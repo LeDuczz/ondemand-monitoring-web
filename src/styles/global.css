@@ -252,15 +252,19 @@ a:focus-visible {
   min-height: 800px;
   padding-top: 185px;
   overflow: hidden;
-  background: linear-gradient(132deg,
-      var(--color-background) 30%,
-      #eef7fb 100%);
+  background: linear-gradient(
+    132deg,
+    var(--color-background) 30%,
+    #eef7fb 100%
+  );
 }
 
 :root[data-theme='dark'] .hero {
-  background: linear-gradient(132deg,
-      var(--color-background) 30%,
-      #102b3e 100%);
+  background: linear-gradient(
+    132deg,
+    var(--color-background) 30%,
+    #102b3e 100%
+  );
 }
 
 .hero::before {
@@ -756,7 +760,7 @@ h2 span {
   font-size: 0.67rem;
 }
 
-.form-window-top>svg {
+.form-window-top > svg {
   width: 15px;
   margin-left: auto;
 }
@@ -1106,7 +1110,7 @@ h2 span {
   font-size: 0.63rem;
 }
 
-.report-summary>p {
+.report-summary > p {
   margin: 27px 0;
   color: var(--color-body);
   font-size: 0.75rem;
@@ -1310,7 +1314,7 @@ h2 span {
   padding-bottom: 45px;
 }
 
-.footer-top>p {
+.footer-top > p {
   margin: 0;
   color: var(--color-muted);
   font-size: 0.7rem;
@@ -1565,7 +1569,6 @@ h2 span {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
@@ -1861,7 +1864,10 @@ h2 span {
   color: var(--color-foreground);
   font-size: 0.78rem;
   font-weight: 700;
-  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 .auth-google-button:hover {
   border-color: var(--color-primary);
@@ -1951,10 +1957,14 @@ h2 span {
   animation: auth-spin 0.85s linear infinite;
 }
 @keyframes auth-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auth-callback-spinner { animation: none; }
+  .auth-callback-spinner {
+    animation: none;
+  }
 }
 .auth-field {
   display: grid;
@@ -2173,7 +2183,9 @@ h2 span {
   padding: 28px 32px;
   box-shadow: var(--shadow-panel);
   margin-bottom: 32px;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .flow-step-tracker {
@@ -2218,7 +2230,8 @@ h2 span {
   background: var(--color-primary);
   color: #ffffff;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .flow-step-node--done .flow-step-number {

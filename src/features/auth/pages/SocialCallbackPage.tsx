@@ -113,7 +113,10 @@ export function SocialCallbackPage() {
           </div>
           <p className="eyebrow">Google account connected</p>
           <h1>Welcome{userName ? `, ${userName}` : ''}</h1>
-          <p>Your customer account is ready. Continue to Fieldwise to manage monitoring requests.</p>
+          <p>
+            Your customer account is ready. Continue to Fieldwise to manage
+            monitoring requests.
+          </p>
           <a className="button button--primary" href="#top">
             <span>Continue to Fieldwise</span>
             <Icon name="arrow-right" />
@@ -125,11 +128,19 @@ export function SocialCallbackPage() {
 
   return (
     <div className="auth-callback-page">
-      <div className="auth-callback-card auth-callback-card--loading" role="status" aria-live="polite">
+      <div
+        className="auth-callback-card auth-callback-card--loading"
+        role="status"
+        aria-live="polite"
+      >
         <div className="auth-callback-spinner" aria-hidden="true" />
         <p className="eyebrow">Google account</p>
         <h1>Finishing sign-in</h1>
-        <p>{isSlow ? 'This is taking longer than usual. Please keep this window open.' : 'Verifying your account securely…'}</p>
+        <p>
+          {isSlow
+            ? 'This is taking longer than usual. Please keep this window open.'
+            : 'Verifying your account securely…'}
+        </p>
       </div>
     </div>
   )

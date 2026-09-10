@@ -8,6 +8,10 @@ import {
   telemetryMetrics,
 } from '../mock-data'
 
+const goToAuth = (mode: 'login' | 'register') => {
+  window.location.hash = `auth/${mode}`
+}
+
 function BrandMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
@@ -89,8 +93,12 @@ function Header() {
         </nav>
         <div className="nav-actions">
           <ThemeToggle />
-          <Button variant="secondary">Sign in</Button>
-          <Button icon="arrow-up-right">Create a request</Button>
+          <Button variant="secondary" onClick={() => goToAuth('login')}>
+            Sign in
+          </Button>
+          <Button icon="arrow-up-right" onClick={() => goToAuth('register')}>
+            Create a request
+          </Button>
         </div>
         <button
           className="menu-toggle"
@@ -374,7 +382,10 @@ export function LandingPage() {
                 people into dangerous or hard-to-reach places.
               </p>
               <div className="hero-actions">
-                <Button icon="arrow-up-right">
+                <Button
+                  icon="arrow-up-right"
+                  onClick={() => goToAuth('register')}
+                >
                   Create a monitoring request
                 </Button>
                 <a className="text-link" href="#how-it-works">
@@ -603,7 +614,9 @@ export function LandingPage() {
               Create a request and let our service team take care of the
               operational details.
             </p>
-            <Button icon="arrow-up-right">Create a monitoring request</Button>
+            <Button icon="arrow-up-right" onClick={() => goToAuth('register')}>
+              Create a monitoring request
+            </Button>
           </div>
         </section>
       </main>

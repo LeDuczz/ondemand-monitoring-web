@@ -90,6 +90,7 @@ export function PostflightModal({
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label
+              htmlFor="postflight-device-status"
               style={{
                 display: 'block',
                 fontSize: '0.78rem',
@@ -101,6 +102,7 @@ export function PostflightModal({
               Trạng thái Thiết bị sau Chuyến bay
             </label>
             <select
+              id="postflight-device-status"
               value={deviceStatus}
               onChange={(e) => setDeviceStatus(e.target.value as DeviceStatus)}
               style={{
@@ -129,6 +131,7 @@ export function PostflightModal({
 
           <div style={{ marginBottom: '28px' }}>
             <label
+              htmlFor="postflight-notes"
               style={{
                 display: 'block',
                 fontSize: '0.78rem',
@@ -140,6 +143,7 @@ export function PostflightModal({
               Ghi chú Kiểm tra Kỹ thuật (Inspection Log Notes)
             </label>
             <textarea
+              id="postflight-notes"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

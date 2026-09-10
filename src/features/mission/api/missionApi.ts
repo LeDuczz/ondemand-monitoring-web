@@ -54,8 +54,8 @@ export const missionApi = {
   // F3.1 Reject mission (PATCH /api/missions/{id}/reject)
   rejectMission: async (
     missionId: string,
-    operatorId = 'OP-001',
     reason: string,
+    operatorId = 'OP-001',
   ): Promise<Mission> => {
     return request<Mission>(`${API_BASE}/missions/${missionId}/reject`, {
       method: 'PATCH',

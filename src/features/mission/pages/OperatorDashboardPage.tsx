@@ -16,6 +16,21 @@ import { PostflightModal } from '../components/PostflightModal'
 import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
 
+const STEP_BY_STATUS: Record<string, number> = {
+  WAITING_OPERATOR_ACCEPTANCE: 1,
+  SCHEDULED: 2,
+  CONNECTED: 2,
+  PREFLIGHT_CHECKING: 2,
+  READY_TO_FLY: 2,
+  FAILED_PREFLIGHT: 2,
+  PENDING_APPROVAL: 2,
+  IN_FLIGHT: 3,
+  IN_PROGRESS: 3,
+  RETURNING: 3,
+  POSTFLIGHT_CHECKING: 4,
+  COMPLETED: 4,
+}
+
 export function OperatorDashboardPage() {
   const [mission, setMission] = useState<Mission | null>(null)
   const [loading, setLoading] = useState(true)
@@ -152,31 +167,7 @@ export function OperatorDashboardPage() {
     )
   }
 
-  // Calculate current flow step number (1 to 4)
-  const getStepNumber = () => {
-    switch (mission.status) {
-      case 'WAITING_OPERATOR_ACCEPTANCE':
-        return 1
-      case 'SCHEDULED':
-      case 'CONNECTED':
-      case 'PREFLIGHT_CHECKING':
-      case 'READY_TO_FLY':
-      case 'FAILED_PREFLIGHT':
-      case 'PENDING_APPROVAL':
-        return 2
-      case 'IN_FLIGHT':
-      case 'IN_PROGRESS':
-      case 'RETURNING':
-        return 3
-      case 'POSTFLIGHT_CHECKING':
-      case 'COMPLETED':
-        return 4
-      default:
-        return 1
-    }
-  }
-
-  const currentStep = getStepNumber()
+  const currentStep = STEP_BY_STATUS[mission.status] ?? 1
 
   // ---------------------------------------------------------------------------
   // Flow 3 Pure Backend API Handlers (No Demo Fallbacks)
@@ -198,8 +189,8 @@ export function OperatorDashboardPage() {
     try {
       const updated = await missionApi.rejectMission(
         mission.id,
-        mission.operatorId || 'OP-001',
         rejectReason || 'Lý do cá nhân',
+        mission.operatorId || 'OP-001',
       )
       setMission(updated)
       setShowRejectModal(false)

@@ -8,6 +8,7 @@ import {
   authSession,
   getGoogleAuthorizationUrl,
 } from '../api/authApi'
+import { redirectToRoleHome } from '../routing'
 
 type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset'
 type Notice = { type: 'info' | 'error' | 'success'; message: string }
@@ -329,6 +330,7 @@ export function AuthPage({
       ? ` as ${response.user.fullName}`
       : ''
     setNotice({ type: 'success', message: `Signed in${suffix}.` })
+    redirectToRoleHome(response.user?.role)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

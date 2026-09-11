@@ -152,6 +152,16 @@ export const authSession = {
       sessionStorage.getItem(ACCESS_TOKEN_KEY)
     )
   },
+  getUser() {
+    const raw =
+      localStorage.getItem(USER_KEY) ?? sessionStorage.getItem(USER_KEY)
+    if (!raw) return undefined
+    try {
+      return JSON.parse(raw) as AuthResponse['user']
+    } catch {
+      return undefined
+    }
+  },
   clear() {
     localStorage.removeItem(ACCESS_TOKEN_KEY)
     localStorage.removeItem(USER_KEY)

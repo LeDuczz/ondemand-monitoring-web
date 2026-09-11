@@ -120,17 +120,47 @@ export const authApi = {
 const ACCESS_TOKEN_KEY = 'fieldwise.accessToken'
 const USER_KEY = 'fieldwise.user'
 
+const isSafeToken = (value: unknown): value is string =>
+  typeof value === 'string' && /^[A-Za-z0-9._~-]+$/.test(value)
+
+const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
+  id: String(user.id),
+  fullName: String(user.fullName),
+  email: String(user.email),
+  emailVerified: Boolean(user.emailVerified),
+  role: user.role,
+  linkedProviders: user.linkedProviders?.filter(
+    (provider): provider is string => typeof provider === 'string',
+  ),
+  avatarUrl:
+    typeof user.avatarUrl === 'string' && /^https?:\/\//i.test(user.avatarUrl)
+      ? user.avatarUrl
+      : undefined,
+  isActive: Boolean(user.isActive),
+})
+
 export const authSession = {
   save(response: AuthResponse, rememberMe: boolean) {
+    if (!isSafeToken(response.accessToken) || !response.user) return
     const storage = rememberMe ? localStorage : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
-    if (response.user) storage.setItem(USER_KEY, JSON.stringify(response.user))
+    storage.setItem(USER_KEY, JSON.stringify(sanitizeUser(response.user)))
   },
   getAccessToken() {
     return (
       localStorage.getItem(ACCESS_TOKEN_KEY) ??
       sessionStorage.getItem(ACCESS_TOKEN_KEY)
     )
+  },
+  getUser() {
+    const raw =
+      localStorage.getItem(USER_KEY) ?? sessionStorage.getItem(USER_KEY)
+    if (!raw) return undefined
+    try {
+      return JSON.parse(raw) as AuthResponse['user']
+    } catch {
+      return undefined
+    }
   },
   clear() {
     localStorage.removeItem(ACCESS_TOKEN_KEY)

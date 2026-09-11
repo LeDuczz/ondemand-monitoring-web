@@ -215,6 +215,35 @@ function ModeSwitch({
   )
 }
 
+function getAuthTitle(mode: AuthMode) {
+  const titles: Record<AuthMode, string> = {
+    login: 'Welcome back',
+    register: 'Create your account',
+    verify: 'Verify your email',
+    forgot: 'Reset your password',
+    reset: 'Set a new password',
+  }
+  return titles[mode]
+}
+
+function getAuthSubtitle(mode: AuthMode) {
+  const subtitles: Record<AuthMode, string> = {
+    login: 'Sign in to follow requests, tickets, and reports.',
+    register:
+      'Start managing monitoring requests with a clear customer workspace.',
+    verify: 'One more step before your Fieldwise workspace is ready.',
+    forgot: 'Enter your work email and we’ll help you get back in.',
+    reset: 'Use a new password with at least 8 characters.',
+  }
+  return subtitles[mode]
+}
+
+function getNoticeIcon(type: Notice['type']) {
+  if (type === 'success') return 'check' as const
+  if (type === 'error') return 'x' as const
+  return 'activity' as const
+}
+
 export function AuthPage({
   initialMode = 'login',
 }: {
@@ -244,69 +273,80 @@ export function AuthPage({
     })
   }
 
+  const submitRegister = async () => {
+    const response = await authApi.register({
+      email,
+      password,
+      fullName,
+      role: 'CUSTOMER',
+    })
+    if (response?.otpRequired) {
+      setMode('verify')
+      setNotice({
+        type: 'success',
+        message: `We sent a 6-digit verification code to ${email}.`,
+      })
+      return
+    }
+    setMode('login')
+    setNotice({
+      type: 'success',
+      message: 'Registration complete. You can sign in now.',
+    })
+  }
+
+  const submitVerify = async () => {
+    await authApi.verifyOtp({ email, otpCode })
+    setMode('login')
+    setNotice({
+      type: 'success',
+      message: 'Email verified. You can sign in to your workspace.',
+    })
+  }
+
+  const submitForgot = async () => {
+    await authApi.forgotPassword({ email })
+    setMode('reset')
+    setNotice({
+      type: 'success',
+      message: 'A password reset code has been sent to your email.',
+    })
+  }
+
+  const submitReset = async () => {
+    await authApi.resetPassword({ email, otpCode, newPassword })
+    setMode('login')
+    setNotice({
+      type: 'success',
+      message:
+        'Password reset complete. You can sign in with your new password.',
+    })
+  }
+
+  const submitLogin = async () => {
+    const response = await authApi.login({ email, password })
+    authSession.save(response, rememberMe)
+    const suffix = response.user?.fullName
+      ? ` as ${response.user.fullName}`
+      : ''
+    setNotice({ type: 'success', message: `Signed in${suffix}.` })
+    redirectToRoleHome(response.user?.role)
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setNotice(undefined)
     setFieldErrors({})
     setIsSubmitting(true)
+    const submitters: Partial<Record<AuthMode, () => Promise<void>>> = {
+      register: submitRegister,
+      verify: submitVerify,
+      forgot: submitForgot,
+      reset: submitReset,
+      login: submitLogin,
+    }
     try {
-      if (mode === 'register') {
-        const response = await authApi.register({
-          email,
-          password,
-          fullName,
-          role: 'CUSTOMER',
-        })
-        if (response?.otpRequired) {
-          setMode('verify')
-          setNotice({
-            type: 'success',
-            message: `We sent a 6-digit verification code to ${email}.`,
-          })
-        } else {
-          setMode('login')
-          setNotice({
-            type: 'success',
-            message: 'Registration complete. You can sign in now.',
-          })
-        }
-        return
-      }
-      if (mode === 'verify') {
-        await authApi.verifyOtp({ email, otpCode })
-        setMode('login')
-        setNotice({
-          type: 'success',
-          message: 'Email verified. You can sign in to your workspace.',
-        })
-        return
-      }
-      if (mode === 'forgot') {
-        await authApi.forgotPassword({ email })
-        setMode('reset')
-        setNotice({
-          type: 'success',
-          message: 'A password reset code has been sent to your email.',
-        })
-        return
-      }
-      if (mode === 'reset') {
-        await authApi.resetPassword({ email, otpCode, newPassword })
-        setMode('login')
-        setNotice({
-          type: 'success',
-          message:
-            'Password reset complete. You can sign in with your new password.',
-        })
-        return
-      }
-      const response = await authApi.login({ email, password })
-      authSession.save(response, rememberMe)
-      setNotice({
-        type: 'success',
-        message: `Signed in${response.user?.fullName ? ` as ${response.user.fullName}` : ''}.`,
-      })
-      redirectToRoleHome(response.user?.role)
+      await submitters[mode]?.()
     } catch (error) {
       handleApiError(error)
     } finally {
@@ -345,26 +385,8 @@ export function AuthPage({
     setNotice(undefined)
     setFieldErrors({})
   }
-  const title =
-    mode === 'login'
-      ? 'Welcome back'
-      : mode === 'register'
-        ? 'Create your account'
-        : mode === 'verify'
-          ? 'Verify your email'
-          : mode === 'forgot'
-            ? 'Reset your password'
-            : 'Set a new password'
-  const subtitle =
-    mode === 'login'
-      ? 'Sign in to follow requests, tickets, and reports.'
-      : mode === 'register'
-        ? 'Start managing monitoring requests with a clear customer workspace.'
-        : mode === 'verify'
-          ? 'One more step before your Fieldwise workspace is ready.'
-          : mode === 'forgot'
-            ? 'Enter your work email and we’ll help you get back in.'
-            : 'Use a new password with at least 8 characters.'
+  const title = getAuthTitle(mode)
+  const subtitle = getAuthSubtitle(mode)
 
   return (
     <div className="auth-page">
@@ -390,21 +412,13 @@ export function AuthPage({
             <p>{subtitle}</p>
           </div>
           {notice ? (
-            <div
+            <output
               className={`auth-notice auth-notice--${notice.type}`}
-              role="status"
+              aria-live="polite"
             >
-              <Icon
-                name={
-                  notice.type === 'success'
-                    ? 'check'
-                    : notice.type === 'error'
-                      ? 'x'
-                      : 'activity'
-                }
-              />
+              <Icon name={getNoticeIcon(notice.type)} />
               <span>{notice.message}</span>
-            </div>
+            </output>
           ) : null}
           <form id="auth-form" className="auth-form" onSubmit={handleSubmit}>
             {mode === 'login' ? (

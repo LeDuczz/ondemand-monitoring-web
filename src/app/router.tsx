@@ -13,6 +13,7 @@ import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
+import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
 
 function RoleRoute({
   role,
@@ -83,5 +84,7 @@ export function Router() {
         <AdminHomePage />
       </RoleRoute>
     )
+  if (hash === '#operator') return <OperatorDashboardPage />
+
   return <LandingPage />
 }

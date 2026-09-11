@@ -52,6 +52,21 @@ export type AuthResponse = {
   user?: UserProfile
 }
 
+export type EmployeeRole = Exclude<UserRole, 'CUSTOMER' | 'ADMIN'>
+
+export type CreateManagedAccountRequest = {
+  email: string
+  fullName: string
+  role: EmployeeRole
+}
+
+export type ManagedAccountResponse = {
+  email: string
+  role: EmployeeRole
+  invitationSent: boolean
+  passwordChangeRequired: boolean
+}
+
 export type ApiResponse<T> = {
   success: boolean
   code?: string

@@ -57,7 +57,7 @@ const navItems: Record<UserRole, PortalNavItem[]> = {
   ],
   ADMIN: [
     { label: 'Admin overview', icon: 'chart', href: '#portal/admin' },
-    { label: 'Users', icon: 'users', href: '#portal/admin/users' },
+    { label: 'Users', icon: 'users', href: '#portal/admin/accounts/new' },
     { label: 'Missions', icon: 'route', href: '#portal/admin/missions' },
     { label: 'Audit logs', icon: 'clipboard', href: '#portal/admin/audit' },
   ],

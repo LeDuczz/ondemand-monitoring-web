@@ -2648,3 +2648,280 @@ h2 span {
   padding: 16px 24px;
   margin-bottom: 28px;
 }
+
+.admin-account-page {
+  display: grid;
+  gap: 20px;
+}
+
+.portal-back-link {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: 0.84rem;
+  gap: 8px;
+  width: fit-content;
+}
+
+.portal-back-link:hover {
+  color: var(--color-primary);
+}
+
+.portal-back-link svg {
+  height: 16px;
+  width: 16px;
+}
+
+.admin-account-grid {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+}
+
+.admin-account-card,
+.admin-account-side .portal-panel {
+  padding: 28px;
+}
+
+.admin-account-card .portal-panel-heading {
+  align-items: flex-start;
+}
+
+.admin-account-card h2,
+.admin-account-side h2 {
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+}
+
+.admin-account-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-radius: 12px;
+  color: var(--color-primary);
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.admin-account-icon svg {
+  height: 21px;
+  width: 21px;
+}
+
+.admin-account-intro,
+.admin-account-field-help,
+.admin-security-note p {
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.admin-account-intro {
+  margin: 8px 0 24px;
+  max-width: 66ch;
+}
+
+.admin-account-form {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-account-form .auth-field {
+  gap: 7px;
+}
+
+.admin-account-form .auth-field > label {
+  color: var(--color-foreground);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-account-form input,
+.admin-account-form select {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-foreground);
+  font: inherit;
+  min-height: 46px;
+  padding: 0 13px;
+  width: 100%;
+}
+
+.admin-account-form input:focus,
+.admin-account-form select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 18%, transparent);
+  outline: none;
+}
+
+.admin-account-form input[aria-invalid='true'],
+.admin-account-form select[aria-invalid='true'] {
+  border-color: var(--color-destructive);
+}
+
+.admin-account-field-help {
+  display: block;
+  font-size: 0.75rem;
+}
+
+.admin-account-notice {
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--green-500) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--green-500) 32%, transparent);
+  border-radius: 10px;
+  color: var(--color-foreground);
+  display: flex;
+  font-size: 0.82rem;
+  gap: 9px;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+
+.admin-account-notice svg {
+  color: var(--green-500);
+  flex: 0 0 auto;
+  height: 18px;
+  margin-top: 1px;
+  width: 18px;
+}
+
+.admin-account-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.admin-account-actions .button--ghost {
+  color: var(--color-muted);
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.admin-role-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.admin-role-option {
+  align-items: flex-start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  color: var(--color-foreground);
+  cursor: pointer;
+  display: flex;
+  gap: 11px;
+  padding: 14px;
+  text-align: left;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+  width: 100%;
+}
+
+.admin-role-option:hover,
+.admin-role-option.is-selected {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+  border-color: var(--color-primary);
+}
+
+.admin-role-option:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.admin-role-option strong,
+.admin-role-option small {
+  display: block;
+}
+
+.admin-role-option strong {
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+}
+
+.admin-role-option small {
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.admin-role-radio {
+  align-items: center;
+  border: 1px solid var(--color-border-strong, var(--color-border));
+  border-radius: 50%;
+  display: flex;
+  flex: 0 0 auto;
+  height: 17px;
+  justify-content: center;
+  margin-top: 2px;
+  width: 17px;
+}
+
+.admin-role-option.is-selected .admin-role-radio {
+  border-color: var(--color-primary);
+}
+
+.admin-role-option.is-selected .admin-role-radio span {
+  background: var(--color-primary);
+  border-radius: 50%;
+  height: 9px;
+  width: 9px;
+}
+
+.admin-security-note {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.admin-security-note > svg {
+  color: var(--color-primary);
+  flex: 0 0 auto;
+  height: 20px;
+  margin-top: 2px;
+  width: 20px;
+}
+
+.admin-security-note strong {
+  display: block;
+  font-size: 0.84rem;
+  margin-bottom: 5px;
+}
+
+.admin-security-note p {
+  font-size: 0.77rem;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .admin-account-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-account-card,
+  .admin-account-side .portal-panel {
+    padding: 20px;
+  }
+
+  .admin-account-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-account-actions .button,
+  .admin-account-actions .button--ghost {
+    justify-content: center;
+    width: 100%;
+  }
+}

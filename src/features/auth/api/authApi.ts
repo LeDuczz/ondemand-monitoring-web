@@ -2,8 +2,10 @@ import { env } from '../../../config/env'
 import type {
   ApiResponse,
   AuthResponse,
+  CreateManagedAccountRequest,
   ForgotPasswordRequest,
   LoginRequest,
+  ManagedAccountResponse,
   RegisterRequest,
   RegisterResponse,
   ResendOtpRequest,
@@ -111,6 +113,15 @@ export const authApi = {
     request<AuthResponse>('/api/v1/auth/refresh', { method: 'POST' }),
   logout: (accessToken: string) =>
     request<void>('/api/v1/auth/logout', { method: 'POST', accessToken }),
+  createManagedAccount: (
+    body: CreateManagedAccountRequest,
+    accessToken: string,
+  ) =>
+    request<ManagedAccountResponse>('/api/v1/admin/accounts', {
+      method: 'POST',
+      body,
+      accessToken,
+    }),
   forgotPassword: (body: ForgotPasswordRequest) =>
     request<void>('/api/v1/auth/forgot-password', { method: 'POST', body }),
   resetPassword: (body: ResetPasswordRequest) =>

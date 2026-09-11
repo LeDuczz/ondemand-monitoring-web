@@ -13,6 +13,7 @@ import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
+import { AdminAccountCreatePage } from '../features/admin/pages/AdminAccountCreatePage'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
 
 function RoleRoute({
@@ -82,6 +83,12 @@ export function Router() {
     return (
       <RoleRoute role="ADMIN">
         <AdminHomePage />
+      </RoleRoute>
+    )
+  if (hash === '#portal/admin/accounts/new')
+    return (
+      <RoleRoute role="ADMIN">
+        <AdminAccountCreatePage />
       </RoleRoute>
     )
   if (hash === '#operator') return <OperatorDashboardPage />

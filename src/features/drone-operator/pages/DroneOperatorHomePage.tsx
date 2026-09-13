@@ -1,4 +1,6 @@
-import { RolePortalPage } from '../../portal/pages/RolePortalPage'
+import '../omss/operator.css'
+import OperatorWorkspace from '../omss/OperatorWorkspace'
+
 export function DroneOperatorHomePage() {
-  return <RolePortalPage role="DRONE_OPERATOR" />
+  return <OperatorWorkspace />
 }

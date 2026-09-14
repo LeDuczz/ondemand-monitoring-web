@@ -35,6 +35,8 @@ type ControlStatus = {
   altitudeM?: number;
   speedMps?: number;
   batteryPercent?: number;
+  batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY';
+  batteryDrainMode?: 'LANDED' | 'IDLE' | 'HOVER' | 'CRUISE' | 'ASCEND' | 'DESCEND';
   cameraMode?: 'FRONT' | 'DOWN';
 };
 
@@ -468,8 +470,17 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
   const telemetryValue = (value: number | undefined, suffix: string, digits = 1) =>
     typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(digits)} ${suffix}` : '--';
   const telemetryBattery = typeof controlStatus?.batteryPercent === 'number' && Number.isFinite(controlStatus.batteryPercent)
-    ? Math.round(controlStatus.batteryPercent)
+    ? Math.max(0, Math.min(100, controlStatus.batteryPercent))
     : null;
+  const batteryDisplay = telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`;
+  const batteryState = controlStatus?.batteryState ?? 'NORMAL';
+  const batteryMode = controlStatus?.batteryDrainMode ?? 'LANDED';
+  const batteryTone =
+    batteryState === 'EMERGENCY' ? '#ef4444' :
+    batteryState === 'CRITICAL' ? '#f87171' :
+    batteryState === 'LOW' ? '#fbbf24' :
+    '#22c55e';
+  const showBatteryWarning = telemetryBattery !== null && batteryState !== 'NORMAL';
   const cameraMode = controlStatus?.cameraMode === 'DOWN' ? 'DOWN' : 'FRONT';
   const cameraLabel = cameraMode === 'DOWN' ? 'Downward' : 'FPV';
   const viewLabel = cameraMode === 'DOWN' ? 'Top Down' : 'First Person';
@@ -591,7 +602,8 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           {[
             ['Altitude', telemetryValue(controlStatus?.altitudeM, 'm')],
             ['Speed', telemetryValue(controlStatus?.speedMps, 'm/s')],
-            ['Battery', telemetryBattery === null ? '--' : `${telemetryBattery}%`],
+            ['Battery', batteryDisplay],
+            ['Drain', batteryMode],
           ].map(([label, value]) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
               <span style={{ color: '#94a3b8', fontSize: 12 }}>{label}</span>
@@ -599,9 +611,25 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
             </div>
           ))}
           <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.95)', overflow: 'hidden' }}>
-            <div style={{ width: `${telemetryBattery ?? 0}%`, height: '100%', borderRadius: 999, background: '#22c55e' }} />
+            <div style={{ width: `${telemetryBattery ?? 0}%`, height: '100%', borderRadius: 999, background: batteryTone, transition: 'width .35s ease, background .2s ease' }} />
           </div>
         </GlassPanel>
+
+        {showBatteryWarning && (
+          <GlassPanel style={{ position: 'absolute', left: '50%', top: geofenceAlertActive ? 100 : 28, transform: 'translateX(-50%)', width: 'min(360px, calc(100% - 56px))', padding: '11px 14px', border: `1px solid ${batteryState === 'LOW' ? 'rgba(251,191,36,.7)' : 'rgba(248,113,113,.72)'}`, background: batteryState === 'LOW' ? 'rgba(120,53,15,.82)' : 'rgba(127,29,29,.78)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Icon name="alert" size={20} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 950, color: batteryState === 'LOW' ? '#fef3c7' : '#fee2e2', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                  {batteryState === 'LOW' ? 'Low battery' : batteryState === 'CRITICAL' ? 'Critical battery' : 'Emergency battery'} - {batteryDisplay}
+                </div>
+                <div style={{ marginTop: 3, fontSize: 11, color: batteryState === 'LOW' ? '#fde68a' : '#fecaca', fontWeight: 750 }}>
+                  Manual control remains available. No automatic flight action was triggered.
+                </div>
+              </div>
+            </div>
+          </GlassPanel>
+        )}
 
         <GlassPanel style={{ position: 'absolute', right: 22, top: 370, padding: '7px 11px', color: '#cbd5e1', fontSize: 11 }}>
           {lastCommand}

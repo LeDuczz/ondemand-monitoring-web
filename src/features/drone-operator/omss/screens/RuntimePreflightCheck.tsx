@@ -28,6 +28,7 @@ const pendingChecks: PreflightItem[] = [
   ['PX4_CONTROL', 'PX4 Control', true],
   ['LOCAL_POSITION', 'Local Position', true],
   ['MAVSDK_HEALTH', 'MAVSDK Health', true],
+  ['BATTERY', 'Battery', true],
   ['LIDAR', 'LiDAR', false],
   ['CAMERA', 'Downward Camera', false],
   ['BACKEND', 'Backend Connection', false],

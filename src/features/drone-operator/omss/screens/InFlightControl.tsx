@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { env } from '../../../../config/env';
 import type { Drone, Mission } from '../types';
+import RuntimePreflightCheck from './RuntimePreflightCheck';
 
 interface Props {
   mission: Mission;
@@ -21,8 +22,9 @@ type IconName =
   | 'drone' | 'settings' | 'crosshair' | 'camera' | 'eye' | 'joystick'
   | 'map' | 'plus' | 'minus' | 'takeoff' | 'land' | 'alert'
   | 'arrowUp' | 'arrowDown' | 'arrowLeft' | 'arrowRight'
+  | 'moveForward' | 'moveBack' | 'moveLeft' | 'moveRight' | 'altitudeUp' | 'altitudeDown'
   | 'rotateLeft' | 'rotateRight' | 'gauge' | 'photo' | 'video'
-  | 'radar' | 'activity' | 'shield';
+  | 'radar' | 'activity' | 'shield' | 'chevronRight';
 
 type ControlStatus = {
   online?: boolean;
@@ -33,6 +35,7 @@ type ControlStatus = {
   altitudeM?: number;
   speedMps?: number;
   batteryPercent?: number;
+  cameraMode?: 'FRONT' | 'DOWN';
 };
 
 type MapMeta = {
@@ -42,7 +45,36 @@ type MapMeta = {
   maxY: number;
 };
 
+type ZonePayload = {
+  id?: string;
+  code?: string;
+  name?: string;
+  zoneType?: string;
+  restricted?: boolean;
+  coordinates?: number[][];
+};
+
+type RestrictedZone = {
+  id: string;
+  code: string;
+  name: string;
+  coordinates: [number, number][];
+};
+
+type GeofenceLevel = 'UNKNOWN' | 'SAFE' | 'CAUTION' | 'DANGER' | 'VIOLATION';
+
+type GeofenceStatus = {
+  level: GeofenceLevel;
+  zone?: RestrictedZone;
+  distanceM?: number;
+};
+
 const controlBaseUrl = import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090';
+const restrictedZoneTypes = new Set(['AIRPORT', 'RESTRICTED', 'NO_FLY', 'NO-FLY', 'NOFLY']);
+const cautionDistanceM = 50;
+const dangerDistanceM = 20;
+const px4HomeSimX = Number(import.meta.env.VITE_GEOFENCE_PX4_HOME_SIM_X_M ?? 0);
+const px4HomeSimY = Number(import.meta.env.VITE_GEOFENCE_PX4_HOME_SIM_Y_M ?? -280);
 
 const flightControls: { command: FlightCommand; label: string; icon: IconName; tone?: 'danger' | 'amber' }[] = [
   { command: 'takeoff', label: 'Take off', icon: 'takeoff' },
@@ -51,12 +83,12 @@ const flightControls: { command: FlightCommand; label: string; icon: IconName; t
 ];
 
 const movementControls: { command: FlightCommand; label: string; icon: IconName }[] = [
-  { command: 'up', label: 'Up', icon: 'arrowUp' },
-  { command: 'forward', label: 'Forward', icon: 'arrowUp' },
-  { command: 'down', label: 'Down', icon: 'arrowDown' },
-  { command: 'back', label: 'Back', icon: 'arrowDown' },
-  { command: 'left', label: 'Left', icon: 'arrowLeft' },
-  { command: 'right', label: 'Right', icon: 'arrowRight' },
+  { command: 'up', label: 'Ascend', icon: 'altitudeUp' },
+  { command: 'forward', label: 'Forward', icon: 'moveForward' },
+  { command: 'down', label: 'Descend', icon: 'altitudeDown' },
+  { command: 'left', label: 'Left', icon: 'moveLeft' },
+  { command: 'back', label: 'Back', icon: 'moveBack' },
+  { command: 'right', label: 'Right', icon: 'moveRight' },
 ];
 
 const rotationControls: { command: FlightCommand; label: string; icon: IconName }[] = [
@@ -66,7 +98,7 @@ const rotationControls: { command: FlightCommand; label: string; icon: IconName 
   { command: 'speed_up', label: 'Speed +', icon: 'plus' },
 ];
 
-const toolControls: { command: FlightCommand; label: string; icon: IconName }[] = [
+const moreToolControls: { command: FlightCommand; label: string; icon: IconName }[] = [
   { command: 'camera_switch', label: 'Camera', icon: 'camera' },
   { command: 'photo', label: 'Photo', icon: 'photo' },
   { command: 'video_toggle', label: 'Video', icon: 'video' },
@@ -95,6 +127,12 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
       {name === 'arrowDown' && <path {...common} d="M12 5v14M6 13l6 6 6-6" />}
       {name === 'arrowLeft' && <path {...common} d="M19 12H5M11 6l-6 6 6 6" />}
       {name === 'arrowRight' && <path {...common} d="M5 12h14M13 6l6 6-6 6" />}
+      {name === 'moveForward' && <><path {...common} d="M12 19V6" /><path {...common} d="m7 11 5-5 5 5" /><path {...common} d="M6 21h12" /></>}
+      {name === 'moveBack' && <><path {...common} d="M12 5v13" /><path {...common} d="m7 13 5 5 5-5" /><path {...common} d="M6 3h12" /></>}
+      {name === 'moveLeft' && <><path {...common} d="M19 12H6" /><path {...common} d="m11 7-5 5 5 5" /><path {...common} d="M21 6v12" /></>}
+      {name === 'moveRight' && <><path {...common} d="M5 12h13" /><path {...common} d="m13 7 5 5-5 5" /><path {...common} d="M3 6v12" /></>}
+      {name === 'altitudeUp' && <><path {...common} d="M12 20V7" /><path {...common} d="m8 11 4-4 4 4" /><path {...common} d="M7 20h10" /><path {...common} d="M18 5h3M19.5 3.5v3" /></>}
+      {name === 'altitudeDown' && <><path {...common} d="M12 4v13" /><path {...common} d="m8 13 4 4 4-4" /><path {...common} d="M7 20h10" /><path {...common} d="M18 5h3" /></>}
       {name === 'rotateLeft' && <><path {...common} d="M4 7v6h6" /><path {...common} d="M5 13a7 7 0 1 0 2-7" /></>}
       {name === 'rotateRight' && <><path {...common} d="M20 7v6h-6" /><path {...common} d="M19 13a7 7 0 1 1-2-7" /></>}
       {name === 'gauge' && <><path {...common} d="M4 14a8 8 0 1 1 16 0" /><path {...common} d="m12 14 4-4" /><path {...common} d="M6 18h12" /></>}
@@ -103,6 +141,7 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
       {name === 'radar' && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 12 18 8M12 4v2M12 18v2M4 12h2M18 12h2" /></>}
       {name === 'activity' && <path {...common} d="M3 12h4l2-7 4 14 2-7h6" />}
       {name === 'shield' && <path {...common} d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />}
+      {name === 'chevronRight' && <path {...common} d="m9 6 6 6-6 6" />}
     </svg>
   );
 }
@@ -151,6 +190,128 @@ function useSimulationMap() {
   return { meta };
 }
 
+function normalizeRing(coordinates: number[][] | undefined): [number, number][] {
+  if (!coordinates) return [];
+  const ring = coordinates
+    .map((point) => [Number(point[0]), Number(point[1])] as [number, number])
+    .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+
+  if (ring.length < 3) return [];
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first);
+  return ring;
+}
+
+function pointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const cross = (px - ax) * (by - ay) - (py - ay) * (bx - ax);
+  if (Math.abs(cross) > 1e-9) return false;
+  return (px - ax) * (px - bx) + (py - ay) * (py - by) <= 1e-9;
+}
+
+function polygonContainsPoint(ring: [number, number][], point: [number, number]) {
+  const [px, py] = point;
+  let inside = false;
+  for (let index = 0; index < ring.length - 1; index += 1) {
+    const [ax, ay] = ring[index];
+    const [bx, by] = ring[index + 1];
+    if (pointOnSegment(px, py, ax, ay, bx, by)) return true;
+    if ((ay > py) !== (by > py)) {
+      const xAtY = ax + ((py - ay) * (bx - ax)) / (by - ay);
+      if (px < xAtY) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function pointSegmentDistance(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSq = dx * dx + dy * dy;
+  if (lengthSq <= 0) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSq));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+function pointPolygonDistance(ring: [number, number][], point: [number, number]) {
+  const [px, py] = point;
+  if (polygonContainsPoint(ring, point)) return 0;
+  return Math.min(...ring.slice(0, -1).map(([ax, ay], index) => {
+    const [bx, by] = ring[index + 1];
+    return pointSegmentDistance(px, py, ax, ay, bx, by);
+  }));
+}
+
+function useRestrictedZones() {
+  const [zones, setZones] = useState<RestrictedZone[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadZones() {
+      try {
+        const response = await fetch(`${env.apiBaseUrl}/api/zones`, { cache: 'no-store' });
+        const payload = await response.json();
+        const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+        const restricted = (items as ZonePayload[])
+          .filter((zone) => zone.restricted || restrictedZoneTypes.has(String(zone.zoneType ?? '').toUpperCase()))
+          .map((zone) => ({
+            id: String(zone.id ?? zone.code ?? zone.name ?? 'restricted-zone'),
+            code: String(zone.code ?? ''),
+            name: String(zone.name ?? zone.code ?? 'Restricted zone'),
+            coordinates: normalizeRing(zone.coordinates),
+          }))
+          .filter((zone) => zone.coordinates.length >= 4);
+        if (alive) setZones(restricted);
+      } catch {
+        if (alive) setZones([]);
+      }
+    }
+
+    void loadZones();
+    const timer = window.setInterval(loadZones, 5000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  return zones;
+}
+
+function evaluateGeofence(point: [number, number] | null, zones: RestrictedZone[]): GeofenceStatus {
+  if (!point) return { level: 'UNKNOWN' };
+
+  let nearestZone: RestrictedZone | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const zone of zones) {
+    if (polygonContainsPoint(zone.coordinates, point)) {
+      return { level: 'VIOLATION', zone, distanceM: 0 };
+    }
+    const distance = pointPolygonDistance(zone.coordinates, point);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestZone = zone;
+    }
+  }
+
+  if (!nearestZone) return { level: 'SAFE' };
+  if (nearestDistance <= dangerDistanceM) return { level: 'DANGER', zone: nearestZone, distanceM: nearestDistance };
+  if (nearestDistance <= cautionDistanceM) return { level: 'CAUTION', zone: nearestZone, distanceM: nearestDistance };
+  return { level: 'SAFE', zone: nearestZone, distanceM: nearestDistance };
+}
+
+function statusToSimulationPoint(status: ControlStatus | null): [number, number] | null {
+  if (status?.positionNed) {
+    return [px4HomeSimX + status.positionNed.eastM, px4HomeSimY + status.positionNed.northM];
+  }
+  if (status?.positionGazebo) {
+    return [status.positionGazebo.x, status.positionGazebo.y];
+  }
+  return null;
+}
+
 function RealMiniMap({ status }: { status: ControlStatus | null }) {
   const { meta } = useSimulationMap();
   const [zoom, setZoom] = useState(1);
@@ -165,7 +326,8 @@ function RealMiniMap({ status }: { status: ControlStatus | null }) {
     return [px, py] as const;
   };
 
-  const droneWorld = status?.positionGazebo ?? { x: 0, y: 0 };
+  const simPoint = statusToSimulationPoint(status);
+  const droneWorld = simPoint ? { x: simPoint[0], y: simPoint[1] } : { x: 0, y: 0 };
   const [droneX, droneY] = worldToMinimap(droneWorld.x, droneWorld.y);
   const viewWidth = width / zoom;
   const viewHeight = height / zoom;
@@ -208,9 +370,35 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
   const [busyCommand, setBusyCommand] = useState<FlightCommand | null>(null);
   const [streamRevision, setStreamRevision] = useState(0);
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [preflightReady, setPreflightReady] = useState(false);
+  const restrictedZones = useRestrictedZones();
 
   const streamUrl = useMemo(() => `${controlBaseUrl}/stream.mjpg?viewer=operator&v=${streamRevision}`, [streamRevision]);
   const remaining = Math.max(0, mission.estimatedMinutes * 60 - elapsed);
+  const dronePoint = statusToSimulationPoint(controlStatus);
+  const geofenceStatus = useMemo(() => evaluateGeofence(dronePoint, restrictedZones), [dronePoint, restrictedZones]);
+  const geofenceAlertActive = geofenceStatus.level === 'CAUTION' || geofenceStatus.level === 'DANGER' || geofenceStatus.level === 'VIOLATION';
+  const geofenceTone = geofenceStatus.level === 'VIOLATION' || geofenceStatus.level === 'DANGER' ? 'danger' : 'amber';
+  const geofenceZoneName = geofenceStatus.zone?.name ?? geofenceStatus.zone?.code ?? 'restricted zone';
+  const geofenceMessage =
+    geofenceStatus.level === 'VIOLATION'
+      ? `Restricted zone breach: ${geofenceZoneName}`
+      : geofenceStatus.level === 'DANGER'
+        ? `Restricted zone danger: ${Math.round(geofenceStatus.distanceM ?? 0)} m from ${geofenceZoneName}`
+        : geofenceStatus.level === 'CAUTION'
+          ? `Restricted zone caution: ${Math.round(geofenceStatus.distanceM ?? 0)} m from ${geofenceZoneName}`
+          : 'All Systems Nominal';
+  const footerStatusColor = geofenceAlertActive
+    ? geofenceTone === 'danger' ? '#fecaca' : '#fde68a'
+    : '#bbf7d0';
+  const footerStatusDot = geofenceAlertActive
+    ? geofenceTone === 'danger' ? '#ef4444' : '#f59e0b'
+    : '#22c55e';
+
+  useEffect(() => {
+    window.sessionStorage.removeItem('omss.droneOperator.preflightReady');
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -249,6 +437,10 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
   }, []);
 
   async function sendCommand(command: FlightCommand) {
+    if (!preflightReady) {
+      setLastCommand('Preflight required');
+      return;
+    }
     setBusyCommand(command);
     try {
       const response = await fetch(`${controlBaseUrl}/api/control/command`, {
@@ -273,11 +465,19 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
 
   const fmt = (seconds: number) =>
     `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  const telemetryValue = (value: number | undefined, suffix: string, digits = 1) =>
+    typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(digits)} ${suffix}` : '--';
+  const telemetryBattery = typeof controlStatus?.batteryPercent === 'number' && Number.isFinite(controlStatus.batteryPercent)
+    ? Math.round(controlStatus.batteryPercent)
+    : null;
+  const cameraMode = controlStatus?.cameraMode === 'DOWN' ? 'DOWN' : 'FRONT';
+  const cameraLabel = cameraMode === 'DOWN' ? 'Downward' : 'FPV';
+  const viewLabel = cameraMode === 'DOWN' ? 'Top Down' : 'First Person';
 
   const buttonStyle = (tone?: 'danger' | 'amber'): CSSProperties => ({
-    width: 66,
-    height: 58,
-    borderRadius: 12,
+    width: 48,
+    height: 40,
+    borderRadius: 8,
     border: tone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(148,163,184,.18)',
     background: tone === 'danger' ? 'rgba(127,29,29,.78)' : tone === 'amber' ? 'rgba(180,83,9,.76)' : 'rgba(15,23,42,.78)',
     color: tone === 'danger' ? '#fecaca' : '#e5edf8',
@@ -285,12 +485,24 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    fontSize: 10,
+    gap: 2,
+    fontSize: 8,
     fontWeight: 800,
     cursor: 'pointer',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,.06)',
   });
+
+  const toolbarGroupStyle: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    padding: 3,
+    borderRadius: 10,
+    background: 'rgba(15, 23, 42, .42)',
+    border: '1px solid rgba(148,163,184,.12)',
+  };
 
   const controlButton = (item: { command: FlightCommand; label: string; icon: IconName; tone?: 'danger' | 'amber' }) => (
     <button
@@ -300,7 +512,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
       style={buttonStyle(item.tone)}
       title={item.label}
     >
-      <Icon name={item.icon} size={18} />
+      <Icon name={item.icon} size={14} />
       <span>{busyCommand === item.command ? 'Sending' : item.label}</span>
     </button>
   );
@@ -358,8 +570,8 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
 
         <GlassPanel style={{ position: 'absolute', left: 22, top: 22, width: 176, padding: 14 }}>
           {[
-            ['camera', 'Camera', 'FPV'],
-            ['eye', 'View', 'First Person'],
+            ['camera', 'Camera', cameraLabel],
+            ['eye', 'View', viewLabel],
             ['joystick', 'Mode', 'Manual'],
           ].map(([icon, label, value]) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: label === 'Mode' ? 0 : 12 }}>
@@ -377,9 +589,9 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
         <GlassPanel style={{ position: 'absolute', right: 22, top: 214, width: 220, padding: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: '#cbd5e1', marginBottom: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>Telemetry</div>
           {[
-            ['Altitude', `${(controlStatus?.altitudeM ?? drone.altitude).toFixed(1)} m`],
-            ['Speed', `${(controlStatus?.speedMps ?? drone.groundSpeed).toFixed(1)} m/s`],
-            ['Battery', `${Math.round(controlStatus?.batteryPercent ?? drone.battery)}%`],
+            ['Altitude', telemetryValue(controlStatus?.altitudeM, 'm')],
+            ['Speed', telemetryValue(controlStatus?.speedMps, 'm/s')],
+            ['Battery', telemetryBattery === null ? '--' : `${telemetryBattery}%`],
           ].map(([label, value]) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
               <span style={{ color: '#94a3b8', fontSize: 12 }}>{label}</span>
@@ -387,7 +599,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
             </div>
           ))}
           <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.95)', overflow: 'hidden' }}>
-            <div style={{ width: `${Math.round(controlStatus?.batteryPercent ?? drone.battery)}%`, height: '100%', borderRadius: 999, background: '#22c55e' }} />
+            <div style={{ width: `${telemetryBattery ?? 0}%`, height: '100%', borderRadius: 999, background: '#22c55e' }} />
           </div>
         </GlassPanel>
 
@@ -395,7 +607,23 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           {lastCommand}
         </GlassPanel>
 
-        {!isOnline && (
+        {geofenceAlertActive && (
+          <GlassPanel style={{ position: 'absolute', left: '50%', top: 28, transform: 'translateX(-50%)', width: 'min(460px, calc(100% - 56px))', padding: '13px 16px', border: geofenceTone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(251,191,36,.72)', background: geofenceTone === 'danger' ? 'rgba(127,29,29,.78)' : 'rgba(120,53,15,.82)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Icon name="alert" size={22} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 950, color: geofenceTone === 'danger' ? '#fee2e2' : '#fef3c7', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                  {geofenceStatus.level === 'VIOLATION' ? 'No-fly zone breach' : 'No-fly zone warning'}
+                </div>
+                <div style={{ marginTop: 3, fontSize: 12, color: geofenceTone === 'danger' ? '#fecaca' : '#fde68a', fontWeight: 750 }}>
+                  {geofenceMessage}
+                </div>
+              </div>
+            </div>
+          </GlassPanel>
+        )}
+
+        {!isOnline && preflightReady && (
           <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(2,6,23,.72)' }}>
             <GlassPanel style={{ padding: '18px 22px', textAlign: 'center' }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#e5edf8', marginBottom: 7 }}>Live controller offline</div>
@@ -404,24 +632,74 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           </div>
         )}
 
-        <GlassPanel style={{ position: 'absolute', left: '50%', bottom: 18, transform: 'translateX(-50%)', display: 'flex', alignItems: 'stretch', gap: 12, padding: 10, maxWidth: 'calc(100% - 44px)' }}>
-          <div style={{ display: 'flex', gap: 7 }}>{flightControls.map(controlButton)}</div>
-          <div style={{ width: 1, background: 'rgba(148,163,184,.18)' }} />
-          <button onClick={() => void sendCommand('stop')} disabled={busyCommand !== null} style={{ ...buttonStyle(), background: 'rgba(20,83,45,.82)', color: '#86efac' }} title="Hover">
-            <Icon name="joystick" size={18} />
-            <span>Hover</span>
-          </button>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gridTemplateRows: 'repeat(2, 32px)', gap: 5, alignSelf: 'center' }}>
+        {!preflightReady && (
+          <div style={{ position: 'absolute', inset: '0 0 6px', zIndex: 20, background: 'rgba(2,6,23,.72)', backdropFilter: 'blur(3px)', overflow: 'auto' }}>
+            <RuntimePreflightCheck
+              onReady={() => {
+                setPreflightReady(true);
+                setLastCommand('Preflight completed');
+              }}
+            />
+          </div>
+        )}
+
+        <GlassPanel style={{ position: 'absolute', left: '50%', bottom: 8, transform: 'translateX(-50%)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 5, width: 'min(780px, calc(100% - 24px))', maxWidth: 'calc(100% - 24px)', maxHeight: 'min(118px, 18vh)', overflow: 'visible' }}>
+          <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
+            {flightControls.map(controlButton)}
+            <button onClick={() => void sendCommand('stop')} disabled={busyCommand !== null} style={{ ...buttonStyle(), background: 'rgba(20,83,45,.82)', color: '#86efac' }} title="Hover">
+              <Icon name="joystick" size={14} />
+              <span>Hover</span>
+            </button>
+          </div>
+
+          <div style={{ ...toolbarGroupStyle, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 3 }}>
             {movementControls.map((item) => (
-              <button key={item.label} onClick={() => void sendCommand(item.command)} disabled={busyCommand !== null} style={{ borderRadius: 8, border: '1px solid rgba(148,163,184,.18)', background: 'rgba(15,23,42,.78)', color: '#e5edf8', display: 'grid', placeItems: 'center', cursor: 'pointer' }} title={item.label}>
-                <Icon name={item.icon} size={15} />
+              <button
+                key={item.label}
+                onClick={() => void sendCommand(item.command)}
+                disabled={busyCommand !== null}
+                style={{
+                  width: 48,
+                  height: 31,
+                  borderRadius: 8,
+                  border: '1px solid rgba(148,163,184,.18)',
+                  background: 'rgba(15,23,42,.78)',
+                  color: '#e5edf8',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1,
+                  cursor: 'pointer',
+                  fontSize: 7,
+                  fontWeight: 850,
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,.05)',
+                }}
+                title={item.label}
+              >
+                <Icon name={item.icon} size={12} />
+                <span>{item.label}</span>
               </button>
             ))}
           </div>
-          <div style={{ width: 1, background: 'rgba(148,163,184,.18)' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 62px)', gap: 7 }}>{rotationControls.map(controlButton)}</div>
-          <div style={{ width: 1, background: 'rgba(148,163,184,.18)' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 58px)', gap: 7 }}>{toolControls.map(controlButton)}</div>
+
+          <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>{rotationControls.map(controlButton)}</div>
+          <div style={{ ...toolbarGroupStyle, maxWidth: 62, flexWrap: 'nowrap', position: 'relative' }}>
+            <button
+              onClick={() => setMoreOpen((value) => !value)}
+              disabled={busyCommand !== null}
+              style={buttonStyle()}
+              title="More controls"
+            >
+              <Icon name="chevronRight" size={14} />
+              <span>More</span>
+            </button>
+            {moreOpen && (
+              <GlassPanel style={{ position: 'absolute', right: 0, bottom: 50, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 5, padding: 6, zIndex: 10 }}>
+                {moreToolControls.map(controlButton)}
+              </GlassPanel>
+            )}
+          </div>
         </GlassPanel>
       </main>
 
@@ -432,9 +710,9 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           </button>
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#bbf7d0', fontSize: 12, fontWeight: 800 }}>
-            <span className="pulse-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }} />
-            All Systems Nominal
+          <span style={{ display: 'flex', alignItems: 'center', gap: 7, color: footerStatusColor, fontSize: 12, fontWeight: 800 }}>
+            <span className="pulse-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: footerStatusDot }} />
+            {geofenceMessage}
           </span>
           <span style={{ padding: '5px 10px', borderRadius: 999, background: 'rgba(37,99,235,.22)', border: '1px solid rgba(96,165,250,.28)', color: '#bfdbfe', fontSize: 11, fontWeight: 900 }}>
             In Flight

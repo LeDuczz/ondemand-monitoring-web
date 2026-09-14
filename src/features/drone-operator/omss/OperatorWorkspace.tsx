@@ -9,7 +9,6 @@ import MissionList from './screens/MissionList';
 import MissionDetail from './screens/MissionDetail';
 import AcceptReject from './screens/AcceptReject';
 import GCSConnection from './screens/GCSConnection';
-import PreflightChecklist from './screens/PreflightChecklist';
 import PreflightFailure from './screens/PreflightFailure';
 import DroneReplacement from './screens/DroneReplacement';
 import ControlHandover from './screens/ControlHandover';
@@ -52,8 +51,8 @@ const SCREEN_MISSION_STATE: Partial<Record<Screen, Mission['state']>> = {
 };
 
 export default function OperatorWorkspace() {
-  const [screen, setScreen]   = useState<Screen>('operator-overview');
-  const [navId, setNavId]     = useState<NavId>('dashboard');
+  const [screen, setScreen]   = useState<Screen>('in-flight');
+  const [navId, setNavId]     = useState<NavId>('mission-control');
   const [scenario, setScenario] = useState<ChecklistScenario>('all-pass');
   const [mission, setMission] = useState<Mission>({ ...ALL_MISSIONS[0] });
   const [drone, setDrone]     = useState<Drone>({ ...DRONE_PRIMARY });
@@ -118,9 +117,6 @@ export default function OperatorWorkspace() {
   }
 
   function handleGCSConnected() { setScreen('preflight'); }
-  function handlePreflightPass() { setScreen('control-handover'); }
-  function handlePreflightFail() { setScreen('preflight-failure'); }
-
   function handleHandoverComplete() {
     const t = makeToken(mission.id, drone.id);
     setToken(t);
@@ -239,10 +235,9 @@ export default function OperatorWorkspace() {
             />
           )}
           {screen === 'preflight' && (
-            <PreflightChecklist
-              checklist={checklist}
-              onPass={handlePreflightPass} onFail={handlePreflightFail}
-              onBack={() => setScreen('gcs-connect')}
+            <InFlightControl
+              mission={displayMission} drone={displayDrone}
+              onRTB={handleRTB} onEmergency={handleEmergency}
             />
           )}
           {screen === 'preflight-failure' && (

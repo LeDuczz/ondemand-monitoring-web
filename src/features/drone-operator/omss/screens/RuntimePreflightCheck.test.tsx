@@ -8,6 +8,7 @@ const readyPayload = {
   progress: 100,
   checks: [
     { key: 'PX4', name: 'PX4 Flight Controller', status: 'PASS', message: 'Ready for takeoff', critical: true },
+    { key: 'BATTERY', name: 'Battery', status: 'PASS', message: '87.4% sufficient for operation', critical: true },
     { key: 'MEDIA', name: 'Media Upload', status: 'PASS', message: 'Media capture pipeline ready', critical: false },
   ],
 };
@@ -18,6 +19,7 @@ const failedPayload = {
   progress: 100,
   checks: [
     { key: 'PX4', name: 'PX4 Flight Controller', status: 'FAIL', message: 'PX4 heartbeat not available', critical: true },
+    { key: 'BATTERY', name: 'Battery', status: 'FAIL', message: '18.6% too low for safe mission start', critical: true },
   ],
 };
 

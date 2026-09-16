@@ -394,8 +394,8 @@ const RealMiniMap = memo(function RealMiniMap({ status }: { status: ControlStatu
   const { meta } = useSimulationMap();
   const [zoom, setZoom] = useState(1);
   const [follow, setFollow] = useState(false);
-  const width = 220;
-  const height = 110;
+  const width = 320;
+  const height = 190;
 
   const worldToMinimap = (x: number, y: number) => {
     if (!meta) return [width / 2, height / 2] as const;
@@ -415,17 +415,17 @@ const RealMiniMap = memo(function RealMiniMap({ status }: { status: ControlStatu
   const mapImageUrl = `${env.apiBaseUrl}/simulation-viewer/simulation_map_top.png`;
 
   return (
-    <GlassPanel style={{ position: 'absolute', right: 22, top: 22, width: 260, height: 178, overflow: 'hidden' }}>
-      <div style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px', borderBottom: '1px solid rgba(148,163,184,.16)', color: '#cbd5e1', fontSize: 11, fontWeight: 800 }}>
+    <GlassPanel style={{ width: '100%', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ height: 34, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', borderBottom: '1px solid rgba(148,163,184,.16)', color: '#cbd5e1', fontSize: 12, fontWeight: 900 }}>
         <button onClick={() => setFollow((value) => !value)} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 0, background: 'transparent', color: follow ? '#93c5fd' : '#cbd5e1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
-          <Icon name="map" size={14} /> Mini Map
+          <Icon name="map" size={14} /> Mission Map
         </button>
         <span style={{ display: 'flex', gap: 5 }}>
           <button onClick={() => setZoom((value) => Math.max(1, Number((value - .25).toFixed(2))))} style={{ border: 0, background: 'transparent', color: '#cbd5e1', cursor: 'pointer', display: 'grid', placeItems: 'center' }} title="Zoom out"><Icon name="minus" size={12} /></button>
           <button onClick={() => setZoom((value) => Math.min(3, Number((value + .25).toFixed(2))))} style={{ border: 0, background: 'transparent', color: '#cbd5e1', cursor: 'pointer', display: 'grid', placeItems: 'center' }} title="Zoom in"><Icon name="plus" size={12} /></button>
         </span>
       </div>
-      <svg viewBox={`${viewX} ${viewY} ${viewWidth} ${viewHeight}`} width="100%" height="150" preserveAspectRatio="xMidYMid meet">
+      <svg className="mission-control-map" viewBox={`${viewX} ${viewY} ${viewWidth} ${viewHeight}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{ display: 'block', background: 'rgba(15,23,42,.55)' }}>
         <rect x="0" y="0" width={width} height={height} fill="rgba(15,23,42,.55)" />
         <image href={mapImageUrl} x="0" y="0" width={width} height={height} preserveAspectRatio="xMidYMid slice" opacity=".92" />
         <rect x="0" y="0" width={width} height={height} fill="rgba(2,6,23,.14)" />
@@ -448,6 +448,7 @@ const TelemetryPanel = memo(function TelemetryPanel({ status }: { status: Contro
   const batteryDisplay = telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`;
   const batteryState = status?.batteryState ?? 'NORMAL';
   const batteryMode = status?.batteryDrainMode ?? 'LANDED';
+  const droneState = batteryMode === 'LANDED' || batteryMode === 'IDLE' ? 'LANDED' : 'IN FLIGHT';
   const batteryTone =
     batteryState === 'EMERGENCY' ? '#ef4444' :
     batteryState === 'CRITICAL' ? '#f87171' :
@@ -455,22 +456,76 @@ const TelemetryPanel = memo(function TelemetryPanel({ status }: { status: Contro
     '#22c55e';
 
   return (
-    <GlassPanel style={{ position: 'absolute', right: 22, top: 214, width: 220, padding: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, color: '#cbd5e1', marginBottom: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>Telemetry</div>
-      {[
-        ['Altitude', telemetryValue(status?.altitudeM, 'm')],
-        ['Speed', telemetryValue(status?.speedMps, 'm/s')],
-        ['Battery', batteryDisplay],
-        ['Drain', batteryMode],
-      ].map(([label, value]) => (
-        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
-          <span style={{ color: '#94a3b8', fontSize: 12 }}>{label}</span>
-          <strong style={{ fontFamily: 'var(--font-data)', fontSize: 13, color: '#e5edf8' }}>{value}</strong>
-        </div>
-      ))}
-      <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.95)', overflow: 'hidden' }}>
+    <GlassPanel style={{ width: '100%', height: 'auto', minHeight: 'fit-content', flexShrink: 0, overflow: 'hidden', padding: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 950, color: '#cbd5e1', letterSpacing: '.08em', textTransform: 'uppercase' }}>Live Telemetry</div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: status?.online === false ? '#fca5a5' : '#93c5fd', fontSize: 10, fontWeight: 900 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: status?.online === false ? '#ef4444' : '#38bdf8' }} />
+          {status?.online === false ? 'Offline' : 'MAVLink Live'}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7 }}>
+        {[
+          ['Altitude', telemetryValue(status?.altitudeM, 'm')],
+          ['Speed', telemetryValue(status?.speedMps, 'm/s')],
+          ['Battery', batteryDisplay],
+          ['State', droneState],
+        ].map(([label, value]) => (
+          <div key={label} style={{ minWidth: 0, padding: '8px 10px', borderRadius: 8, background: 'rgba(15,23,42,.54)', border: '1px solid rgba(148,163,184,.14)' }}>
+            <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 750 }}>{label}</div>
+            <strong style={{ display: 'block', marginTop: 4, fontFamily: 'var(--font-data)', fontSize: 17, lineHeight: 1, color: '#e5edf8', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 10, display: 'grid', gap: 5 }}>
+        {[
+          ['Drain mode', batteryMode],
+          ['Position', status?.positionReady ? 'Ready' : 'Waiting'],
+        ].map(([label, value]) => (
+          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: '#94a3b8', fontSize: 11 }}>{label}</span>
+            <strong style={{ fontFamily: 'var(--font-data)', fontSize: 11, color: '#cbd5e1', textAlign: 'right' }}>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 9, height: 5, borderRadius: 999, background: 'rgba(30,41,59,.95)', overflow: 'hidden' }}>
         <div style={{ width: `${telemetryBattery ?? 0}%`, height: '100%', borderRadius: 999, background: batteryTone, transition: 'width .35s ease, background .2s ease' }} />
       </div>
+    </GlassPanel>
+  );
+});
+
+const MissionInfoPanel = memo(function MissionInfoPanel({
+  status,
+  progress,
+  mission,
+}: {
+  status: ControlStatus | null;
+  progress: number;
+  mission: Mission;
+}) {
+  useRenderDiagnostics('MissionInfo');
+  const yaw = typeof status?.yawDeg === 'number' && Number.isFinite(status.yawDeg)
+    ? `${Math.round(status.yawDeg)}°`
+    : '--';
+  const distance = typeof mission.distanceKm === 'number' && Number.isFinite(mission.distanceKm)
+    ? `${mission.distanceKm.toFixed(1)} km`
+    : '--';
+
+  return (
+    <GlassPanel style={{ width: '100%', height: 'auto', minHeight: 'fit-content', flexShrink: 0, overflow: 'hidden', padding: 12 }}>
+      <div style={{ fontSize: 12, fontWeight: 950, color: '#cbd5e1', marginBottom: 10, letterSpacing: '.08em', textTransform: 'uppercase' }}>Mission Info</div>
+      {[
+        ['Mission', mission.id],
+        ['Progress', `${progress.toFixed(1)}%`],
+        ['Distance', distance],
+        ['Heading', yaw],
+      ].map(([label, value]) => (
+        <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
+          <span style={{ color: '#94a3b8', fontSize: 11 }}>{label}</span>
+          <strong style={{ minWidth: 0, color: '#e5edf8', fontSize: 12, fontFamily: label === 'Progress' || label === 'Distance' || label === 'Heading' ? 'var(--font-data)' : 'var(--font-ui)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{value}</strong>
+        </div>
+      ))}
     </GlassPanel>
   );
 });
@@ -501,8 +556,8 @@ const CameraStatusPanel = memo(function CameraStatusPanel({ status }: { status: 
 });
 
 const buttonStyle = (tone?: 'danger' | 'amber'): CSSProperties => ({
-  width: 48,
-  height: 40,
+  width: 46,
+  height: 36,
   borderRadius: 8,
   border: tone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(148,163,184,.18)',
   background: tone === 'danger' ? 'rgba(127,29,29,.78)' : tone === 'amber' ? 'rgba(180,83,9,.76)' : 'rgba(15,23,42,.78)',
@@ -511,7 +566,7 @@ const buttonStyle = (tone?: 'danger' | 'amber'): CSSProperties => ({
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 2,
+  gap: 1,
   fontSize: 8,
   fontWeight: 800,
   cursor: 'pointer',
@@ -556,7 +611,7 @@ const FlightControls = memo(function FlightControls({
   );
 
   return (
-    <GlassPanel style={{ position: 'absolute', left: '50%', bottom: 8, transform: 'translateX(-50%)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 5, width: 'min(780px, calc(100% - 24px))', maxWidth: 'calc(100% - 24px)', maxHeight: 'min(118px, 18vh)', overflow: 'visible' }}>
+    <GlassPanel style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 6, width: '100%', overflow: 'visible' }}>
       <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
         {flightControls.map(controlButton)}
         <button onClick={() => onCommand('stop')} disabled={busyCommand !== null} style={{ ...buttonStyle(), background: 'rgba(20,83,45,.82)', color: '#86efac' }} title="Hover">
@@ -565,15 +620,15 @@ const FlightControls = memo(function FlightControls({
         </button>
       </div>
 
-      <div style={{ ...toolbarGroupStyle, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 3 }}>
+       <div style={{ ...toolbarGroupStyle, display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 3 }}>
         {movementControls.map((item) => (
           <button
             key={item.label}
             onClick={() => onCommand(item.command)}
             disabled={busyCommand !== null}
             style={{
-              width: 48,
-              height: 31,
+              width: 46,
+              height: 29,
               borderRadius: 8,
               border: '1px solid rgba(148,163,184,.18)',
               background: 'rgba(15,23,42,.78)',
@@ -608,7 +663,7 @@ const FlightControls = memo(function FlightControls({
           <span>More</span>
         </button>
         {moreOpen && (
-          <GlassPanel style={{ position: 'absolute', right: 0, bottom: 50, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 5, padding: 6, zIndex: 10 }}>
+          <GlassPanel style={{ position: 'absolute', right: 0, bottom: 46, display: 'grid', gridTemplateColumns: 'repeat(3, 46px)', gap: 5, padding: 6, zIndex: 10 }}>
             {moreToolControls.map(controlButton)}
           </GlassPanel>
         )}
@@ -618,6 +673,7 @@ const FlightControls = memo(function FlightControls({
 });
 
 export default function InFlightControl({ mission, drone, onRTB, onEmergency }: Props) {
+  const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`;
   const [elapsed, setElapsed] = useState(5);
   const [progress, setProgress] = useState(18.2);
   const [isOnline, setIsOnline] = useState(false);
@@ -626,7 +682,13 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
   const [streamRevision, setStreamRevision] = useState(0);
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [preflightReady, setPreflightReady] = useState(false);
+  const [preflightReady, setPreflightReady] = useState(() => {
+    try {
+      return window.localStorage.getItem(preflightStorageKey) === 'true';
+    } catch {
+      return false;
+    }
+  });
   const restrictedZones = useRestrictedZones();
 
   const streamUrl = useMemo(() => `${controlBaseUrl}/stream.mjpg?viewer=operator&v=${streamRevision}`, [streamRevision]);
@@ -652,8 +714,21 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
     : '#22c55e';
 
   useEffect(() => {
-    window.sessionStorage.removeItem('omss.droneOperator.preflightReady');
-  }, []);
+    try {
+      setPreflightReady(window.localStorage.getItem(preflightStorageKey) === 'true');
+    } catch {
+      setPreflightReady(false);
+    }
+  }, [preflightStorageKey]);
+
+  const clearPreflightReady = useCallback(() => {
+    try {
+      window.localStorage.removeItem(preflightStorageKey);
+    } catch {
+      // Ignore storage failures; the in-memory state still resets for this page.
+    }
+    setPreflightReady(false);
+  }, [preflightStorageKey]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -669,6 +744,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
     async function checkStatus() {
       try {
         const response = await fetch(`${controlBaseUrl}/api/control/status`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const status = await response.json().catch(() => ({ online: response.ok }));
         if (alive) {
           setControlStatus(status);
@@ -678,8 +754,11 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           });
         }
       } catch {
-        if (alive) setControlStatus(null);
-        if (alive) setIsOnline(false);
+        if (alive) {
+          setControlStatus(null);
+          setIsOnline(false);
+          clearPreflightReady();
+        }
       }
     }
 
@@ -689,7 +768,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
       alive = false;
       window.clearInterval(timer);
     };
-  }, []);
+  }, [clearPreflightReady]);
 
   const sendCommand = useCallback(async (command: FlightCommand) => {
     if (!preflightReady) {
@@ -731,9 +810,14 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
     void sendCommand(command);
   }, [sendCommand]);
   const handlePreflightReady = useCallback(() => {
+    try {
+      window.localStorage.setItem(preflightStorageKey, 'true');
+    } catch {
+      // Ignore storage failures; the current screen can still continue.
+    }
     setPreflightReady(true);
     setLastCommand('Preflight completed');
-  }, []);
+  }, [preflightStorageKey]);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateRows: '76px minmax(0,1fr) 42px', background: '#020617', color: '#e5edf8', overflow: 'hidden' }}>
@@ -764,74 +848,80 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
         </div>
       </header>
 
-      <main style={{ position: 'relative', minHeight: 0, overflow: 'hidden' }}>
-        <CameraFeed
-          streamUrl={streamUrl}
-          preflightReady={preflightReady}
-          isOnline={isOnline}
-          onOnline={handleOnline}
-          onOffline={handleOffline}
-        />
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at center, transparent 0 42%, rgba(2,6,23,.08) 72%, rgba(2,6,23,.34) 100%)' }} />
+      <main className="mission-control-workspace">
+        <section className="mission-control-primary">
+          <div className="mission-control-camera-card">
+            <CameraFeed
+              streamUrl={streamUrl}
+              preflightReady={preflightReady}
+              isOnline={isOnline}
+              onOnline={handleOnline}
+              onOffline={handleOffline}
+            />
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at center, transparent 0 42%, rgba(2,6,23,.08) 72%, rgba(2,6,23,.34) 100%)' }} />
 
-        <div style={{ position: 'absolute', left: '50%', top: '50%', width: 88, height: 88, transform: 'translate(-50%,-50%)', color: 'rgba(226,232,240,.68)', pointerEvents: 'none' }}>
-          <Icon name="crosshair" size={88} />
-        </div>
-
-        <CameraStatusPanel status={controlStatus} />
-
-        <RealMiniMap status={controlStatus} />
-
-        <TelemetryPanel status={controlStatus} />
-
-        {showBatteryWarning && (
-          <GlassPanel style={{ position: 'absolute', left: '50%', top: geofenceAlertActive ? 100 : 28, transform: 'translateX(-50%)', width: 'min(360px, calc(100% - 56px))', padding: '11px 14px', border: `1px solid ${batteryState === 'LOW' ? 'rgba(251,191,36,.7)' : 'rgba(248,113,113,.72)'}`, background: batteryState === 'LOW' ? 'rgba(120,53,15,.82)' : 'rgba(127,29,29,.78)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Icon name="alert" size={20} />
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 950, color: batteryState === 'LOW' ? '#fef3c7' : '#fee2e2', textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                  {batteryState === 'LOW' ? 'Low battery' : batteryState === 'CRITICAL' ? 'Critical battery' : 'Emergency battery'} - {batteryDisplay}
-                </div>
-                <div style={{ marginTop: 3, fontSize: 11, color: batteryState === 'LOW' ? '#fde68a' : '#fecaca', fontWeight: 750 }}>
-                  Manual control remains available. No automatic flight action was triggered.
-                </div>
-              </div>
+            <div style={{ position: 'absolute', left: '50%', top: '50%', width: 78, height: 78, transform: 'translate(-50%,-50%)', color: 'rgba(226,232,240,.68)', pointerEvents: 'none' }}>
+              <Icon name="crosshair" size={78} />
             </div>
-          </GlassPanel>
-        )}
 
-        <GlassPanel style={{ position: 'absolute', right: 22, top: 370, padding: '7px 11px', color: '#cbd5e1', fontSize: 11 }}>
-          {lastCommand}
-        </GlassPanel>
+            <CameraStatusPanel status={controlStatus} />
 
-        {geofenceAlertActive && (
-          <GlassPanel style={{ position: 'absolute', left: '50%', top: 28, transform: 'translateX(-50%)', width: 'min(460px, calc(100% - 56px))', padding: '13px 16px', border: geofenceTone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(251,191,36,.72)', background: geofenceTone === 'danger' ? 'rgba(127,29,29,.78)' : 'rgba(120,53,15,.82)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Icon name="alert" size={22} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 950, color: geofenceTone === 'danger' ? '#fee2e2' : '#fef3c7', textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                  {geofenceStatus.level === 'VIOLATION' ? 'No-fly zone breach' : 'No-fly zone warning'}
+            {showBatteryWarning && (
+              <GlassPanel style={{ position: 'absolute', left: '50%', top: geofenceAlertActive ? 92 : 20, transform: 'translateX(-50%)', width: 'min(360px, calc(100% - 56px))', padding: '11px 14px', border: `1px solid ${batteryState === 'LOW' ? 'rgba(251,191,36,.7)' : 'rgba(248,113,113,.72)'}`, background: batteryState === 'LOW' ? 'rgba(120,53,15,.82)' : 'rgba(127,29,29,.78)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Icon name="alert" size={20} />
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 950, color: batteryState === 'LOW' ? '#fef3c7' : '#fee2e2', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                      {batteryState === 'LOW' ? 'Low battery' : batteryState === 'CRITICAL' ? 'Critical battery' : 'Emergency battery'} - {batteryDisplay}
+                    </div>
+                    <div style={{ marginTop: 3, fontSize: 11, color: batteryState === 'LOW' ? '#fde68a' : '#fecaca', fontWeight: 750 }}>
+                      Manual control remains available. No automatic flight action was triggered.
+                    </div>
+                  </div>
                 </div>
-                <div style={{ marginTop: 3, fontSize: 12, color: geofenceTone === 'danger' ? '#fecaca' : '#fde68a', fontWeight: 750 }}>
-                  {geofenceMessage}
+              </GlassPanel>
+            )}
+
+            <GlassPanel style={{ position: 'absolute', right: 14, bottom: 14, padding: '7px 11px', color: '#cbd5e1', fontSize: 11 }}>
+              {lastCommand}
+            </GlassPanel>
+
+            {geofenceAlertActive && (
+              <GlassPanel style={{ position: 'absolute', left: '50%', top: 20, transform: 'translateX(-50%)', width: 'min(460px, calc(100% - 56px))', padding: '13px 16px', border: geofenceTone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(251,191,36,.72)', background: geofenceTone === 'danger' ? 'rgba(127,29,29,.78)' : 'rgba(120,53,15,.82)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Icon name="alert" size={22} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 950, color: geofenceTone === 'danger' ? '#fee2e2' : '#fef3c7', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                      {geofenceStatus.level === 'VIOLATION' ? 'No-fly zone breach' : 'No-fly zone warning'}
+                    </div>
+                    <div style={{ marginTop: 3, fontSize: 12, color: geofenceTone === 'danger' ? '#fecaca' : '#fde68a', fontWeight: 750 }}>
+                      {geofenceMessage}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </GlassPanel>
-        )}
+              </GlassPanel>
+            )}
+          </div>
+
+          <FlightControls
+            busyCommand={busyCommand}
+            moreOpen={moreOpen}
+            onCommand={handleCommand}
+            onToggleMore={handleToggleMore}
+          />
+        </section>
+
+        <aside className="mission-control-side">
+          <TelemetryPanel status={controlStatus} />
+          <MissionInfoPanel status={controlStatus} progress={progress} mission={mission} />
+          <RealMiniMap status={controlStatus} />
+        </aside>
 
         {!preflightReady && (
-          <div style={{ position: 'absolute', inset: '0 0 6px', zIndex: 20, background: 'rgba(2,6,23,.82)', overflow: 'auto' }}>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(2,6,23,.82)', overflow: 'auto' }}>
             <RuntimePreflightCheck onReady={handlePreflightReady} />
           </div>
         )}
-
-        <FlightControls
-          busyCommand={busyCommand}
-          moreOpen={moreOpen}
-          onCommand={handleCommand}
-          onToggleMore={handleToggleMore}
-        />
       </main>
 
       <footer style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 18px', background: '#071324', borderTop: '1px solid rgba(59,130,246,.24)' }}>

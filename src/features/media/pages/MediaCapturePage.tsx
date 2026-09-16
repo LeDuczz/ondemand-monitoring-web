@@ -273,7 +273,7 @@ function MediaCaptureWorkspace({
                   ? 'Connected and ready'
                   : controller.connection}
               </h2>
-              <p>gRPC · localhost:50051</p>
+              <p>Control Gateway · {env.controlApiBaseUrl}</p>
             </div>
           </div>
           <div className="media-connection-context">

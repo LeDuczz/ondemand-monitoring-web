@@ -9,6 +9,7 @@ import { authSession } from '../features/auth/api/authApi'
 import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
 import { CustomerHomePage } from '../features/customer/pages/CustomerHomePage'
+import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
 import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
@@ -68,6 +69,12 @@ export function Router() {
     return (
       <RoleRoute role="CUSTOMER">
         <CustomerMediaPage />
+      </RoleRoute>
+    )
+  if (routeHash === '#portal/customer/request')
+    return (
+      <RoleRoute role="CUSTOMER">
+        <CustomerCreateRequestPage />
       </RoleRoute>
     )
   if (routeHash === '#portal/staff')

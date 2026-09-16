@@ -32,7 +32,6 @@ function makeToken(missionId: string, droneId: string): FlightToken {
     droneId,
   };
 }
-
 const SCREEN_MISSION_STATE: Partial<Record<Screen, Mission['state']>> = {
   'accept-reject':    'WAITING_OPERATOR_ACCEPTANCE',
   'gcs-connect':      'RESOURCE_ASSIGNING',
@@ -90,6 +89,10 @@ export default function OperatorWorkspace() {
   }
 
   function handleNavChange(id: NavId, s?: Screen) {
+    if (id === 'media') {
+      window.location.hash = '#portal/drone-operator/media';
+      return;
+    }
     setNavId(id);
     if (s) { setScreen(s); return; }
     if (id === 'my-missions') setScreen('mission-list');
@@ -290,7 +293,9 @@ export default function OperatorWorkspace() {
           {screen === 'mission-completed' && (
             <MissionCompleted
               mission={displayMission} drone={displayDrone}
-              onMedia={() => setScreen('media-upload')}
+              onMedia={() => {
+                window.location.hash = '#portal/drone-operator/media';
+              }}
               onMissions={() => setScreen('mission-list')}
             />
           )}

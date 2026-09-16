@@ -20,7 +20,11 @@ const navItems: Record<UserRole, PortalNavItem[]> = {
     { label: 'Overview', icon: 'chart', href: '#portal/customer' },
     { label: 'Create request', icon: 'plus', href: '#portal/customer/request' },
     { label: 'My requests', icon: 'ticket', href: '#portal/customer/requests' },
-    { label: 'Reports', icon: 'file-text', href: '#portal/customer/reports' },
+    {
+      label: 'Media library',
+      icon: 'file-text',
+      href: '#portal/customer/media',
+    },
   ],
   STAFF: [
     { label: 'Operations overview', icon: 'chart', href: '#portal/staff' },
@@ -30,6 +34,11 @@ const navItems: Record<UserRole, PortalNavItem[]> = {
   ],
   DRONE_OPERATOR: [
     { label: 'Mission console', icon: 'route', href: '#portal/drone-operator' },
+    {
+      label: 'Media capture',
+      icon: 'camera',
+      href: '#portal/drone-operator/media',
+    },
     {
       label: 'Preflight checks',
       icon: 'shield',

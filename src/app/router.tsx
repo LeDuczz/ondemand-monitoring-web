@@ -15,6 +15,8 @@ import { SystemOperatorHomePage } from '../features/system-operator/pages/System
 import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
 import { AdminAccountCreatePage } from '../features/admin/pages/AdminAccountCreatePage'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
+import { MediaCapturePage } from '../features/media/pages/MediaCapturePage'
+import { CustomerMediaPage } from '../features/media/pages/CustomerMediaPage'
 
 function RoleRoute({
   role,
@@ -37,6 +39,7 @@ function RoleRoute({
 
 export function Router() {
   const [hash, setHash] = useState(() => window.location.hash)
+  const routeHash = hash.split('?')[0]
   const [pathname, setPathname] = useState(() => window.location.pathname)
 
   useEffect(() => {
@@ -53,45 +56,57 @@ export function Router() {
   if (pathname === '/social/callback') {
     return <SocialCallbackPage />
   }
-  if (hash === '#auth/register') return <AuthPage initialMode="register" />
-  if (hash === '#auth/login') return <AuthPage initialMode="login" />
-  if (hash === '#portal/customer')
+  if (routeHash === '#auth/register') return <AuthPage initialMode="register" />
+  if (routeHash === '#auth/login') return <AuthPage initialMode="login" />
+  if (routeHash === '#portal/customer')
     return (
       <RoleRoute role="CUSTOMER">
         <CustomerHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/staff')
+  if (routeHash === '#portal/customer/media')
+    return (
+      <RoleRoute role="CUSTOMER">
+        <CustomerMediaPage />
+      </RoleRoute>
+    )
+  if (routeHash === '#portal/staff')
     return (
       <RoleRoute role="STAFF">
         <StaffHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/drone-operator')
+  if (routeHash === '#portal/drone-operator')
     return (
       <RoleRoute role="DRONE_OPERATOR">
         <DroneOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/system-operator')
+  if (routeHash === '#portal/drone-operator/media')
+    return (
+      <RoleRoute role="DRONE_OPERATOR">
+        <MediaCapturePage />
+      </RoleRoute>
+    )
+  if (routeHash === '#portal/system-operator')
     return (
       <RoleRoute role="SYSTEM_OPERATOR">
         <SystemOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/admin')
+  if (routeHash === '#portal/admin')
     return (
       <RoleRoute role="ADMIN">
         <AdminHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/admin/accounts/new')
+  if (routeHash === '#portal/admin/accounts/new')
     return (
       <RoleRoute role="ADMIN">
         <AdminAccountCreatePage />
       </RoleRoute>
     )
-  if (hash === '#operator') return <OperatorDashboardPage />
+  if (routeHash === '#operator') return <OperatorDashboardPage />
 
   return <LandingPage />
 }

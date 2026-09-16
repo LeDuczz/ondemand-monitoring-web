@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { env } from '../../../../config/env';
 import type { Drone, Mission } from '../types';
@@ -155,7 +155,6 @@ function GlassPanel({ children, style }: { children: ReactNode; style?: CSSPrope
         background: 'rgba(8, 13, 24, .66)',
         border: '1px solid rgba(148, 163, 184, .2)',
         boxShadow: '0 16px 40px rgba(0,0,0,.24)',
-        backdropFilter: 'blur(12px)',
         borderRadius: 12,
         ...style,
       }}
@@ -164,6 +163,82 @@ function GlassPanel({ children, style }: { children: ReactNode; style?: CSSPrope
     </div>
   );
 }
+
+const telemetryValue = (value: number | undefined, suffix: string, digits = 1) =>
+  typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(digits)} ${suffix}` : '--';
+
+const fmt = (seconds: number) =>
+  `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+
+function useRenderDiagnostics(name: string) {
+  const renders = useRef(0);
+  renders.current += 1;
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || import.meta.env.VITE_MISSION_CONTROL_PERF !== 'true') return;
+    const timer = window.setInterval(() => {
+      if (renders.current > 0) console.debug(`[MissionControlPerf] ${name} renders/s=${renders.current}`);
+      renders.current = 0;
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [name]);
+}
+
+const CameraFeed = memo(function CameraFeed({
+  streamUrl,
+  preflightReady,
+  isOnline,
+  onOnline,
+  onOffline,
+}: {
+  streamUrl: string;
+  preflightReady: boolean;
+  isOnline: boolean;
+  onOnline: () => void;
+  onOffline: () => void;
+}) {
+  useRenderDiagnostics('CameraFeed');
+  return (
+    <>
+      <img
+        src={streamUrl}
+        alt="Live drone camera"
+        onLoad={onOnline}
+        onError={onOffline}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center', display: 'block', background: '#020617' }}
+      />
+      {!isOnline && preflightReady && (
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(2,6,23,.72)' }}>
+          <GlassPanel style={{ padding: '18px 22px', textAlign: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: '#e5edf8', marginBottom: 7 }}>Live controller offline</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>Start the flight controller terminal to show the camera stream.</div>
+          </GlassPanel>
+        </div>
+      )}
+    </>
+  );
+});
+
+const MissionProgress = memo(function MissionProgress({
+  progress,
+}: {
+  progress: number;
+}) {
+  useRenderDiagnostics('MissionProgress');
+  return (
+    <>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 900, color: '#64748b', letterSpacing: '.18em', textTransform: 'uppercase' }}>Mission Progress</span>
+          <span style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: '#4ade80', fontWeight: 800 }}>{progress.toFixed(1)}%</span>
+        </div>
+        <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.92)', overflow: 'hidden' }}>
+          <div style={{ width: `${progress}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#16a34a,#22c55e)' }} />
+        </div>
+      </div>
+    </>
+  );
+});
 
 function useSimulationMap() {
   const [meta, setMeta] = useState<MapMeta | null>(null);
@@ -314,7 +389,8 @@ function statusToSimulationPoint(status: ControlStatus | null): [number, number]
   return null;
 }
 
-function RealMiniMap({ status }: { status: ControlStatus | null }) {
+const RealMiniMap = memo(function RealMiniMap({ status }: { status: ControlStatus | null }) {
+  useRenderDiagnostics('MiniMap');
   const { meta } = useSimulationMap();
   const [zoom, setZoom] = useState(1);
   const [follow, setFollow] = useState(false);
@@ -362,7 +438,184 @@ function RealMiniMap({ status }: { status: ControlStatus | null }) {
       </svg>
     </GlassPanel>
   );
-}
+});
+
+const TelemetryPanel = memo(function TelemetryPanel({ status }: { status: ControlStatus | null }) {
+  useRenderDiagnostics('TelemetryPanel');
+  const telemetryBattery = typeof status?.batteryPercent === 'number' && Number.isFinite(status.batteryPercent)
+    ? Math.max(0, Math.min(100, status.batteryPercent))
+    : null;
+  const batteryDisplay = telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`;
+  const batteryState = status?.batteryState ?? 'NORMAL';
+  const batteryMode = status?.batteryDrainMode ?? 'LANDED';
+  const batteryTone =
+    batteryState === 'EMERGENCY' ? '#ef4444' :
+    batteryState === 'CRITICAL' ? '#f87171' :
+    batteryState === 'LOW' ? '#fbbf24' :
+    '#22c55e';
+
+  return (
+    <GlassPanel style={{ position: 'absolute', right: 22, top: 214, width: 220, padding: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 900, color: '#cbd5e1', marginBottom: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>Telemetry</div>
+      {[
+        ['Altitude', telemetryValue(status?.altitudeM, 'm')],
+        ['Speed', telemetryValue(status?.speedMps, 'm/s')],
+        ['Battery', batteryDisplay],
+        ['Drain', batteryMode],
+      ].map(([label, value]) => (
+        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>{label}</span>
+          <strong style={{ fontFamily: 'var(--font-data)', fontSize: 13, color: '#e5edf8' }}>{value}</strong>
+        </div>
+      ))}
+      <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.95)', overflow: 'hidden' }}>
+        <div style={{ width: `${telemetryBattery ?? 0}%`, height: '100%', borderRadius: 999, background: batteryTone, transition: 'width .35s ease, background .2s ease' }} />
+      </div>
+    </GlassPanel>
+  );
+});
+
+const CameraStatusPanel = memo(function CameraStatusPanel({ status }: { status: ControlStatus | null }) {
+  useRenderDiagnostics('CameraStatusPanel');
+  const cameraMode = status?.cameraMode === 'DOWN' ? 'DOWN' : 'FRONT';
+  const cameraLabel = cameraMode === 'DOWN' ? 'Downward' : 'FPV';
+  const viewLabel = cameraMode === 'DOWN' ? 'Top Down' : 'First Person';
+
+  return (
+    <GlassPanel style={{ position: 'absolute', left: 22, top: 22, width: 176, padding: 14 }}>
+      {[
+        ['camera', 'Camera', cameraLabel],
+        ['eye', 'View', viewLabel],
+        ['joystick', 'Mode', 'Manual'],
+      ].map(([icon, label, value]) => (
+        <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: label === 'Mode' ? 0 : 12 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cbd5e1', fontSize: 12 }}>
+            <Icon name={icon as IconName} size={15} />
+            {label}
+          </span>
+          <strong style={{ color: '#4ade80', fontSize: 12 }}>{value}</strong>
+        </div>
+      ))}
+    </GlassPanel>
+  );
+});
+
+const buttonStyle = (tone?: 'danger' | 'amber'): CSSProperties => ({
+  width: 48,
+  height: 40,
+  borderRadius: 8,
+  border: tone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(148,163,184,.18)',
+  background: tone === 'danger' ? 'rgba(127,29,29,.78)' : tone === 'amber' ? 'rgba(180,83,9,.76)' : 'rgba(15,23,42,.78)',
+  color: tone === 'danger' ? '#fecaca' : '#e5edf8',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 2,
+  fontSize: 8,
+  fontWeight: 800,
+  cursor: 'pointer',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,.06)',
+});
+
+const toolbarGroupStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 4,
+  padding: 3,
+  borderRadius: 10,
+  background: 'rgba(15, 23, 42, .42)',
+  border: '1px solid rgba(148,163,184,.12)',
+};
+
+const FlightControls = memo(function FlightControls({
+  busyCommand,
+  moreOpen,
+  onCommand,
+  onToggleMore,
+}: {
+  busyCommand: FlightCommand | null;
+  moreOpen: boolean;
+  onCommand: (command: FlightCommand) => void;
+  onToggleMore: () => void;
+}) {
+  useRenderDiagnostics('FlightControls');
+  const controlButton = (item: { command: FlightCommand; label: string; icon: IconName; tone?: 'danger' | 'amber' }) => (
+    <button
+      key={`${item.command}-${item.label}`}
+      onClick={() => onCommand(item.command)}
+      disabled={busyCommand !== null}
+      style={buttonStyle(item.tone)}
+      title={item.label}
+    >
+      <Icon name={item.icon} size={14} />
+      <span>{busyCommand === item.command ? 'Sending' : item.label}</span>
+    </button>
+  );
+
+  return (
+    <GlassPanel style={{ position: 'absolute', left: '50%', bottom: 8, transform: 'translateX(-50%)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 5, width: 'min(780px, calc(100% - 24px))', maxWidth: 'calc(100% - 24px)', maxHeight: 'min(118px, 18vh)', overflow: 'visible' }}>
+      <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
+        {flightControls.map(controlButton)}
+        <button onClick={() => onCommand('stop')} disabled={busyCommand !== null} style={{ ...buttonStyle(), background: 'rgba(20,83,45,.82)', color: '#86efac' }} title="Hover">
+          <Icon name="joystick" size={14} />
+          <span>Hover</span>
+        </button>
+      </div>
+
+      <div style={{ ...toolbarGroupStyle, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 3 }}>
+        {movementControls.map((item) => (
+          <button
+            key={item.label}
+            onClick={() => onCommand(item.command)}
+            disabled={busyCommand !== null}
+            style={{
+              width: 48,
+              height: 31,
+              borderRadius: 8,
+              border: '1px solid rgba(148,163,184,.18)',
+              background: 'rgba(15,23,42,.78)',
+              color: '#e5edf8',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              cursor: 'pointer',
+              fontSize: 7,
+              fontWeight: 850,
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.05)',
+            }}
+            title={item.label}
+          >
+            <Icon name={item.icon} size={12} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>{rotationControls.map(controlButton)}</div>
+      <div style={{ ...toolbarGroupStyle, maxWidth: 62, flexWrap: 'nowrap', position: 'relative' }}>
+        <button
+          onClick={onToggleMore}
+          disabled={busyCommand !== null}
+          style={buttonStyle()}
+          title="More controls"
+        >
+          <Icon name="chevronRight" size={14} />
+          <span>More</span>
+        </button>
+        {moreOpen && (
+          <GlassPanel style={{ position: 'absolute', right: 0, bottom: 50, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 5, padding: 6, zIndex: 10 }}>
+            {moreToolControls.map(controlButton)}
+          </GlassPanel>
+        )}
+      </div>
+    </GlassPanel>
+  );
+});
 
 export default function InFlightControl({ mission, drone, onRTB, onEmergency }: Props) {
   const [elapsed, setElapsed] = useState(5);
@@ -438,7 +691,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
     };
   }, []);
 
-  async function sendCommand(command: FlightCommand) {
+  const sendCommand = useCallback(async (command: FlightCommand) => {
     if (!preflightReady) {
       setLastCommand('Preflight required');
       return;
@@ -463,70 +716,24 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
     } finally {
       setBusyCommand(null);
     }
-  }
+  }, [onEmergency, onRTB, preflightReady]);
 
-  const fmt = (seconds: number) =>
-    `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-  const telemetryValue = (value: number | undefined, suffix: string, digits = 1) =>
-    typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(digits)} ${suffix}` : '--';
   const telemetryBattery = typeof controlStatus?.batteryPercent === 'number' && Number.isFinite(controlStatus.batteryPercent)
     ? Math.max(0, Math.min(100, controlStatus.batteryPercent))
     : null;
   const batteryDisplay = telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`;
   const batteryState = controlStatus?.batteryState ?? 'NORMAL';
-  const batteryMode = controlStatus?.batteryDrainMode ?? 'LANDED';
-  const batteryTone =
-    batteryState === 'EMERGENCY' ? '#ef4444' :
-    batteryState === 'CRITICAL' ? '#f87171' :
-    batteryState === 'LOW' ? '#fbbf24' :
-    '#22c55e';
   const showBatteryWarning = telemetryBattery !== null && batteryState !== 'NORMAL';
-  const cameraMode = controlStatus?.cameraMode === 'DOWN' ? 'DOWN' : 'FRONT';
-  const cameraLabel = cameraMode === 'DOWN' ? 'Downward' : 'FPV';
-  const viewLabel = cameraMode === 'DOWN' ? 'Top Down' : 'First Person';
-
-  const buttonStyle = (tone?: 'danger' | 'amber'): CSSProperties => ({
-    width: 48,
-    height: 40,
-    borderRadius: 8,
-    border: tone === 'danger' ? '1px solid rgba(248,113,113,.72)' : '1px solid rgba(148,163,184,.18)',
-    background: tone === 'danger' ? 'rgba(127,29,29,.78)' : tone === 'amber' ? 'rgba(180,83,9,.76)' : 'rgba(15,23,42,.78)',
-    color: tone === 'danger' ? '#fecaca' : '#e5edf8',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    fontSize: 8,
-    fontWeight: 800,
-    cursor: 'pointer',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,.06)',
-  });
-
-  const toolbarGroupStyle: CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    padding: 3,
-    borderRadius: 10,
-    background: 'rgba(15, 23, 42, .42)',
-    border: '1px solid rgba(148,163,184,.12)',
-  };
-
-  const controlButton = (item: { command: FlightCommand; label: string; icon: IconName; tone?: 'danger' | 'amber' }) => (
-    <button
-      key={`${item.command}-${item.label}`}
-      onClick={() => void sendCommand(item.command)}
-      disabled={busyCommand !== null}
-      style={buttonStyle(item.tone)}
-      title={item.label}
-    >
-      <Icon name={item.icon} size={14} />
-      <span>{busyCommand === item.command ? 'Sending' : item.label}</span>
-    </button>
-  );
+  const handleOnline = useCallback(() => setIsOnline(true), []);
+  const handleOffline = useCallback(() => setIsOnline(false), []);
+  const handleToggleMore = useCallback(() => setMoreOpen((value) => !value), []);
+  const handleCommand = useCallback((command: FlightCommand) => {
+    void sendCommand(command);
+  }, [sendCommand]);
+  const handlePreflightReady = useCallback(() => {
+    setPreflightReady(true);
+    setLastCommand('Preflight completed');
+  }, []);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateRows: '76px minmax(0,1fr) 42px', background: '#020617', color: '#e5edf8', overflow: 'hidden' }}>
@@ -547,15 +754,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           </div>
         </div>
 
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 900, color: '#64748b', letterSpacing: '.18em', textTransform: 'uppercase' }}>Mission Progress</span>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: '#4ade80', fontWeight: 800 }}>{progress.toFixed(1)}%</span>
-          </div>
-          <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.92)', overflow: 'hidden' }}>
-            <div style={{ width: `${progress}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#16a34a,#22c55e)' }} />
-          </div>
-        </div>
+        <MissionProgress progress={progress} />
 
         <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: '#94a3b8' }}>{fmt(elapsed)} / {fmt(remaining)}</span>
@@ -566,12 +765,12 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
       </header>
 
       <main style={{ position: 'relative', minHeight: 0, overflow: 'hidden' }}>
-        <img
-          src={streamUrl}
-          alt="Live drone camera"
-          onLoad={() => setIsOnline(true)}
-          onError={() => setIsOnline(false)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center', display: 'block', background: '#020617' }}
+        <CameraFeed
+          streamUrl={streamUrl}
+          preflightReady={preflightReady}
+          isOnline={isOnline}
+          onOnline={handleOnline}
+          onOffline={handleOffline}
         />
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at center, transparent 0 42%, rgba(2,6,23,.08) 72%, rgba(2,6,23,.34) 100%)' }} />
 
@@ -579,41 +778,11 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           <Icon name="crosshair" size={88} />
         </div>
 
-        <GlassPanel style={{ position: 'absolute', left: 22, top: 22, width: 176, padding: 14 }}>
-          {[
-            ['camera', 'Camera', cameraLabel],
-            ['eye', 'View', viewLabel],
-            ['joystick', 'Mode', 'Manual'],
-          ].map(([icon, label, value]) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: label === 'Mode' ? 0 : 12 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cbd5e1', fontSize: 12 }}>
-                <Icon name={icon as IconName} size={15} />
-                {label}
-              </span>
-              <strong style={{ color: '#4ade80', fontSize: 12 }}>{value}</strong>
-            </div>
-          ))}
-        </GlassPanel>
+        <CameraStatusPanel status={controlStatus} />
 
         <RealMiniMap status={controlStatus} />
 
-        <GlassPanel style={{ position: 'absolute', right: 22, top: 214, width: 220, padding: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: '#cbd5e1', marginBottom: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>Telemetry</div>
-          {[
-            ['Altitude', telemetryValue(controlStatus?.altitudeM, 'm')],
-            ['Speed', telemetryValue(controlStatus?.speedMps, 'm/s')],
-            ['Battery', batteryDisplay],
-            ['Drain', batteryMode],
-          ].map(([label, value]) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
-              <span style={{ color: '#94a3b8', fontSize: 12 }}>{label}</span>
-              <strong style={{ fontFamily: 'var(--font-data)', fontSize: 13, color: '#e5edf8' }}>{value}</strong>
-            </div>
-          ))}
-          <div style={{ height: 5, borderRadius: 999, background: 'rgba(30,41,59,.95)', overflow: 'hidden' }}>
-            <div style={{ width: `${telemetryBattery ?? 0}%`, height: '100%', borderRadius: 999, background: batteryTone, transition: 'width .35s ease, background .2s ease' }} />
-          </div>
-        </GlassPanel>
+        <TelemetryPanel status={controlStatus} />
 
         {showBatteryWarning && (
           <GlassPanel style={{ position: 'absolute', left: '50%', top: geofenceAlertActive ? 100 : 28, transform: 'translateX(-50%)', width: 'min(360px, calc(100% - 56px))', padding: '11px 14px', border: `1px solid ${batteryState === 'LOW' ? 'rgba(251,191,36,.7)' : 'rgba(248,113,113,.72)'}`, background: batteryState === 'LOW' ? 'rgba(120,53,15,.82)' : 'rgba(127,29,29,.78)' }}>
@@ -651,84 +820,18 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           </GlassPanel>
         )}
 
-        {!isOnline && preflightReady && (
-          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(2,6,23,.72)' }}>
-            <GlassPanel style={{ padding: '18px 22px', textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#e5edf8', marginBottom: 7 }}>Live controller offline</div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>Start the flight controller terminal to show the camera stream.</div>
-            </GlassPanel>
-          </div>
-        )}
-
         {!preflightReady && (
-          <div style={{ position: 'absolute', inset: '0 0 6px', zIndex: 20, background: 'rgba(2,6,23,.72)', backdropFilter: 'blur(3px)', overflow: 'auto' }}>
-            <RuntimePreflightCheck
-              onReady={() => {
-                setPreflightReady(true);
-                setLastCommand('Preflight completed');
-              }}
-            />
+          <div style={{ position: 'absolute', inset: '0 0 6px', zIndex: 20, background: 'rgba(2,6,23,.82)', overflow: 'auto' }}>
+            <RuntimePreflightCheck onReady={handlePreflightReady} />
           </div>
         )}
 
-        <GlassPanel style={{ position: 'absolute', left: '50%', bottom: 8, transform: 'translateX(-50%)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 5, width: 'min(780px, calc(100% - 24px))', maxWidth: 'calc(100% - 24px)', maxHeight: 'min(118px, 18vh)', overflow: 'visible' }}>
-          <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
-            {flightControls.map(controlButton)}
-            <button onClick={() => void sendCommand('stop')} disabled={busyCommand !== null} style={{ ...buttonStyle(), background: 'rgba(20,83,45,.82)', color: '#86efac' }} title="Hover">
-              <Icon name="joystick" size={14} />
-              <span>Hover</span>
-            </button>
-          </div>
-
-          <div style={{ ...toolbarGroupStyle, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 3 }}>
-            {movementControls.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => void sendCommand(item.command)}
-                disabled={busyCommand !== null}
-                style={{
-                  width: 48,
-                  height: 31,
-                  borderRadius: 8,
-                  border: '1px solid rgba(148,163,184,.18)',
-                  background: 'rgba(15,23,42,.78)',
-                  color: '#e5edf8',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1,
-                  cursor: 'pointer',
-                  fontSize: 7,
-                  fontWeight: 850,
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,.05)',
-                }}
-                title={item.label}
-              >
-                <Icon name={item.icon} size={12} />
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>{rotationControls.map(controlButton)}</div>
-          <div style={{ ...toolbarGroupStyle, maxWidth: 62, flexWrap: 'nowrap', position: 'relative' }}>
-            <button
-              onClick={() => setMoreOpen((value) => !value)}
-              disabled={busyCommand !== null}
-              style={buttonStyle()}
-              title="More controls"
-            >
-              <Icon name="chevronRight" size={14} />
-              <span>More</span>
-            </button>
-            {moreOpen && (
-              <GlassPanel style={{ position: 'absolute', right: 0, bottom: 50, display: 'grid', gridTemplateColumns: 'repeat(3, 48px)', gap: 5, padding: 6, zIndex: 10 }}>
-                {moreToolControls.map(controlButton)}
-              </GlassPanel>
-            )}
-          </div>
-        </GlassPanel>
+        <FlightControls
+          busyCommand={busyCommand}
+          moreOpen={moreOpen}
+          onCommand={handleCommand}
+          onToggleMore={handleToggleMore}
+        />
       </main>
 
       <footer style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 18px', background: '#071324', borderTop: '1px solid rgba(59,130,246,.24)' }}>

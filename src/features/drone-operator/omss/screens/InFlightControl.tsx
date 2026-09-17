@@ -16,7 +16,8 @@ type FlightCommand =
   | 'yaw_left' | 'yaw_right' | 'stop' | 'land' | 'return_to_base'
   | 'emergency_stop' | 'camera_switch' | 'camera_monitor_toggle'
   | 'lidar_monitor_toggle' | 'telemetry_monitor_toggle' | 'photo'
-  | 'video_toggle' | 'speed_up' | 'speed_down' | 'safety_toggle';
+  | 'video_toggle' | 'speed_up' | 'speed_down' | 'safety_toggle'
+  | 'thermal_toggle' | 'thermal_viewer_toggle';
 
 type IconName =
   | 'drone' | 'settings' | 'crosshair' | 'camera' | 'eye' | 'joystick'
@@ -24,7 +25,7 @@ type IconName =
   | 'arrowUp' | 'arrowDown' | 'arrowLeft' | 'arrowRight'
   | 'moveForward' | 'moveBack' | 'moveLeft' | 'moveRight' | 'altitudeUp' | 'altitudeDown'
   | 'rotateLeft' | 'rotateRight' | 'gauge' | 'photo' | 'video'
-  | 'radar' | 'activity' | 'shield' | 'chevronRight';
+  | 'radar' | 'activity' | 'shield' | 'thermometer' | 'chevronRight';
 
 type ControlStatus = {
   online?: boolean;
@@ -38,9 +39,19 @@ type ControlStatus = {
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY';
   batteryDrainMode?: 'LANDED' | 'IDLE' | 'HOVER' | 'CRUISE' | 'ASCEND' | 'DESCEND';
   cameraMode?: 'FRONT' | 'DOWN';
+  cameraPitchDeg?: number;
+  thermalEnabled?: boolean;
+  thermalSensorOnline?: boolean;
+  thermalFrameAgeMs?: number | null;
+  maxTemperatureC?: number | null;
+  averageTemperatureC?: number | null;
+  hotspotDetected?: boolean;
+  hotspotTemperatureC?: number | null;
 };
 
 type MapMeta = {
+  image?: string;
+  imageVersion?: string;
   minX: number;
   maxX: number;
   minY: number;
@@ -106,6 +117,7 @@ const moreToolControls: { command: FlightCommand; label: string; icon: IconName 
   { command: 'video_toggle', label: 'Video', icon: 'video' },
   { command: 'lidar_monitor_toggle', label: 'LiDAR', icon: 'radar' },
   { command: 'telemetry_monitor_toggle', label: 'Telemetry', icon: 'activity' },
+  { command: 'thermal_viewer_toggle', label: 'Thermal View', icon: 'thermometer' },
   { command: 'safety_toggle', label: 'Safety', icon: 'shield' },
 ];
 
@@ -143,6 +155,7 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
       {name === 'radar' && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 12 18 8M12 4v2M12 18v2M4 12h2M18 12h2" /></>}
       {name === 'activity' && <path {...common} d="M3 12h4l2-7 4 14 2-7h6" />}
       {name === 'shield' && <path {...common} d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />}
+      {name === 'thermometer' && <><path {...common} d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z" /><path {...common} d="M12 7v7" /></>}
       {name === 'chevronRight' && <path {...common} d="m9 6 6 6-6 6" />}
     </svg>
   );
@@ -412,7 +425,9 @@ const RealMiniMap = memo(function RealMiniMap({ status }: { status: ControlStatu
   const viewX = follow ? Math.max(0, Math.min(width - viewWidth, droneX - viewWidth / 2)) : (width - viewWidth) / 2;
   const viewY = follow ? Math.max(0, Math.min(height - viewHeight, droneY - viewHeight / 2)) : (height - viewHeight) / 2;
   const yaw = status?.yawDeg ?? 0;
-  const mapImageUrl = `${env.apiBaseUrl}/simulation-viewer/simulation_map_top.png`;
+  const mapImagePath = meta?.image ?? '/simulation-viewer/simulation_map_top.png';
+  const mapImageVersion = meta?.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : '';
+  const mapImageUrl = `${env.apiBaseUrl}${mapImagePath}${mapImageVersion}`;
 
   return (
     <GlassPanel style={{ width: '100%', overflow: 'hidden', flexShrink: 0 }}>
@@ -532,9 +547,11 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
 
 const CameraStatusPanel = memo(function CameraStatusPanel({ status }: { status: ControlStatus | null }) {
   useRenderDiagnostics('CameraStatusPanel');
+  const thermalEnabled = status?.thermalEnabled === true;
   const cameraMode = status?.cameraMode === 'DOWN' ? 'DOWN' : 'FRONT';
-  const cameraLabel = cameraMode === 'DOWN' ? 'Downward' : 'FPV';
-  const viewLabel = cameraMode === 'DOWN' ? 'Top Down' : 'First Person';
+  const cameraPitch = Number.isFinite(status?.cameraPitchDeg) ? Number(status?.cameraPitchDeg) : cameraMode === 'DOWN' ? -90 : 0;
+  const cameraLabel = thermalEnabled ? 'Thermal' : cameraPitch <= -89.5 ? 'Downward' : cameraPitch >= -0.5 ? 'FPV' : 'Gimbal';
+  const viewLabel = thermalEnabled ? 'Heat Map' : `${cameraPitch.toFixed(0)}° pitch`;
 
   return (
     <GlassPanel style={{ position: 'absolute', left: 22, top: 22, width: 176, padding: 14 }}>
@@ -588,27 +605,37 @@ const toolbarGroupStyle: CSSProperties = {
 const FlightControls = memo(function FlightControls({
   busyCommand,
   moreOpen,
+  status,
   onCommand,
   onToggleMore,
 }: {
   busyCommand: FlightCommand | null;
   moreOpen: boolean;
+  status: ControlStatus | null;
   onCommand: (command: FlightCommand) => void;
   onToggleMore: () => void;
 }) {
   useRenderDiagnostics('FlightControls');
-  const controlButton = (item: { command: FlightCommand; label: string; icon: IconName; tone?: 'danger' | 'amber' }) => (
+  const thermalEnabled = status?.thermalEnabled === true;
+  const thermalLabel = `Thermal ${thermalEnabled ? 'ON' : 'OFF'}`;
+  const controlButton = (item: { command: FlightCommand; label: string; icon: IconName; tone?: 'danger' | 'amber' }) => {
+    const isThermal = item.command === 'thermal_toggle';
+    const label = isThermal ? `Thermal ${thermalEnabled ? 'ON' : 'OFF'}` : item.label;
+    return (
     <button
       key={`${item.command}-${item.label}`}
       onClick={() => onCommand(item.command)}
       disabled={busyCommand !== null}
-      style={buttonStyle(item.tone)}
-      title={item.label}
+      style={{
+        ...buttonStyle(isThermal && thermalEnabled ? 'amber' : item.tone),
+      }}
+      title={label}
     >
       <Icon name={item.icon} size={14} />
-      <span>{busyCommand === item.command ? 'Sending' : item.label}</span>
+      <span>{busyCommand === item.command ? 'Sending' : label}</span>
     </button>
   );
+  };
 
   return (
     <GlassPanel style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5, padding: 6, width: '100%', overflow: 'visible' }}>
@@ -652,7 +679,19 @@ const FlightControls = memo(function FlightControls({
       </div>
 
       <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>{rotationControls.map(controlButton)}</div>
-      <div style={{ ...toolbarGroupStyle, maxWidth: 62, flexWrap: 'nowrap', position: 'relative' }}>
+      <div style={{ ...toolbarGroupStyle, maxWidth: 128, flexWrap: 'nowrap', position: 'relative' }}>
+        <button
+          onClick={() => onCommand('thermal_toggle')}
+          disabled={busyCommand !== null}
+          style={{
+            ...buttonStyle(thermalEnabled ? 'amber' : undefined),
+            width: 62,
+          }}
+          title={thermalLabel}
+        >
+          <Icon name="thermometer" size={14} />
+          <span>{busyCommand === 'thermal_toggle' ? 'Sending' : thermalLabel}</span>
+        </button>
         <button
           onClick={onToggleMore}
           disabled={busyCommand !== null}
@@ -691,7 +730,11 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
   });
   const restrictedZones = useRestrictedZones();
 
-  const streamUrl = useMemo(() => `${controlBaseUrl}/stream.mjpg?viewer=operator&v=${streamRevision}`, [streamRevision]);
+  const thermalEnabled = controlStatus?.thermalEnabled === true;
+  const streamUrl = useMemo(
+    () => `${controlBaseUrl}/${thermalEnabled ? 'thermal-stream.mjpg' : 'stream.mjpg'}?viewer=operator&v=${streamRevision}`,
+    [streamRevision, thermalEnabled],
+  );
   const remaining = Math.max(0, mission.estimatedMinutes * 60 - elapsed);
   const dronePoint = statusToSimulationPoint(controlStatus);
   const geofenceStatus = useMemo(() => evaluateGeofence(dronePoint, restrictedZones), [dronePoint, restrictedZones]);
@@ -803,6 +846,9 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
   const batteryDisplay = telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`;
   const batteryState = controlStatus?.batteryState ?? 'NORMAL';
   const showBatteryWarning = telemetryBattery !== null && batteryState !== 'NORMAL';
+  const thermalMax = typeof controlStatus?.maxTemperatureC === 'number' && Number.isFinite(controlStatus.maxTemperatureC)
+    ? `${controlStatus.maxTemperatureC.toFixed(1)} °C`
+    : '--';
   const handleOnline = useCallback(() => setIsOnline(true), []);
   const handleOffline = useCallback(() => setIsOnline(false), []);
   const handleToggleMore = useCallback(() => setMoreOpen((value) => !value), []);
@@ -866,6 +912,24 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
 
             <CameraStatusPanel status={controlStatus} />
 
+            {thermalEnabled && (
+              <GlassPanel style={{ position: 'absolute', right: 16, top: 16, width: 210, padding: '10px 12px', border: controlStatus?.hotspotDetected ? '1px solid rgba(251,146,60,.78)' : '1px solid rgba(56,189,248,.35)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                  <strong style={{ fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: '#e5edf8' }}>Thermal</strong>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: controlStatus?.thermalSensorOnline === false ? '#fca5a5' : '#67e8f9' }}>
+                    {controlStatus?.thermalSensorOnline === false ? 'OFFLINE' : 'SENSOR ONLINE'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: 11 }}>
+                  <span>MAX</span>
+                  <strong style={{ fontFamily: 'var(--font-data)', color: '#fff7ed' }}>{thermalMax}</strong>
+                </div>
+                <div style={{ marginTop: 5, fontSize: 11, fontWeight: 900, color: controlStatus?.hotspotDetected ? '#fed7aa' : '#bae6fd' }}>
+                  {controlStatus?.hotspotDetected ? 'HOTSPOT DETECTED' : 'No hotspot'}
+                </div>
+              </GlassPanel>
+            )}
+
             {showBatteryWarning && (
               <GlassPanel style={{ position: 'absolute', left: '50%', top: geofenceAlertActive ? 92 : 20, transform: 'translateX(-50%)', width: 'min(360px, calc(100% - 56px))', padding: '11px 14px', border: `1px solid ${batteryState === 'LOW' ? 'rgba(251,191,36,.7)' : 'rgba(248,113,113,.72)'}`, background: batteryState === 'LOW' ? 'rgba(120,53,15,.82)' : 'rgba(127,29,29,.78)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -906,6 +970,7 @@ export default function InFlightControl({ mission, drone, onRTB, onEmergency }: 
           <FlightControls
             busyCommand={busyCommand}
             moreOpen={moreOpen}
+            status={controlStatus}
             onCommand={handleCommand}
             onToggleMore={handleToggleMore}
           />

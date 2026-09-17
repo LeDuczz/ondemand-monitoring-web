@@ -14,6 +14,8 @@ import {
 } from '../api/orderApi'
 
 type MapMeta = {
+  image?: string
+  imageVersion?: string
   minX: number
   maxX: number
   minY: number
@@ -220,6 +222,9 @@ function useSimulationZones() {
 export function CustomerCreateRequestPage() {
   const user = authSession.getUser()
   const { meta, error: mapError } = useSimulationMapMeta()
+  const mapImageUrl = meta
+    ? `${env.apiBaseUrl}${meta.image ?? '/simulation-viewer/simulation_map_top.png'}${meta.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : ''}`
+    : ''
   const zones = useSimulationZones()
   const [form, setForm] = useState<FormState>(initialForm)
   const [services, setServices] = useState<CategoryService[]>([])
@@ -487,7 +492,7 @@ export function CustomerCreateRequestPage() {
               >
                 <img
                   alt="Local simulation map"
-                  src={`${env.apiBaseUrl}/simulation-viewer/simulation_map_top.png`}
+                  src={mapImageUrl}
                 />
                 {target ? (
                   <span
@@ -663,7 +668,7 @@ export function CustomerCreateRequestPage() {
               <img
                 alt="Selected simulation target"
                 className={target ? 'request-summary-map-zoom' : undefined}
-                src={`${env.apiBaseUrl}/simulation-viewer/simulation_map_top.png`}
+                src={mapImageUrl}
                 style={
                   summaryMapImagePosition
                     ? {

@@ -30,12 +30,12 @@ export default function SimulationZones() {
           Zone map
         </h1>
         <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-          Read-only simulation zones for mission awareness. Editing is available to manager workspaces only.
+          Simulation zones and thermal areas can be adjusted and saved to the database.
         </p>
       </div>
       <iframe
-        title="Read-only simulation zone map"
-        src="http://localhost:8080/simulation-viewer/index.html?readonly=1"
+        title="Simulation zone map"
+        src="http://localhost:8080/simulation-viewer/index.html"
         style={{
           flex: 1,
           width: '100%',

@@ -3101,7 +3101,7 @@ h2 span {
 .simulation-picker-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) 230px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   min-width: 0;
 }
 
@@ -3110,7 +3110,7 @@ h2 span {
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  min-height: 300px;
+  min-height: 260px;
   min-width: 0;
   overflow: hidden;
   padding: 0;

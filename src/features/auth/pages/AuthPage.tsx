@@ -8,8 +8,10 @@ import {
   authSession,
   getGoogleAuthorizationUrl,
 } from '../api/authApi'
+import { redirectToRoleHome } from '../routing'
 
-type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset'
+type AuthMode =
+  'login' | 'register' | 'verify' | 'forgot' | 'reset' | 'first-login'
 type Notice = { type: 'info' | 'error' | 'success'; message: string }
 
 function BrandMark() {
@@ -200,7 +202,13 @@ function ModeSwitch({
   mode: AuthMode
   onChange: (mode: 'login' | 'register') => void
 }) {
-  if (mode === 'verify' || mode === 'forgot' || mode === 'reset') return null
+  if (
+    mode === 'verify' ||
+    mode === 'forgot' ||
+    mode === 'reset' ||
+    mode === 'first-login'
+  )
+    return null
   return (
     <p className="mode-switch">
       {mode === 'login' ? 'New to Fieldwise?' : 'Already have an account?'}{' '}
@@ -221,6 +229,7 @@ function getAuthTitle(mode: AuthMode) {
     verify: 'Verify your email',
     forgot: 'Reset your password',
     reset: 'Set a new password',
+    'first-login': 'Set your password',
   }
   return titles[mode]
 }
@@ -233,6 +242,8 @@ function getAuthSubtitle(mode: AuthMode) {
     verify: 'One more step before your Fieldwise workspace is ready.',
     forgot: 'Enter your work email and we’ll help you get back in.',
     reset: 'Use a new password with at least 8 characters.',
+    'first-login':
+      'Your administrator created this account. Set a personal password to continue.',
   }
   return subtitles[mode]
 }
@@ -254,6 +265,7 @@ export function AuthPage({
   const [password, setPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [otpCode, setOtpCode] = useState('')
+  const [challengeSession, setChallengeSession] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -324,11 +336,35 @@ export function AuthPage({
 
   const submitLogin = async () => {
     const response = await authApi.login({ email, password })
+    if (response.status === 'PASSWORD_CHANGE_REQUIRED' && response.session) {
+      setChallengeSession(response.session)
+      setMode('first-login')
+      setNotice({
+        type: 'info',
+        message: 'Set a new password to activate your account.',
+      })
+      return
+    }
     authSession.save(response, rememberMe)
     const suffix = response.user?.fullName
       ? ` as ${response.user.fullName}`
       : ''
     setNotice({ type: 'success', message: `Signed in${suffix}.` })
+    redirectToRoleHome(response.user?.role)
+  }
+
+  const submitFirstLogin = async () => {
+    const response = await authApi.completeFirstLogin({
+      email,
+      session: challengeSession,
+      newPassword,
+    })
+    authSession.save(response, rememberMe)
+    setNotice({
+      type: 'success',
+      message: 'Password set. Welcome to Fieldwise.',
+    })
+    redirectToRoleHome(response.user?.role)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -342,6 +378,7 @@ export function AuthPage({
       forgot: submitForgot,
       reset: submitReset,
       login: submitLogin,
+      'first-login': submitFirstLogin,
     }
     try {
       await submitters[mode]?.()
@@ -649,6 +686,30 @@ export function AuthPage({
                 >
                   <Icon name="arrow-left" /> Back to sign in
                 </button>
+              </>
+            ) : null}
+            {mode === 'first-login' ? (
+              <>
+                <EmailField
+                  value={email}
+                  onChange={setEmail}
+                  error={fieldErrors.email}
+                />
+                <PasswordField
+                  id="newPassword"
+                  label="New password"
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  error={fieldErrors.newPassword}
+                />
+                <Button
+                  type="submit"
+                  className="auth-submit"
+                  icon="arrow-right"
+                  disabled={isSubmitting || !challengeSession}
+                >
+                  {isSubmitting ? 'Saving password…' : 'Continue to workspace'}
+                </Button>
               </>
             ) : null}
           </form>

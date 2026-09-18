@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Icon } from '../../../shared/components/Icon'
 import { AuthApiError, authApi, authSession } from '../api/authApi'
+import { redirectToRoleHome } from '../routing'
 
 const CALLBACK_PATH = '/social/callback'
 const processedSocialCodes = new Set<string>()
@@ -70,6 +71,7 @@ export function SocialCallbackPage() {
         authSession.save(response, true)
         if (storageKey) sessionStorage.setItem(storageKey, 'done')
         setUserName(response.user?.fullName)
+        window.setTimeout(() => redirectToRoleHome(response.user?.role), 700)
       })
       .catch((requestError: unknown) => {
         processedSocialCodes.delete(code)

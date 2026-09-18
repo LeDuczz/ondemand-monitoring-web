@@ -2,8 +2,11 @@ import { env } from '../../../config/env'
 import type {
   ApiResponse,
   AuthResponse,
+  CreateManagedAccountRequest,
+  FirstLoginPasswordChangeRequest,
   ForgotPasswordRequest,
   LoginRequest,
+  ManagedAccountResponse,
   RegisterRequest,
   RegisterResponse,
   ResendOtpRequest,
@@ -15,6 +18,7 @@ import type {
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
   accessToken?: string
+  skipRefresh?: boolean
 }
 
 export class AuthApiError extends Error {
@@ -54,20 +58,59 @@ export function getGoogleAuthorizationUrl() {
   return `${domain.replace(/\/$/, '')}/oauth2/authorize?${params.toString()}`
 }
 
+let refreshPromise: Promise<AuthResponse | undefined> | undefined
+
+async function refreshAccessTokenOnce() {
+  if (!refreshPromise) {
+    refreshPromise = request<AuthResponse>('/api/v1/auth/refresh', {
+      method: 'POST',
+      skipRefresh: true,
+    })
+      .then((response) => {
+        authSession.updateAccessToken(response)
+        return response
+      })
+      .catch(() => {
+        authSession.clear()
+        return undefined
+      })
+      .finally(() => {
+        refreshPromise = undefined
+      })
+  }
+  return refreshPromise
+}
+
+export async function authenticatedFetch(
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const request = (token?: string) => {
+    const headers = new Headers(init.headers)
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+    return fetch(url, { ...init, credentials: 'include', headers })
+  }
+
+  const response = await request(authSession.getAccessToken() ?? undefined)
+  if (response.status !== 401) return response
+
+  const refreshed = await refreshAccessTokenOnce()
+  if (!refreshed?.accessToken) return response
+  return request(refreshed.accessToken)
+}
+
 async function request<T>(path: string, options: RequestOptions = {}) {
+  const { accessToken, skipRefresh, body, ...requestInit } = options
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
-  if (options.body !== undefined)
-    headers.set('Content-Type', 'application/json')
-  if (options.accessToken)
-    headers.set('Authorization', `Bearer ${options.accessToken}`)
+  if (body !== undefined) headers.set('Content-Type', 'application/json')
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
 
   let response: Response
   try {
     response = await fetch(`${env.apiBaseUrl}${path}`, {
-      ...options,
-      body:
-        options.body === undefined ? undefined : JSON.stringify(options.body),
+      ...requestInit,
+      body: body === undefined ? undefined : JSON.stringify(body),
       credentials: 'include',
       headers,
     })
@@ -75,6 +118,21 @@ async function request<T>(path: string, options: RequestOptions = {}) {
     throw new AuthApiError(
       'Unable to reach the authentication service. Please try again.',
     )
+  }
+
+  if (
+    response.status === 401 &&
+    !skipRefresh &&
+    path !== '/api/v1/auth/refresh'
+  ) {
+    const refreshed = await refreshAccessTokenOnce()
+    if (refreshed?.accessToken) {
+      return request<T>(path, {
+        ...options,
+        accessToken: refreshed.accessToken,
+        skipRefresh: true,
+      })
+    }
   }
 
   const payload = (await response.json().catch(() => undefined)) as
@@ -104,13 +162,35 @@ export const authApi = {
   resendOtp: (body: ResendOtpRequest) =>
     request<void>('/api/v1/auth/resend-otp', { method: 'POST', body }),
   login: (body: LoginRequest) =>
-    request<AuthResponse>('/api/v1/auth/login', { method: 'POST', body }),
+    request<AuthResponse>('/api/v1/auth/login', {
+      method: 'POST',
+      body,
+      skipRefresh: true,
+    }),
+  completeFirstLogin: (body: FirstLoginPasswordChangeRequest) =>
+    request<AuthResponse>('/api/v1/auth/first-login/change-password', {
+      method: 'POST',
+      body,
+      skipRefresh: true,
+    }),
   socialSync: (body: SocialSyncRequest) =>
     request<AuthResponse>('/api/v1/auth/social/sync', { method: 'POST', body }),
   refresh: () =>
-    request<AuthResponse>('/api/v1/auth/refresh', { method: 'POST' }),
+    request<AuthResponse>('/api/v1/auth/refresh', {
+      method: 'POST',
+      skipRefresh: true,
+    }),
   logout: (accessToken: string) =>
     request<void>('/api/v1/auth/logout', { method: 'POST', accessToken }),
+  createManagedAccount: (
+    body: CreateManagedAccountRequest,
+    accessToken: string,
+  ) =>
+    request<ManagedAccountResponse>('/api/v1/admin/accounts', {
+      method: 'POST',
+      body,
+      accessToken,
+    }),
   forgotPassword: (body: ForgotPasswordRequest) =>
     request<void>('/api/v1/auth/forgot-password', { method: 'POST', body }),
   resetPassword: (body: ResetPasswordRequest) =>
@@ -146,11 +226,28 @@ export const authSession = {
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
     storage.setItem(USER_KEY, JSON.stringify(sanitizeUser(response.user)))
   },
+  updateAccessToken(response: AuthResponse) {
+    if (!isSafeToken(response.accessToken)) return
+    const storage = localStorage.getItem(ACCESS_TOKEN_KEY)
+      ? localStorage
+      : sessionStorage
+    storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
+  },
   getAccessToken() {
     return (
       localStorage.getItem(ACCESS_TOKEN_KEY) ??
       sessionStorage.getItem(ACCESS_TOKEN_KEY)
     )
+  },
+  getUser() {
+    const raw =
+      localStorage.getItem(USER_KEY) ?? sessionStorage.getItem(USER_KEY)
+    if (!raw) return undefined
+    try {
+      return JSON.parse(raw) as AuthResponse['user']
+    } catch {
+      return undefined
+    }
   },
   clear() {
     localStorage.removeItem(ACCESS_TOKEN_KEY)

@@ -1,0 +1,320 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ── Design tokens: light enterprise ──────────────────────── */
+:root {
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-data: 'JetBrains Mono', monospace;
+
+  /* Surfaces */
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --border: #e5e7eb;
+  --border-2: #d1d5db;
+
+  /* Text */
+  --text: #111827;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
+
+  /* Brand indigo */
+  --accent: #4f46e5;
+  --accent-2: #4338ca;
+  --accent-bg: #eef2ff;
+
+  /* Semantic */
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --green-border: #bbf7d0;
+  --green-text: #15803d;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --amber-border: #fde68a;
+  --amber-text: #92400e;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --red-border: #fecaca;
+  --red-text: #991b1b;
+  --blue: #2563eb;
+  --blue-bg: #eff6ff;
+  --blue-border: #bfdbfe;
+  --blue-text: #1d4ed8;
+
+  /* Shape */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Base ──────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Form elements ─────────────────────────────────────────── */
+input,
+textarea,
+select {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+}
+textarea {
+  resize: vertical;
+}
+input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+}
+
+/* ── Utilities ─────────────────────────────────────────────── */
+.font-data {
+  font-family: var(--font-data);
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes pulseDot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(22, 163, 74, 0);
+  }
+}
+
+.fade-in {
+  animation: fadeUp 0.2s ease both;
+}
+.blink {
+  animation: blink 1.4s ease-in-out infinite;
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+.pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 3px;
+}
+
+/* ── Dark workspace — in-flight only ──────────────────────── */
+.dark-ws {
+  --bg: #0b0e16;
+  --surface: #111520;
+  --surface-2: #171b28;
+  --border: #1a1f2e;
+  --border-2: #252c3d;
+  --text: #e2e6f0;
+  --text-2: #8892a8;
+  --text-3: #4e5670;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* dark-ws inputs */
+.dark-ws input,
+.dark-ws textarea,
+.dark-ws select {
+  background: #0e1118;
+  border-color: #252c3d;
+  color: #e2e6f0;
+}
+.dark-ws input:focus,
+.dark-ws textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+/* ── Drone Mission Control dashboard ─────────────────────── */
+.mission-control-workspace {
+  position: relative;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr);
+  gap: 12px;
+  padding: 12px 16px;
+  background:
+    radial-gradient(
+      circle at 28% 10%,
+      rgba(37, 99, 235, 0.12),
+      transparent 34%
+    ),
+    #020617;
+}
+
+.mission-control-primary {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(240px, min(48vw, calc(100vh - 285px))) auto;
+  gap: 10px;
+}
+
+.mission-control-camera-card {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  background: #020617;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+}
+
+.mission-control-camera-card > img {
+  aspect-ratio: 16 / 9;
+}
+
+.mission-control-side {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.5) transparent;
+}
+
+.mission-control-side > * {
+  flex-shrink: 0;
+}
+
+.mission-control-side::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mission-control-side::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mission-control-side::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.45);
+  border-radius: 999px;
+}
+
+.mission-control-side::-webkit-scrollbar-thumb:hover {
+  background: rgba(96, 165, 250, 0.7);
+}
+
+.mission-control-map {
+  height: clamp(220px, 28vh, 320px);
+  min-height: 220px;
+}
+
+@media (max-width: 1199px) {
+  .mission-control-workspace {
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.95fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .mission-control-primary {
+    grid-template-rows: minmax(220px, min(46vw, calc(100vh - 285px))) auto;
+  }
+
+  .mission-control-map {
+    height: clamp(220px, 26vh, 300px);
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 900px) {
+  .mission-control-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: hidden;
+  }
+
+  .mission-control-primary {
+    grid-template-rows: minmax(220px, 52vw) auto;
+  }
+
+  .mission-control-side {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}

@@ -25,6 +25,11 @@ export type ResetPasswordRequest = {
   otpCode: string
   newPassword: string
 }
+export type FirstLoginPasswordChangeRequest = {
+  email: string
+  session: string
+  newPassword: string
+}
 
 export type SocialSyncRequest = {
   code: string
@@ -46,9 +51,12 @@ export type UserProfile = {
 
 export type RegisterResponse = { otpRequired: boolean }
 export type AuthResponse = {
-  accessToken: string
+  accessToken?: string
   tokenType: string
   expiresIn?: number
+  status?: string
+  challengeName?: string
+  session?: string
   user?: UserProfile
 }
 

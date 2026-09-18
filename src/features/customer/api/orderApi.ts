@@ -1,5 +1,5 @@
 import { env } from '../../../config/env'
-import { authSession } from '../../auth/api/authApi'
+import { authenticatedFetch } from '../../auth/api/authApi'
 
 type ApiResponse<T> = {
   success?: boolean
@@ -26,17 +26,15 @@ export class OrderApiError extends Error {
 async function request<T>(path: string, options: RequestOptions = {}) {
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
-  if (options.body !== undefined) headers.set('Content-Type', 'application/json')
-
-  const token = authSession.getAccessToken()
-  if (token) headers.set('Authorization', `Bearer ${token}`)
+  if (options.body !== undefined)
+    headers.set('Content-Type', 'application/json')
 
   let response: Response
   try {
-    response = await fetch(`${env.apiBaseUrl}${path}`, {
+    response = await authenticatedFetch(`${env.apiBaseUrl}${path}`, {
       ...options,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      credentials: 'include',
+      body:
+        options.body === undefined ? undefined : JSON.stringify(options.body),
       headers,
     })
   } catch {
@@ -44,8 +42,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
   }
 
   const payload = (await response.json().catch(() => undefined)) as
-    | ApiResponse<T>
-    | undefined
+    ApiResponse<T> | undefined
 
   if (!response.ok || payload?.success === false) {
     throw new OrderApiError(

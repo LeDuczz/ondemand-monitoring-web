@@ -2,56 +2,66 @@
 
 /* ── Design tokens: light enterprise ──────────────────────── */
 :root {
-  --font-ui:   'Inter', system-ui, sans-serif;
+  --font-ui: 'Inter', system-ui, sans-serif;
   --font-data: 'JetBrains Mono', monospace;
 
   /* Surfaces */
-  --bg:          #f8f9fa;
-  --surface:     #ffffff;
-  --surface-2:   #f1f3f5;
-  --border:      #e5e7eb;
-  --border-2:    #d1d5db;
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --border: #e5e7eb;
+  --border-2: #d1d5db;
 
   /* Text */
-  --text:        #111827;
-  --text-2:      #6b7280;
-  --text-3:      #9ca3af;
+  --text: #111827;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
 
   /* Brand indigo */
-  --accent:      #4f46e5;
-  --accent-2:    #4338ca;
-  --accent-bg:   #eef2ff;
+  --accent: #4f46e5;
+  --accent-2: #4338ca;
+  --accent-bg: #eef2ff;
 
   /* Semantic */
-  --green:       #16a34a;
-  --green-bg:    #f0fdf4;
-  --green-border:#bbf7d0;
-  --green-text:  #15803d;
-  --amber:       #d97706;
-  --amber-bg:    #fffbeb;
-  --amber-border:#fde68a;
-  --amber-text:  #92400e;
-  --red:         #dc2626;
-  --red-bg:      #fef2f2;
-  --red-border:  #fecaca;
-  --red-text:    #991b1b;
-  --blue:        #2563eb;
-  --blue-bg:     #eff6ff;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --green-border: #bbf7d0;
+  --green-text: #15803d;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --amber-border: #fde68a;
+  --amber-text: #92400e;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --red-border: #fecaca;
+  --red-text: #991b1b;
+  --blue: #2563eb;
+  --blue-bg: #eff6ff;
   --blue-border: #bfdbfe;
-  --blue-text:   #1d4ed8;
+  --blue-text: #1d4ed8;
 
   /* Shape */
-  --radius:    10px;
+  --radius: 10px;
   --radius-sm: 6px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-  --shadow:    0 1px 4px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 /* ── Base ──────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-html, body, #root { height: 100%; margin: 0; padding: 0; }
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   font-family: var(--font-ui);
@@ -63,7 +73,9 @@ body {
 }
 
 /* ── Form elements ─────────────────────────────────────────── */
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: var(--font-ui);
   font-size: 14px;
   color: var(--text);
@@ -71,64 +83,121 @@ input, textarea, select {
   border: 1px solid var(--border-2);
   border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
-input::placeholder, textarea::placeholder { color: var(--text-3); }
-textarea { resize: vertical; }
-input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+}
+textarea {
+  resize: vertical;
+}
+input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+}
 
 /* ── Utilities ─────────────────────────────────────────────── */
-.font-data { font-family: var(--font-data); }
+.font-data {
+  font-family: var(--font-data);
+}
 
 /* ── Animations ────────────────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
 @keyframes pulseDot {
-  0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,.4); }
-  50%      { box-shadow: 0 0 0 5px rgba(22,163,74,0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(22, 163, 74, 0);
+  }
 }
 
-.fade-in   { animation: fadeUp .2s ease both; }
-.blink     { animation: blink 1.4s ease-in-out infinite; }
-.spin      { animation: spin .9s linear infinite; }
-.pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+.fade-in {
+  animation: fadeUp 0.2s ease both;
+}
+.blink {
+  animation: blink 1.4s ease-in-out infinite;
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+.pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 3px;
+}
 
 /* ── Dark workspace — in-flight only ──────────────────────── */
 .dark-ws {
-  --bg:       #0b0e16;
-  --surface:  #111520;
-  --surface-2:#171b28;
-  --border:   #1a1f2e;
+  --bg: #0b0e16;
+  --surface: #111520;
+  --surface-2: #171b28;
+  --border: #1a1f2e;
   --border-2: #252c3d;
-  --text:     #e2e6f0;
-  --text-2:   #8892a8;
-  --text-3:   #4e5670;
+  --text: #e2e6f0;
+  --text-2: #8892a8;
+  --text-3: #4e5670;
   background: var(--bg);
   color: var(--text);
 }
 
 /* dark-ws inputs */
-.dark-ws input, .dark-ws textarea, .dark-ws select {
+.dark-ws input,
+.dark-ws textarea,
+.dark-ws select {
   background: #0e1118;
   border-color: #252c3d;
   color: #e2e6f0;
 }
-.dark-ws input:focus, .dark-ws textarea:focus {
+.dark-ws input:focus,
+.dark-ws textarea:focus {
   border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96,165,250,.15);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
 }
 
 /* ── Drone Mission Control dashboard ─────────────────────── */
@@ -141,7 +210,11 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
   gap: 12px;
   padding: 12px 16px;
   background:
-    radial-gradient(circle at 28% 10%, rgba(37, 99, 235, .12), transparent 34%),
+    radial-gradient(
+      circle at 28% 10%,
+      rgba(37, 99, 235, 0.12),
+      transparent 34%
+    ),
     #020617;
 }
 
@@ -159,9 +232,9 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
   min-height: 0;
   overflow: hidden;
   border-radius: 10px;
-  border: 1px solid rgba(59, 130, 246, .22);
+  border: 1px solid rgba(59, 130, 246, 0.22);
   background: #020617;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, .24);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
 }
 
 .mission-control-camera-card > img {
@@ -182,7 +255,7 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(96, 165, 250, .5) transparent;
+  scrollbar-color: rgba(96, 165, 250, 0.5) transparent;
 }
 
 .mission-control-side > * {
@@ -198,12 +271,12 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
 }
 
 .mission-control-side::-webkit-scrollbar-thumb {
-  background: rgba(96, 165, 250, .45);
+  background: rgba(96, 165, 250, 0.45);
   border-radius: 999px;
 }
 
 .mission-control-side::-webkit-scrollbar-thumb:hover {
-  background: rgba(96, 165, 250, .7);
+  background: rgba(96, 165, 250, 0.7);
 }
 
 .mission-control-map {
@@ -213,7 +286,7 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
 
 @media (max-width: 1199px) {
   .mission-control-workspace {
-    grid-template-columns: minmax(0, 1.65fr) minmax(280px, .95fr);
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.95fr);
     gap: 10px;
     padding: 10px;
   }

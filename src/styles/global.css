@@ -3729,7 +3729,11 @@ h2 span {
 }
 
 .request-step span {
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 12%,
+    var(--color-surface)
+  );
   border-radius: 50%;
   color: var(--color-primary);
   display: grid;
@@ -3865,7 +3869,8 @@ h2 span {
 .request-field select:focus,
 .request-field textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 14%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
 .simulation-picker-grid {

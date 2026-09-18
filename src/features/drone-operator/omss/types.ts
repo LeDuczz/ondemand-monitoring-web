@@ -12,83 +12,79 @@ export type MissionState =
   | 'POSTFLIGHT_CHECKING'
   | 'COMPLETED'
   | 'FAILED'
-  | 'CANCELLED';
+  | 'CANCELLED'
 
 export type DroneState =
-  | 'AVAILABLE'
-  | 'PREFLIGHT'
-  | 'ACTIVE_MISSION'
-  | 'IDLE_CHARGING'
-  | 'MAINTENANCE';
+  'AVAILABLE' | 'PREFLIGHT' | 'ACTIVE_MISSION' | 'IDLE_CHARGING' | 'MAINTENANCE'
 
-export type CheckStatus = 'PASS' | 'FAIL' | 'WARNING' | 'PENDING';
+export type CheckStatus = 'PASS' | 'FAIL' | 'WARNING' | 'PENDING'
 
 export interface CheckItem {
-  id: string;
-  label: string;
-  icon: 'battery' | 'gps' | 'camera' | 'storage' | 'signal' | 'weather';
-  value: string;
-  requirement: string;
-  status: CheckStatus;
-  explanation: string;
-  action?: string;
+  id: string
+  label: string
+  icon: 'battery' | 'gps' | 'camera' | 'storage' | 'signal' | 'weather'
+  value: string
+  requirement: string
+  status: CheckStatus
+  explanation: string
+  action?: string
 }
 
 export interface Drone {
-  id: string;
-  name: string;
-  model: string;
-  serialNumber: string;
-  state: DroneState;
-  battery: number;          // %
-  gpsCount: number;         // satellites
-  gpsHdop: number;
-  altitude: number;         // m AGL
-  groundSpeed: number;      // m/s
-  verticalSpeed: number;    // m/s
-  heading: number;          // degrees
-  lat: number;
-  lng: number;
-  storageMB: number;
-  telemetryAge: number;     // seconds
-  cameraOk: boolean;
-  gimbalOk: boolean;
-  rssi: number;             // %
-  voltage: number;          // V
-  currentAmps: number;
-  tempC: number;
+  id: string
+  name: string
+  model: string
+  serialNumber: string
+  state: DroneState
+  battery: number // %
+  gpsCount: number // satellites
+  gpsHdop: number
+  altitude: number // m AGL
+  groundSpeed: number // m/s
+  verticalSpeed: number // m/s
+  heading: number // degrees
+  lat: number
+  lng: number
+  storageMB: number
+  telemetryAge: number // seconds
+  cameraOk: boolean
+  gimbalOk: boolean
+  rssi: number // %
+  voltage: number // V
+  currentAmps: number
+  tempC: number
 }
 
 export interface Mission {
-  id: string;
-  orderRef: string;
-  title: string;
-  state: MissionState;
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
-  droneId: string;
-  operatorId: string;
-  customer: string;
-  location: string;
-  lat: number;
-  lng: number;
-  scheduledAt: string;
-  estimatedMinutes: number;
-  distanceKm: number;
-  flightPlanId: string;
-  maxAltitudeM: number;
-  notes: string;
-  rejectionReason?: string;
+  id: string
+  orderRef: string
+  title: string
+  state: MissionState
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
+  droneId: string
+  operatorId: string
+  customer: string
+  location: string
+  lat: number
+  lng: number
+  scheduledAt: string
+  estimatedMinutes: number
+  distanceKm: number
+  flightPlanId: string
+  maxAltitudeM: number
+  notes: string
+  rejectionReason?: string
 }
 
 export interface FlightToken {
-  token: string;
-  issuedAt: number;
-  expiresAt: number;
-  missionId: string;
-  droneId: string;
+  token: string
+  issuedAt: number
+  expiresAt: number
+  missionId: string
+  droneId: string
 }
 
-export type Role = 'operator' | 'customer' | 'manager' | 'sysop' | 'admin';
+export type Role = 'operator' | 'customer' | 'manager' | 'sysop' | 'admin'
 
 export type Screen =
   | 'operator-overview'
@@ -112,14 +108,38 @@ export type Screen =
   | 'mission-failed'
   | 'media-upload'
   | 'manual-upload'
-  | 'simulation-zones';
+  | 'simulation-zones'
 
 export type NavId =
-  | 'dashboard' | 'my-missions' | 'mission-control' | 'preflight' | 'media' | 'history' | 'zone-map'
-  | 'my-requests' | 'media-downloads' | 'billing' | 'support'
-  | 'team' | 'approvals' | 'fleet' | 'reports'
-  | 'fleet-health' | 'maintenance' | 'systems' | 'sys-alerts'
-  | 'users' | 'configuration' | 'audit' | 'integrations'
-  | 'notifications' | 'profile';
+  | 'dashboard'
+  | 'my-missions'
+  | 'mission-control'
+  | 'preflight'
+  | 'media'
+  | 'history'
+  | 'zone-map'
+  | 'my-requests'
+  | 'media-downloads'
+  | 'billing'
+  | 'support'
+  | 'team'
+  | 'approvals'
+  | 'fleet'
+  | 'reports'
+  | 'fleet-health'
+  | 'maintenance'
+  | 'systems'
+  | 'sys-alerts'
+  | 'users'
+  | 'configuration'
+  | 'audit'
+  | 'integrations'
+  | 'notifications'
+  | 'profile'
 
-export type ChecklistScenario = 'all-pass' | 'battery-fail' | 'hardware-fail' | 'telemetry-stale' | 'weather-warn';
+export type ChecklistScenario =
+  | 'all-pass'
+  | 'battery-fail'
+  | 'hardware-fail'
+  | 'telemetry-stale'
+  | 'weather-warn'

@@ -124,7 +124,9 @@ function useSimulationMapMeta() {
   return { meta, error }
 }
 
-function normalizeRing(coordinates: number[][] | undefined): [number, number][] {
+function normalizeRing(
+  coordinates: number[][] | undefined,
+): [number, number][] {
   if (!coordinates) return []
   const ring = coordinates
     .map((point) => [Number(point[0]), Number(point[1])] as [number, number])
@@ -161,7 +163,7 @@ function polygonContainsPoint(
     const [ax, ay] = ring[index]
     const [bx, by] = ring[index + 1]
     if (pointOnSegment(px, py, ax, ay, bx, by)) return true
-    if ((ay > py) !== (by > py)) {
+    if (ay > py !== by > py) {
       const xAtY = ax + ((py - ay) * (bx - ax)) / (by - ay)
       if (px < xAtY) inside = !inside
     }
@@ -170,10 +172,7 @@ function polygonContainsPoint(
   return inside
 }
 
-function findContainingZone(
-  point: [number, number],
-  zones: SimulationZone[],
-) {
+function findContainingZone(point: [number, number], zones: SimulationZone[]) {
   return zones.find((zone) => polygonContainsPoint(zone.coordinates, point))
 }
 
@@ -339,8 +338,10 @@ export function CustomerCreateRequestPage() {
     const rect = event.currentTarget.getBoundingClientRect()
     const mapAspect = (meta.maxX - meta.minX) / (meta.maxY - meta.minY)
     const boxAspect = rect.width / rect.height
-    const renderedWidth = boxAspect > mapAspect ? rect.height * mapAspect : rect.width
-    const renderedHeight = boxAspect > mapAspect ? rect.height : rect.width / mapAspect
+    const renderedWidth =
+      boxAspect > mapAspect ? rect.height * mapAspect : rect.width
+    const renderedHeight =
+      boxAspect > mapAspect ? rect.height : rect.width / mapAspect
     const offsetX = (rect.width - renderedWidth) / 2
     const offsetY = (rect.height - renderedHeight) / 2
     const localX = Math.max(
@@ -381,7 +382,9 @@ export function CustomerCreateRequestPage() {
     try {
       const response = await orderApi.createOrder(payload)
       setCreatedOrderId(response.id)
-      setNotice(`Order ${response.id} created successfully and waiting for review.`)
+      setNotice(
+        `Order ${response.id} created successfully and waiting for review.`,
+      )
     } catch (exception) {
       if (exception instanceof OrderApiError) {
         setError(exception.message)
@@ -490,14 +493,14 @@ export function CustomerCreateRequestPage() {
                 onClick={selectMapPoint}
                 disabled={!meta}
               >
-                <img
-                  alt="Local simulation map"
-                  src={mapImageUrl}
-                />
+                <img alt="Local simulation map" src={mapImageUrl} />
                 {target ? (
                   <span
                     className="simulation-target-marker"
-                    style={{ left: `${target.markerX}%`, top: `${target.markerY}%` }}
+                    style={{
+                      left: `${target.markerX}%`,
+                      top: `${target.markerY}%`,
+                    }}
                   />
                 ) : null}
               </button>
@@ -562,12 +565,12 @@ export function CustomerCreateRequestPage() {
                     }
                   >
                     {preferredTimes.map((time) => (
-                    <option key={time.id} value={time.id}>
-                      {time.name}
-                      {time.startTime && time.endTime
-                        ? ` (${time.startTime.slice(0, 5)} - ${time.endTime.slice(0, 5)})`
-                        : ''}
-                    </option>
+                      <option key={time.id} value={time.id}>
+                        {time.name}
+                        {time.startTime && time.endTime
+                          ? ` (${time.startTime.slice(0, 5)} - ${time.endTime.slice(0, 5)})`
+                          : ''}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -638,7 +641,9 @@ export function CustomerCreateRequestPage() {
               <div className="request-readonly-item">
                 <span>Order Status</span>
                 <strong>PENDING</strong>
-                <small>Created automatically when the order is submitted.</small>
+                <small>
+                  Created automatically when the order is submitted.
+                </small>
               </div>
             </div>
           </section>
@@ -662,7 +667,9 @@ export function CustomerCreateRequestPage() {
             <small>
               Zone:{' '}
               {target?.zone?.name ??
-                (target ? 'Outside configured monitoring zones' : 'Not selected')}
+                (target
+                  ? 'Outside configured monitoring zones'
+                  : 'Not selected')}
             </small>
             <div className="request-summary-map-preview">
               <img

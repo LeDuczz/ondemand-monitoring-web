@@ -30,7 +30,8 @@ export default function SimulationZones() {
           Zone map
         </h1>
         <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-          Simulation zones and thermal areas can be adjusted and saved to the database.
+          Simulation zones and thermal areas can be adjusted and saved to the
+          database.
         </p>
       </div>
       <iframe
@@ -45,5 +46,5 @@ export default function SimulationZones() {
         }}
       />
     </div>
-  );
+  )
 }

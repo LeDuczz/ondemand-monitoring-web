@@ -41,4 +41,14 @@ describe('ordersApi (mock mode)', () => {
     expect(preview.eligibleDroneCount).toBe(4)
     expect(preview.topDrones[0].name).toBe('DRN-06 Cú Mèo')
   })
+
+  it('saveInternalNote upserts the note', async () => {
+    setHttpTransport(mockFetch)
+    const saved = await ordersApi.saveInternalNote(
+      'ord-2609-0157',
+      'Ghi chú mới',
+    )
+    expect(saved.note).toBe('Ghi chú mới')
+    expect(saved.authorName).toBe('Lê Thị Thanh Hằng')
+  })
 })

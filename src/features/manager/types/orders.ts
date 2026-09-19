@@ -107,3 +107,13 @@ export type OrderResourcePreview = {
   topDrones: ResourceCandidate[]
   topPilots: ResourceCandidate[]
 }
+
+/**
+ * `PUT /api/orders/{id}/internal-note` — PROPOSED, brief lists the "Ghi chú
+ * nội bộ" block [TK MNG-03] but no backing table/endpoint.
+ */
+export type OrderInternalNote = {
+  note: string
+  authorName: string
+  updatedAt: string
+}

@@ -4,10 +4,12 @@
 //   GET  /api/orders/{id}                    [TK]
 //   GET  /api/orders/{id}/analysis/latest    [BRIEF C4]
 //   GET  /api/orders/{id}/resource-preview   PROPOSED (no source endpoint)
+//   PUT  /api/orders/{id}/internal-note      PROPOSED (no source endpoint)
 import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
 import type {
   OrderAnalysis,
   OrderDetail,
+  OrderInternalNote,
   OrderQueueItem,
   OrderResourcePreview,
 } from '../../features/manager/types/orders'
@@ -48,6 +50,8 @@ type SeedOrder = {
   warningCount: number
 }
 
+const REVIEWER_NAME = 'Lê Thị Thanh Hằng'
+
 // Each collection is created from the exact object/array we hold a
 // reference to (not a nested property read off a bigger createCollection()
 // result) — `createCollection`'s reset only keeps identity for the value it
@@ -62,6 +66,9 @@ const analyses = createCollection(analysesSeed.analyses) as unknown as Record<
 const resourcePreviews = createCollection(
   analysesSeed.resourcePreviews,
 ) as unknown as Record<string, OrderResourcePreview>
+const internalNotes = createCollection(
+  analysesSeed.internalNotes,
+) as unknown as Record<string, OrderInternalNote>
 
 function findOrder(id: string): SeedOrder | undefined {
   return orders.find((o) => o.id === id || o.code === id)
@@ -188,6 +195,22 @@ registerMockRoutes([
       if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
       const found = resourcePreviews[order.code]
       return ok(found ?? fallbackPreviewByVerdict[order.aiVerdict])
+    },
+  },
+  {
+    method: 'PUT',
+    path: '/api/orders/:id/internal-note',
+    handler: ({ params, body }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      const { note } = (body ?? {}) as { note?: string }
+      const value: OrderInternalNote = {
+        note: note ?? '',
+        authorName: REVIEWER_NAME,
+        updatedAt: new Date().toISOString(),
+      }
+      internalNotes[order.code] = value
+      return ok(value)
     },
   },
 ])

@@ -89,13 +89,26 @@ describe('GET /api/orders/{id}/analysis/latest', () => {
   })
 })
 
-describe('GET /api/orders/{id}/resource-preview', () => {
-  it('returns the design numbers for ORD-2609-0160', async () => {
+describe('resource-preview and internal-note', () => {
+  it('GET resource-preview returns the design numbers for ORD-2609-0160', async () => {
     const { payload } = await call(
       'GET',
       '/api/orders/ord-2609-0160/resource-preview',
     )
     expect(payload.data.eligibleDroneCount).toBe(2)
     expect(payload.data.eligiblePilotCount).toBe(1)
+  })
+
+  it('PUT internal-note upserts and returns the note', async () => {
+    const { status, payload } = await call(
+      'PUT',
+      '/api/orders/ord-2609-0157/internal-note',
+      {
+        note: 'Ghi chú test',
+      },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.note).toBe('Ghi chú test')
+    expect(payload.data.authorName).toBe('Lê Thị Thanh Hằng')
   })
 })

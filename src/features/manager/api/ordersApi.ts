@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/httpClient'
 import type {
   OrderAnalysis,
   OrderDetail,
+  OrderInternalNote,
   OrderQueueItem,
   OrderResourcePreview,
 } from '../types/orders'
@@ -37,5 +38,13 @@ export const ordersApi = {
       `/api/orders/${id}/resource-preview`,
       { signal },
     )
+  },
+
+  /** `PUT /api/orders/{id}/internal-note` — PROPOSED, no source endpoint. */
+  saveInternalNote(id: string, note: string): Promise<OrderInternalNote> {
+    return apiRequest<OrderInternalNote>(`/api/orders/${id}/internal-note`, {
+      method: 'PUT',
+      body: { note },
+    })
   },
 }

@@ -186,6 +186,42 @@
       "aiVerdict": "RISKY",
       "blockerCount": 0,
       "warningCount": 2
+    },
+    {
+      "id": "ord-2609-0153",
+      "code": "ORD-2609-0153",
+      "status": "APPROVED",
+      "customer": {
+        "fullName": "Trần Thị Thu Hà",
+        "companyName": "",
+        "email": null,
+        "phone": null
+      },
+      "serviceName": "Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước",
+      "preferredDate": "24/09",
+      "preferredTimeName": "Sáng",
+      "preferredWindow": null,
+      "submittedAt": "2026-09-17T09:10:00+07:00",
+      "addressText": "KCN Hiệp Phước, Nhà Bè",
+      "center": {
+        "lat": 10.6402,
+        "lon": 106.74
+      },
+      "radiusM": 300,
+      "nearestBase": "Trạm Nhà Bè",
+      "mediaRequirements": [
+        {
+          "label": "VIDEO × 1 · 240 giây"
+        },
+        {
+          "label": "PHOTO × 30 · 640×512"
+        }
+      ],
+      "purpose": null,
+      "attachments": null,
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
     }
   ]
 }

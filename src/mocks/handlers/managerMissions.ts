@@ -1,0 +1,133 @@
+// Mock handlers for MNG-04 (create mission from an approved order) and
+// MNG-05 (resource dispatch). Endpoints, per the P5 task brief:
+//   POST /api/orders/{id}/missions                      [BRIEF C4 = TK]
+//   GET  /api/missions/{id}                              [BE]
+//   GET  /api/missions/{id}/resource-suggestions         [BRIEF C4]
+//   POST /api/missions/{id}/assign-drone?droneId=        [BE]
+//   POST /api/missions/{id}/assign-operator?operatorId=  [BE]
+//   POST /api/missions/{id}/assignments/{aid}/release    [BRIEF C4 = TK]
+import type { Mission } from '../../features/manager/types/missions'
+import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
+import { fail, created, registerMockRoutes } from '../mockServer'
+import { findOrder } from './ordersStore'
+import {
+  findMissionsForOrder,
+  missions,
+  newMinimalMission,
+  type StoredMission,
+} from './missionsStore'
+
+// PROPOSED deterministic trigger for the 422 FLIGHT_PLAN_GENERATION_FAILED
+// state [TK MNG-04] — no source gives a real generator failure condition.
+const FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M = 800
+
+function toMissionDto(m: StoredMission): Mission {
+  return {
+    id: m.id,
+    orderId: m.orderId,
+    orderCode: m.orderCode,
+    missionCode: m.missionCode,
+    status: m.status,
+    attemptNumber: m.attemptNumber,
+    droneId: m.droneId,
+    operatorId: m.operatorId,
+    droneAssignmentId: m.droneAssignmentId,
+    operatorAssignmentId: m.operatorAssignmentId,
+    scheduledStartAt: m.scheduledStartAt,
+    scheduledEndAt: m.scheduledEndAt,
+    addressText: m.addressText,
+    centerLat: m.centerLat,
+    centerLon: m.centerLon,
+    radiusM: m.radiusM,
+    requiredSensor: m.requiredSensor,
+    nearestBase: m.nearestBase,
+    mediaRequirements: m.mediaRequirements as Mission['mediaRequirements'],
+    flightPlan: m.flightPlan as Mission['flightPlan'],
+    waypoints: m.waypoints as Mission['waypoints'],
+  }
+}
+
+registerMockRoutes([
+  {
+    method: 'POST',
+    path: '/api/orders/:id/missions',
+    handler: ({ params, body }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (order.status !== 'APPROVED') {
+        return fail(
+          409,
+          'ORDER_NOT_APPROVED',
+          'Đơn chưa được duyệt, chưa thể tạo mission.',
+        )
+      }
+
+      const req = (body ?? {}) as {
+        scheduledStart?: string
+        scheduledEnd?: string
+        flightPlan?: {
+          planType: 'ORBIT' | 'GRID' | 'POINT'
+          centerLat: number
+          centerLon: number
+          radiusM: number
+          altitudeM: number
+          speedMs: number | null
+          estimatedDurationSec: number
+          generatedBy: 'SYSTEM' | 'MANUAL'
+        }
+        waypoints?: StoredMission['waypoints']
+      }
+
+      if (!req.scheduledStart || !req.scheduledEnd || !req.flightPlan) {
+        return fail(
+          400,
+          'VALIDATION_ERROR',
+          'Thiếu thông tin lịch bay hoặc flight plan',
+          { flightPlan: 'flightPlan là bắt buộc' },
+        )
+      }
+
+      if (req.flightPlan.altitudeM > NO_FLY_CEILING_M) {
+        return fail(
+          400,
+          'VALIDATION_ERROR',
+          `Độ cao ${req.flightPlan.altitudeM} m vượt trần cấm bay ${NO_FLY_CEILING_M} m.`,
+          { altitudeM: `Không được vượt quá ${NO_FLY_CEILING_M} m` },
+        )
+      }
+
+      if (req.flightPlan.radiusM > FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M) {
+        return fail(
+          422,
+          'FLIGHT_PLAN_GENERATION_FAILED',
+          'Dịch vụ tạo đường bay báo lỗi cho khu vực này. Bạn có thể nhập waypoint thủ công.',
+        )
+      }
+
+      // Conflict resolution [documented in evd/P5-manager-mission-dispatch.md]:
+      // the backend's `POST /orders/{id}/approve` already creates a bare
+      // CREATED mission with no plan. Attach this request's plan/schedule
+      // to that mission if one exists without a plan yet; otherwise this is
+      // a re-plan attempt (e.g. after a manual retry) — start a new
+      // `...-N+1` mission attempt.
+      const existing = findMissionsForOrder(order.id).find(
+        (m) => m.status === 'CREATED' && !m.flightPlan,
+      )
+      const mission = existing ?? newMinimalMission(order.id, order.code)
+      if (!existing) missions.push(mission)
+
+      mission.scheduledStartAt = req.scheduledStart
+      mission.scheduledEndAt = req.scheduledEnd
+      mission.flightPlan = req.flightPlan
+      mission.waypoints = req.waypoints ?? []
+      mission.centerLat = req.flightPlan.centerLat
+      mission.centerLon = req.flightPlan.centerLon
+      mission.radiusM = req.flightPlan.radiusM
+
+      return created(toMissionDto(mission), 'Đã tạo flight plan cho mission')
+    },
+  },
+])
+
+/** Test-only escape hatch to assert on the in-memory mock collections. */
+export const __testing = { missions }

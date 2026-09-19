@@ -9,5 +9,6 @@
 import './handlers/auth'
 import './handlers/managerDashboard'
 import './handlers/managerOrders'
+import './handlers/managerMissions'
 
 export { mockFetch } from './mockServer'

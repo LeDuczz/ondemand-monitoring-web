@@ -7,7 +7,6 @@
 //   PUT  /api/orders/{id}/internal-note      PROPOSED (no source endpoint)
 //   POST /api/orders/{id}/approve            [BE] (creates a mission)
 //   POST /api/orders/{id}/approval           [BRIEF C4] {decision, reason}
-import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
 import type {
   ApprovalDecision,
   OrderAnalysis,
@@ -18,53 +17,9 @@ import type {
 } from '../../features/manager/types/orders'
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
-import ordersSeed from '../data/orders.json'
 import analysesSeed from '../data/order-analyses.json'
-import missionsSeed from '../data/missions.json'
-
-type SeedOrder = {
-  id: string
-  code: string
-  status: OrderStatus
-  customer: {
-    fullName: string
-    companyName: string
-    email: string | null
-    phone: string | null
-  }
-  serviceName: string
-  preferredDate: string
-  preferredTimeName: string
-  preferredWindow: string | null
-  submittedAt: string
-  addressText: string | null
-  center: { lat: number; lon: number } | null
-  radiusM: number | null
-  nearestBase: string | null
-  mediaRequirements: { label: string }[] | null
-  purpose: string | null
-  attachments:
-    | {
-        name: string
-        sizeLabel: string
-        mimeType: string
-        url: string
-      }[]
-    | null
-  aiVerdict: AiVerdict
-  blockerCount: number
-  warningCount: number
-}
-
-type Mission = {
-  id: string
-  orderId: string
-  missionCode: string
-  status: string
-  droneId: string | null
-  operatorId: string | null
-  scheduledStartAt: string | null
-}
+import { missions, newMinimalMission } from './missionsStore'
+import { findOrder, orders, type SeedOrder } from './ordersStore'
 
 type Approval = {
   orderId: string
@@ -83,7 +38,6 @@ const REVIEWER_ID = 'staff-hang-le'
 // was given directly (arrays are spliced in place; objects have their keys
 // replaced in place). Reading `createCollection(seed).nested` instead would
 // leave `nested` pointing at the pre-reset value forever.
-const orders = createCollection(ordersSeed.orders) as SeedOrder[]
 const analyses = createCollection(analysesSeed.analyses) as unknown as Record<
   string,
   OrderAnalysis
@@ -94,12 +48,7 @@ const resourcePreviews = createCollection(
 const internalNotes = createCollection(
   analysesSeed.internalNotes,
 ) as unknown as Record<string, OrderInternalNote>
-const missions = createCollection(missionsSeed.missions) as Mission[]
 const approvals = createCollection([] as Approval[])
-
-function findOrder(id: string): SeedOrder | undefined {
-  return orders.find((o) => o.id === id || o.code === id)
-}
 
 function latestApprovalFor(orderId: string): Approval | undefined {
   const forOrder = approvals.filter((a) => a.orderId === orderId)
@@ -244,16 +193,7 @@ registerMockRoutes([
         )
       }
       order.status = 'APPROVED'
-      const mission: Mission = {
-        id: `msn-${order.code.slice(4)}-1`,
-        orderId: order.id,
-        missionCode: `MSN-${order.code.slice(4)}-1`,
-        status: 'CREATED',
-        droneId: null,
-        operatorId: null,
-        scheduledStartAt: null,
-      }
-      missions.push(mission)
+      missions.push(newMinimalMission(order.id, order.code))
       return ok(undefined, 'Order approved and mission created successfully')
     },
   },

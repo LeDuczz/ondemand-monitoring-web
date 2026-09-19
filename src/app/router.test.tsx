@@ -1,6 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { authSession } from '../features/auth/api/authApi'
+import { managerApi } from '../features/manager/api/dashboardApi'
+import type { ManagerDashboardResponse } from '../features/manager/types/dashboard'
 import { Router } from './router'
 
 // jsdom does not fire `hashchange` automatically when `location.hash` is set
@@ -72,5 +75,61 @@ describe('Router - auth hash sync (regression)', () => {
     expect(
       screen.getByRole('heading', { name: 'Đăng nhập' }),
     ).toBeInTheDocument()
+  })
+})
+
+describe('Router - manager routes (#portal/staff*)', () => {
+  const sampleDashboard: ManagerDashboardResponse = {
+    kpis: {
+      pendingOrders: { count: 6, detail: '2 quá 24h' },
+      missionsToday: { count: 5, detail: '3 đã xong' },
+      missionsInFlight: { count: 1, detail: '' },
+      dronesReady: { ready: 5, total: 9, detail: '1 bảo trì' },
+      actionItems: { count: 4, detail: '2 upload · 2 lỗi media' },
+    },
+    missionStatusByDay: [],
+    droneStatusBreakdown: [],
+    actionItems: [],
+    flyingMission: null,
+  }
+
+  beforeEach(() => {
+    localStorage.setItem('fieldwise.accessToken', 'mock-staff-token')
+    localStorage.setItem(
+      'fieldwise.user',
+      JSON.stringify({
+        id: '1',
+        fullName: 'Lê Thị Thanh Hằng',
+        email: 'hang.le@odms.vn',
+        role: 'STAFF',
+      }),
+    )
+  })
+
+  afterEach(() => {
+    authSession.clear()
+    vi.restoreAllMocks()
+  })
+
+  it('routes a STAFF user hitting #portal/staff to the Manager dashboard', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
+    window.location.hash = '#portal/staff'
+    render(<Router />)
+
+    await waitFor(() =>
+      expect(screen.getByText('Dashboard điều hành')).toBeInTheDocument(),
+    )
+  })
+
+  it('routes nested #portal/staff/... hashes to the Manager area too', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
+    window.location.hash = '#portal/staff/orders'
+    render(<Router />)
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Màn hình đang được xây dựng'),
+      ).toBeInTheDocument(),
+    )
   })
 })

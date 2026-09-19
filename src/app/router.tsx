@@ -11,7 +11,7 @@ import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
 import { CustomerHomePage } from '../features/customer/pages/CustomerHomePage'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
-import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
+import { ManagerApp } from '../features/manager/ManagerApp'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
@@ -75,10 +75,10 @@ export function Router() {
         <CustomerCreateRequestPage />
       </RoleRoute>
     )
-  if (hash === '#portal/staff')
+  if (hash === '#portal/staff' || hash.startsWith('#portal/staff/'))
     return (
       <RoleRoute role="STAFF">
-        <StaffHomePage />
+        <ManagerApp />
       </RoleRoute>
     )
   if (hash === '#portal/drone-operator')

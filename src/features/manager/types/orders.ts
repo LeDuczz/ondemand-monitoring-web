@@ -88,3 +88,22 @@ export type OrderAnalysis = {
   llmSummary: string
   findings: AnalysisFinding[]
 }
+
+export type ResourceCandidate = {
+  name: string
+  score: number
+  /** km for drones, missions/week label for pilots — see `distanceLabel`. */
+  distanceLabel: string
+}
+
+/**
+ * `GET /api/orders/{id}/resource-preview` — PROPOSED, no endpoint found in
+ * [BE]/[BRIEF]/[TK API table]; content ("Nguồn lực khả dụng · xem trước · chưa
+ * phân công") only exists as rendered numbers in [TK MNG-03].
+ */
+export type OrderResourcePreview = {
+  eligibleDroneCount: number
+  eligiblePilotCount: number
+  topDrones: ResourceCandidate[]
+  topPilots: ResourceCandidate[]
+}

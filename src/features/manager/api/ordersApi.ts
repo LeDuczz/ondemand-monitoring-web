@@ -3,6 +3,7 @@ import type {
   OrderAnalysis,
   OrderDetail,
   OrderQueueItem,
+  OrderResourcePreview,
 } from '../types/orders'
 
 /** MNG-02 / MNG-03 order-review APIs. See evd/00-PLAN.md §3. */
@@ -25,5 +26,16 @@ export const ordersApi = {
     return apiRequest<OrderAnalysis>(`/api/orders/${id}/analysis/latest`, {
       signal,
     })
+  },
+
+  /** `GET /api/orders/{id}/resource-preview` — PROPOSED, no source endpoint. */
+  getResourcePreview(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<OrderResourcePreview> {
+    return apiRequest<OrderResourcePreview>(
+      `/api/orders/${id}/resource-preview`,
+      { signal },
+    )
   },
 }

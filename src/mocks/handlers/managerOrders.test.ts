@@ -88,3 +88,14 @@ describe('GET /api/orders/{id}/analysis/latest', () => {
     expect(payload.data.findings).toEqual([])
   })
 })
+
+describe('GET /api/orders/{id}/resource-preview', () => {
+  it('returns the design numbers for ORD-2609-0160', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0160/resource-preview',
+    )
+    expect(payload.data.eligibleDroneCount).toBe(2)
+    expect(payload.data.eligiblePilotCount).toBe(1)
+  })
+})

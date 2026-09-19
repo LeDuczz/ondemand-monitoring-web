@@ -34,4 +34,11 @@ describe('ordersApi (mock mode)', () => {
     expect(analysis.overallVerdict).toBe('FEASIBLE')
     expect(analysis.findings).toHaveLength(2)
   })
+
+  it('getResourcePreview resolves the preview panel', async () => {
+    setHttpTransport(mockFetch)
+    const preview = await ordersApi.getResourcePreview('ord-2609-0157')
+    expect(preview.eligibleDroneCount).toBe(4)
+    expect(preview.topDrones[0].name).toBe('DRN-06 Cú Mèo')
+  })
 })

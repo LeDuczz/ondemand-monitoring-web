@@ -3,11 +3,13 @@
 //   GET  /api/orders?status=PENDING          [TK path; BE OrderStatus value]
 //   GET  /api/orders/{id}                    [TK]
 //   GET  /api/orders/{id}/analysis/latest    [BRIEF C4]
+//   GET  /api/orders/{id}/resource-preview   PROPOSED (no source endpoint)
 import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
 import type {
   OrderAnalysis,
   OrderDetail,
   OrderQueueItem,
+  OrderResourcePreview,
 } from '../../features/manager/types/orders'
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
@@ -57,6 +59,9 @@ const analyses = createCollection(analysesSeed.analyses) as unknown as Record<
   string,
   OrderAnalysis
 >
+const resourcePreviews = createCollection(
+  analysesSeed.resourcePreviews,
+) as unknown as Record<string, OrderResourcePreview>
 
 function findOrder(id: string): SeedOrder | undefined {
   return orders.find((o) => o.id === id || o.code === id)
@@ -99,6 +104,31 @@ function toDetail(order: SeedOrder): OrderDetail {
     purpose: order.purpose,
     attachments: order.attachments,
   }
+}
+
+// Fallback resource-preview counts by verdict, reusing the same two numbers
+// [TK MNG-03] shows for its FEASIBLE (4/3) and RISKY (2/1) states — not
+// invented per order, just the same verdict-keyed default applied to orders
+// the design didn't render a resource panel for.
+const fallbackPreviewByVerdict: Record<AiVerdict, OrderResourcePreview> = {
+  FEASIBLE: {
+    eligibleDroneCount: 4,
+    eligiblePilotCount: 3,
+    topDrones: [],
+    topPilots: [],
+  },
+  RISKY: {
+    eligibleDroneCount: 2,
+    eligiblePilotCount: 1,
+    topDrones: [],
+    topPilots: [],
+  },
+  INFEASIBLE: {
+    eligibleDroneCount: 0,
+    eligiblePilotCount: 0,
+    topDrones: [],
+    topPilots: [],
+  },
 }
 
 registerMockRoutes([
@@ -148,6 +178,16 @@ registerMockRoutes([
         findings: [],
       }
       return ok(fallback)
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/orders/:id/resource-preview',
+    handler: ({ params }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      const found = resourcePreviews[order.code]
+      return ok(found ?? fallbackPreviewByVerdict[order.aiVerdict])
     },
   },
 ])

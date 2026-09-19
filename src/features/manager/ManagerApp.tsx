@@ -7,7 +7,10 @@ import { ManagerLayout } from './components/ManagerLayout'
 import { CreateMissionPage } from './pages/CreateMissionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { DispatchPage } from './pages/DispatchPage'
+import { DronesPage } from './pages/DronesPage'
 import { LivePage } from './pages/LivePage'
+import { MaintenancePage } from './pages/MaintenancePage'
+import { MissionsListPage } from './pages/MissionsListPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
 import { SchedulePage } from './pages/SchedulePage'
@@ -97,6 +100,10 @@ function renderScreen(route: ManagerRoute) {
     return <DispatchPage missionId={route.missionId} />
   if (route.screen === 'schedule') return <SchedulePage />
   if (route.screen === 'live') return <LivePage missionId={route.missionId} />
+  if (route.screen === 'missions')
+    return <MissionsListPage missionId={route.missionId} />
+  if (route.screen === 'drones') return <DronesPage droneId={route.droneId} />
+  if (route.screen === 'maintenance') return <MaintenancePage />
 
   if (route.screen === 'notFound') {
     return (

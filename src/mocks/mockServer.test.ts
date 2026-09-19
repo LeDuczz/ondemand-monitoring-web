@@ -6,6 +6,7 @@ import {
   fail,
   mockFetch,
   ok,
+  passThrough,
   registerMockRoutes,
   resetMockRoutes,
 } from './mockServer'
@@ -98,6 +99,28 @@ describe('mockFetch', () => {
     const response = await mockFetch(url, { method: 'GET' })
 
     expect(fetchSpy).toHaveBeenCalledWith(url, { method: 'GET' })
+    expect(response).toBe(realResponse)
+  })
+
+  it('forwards to the real fetch when a matched handler returns passThrough()', async () => {
+    const realResponse = new Response('{}', { status: 200 })
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(realResponse)
+
+    registerMockRoutes([
+      {
+        method: 'POST',
+        path: '/api/v1/auth/login',
+        handler: () => passThrough(),
+      },
+    ])
+
+    const init = { method: 'POST', body: JSON.stringify({ email: 'x' }) }
+    const url = `${env.apiBaseUrl}/api/v1/auth/login`
+    const response = await mockFetch(url, init)
+
+    expect(fetchSpy).toHaveBeenCalledWith(url, init)
     expect(response).toBe(realResponse)
   })
 

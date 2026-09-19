@@ -9,10 +9,15 @@ export type MockEnvelope<T = unknown> = {
   timestamp: string
 }
 
-export type MockResult<T = unknown> = {
-  status: number
-  envelope: MockEnvelope<T>
-}
+export type MockResult<T = unknown> =
+  | {
+      status: number
+      envelope: MockEnvelope<T>
+      passThrough?: false
+    }
+  | {
+      passThrough: true
+    }
 
 export type MockContext = {
   params: Record<string, string>
@@ -55,6 +60,16 @@ export function created<T>(data: T, message = 'Created'): MockResult<T> {
       timestamp: new Date().toISOString(),
     },
   }
+}
+
+/**
+ * A handler returns this to opt an individual request out of mocking — the
+ * request falls through to the real network exactly like an unmatched
+ * route. Used for routes that mock *some* inputs (e.g. known demo emails)
+ * but must forward everything else to the real backend.
+ */
+export function passThrough(): MockResult {
+  return { passThrough: true }
 }
 
 /** Builds an error envelope + HTTP status, e.g. `fail(404, 'NOT_FOUND', …)`. */
@@ -171,6 +186,10 @@ export async function mockFetch(
   }
 
   const result = await matched.route.handler(ctx)
+
+  if (result.passThrough) {
+    return globalThis.fetch(input, init)
+  }
 
   return new Response(JSON.stringify(result.envelope), {
     status: result.status,

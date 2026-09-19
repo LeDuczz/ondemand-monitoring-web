@@ -207,3 +207,34 @@ describe('POST /api/missions/{id}/assign-drone', () => {
     expect(status).toBe(404)
   })
 })
+
+describe('POST /api/missions/{id}/assign-operator', () => {
+  it('assigns and, after a drone is already set, reaches WAITING_OPERATOR_ACCEPTANCE', async () => {
+    await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone?droneId=DRN-01',
+    )
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-operator?operatorId=HT',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('WAITING_OPERATOR_ACCEPTANCE')
+  })
+
+  it('400s when operatorId is missing', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-operator',
+    )
+    expect(status).toBe(400)
+  })
+
+  it('404s for an unknown operator', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-operator?operatorId=ZZ',
+    )
+    expect(status).toBe(404)
+  })
+})

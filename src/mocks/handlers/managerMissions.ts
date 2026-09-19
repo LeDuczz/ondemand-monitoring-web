@@ -16,6 +16,7 @@ import { createCollection } from '../db'
 import { fail, ok, created, registerMockRoutes } from '../mockServer'
 import resourceSuggestionsSeed from '../data/resource-suggestions.json'
 import dronesSeed from '../data/drones.json'
+import operatorsSeed from '../data/operators.json'
 import { findOrder } from './ordersStore'
 import {
   findMissionById,
@@ -36,10 +37,17 @@ type SeedDrone = {
   existingBookings?: { missionCode: string; start: string; end: string }[]
 }
 
+type SeedOperator = {
+  id: string
+  code: string | null
+  fullName: string
+}
+
 const suggestions = createCollection(
   resourceSuggestionsSeed,
 ) as typeof resourceSuggestionsSeed
 const drones = createCollection(dronesSeed.drones) as SeedDrone[]
+const operators = createCollection(operatorsSeed.operators) as SeedOperator[]
 
 function toMissionDto(m: StoredMission): Mission {
   return {
@@ -264,7 +272,32 @@ registerMockRoutes([
       return ok(toMissionDto(mission), 'Đã gán Drone thành công')
     },
   },
+  {
+    method: 'POST',
+    path: '/api/missions/:id/assign-operator',
+    handler: ({ params, query }) => {
+      const mission = findMissionById(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      const operatorId = query.get('operatorId')
+      if (!operatorId) {
+        return fail(400, 'VALIDATION_ERROR', 'Thiếu operatorId', {
+          operatorId: 'operatorId là bắt buộc',
+        })
+      }
+      const operator = operators.find(
+        (o) => o.id === operatorId || o.code === operatorId,
+      )
+      if (!operator) return fail(404, 'NOT_FOUND', 'Không tìm thấy phi công')
+
+      mission.operatorId = operator.id
+      mission.operatorAssignmentId = `moa-${mission.id}-${operator.id}`
+      mission.status = mission.droneId
+        ? 'WAITING_OPERATOR_ACCEPTANCE'
+        : 'RESOURCE_ASSIGNING'
+      return ok(toMissionDto(mission), 'Đã gán Operator thành công')
+    },
+  },
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */
-export const __testing = { missions, drones }
+export const __testing = { missions, drones, operators }

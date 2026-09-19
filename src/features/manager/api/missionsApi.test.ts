@@ -115,4 +115,18 @@ describe('missionsApi (mock mode)', () => {
       expect((err as ApiError).code).toBe('SCHEDULE_CONFLICT')
     }
   })
+
+  it('assignDrone then assignOperator moves the mission to WAITING_OPERATOR_ACCEPTANCE', async () => {
+    setHttpTransport(mockFetch)
+    const afterDrone = await missionsApi.assignDrone(
+      'msn-2609-0153-1',
+      'DRN-01',
+    )
+    expect(afterDrone.status).toBe('RESOURCE_ASSIGNING')
+    const afterOperator = await missionsApi.assignOperator(
+      'msn-2609-0153-1',
+      'HT',
+    )
+    expect(afterOperator.status).toBe('WAITING_OPERATOR_ACCEPTANCE')
+  })
 })

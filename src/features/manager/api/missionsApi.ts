@@ -55,4 +55,12 @@ export const missionsApi = {
       query: { droneId },
     })
   },
+
+  /** `POST /api/missions/{id}/assign-operator?operatorId=` [BE]. */
+  assignOperator(missionId: string, operatorId: string): Promise<Mission> {
+    return apiRequest<Mission>(`/api/missions/${missionId}/assign-operator`, {
+      method: 'POST',
+      query: { operatorId },
+    })
+  },
 }

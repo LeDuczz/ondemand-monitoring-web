@@ -238,3 +238,43 @@ describe('POST /api/missions/{id}/assign-operator', () => {
     expect(status).toBe(404)
   })
 })
+
+describe('POST /api/missions/{id}/assignments/{aid}/release', () => {
+  it('400s when releaseReason is blank', async () => {
+    await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone?droneId=DRN-01',
+    )
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assignments/mda-msn-2609-0153-1-drn-01/release',
+      { releaseReason: '' },
+    )
+    expect(status).toBe(400)
+    expect(payload.errors.releaseReason).toBeDefined()
+  })
+
+  it('releases the drone assignment and returns the mission to CREATED', async () => {
+    await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone?droneId=DRN-01',
+    )
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assignments/mda-msn-2609-0153-1-drn-01/release',
+      { releaseReason: 'Drone bị gọi bảo trì khẩn' },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('CREATED')
+    expect(payload.data.droneId).toBeNull()
+  })
+
+  it('404s for an assignment id that does not belong to the mission', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assignments/not-a-real-id/release',
+      { releaseReason: 'x' },
+    )
+    expect(status).toBe(404)
+  })
+})

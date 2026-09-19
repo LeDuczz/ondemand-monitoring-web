@@ -63,4 +63,16 @@ export const missionsApi = {
       query: { operatorId },
     })
   },
+
+  /** `POST /api/missions/{id}/assignments/{aid}/release` [BRIEF C4 = TK]. */
+  releaseAssignment(
+    missionId: string,
+    assignmentId: string,
+    releaseReason: string,
+  ): Promise<Mission> {
+    return apiRequest<Mission>(
+      `/api/missions/${missionId}/assignments/${assignmentId}/release`,
+      { method: 'POST', body: { releaseReason } },
+    )
+  },
 }

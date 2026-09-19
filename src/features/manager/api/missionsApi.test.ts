@@ -129,4 +129,28 @@ describe('missionsApi (mock mode)', () => {
     )
     expect(afterOperator.status).toBe('WAITING_OPERATOR_ACCEPTANCE')
   })
+
+  it('releaseAssignment requires a non-blank reason', async () => {
+    setHttpTransport(mockFetch)
+    await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-01')
+    await expect(
+      missionsApi.releaseAssignment(
+        'msn-2609-0153-1',
+        'mda-msn-2609-0153-1-drn-01',
+        '',
+      ),
+    ).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('releaseAssignment releases the drone and returns the mission to CREATED', async () => {
+    setHttpTransport(mockFetch)
+    await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-01')
+    const released = await missionsApi.releaseAssignment(
+      'msn-2609-0153-1',
+      'mda-msn-2609-0153-1-drn-01',
+      'Drone bị gọi bảo trì khẩn',
+    )
+    expect(released.status).toBe('CREATED')
+    expect(released.droneId).toBeNull()
+  })
 })

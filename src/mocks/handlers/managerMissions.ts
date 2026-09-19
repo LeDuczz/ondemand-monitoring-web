@@ -297,6 +297,36 @@ registerMockRoutes([
       return ok(toMissionDto(mission), 'Đã gán Operator thành công')
     },
   },
+  {
+    method: 'POST',
+    path: '/api/missions/:id/assignments/:aid/release',
+    handler: ({ params, body }) => {
+      const mission = findMissionById(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      const { releaseReason } = (body ?? {}) as { releaseReason?: string }
+      if (!releaseReason || !releaseReason.trim()) {
+        return fail(400, 'VALIDATION_ERROR', 'Yêu cầu nhập lý do thu hồi', {
+          releaseReason: 'Lý do là bắt buộc',
+        })
+      }
+      if (
+        params.aid !== mission.droneAssignmentId &&
+        params.aid !== mission.operatorAssignmentId
+      ) {
+        return fail(404, 'NOT_FOUND', 'Không tìm thấy assignment')
+      }
+      if (params.aid === mission.droneAssignmentId) {
+        mission.droneId = null
+        mission.droneAssignmentId = null
+      }
+      if (params.aid === mission.operatorAssignmentId) {
+        mission.operatorId = null
+        mission.operatorAssignmentId = null
+      }
+      mission.status = 'CREATED'
+      return ok(toMissionDto(mission), 'Đã thu hồi phân công')
+    },
+  },
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */

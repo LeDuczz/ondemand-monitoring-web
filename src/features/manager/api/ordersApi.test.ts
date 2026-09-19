@@ -35,11 +35,18 @@ describe('ordersApi (mock mode)', () => {
     expect(analysis.findings).toHaveLength(2)
   })
 
-  it('getResourcePreview resolves the preview panel', async () => {
+  it('getResourcePreview resolves the preview panel for a sourced order', async () => {
     setHttpTransport(mockFetch)
     const preview = await ordersApi.getResourcePreview('ord-2609-0157')
-    expect(preview.eligibleDroneCount).toBe(4)
-    expect(preview.topDrones[0].name).toBe('DRN-06 Cú Mèo')
+    expect(preview).not.toBeNull()
+    expect(preview?.eligibleDroneCount).toBe(4)
+    expect(preview?.topDrones[0].name).toBe('DRN-06 Cú Mèo')
+  })
+
+  it('getResourcePreview resolves null for an order without source content', async () => {
+    setHttpTransport(mockFetch)
+    const preview = await ordersApi.getResourcePreview('ord-2609-0149')
+    expect(preview).toBeNull()
   })
 
   it('saveInternalNote upserts the note', async () => {

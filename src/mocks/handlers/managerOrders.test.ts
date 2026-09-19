@@ -105,6 +105,33 @@ describe('GET /api/orders/{id}/analysis/latest', () => {
     )
     expect(payload.data.overallVerdict).toBe('RISKY')
     expect(payload.data.findings).toEqual([])
+    expect(payload.data.ruleEngineMs).toBeNull()
+    expect(payload.data.createdAt).toBeNull()
+    expect(payload.data.llmSummary).toBeNull()
+  })
+})
+
+describe('orders without design-sourced detail content', () => {
+  it('GET /api/orders/{id} returns null for every unsourced detail field', async () => {
+    const { payload } = await call('GET', '/api/orders/ord-2609-0149')
+    expect(payload.data.addressText).toBeNull()
+    expect(payload.data.center).toBeNull()
+    expect(payload.data.radiusM).toBeNull()
+    expect(payload.data.nearestBase).toBeNull()
+    expect(payload.data.mediaRequirements).toBeNull()
+    expect(payload.data.purpose).toBeNull()
+    expect(payload.data.attachments).toBeNull()
+    expect(payload.data.preferredWindow).toBeNull()
+    expect(payload.data.customer.email).toBeNull()
+    expect(payload.data.customer.phone).toBeNull()
+  })
+
+  it('GET resource-preview returns null instead of an invented default', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0149/resource-preview',
+    )
+    expect(payload.data).toBeNull()
   })
 })
 

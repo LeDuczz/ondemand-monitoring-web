@@ -1,5 +1,5 @@
 {
-  "_note": "Mock data for GET /api/orders?status=PENDING [TK MNG-02] and GET /api/orders/{id} [TK MNG-03]. Field names follow [BE] OrderCreateResponse (camelCase) plus brief-only detail fields (radiusM, mediaRequirements[], attachments[], customer contact) needed for MNG-03 — none of those exist in OrderCreateResponse, marked PROPOSED-shape in src/features/manager/types/orders.ts doc comments. submittedAt values are chosen so that relative to now=2026-09-19T14:32:00+07:00 the wait matches [TK MNG-02] exactly: ORD-2609-0157=31h, ORD-2609-0149=26h, ORD-2609-0162=6h, ORD-2609-0160=19h, ORD-2609-0161=12h, ORD-2609-0163=3h. Full detail (address/center/radius/media/purpose/attachments) is verbatim from [TK MNG-03] only for ORD-2609-0157 (FEASIBLE default state) and ORD-2609-0160 (RISKY state, reusing the same location/media block the design renders for the risky variant of the same artboard). The other 4 orders (0149/0162/0161/0163) don't have per-order detail content in any source — their detail fields reuse the same location/media pattern as 0157 as FE-authored placeholder content so the detail screen has something to render; documented as a deviation in evd/P4-manager-order-review.md.",
+  "_note": "Mock data for GET /api/orders?status=PENDING [TK MNG-02] and GET /api/orders/{id} [TK MNG-03]. Queue-row fields (id, code, status, customer.fullName/companyName, serviceName, preferredDate, preferredTimeName, submittedAt, aiVerdict, blockerCount, warningCount) are evidenced for all 6 orders straight from the [TK MNG-02] table. Detail-only fields (customer email/phone, preferredWindow, addressText, center, radiusM, nearestBase, mediaRequirements, purpose, attachments) are verbatim from [TK MNG-03] only for ORD-2609-0157 (FEASIBLE default state) and ORD-2609-0160 (RISKY state, reusing the same location/media block the design renders for the risky variant of the same artboard). The other 4 orders (0149/0162/0161/0163) have no detail source anywhere — those fields are `null` rather than invented; OrderReviewPage renders an explicit 'Chưa có dữ liệu' marker per block for them (see evd/P4-manager-order-review.md, 'Review fixes'). submittedAt values are chosen so that relative to now=2026-09-19T14:32:00+07:00 the wait matches [TK MNG-02] exactly: ORD-2609-0157=31h, ORD-2609-0149=26h, ORD-2609-0162=6h, ORD-2609-0160=19h, ORD-2609-0161=12h, ORD-2609-0163=3h.",
   "orders": [
     {
       "id": "ord-2609-0157",
@@ -54,31 +54,21 @@
       "customer": {
         "fullName": "Nguyễn Minh Khoa",
         "companyName": "Công ty CP Xây dựng Phú Thịnh",
-        "email": "khoa.nguyen@phuthinh.vn",
-        "phone": "0909 112 334"
+        "email": null,
+        "phone": null
       },
       "serviceName": "Tuần tra an ninh khu vực",
       "preferredDate": "23/09",
       "preferredTimeName": "Chiều",
-      "preferredWindow": "23/09/2026 · Chiều 13:00–17:00",
+      "preferredWindow": null,
       "submittedAt": "2026-09-18T12:32:00+07:00",
-      "addressText": "Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức",
-      "center": {
-        "lat": 10.7686,
-        "lon": 106.7952
-      },
-      "radiusM": 600,
-      "nearestBase": "Trạm Bình Thạnh · 5,9 km",
-      "mediaRequirements": [
-        {
-          "label": "VIDEO × 2 · 300 giây · 1080p"
-        },
-        {
-          "label": "PHOTO × 60 · 20 MP"
-        }
-      ],
-      "purpose": "Tuần tra công trường ngoài giờ, phát hiện xâm nhập",
-      "attachments": [],
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
       "aiVerdict": "FEASIBLE",
       "blockerCount": 0,
       "warningCount": 0
@@ -90,28 +80,21 @@
       "customer": {
         "fullName": "Trần Thị Thu Hà",
         "companyName": "Công ty TNHH Bao bì Hiệp Phước",
-        "email": "ha.tran@hiepphuoc.vn",
-        "phone": "0933 556 778"
+        "email": null,
+        "phone": null
       },
       "serviceName": "Kiểm tra nhiệt mái và tấm pin",
       "preferredDate": "24/09",
       "preferredTimeName": "Sáng",
-      "preferredWindow": "24/09/2026 · Sáng 07:00–11:00",
+      "preferredWindow": null,
       "submittedAt": "2026-09-19T08:32:00+07:00",
-      "addressText": "KCN Hiệp Phước, Nhà Bè, TP.HCM",
-      "center": {
-        "lat": 10.6103,
-        "lon": 106.7346
-      },
-      "radiusM": 400,
-      "nearestBase": "Trạm Nhà Bè · 3,2 km",
-      "mediaRequirements": [
-        {
-          "label": "PHOTO NHIỆT × 40 · 20 MP"
-        }
-      ],
-      "purpose": "Kiểm tra thất thoát nhiệt mái nhà xưởng và tấm pin mặt trời",
-      "attachments": [],
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
       "aiVerdict": "FEASIBLE",
       "blockerCount": 0,
       "warningCount": 0
@@ -159,28 +142,21 @@
       "customer": {
         "fullName": "Phạm Ngọc Anh",
         "companyName": "HTX Nông nghiệp Phú Mỹ Hưng",
-        "email": "anh.pham@pmh-nn.vn",
-        "phone": "0916 774 002"
+        "email": null,
+        "phone": null
       },
       "serviceName": "GS cây trồng",
       "preferredDate": "27/09",
       "preferredTimeName": "Sáng",
-      "preferredWindow": "27/09/2026 · Sáng 07:00–11:00",
+      "preferredWindow": null,
       "submittedAt": "2026-09-19T02:32:00+07:00",
-      "addressText": "Vùng canh tác Phú Mỹ Hưng, Củ Chi, TP.HCM",
-      "center": {
-        "lat": 11.0433,
-        "lon": 106.4931
-      },
-      "radiusM": 800,
-      "nearestBase": "Trạm Củ Chi · 7,4 km",
-      "mediaRequirements": [
-        {
-          "label": "PHOTO ĐA PHỔ × 80 · 20 MP"
-        }
-      ],
-      "purpose": "Giám sát sinh trưởng và phát hiện sâu bệnh trên diện rộng",
-      "attachments": [],
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
       "aiVerdict": "RISKY",
       "blockerCount": 0,
       "warningCount": 1
@@ -192,28 +168,21 @@
       "customer": {
         "fullName": "Lê Quốc Bảo",
         "companyName": "Công ty CP Logistics Cát Lái",
-        "email": "bao.le@logisticscatlai.vn",
-        "phone": "0918 227 640"
+        "email": null,
+        "phone": null
       },
       "serviceName": "GS giao thông và sự kiện",
       "preferredDate": "21/09",
       "preferredTimeName": "Chiều",
-      "preferredWindow": "21/09/2026 · Chiều 13:00–17:00",
+      "preferredWindow": null,
       "submittedAt": "2026-09-19T11:32:00+07:00",
-      "addressText": "Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức",
-      "center": {
-        "lat": 10.7686,
-        "lon": 106.7952
-      },
-      "radiusM": 600,
-      "nearestBase": "Trạm Bình Thạnh · 5,9 km",
-      "mediaRequirements": [
-        {
-          "label": "VIDEO × 1 · 600 giây · 1080p"
-        }
-      ],
-      "purpose": "Giám sát lưu lượng giao thông ra vào cảng giờ cao điểm",
-      "attachments": [],
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
       "aiVerdict": "RISKY",
       "blockerCount": 0,
       "warningCount": 2

@@ -74,6 +74,42 @@ const riskyAnalysis: OrderAnalysis = {
   ],
 }
 
+// Order without design-sourced detail content (e.g. ORD-2609-0149) — every
+// field beyond the evidenced queue-row data is null.
+const unsourcedOrder: OrderDetail = {
+  id: 'ord-2609-0149',
+  code: 'ORD-2609-0149',
+  status: 'PENDING',
+  customer: {
+    fullName: 'Nguyễn Minh Khoa',
+    companyName: 'Công ty CP Xây dựng Phú Thịnh',
+    email: null,
+    phone: null,
+  },
+  serviceName: 'Tuần tra an ninh khu vực',
+  preferredDate: '23/09',
+  preferredTimeName: 'Chiều',
+  preferredWindow: null,
+  submittedAt: '2026-09-18T12:32:00+07:00',
+  addressText: null,
+  center: null,
+  radiusM: null,
+  nearestBase: null,
+  mediaRequirements: null,
+  purpose: null,
+  attachments: null,
+}
+
+const unsourcedAnalysis: OrderAnalysis = {
+  overallVerdict: 'FEASIBLE',
+  blockerCount: 0,
+  warningCount: 0,
+  ruleEngineMs: null,
+  createdAt: null,
+  llmSummary: null,
+  findings: [],
+}
+
 const preview: OrderResourcePreview = {
   eligibleDroneCount: 4,
   eligiblePilotCount: 3,
@@ -191,6 +227,33 @@ describe('OrderReviewPage', () => {
       'href',
       '#portal/staff/orders',
     )
+  })
+
+  it('renders an order without detail/analysis/resource-preview source without crashing, showing empty markers', async () => {
+    vi.spyOn(ordersApi, 'getOrder').mockResolvedValue(unsourcedOrder)
+    vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(
+      unsourcedAnalysis,
+    )
+    vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(null)
+
+    render(<OrderReviewPage orderId="ord-2609-0149" />)
+
+    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0149'))
+    expect(screen.getByText('Nguyễn Minh Khoa')).toBeInTheDocument()
+    expect(
+      screen.getByText('Chưa có dữ liệu vị trí cho đơn này.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Chưa có dữ liệu tệp đính kèm cho đơn này.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Chưa có dữ liệu nguồn lực cho đơn này.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Không có finding nào.')).toBeInTheDocument()
+    // Action bar still renders — the page didn't crash on null fields.
+    expect(
+      screen.getByRole('button', { name: 'Duyệt và tạo mission' }),
+    ).toBeInTheDocument()
   })
 
   it('saves the internal note', async () => {

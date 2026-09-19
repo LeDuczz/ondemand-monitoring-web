@@ -29,26 +29,28 @@ type SeedOrder = {
   customer: {
     fullName: string
     companyName: string
-    email: string
-    phone: string
+    email: string | null
+    phone: string | null
   }
   serviceName: string
   preferredDate: string
   preferredTimeName: string
-  preferredWindow: string
+  preferredWindow: string | null
   submittedAt: string
-  addressText: string
-  center: { lat: number; lon: number }
-  radiusM: number
-  nearestBase: string
-  mediaRequirements: { label: string }[]
-  purpose: string
-  attachments: {
-    name: string
-    sizeLabel: string
-    mimeType: string
-    url: string
-  }[]
+  addressText: string | null
+  center: { lat: number; lon: number } | null
+  radiusM: number | null
+  nearestBase: string | null
+  mediaRequirements: { label: string }[] | null
+  purpose: string | null
+  attachments:
+    | {
+        name: string
+        sizeLabel: string
+        mimeType: string
+        url: string
+      }[]
+    | null
   aiVerdict: AiVerdict
   blockerCount: number
   warningCount: number
@@ -143,31 +145,6 @@ function toDetail(order: SeedOrder): OrderDetail {
   }
 }
 
-// Fallback resource-preview counts by verdict, reusing the same two numbers
-// [TK MNG-03] shows for its FEASIBLE (4/3) and RISKY (2/1) states — not
-// invented per order, just the same verdict-keyed default applied to orders
-// the design didn't render a resource panel for.
-const fallbackPreviewByVerdict: Record<AiVerdict, OrderResourcePreview> = {
-  FEASIBLE: {
-    eligibleDroneCount: 4,
-    eligiblePilotCount: 3,
-    topDrones: [],
-    topPilots: [],
-  },
-  RISKY: {
-    eligibleDroneCount: 2,
-    eligiblePilotCount: 1,
-    topDrones: [],
-    topPilots: [],
-  },
-  INFEASIBLE: {
-    eligibleDroneCount: 0,
-    eligiblePilotCount: 0,
-    topDrones: [],
-    topPilots: [],
-  },
-}
-
 registerMockRoutes([
   {
     method: 'GET',
@@ -208,13 +185,17 @@ registerMockRoutes([
       if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
       const found = analyses[order.code]
       if (found) return ok(found)
+      // No design-sourced analysis for this order — verdict/counts are
+      // still the evidenced queue-row values, but the analysis-only fields
+      // (rule engine timing, LLM summary, findings) have no source, so they
+      // go null/empty instead of being invented.
       const fallback: OrderAnalysis = {
         overallVerdict: order.aiVerdict,
         blockerCount: order.blockerCount,
         warningCount: order.warningCount,
-        ruleEngineMs: 0,
-        createdAt: order.submittedAt,
-        llmSummary: '',
+        ruleEngineMs: null,
+        createdAt: null,
+        llmSummary: null,
         findings: [],
       }
       return ok(fallback)
@@ -226,8 +207,11 @@ registerMockRoutes([
     handler: ({ params }) => {
       const order = findOrder(params.id)
       if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
-      const found = resourcePreviews[order.code]
-      return ok(found ?? fallbackPreviewByVerdict[order.aiVerdict])
+      // null (not an invented default) for orders without a design-sourced
+      // resource preview.
+      return ok<OrderResourcePreview | null>(
+        resourcePreviews[order.code] ?? null,
+      )
     },
   },
   {

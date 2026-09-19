@@ -229,8 +229,8 @@ function CustomerCard({ order }: { order: OrderDetail }) {
         <div
           style={{ textAlign: 'right', color: 'var(--tx2)', fontSize: 12.5 }}
         >
-          <div>{order.customer.email}</div>
-          <div>{order.customer.phone}</div>
+          <div>{order.customer.email ?? '—'}</div>
+          <div>{order.customer.phone ?? '—'}</div>
         </div>
       </div>
     </div>
@@ -238,6 +238,16 @@ function CustomerCard({ order }: { order: OrderDetail }) {
 }
 
 function LocationCard({ order }: { order: OrderDetail }) {
+  if (!order.center || order.radiusM == null) {
+    return (
+      <div className="odm-card">
+        <div className="odm-card-header">Vị trí và vùng giám sát</div>
+        <div className="odm-card-body odm-mgr-review-nodata">
+          Chưa có dữ liệu vị trí cho đơn này.
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="odm-card">
       <div className="odm-card-header">Vị trí và vùng giám sát</div>
@@ -269,7 +279,7 @@ function LocationCard({ order }: { order: OrderDetail }) {
       <div className="odm-card-body odm-mgr-review-location-grid">
         <div>
           <div className="odm-mgr-review-hint">address_text</div>
-          <div style={{ fontWeight: 600 }}>{order.addressText}</div>
+          <div style={{ fontWeight: 600 }}>{order.addressText ?? '—'}</div>
         </div>
         <div>
           <div className="odm-mgr-review-hint">center</div>
@@ -285,7 +295,7 @@ function LocationCard({ order }: { order: OrderDetail }) {
         </div>
         <div>
           <div className="odm-mgr-review-hint">Trạm gần nhất</div>
-          <div style={{ fontWeight: 600 }}>{order.nearestBase}</div>
+          <div style={{ fontWeight: 600 }}>{order.nearestBase ?? '—'}</div>
         </div>
       </div>
     </div>
@@ -304,17 +314,24 @@ function ServiceCard({ order }: { order: OrderDetail }) {
           </div>
           <div>
             <dt>Thời gian mong muốn</dt>
-            <dd>{order.preferredWindow}</dd>
+            <dd>{order.preferredWindow ?? '—'}</dd>
           </div>
-          {order.mediaRequirements.map((req, i) => (
-            <div key={i}>
-              <dt>Media {i + 1}</dt>
-              <dd>{req.label}</dd>
+          {order.mediaRequirements == null ? (
+            <div>
+              <dt>Yêu cầu media</dt>
+              <dd>Chưa có dữ liệu</dd>
             </div>
-          ))}
+          ) : (
+            order.mediaRequirements.map((req, i) => (
+              <div key={i}>
+                <dt>Media {i + 1}</dt>
+                <dd>{req.label}</dd>
+              </div>
+            ))
+          )}
           <div>
             <dt>Mục đích</dt>
-            <dd>{order.purpose}</dd>
+            <dd>{order.purpose ?? '—'}</dd>
           </div>
         </dl>
       </div>
@@ -323,6 +340,16 @@ function ServiceCard({ order }: { order: OrderDetail }) {
 }
 
 function AttachmentsCard({ order }: { order: OrderDetail }) {
+  if (order.attachments == null) {
+    return (
+      <div className="odm-card">
+        <div className="odm-card-header">Tệp đính kèm</div>
+        <div className="odm-card-body odm-mgr-review-nodata">
+          Chưa có dữ liệu tệp đính kèm cho đơn này.
+        </div>
+      </div>
+    )
+  }
   if (order.attachments.length === 0) return null
   return (
     <div className="odm-card">
@@ -458,10 +485,10 @@ function AnalysisCard({
 function ResourcePreviewCard({
   query,
 }: {
-  query: ReturnType<typeof useApiQuery<OrderResourcePreview>>
+  query: ReturnType<typeof useApiQuery<OrderResourcePreview | null>>
 }) {
-  if (query.loading || query.error || !query.data) return null
-  const preview = query.data
+  if (query.loading) return null
+  if (query.error) return null
   return (
     <div className="odm-card">
       <div className="odm-card-header">
@@ -470,6 +497,20 @@ function ResourcePreviewCard({
           xem trước · chưa phân công
         </span>
       </div>
+      {!query.data ? (
+        <div className="odm-card-body odm-mgr-review-nodata">
+          Chưa có dữ liệu nguồn lực cho đơn này.
+        </div>
+      ) : (
+        <ResourcePreviewBody preview={query.data} />
+      )}
+    </div>
+  )
+}
+
+function ResourcePreviewBody({ preview }: { preview: OrderResourcePreview }) {
+  return (
+    <>
       <div className="odm-card-body">
         <div className="odm-mgr-resource-counts">
           <div className="odm-mgr-resource-count">
@@ -524,7 +565,7 @@ function ResourcePreviewCard({
           </>
         ) : null}
       </div>
-    </div>
+    </>
   )
 }
 

@@ -28,9 +28,11 @@ export type OrderQueueItem = {
   warningCount: number
 }
 
+// Contact info has no source for orders the design never renders a detail
+// screen for — null rather than invented when absent.
 export type OrderCustomerContact = OrderCustomerSummary & {
-  email: string
-  phone: string
+  email: string | null
+  phone: string | null
 }
 
 /** `order.media_requirements[]` item [BRIEF] — brief-only field. */
@@ -46,7 +48,13 @@ export type OrderAttachment = {
   url: string
 }
 
-/** `GET /api/orders/{id}` [TK] full order detail for MNG-03. */
+/**
+ * `GET /api/orders/{id}` [TK] full order detail for MNG-03. Only
+ * ORD-2609-0157/0160 have design-sourced detail content — every other order
+ * gets `null` for the fields below rather than invented placeholder data;
+ * `OrderReviewPage` renders an explicit "Chưa có dữ liệu" marker per block
+ * when its field is `null`.
+ */
 export type OrderDetail = {
   id: string
   code: string
@@ -55,17 +63,19 @@ export type OrderDetail = {
   serviceName: string
   preferredDate: string
   preferredTimeName: string
-  preferredWindow: string
+  /** Precise HH:MM window — only sourced for the design's own demo order. */
+  preferredWindow: string | null
   submittedAt: string
   // Location Info — brief-only fields (radiusM, nearestBase, center) needed
-  // for the MNG-03 map/detail card, not part of OrderCreateResponse.
-  addressText: string
-  center: { lat: number; lon: number }
-  radiusM: number
-  nearestBase: string
-  mediaRequirements: OrderMediaRequirement[]
-  purpose: string
-  attachments: OrderAttachment[]
+  // for the MNG-03 map/detail card, not part of OrderCreateResponse. `null`
+  // when the design has no location content for this order.
+  addressText: string | null
+  center: { lat: number; lon: number } | null
+  radiusM: number | null
+  nearestBase: string | null
+  mediaRequirements: OrderMediaRequirement[] | null
+  purpose: string | null
+  attachments: OrderAttachment[] | null
 }
 
 export type FindingCustomerAction = 'ACCEPTED' | 'IGNORED' | 'AUTO_FIXED' | null
@@ -78,14 +88,20 @@ export type AnalysisFinding = {
   customerAction: FindingCustomerAction
 }
 
-/** `GET /api/orders/{id}/analysis/latest` [BRIEF C4]. */
+/**
+ * `GET /api/orders/{id}/analysis/latest` [BRIEF C4]. `overallVerdict`/
+ * `blockerCount`/`warningCount` always come from the evidenced queue row;
+ * `ruleEngineMs`/`createdAt`/`llmSummary` and `findings` are only populated
+ * for orders with design-sourced analysis content (`null`/`[]` otherwise —
+ * not invented).
+ */
 export type OrderAnalysis = {
   overallVerdict: AiVerdict
   blockerCount: number
   warningCount: number
-  ruleEngineMs: number
-  createdAt: string
-  llmSummary: string
+  ruleEngineMs: number | null
+  createdAt: string | null
+  llmSummary: string | null
   findings: AnalysisFinding[]
 }
 

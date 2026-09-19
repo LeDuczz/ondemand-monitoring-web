@@ -30,12 +30,15 @@ export const ordersApi = {
     })
   },
 
-  /** `GET /api/orders/{id}/resource-preview` — PROPOSED, no source endpoint. */
+  /**
+   * `GET /api/orders/{id}/resource-preview` — PROPOSED, no source endpoint.
+   * `null` for orders without design-sourced preview content.
+   */
   getResourcePreview(
     id: string,
     signal?: AbortSignal,
-  ): Promise<OrderResourcePreview> {
-    return apiRequest<OrderResourcePreview>(
+  ): Promise<OrderResourcePreview | null> {
+    return apiRequest<OrderResourcePreview | null>(
       `/api/orders/${id}/resource-preview`,
       { signal },
     )

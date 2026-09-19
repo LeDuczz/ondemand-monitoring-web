@@ -1067,3 +1067,8 @@
   border-top: 1px solid var(--bd);
   background: var(--sf2);
 }
+
+.odm-mgr-review-nodata {
+  color: var(--tx3);
+  font-style: italic;
+}

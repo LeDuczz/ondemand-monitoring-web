@@ -91,7 +91,8 @@ describe('ManagerApp', () => {
 
   it('shows the "under construction" placeholder for screens not built yet', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    window.location.hash = '#portal/staff/schedule'
+    // Use a screen that is still a placeholder (MNG-08 missions list)
+    window.location.hash = '#portal/staff/missions'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -99,7 +100,7 @@ describe('ManagerApp', () => {
         screen.getByText('Màn hình đang được xây dựng'),
       ).toBeInTheDocument(),
     )
-    expect(screen.getByText(/MNG-06/)).toBeInTheDocument()
+    expect(screen.getByText(/MNG-08/)).toBeInTheDocument()
   })
 
   it('renders the real QueuePage (MNG-02) for #portal/staff/orders', async () => {

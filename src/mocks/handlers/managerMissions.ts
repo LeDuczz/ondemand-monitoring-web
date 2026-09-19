@@ -162,18 +162,20 @@ registerMockRoutes([
         scheduledEnd?: string
       }
       if (!req.scheduledStart || !req.scheduledEnd) {
-        return fail(400, 'VALIDATION_ERROR', 'Thiếu scheduledStart hoặc scheduledEnd', {
-          scheduledStart: 'Bắt buộc',
-          scheduledEnd: 'Bắt buộc',
-        })
+        return fail(
+          400,
+          'VALIDATION_ERROR',
+          'Thiếu scheduledStart hoặc scheduledEnd',
+          {
+            scheduledStart: 'Bắt buộc',
+            scheduledEnd: 'Bắt buộc',
+          },
+        )
       }
 
       // Check for conflict with OTHER missions (same drone) [P5 helper].
       if (mission.droneId) {
-        const otherMissions = [
-          ...missions,
-          ...calendarMissions,
-        ].filter(
+        const otherMissions = [...missions, ...calendarMissions].filter(
           (m) =>
             m.id !== mission.id &&
             m.droneId === mission.droneId &&
@@ -585,4 +587,10 @@ registerMockRoutes([
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */
-export const __testing = { missions, drones, operators, calendarMissions, incidentLog }
+export const __testing = {
+  missions,
+  drones,
+  operators,
+  calendarMissions,
+  incidentLog,
+}

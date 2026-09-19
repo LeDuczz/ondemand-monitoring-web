@@ -109,7 +109,10 @@ export const missionsApi = {
    * window of a mission; responds 409 SCHEDULE_CONFLICT when the drone
    * already has a booking in that slot.
    */
-  patchSchedule(missionId: string, request: PatchScheduleRequest): Promise<Mission> {
+  patchSchedule(
+    missionId: string,
+    request: PatchScheduleRequest,
+  ): Promise<Mission> {
     return apiRequest<Mission>(`/api/missions/${missionId}/schedule`, {
       method: 'PATCH',
       body: request,
@@ -144,7 +147,10 @@ export const missionsApi = {
    * `POST /api/missions/{id}/cancel` [ĐỀ XUẤT — field `cancellation_reason`
    * in BRIEF A6]. The UI must confirm with a 2-step modal (MNG-07 design).
    */
-  cancelMission(missionId: string, request: CancelMissionRequest): Promise<Mission> {
+  cancelMission(
+    missionId: string,
+    request: CancelMissionRequest,
+  ): Promise<Mission> {
     return apiRequest<Mission>(`/api/missions/${missionId}/cancel`, {
       method: 'POST',
       body: request,

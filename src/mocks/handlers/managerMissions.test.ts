@@ -310,7 +310,11 @@ describe('GET /api/missions', () => {
 
 describe('PATCH /api/missions/{id}/schedule', () => {
   it('400s when body is missing', async () => {
-    const { status } = await call('PATCH', '/api/missions/msn-2609-0142-1/schedule', {})
+    const { status } = await call(
+      'PATCH',
+      '/api/missions/msn-2609-0142-1/schedule',
+      {},
+    )
     expect(status).toBe(400)
   })
 

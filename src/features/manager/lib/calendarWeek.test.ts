@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCalendarWeek, nextWeek, prevWeek, toISODate } from './calendarWeek'
+import {
+  formatCalendarWeek,
+  nextWeek,
+  prevWeek,
+  toISODate,
+} from './calendarWeek'
 
 describe('formatCalendarWeek', () => {
   it('returns Mon–Sun for a Wednesday input', () => {

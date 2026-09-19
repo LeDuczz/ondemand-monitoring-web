@@ -27,6 +27,14 @@ export type IconName =
   | 'eye-off'
   | 'arrow-left'
   | 'google'
+  | 'map-pin'
+  | 'cpu'
+  | 'building'
+  | 'leaf'
+  | 'zap'
+  | 'home'
+  | 'minus'
+  | 'sparkle'
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName }
 
@@ -164,6 +172,49 @@ export function Icon({ name, ...props }: IconProps) {
       <>
         <path d="M19 12H5" />
         <path d="m11 18-6-6 6-6" />
+      </>
+    ),
+    'map-pin': (
+      <>
+        <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" />
+        <circle cx="12" cy="9.5" r="2.5" />
+      </>
+    ),
+    cpu: (
+      <>
+        <rect x="7" y="7" width="10" height="10" rx="1.5" />
+        <path d="M9.5 9.5 6.5 6.5M14.5 9.5l3-3M9.5 14.5l-3 3M14.5 14.5l3 3" />
+        <circle cx="5" cy="5" r="1.5" />
+        <circle cx="19" cy="5" r="1.5" />
+        <circle cx="5" cy="19" r="1.5" />
+        <circle cx="19" cy="19" r="1.5" />
+      </>
+    ),
+    building: (
+      <>
+        <rect x="4" y="3" width="10" height="18" rx="1" />
+        <path d="M14 8h6v13h-6M7 7h1M11 7h1M7 11h1M11 11h1M7 15h1M11 15h1" />
+      </>
+    ),
+    leaf: (
+      <>
+        <path d="M5 12c0-5 4-9 14-9 0 10-4 14-9 14-3 0-5-2-5-5Z" />
+        <path d="M5 19c4-4 8-6 14-14" />
+      </>
+    ),
+    zap: <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />,
+    home: (
+      <>
+        <path d="M4 11 12 4l8 7" />
+        <path d="M6 9.5V20h12V9.5" />
+        <path d="M10 20v-6h4v6" />
+      </>
+    ),
+    minus: <path d="M5 12h14" />,
+    sparkle: (
+      <>
+        <path d="M12 3 14 9 20 11 14 13 12 19 10 13 4 11 10 9Z" />
+        <path d="M19 3v3M17.5 4.5h3" />
       </>
     ),
     google: (

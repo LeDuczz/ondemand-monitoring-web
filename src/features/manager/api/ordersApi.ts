@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 import type {
+  ApprovalRequest,
   OrderAnalysis,
   OrderDetail,
   OrderInternalNote,
@@ -51,5 +52,13 @@ export const ordersApi = {
   /** `POST /api/orders/{id}/approve` [BE] — no body, creates a mission. */
   approve(id: string): Promise<void> {
     return apiRequest<void>(`/api/orders/${id}/approve`, { method: 'POST' })
+  },
+
+  /** `POST /api/orders/{id}/approval` [BRIEF C4] `{decision, reason}`. */
+  submitApproval(id: string, request: ApprovalRequest): Promise<void> {
+    return apiRequest<void>(`/api/orders/${id}/approval`, {
+      method: 'POST',
+      body: request,
+    })
   },
 }

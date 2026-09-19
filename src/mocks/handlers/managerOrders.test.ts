@@ -42,6 +42,18 @@ describe('GET /api/orders?status=PENDING', () => {
     )
     expect(byVerdict).toEqual({ FEASIBLE: 3, RISKY: 3 })
   })
+
+  it('excludes an order whose latest approval decision is NEED_INFO', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approval', {
+      decision: 'NEED_INFO',
+      reason: 'Cần mặt bằng chi tiết',
+    })
+    const { payload } = await call('GET', '/api/orders?status=PENDING')
+    expect(payload.data).toHaveLength(5)
+    expect(payload.data.some((r: any) => r.code === 'ORD-2609-0157')).toBe(
+      false,
+    )
+  })
 })
 
 describe('GET /api/orders/{id}', () => {
@@ -93,6 +105,32 @@ describe('GET /api/orders/{id}/analysis/latest', () => {
     )
     expect(payload.data.overallVerdict).toBe('RISKY')
     expect(payload.data.findings).toEqual([])
+  })
+})
+
+describe('POST /api/orders/{id}/approval', () => {
+  it('400s VALIDATION_ERROR when reason is blank', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0157/approval',
+      {
+        decision: 'REJECTED',
+        reason: '  ',
+      },
+    )
+    expect(status).toBe(400)
+    expect(payload.code).toBe('VALIDATION_ERROR')
+    expect(payload.errors.reason).toBeTruthy()
+  })
+
+  it('REJECTED sets the order status to REJECTED', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approval', {
+      decision: 'REJECTED',
+      reason: 'Vùng cấm bay',
+    })
+    const { status, payload } = await call('GET', '/api/orders/ord-2609-0157')
+    expect(status).toBe(409)
+    expect(payload.code).toBe('ORDER_NOT_UNDER_REVIEW')
   })
 })
 

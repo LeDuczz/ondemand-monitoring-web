@@ -6,8 +6,10 @@
 //   GET  /api/orders/{id}/resource-preview   PROPOSED (no source endpoint)
 //   PUT  /api/orders/{id}/internal-note      PROPOSED (no source endpoint)
 //   POST /api/orders/{id}/approve            [BE] (creates a mission)
+//   POST /api/orders/{id}/approval           [BRIEF C4] {decision, reason}
 import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
 import type {
+  ApprovalDecision,
   OrderAnalysis,
   OrderDetail,
   OrderInternalNote,
@@ -62,7 +64,16 @@ type Mission = {
   scheduledStartAt: string | null
 }
 
+type Approval = {
+  orderId: string
+  decision: ApprovalDecision
+  reason: string
+  reviewerId: string
+  decidedAt: string
+}
+
 const REVIEWER_NAME = 'Lê Thị Thanh Hằng'
+const REVIEWER_ID = 'staff-hang-le'
 
 // Each collection is created from the exact object/array we hold a
 // reference to (not a nested property read off a bigger createCollection()
@@ -82,9 +93,15 @@ const internalNotes = createCollection(
   analysesSeed.internalNotes,
 ) as unknown as Record<string, OrderInternalNote>
 const missions = createCollection(missionsSeed.missions) as Mission[]
+const approvals = createCollection([] as Approval[])
 
 function findOrder(id: string): SeedOrder | undefined {
   return orders.find((o) => o.id === id || o.code === id)
+}
+
+function latestApprovalFor(orderId: string): Approval | undefined {
+  const forOrder = approvals.filter((a) => a.orderId === orderId)
+  return forOrder[forOrder.length - 1]
 }
 
 function toQueueItem(order: SeedOrder): OrderQueueItem {
@@ -160,7 +177,10 @@ registerMockRoutes([
       if (status && status !== 'PENDING') {
         return ok<OrderQueueItem[]>([])
       }
-      const rows = orders.filter((o) => o.status === 'PENDING').map(toQueueItem)
+      const rows = orders
+        .filter((o) => o.status === 'PENDING')
+        .filter((o) => latestApprovalFor(o.id)?.decision !== 'NEED_INFO')
+        .map(toQueueItem)
       return ok(rows)
     },
   },
@@ -253,7 +273,53 @@ registerMockRoutes([
       return ok(undefined, 'Order approved and mission created successfully')
     },
   },
+  {
+    method: 'POST',
+    path: '/api/orders/:id/approval',
+    handler: ({ params, body }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      const { decision, reason } = (body ?? {}) as {
+        decision?: ApprovalDecision
+        reason?: string
+      }
+      if (!reason || !reason.trim()) {
+        return fail(400, 'VALIDATION_ERROR', 'Yêu cầu nhập lý do', {
+          reason: 'Lý do là bắt buộc',
+        })
+      }
+      if (decision !== 'REJECTED' && decision !== 'NEED_INFO') {
+        return fail(400, 'VALIDATION_ERROR', 'decision không hợp lệ', {
+          decision: 'decision phải là REJECTED hoặc NEED_INFO',
+        })
+      }
+      if (order.status !== 'PENDING') {
+        return fail(
+          409,
+          'ORDER_NOT_UNDER_REVIEW',
+          'Đơn không còn ở trạng thái chờ duyệt.',
+        )
+      }
+
+      approvals.push({
+        orderId: order.id,
+        decision,
+        reason,
+        reviewerId: REVIEWER_ID,
+        decidedAt: new Date().toISOString(),
+      })
+
+      if (decision === 'REJECTED') {
+        order.status = 'REJECTED'
+      }
+      // NEED_INFO: backend OrderStatus has no matching value (conflict,
+      // documented in evd/P4-manager-order-review.md) — order stays PENDING,
+      // the queue query above filters it out via latestApprovalFor().
+
+      return ok(undefined, 'Đã ghi nhận quyết định')
+    },
+  },
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */
-export const __testing = { missions }
+export const __testing = { missions, approvals }

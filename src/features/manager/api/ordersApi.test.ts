@@ -56,4 +56,14 @@ describe('ordersApi (mock mode)', () => {
     setHttpTransport(mockFetch)
     await expect(ordersApi.approve('ord-2609-0157')).resolves.toBeUndefined()
   })
+
+  it('submitApproval REJECTED resolves without throwing', async () => {
+    setHttpTransport(mockFetch)
+    await expect(
+      ordersApi.submitApproval('ord-2609-0157', {
+        decision: 'REJECTED',
+        reason: 'Vùng cấm bay',
+      }),
+    ).resolves.toBeUndefined()
+  })
 })

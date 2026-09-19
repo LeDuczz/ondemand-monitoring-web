@@ -117,3 +117,11 @@ export type OrderInternalNote = {
   authorName: string
   updatedAt: string
 }
+
+export type ApprovalDecision = 'REJECTED' | 'NEED_INFO'
+
+/** Body of `POST /api/orders/{id}/approval` [BRIEF C4]. */
+export type ApprovalRequest = {
+  decision: ApprovalDecision
+  reason: string
+}

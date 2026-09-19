@@ -18,6 +18,7 @@ import type {
   OrderStatus,
   StatusTone,
   TicketSeverity,
+  TicketStatus,
 } from '../types/domain'
 
 export const orderStatusTone: Record<OrderStatus, StatusTone> = {
@@ -178,6 +179,20 @@ export const ticketSeverityLabel: Record<TicketSeverity, string> = {
   MEDIUM: 'Trung bình',
   HIGH: 'Cao',
   CRITICAL: 'Nghiêm trọng',
+}
+
+export const ticketStatusTone: Record<TicketStatus, StatusTone> = {
+  OPEN: 'yellow',
+  IN_PROGRESS: 'blue',
+  RESOLVED: 'green',
+  CLOSED: 'gray',
+}
+
+export const ticketStatusLabel: Record<TicketStatus, string> = {
+  OPEN: 'Mở',
+  IN_PROGRESS: 'Đang thực hiện',
+  RESOLVED: 'Đã xử lý',
+  CLOSED: 'Đã đóng',
 }
 
 export const mediaStatusLabel: Record<MediaStatus, string> = {

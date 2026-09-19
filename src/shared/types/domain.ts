@@ -54,6 +54,9 @@ export type AiVerdict = 'FEASIBLE' | 'RISKY' | 'INFEASIBLE'
 /** `feasibility_rule.severity` / `ai_finding.severity` [BRIEF A4] */
 export type FindingSeverity = 'INFO' | 'WARNING' | 'BLOCKER'
 
+/** `maintenance_ticket.status` [TK] */
+export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
+
 /** `maintenance_ticket.severity` [BRIEF A5] */
 export type TicketSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 

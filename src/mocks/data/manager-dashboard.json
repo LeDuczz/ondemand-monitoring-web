@@ -1,0 +1,135 @@
+{
+  "_note": "Mock data for GET /api/manager/dashboard [TK MNG-01, default demo state]. Timestamps are set so that, relative to the design's own 'now' (2026-09-19T14:32:00+07:00), every derived age label (formatOrderAge/formatMissionCountdown/formatTicketAge/formatMinutesAgo/formatFlightMinutes in src/features/manager/lib/actionItemAge.ts) matches the design text exactly.",
+  "kpis": {
+    "pendingOrders": { "count": 6, "detail": "2 quá 24h" },
+    "missionsToday": { "count": 5, "detail": "3 đã xong" },
+    "missionsInFlight": { "count": 1, "detail": "" },
+    "dronesReady": { "ready": 5, "total": 9, "detail": "1 bảo trì" },
+    "actionItems": { "count": 4, "detail": "2 upload · 2 lỗi media" }
+  },
+  "missionStatusByDay": [
+    {
+      "date": "2026-09-13",
+      "completed": 3,
+      "inFlight": 0,
+      "failed": 1,
+      "cancelled": 0
+    },
+    {
+      "date": "2026-09-14",
+      "completed": 4,
+      "inFlight": 0,
+      "failed": 0,
+      "cancelled": 1
+    },
+    {
+      "date": "2026-09-15",
+      "completed": 2,
+      "inFlight": 0,
+      "failed": 0,
+      "cancelled": 0
+    },
+    {
+      "date": "2026-09-16",
+      "completed": 3,
+      "inFlight": 0,
+      "failed": 0,
+      "cancelled": 0
+    },
+    {
+      "date": "2026-09-17",
+      "completed": 3,
+      "inFlight": 0,
+      "failed": 1,
+      "cancelled": 0
+    },
+    {
+      "date": "2026-09-18",
+      "completed": 4,
+      "inFlight": 0,
+      "failed": 0,
+      "cancelled": 0
+    },
+    {
+      "date": "2026-09-19",
+      "completed": 3,
+      "inFlight": 1,
+      "failed": 0,
+      "cancelled": 0
+    }
+  ],
+  "droneStatusBreakdown": [
+    { "status": "AVAILABLE", "count": 5 },
+    { "status": "RESERVED", "count": 1 },
+    { "status": "IN_MISSION", "count": 1 },
+    { "status": "MAINTENANCE", "count": 1 },
+    { "status": "OUT_OF_SERVICE", "count": 1 }
+  ],
+  "actionItems": [
+    {
+      "id": "ai-1",
+      "type": "ORDER_PENDING",
+      "orderId": "ORD-2609-0157",
+      "code": "ORD-2609-0157",
+      "title": "Tuần tra an ninh bãi container Cát Lái",
+      "subtitle": "Lê Quốc Bảo · Công ty CP Logistics Cát Lái · AI: FEASIBLE",
+      "submittedAtIso": "2026-09-18T07:32:00+07:00"
+    },
+    {
+      "id": "ai-2",
+      "type": "ORDER_PENDING",
+      "orderId": "ORD-2609-0149",
+      "code": "ORD-2609-0149",
+      "title": "Tuần tra an ninh công trường Sala Riverside",
+      "subtitle": "Nguyễn Minh Khoa · AI: FEASIBLE",
+      "submittedAtIso": "2026-09-18T12:32:00+07:00"
+    },
+    {
+      "id": "ai-3",
+      "type": "MISSION_UNASSIGNED",
+      "missionId": "MSN-2609-0148-1",
+      "code": "MSN-2609-0148-1",
+      "title": "Chưa phân công, bay lúc 17:00 hôm nay",
+      "subtitle": "ORD-2609-0148 · thiếu drone và phi công",
+      "scheduledStartIso": "2026-09-19T17:00:00+07:00"
+    },
+    {
+      "id": "ai-4",
+      "type": "MAINTENANCE_TICKET",
+      "ticketId": "MT-2609-011",
+      "code": "MT-2609-011",
+      "title": "DRN-07 Vạc: động cơ số 3 rung bất thường",
+      "subtitle": "Ticket CRITICAL · đang OPEN",
+      "openedAtIso": "2026-09-13T14:32:00+07:00"
+    },
+    {
+      "id": "ai-5",
+      "type": "MEDIA_ACTION",
+      "mediaTaskId": "MUT-2609-0133-1",
+      "code": "MSN-2609-0133-1",
+      "title": "2 tệp cần upload thủ công",
+      "subtitle": "manual_upload_task OPEN · phi công Ngô Thị Lan Phương",
+      "createdAtIso": "2026-09-19T13:50:00+07:00"
+    },
+    {
+      "id": "ai-6",
+      "type": "MISSION_FLYING",
+      "missionId": "MSN-2609-0142-1",
+      "code": "MSN-2609-0142-1",
+      "title": "Đang bay, livestream 3 người xem",
+      "subtitle": "DRN-02 Hải Âu · Hoàng Đức Thắng · pin 71%",
+      "startedAtIso": "2026-09-19T13:34:00+07:00"
+    }
+  ],
+  "flyingMission": {
+    "missionId": "MSN-2609-0142-1",
+    "code": "MSN-2609-0142-1",
+    "title": "Giám sát tiến độ thi công Sala Riverside",
+    "droneCode": "DRN-02",
+    "droneName": "Hải Âu",
+    "operatorName": "Hoàng Đức Thắng",
+    "batteryPercent": 71,
+    "startedAtIso": "2026-09-19T13:34:00+07:00",
+    "plannedDurationMin": 90
+  }
+}

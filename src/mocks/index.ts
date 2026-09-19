@@ -7,5 +7,6 @@
 //   import './handlers/orders'
 
 import './handlers/auth'
+import './handlers/managerDashboard'
 
 export { mockFetch } from './mockServer'

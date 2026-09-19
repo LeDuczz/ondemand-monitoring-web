@@ -4,6 +4,7 @@ import type {
   OrderAnalysis,
   OrderDetail,
   OrderInternalNote,
+  OrderMissionBrief,
   OrderQueueItem,
   OrderResourcePreview,
 } from '../types/orders'
@@ -62,6 +63,20 @@ export const ordersApi = {
     return apiRequest<void>(`/api/orders/${id}/approval`, {
       method: 'POST',
       body: request,
+    })
+  },
+
+  /**
+   * `GET /api/orders/{id}/mission-brief` — PROPOSED (P5). Read-only order
+   * projection for an APPROVED order, used to prefill CreateMissionPage
+   * (MNG-04). See `OrderMissionBrief` for why this can't reuse `getOrder`.
+   */
+  getOrderForMission(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<OrderMissionBrief> {
+    return apiRequest<OrderMissionBrief>(`/api/orders/${id}/mission-brief`, {
+      signal,
     })
   },
 }

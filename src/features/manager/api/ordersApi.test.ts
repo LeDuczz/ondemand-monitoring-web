@@ -73,4 +73,18 @@ describe('ordersApi (mock mode)', () => {
       }),
     ).resolves.toBeUndefined()
   })
+
+  it('getOrderForMission resolves the seeded APPROVED order', async () => {
+    setHttpTransport(mockFetch)
+    const brief = await ordersApi.getOrderForMission('ord-2609-0153')
+    expect(brief.customerFullName).toBe('Trần Thị Thu Hà')
+    expect(brief.center).toEqual({ lat: 10.6402, lon: 106.74 })
+  })
+
+  it('getOrderForMission 409s for a PENDING order', async () => {
+    setHttpTransport(mockFetch)
+    await expect(
+      ordersApi.getOrderForMission('ord-2609-0157'),
+    ).rejects.toMatchObject({ status: 409 })
+  })
 })

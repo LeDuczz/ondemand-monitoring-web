@@ -243,6 +243,37 @@ registerMockRoutes([
       return ok(undefined, 'Đã ghi nhận quyết định')
     },
   },
+  {
+    // PROPOSED (P5) — see OrderMissionBrief doc in
+    // features/manager/types/orders.ts for why GET /api/orders/:id can't
+    // serve CreateMissionPage (it 409s once the order leaves PENDING).
+    method: 'GET',
+    path: '/api/orders/:id/mission-brief',
+    handler: ({ params }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (order.status !== 'APPROVED') {
+        return fail(
+          409,
+          'ORDER_NOT_APPROVED',
+          'Đơn chưa được duyệt, chưa thể tạo mission.',
+        )
+      }
+      return ok({
+        id: order.id,
+        code: order.code,
+        serviceName: order.serviceName,
+        customerFullName: order.customer.fullName,
+        preferredDate: order.preferredDate,
+        preferredTimeName: order.preferredTimeName,
+        addressText: order.addressText,
+        center: order.center,
+        radiusM: order.radiusM,
+        nearestBase: order.nearestBase,
+        mediaRequirements: order.mediaRequirements,
+      })
+    },
+  },
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */

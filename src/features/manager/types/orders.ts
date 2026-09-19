@@ -134,6 +134,28 @@ export type OrderInternalNote = {
   updatedAt: string
 }
 
+/**
+ * `GET /api/orders/{id}/mission-brief` — PROPOSED, added in P5. `GET
+ * /api/orders/{id}` [TK] 409s once an order leaves PENDING (MNG-03's
+ * "already processed" error state, by design), so it cannot serve
+ * CreateMissionPage (MNG-04), which needs an already-APPROVED order's
+ * address/media/schedule fields. This is a minimal read-only projection
+ * scoped to APPROVED orders instead.
+ */
+export type OrderMissionBrief = {
+  id: string
+  code: string
+  serviceName: string
+  customerFullName: string
+  preferredDate: string
+  preferredTimeName: string
+  addressText: string | null
+  center: { lat: number; lon: number } | null
+  radiusM: number | null
+  nearestBase: string | null
+  mediaRequirements: OrderMediaRequirement[] | null
+}
+
 export type ApprovalDecision = 'REJECTED' | 'NEED_INFO'
 
 /** Body of `POST /api/orders/{id}/approval` [BRIEF C4]. */

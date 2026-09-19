@@ -213,3 +213,32 @@ describe('resource-preview and internal-note', () => {
     expect(payload.data.authorName).toBe('Lê Thị Thanh Hằng')
   })
 })
+
+describe('GET /api/orders/{id}/mission-brief', () => {
+  it('resolves the seeded APPROVED order for CreateMissionPage', async () => {
+    const { status, payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0153/mission-brief',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.serviceName).toBe(
+      'Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước',
+    )
+    expect(payload.data.customerFullName).toBe('Trần Thị Thu Hà')
+    expect(payload.data.radiusM).toBe(300)
+  })
+
+  it('409s for a PENDING order', async () => {
+    const { status, payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0157/mission-brief',
+    )
+    expect(status).toBe(409)
+    expect(payload.code).toBe('ORDER_NOT_APPROVED')
+  })
+
+  it('404s for an unknown order', async () => {
+    const { status } = await call('GET', '/api/orders/nope/mission-brief')
+    expect(status).toBe(404)
+  })
+})

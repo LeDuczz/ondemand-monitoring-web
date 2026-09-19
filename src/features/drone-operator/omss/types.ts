@@ -58,6 +58,7 @@ export interface Drone {
 export interface Mission {
   id: string
   orderRef: string
+  orderTitle?: string
   title: string
   state: MissionState
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
@@ -74,6 +75,19 @@ export interface Mission {
   maxAltitudeM: number
   notes: string
   rejectionReason?: string
+  targetSimX?: number
+  targetSimY?: number
+  routePoints?: MissionRoutePoint[]
+}
+
+export interface MissionRoutePoint {
+  id: string
+  sequence: number
+  simX: number
+  simY: number
+  altitudeM: number
+  speedMps?: number
+  reason: string
 }
 
 export interface FlightToken {

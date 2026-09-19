@@ -113,6 +113,23 @@ type ControlStatus = {
   thermalDisplayMinC?: number | null
   thermalDisplayMaxC?: number | null
   thermalSourceError?: string | null
+  lidar?: {
+    enabled?: boolean
+    available?: boolean
+    status?: string
+    direction?: string
+    rangeMaxM?: number
+    frontM?: number
+    frontLeftM?: number
+    frontRightM?: number
+    leftM?: number
+    rightM?: number
+    backM?: number
+    nearestM?: number
+    nearestAngleDeg?: number
+    nearestDirection?: string
+    scanAgeS?: number | null
+  }
 }
 
 type MapMeta = {
@@ -786,8 +803,10 @@ function statusToSimulationPoint(
 
 const RealMiniMap = memo(function RealMiniMap({
   status,
+  mission,
 }: {
   status: ControlStatus | null
+  mission: Mission
 }) {
   useRenderDiagnostics('MiniMap')
   const { meta } = useSimulationMap()
@@ -808,6 +827,27 @@ const RealMiniMap = memo(function RealMiniMap({
     ? { x: simPoint[0], y: simPoint[1] }
     : { x: 0, y: 0 }
   const [droneX, droneY] = worldToMinimap(droneWorld.x, droneWorld.y)
+  const routePoints = mission.routePoints ?? []
+  const routeScreenPoints = routePoints.map((point) => {
+    const [x, y] = worldToMinimap(point.simX, point.simY)
+    return { ...point, x, y }
+  })
+  const routePath = routeScreenPoints
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
+    .join(' ')
+  const routeTargetPoint =
+    routeScreenPoints.find(
+      (point) => point.reason?.toUpperCase() === 'TARGET',
+    ) ?? routeScreenPoints[routeScreenPoints.length - 1]
+  const orderTargetPoint =
+    typeof mission.targetSimX === 'number' &&
+    typeof mission.targetSimY === 'number'
+      ? (() => {
+          const [x, y] = worldToMinimap(mission.targetSimX, mission.targetSimY)
+          return { x, y }
+        })()
+      : null
+  const missionTargetPoint = orderTargetPoint ?? routeTargetPoint
   const viewWidth = width / zoom
   const viewHeight = height / zoom
   const viewX = follow
@@ -920,6 +960,73 @@ const RealMiniMap = memo(function RealMiniMap({
           height={height}
           fill="rgba(2,6,23,.14)"
         />
+        {routeScreenPoints.length > 1 && (
+          <path
+            d={routePath}
+            fill="none"
+            stroke="rgba(34,211,238,.92)"
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="5 3"
+          />
+        )}
+        {routeScreenPoints.map((point) => {
+          const isTarget = point.reason?.toUpperCase() === 'TARGET'
+          return (
+            <g key={point.id} transform={`translate(${point.x} ${point.y})`}>
+              <circle
+                r={isTarget ? 5 : 4}
+                fill={isTarget ? '#ef4444' : '#fbbf24'}
+                stroke="#fff7ed"
+                strokeWidth="1"
+              />
+              <text
+                x={7}
+                y={3}
+                fill="#fef3c7"
+                fontSize="7"
+                fontWeight="900"
+              >
+                {point.sequence}
+              </text>
+            </g>
+          )
+        })}
+        {missionTargetPoint && (
+          <g transform={`translate(${missionTargetPoint.x} ${missionTargetPoint.y})`}>
+            <circle
+              r="13"
+              fill="rgba(239,68,68,.22)"
+              stroke="rgba(254,202,202,.85)"
+              strokeWidth="1.5"
+            />
+            <circle
+              r="6"
+              fill="#ef4444"
+              stroke="#ffffff"
+              strokeWidth="2"
+            />
+            <path
+              d="M0 -19 L4 -10 L-4 -10 Z"
+              fill="#ef4444"
+              stroke="#ffffff"
+              strokeWidth="1"
+            />
+            <text
+              x="10"
+              y="-10"
+              fill="#fee2e2"
+              fontSize="8"
+              fontWeight="900"
+              paintOrder="stroke"
+              stroke="rgba(15,23,42,.9)"
+              strokeWidth="2"
+            >
+              ORDER
+            </text>
+          </g>
+        )}
         <g transform={`translate(${droneX} ${droneY}) rotate(${yaw})`}>
           <circle
             cx="0"
@@ -981,7 +1088,6 @@ const TelemetryPanel = memo(function TelemetryPanel({
         : batteryState === 'LOW'
           ? '#fbbf24'
           : '#22c55e'
-
   return (
     <GlassPanel
       style={{
@@ -990,7 +1096,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
         minHeight: 'fit-content',
         flexShrink: 0,
         overflow: 'hidden',
-        padding: 12,
+        padding: 10,
       }}
     >
       <div
@@ -998,7 +1104,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 10,
+          marginBottom: 8,
         }}
       >
         <div
@@ -1037,7 +1143,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 7,
+          gap: 6,
         }}
       >
         {[
@@ -1050,7 +1156,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
             key={label}
             style={{
               minWidth: 0,
-              padding: '8px 10px',
+              padding: '7px 9px',
               borderRadius: 8,
               background: 'rgba(15,23,42,.54)',
               border: '1px solid rgba(148,163,184,.14)',
@@ -1064,7 +1170,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
                 display: 'block',
                 marginTop: 4,
                 fontFamily: 'var(--font-data)',
-                fontSize: 17,
+                fontSize: 16,
                 lineHeight: 1,
                 color: '#e5edf8',
                 overflow: 'hidden',
@@ -1076,7 +1182,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 10, display: 'grid', gap: 5 }}>
+      <div style={{ marginTop: 8, display: 'grid', gap: 4 }}>
         {[
           ['Drain mode', batteryMode],
           ['Position', status?.positionReady ? 'Ready' : 'Waiting'],
@@ -1106,7 +1212,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
       </div>
       <div
         style={{
-          marginTop: 9,
+          marginTop: 7,
           height: 5,
           borderRadius: 999,
           background: 'rgba(30,41,59,.95)',
@@ -1122,6 +1228,603 @@ const TelemetryPanel = memo(function TelemetryPanel({
             transition: 'width .35s ease, background .2s ease',
           }}
         />
+      </div>
+    </GlassPanel>
+  )
+})
+
+function getLidarFresh(lidar: ControlStatus['lidar']) {
+  return (
+    typeof lidar?.scanAgeS === 'number' &&
+    Number.isFinite(lidar.scanAgeS) &&
+    lidar.scanAgeS < 3
+  )
+}
+
+function getLidarMetric(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value.toFixed(1)} m`
+    : '--'
+}
+
+type LidarDirection = 'FRONT' | 'LEFT' | 'RIGHT' | 'BACK'
+type LidarSeverity = 'CLEAR' | 'CAUTION' | 'DANGER' | 'UNKNOWN'
+
+type LidarDirectionState = {
+  direction: LidarDirection
+  value: number | null
+  severity: LidarSeverity
+  display: string
+}
+
+const lidarSectorPaths: Record<LidarDirection, string> = {
+  FRONT: 'M0 0 L-44 -66 A79 79 0 0 1 44 -66 Z',
+  RIGHT: 'M0 0 L66 -44 A79 79 0 0 1 66 44 Z',
+  BACK: 'M0 0 L44 66 A79 79 0 0 1 -44 66 Z',
+  LEFT: 'M0 0 L-66 44 A79 79 0 0 1 -66 -44 Z',
+}
+
+const lidarSectorLabels: Record<
+  LidarDirection,
+  { x: number; y: number; anchor: 'start' | 'middle' | 'end' }
+> = {
+  FRONT: { x: 0, y: -92, anchor: 'middle' },
+  LEFT: { x: -95, y: -4, anchor: 'end' },
+  RIGHT: { x: 95, y: -4, anchor: 'start' },
+  BACK: { x: 0, y: 92, anchor: 'middle' },
+}
+
+function getValidLidarDistance(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : null
+}
+
+function getMinValidDistance(values: Array<number | null | undefined>) {
+  const valid = values
+    .map(getValidLidarDistance)
+    .filter((value): value is number => value !== null)
+  return valid.length > 0 ? Math.min(...valid) : null
+}
+
+function getLidarSeverity(
+  distance: number | null,
+  fresh: boolean,
+  maxRange: number,
+): LidarSeverity {
+  if (!fresh || distance === null) return 'UNKNOWN'
+  if (distance >= maxRange * 0.995) return 'CLEAR'
+  if (distance <= dangerDistanceM) return 'DANGER'
+  if (distance <= cautionDistanceM) return 'CAUTION'
+  return 'CLEAR'
+}
+
+function formatLidarDistance(distance: number | null, maxRange: number) {
+  if (distance === null) return '--'
+  if (distance >= maxRange * 0.995) return `> ${Math.round(maxRange)} m`
+  return `${distance.toFixed(1)} m`
+}
+
+function getLidarSeverityStyle(severity: LidarSeverity) {
+  if (severity === 'DANGER') {
+    return {
+      fill: 'rgba(239,68,68,.34)',
+      stroke: '#ef4444',
+      text: '#fecaca',
+      badgeBg: 'rgba(239,68,68,.22)',
+      badgeBorder: 'rgba(248,113,113,.42)',
+      icon: '#f87171',
+    }
+  }
+  if (severity === 'CAUTION') {
+    return {
+      fill: 'rgba(245,158,11,.28)',
+      stroke: '#f59e0b',
+      text: '#fde68a',
+      badgeBg: 'rgba(245,158,11,.2)',
+      badgeBorder: 'rgba(251,191,36,.42)',
+      icon: '#fbbf24',
+    }
+  }
+  if (severity === 'CLEAR') {
+    return {
+      fill: 'rgba(34,197,94,.25)',
+      stroke: '#22c55e',
+      text: '#bbf7d0',
+      badgeBg: 'rgba(34,197,94,.18)',
+      badgeBorder: 'rgba(74,222,128,.32)',
+      icon: '#22c55e',
+    }
+  }
+  return {
+    fill: 'rgba(148,163,184,.18)',
+    stroke: '#94a3b8',
+    text: '#cbd5e1',
+    badgeBg: 'rgba(148,163,184,.14)',
+    badgeBorder: 'rgba(148,163,184,.26)',
+    icon: '#94a3b8',
+  }
+}
+
+const LidarRadarOverlay = memo(function LidarRadarOverlay({
+  status,
+}: {
+  status: ControlStatus | null
+}) {
+  useRenderDiagnostics('LidarRadarOverlay')
+  const lidar = status?.lidar
+  const fresh = getLidarFresh(lidar)
+  const maxRange =
+    typeof lidar?.rangeMaxM === 'number' && Number.isFinite(lidar.rangeMaxM)
+      ? lidar.rangeMaxM
+      : 60
+  const rawDirectionStates: Array<
+    Omit<LidarDirectionState, 'severity' | 'display'>
+  > = [
+    {
+      direction: 'FRONT',
+      value: getMinValidDistance([
+        lidar?.frontM,
+        lidar?.frontLeftM,
+        lidar?.frontRightM,
+      ]),
+    },
+    {
+      direction: 'LEFT',
+      value: getMinValidDistance([lidar?.leftM]),
+    },
+    {
+      direction: 'RIGHT',
+      value: getMinValidDistance([lidar?.rightM]),
+    },
+    {
+      direction: 'BACK',
+      value: getMinValidDistance([lidar?.backM]),
+    },
+  ]
+  const directionStates: LidarDirectionState[] = rawDirectionStates.map((item) => {
+    const severity = getLidarSeverity(item.value, fresh, maxRange)
+    return {
+      ...item,
+      severity,
+      display: formatLidarDistance(item.value, maxRange),
+    }
+  })
+  const orderedSeverities: LidarSeverity[] = [
+    'DANGER',
+    'CAUTION',
+    'UNKNOWN',
+    'CLEAR',
+  ]
+  const panelSeverity = fresh
+    ? orderedSeverities.find((severity) =>
+        directionStates.some((item) => item.severity === severity),
+      ) ?? 'UNKNOWN'
+    : 'UNKNOWN'
+  const statusLabel = fresh
+    ? panelSeverity === 'DANGER'
+      ? 'DANGER'
+      : panelSeverity === 'CAUTION'
+        ? 'CAUTION'
+        : panelSeverity === 'CLEAR'
+          ? 'ACTIVE'
+          : 'UNKNOWN'
+    : 'STALE'
+  const nearestObstacle = directionStates
+    .filter(
+      (item) =>
+        item.value !== null &&
+        item.severity !== 'UNKNOWN' &&
+        item.value < maxRange * 0.995,
+    )
+    .sort((a, b) => Number(a.value) - Number(b.value))[0]
+  const alertStyle = getLidarSeverityStyle(
+    !fresh ? 'UNKNOWN' : nearestObstacle?.severity ?? 'CLEAR',
+  )
+  const panelBorder = getLidarSeverityStyle(panelSeverity)
+
+  return (
+    <GlassPanel
+      style={{
+        width: '100%',
+        minWidth: 0,
+        alignSelf: 'start',
+        padding: 0,
+        overflow: 'hidden',
+        border: `1px solid ${panelBorder.badgeBorder}`,
+        background:
+          'linear-gradient(180deg, rgba(8,18,33,.9), rgba(8,13,24,.78))',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          height: 48,
+          padding: '0 12px',
+          borderBottom: '1px solid rgba(148,163,184,.16)',
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            color: '#67e8f9',
+            fontSize: 12,
+            fontWeight: 950,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Icon name="radar" size={15} />
+          LIDAR
+        </span>
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+          }}
+        >
+          <strong
+            style={{
+              borderRadius: 999,
+              padding: '5px 10px',
+              background: panelBorder.badgeBg,
+              border: `1px solid ${panelBorder.badgeBorder}`,
+              color: panelBorder.text,
+              fontSize: 11,
+              fontWeight: 950,
+            }}
+          >
+            {statusLabel}
+          </strong>
+          <span style={{ color: '#cbd5e1', fontSize: 11 }}>Range</span>
+          <strong
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              borderRadius: 8,
+              padding: '7px 8px',
+              color: '#e5edf8',
+              background: 'rgba(15,23,42,.58)',
+              border: '1px solid rgba(148,163,184,.14)',
+              fontFamily: 'var(--font-data)',
+              fontSize: 13,
+              fontWeight: 950,
+            }}
+          >
+            {maxRange.toFixed(0)} m
+            <Icon name="chevronRight" size={12} />
+          </strong>
+        </div>
+      </div>
+      <div
+        style={{
+          position: 'relative',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '8px 8px 6px',
+        }}
+      >
+        <svg
+          viewBox="-128 -118 256 236"
+          width="100%"
+          height="clamp(190px, 25vh, 226px)"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ maxWidth: 292 }}
+        >
+          <circle r="89" fill="rgba(2,6,23,.36)" />
+          {[29, 55, 82].map((r) => (
+            <circle
+              key={r}
+              r={r}
+              fill="none"
+              stroke="rgba(203,213,225,.16)"
+              strokeWidth="1"
+            />
+          ))}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+            const a = ((deg - 90) * Math.PI) / 180
+            return (
+              <line
+                key={deg}
+                x1={Math.cos(a) * 18}
+                y1={Math.sin(a) * 18}
+                x2={Math.cos(a) * 88}
+                y2={Math.sin(a) * 88}
+                stroke="rgba(203,213,225,.12)"
+              />
+            )
+          })}
+          {directionStates.map((item) => {
+            const style = getLidarSeverityStyle(item.severity)
+            const label = lidarSectorLabels[item.direction]
+            return (
+              <g key={item.direction}>
+                <path
+                  d={lidarSectorPaths[item.direction]}
+                  fill={style.fill}
+                  stroke={style.stroke}
+                  strokeWidth={item.severity === 'UNKNOWN' ? 1 : 1.6}
+                />
+                <text
+                  x={label.x}
+                  y={label.y}
+                  textAnchor={label.anchor}
+                  fill="#e5edf8"
+                  fontSize="10"
+                  fontWeight="950"
+                >
+                  {item.direction}
+                </text>
+                <text
+                  x={label.x}
+                  y={label.y + 16}
+                  textAnchor={label.anchor}
+                  fill="#f8fafc"
+                  fontSize="14"
+                  fontWeight="950"
+                  fontFamily="var(--font-data)"
+                >
+                  {item.display}
+                </text>
+                <text
+                  x={label.x}
+                  y={label.y + 31}
+                  textAnchor={label.anchor}
+                  fill={style.text}
+                  fontSize="9"
+                  fontWeight="950"
+                >
+                  {item.severity}
+                </text>
+              </g>
+            )
+          })}
+          <circle r="20" fill="rgba(15,23,42,.88)" stroke="#334155" />
+          <circle r="10" fill="rgba(96,165,250,.2)" stroke="#bfdbfe" />
+          <path
+            d="M0 -18 L10 9 L0 4 L-10 9 Z"
+            fill="#60a5fa"
+            stroke="#eff6ff"
+            strokeWidth="1.2"
+          />
+          <g opacity=".85">
+            <circle cx="-14" cy="-2" r="3" fill="#e2e8f0" />
+            <circle cx="14" cy="-2" r="3" fill="#e2e8f0" />
+            <circle cx="-8" cy="9" r="3" fill="#e2e8f0" />
+            <circle cx="8" cy="9" r="3" fill="#e2e8f0" />
+            <path
+              d="M-14 -2H14M-8 9H8"
+              stroke="#e2e8f0"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </g>
+        </svg>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 7,
+          padding: '0 10px 9px',
+        }}
+      >
+        {directionStates.map((item) => {
+          const style = getLidarSeverityStyle(item.severity)
+          return (
+            <div
+              key={item.direction}
+              style={{
+                borderRadius: 9,
+                padding: '8px 7px',
+                background: 'rgba(15,23,42,.62)',
+                border: `1px solid ${style.badgeBorder}`,
+              }}
+            >
+              <div
+                style={{
+                  color: '#dbeafe',
+                  fontSize: 9,
+                  fontWeight: 950,
+                  marginBottom: 4,
+                }}
+              >
+                {item.direction}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 4,
+                }}
+              >
+                <strong
+                  style={{
+                    color: '#e5edf8',
+                    fontFamily: 'var(--font-data)',
+                    fontSize: 11,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {item.display}
+                </strong>
+                <span
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 999,
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: style.icon,
+                    background: style.badgeBg,
+                    border: `1px solid ${style.badgeBorder}`,
+                  }}
+                  title={item.severity}
+                >
+                  {item.severity === 'CLEAR' ? (
+                    <Icon name="shield" size={13} />
+                  ) : item.severity === 'UNKNOWN' ? (
+                    <Icon name="minus" size={12} />
+                  ) : (
+                    <Icon name="alert" size={13} />
+                  )}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ padding: '0 10px 10px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            borderRadius: 10,
+            padding: '9px 10px',
+            background: alertStyle.badgeBg,
+            border: `1px solid ${alertStyle.badgeBorder}`,
+          }}
+        >
+          <span
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 999,
+              display: 'grid',
+              placeItems: 'center',
+              color: alertStyle.icon,
+              background: 'rgba(2,6,23,.26)',
+            }}
+          >
+            {!fresh || !lidar?.available ? (
+              <Icon name="minus" size={16} />
+            ) : nearestObstacle ? (
+              <Icon
+                name={
+                  nearestObstacle.severity === 'CLEAR' ? 'shield' : 'alert'
+                }
+                size={17}
+              />
+            ) : (
+              <Icon name="shield" size={17} />
+            )}
+          </span>
+          <div
+            style={{
+              display: 'grid',
+              gap: 2,
+              minWidth: 0,
+            }}
+          >
+            <strong style={{ color: '#f8fafc', fontSize: 12, lineHeight: 1.2 }}>
+              {!fresh || !lidar?.available
+                ? fresh
+                  ? 'LiDAR data unavailable'
+                  : 'LiDAR data stale'
+                : nearestObstacle
+                  ? `Nearest obstacle: ${nearestObstacle.display} at ${nearestObstacle.direction.toLowerCase()}`
+                  : 'No obstacle within safety threshold'}
+            </strong>
+            <span style={{ color: '#cbd5e1', fontSize: 10, lineHeight: 1.25 }}>
+              {nearestObstacle?.severity === 'DANGER'
+                ? 'Hold position or avoid immediately.'
+                : nearestObstacle?.severity === 'CAUTION'
+                  ? 'Proceed with caution.'
+                  : 'Directional sectors are clear or outside warning range.'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </GlassPanel>
+  )
+})
+
+const LidarDetailPanel = memo(function LidarDetailPanel({
+  status,
+}: {
+  status: ControlStatus | null
+}) {
+  useRenderDiagnostics('LidarDetailPanel')
+  const lidar = status?.lidar
+  const fresh = getLidarFresh(lidar)
+  const rows = [
+    ['Status', fresh ? (lidar?.status ?? 'CLEAR') : 'WAITING'],
+    ['Action', lidar?.status === 'OBSTACLE' ? 'AVOID' : 'CONTINUE'],
+    ['Front', getLidarMetric(lidar?.frontM)],
+    ['Front L', getLidarMetric(lidar?.frontLeftM)],
+    ['Front R', getLidarMetric(lidar?.frontRightM)],
+    ['Left', getLidarMetric(lidar?.leftM)],
+    ['Right', getLidarMetric(lidar?.rightM)],
+    ['Back', getLidarMetric(lidar?.backM)],
+    ['Nearest', getLidarMetric(lidar?.nearestM)],
+    ['Direction', lidar?.nearestDirection ?? lidar?.direction ?? '--'],
+    ['Range', getLidarMetric(lidar?.rangeMaxM)],
+    ['Scan age', lidar?.scanAgeS != null ? `${lidar.scanAgeS.toFixed(1)}s` : '--'],
+  ]
+
+  return (
+    <GlassPanel
+      style={{
+        width: '100%',
+        padding: 12,
+        border: fresh
+          ? '1px solid rgba(34,211,238,.28)'
+          : '1px solid rgba(251,191,36,.35)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            color: fresh ? '#67e8f9' : '#fbbf24',
+            fontSize: 12,
+            fontWeight: 950,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Icon name="radar" size={14} />
+          LiDAR Detail
+        </span>
+        <strong style={{ color: fresh ? '#bbf7d0' : '#fde68a', fontSize: 10 }}>
+          {lidar?.enabled ? 'ON' : 'OFF'}
+        </strong>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 7 }}>
+        {rows.map(([label, value]) => (
+          <Fragment key={label}>
+            <span style={{ color: '#94a3b8', fontSize: 11 }}>{label}</span>
+            <strong
+              style={{
+                color: '#e5edf8',
+                fontSize: 11,
+                fontFamily: 'var(--font-data)',
+                textAlign: 'right',
+              }}
+            >
+              {value}
+            </strong>
+          </Fragment>
+        ))}
       </div>
     </GlassPanel>
   )
@@ -1146,6 +1849,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
     Number.isFinite(mission.distanceKm)
       ? `${mission.distanceKm.toFixed(1)} km`
       : '--'
+  const routePointCount = mission.routePoints?.length ?? 0
 
   return (
     <GlassPanel
@@ -1155,7 +1859,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
         minHeight: 'fit-content',
         flexShrink: 0,
         overflow: 'hidden',
-        padding: 12,
+        padding: 10,
       }}
     >
       <div
@@ -1163,7 +1867,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
           fontSize: 12,
           fontWeight: 950,
           color: '#cbd5e1',
-          marginBottom: 10,
+          marginBottom: 8,
           letterSpacing: '.08em',
           textTransform: 'uppercase',
         }}
@@ -1172,8 +1876,12 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
       </div>
       {[
         ['Mission', mission.id],
+        ['Order', mission.orderRef],
         ['Progress', `${progress.toFixed(1)}%`],
         ['Distance', distance],
+        ['Plan', mission.flightPlanId],
+        ['Points', routePointCount > 0 ? `${routePointCount}` : '--'],
+        ['Max Alt', `${mission.maxAltitudeM.toFixed(0)} m`],
         ['Heading', yaw],
       ].map(([label, value]) => (
         <div
@@ -1183,7 +1891,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 12,
-            marginBottom: 6,
+            marginBottom: 4,
           }}
         >
           <span style={{ color: '#94a3b8', fontSize: 11 }}>{label}</span>
@@ -1320,12 +2028,14 @@ const toolbarGroupStyle: CSSProperties = {
 
 const FlightControls = memo(function FlightControls({
   busyCommand,
+  lidarDetailsOpen,
   moreOpen,
   status,
   onCommand,
   onToggleMore,
 }: {
   busyCommand: FlightCommand | null
+  lidarDetailsOpen: boolean
   moreOpen: boolean
   status: ControlStatus | null
   onCommand: (command: FlightCommand) => void
@@ -1341,8 +2051,11 @@ const FlightControls = memo(function FlightControls({
     tone?: 'danger' | 'amber'
   }) => {
     const isThermal = item.command === 'thermal_toggle'
+    const isLidar = item.command === 'lidar_monitor_toggle'
     const label = isThermal
       ? `Thermal ${thermalEnabled ? 'ON' : 'OFF'}`
+      : isLidar
+        ? `LiDAR ${lidarDetailsOpen ? 'VIEW' : 'UI'}`
       : item.label
     return (
       <button
@@ -1350,7 +2063,11 @@ const FlightControls = memo(function FlightControls({
         onClick={() => onCommand(item.command)}
         disabled={busyCommand !== null}
         style={{
-          ...buttonStyle(isThermal && thermalEnabled ? 'amber' : item.tone),
+          ...buttonStyle(
+            (isThermal && thermalEnabled) || (isLidar && lidarDetailsOpen)
+              ? 'amber'
+              : item.tone,
+          ),
         }}
         title={label}
       >
@@ -1363,41 +2080,66 @@ const FlightControls = memo(function FlightControls({
   return (
     <GlassPanel
       style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 5,
-        padding: 6,
+        display: 'grid',
+        gridTemplateColumns:
+          'minmax(220px, .8fr) minmax(340px, 1.25fr) minmax(280px, 1fr)',
+        alignItems: 'stretch',
+        gap: 8,
+        padding: 8,
         width: '100%',
         overflow: 'visible',
       }}
     >
-      <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
-        {flightControls.map(controlButton)}
-        <button
-          onClick={() => onCommand('stop')}
-          disabled={busyCommand !== null}
+      <div style={{ ...toolbarGroupStyle, alignContent: 'center' }}>
+        <div
           style={{
-            ...buttonStyle(),
-            background: 'rgba(20,83,45,.82)',
-            color: '#86efac',
+            width: '100%',
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 850,
+            marginBottom: 2,
           }}
-          title="Hover"
         >
-          <Icon name="joystick" size={14} />
-          <span>Hover</span>
-        </button>
+          Quick Actions
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
+          {flightControls.map(controlButton)}
+          <button
+            onClick={() => onCommand('stop')}
+            disabled={busyCommand !== null}
+            style={{
+              ...buttonStyle(),
+              background: 'rgba(20,83,45,.82)',
+              color: '#86efac',
+            }}
+            title="Hover"
+          >
+            <Icon name="joystick" size={14} />
+            <span>Hover</span>
+          </button>
+        </div>
       </div>
 
       <div
         style={{
           ...toolbarGroupStyle,
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 46px)',
-          gap: 3,
+          gridTemplateColumns: 'repeat(6, 46px)',
+          alignContent: 'center',
+          gap: 4,
         }}
       >
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 850,
+            marginBottom: 1,
+          }}
+        >
+          Manual Control
+        </div>
         {movementControls.map((item) => (
           <button
             key={item.label}
@@ -1426,19 +2168,43 @@ const FlightControls = memo(function FlightControls({
             <span>{item.label}</span>
           </button>
         ))}
+        {rotationControls.map((item) => (
+          <button
+            key={item.label}
+            onClick={() => onCommand(item.command)}
+            disabled={busyCommand !== null}
+            style={{
+              ...buttonStyle(),
+              width: 46,
+              height: 29,
+              fontSize: 7,
+            }}
+            title={item.label}
+          >
+            <Icon name={item.icon} size={12} />
+            <span>{busyCommand === item.command ? 'Sending' : item.label}</span>
+          </button>
+        ))}
       </div>
 
-      <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
-        {rotationControls.map(controlButton)}
-      </div>
       <div
         style={{
           ...toolbarGroupStyle,
-          maxWidth: 128,
-          flexWrap: 'nowrap',
+          alignContent: 'center',
           position: 'relative',
         }}
       >
+        <div
+          style={{
+            width: '100%',
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 850,
+            marginBottom: 2,
+          }}
+        >
+          Camera & Tools
+        </div>
         <button
           onClick={() => onCommand('thermal_toggle')}
           disabled={busyCommand !== null}
@@ -1498,6 +2264,7 @@ export default function InFlightControl({
   const [streamRevision, setStreamRevision] = useState(0)
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [lidarDetailsOpen, setLidarDetailsOpen] = useState(false)
   const [preflightReady, setPreflightReady] = useState(() => {
     try {
       return window.localStorage.getItem(preflightStorageKey) === 'true'
@@ -1691,9 +2458,16 @@ export default function InFlightControl({
   const handleToggleMore = useCallback(() => setMoreOpen((value) => !value), [])
   const handleCommand = useCallback(
     (command: FlightCommand) => {
+      if (command === 'lidar_monitor_toggle') {
+        setLidarDetailsOpen((value) => !value)
+        if (controlStatus?.lidar?.enabled === true) {
+          setLastCommand('LiDAR panel toggled')
+          return
+        }
+      }
       void sendCommand(command)
     },
-    [sendCommand],
+    [controlStatus?.lidar?.enabled, sendCommand],
   )
   const handlePreflightReady = useCallback(() => {
     try {
@@ -1859,7 +2633,7 @@ export default function InFlightControl({
                 style={{
                   position: 'absolute',
                   right: 16,
-                  top: 16,
+                  top: 178,
                   width: 260,
                   padding: '12px 14px',
                   border: controlStatus?.hotspotDetected
@@ -2075,9 +2849,16 @@ export default function InFlightControl({
               </GlassPanel>
             )}
           </div>
+        </section>
 
+        <section className="mission-control-lidar">
+          <LidarRadarOverlay status={controlStatus} />
+        </section>
+
+        <section className="mission-control-controls">
           <FlightControls
             busyCommand={busyCommand}
+            lidarDetailsOpen={lidarDetailsOpen}
             moreOpen={moreOpen}
             status={controlStatus}
             onCommand={handleCommand}
@@ -2087,12 +2868,13 @@ export default function InFlightControl({
 
         <aside className="mission-control-side">
           <TelemetryPanel status={controlStatus} />
+          {lidarDetailsOpen && <LidarDetailPanel status={controlStatus} />}
           <MissionInfoPanel
             status={controlStatus}
             progress={progress}
             mission={mission}
           />
-          <RealMiniMap status={controlStatus} />
+          <RealMiniMap status={controlStatus} mission={mission} />
         </aside>
 
         {!preflightReady && (

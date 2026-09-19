@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { env } from '../../../config/env'
 import type {
   Screen,
   Mission,
@@ -12,6 +13,7 @@ import {
   DRONE_BATTERY_LOW,
   DRONE_HW_FAULT,
   DRONE_STALE_TEL,
+  MISSION_PRIMARY,
   ALL_MISSIONS,
   CHECKLIST,
   REPLACEMENT_DRONES,
@@ -65,6 +67,109 @@ const SCREEN_MISSION_STATE: Partial<Record<Screen, Mission['state']>> = {
   'manual-upload': 'COMPLETED',
 }
 
+type BackendMission = {
+  id: string
+  orderId?: string
+  orderTitle?: string
+  customerName?: string
+  missionCode?: string
+  status?: Mission['state']
+  operatorId?: string
+  droneId?: string
+  droneCode?: string
+  latitude?: number
+  longitude?: number
+  address?: string
+  scheduledStartAt?: string
+  description?: string
+  mediaType?: string
+  plan?: {
+    id?: string
+    plannedDistanceM?: number
+    plannedDurationSec?: number
+    maxPlannedAltitudeM?: number
+    waypoints?: {
+      id?: string
+      sequence?: number
+      simX?: number
+      simY?: number
+      altitudeM?: number
+      plannedSpeedMps?: number
+      reason?: string
+    }[]
+  }
+}
+
+type ApiResponse<T> = {
+  data: T
+}
+
+function adaptBackendMission(mission: BackendMission): Mission {
+  const plan = mission.plan
+  const routePoints = (plan?.waypoints ?? [])
+    .filter(
+      (point) =>
+        typeof point.sequence === 'number' &&
+        typeof point.simX === 'number' &&
+        typeof point.simY === 'number' &&
+        typeof point.altitudeM === 'number',
+    )
+    .sort((a, b) => Number(a.sequence) - Number(b.sequence))
+    .map((point) => ({
+      id: point.id ?? `wp-${point.sequence}`,
+      sequence: Number(point.sequence),
+      simX: Number(point.simX),
+      simY: Number(point.simY),
+      altitudeM: Number(point.altitudeM),
+      speedMps:
+        typeof point.plannedSpeedMps === 'number'
+          ? point.plannedSpeedMps
+          : undefined,
+      reason: point.reason ?? 'CRUISE',
+    }))
+  const lastRoutePoint = routePoints[routePoints.length - 1]
+  const orderTarget =
+    typeof mission.longitude === 'number' && typeof mission.latitude === 'number'
+      ? {
+          simX: Number(mission.longitude),
+          simY: Number(mission.latitude),
+        }
+      : null
+
+  return {
+    id: mission.missionCode ?? mission.id,
+    orderRef: mission.orderId ?? MISSION_PRIMARY.orderRef,
+    orderTitle: mission.orderTitle,
+    title: mission.orderTitle ?? MISSION_PRIMARY.title,
+    state: mission.status ?? MISSION_PRIMARY.state,
+    priority: MISSION_PRIMARY.priority,
+    droneId: mission.droneCode ?? mission.droneId ?? MISSION_PRIMARY.droneId,
+    operatorId: mission.operatorId ?? MISSION_PRIMARY.operatorId,
+    customer: mission.customerName ?? MISSION_PRIMARY.customer,
+    location: mission.address ?? MISSION_PRIMARY.location,
+    lat: mission.latitude ?? MISSION_PRIMARY.lat,
+    lng: mission.longitude ?? MISSION_PRIMARY.lng,
+    scheduledAt: mission.scheduledStartAt ?? MISSION_PRIMARY.scheduledAt,
+    estimatedMinutes:
+      typeof plan?.plannedDurationSec === 'number'
+        ? Math.max(1, Math.round(plan.plannedDurationSec / 60))
+        : MISSION_PRIMARY.estimatedMinutes,
+    distanceKm:
+      typeof plan?.plannedDistanceM === 'number'
+        ? plan.plannedDistanceM / 1000
+        : MISSION_PRIMARY.distanceKm,
+    flightPlanId: plan?.id ?? MISSION_PRIMARY.flightPlanId,
+    maxAltitudeM:
+      typeof plan?.maxPlannedAltitudeM === 'number'
+        ? plan.maxPlannedAltitudeM
+        : MISSION_PRIMARY.maxAltitudeM,
+    notes: mission.description ?? MISSION_PRIMARY.notes,
+    targetSimX: orderTarget?.simX ?? lastRoutePoint?.simX,
+    targetSimY: orderTarget?.simY ?? lastRoutePoint?.simY,
+    routePoints,
+  }
+}
+
 export default function OperatorWorkspace() {
   const [screen, setScreen] = useState<Screen>('in-flight')
   const [navId, setNavId] = useState<NavId>('mission-control')
@@ -73,6 +178,32 @@ export default function OperatorWorkspace() {
   const [drone, setDrone] = useState<Drone>({ ...DRONE_PRIMARY })
   const [token, setToken] = useState<FlightToken | null>(null)
   const [failReason, setFailReason] = useState('Pre-flight hardware failure')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadMissionFromBackend() {
+      try {
+        const response = await fetch(
+          `${env.apiBaseUrl}/api/missions/code/${encodeURIComponent(
+            MISSION_PRIMARY.id,
+          )}`,
+        )
+        if (!response.ok) return
+        const payload = (await response.json()) as ApiResponse<BackendMission>
+        if (cancelled || !payload.data) return
+        setMission(adaptBackendMission(payload.data))
+      } catch {
+        // Keep the built-in demo mission when the backend is not running.
+      }
+    }
+
+    loadMissionFromBackend()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const droneForScenario: Record<ChecklistScenario, Drone> = {
     'all-pass': DRONE_PRIMARY,

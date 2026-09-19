@@ -137,6 +137,8 @@ export const MISSION_PRIMARY: Mission = {
   distanceKm: 4.2,
   flightPlanId: 'FP-2024-0891-A',
   maxAltitudeM: 60,
+  targetSimX: 214,
+  targetSimY: -5,
   notes:
     'Detailed photogrammetric survey of East Span cable anchorage zones. Maintain ≥15 m clearance from structure at all times. Coordinate with Bay Bridge traffic control on Ch. 6 before launch. Scheduled weather window: 08:00–12:00 PST. Deliverables: 4K ortho mosaic + point cloud.',
 }

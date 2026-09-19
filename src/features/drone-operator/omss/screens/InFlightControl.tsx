@@ -1,4 +1,12 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { env } from '../../../../config/env'
 import type { Drone, Mission } from '../types'
@@ -35,7 +43,6 @@ type FlightCommand =
   | 'speed_down'
   | 'safety_toggle'
   | 'thermal_toggle'
-  | 'thermal_viewer_toggle'
 
 type IconName =
   | 'drone'
@@ -88,10 +95,24 @@ type ControlStatus = {
   thermalEnabled?: boolean
   thermalSensorOnline?: boolean
   thermalFrameAgeMs?: number | null
+  thermalFps?: number | null
+  thermalFrameWidth?: number | null
+  thermalFrameHeight?: number | null
+  minTemperatureC?: number | null
   maxTemperatureC?: number | null
   averageTemperatureC?: number | null
+  thermalThresholdC?: number | null
   hotspotDetected?: boolean
   hotspotTemperatureC?: number | null
+  thermalMode?: string | null
+  thermalPixelFormat?: string | null
+  thermalPalette?: string | null
+  thermalIsothermEnabled?: boolean
+  thermalDebugOverlayEnabled?: boolean
+  thermalDisplayRangeMode?: string | null
+  thermalDisplayMinC?: number | null
+  thermalDisplayMaxC?: number | null
+  thermalSourceError?: string | null
 }
 
 type MapMeta = {
@@ -188,11 +209,6 @@ const moreToolControls: {
   { command: 'video_toggle', label: 'Video', icon: 'video' },
   { command: 'lidar_monitor_toggle', label: 'LiDAR', icon: 'radar' },
   { command: 'telemetry_monitor_toggle', label: 'Telemetry', icon: 'activity' },
-  {
-    command: 'thermal_viewer_toggle',
-    label: 'Thermal View',
-    icon: 'thermometer',
-  },
   { command: 'safety_toggle', label: 'Safety', icon: 'shield' },
 ]
 
@@ -712,6 +728,17 @@ function useRestrictedZones() {
   }, [])
 
   return zones
+}
+
+function formatNumber(value: number | null | undefined, digits = 1) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(digits)
+    : '--'
+}
+
+function formatTemperature(value: number | null | undefined) {
+  const formatted = formatNumber(value)
+  return formatted === '--' ? '--' : `${formatted} °C`
 }
 
 function evaluateGeofence(
@@ -1625,11 +1652,40 @@ export default function InFlightControl({
   const batteryState = controlStatus?.batteryState ?? 'NORMAL'
   const showBatteryWarning =
     telemetryBattery !== null && batteryState !== 'NORMAL'
-  const thermalMax =
-    typeof controlStatus?.maxTemperatureC === 'number' &&
-    Number.isFinite(controlStatus.maxTemperatureC)
-      ? `${controlStatus.maxTemperatureC.toFixed(1)} °C`
-      : '--'
+  const thermalMax = formatTemperature(controlStatus?.maxTemperatureC)
+  const thermalRows = [
+    [
+      'Resolution',
+      controlStatus?.thermalFrameWidth && controlStatus?.thermalFrameHeight
+        ? `${controlStatus.thermalFrameWidth}x${controlStatus.thermalFrameHeight}`
+        : '--',
+    ],
+    ['FPS', formatNumber(controlStatus?.thermalFps)],
+    ['Mode', controlStatus?.thermalMode?.replaceAll('_', ' ') ?? '--'],
+    [
+      'Frame age',
+      typeof controlStatus?.thermalFrameAgeMs === 'number'
+        ? `${controlStatus.thermalFrameAgeMs} ms`
+        : '--',
+    ],
+    ['Min', formatTemperature(controlStatus?.minTemperatureC)],
+    ['Avg', formatTemperature(controlStatus?.averageTemperatureC)],
+    ['Max', thermalMax],
+    ['Threshold', formatTemperature(controlStatus?.thermalThresholdC)],
+    ['Palette', controlStatus?.thermalPalette ?? '--'],
+    ['Range', controlStatus?.thermalDisplayRangeMode ?? '--'],
+    [
+      'Scale',
+      controlStatus?.thermalDisplayMinC != null &&
+      controlStatus?.thermalDisplayMaxC != null
+        ? `${formatNumber(controlStatus.thermalDisplayMinC)}-${formatNumber(controlStatus.thermalDisplayMaxC)} °C`
+        : '--',
+    ],
+    [
+      'ISO',
+      `${controlStatus?.thermalIsothermEnabled ? 'ON' : 'OFF'} / DBG ${controlStatus?.thermalDebugOverlayEnabled ? 'ON' : 'OFF'}`,
+    ],
+  ]
   const handleOnline = useCallback(() => setIsOnline(true), [])
   const handleOffline = useCallback(() => setIsOnline(false), [])
   const handleToggleMore = useCallback(() => setMoreOpen((value) => !value), [])
@@ -1804,8 +1860,8 @@ export default function InFlightControl({
                   position: 'absolute',
                   right: 16,
                   top: 16,
-                  width: 210,
-                  padding: '10px 12px',
+                  width: 260,
+                  padding: '12px 14px',
                   border: controlStatus?.hotspotDetected
                     ? '1px solid rgba(251,146,60,.78)'
                     : '1px solid rgba(56,189,248,.35)',
@@ -1847,23 +1903,8 @@ export default function InFlightControl({
                 </div>
                 <div
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    color: '#cbd5e1',
-                    fontSize: 11,
-                  }}
-                >
-                  <span>MAX</span>
-                  <strong
-                    style={{ fontFamily: 'var(--font-data)', color: '#fff7ed' }}
-                  >
-                    {thermalMax}
-                  </strong>
-                </div>
-                <div
-                  style={{
-                    marginTop: 5,
-                    fontSize: 11,
+                    marginBottom: 8,
+                    fontSize: 12,
                     fontWeight: 900,
                     color: controlStatus?.hotspotDetected
                       ? '#fed7aa'
@@ -1874,6 +1915,47 @@ export default function InFlightControl({
                     ? 'HOTSPOT DETECTED'
                     : 'No hotspot'}
                 </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr auto',
+                    rowGap: 5,
+                    columnGap: 12,
+                    fontSize: 11,
+                    color: '#cbd5e1',
+                  }}
+                >
+                  {thermalRows.map(([label, value]) => (
+                    <Fragment key={label}>
+                      <span>{label}</span>
+                      <strong
+                        style={{
+                          color:
+                            label === 'Max' && controlStatus?.hotspotDetected
+                              ? '#fed7aa'
+                              : '#f8fafc',
+                          fontFamily: 'var(--font-data)',
+                          textAlign: 'right',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {value}
+                      </strong>
+                    </Fragment>
+                  ))}
+                </div>
+                {controlStatus?.thermalSourceError && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      color: '#fca5a5',
+                      fontSize: 10,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    Err: {controlStatus.thermalSourceError}
+                  </div>
+                )}
               </GlassPanel>
             )}
 

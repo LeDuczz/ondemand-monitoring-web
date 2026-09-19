@@ -187,12 +187,14 @@ function HeroIllustration() {
         />
       </svg>
       <div className="odm-card lp-ai-card">
-        <span className="lp-ai-card-score">{heroAiCard.score}</span>
+        <div className="lp-ai-card-top">
+          <span className="lp-ai-card-score">{heroAiCard.score}</span>
+          <StatusBadge tone="green">PASS</StatusBadge>
+        </div>
         <div className="lp-ai-card-body">
           <strong>{heroAiCard.label}</strong>
           <span>{heroAiCard.status}</span>
         </div>
-        <StatusBadge tone="green">PASS</StatusBadge>
       </div>
       <div className="odm-card lp-mission-card">
         <div className="lp-mission-card-top">
@@ -316,10 +318,32 @@ function LivePanel() {
 }
 
 function FaqAccordion() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0)
+  // Only the design's first FAQ item has answer copy (see content.ts / the
+  // FaqItem.answer doc comment in ../types); the other four are shown as
+  // static rows instead of accordion buttons that would expand into an
+  // empty panel. Once the team supplies answers for them, adding `answer`
+  // in content.ts is enough to turn them into accordion items too.
+  const firstExpandableIndex = content.faqItems.findIndex((item) => item.answer)
+  const [openIndex, setOpenIndex] = useState<number | null>(
+    firstExpandableIndex,
+  )
+
   return (
     <div className="lp-faq-list">
       {content.faqItems.map((item, index) => {
+        if (!item.answer) {
+          return (
+            <div
+              className="lp-faq-item lp-faq-item--static"
+              key={item.question}
+            >
+              <span className="lp-faq-question lp-faq-question--static">
+                {item.question}
+              </span>
+            </div>
+          )
+        }
+
         const open = openIndex === index
         const buttonId = `lp-faq-button-${index}`
         const panelId = `lp-faq-panel-${index}`
@@ -345,7 +369,7 @@ function FaqAccordion() {
                 aria-labelledby={buttonId}
                 className="lp-faq-answer"
               >
-                {item.answer ?? null}
+                {item.answer}
               </div>
             ) : null}
           </div>

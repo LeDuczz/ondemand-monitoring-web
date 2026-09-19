@@ -73,11 +73,16 @@
 .odm-landing .lp-nav {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   font-size: 14.5px;
   font-weight: 500;
   color: var(--tx2);
   flex: 1;
+  min-width: 0;
+}
+
+.odm-landing .lp-nav a {
+  white-space: nowrap;
 }
 
 .odm-landing .lp-nav a:hover {
@@ -248,8 +253,18 @@
 .odm-landing .lp-ai-card {
   top: 24px;
   left: -24px;
-  width: 230px;
+  width: 260px;
+  min-width: 260px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.odm-landing .lp-ai-card-top {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .odm-landing .lp-ai-card-score {
@@ -262,7 +277,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  flex: 1;
   font-size: 12px;
 }
 
@@ -661,6 +675,18 @@
   max-width: 640px;
 }
 
+/* Questions with no answer copy yet: a plain, non-interactive row (no
+   button, no chevron, no panel) instead of an accordion item that would
+   expand to nothing. */
+.odm-landing .lp-faq-question--static {
+  display: block;
+  width: 100%;
+  padding: 20px 0;
+  color: var(--tx);
+  font-weight: 600;
+  font-size: 16px;
+}
+
 /* ---------- CTA ---------- */
 .odm-landing .lp-cta {
   padding: 72px 0;
@@ -751,7 +777,16 @@
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 900px) {
+/*
+ * The nav collapses to the mobile menu at a wider breakpoint (1180px) than
+ * the rest of the layout (900px): with all 4 Vietnamese nav labels plus the
+ * theme toggle and two buttons inline, the header runs out of room and wraps
+ * ("Cách hoạt động" / "Câu hỏi thường gặp" onto two lines) well before the
+ * hero/stats/etc. grids need to stack. Checked at 1024/1100/1280 — the
+ * container caps at 1200px, so 1280 already matches the design's desktop
+ * header width and keeps the inline nav.
+ */
+@media (max-width: 1180px) {
   .odm-landing .lp-nav {
     position: fixed;
     inset: 72px 0 0 0;
@@ -789,7 +824,9 @@
   .odm-landing .lp-menu-btn {
     display: inline-flex;
   }
+}
 
+@media (max-width: 900px) {
   .odm-landing .lp-hero-grid {
     flex-direction: column;
     align-items: stretch;
@@ -840,6 +877,7 @@
   .odm-landing .lp-mission-card {
     position: static;
     width: 100%;
+    min-width: 0;
     margin-top: 12px;
   }
 

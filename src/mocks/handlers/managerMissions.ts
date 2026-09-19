@@ -1,15 +1,20 @@
-// Mock handlers for MNG-04 (create mission from an approved order) and
-// MNG-05 (resource dispatch). Endpoints, per the P5 task brief:
-//   POST /api/orders/{id}/missions                      [BRIEF C4 = TK]
-//   GET  /api/missions/{id}                              [BE]
-//   GET  /api/missions/{id}/resource-suggestions         [BRIEF C4]
-//   POST /api/missions/{id}/assign-drone?droneId=        [BE]
-//   POST /api/missions/{id}/assign-operator?operatorId=  [BE]
-//   POST /api/missions/{id}/assignments/{aid}/release    [BRIEF C4 = TK]
+// Mock handlers for MNG-04 through MNG-07. Endpoints:
+//   POST   /api/orders/{id}/missions                      [BRIEF C4 = TK]
+//   GET    /api/missions?from=&to=&status=                [TK]
+//   GET    /api/missions/{id}                             [BE]
+//   GET    /api/missions/{id}/resource-suggestions        [BRIEF C4]
+//   PATCH  /api/missions/{id}/schedule                   [ĐỀ XUẤT]
+//   GET    /api/missions/{id}/live                        [BRIEF C4]
+//   POST   /api/missions/{id}/incidents                  [ĐỀ XUẤT]
+//   POST   /api/missions/{id}/cancel                     [ĐỀ XUẤT]
+//   POST   /api/missions/{id}/assign-drone?droneId=       [BE]
+//   POST   /api/missions/{id}/assign-operator?operatorId= [BE]
+//   POST   /api/missions/{id}/assignments/{aid}/release   [BRIEF C4 = TK]
 import type {
   Mission,
   ResourceSuggestions,
 } from '../../features/manager/types/missions'
+import type { MissionStatus } from '../../shared/types/domain'
 import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
 import { hasScheduleConflict } from '../../features/manager/lib/schedule'
 import { createCollection } from '../db'
@@ -17,6 +22,7 @@ import { fail, ok, created, registerMockRoutes } from '../mockServer'
 import resourceSuggestionsSeed from '../data/resource-suggestions.json'
 import dronesSeed from '../data/drones.json'
 import operatorsSeed from '../data/operators.json'
+import calendarSeed from '../data/missions-calendar.json'
 import { findOrder } from './ordersStore'
 import {
   findMissionById,
@@ -49,6 +55,43 @@ const suggestions = createCollection(
 const drones = createCollection(dronesSeed.drones) as SeedDrone[]
 const operators = createCollection(operatorsSeed.operators) as SeedOperator[]
 
+// Calendar-specific missions for MNG-06/07 (list + live endpoints).
+// These are separate from `missions` (which backs MNG-04/05 single-mission
+// endpoints) to avoid mutating the P4/P5 seed. Both collections are searched
+// by findMissionById / list; calendar items also carry extra display fields
+// (droneCode, droneName, operatorName, serviceLabel) not present on StoredMission.
+type CalendarMission = StoredMission & {
+  droneCode: string | null
+  droneName: string | null
+  operatorName: string | null
+  serviceLabel: string | null
+}
+
+const calendarMissions = createCollection(
+  calendarSeed.missions,
+) as unknown as CalendarMission[]
+
+// In-memory incident log keyed by missionId. PROPOSED: table `mission_incident` [BRIEF A6].
+const incidentLog: Record<
+  string,
+  Array<{
+    id: string
+    type: string
+    description: string
+    reportedAt: string
+  }>
+> = {}
+
+/** Find a mission by id/code across BOTH the P4/P5 store and the calendar store. */
+function findAnyMission(
+  id: string,
+): StoredMission | CalendarMission | undefined {
+  return (
+    findMissionById(id) ??
+    calendarMissions.find((m) => m.id === id || m.missionCode === id)
+  )
+}
+
 function toMissionDto(m: StoredMission): Mission {
   return {
     id: m.id,
@@ -76,6 +119,218 @@ function toMissionDto(m: StoredMission): Mission {
 }
 
 registerMockRoutes([
+  // ── MNG-06/08: list missions in a date range [TK] ──────────────────────
+  {
+    method: 'GET',
+    path: '/api/missions',
+    handler: ({ query }) => {
+      const from = query.get('from')
+      const to = query.get('to')
+      const statusFilter = query.get('status')
+
+      // Merge both stores; calendar missions include richer display fields.
+      const all: (StoredMission | CalendarMission)[] = [
+        ...missions,
+        ...calendarMissions,
+      ]
+
+      const items = all.filter((m) => {
+        if (statusFilter && m.status !== statusFilter) return false
+        if (!from && !to) return true
+        const start = m.scheduledStartAt
+        const end = m.scheduledEndAt
+        if (!start) return false
+        if (from && end && end < from) return false
+        if (to && start && start > `${to}T23:59:59`) return false
+        return true
+      })
+
+      return ok({ items })
+    },
+  },
+
+  // ── MNG-06: update mission schedule [ĐỀ XUẤT] ─────────────────────────
+  {
+    method: 'PATCH',
+    path: '/api/missions/:id/schedule',
+    handler: ({ params, body }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+
+      const req = (body ?? {}) as {
+        scheduledStart?: string
+        scheduledEnd?: string
+      }
+      if (!req.scheduledStart || !req.scheduledEnd) {
+        return fail(400, 'VALIDATION_ERROR', 'Thiếu scheduledStart hoặc scheduledEnd', {
+          scheduledStart: 'Bắt buộc',
+          scheduledEnd: 'Bắt buộc',
+        })
+      }
+
+      // Check for conflict with OTHER missions (same drone) [P5 helper].
+      if (mission.droneId) {
+        const otherMissions = [
+          ...missions,
+          ...calendarMissions,
+        ].filter(
+          (m) =>
+            m.id !== mission.id &&
+            m.droneId === mission.droneId &&
+            m.scheduledStartAt &&
+            m.scheduledEndAt,
+        )
+        const bookings = otherMissions.map((m) => ({
+          start: m.scheduledStartAt!,
+          end: m.scheduledEndAt!,
+          missionCode: m.missionCode,
+        }))
+        const conflict = hasScheduleConflict(
+          { start: req.scheduledStart, end: req.scheduledEnd },
+          bookings,
+        )
+        if (conflict) {
+          return fail(
+            409,
+            'SCHEDULE_CONFLICT',
+            `Khung giờ trùng với ${conflict.missionCode} (${conflict.start.slice(11, 16)}–${conflict.end.slice(11, 16)}). Chọn khung giờ khác.`,
+          )
+        }
+      }
+
+      mission.scheduledStartAt = req.scheduledStart
+      mission.scheduledEndAt = req.scheduledEnd
+      return ok(toMissionDto(mission), 'Đã cập nhật lịch bay')
+    },
+  },
+
+  // ── MNG-07: live telemetry polling [BRIEF C4] ──────────────────────────
+  {
+    method: 'GET',
+    path: '/api/missions/:id/live',
+    handler: ({ params }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+
+      const isMSN0142 =
+        mission.id === 'msn-2609-0142-1' ||
+        mission.missionCode === 'MSN-2609-0142-1'
+
+      if (isMSN0142) {
+        // Seed values for MSN-2609-0142-1 come from evd/design/MNG-07.dc.html
+        // "Đang bay" state. Lightweight variation: add small drift each call
+        // so repeated polls look like live data.
+        const batteryPct = 71
+        const flightTimeSec = 58 * 60
+        const latitude = 10.7845
+        const longitude = 106.7228
+        const altitudeM = 68
+        const speedMs = 6.2
+        // signalDbm — PROPOSED: not shown as a number in design, design shows
+        // "18 GPS" (satellite count); using -72 as a plausible strong signal.
+        const signalDbm = -72
+        // PROPOSED: livestream fields — design shows a LIVE badge + "00:12:41"
+        // counter and "1080p · WebRTC"; sessionId/playbackUrl are invented.
+        const livestream = {
+          sessionId: 'ls-0142-1-live',
+          playbackUrl: null, // PROPOSED: no real URL in design
+          isLive: true,
+        }
+        return ok({
+          missionStatus: 'IN_FLIGHT' as MissionStatus,
+          droneStatus: 'IN_MISSION',
+          droneCode: 'DRN-02',
+          droneName: 'Hải Âu',
+          operatorName: 'Hoàng Đức Thắng',
+          batteryPct,
+          flightTimeSec,
+          latitude,
+          longitude,
+          altitudeM,
+          speedMs,
+          signalDbm,
+          satelliteCount: 18,
+          connectionStatus: 'CONNECTED',
+          telemetryActive: true,
+          lastTelemetryAt: new Date(Date.now() - 1000).toISOString(),
+          activeIncidents: incidentLog[mission.id] ?? [],
+          livestream,
+        })
+      }
+
+      // Generic live state for other active missions
+      return ok({
+        missionStatus: mission.status as MissionStatus,
+        droneStatus: null,
+        droneCode: (mission as CalendarMission).droneCode ?? null,
+        droneName: (mission as CalendarMission).droneName ?? null,
+        operatorName: (mission as CalendarMission).operatorName ?? null,
+        batteryPct: null,
+        flightTimeSec: null,
+        latitude: mission.centerLat,
+        longitude: mission.centerLon,
+        altitudeM: null,
+        speedMs: null,
+        signalDbm: null,
+        satelliteCount: null,
+        connectionStatus: null,
+        telemetryActive: false,
+        lastTelemetryAt: null,
+        activeIncidents: incidentLog[mission.id] ?? [],
+        livestream: null,
+      })
+    },
+  },
+
+  // ── MNG-07: report an incident [ĐỀ XUẤT — table mission_incident BRIEF A6] ──
+  {
+    method: 'POST',
+    path: '/api/missions/:id/incidents',
+    handler: ({ params, body }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+
+      const req = (body ?? {}) as { type?: string; description?: string }
+      if (!req.type || !req.description?.trim()) {
+        return fail(400, 'VALIDATION_ERROR', 'Thiếu type hoặc description', {
+          ...(req.type ? {} : { type: 'Bắt buộc' }),
+          ...(!req.description?.trim() ? { description: 'Bắt buộc' } : {}),
+        })
+      }
+
+      if (!incidentLog[mission.id]) incidentLog[mission.id] = []
+      const incident = {
+        id: `inc-${mission.id}-${Date.now()}`,
+        type: req.type,
+        description: req.description,
+        reportedAt: new Date().toISOString(),
+      }
+      incidentLog[mission.id].push(incident)
+      return created(incident, 'Đã ghi nhận sự cố')
+    },
+  },
+
+  // ── MNG-07: cancel a mission [ĐỀ XUẤT — field cancellation_reason BRIEF A6] ──
+  {
+    method: 'POST',
+    path: '/api/missions/:id/cancel',
+    handler: ({ params, body }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+
+      const req = (body ?? {}) as { reason?: string }
+      if (!req.reason?.trim()) {
+        return fail(400, 'VALIDATION_ERROR', 'Yêu cầu nhập lý do huỷ', {
+          reason: 'Bắt buộc',
+        })
+      }
+
+      mission.status = 'CANCELLED'
+      return ok(toMissionDto(mission), 'Mission đã bị huỷ')
+    },
+  },
+
+  // ── MNG-04/05 routes (P5, unchanged) ──────────────────────────────────
   {
     method: 'POST',
     path: '/api/orders/:id/missions',
@@ -159,7 +414,7 @@ registerMockRoutes([
     method: 'GET',
     path: '/api/missions/:id',
     handler: ({ params }) => {
-      const mission = findMissionById(params.id)
+      const mission = findAnyMission(params.id)
       if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
       return ok(toMissionDto(mission))
     },
@@ -330,4 +585,4 @@ registerMockRoutes([
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */
-export const __testing = { missions, drones, operators }
+export const __testing = { missions, drones, operators, calendarMissions, incidentLog }

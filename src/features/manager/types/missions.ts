@@ -71,6 +71,89 @@ export type Mission = {
   waypoints: MissionWaypoint[]
 }
 
+/**
+ * Item returned by `GET /api/missions?from=&to=&status=` [TK].
+ * Extends `Mission` with display-only fields from the calendar/live seed.
+ */
+export type MissionCalendarItem = Mission & {
+  /** PROPOSED — derived from `mission.service_label` or order title; null when not sourced. */
+  serviceLabel: string | null
+  droneCode: string | null
+  droneName: string | null
+  operatorName: string | null
+}
+
+/** Body of `PATCH /api/missions/{id}/schedule` [ĐỀ XUẤT]. */
+export type PatchScheduleRequest = {
+  scheduledStart: string
+  scheduledEnd: string
+}
+
+/** Active incident, returned inside `GET /api/missions/{id}/live` [ĐỀ XUẤT]. */
+export type MissionIncident = {
+  id: string
+  type: string
+  description: string
+  reportedAt: string
+}
+
+/**
+ * PROPOSED — livestream session state, nested in `LiveTelemetry`.
+ * Fields come from brief's `live_stream_session` mention; WebRTC spike
+ * is out-of-scope per evd/00-PLAN.md §8.
+ */
+export type LivestreamState = {
+  sessionId: string
+  /** null until a real WebRTC/RTSP URL is available. */
+  playbackUrl: string | null
+  isLive: boolean
+}
+
+/**
+ * `GET /api/missions/{id}/live` response [BRIEF C4].
+ * Polling endpoint; field names follow the design's data labels from
+ * evd/design/MNG-07.dc.html verbatim.
+ */
+export type LiveTelemetry = {
+  missionStatus: MissionStatus
+  /** null when drone not assigned or telemetry unavailable. */
+  droneStatus: string | null
+  droneCode: string | null
+  droneName: string | null
+  operatorName: string | null
+  /** Battery percentage 0–100; null when no telemetry. */
+  batteryPct: number | null
+  /** Seconds in flight; null when not in-flight. */
+  flightTimeSec: number | null
+  latitude: number | null
+  longitude: number | null
+  /** Altitude in metres ASL; null when no telemetry. */
+  altitudeM: number | null
+  /** Speed in m/s; null when no telemetry. */
+  speedMs: number | null
+  /** Signal strength in dBm; PROPOSED. */
+  signalDbm: number | null
+  /** GPS satellite count; null when no telemetry. */
+  satelliteCount: number | null
+  connectionStatus: string | null
+  telemetryActive: boolean
+  lastTelemetryAt: string | null
+  activeIncidents: MissionIncident[]
+  /** null when no livestream session exists. PROPOSED — see LivestreamState. */
+  livestream: LivestreamState | null
+}
+
+/** Body of `POST /api/missions/{id}/incidents` [ĐỀ XUẤT]. */
+export type CreateIncidentRequest = {
+  type: string
+  description: string
+}
+
+/** Body of `POST /api/missions/{id}/cancel` [ĐỀ XUẤT]. */
+export type CancelMissionRequest = {
+  reason: string
+}
+
 /** Body of `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. */
 export type CreateMissionRequest = {
   scheduledStart: string

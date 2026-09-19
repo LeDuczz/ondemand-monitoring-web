@@ -1,7 +1,13 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 import type {
+  CancelMissionRequest,
+  CreateIncidentRequest,
   CreateMissionRequest,
+  LiveTelemetry,
   Mission,
+  MissionCalendarItem,
+  MissionIncident,
+  PatchScheduleRequest,
   ResourceSuggestions,
 } from '../types/missions'
 
@@ -74,5 +80,74 @@ export const missionsApi = {
       `/api/missions/${missionId}/assignments/${assignmentId}/release`,
       { method: 'POST', body: { releaseReason } },
     )
+  },
+
+  /**
+   * `GET /api/missions?from=&to=&status=` [TK]. Lists missions within an
+   * optional date range and optional status filter for MNG-06 calendar view.
+   */
+  listMissions(
+    options: {
+      from?: string
+      to?: string
+      status?: string
+      signal?: AbortSignal
+    } = {},
+  ): Promise<{ items: MissionCalendarItem[] }> {
+    const query: Record<string, string> = {}
+    if (options.from) query['from'] = options.from
+    if (options.to) query['to'] = options.to
+    if (options.status) query['status'] = options.status
+    return apiRequest<{ items: MissionCalendarItem[] }>('/api/missions', {
+      query,
+      signal: options.signal,
+    })
+  },
+
+  /**
+   * `PATCH /api/missions/{id}/schedule` [ĐỀ XUẤT]. Updates the scheduled
+   * window of a mission; responds 409 SCHEDULE_CONFLICT when the drone
+   * already has a booking in that slot.
+   */
+  patchSchedule(missionId: string, request: PatchScheduleRequest): Promise<Mission> {
+    return apiRequest<Mission>(`/api/missions/${missionId}/schedule`, {
+      method: 'PATCH',
+      body: request,
+    })
+  },
+
+  /**
+   * `GET /api/missions/{id}/live` [BRIEF C4]. Polling endpoint for real-time
+   * telemetry, incidents and livestream state.
+   */
+  getLive(missionId: string, signal?: AbortSignal): Promise<LiveTelemetry> {
+    return apiRequest<LiveTelemetry>(`/api/missions/${missionId}/live`, {
+      signal,
+    })
+  },
+
+  /**
+   * `POST /api/missions/{id}/incidents` [ĐỀ XUẤT — table `mission_incident`
+   * exists in BRIEF A6].
+   */
+  createIncident(
+    missionId: string,
+    request: CreateIncidentRequest,
+  ): Promise<MissionIncident> {
+    return apiRequest<MissionIncident>(`/api/missions/${missionId}/incidents`, {
+      method: 'POST',
+      body: request,
+    })
+  },
+
+  /**
+   * `POST /api/missions/{id}/cancel` [ĐỀ XUẤT — field `cancellation_reason`
+   * in BRIEF A6]. The UI must confirm with a 2-step modal (MNG-07 design).
+   */
+  cancelMission(missionId: string, request: CancelMissionRequest): Promise<Mission> {
+    return apiRequest<Mission>(`/api/missions/${missionId}/cancel`, {
+      method: 'POST',
+      body: request,
+    })
   },
 }

@@ -154,3 +154,72 @@ describe('missionsApi (mock mode)', () => {
     expect(released.droneId).toBeNull()
   })
 })
+
+// ── P6 API client tests ───────────────────────────────────────────────────
+
+describe('missionsApi.listMissions', () => {
+  it('returns items array', async () => {
+    setHttpTransport(mockFetch)
+    const result = await missionsApi.listMissions()
+    expect(Array.isArray(result.items)).toBe(true)
+    expect(result.items.length).toBeGreaterThan(0)
+  })
+
+  it('filters by status', async () => {
+    setHttpTransport(mockFetch)
+    const result = await missionsApi.listMissions({ status: 'IN_FLIGHT' })
+    expect(result.items.every((m) => m.status === 'IN_FLIGHT')).toBe(true)
+  })
+})
+
+describe('missionsApi.patchSchedule', () => {
+  it('updates the mission schedule', async () => {
+    setHttpTransport(mockFetch)
+    const updated = await missionsApi.patchSchedule('msn-2609-0153-1', {
+      scheduledStart: '2026-09-26T10:00:00+07:00',
+      scheduledEnd: '2026-09-26T11:30:00+07:00',
+    })
+    expect(updated.scheduledStartAt).toBe('2026-09-26T10:00:00+07:00')
+  })
+
+  it('throws ApiError 400 when body incomplete', async () => {
+    setHttpTransport(mockFetch)
+    await expect(
+      missionsApi.patchSchedule('msn-2609-0153-1', {
+        scheduledStart: '',
+        scheduledEnd: '',
+      }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('missionsApi.getLive', () => {
+  it('returns telemetry for MSN-2609-0142-1', async () => {
+    setHttpTransport(mockFetch)
+    const live = await missionsApi.getLive('msn-2609-0142-1')
+    expect(live.missionStatus).toBe('IN_FLIGHT')
+    expect(live.batteryPct).toBe(71)
+    expect(live.livestream?.isLive).toBe(true)
+  })
+})
+
+describe('missionsApi.createIncident', () => {
+  it('creates an incident', async () => {
+    setHttpTransport(mockFetch)
+    const incident = await missionsApi.createIncident('msn-2609-0142-1', {
+      type: 'WIND',
+      description: 'Gió mạnh',
+    })
+    expect(incident.type).toBe('WIND')
+  })
+})
+
+describe('missionsApi.cancelMission', () => {
+  it('cancels the mission', async () => {
+    setHttpTransport(mockFetch)
+    const m = await missionsApi.cancelMission('msn-2609-0142-1', {
+      reason: 'Thời tiết xấu',
+    })
+    expect(m.status).toBe('CANCELLED')
+  })
+})

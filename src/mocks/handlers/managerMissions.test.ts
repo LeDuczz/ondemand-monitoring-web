@@ -278,3 +278,128 @@ describe('POST /api/missions/{id}/assignments/{aid}/release', () => {
     expect(status).toBe(404)
   })
 })
+
+// ── P6: new APIs ──────────────────────────────────────────────────────────
+
+describe('GET /api/missions', () => {
+  it('returns all missions when no filters given', async () => {
+    const { status, payload } = await call('GET', '/api/missions')
+    expect(status).toBe(200)
+    expect(Array.isArray(payload.data.items)).toBe(true)
+    expect(payload.data.items.length).toBeGreaterThan(0)
+  })
+
+  it('filters by status', async () => {
+    const { payload } = await call('GET', '/api/missions?status=IN_FLIGHT')
+    const items: any[] = payload.data.items
+    expect(items.every((m: any) => m.status === 'IN_FLIGHT')).toBe(true)
+  })
+
+  it('filters by date range', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/missions?from=2026-09-21&to=2026-09-27',
+    )
+    const items: any[] = payload.data.items
+    // MSN-2609-0142-1 (24/09) should be included
+    expect(items.some((m: any) => m.missionCode === 'MSN-2609-0142-1')).toBe(
+      true,
+    )
+  })
+})
+
+describe('PATCH /api/missions/{id}/schedule', () => {
+  it('400s when body is missing', async () => {
+    const { status } = await call('PATCH', '/api/missions/msn-2609-0142-1/schedule', {})
+    expect(status).toBe(400)
+  })
+
+  it('404s for an unknown mission', async () => {
+    const { status } = await call('PATCH', '/api/missions/nope/schedule', {
+      scheduledStart: '2026-09-25T10:00:00+07:00',
+      scheduledEnd: '2026-09-25T11:00:00+07:00',
+    })
+    expect(status).toBe(404)
+  })
+
+  it('updates the schedule and returns the mission', async () => {
+    const { status, payload } = await call(
+      'PATCH',
+      '/api/missions/msn-2609-0153-1/schedule',
+      {
+        scheduledStart: '2026-09-26T10:00:00+07:00',
+        scheduledEnd: '2026-09-26T11:30:00+07:00',
+      },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.scheduledStartAt).toBe('2026-09-26T10:00:00+07:00')
+  })
+})
+
+describe('GET /api/missions/{id}/live', () => {
+  it('returns telemetry for MSN-2609-0142-1', async () => {
+    const { status, payload } = await call(
+      'GET',
+      '/api/missions/msn-2609-0142-1/live',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.missionStatus).toBe('IN_FLIGHT')
+    expect(payload.data.batteryPct).toBe(71)
+    expect(payload.data.altitudeM).toBe(68)
+    expect(payload.data.livestream.isLive).toBe(true)
+  })
+
+  it('404s for unknown mission', async () => {
+    const { status } = await call('GET', '/api/missions/nope/live')
+    expect(status).toBe(404)
+  })
+})
+
+describe('POST /api/missions/{id}/incidents', () => {
+  it('400s when description is missing', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0142-1/incidents',
+      { type: 'WIND' },
+    )
+    expect(status).toBe(400)
+    expect(payload.errors.description).toBeDefined()
+  })
+
+  it('creates an incident and it appears in live feed', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0142-1/incidents',
+      { type: 'WIND', description: 'Gió mạnh hướng đông' },
+    )
+    expect(status).toBe(201)
+    expect(payload.data.type).toBe('WIND')
+
+    const { payload: livePayload } = await call(
+      'GET',
+      '/api/missions/msn-2609-0142-1/live',
+    )
+    expect(livePayload.data.activeIncidents).toHaveLength(1)
+  })
+})
+
+describe('POST /api/missions/{id}/cancel', () => {
+  it('400s when reason is empty', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0142-1/cancel',
+      { reason: '' },
+    )
+    expect(status).toBe(400)
+  })
+
+  it('cancels the mission', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0142-1/cancel',
+      { reason: 'Thời tiết xấu' },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('CANCELLED')
+  })
+})

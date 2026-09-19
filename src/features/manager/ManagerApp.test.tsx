@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { authSession } from '../auth/api/authApi'
 import { managerApi } from './api/dashboardApi'
+import { ordersApi } from './api/ordersApi'
 import { ManagerApp } from './ManagerApp'
 import type { ManagerDashboardResponse } from './types/dashboard'
 
@@ -89,7 +90,7 @@ describe('ManagerApp', () => {
 
   it('shows the "under construction" placeholder for screens not built yet', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    window.location.hash = '#portal/staff/orders'
+    window.location.hash = '#portal/staff/schedule'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -97,7 +98,18 @@ describe('ManagerApp', () => {
         screen.getByText('Màn hình đang được xây dựng'),
       ).toBeInTheDocument(),
     )
-    expect(screen.getByText(/MNG-02/)).toBeInTheDocument()
+    expect(screen.getByText(/MNG-06/)).toBeInTheDocument()
+  })
+
+  it('renders the real QueuePage (MNG-02) for #portal/staff/orders', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    window.location.hash = '#portal/staff/orders'
+    render(<ManagerApp />)
+
+    await waitFor(() =>
+      expect(screen.getByText('Hàng đợi duyệt đơn')).toBeInTheDocument(),
+    )
   })
 
   it('shows a not-found state with a link back to Dashboard for unknown routes', async () => {

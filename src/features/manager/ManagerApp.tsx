@@ -5,6 +5,7 @@ import { useApiQuery } from '../../shared/hooks/useApiQuery'
 import { managerApi } from './api/dashboardApi'
 import { ManagerLayout } from './components/ManagerLayout'
 import { DashboardPage } from './pages/DashboardPage'
+import { QueuePage } from './pages/QueuePage'
 import {
   managerHref,
   managerScreenCode,
@@ -82,6 +83,7 @@ export function ManagerApp() {
 
 function renderScreen(route: ManagerRoute) {
   if (route.screen === 'dashboard') return <DashboardPage />
+  if (route.screen === 'orderQueue') return <QueuePage />
 
   if (route.screen === 'notFound') {
     return (

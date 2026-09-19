@@ -132,9 +132,7 @@ describe('Router - manager routes (#portal/staff*)', () => {
     render(<Router />)
 
     await waitFor(() =>
-      expect(
-        screen.getByText('Màn hình đang được xây dựng'),
-      ).toBeInTheDocument(),
+      expect(screen.getByText('Hàng đợi duyệt đơn')).toBeInTheDocument(),
     )
   })
 })

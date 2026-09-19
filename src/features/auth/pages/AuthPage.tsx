@@ -760,6 +760,10 @@ export function AuthPage({
               onChange={(nextMode) => {
                 setMode(nextMode)
                 setNotice(undefined)
+                // Keep the URL in sync with the visible form so the back
+                // button and a copy-pasted link both land on the right mode.
+                window.location.hash =
+                  nextMode === 'register' ? '#auth/register' : '#auth/login'
               }}
             />
             {mode === 'verify' ? (

@@ -55,8 +55,14 @@ export function Router() {
   if (pathname === '/social/callback') {
     return <SocialCallbackPage />
   }
-  if (hash === '#auth/register') return <AuthPage initialMode="register" />
-  if (hash === '#auth/login') return <AuthPage initialMode="login" />
+  // `key` forces a fresh AuthPage instance when the hash flips between
+  // register/login — without it React reuses the same component and
+  // `useState(initialMode)` never re-runs, so the visible form gets stuck
+  // on whichever mode it first mounted with.
+  if (hash === '#auth/register')
+    return <AuthPage key="register" initialMode="register" />
+  if (hash === '#auth/login')
+    return <AuthPage key="login" initialMode="login" />
   if (hash === '#portal/customer')
     return (
       <RoleRoute role="CUSTOMER">

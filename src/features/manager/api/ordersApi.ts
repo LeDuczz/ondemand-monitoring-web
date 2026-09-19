@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/httpClient'
-import type { OrderQueueItem } from '../types/orders'
+import type { OrderDetail, OrderQueueItem } from '../types/orders'
 
 /** MNG-02 / MNG-03 order-review APIs. See evd/00-PLAN.md §3. */
 export const ordersApi = {
@@ -9,5 +9,10 @@ export const ordersApi = {
       query: { status: 'PENDING' },
       signal,
     })
+  },
+
+  /** `GET /api/orders/{id}` [TK]. */
+  getOrder(id: string, signal?: AbortSignal): Promise<OrderDetail> {
+    return apiRequest<OrderDetail>(`/api/orders/${id}`, { signal })
   },
 }

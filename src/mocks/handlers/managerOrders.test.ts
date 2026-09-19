@@ -43,3 +43,18 @@ describe('GET /api/orders?status=PENDING', () => {
     expect(byVerdict).toEqual({ FEASIBLE: 3, RISKY: 3 })
   })
 })
+
+describe('GET /api/orders/{id}', () => {
+  it('404s for an unknown id', async () => {
+    const { status, payload } = await call('GET', '/api/orders/nope')
+    expect(status).toBe(404)
+    expect(payload.code).toBe('NOT_FOUND')
+  })
+
+  it('returns full detail for a PENDING order', async () => {
+    const { status, payload } = await call('GET', '/api/orders/ord-2609-0157')
+    expect(status).toBe(200)
+    expect(payload.data.code).toBe('ORD-2609-0157')
+    expect(payload.data.addressText).toContain('Cát Lái')
+  })
+})

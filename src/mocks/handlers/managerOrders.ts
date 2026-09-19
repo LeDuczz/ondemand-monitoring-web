@@ -1,10 +1,14 @@
 // Mock handlers for the MNG-02 (order queue) and MNG-03 (order review) APIs.
 // Endpoints, per evd/00-PLAN.md §3 and the P4 task brief:
 //   GET  /api/orders?status=PENDING          [TK path; BE OrderStatus value]
+//   GET  /api/orders/{id}                    [TK]
 import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
-import type { OrderQueueItem } from '../../features/manager/types/orders'
+import type {
+  OrderDetail,
+  OrderQueueItem,
+} from '../../features/manager/types/orders'
 import { createCollection } from '../db'
-import { ok, registerMockRoutes } from '../mockServer'
+import { fail, ok, registerMockRoutes } from '../mockServer'
 import ordersSeed from '../data/orders.json'
 
 type SeedOrder = {
@@ -14,11 +18,26 @@ type SeedOrder = {
   customer: {
     fullName: string
     companyName: string
+    email: string
+    phone: string
   }
   serviceName: string
   preferredDate: string
   preferredTimeName: string
+  preferredWindow: string
   submittedAt: string
+  addressText: string
+  center: { lat: number; lon: number }
+  radiusM: number
+  nearestBase: string
+  mediaRequirements: { label: string }[]
+  purpose: string
+  attachments: {
+    name: string
+    sizeLabel: string
+    mimeType: string
+    url: string
+  }[]
   aiVerdict: AiVerdict
   blockerCount: number
   warningCount: number
@@ -31,6 +50,10 @@ type SeedOrder = {
 // replaced in place). Reading `createCollection(seed).nested` instead would
 // leave `nested` pointing at the pre-reset value forever.
 const orders = createCollection(ordersSeed.orders) as SeedOrder[]
+
+function findOrder(id: string): SeedOrder | undefined {
+  return orders.find((o) => o.id === id || o.code === id)
+}
 
 function toQueueItem(order: SeedOrder): OrderQueueItem {
   return {
@@ -50,6 +73,27 @@ function toQueueItem(order: SeedOrder): OrderQueueItem {
   }
 }
 
+function toDetail(order: SeedOrder): OrderDetail {
+  return {
+    id: order.id,
+    code: order.code,
+    status: order.status,
+    customer: order.customer,
+    serviceName: order.serviceName,
+    preferredDate: order.preferredDate,
+    preferredTimeName: order.preferredTimeName,
+    preferredWindow: order.preferredWindow,
+    submittedAt: order.submittedAt,
+    addressText: order.addressText,
+    center: order.center,
+    radiusM: order.radiusM,
+    nearestBase: order.nearestBase,
+    mediaRequirements: order.mediaRequirements,
+    purpose: order.purpose,
+    attachments: order.attachments,
+  }
+}
+
 registerMockRoutes([
   {
     method: 'GET',
@@ -61,6 +105,22 @@ registerMockRoutes([
       }
       const rows = orders.filter((o) => o.status === 'PENDING').map(toQueueItem)
       return ok(rows)
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/orders/:id',
+    handler: ({ params }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (order.status !== 'PENDING') {
+        return fail(
+          409,
+          'ORDER_NOT_UNDER_REVIEW',
+          'Đơn không còn ở trạng thái chờ duyệt (đã được xử lý bởi đồng nghiệp) hoặc máy chủ lỗi.',
+        )
+      }
+      return ok(toDetail(order))
     },
   },
 ])

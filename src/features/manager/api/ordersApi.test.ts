@@ -20,4 +20,11 @@ describe('ordersApi (mock mode)', () => {
     expect(rows).toHaveLength(6)
     expect(rows[0].code).toBe('ORD-2609-0157')
   })
+
+  it('getOrder resolves full detail', async () => {
+    setHttpTransport(mockFetch)
+    const detail = await ordersApi.getOrder('ord-2609-0157')
+    expect(detail.customer.fullName).toBe('Lê Quốc Bảo')
+    expect(detail.radiusM).toBe(600)
+  })
 })

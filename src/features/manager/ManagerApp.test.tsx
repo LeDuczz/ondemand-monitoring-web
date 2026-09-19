@@ -139,6 +139,65 @@ describe('ManagerApp', () => {
     )
   })
 
+  it('renders the real DispatchPage (MNG-05) for #portal/staff/missions/:id/dispatch', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
+    const { missionsApi } = await import('./api/missionsApi')
+    vi.spyOn(missionsApi, 'getMission').mockResolvedValue({
+      id: 'msn-2609-0153-1',
+      orderId: 'ord-2609-0153',
+      orderCode: 'ORD-2609-0153',
+      missionCode: 'MSN-2609-0153-1',
+      status: 'CREATED',
+      attemptNumber: 1,
+      droneId: null,
+      operatorId: null,
+      droneAssignmentId: null,
+      operatorAssignmentId: null,
+      scheduledStartAt: null,
+      scheduledEndAt: null,
+      addressText: null,
+      centerLat: null,
+      centerLon: null,
+      radiusM: null,
+      requiredSensor: null,
+      nearestBase: null,
+      mediaRequirements: [],
+      flightPlan: null,
+      waypoints: [],
+    })
+    vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue({
+      feasible: true,
+      missionCode: 'MSN-2609-0153-1',
+      attemptNumber: 1,
+      scheduledStart: '',
+      scheduledEnd: '',
+      addressText: null,
+      centerLat: null,
+      centerLon: null,
+      radiusM: null,
+      mediaSummary: null,
+      requiredDurationLabel: null,
+      requiredSensor: null,
+      nearestBase: null,
+      eligibleDroneCount: 0,
+      eligibleOperatorCount: 0,
+      topDrones: [],
+      topOperators: [],
+      rejected: { drones: [], operators: [] },
+      explanation: '',
+      timeline: { date: '', windowStart: '', windowEnd: '', resources: [] },
+      alternatives: [],
+    })
+    window.location.hash = '#portal/staff/missions/msn-2609-0153-1/dispatch'
+    render(<ManagerApp />)
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Phân công nguồn lực' }),
+      ).toBeInTheDocument(),
+    )
+  })
+
   it('shows a not-found state with a link back to Dashboard for unknown routes', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     window.location.hash = '#portal/staff/unknown-thing'

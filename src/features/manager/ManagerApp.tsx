@@ -6,6 +6,7 @@ import { managerApi } from './api/dashboardApi'
 import { ManagerLayout } from './components/ManagerLayout'
 import { CreateMissionPage } from './pages/CreateMissionPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { DispatchPage } from './pages/DispatchPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
 import {
@@ -90,6 +91,8 @@ function renderScreen(route: ManagerRoute) {
     return <OrderReviewPage orderId={route.orderId} />
   if (route.screen === 'missionCreate')
     return <CreateMissionPage orderId={route.orderId} />
+  if (route.screen === 'missionDispatch')
+    return <DispatchPage missionId={route.missionId} />
 
   if (route.screen === 'notFound') {
     return (

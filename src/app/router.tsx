@@ -1,4 +1,5 @@
 import '../styles/global.css'
+import '../styles/odm.css'
 
 import { useEffect, useState, type ReactNode } from 'react'
 

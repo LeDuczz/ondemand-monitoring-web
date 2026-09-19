@@ -55,21 +55,17 @@ export function ManagerApp() {
   const navCounts = useApiQuery((signal) => managerApi.getDashboard(signal), [])
 
   const data = navCounts.data
-  // Nav badges come straight from the dashboard payload — no separate
-  // "total open tickets" / "total media needing action" endpoint exists yet
-  // (MNG-10/MNG-11 land in a later phase), so Bảo trì / Media count only the
-  // items already surfaced in "Cần xử lý ngay" rather than inventing a
-  // bigger number to match the design's static mock (3 / 6 there come from
-  // screens this phase doesn't build). See evd/P3-manager-dashboard.md.
+  // Nav badges come from the dashboard's (PROPOSED) `navCounts` field, not
+  // from counting `actionItems` — that list only surfaces the handful of
+  // items needing attention right now, which undercounts the real totals
+  // (Bảo trì / Media). `navCounts` values are backed by design strings from
+  // MNG-10/MNG-11, not invented — see the type doc in
+  // src/features/manager/types/dashboard.ts and evd/P3-manager-dashboard.md.
   const counts = data
     ? {
-        pendingOrders: data.kpis.pendingOrders.count,
-        openMaintenance: data.actionItems.filter(
-          (item) => item.type === 'MAINTENANCE_TICKET',
-        ).length,
-        mediaNeedsAction: data.actionItems.filter(
-          (item) => item.type === 'MEDIA_ACTION',
-        ).length,
+        pendingOrders: data.navCounts.pendingOrders,
+        openMaintenance: data.navCounts.openMaintenanceTickets,
+        mediaNeedsAction: data.navCounts.mediaNeedsAction,
       }
     : undefined
 

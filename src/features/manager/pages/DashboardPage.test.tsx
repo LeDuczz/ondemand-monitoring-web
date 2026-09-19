@@ -46,6 +46,11 @@ const sampleData: ManagerDashboardResponse = {
     startedAtIso: '2026-09-19T13:34:00+07:00',
     plannedDurationMin: 90,
   },
+  navCounts: {
+    pendingOrders: 6,
+    openMaintenanceTickets: 3,
+    mediaNeedsAction: 6,
+  },
 }
 
 const emptyData: ManagerDashboardResponse = {
@@ -60,6 +65,11 @@ const emptyData: ManagerDashboardResponse = {
   droneStatusBreakdown: [],
   actionItems: [],
   flyingMission: null,
+  navCounts: {
+    pendingOrders: 0,
+    openMaintenanceTickets: 0,
+    mediaNeedsAction: 0,
+  },
 }
 
 afterEach(() => {

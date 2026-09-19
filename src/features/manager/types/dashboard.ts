@@ -88,10 +88,30 @@ export type FlyingMissionSummary = {
   plannedDurationMin: number
 }
 
+// PROPOSED: not part of [TK MNG-01]'s own JSON-shaped payload — the design's
+// sidebar badge numbers (Duyệt đơn 6 / Bảo trì 3 / Media 6) are static demo
+// values baked into the MNG-*.dc.html markup, not computed from the
+// dashboard's own `actionItems` (which only lists the handful of items that
+// need attention *right now*, not the full open count). Added here so the
+// sidebar can show real totals instead of undercounting. Values sourced from
+// design strings, not invented:
+//   - pendingOrders: mirrors `kpis.pendingOrders.count` (6)
+//   - openMaintenanceTickets: [TK MNG-10] page subtitle "3 ticket đang mở" -> 3
+//   - mediaNeedsAction: [TK MNG-11] page subtitle "2 tệp cần upload thủ công ·
+//     2 tệp lỗi xác thực · 2 mission chờ giao" -> 2 + 2 + 2 = 6
+// Needs backend confirmation before this becomes a real contract field.
+export type ManagerDashboardNavCounts = {
+  pendingOrders: number
+  openMaintenanceTickets: number
+  mediaNeedsAction: number
+}
+
 export type ManagerDashboardResponse = {
   kpis: ManagerDashboardKpis
   missionStatusByDay: MissionStatusDayPoint[]
   droneStatusBreakdown: DroneStatusBreakdown[]
   actionItems: ActionItem[]
   flyingMission: FlyingMissionSummary | null
+  /** PROPOSED — see `ManagerDashboardNavCounts`. */
+  navCounts: ManagerDashboardNavCounts
 }

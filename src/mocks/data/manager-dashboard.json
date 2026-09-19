@@ -131,5 +131,11 @@
     "batteryPercent": 71,
     "startedAtIso": "2026-09-19T13:34:00+07:00",
     "plannedDurationMin": 90
+  },
+  "_navCountsNote": "navCounts is PROPOSED (not part of [TK MNG-01]'s own payload). pendingOrders mirrors kpis.pendingOrders.count (6). openMaintenanceTickets = 3 from [TK MNG-10] page subtitle '3 ticket đang mở'. mediaNeedsAction = 6 from [TK MNG-11] page subtitle '2 tệp cần upload thủ công · 2 tệp lỗi xác thực · 2 mission chờ giao' (2+2+2).",
+  "navCounts": {
+    "pendingOrders": 6,
+    "openMaintenanceTickets": 3,
+    "mediaNeedsAction": 6
   }
 }

@@ -28,6 +28,11 @@ const sampleData: ManagerDashboardResponse = {
     },
   ],
   flyingMission: null,
+  navCounts: {
+    pendingOrders: 6,
+    openMaintenanceTickets: 3,
+    mediaNeedsAction: 6,
+  },
 }
 
 beforeEach(() => {
@@ -61,14 +66,24 @@ describe('ManagerApp', () => {
     )
   })
 
-  it('feeds the Bảo trì nav badge from the dashboard action items', async () => {
+  it('feeds the nav badges from navCounts, not from actionItems', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     window.location.hash = '#portal/staff'
     render(<ManagerApp />)
 
     await waitFor(() => {
-      const link = screen.getByRole('link', { name: /Bảo trì/ })
-      expect(link).toHaveTextContent('1')
+      // sampleData.actionItems only has 1 MAINTENANCE_TICKET row, but the
+      // badge must reflect navCounts.openMaintenanceTickets (3), not that
+      // undercounted list length.
+      expect(screen.getByRole('link', { name: /Bảo trì/ })).toHaveTextContent(
+        '3',
+      )
+      expect(screen.getByRole('link', { name: /Duyệt đơn/ })).toHaveTextContent(
+        '6',
+      )
+      expect(
+        screen.getByRole('link', { name: /Media và giao kết quả/ }),
+      ).toHaveTextContent('6')
     })
   })
 

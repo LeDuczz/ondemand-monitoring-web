@@ -91,6 +91,11 @@ describe('Router - manager routes (#portal/staff*)', () => {
     droneStatusBreakdown: [],
     actionItems: [],
     flyingMission: null,
+    navCounts: {
+      pendingOrders: 6,
+      openMaintenanceTickets: 3,
+      mediaNeedsAction: 6,
+    },
   }
 
   beforeEach(() => {

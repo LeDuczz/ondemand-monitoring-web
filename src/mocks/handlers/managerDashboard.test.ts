@@ -39,6 +39,11 @@ describe('GET /api/manager/dashboard', () => {
     ).toBe(9)
     expect(payload.data.actionItems).toHaveLength(6)
     expect(payload.data.flyingMission.missionId).toBe('MSN-2609-0142-1')
+    expect(payload.data.navCounts).toEqual({
+      pendingOrders: 6,
+      openMaintenanceTickets: 3,
+      mediaNeedsAction: 6,
+    })
   })
 
   it('serves the same in-memory collection identity across requests (mutable mock db)', async () => {

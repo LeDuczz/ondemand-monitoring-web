@@ -1,6 +1,5 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
-import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
 import {
   AuthApiError,
@@ -9,15 +8,20 @@ import {
   getGoogleAuthorizationUrl,
 } from '../api/authApi'
 import { redirectToRoleHome } from '../routing'
+import '../auth.css'
 
 type AuthMode =
   'login' | 'register' | 'verify' | 'forgot' | 'reset' | 'first-login'
-type Notice = { type: 'info' | 'error' | 'success'; message: string }
+type Notice = {
+  type: 'info' | 'error' | 'success'
+  message: string
+  detail?: string
+}
 
 function BrandMark() {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <span />
+    <span className="odm-auth-aside-brand-mark" aria-hidden="true">
+      <Icon name="cpu" />
     </span>
   )
 }
@@ -25,13 +29,34 @@ function BrandMark() {
 function AuthLogo() {
   return (
     <a
-      className="auth-logo"
-      href="#top"
-      aria-label="Return to Fieldwise landing page"
+      className="odm-auth-logo"
+      href="#"
+      aria-label="Về trang chủ OnDemand Monitor"
     >
       <BrandMark />
-      <span>FIELDWISE</span>
+      <span>OnDemand Monitor</span>
     </a>
+  )
+}
+
+function ThemeToggle() {
+  const [dark, setDark] = useState(
+    () => document.documentElement.dataset.theme === 'dark',
+  )
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  }, [dark])
+  return (
+    <div className="odm-auth-theme-toggle">
+      <span>Giao diện</span>
+      <button
+        type="button"
+        aria-label={`Đổi sang giao diện ${dark ? 'sáng' : 'tối'}`}
+        onClick={() => setDark((value) => !value)}
+      >
+        <Icon name={dark ? 'sun' : 'moon'} />
+      </button>
+    </div>
   )
 }
 
@@ -49,14 +74,14 @@ function Field({
   children: ReactNode
 }) {
   return (
-    <div className="auth-field">
-      <div className="auth-label-row">
+    <div className="odm-auth-field">
+      <div className="odm-auth-field-label-row">
         <label htmlFor={htmlFor}>{label}</label>
         {hint ? <span>{hint}</span> : null}
       </div>
       {children}
       {error ? (
-        <p className="field-error" role="alert">
+        <p className="odm-auth-field-error" role="alert">
           {error}
         </p>
       ) : null}
@@ -68,28 +93,26 @@ function PasswordField({
   id,
   value,
   onChange,
-  label = 'Password',
+  label = 'Mật khẩu',
+  hint,
   error,
 }: {
   id: string
   value: string
   onChange: (value: string) => void
   label?: string
+  hint?: string
   error?: string
 }) {
   const [visible, setVisible] = useState(false)
   return (
-    <Field
-      label={label}
-      htmlFor={id}
-      hint={id === 'password' ? 'At least 8 characters' : undefined}
-      error={error}
-    >
-      <div className="input-with-icon">
+    <Field label={label} htmlFor={id} hint={hint} error={error}>
+      <div className="odm-auth-input-wrap has-action">
         <Icon name="lock" />
         <input
           id={id}
           name={id}
+          className={`odm-inp${error ? ' odm-inp-err' : ''}`}
           type={visible ? 'text' : 'password'}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -99,8 +122,8 @@ function PasswordField({
         />
         <button
           type="button"
-          className="input-action"
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          className="odm-auth-input-action"
+          aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           onClick={() => setVisible(!visible)}
         >
           <Icon name={visible ? 'eye-off' : 'eye'} />
@@ -120,16 +143,17 @@ function EmailField({
   error?: string
 }) {
   return (
-    <Field label="Work email" htmlFor="email" error={error}>
-      <div className="input-with-icon">
+    <Field label="Email" htmlFor="email" error={error}>
+      <div className="odm-auth-input-wrap">
         <Icon name="mail" />
         <input
           id="email"
           name="email"
+          className={`odm-inp${error ? ' odm-inp-err' : ''}`}
           type="email"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="you@company.com"
+          placeholder="ban@congty.vn"
           autoComplete="email"
           required
         />
@@ -138,58 +162,38 @@ function EmailField({
   )
 }
 
-function AuthAside({ mode }: { mode: AuthMode }) {
+function AuthAside() {
   return (
-    <aside className={`auth-aside auth-aside--${mode}`}>
-      <div className="auth-aside-art" aria-hidden="true">
-        <span className="art-ring art-ring--one" />
-        <span className="art-ring art-ring--two" />
-        <span className="art-grid" />
-        <div className="art-ticket">
-          <div>
-            <Icon name="ticket" />
-            <span>TICKET #MON-2481</span>
-          </div>
-          <strong>Inspection in progress</strong>
-          <small>East site · Cooling tower B</small>
-          <span className="art-progress">
-            <i />
+    <aside className="odm-auth-aside">
+      <a
+        className="odm-auth-aside-brand"
+        href="#"
+        aria-label="Về trang chủ OnDemand Monitor"
+      >
+        <BrandMark />
+        <span>OnDemand Monitor</span>
+      </a>
+      <div className="odm-auth-aside-copy">
+        <h1>OnDemand Monitor</h1>
+        <p>Dịch vụ giám sát bằng drone theo yêu cầu</p>
+        <div className="odm-auth-points">
+          <span className="odm-auth-point">
+            <Icon name="map-pin" />
+            Chọn vị trí và bán kính giám sát ngay trên bản đồ
           </span>
-        </div>
-        <div className="art-report">
-          <Icon name="file-text" />
-          <span>
-            <strong>Report ready</strong>
-            <small>3 findings · 18 evidence items</small>
+          <span className="odm-auth-point">
+            <Icon name="sparkle" />
+            AI kiểm tra tính khả thi, gợi ý ngày thay thế trước khi gửi duyệt
           </span>
-        </div>
-      </div>
-      <div className="auth-aside-copy">
-        <p className="eyebrow">Customer-first inspection services</p>
-        <h2>
-          Keep the work moving.
-          <br />
-          <span>Keep the risk away.</span>
-        </h2>
-        <p>
-          One place to submit requests, follow progress, and make confident
-          decisions from the results.
-        </p>
-        <div className="auth-aside-points">
-          <span>
-            <Icon name="shield" /> Safer access to difficult areas
-          </span>
-          <span>
-            <Icon name="ticket" /> Transparent request tracking
-          </span>
-          <span>
-            <Icon name="file-text" /> Action-ready inspection reports
+          <span className="odm-auth-point">
+            <Icon name="camera" />
+            Xem trực tiếp khi drone bay và nhận ảnh, video đã xác thực
           </span>
         </div>
       </div>
-      <div className="auth-aside-footer">
-        <span>Fieldwise</span>
-        <span>Remote monitoring & inspection</span>
+      <div className="odm-auth-aside-footer">
+        <span>OnDemand Monitor</span>
+        <span>support@odms.vn</span>
       </div>
     </aside>
   )
@@ -210,13 +214,13 @@ function ModeSwitch({
   )
     return null
   return (
-    <p className="mode-switch">
-      {mode === 'login' ? 'New to Fieldwise?' : 'Already have an account?'}{' '}
+    <p className="odm-auth-switch">
+      {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}{' '}
       <button
         type="button"
         onClick={() => onChange(mode === 'login' ? 'register' : 'login')}
       >
-        {mode === 'login' ? 'Create an account' : 'Sign in'}
+        {mode === 'login' ? 'Đăng ký' : 'Đăng nhập'}
       </button>
     </p>
   )
@@ -224,26 +228,27 @@ function ModeSwitch({
 
 function getAuthTitle(mode: AuthMode) {
   const titles: Record<AuthMode, string> = {
-    login: 'Welcome back',
-    register: 'Create your account',
-    verify: 'Verify your email',
-    forgot: 'Reset your password',
-    reset: 'Set a new password',
-    'first-login': 'Set your password',
+    login: 'Đăng nhập',
+    register: 'Tạo tài khoản khách hàng',
+    verify: 'Xác thực email',
+    forgot: 'Quên mật khẩu?',
+    reset: 'Đặt lại mật khẩu',
+    'first-login': 'Đặt mật khẩu',
   }
   return titles[mode]
 }
 
 function getAuthSubtitle(mode: AuthMode) {
   const subtitles: Record<AuthMode, string> = {
-    login: 'Sign in to follow requests, tickets, and reports.',
+    login: 'Chào mừng trở lại. Đăng nhập để quản lý yêu cầu giám sát.',
     register:
-      'Start managing monitoring requests with a clear customer workspace.',
-    verify: 'One more step before your Fieldwise workspace is ready.',
-    forgot: 'Enter your work email and we’ll help you get back in.',
-    reset: 'Use a new password with at least 8 characters.',
+      'Dành cho khách hàng cá nhân. Phi công và nhân viên do quản trị viên tạo.',
+    verify:
+      'Nhập mã 6 số chúng tôi đã gửi tới email của bạn để kích hoạt tài khoản.',
+    forgot: 'Nhập email của bạn, chúng tôi sẽ giúp bạn lấy lại quyền truy cập.',
+    reset: 'Dùng mật khẩu mới có ít nhất 8 ký tự.',
     'first-login':
-      'Your administrator created this account. Set a personal password to continue.',
+      'Quản trị viên đã tạo tài khoản này. Đặt mật khẩu cá nhân để tiếp tục.',
   }
   return subtitles[mode]
 }
@@ -263,6 +268,7 @@ export function AuthPage({
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [challengeSession, setChallengeSession] = useState('')
@@ -275,16 +281,33 @@ export function AuthPage({
     if (error instanceof AuthApiError) {
       setFieldErrors(error.errors ?? {})
       if (error.code === 'USER_NOT_CONFIRMED') setMode('verify')
+      if (error.code === 'ACCOUNT_DISABLED') {
+        // Design state "Tài khoản khoá" (SYS-01). No backend "remaining
+        // attempts" field exists, so we do not render the design's
+        // "Còn 3 lần thử trước khi tạm khoá." line — see evd report.
+        setNotice({
+          type: 'error',
+          message: 'Tài khoản đã bị khoá.',
+          detail: 'Liên hệ quản trị viên qua support@odms.vn để mở lại.',
+        })
+        return
+      }
+      if (error.code === 'INVALID_CREDENTIALS') {
+        // Design state "Sai thông tin" (SYS-01).
+        setNotice({ type: 'error', message: 'Email hoặc mật khẩu không đúng.' })
+        return
+      }
       setNotice({ type: 'error', message: error.message })
       return
     }
-    setNotice({
-      type: 'error',
-      message: 'Something went wrong. Please try again.',
-    })
+    setNotice({ type: 'error', message: 'Đã có lỗi xảy ra. Vui lòng thử lại.' })
   }
 
   const submitRegister = async () => {
+    if (password !== confirmPassword) {
+      setFieldErrors({ confirmPassword: 'Mật khẩu không khớp' })
+      return
+    }
     const response = await authApi.register({
       email,
       password,
@@ -295,14 +318,14 @@ export function AuthPage({
       setMode('verify')
       setNotice({
         type: 'success',
-        message: `We sent a 6-digit verification code to ${email}.`,
+        message: `Chúng tôi đã gửi mã xác thực 6 số tới ${email}.`,
       })
       return
     }
     setMode('login')
     setNotice({
       type: 'success',
-      message: 'Registration complete. You can sign in now.',
+      message: 'Đăng ký thành công. Bạn có thể đăng nhập ngay.',
     })
   }
 
@@ -311,7 +334,7 @@ export function AuthPage({
     setMode('login')
     setNotice({
       type: 'success',
-      message: 'Email verified. You can sign in to your workspace.',
+      message: 'Email đã được xác thực. Bạn có thể đăng nhập.',
     })
   }
 
@@ -320,7 +343,7 @@ export function AuthPage({
     setMode('reset')
     setNotice({
       type: 'success',
-      message: 'A password reset code has been sent to your email.',
+      message: 'Mã đặt lại mật khẩu đã được gửi tới email của bạn.',
     })
   }
 
@@ -330,7 +353,7 @@ export function AuthPage({
     setNotice({
       type: 'success',
       message:
-        'Password reset complete. You can sign in with your new password.',
+        'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.',
     })
   }
 
@@ -341,15 +364,13 @@ export function AuthPage({
       setMode('first-login')
       setNotice({
         type: 'info',
-        message: 'Set a new password to activate your account.',
+        message: 'Đặt mật khẩu mới để kích hoạt tài khoản.',
       })
       return
     }
     authSession.save(response, rememberMe)
-    const suffix = response.user?.fullName
-      ? ` as ${response.user.fullName}`
-      : ''
-    setNotice({ type: 'success', message: `Signed in${suffix}.` })
+    const suffix = response.user?.fullName ? `, ${response.user.fullName}` : ''
+    setNotice({ type: 'success', message: `Đăng nhập thành công${suffix}.` })
     redirectToRoleHome(response.user?.role)
   }
 
@@ -362,7 +383,7 @@ export function AuthPage({
     authSession.save(response, rememberMe)
     setNotice({
       type: 'success',
-      message: 'Password set. Welcome to Fieldwise.',
+      message: 'Đặt mật khẩu thành công. Chào mừng tới OnDemand Monitor.',
     })
     redirectToRoleHome(response.user?.role)
   }
@@ -396,7 +417,7 @@ export function AuthPage({
       await authApi.resendOtp({ email })
       setNotice({
         type: 'success',
-        message: `A new verification code was sent to ${email}.`,
+        message: `Mã xác thực mới đã được gửi tới ${email}.`,
       })
     } catch (error) {
       handleApiError(error)
@@ -424,311 +445,333 @@ export function AuthPage({
   const subtitle = getAuthSubtitle(mode)
 
   return (
-    <div className="auth-page">
+    <div className="odm odm-auth">
       <a className="skip-link" href="#auth-form">
-        Skip to authentication form
+        Bỏ qua tới biểu mẫu
       </a>
-      <AuthAside mode={mode} />
-      <main className="auth-main">
-        <div className="auth-topbar">
+      <AuthAside />
+      <main className="odm-auth-main">
+        <div className="odm-auth-topbar">
           <AuthLogo />
-          <a className="back-landing" href="#top">
-            Back to site <Icon name="arrow-up-right" />
-          </a>
+          <ThemeToggle />
         </div>
-        <div className="auth-content">
-          <div className="auth-heading">
-            <p className="eyebrow">
-              {mode === 'register'
-                ? 'Join Fieldwise'
-                : 'Secure workspace access'}
-            </p>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
-          </div>
-          {notice ? (
-            <output
-              className={`auth-notice auth-notice--${notice.type}`}
-              aria-live="polite"
+        <div className="odm-auth-content">
+          <div className="odm-auth-card">
+            <div className="odm-auth-heading">
+              <p className="odm-auth-eyebrow">
+                {mode === 'register'
+                  ? 'Tham gia OnDemand Monitor'
+                  : 'Truy cập không gian làm việc an toàn'}
+              </p>
+              <h1>{title}</h1>
+              <p>{subtitle}</p>
+            </div>
+            {notice ? (
+              <output
+                className={`odm-auth-notice odm-auth-notice--${notice.type}`}
+                aria-live="polite"
+              >
+                <Icon name={getNoticeIcon(notice.type)} />
+                <span>
+                  <p>{notice.message}</p>
+                  {notice.detail ? <p>{notice.detail}</p> : null}
+                </span>
+              </output>
+            ) : null}
+            <form
+              id="auth-form"
+              className="odm-auth-form"
+              onSubmit={handleSubmit}
             >
-              <Icon name={getNoticeIcon(notice.type)} />
-              <span>{notice.message}</span>
-            </output>
-          ) : null}
-          <form id="auth-form" className="auth-form" onSubmit={handleSubmit}>
-            {mode === 'login' ? (
-              <>
-                <button
-                  type="button"
-                  className="auth-google-button"
-                  onClick={handleGoogleSignIn}
-                >
-                  <Icon name="google" />
-                  Continue with Google
-                </button>
-                <div className="auth-divider" aria-hidden="true">
-                  <span>or use your work email</span>
-                </div>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <PasswordField
-                  id="password"
-                  value={password}
-                  onChange={setPassword}
-                  error={fieldErrors.password}
-                />
-                <div className="form-row-inline">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(event) => setRememberMe(event.target.checked)}
-                    />{' '}
-                    <span>Remember me</span>
-                  </label>
+              {mode === 'login' ? (
+                <>
                   <button
                     type="button"
-                    className="inline-link"
-                    onClick={() => {
-                      setMode('forgot')
-                      setNotice(undefined)
-                    }}
+                    className="odm-auth-google"
+                    onClick={handleGoogleSignIn}
                   >
-                    Forgot password?
+                    <Icon name="google" />
+                    Tiếp tục với Google
                   </button>
-                </div>
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Signing in…' : 'Sign in'}
-                </Button>
-              </>
-            ) : null}
-            {mode === 'register' ? (
-              <>
-                <Field
-                  label="Full name"
-                  htmlFor="fullName"
-                  hint="Max 100 characters"
-                  error={fieldErrors.fullName}
-                >
-                  <div className="input-with-icon">
-                    <Icon name="users" />
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      placeholder="Alex Morgan"
-                      maxLength={100}
-                      autoComplete="name"
-                      required
-                    />
+                  <div className="odm-auth-divider" aria-hidden="true">
+                    <span>hoặc dùng email công việc</span>
                   </div>
-                </Field>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <PasswordField
-                  id="password"
-                  value={password}
-                  onChange={setPassword}
-                  error={fieldErrors.password}
-                />
-                <label className="checkbox-label terms-label">
-                  <input type="checkbox" required />{' '}
-                  <span>
-                    I agree to the Fieldwise terms and privacy policy.
-                  </span>
-                </label>
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating account…' : 'Create account'}
-                </Button>
-              </>
-            ) : null}
+                  <EmailField
+                    value={email}
+                    onChange={setEmail}
+                    error={fieldErrors.email}
+                  />
+                  <PasswordField
+                    id="password"
+                    value={password}
+                    onChange={setPassword}
+                    hint="Tối thiểu 8 ký tự"
+                    error={fieldErrors.password}
+                  />
+                  <div className="odm-auth-row">
+                    <label className="odm-auth-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(event) =>
+                          setRememberMe(event.target.checked)
+                        }
+                      />
+                      <span>Ghi nhớ đăng nhập</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="odm-auth-link-button"
+                      onClick={() => {
+                        setMode('forgot')
+                        setNotice(undefined)
+                      }}
+                    >
+                      Quên mật khẩu?
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    className="odm-btn odm-btn-p odm-auth-submit"
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                  >
+                    {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                  </button>
+                </>
+              ) : null}
+              {mode === 'register' ? (
+                <>
+                  <Field
+                    label="Họ và tên"
+                    htmlFor="fullName"
+                    hint="Tối đa 100 ký tự"
+                    error={fieldErrors.fullName}
+                  >
+                    <div className="odm-auth-input-wrap">
+                      <Icon name="users" />
+                      <input
+                        id="fullName"
+                        name="fullName"
+                        className={`odm-inp${fieldErrors.fullName ? ' odm-inp-err' : ''}`}
+                        type="text"
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                        placeholder="Nguyễn Văn A"
+                        maxLength={100}
+                        autoComplete="name"
+                        required
+                      />
+                    </div>
+                  </Field>
+                  <EmailField
+                    value={email}
+                    onChange={setEmail}
+                    error={fieldErrors.email}
+                  />
+                  <PasswordField
+                    id="password"
+                    value={password}
+                    onChange={setPassword}
+                    hint="Tối thiểu 8 ký tự"
+                    error={fieldErrors.password}
+                  />
+                  <PasswordField
+                    id="confirmPassword"
+                    label="Xác nhận mật khẩu"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    error={fieldErrors.confirmPassword}
+                  />
+                  <label className="odm-auth-checkbox">
+                    <input type="checkbox" required />
+                    <span>
+                      Tôi đồng ý với Điều khoản sử dụng và chính sách bay an
+                      toàn.
+                    </span>
+                  </label>
+                  <button
+                    type="submit"
+                    className="odm-btn odm-btn-p odm-auth-submit"
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                  >
+                    {isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
+                  </button>
+                </>
+              ) : null}
+              {mode === 'verify' ? (
+                <>
+                  <EmailField
+                    value={email}
+                    onChange={setEmail}
+                    error={fieldErrors.email}
+                  />
+                  <Field label="Mã xác thực" htmlFor="otpCode" hint="6 chữ số">
+                    <div className="odm-auth-input-wrap">
+                      <Icon name="ticket" />
+                      <input
+                        id="otpCode"
+                        name="otpCode"
+                        className="odm-inp"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(event) =>
+                          setOtpCode(event.target.value.replace(/\D/g, ''))
+                        }
+                        placeholder="000000"
+                        autoComplete="one-time-code"
+                        required
+                      />
+                    </div>
+                  </Field>
+                  <button
+                    type="submit"
+                    className="odm-btn odm-btn-p odm-auth-submit"
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                  >
+                    {isSubmitting ? 'Đang xác thực...' : 'Xác thực email'}
+                  </button>
+                  <button
+                    type="button"
+                    className="odm-auth-resend"
+                    onClick={handleResendOtp}
+                    disabled={isSubmitting}
+                  >
+                    Chưa nhận được mã? <strong>Gửi lại mã</strong>
+                  </button>
+                </>
+              ) : null}
+              {mode === 'forgot' ? (
+                <>
+                  <EmailField
+                    value={email}
+                    onChange={setEmail}
+                    error={fieldErrors.email}
+                  />
+                  <button
+                    type="submit"
+                    className="odm-btn odm-btn-p odm-auth-submit"
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                  >
+                    {isSubmitting ? 'Đang gửi...' : 'Gửi mã đặt lại'}
+                  </button>
+                  <button
+                    type="button"
+                    className="odm-auth-back"
+                    onClick={backToLogin}
+                  >
+                    <Icon name="arrow-left" /> Quay lại đăng nhập
+                  </button>
+                </>
+              ) : null}
+              {mode === 'reset' ? (
+                <>
+                  <EmailField
+                    value={email}
+                    onChange={setEmail}
+                    error={fieldErrors.email}
+                  />
+                  <Field
+                    label="Mã đặt lại"
+                    htmlFor="otpCode"
+                    hint="6 chữ số"
+                    error={fieldErrors.otpCode}
+                  >
+                    <div className="odm-auth-input-wrap">
+                      <Icon name="ticket" />
+                      <input
+                        id="otpCode"
+                        name="otpCode"
+                        className={`odm-inp${fieldErrors.otpCode ? ' odm-inp-err' : ''}`}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(event) =>
+                          setOtpCode(event.target.value.replace(/\D/g, ''))
+                        }
+                        placeholder="000000"
+                        required
+                      />
+                    </div>
+                  </Field>
+                  <PasswordField
+                    id="newPassword"
+                    label="Mật khẩu mới"
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    hint="Tối thiểu 8 ký tự"
+                    error={fieldErrors.newPassword}
+                  />
+                  <button
+                    type="submit"
+                    className="odm-btn odm-btn-p odm-auth-submit"
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                  >
+                    {isSubmitting ? 'Đang đặt lại...' : 'Đặt lại mật khẩu'}
+                  </button>
+                  <button
+                    type="button"
+                    className="odm-auth-back"
+                    onClick={backToLogin}
+                  >
+                    <Icon name="arrow-left" /> Quay lại đăng nhập
+                  </button>
+                </>
+              ) : null}
+              {mode === 'first-login' ? (
+                <>
+                  <EmailField
+                    value={email}
+                    onChange={setEmail}
+                    error={fieldErrors.email}
+                  />
+                  <PasswordField
+                    id="newPassword"
+                    label="Mật khẩu mới"
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    hint="Tối thiểu 8 ký tự"
+                    error={fieldErrors.newPassword}
+                  />
+                  <button
+                    type="submit"
+                    className="odm-btn odm-btn-p odm-auth-submit"
+                    disabled={isSubmitting || !challengeSession}
+                    aria-busy={isSubmitting}
+                  >
+                    {isSubmitting
+                      ? 'Đang lưu mật khẩu...'
+                      : 'Tiếp tục vào workspace'}
+                  </button>
+                </>
+              ) : null}
+            </form>
+            <ModeSwitch
+              mode={mode}
+              onChange={(nextMode) => {
+                setMode(nextMode)
+                setNotice(undefined)
+              }}
+            />
             {mode === 'verify' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <Field
-                  label="Verification code"
-                  htmlFor="otpCode"
-                  hint="6 digits"
-                >
-                  <div className="input-with-icon">
-                    <Icon name="ticket" />
-                    <input
-                      id="otpCode"
-                      name="otpCode"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{6}"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(event) =>
-                        setOtpCode(event.target.value.replace(/\D/g, ''))
-                      }
-                      placeholder="000000"
-                      autoComplete="one-time-code"
-                      required
-                    />
-                  </div>
-                </Field>
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Verifying…' : 'Verify email'}
-                </Button>
-                <button
-                  type="button"
-                  className="resend-button"
-                  onClick={handleResendOtp}
-                  disabled={isSubmitting}
-                >
-                  Didn’t receive a code? <strong>Resend code</strong>
-                </button>
-              </>
+              <button
+                type="button"
+                className="odm-auth-back odm-auth-bottom-back"
+                onClick={backToLogin}
+              >
+                <Icon name="arrow-left" /> Dùng email khác
+              </button>
             ) : null}
-            {mode === 'forgot' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Sending…' : 'Send reset code'}
-                </Button>
-                <button
-                  type="button"
-                  className="text-back"
-                  onClick={backToLogin}
-                >
-                  <Icon name="arrow-left" /> Back to sign in
-                </button>
-              </>
-            ) : null}
-            {mode === 'reset' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <Field
-                  label="Reset code"
-                  htmlFor="otpCode"
-                  hint="6 digits"
-                  error={fieldErrors.otpCode}
-                >
-                  <div className="input-with-icon">
-                    <Icon name="ticket" />
-                    <input
-                      id="otpCode"
-                      name="otpCode"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{6}"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(event) =>
-                        setOtpCode(event.target.value.replace(/\D/g, ''))
-                      }
-                      placeholder="000000"
-                      required
-                    />
-                  </div>
-                </Field>
-                <PasswordField
-                  id="newPassword"
-                  label="New password"
-                  value={newPassword}
-                  onChange={setNewPassword}
-                  error={fieldErrors.newPassword}
-                />
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Resetting…' : 'Reset password'}
-                </Button>
-                <button
-                  type="button"
-                  className="text-back"
-                  onClick={backToLogin}
-                >
-                  <Icon name="arrow-left" /> Back to sign in
-                </button>
-              </>
-            ) : null}
-            {mode === 'first-login' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <PasswordField
-                  id="newPassword"
-                  label="New password"
-                  value={newPassword}
-                  onChange={setNewPassword}
-                  error={fieldErrors.newPassword}
-                />
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting || !challengeSession}
-                >
-                  {isSubmitting ? 'Saving password…' : 'Continue to workspace'}
-                </Button>
-              </>
-            ) : null}
-          </form>
-          <ModeSwitch
-            mode={mode}
-            onChange={(nextMode) => {
-              setMode(nextMode)
-              setNotice(undefined)
-            }}
-          />
-          {mode === 'verify' ? (
-            <button
-              type="button"
-              className="text-back auth-bottom-back"
-              onClick={backToLogin}
-            >
-              <Icon name="arrow-left" /> Use a different email
-            </button>
-          ) : null}
+          </div>
         </div>
       </main>
     </div>

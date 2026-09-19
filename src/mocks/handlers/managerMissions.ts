@@ -8,9 +8,10 @@
 //   POST /api/missions/{id}/assignments/{aid}/release    [BRIEF C4 = TK]
 import type { Mission } from '../../features/manager/types/missions'
 import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
-import { fail, created, registerMockRoutes } from '../mockServer'
+import { fail, ok, created, registerMockRoutes } from '../mockServer'
 import { findOrder } from './ordersStore'
 import {
+  findMissionById,
   findMissionsForOrder,
   missions,
   newMinimalMission,
@@ -125,6 +126,15 @@ registerMockRoutes([
       mission.radiusM = req.flightPlan.radiusM
 
       return created(toMissionDto(mission), 'Đã tạo flight plan cho mission')
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/missions/:id',
+    handler: ({ params }) => {
+      const mission = findMissionById(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      return ok(toMissionDto(mission))
     },
   },
 ])

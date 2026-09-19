@@ -112,3 +112,18 @@ describe('POST /api/orders/{id}/missions', () => {
     expect(payload.data.missionCode).toBe('MSN-2609-0153-2')
   })
 })
+
+describe('GET /api/missions/{id}', () => {
+  it('resolves the seeded demo mission by id or missionCode', async () => {
+    const byId = await call('GET', '/api/missions/msn-2609-0153-1')
+    expect(byId.status).toBe(200)
+    expect(byId.payload.data.orderCode).toBe('ORD-2609-0153')
+    const byCode = await call('GET', '/api/missions/MSN-2609-0153-1')
+    expect(byCode.status).toBe(200)
+  })
+
+  it('404s for an unknown mission', async () => {
+    const { status } = await call('GET', '/api/missions/does-not-exist')
+    expect(status).toBe(404)
+  })
+})

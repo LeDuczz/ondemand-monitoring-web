@@ -62,4 +62,18 @@ describe('missionsApi (mock mode)', () => {
       missionsApi.createMission('ord-2609-0160', validRequest),
     ).rejects.toMatchObject({ status: 409 })
   })
+
+  it('getMission resolves the seeded demo mission', async () => {
+    setHttpTransport(mockFetch)
+    const mission = await missionsApi.getMission('msn-2609-0153-1')
+    expect(mission.orderCode).toBe('ORD-2609-0153')
+    expect(mission.nearestBase).toBe('Trạm Nhà Bè')
+  })
+
+  it('getMission 404s for an unknown id', async () => {
+    setHttpTransport(mockFetch)
+    await expect(
+      missionsApi.getMission('does-not-exist'),
+    ).rejects.toMatchObject({ status: 404 })
+  })
 })

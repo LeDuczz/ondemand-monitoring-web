@@ -19,4 +19,9 @@ export const missionsApi = {
       body: request,
     })
   },
+
+  /** `GET /api/missions/{id}` [BE `MissionController.getById`]. */
+  getMission(id: string, signal?: AbortSignal): Promise<Mission> {
+    return apiRequest<Mission>(`/api/missions/${id}`, { signal })
+  },
 }

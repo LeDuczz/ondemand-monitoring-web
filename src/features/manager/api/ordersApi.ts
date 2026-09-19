@@ -47,4 +47,9 @@ export const ordersApi = {
       body: { note },
     })
   },
+
+  /** `POST /api/orders/{id}/approve` [BE] — no body, creates a mission. */
+  approve(id: string): Promise<void> {
+    return apiRequest<void>(`/api/orders/${id}/approve`, { method: 'POST' })
+  },
 }

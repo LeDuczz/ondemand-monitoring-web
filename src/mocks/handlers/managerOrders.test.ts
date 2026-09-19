@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { env } from '../../config/env'
 import { resetMockDb } from '../db'
 import { mockFetch } from '../mockServer'
-import './managerOrders'
+import { __testing } from './managerOrders'
 
 const base = env.apiBaseUrl
 
@@ -51,6 +51,13 @@ describe('GET /api/orders/{id}', () => {
     expect(payload.code).toBe('NOT_FOUND')
   })
 
+  it('409s ORDER_NOT_UNDER_REVIEW once the order is no longer PENDING', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approve')
+    const { status, payload } = await call('GET', '/api/orders/ord-2609-0157')
+    expect(status).toBe(409)
+    expect(payload.code).toBe('ORDER_NOT_UNDER_REVIEW')
+  })
+
   it('returns full detail for a PENDING order', async () => {
     const { status, payload } = await call('GET', '/api/orders/ord-2609-0157')
     expect(status).toBe(200)
@@ -86,6 +93,35 @@ describe('GET /api/orders/{id}/analysis/latest', () => {
     )
     expect(payload.data.overallVerdict).toBe('RISKY')
     expect(payload.data.findings).toEqual([])
+  })
+})
+
+describe('POST /api/orders/{id}/approve', () => {
+  it('approves and creates a mission in the mock missions collection', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0157/approve',
+    )
+    expect(status).toBe(200)
+    expect(payload.success).toBe(true)
+    expect(
+      __testing.missions.some(
+        (m) => m.orderId === 'ord-2609-0157' && m.status === 'CREATED',
+      ),
+    ).toBe(true)
+
+    const missionsResponse = await call('GET', '/api/orders/ord-2609-0157')
+    expect(missionsResponse.status).toBe(409)
+  })
+
+  it('409s when the order is no longer PENDING', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approve')
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0157/approve',
+    )
+    expect(status).toBe(409)
+    expect(payload.code).toBe('ORDER_NOT_UNDER_REVIEW')
   })
 })
 

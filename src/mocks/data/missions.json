@@ -1,0 +1,4 @@
+{
+  "_note": "Mock collection for missions created by POST /api/orders/{id}/approve [BE — backend creates a mission on approve, no request body]. Schema keeps only the fields this phase needs (id, orderId, missionCode, status, droneId, operatorId, scheduledStartAt) aligned with backend MissionResponse field names; later phases (P5+) extend this file as MNG-04/05 need more of the mission contract. Starts empty — missions are appended at runtime by the mock handler and reset by resetMockDb().",
+  "missions": []
+}

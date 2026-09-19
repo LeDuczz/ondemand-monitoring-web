@@ -5,6 +5,7 @@
 //   GET  /api/orders/{id}/analysis/latest    [BRIEF C4]
 //   GET  /api/orders/{id}/resource-preview   PROPOSED (no source endpoint)
 //   PUT  /api/orders/{id}/internal-note      PROPOSED (no source endpoint)
+//   POST /api/orders/{id}/approve            [BE] (creates a mission)
 import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
 import type {
   OrderAnalysis,
@@ -17,6 +18,7 @@ import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import ordersSeed from '../data/orders.json'
 import analysesSeed from '../data/order-analyses.json'
+import missionsSeed from '../data/missions.json'
 
 type SeedOrder = {
   id: string
@@ -50,6 +52,16 @@ type SeedOrder = {
   warningCount: number
 }
 
+type Mission = {
+  id: string
+  orderId: string
+  missionCode: string
+  status: string
+  droneId: string | null
+  operatorId: string | null
+  scheduledStartAt: string | null
+}
+
 const REVIEWER_NAME = 'Lê Thị Thanh Hằng'
 
 // Each collection is created from the exact object/array we hold a
@@ -69,6 +81,7 @@ const resourcePreviews = createCollection(
 const internalNotes = createCollection(
   analysesSeed.internalNotes,
 ) as unknown as Record<string, OrderInternalNote>
+const missions = createCollection(missionsSeed.missions) as Mission[]
 
 function findOrder(id: string): SeedOrder | undefined {
   return orders.find((o) => o.id === id || o.code === id)
@@ -213,4 +226,34 @@ registerMockRoutes([
       return ok(value)
     },
   },
+  {
+    method: 'POST',
+    path: '/api/orders/:id/approve',
+    handler: ({ params }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (order.status !== 'PENDING') {
+        return fail(
+          409,
+          'ORDER_NOT_UNDER_REVIEW',
+          'Đơn không còn ở trạng thái chờ duyệt.',
+        )
+      }
+      order.status = 'APPROVED'
+      const mission: Mission = {
+        id: `msn-${order.code.slice(4)}-1`,
+        orderId: order.id,
+        missionCode: `MSN-${order.code.slice(4)}-1`,
+        status: 'CREATED',
+        droneId: null,
+        operatorId: null,
+        scheduledStartAt: null,
+      }
+      missions.push(mission)
+      return ok(undefined, 'Order approved and mission created successfully')
+    },
+  },
 ])
+
+/** Test-only escape hatch to assert on the in-memory mock collections. */
+export const __testing = { missions }

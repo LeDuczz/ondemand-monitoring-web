@@ -51,4 +51,9 @@ describe('ordersApi (mock mode)', () => {
     expect(saved.note).toBe('Ghi chú mới')
     expect(saved.authorName).toBe('Lê Thị Thanh Hằng')
   })
+
+  it('approve resolves without throwing', async () => {
+    setHttpTransport(mockFetch)
+    await expect(ordersApi.approve('ord-2609-0157')).resolves.toBeUndefined()
+  })
 })

@@ -10,13 +10,14 @@ import { DispatchPage } from './pages/DispatchPage'
 import { DronesPage } from './pages/DronesPage'
 import { LivePage } from './pages/LivePage'
 import { MaintenancePage } from './pages/MaintenancePage'
+import { MediaPage } from './pages/MediaPage'
 import { MissionsListPage } from './pages/MissionsListPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
 import { SchedulePage } from './pages/SchedulePage'
 import {
   managerHref,
-  managerScreenCode,
   parseManagerRoute,
   type ManagerRoute,
 } from './routes'
@@ -104,30 +105,23 @@ function renderScreen(route: ManagerRoute) {
     return <MissionsListPage missionId={route.missionId} />
   if (route.screen === 'drones') return <DronesPage droneId={route.droneId} />
   if (route.screen === 'maintenance') return <MaintenancePage />
+  if (route.screen === 'media') return <MediaPage />
+  if (route.screen === 'reports') return <ReportsPage />
 
-  if (route.screen === 'notFound') {
-    return (
-      <StateView
-        state="empty"
-        title="Không tìm thấy màn hình"
-        description="Đường dẫn này không tồn tại trong khu vực Manager."
-        action={
-          <a
-            className="odm-btn odm-btn-p"
-            href={managerHref({ screen: 'dashboard' })}
-          >
-            Về Dashboard
-          </a>
-        }
-      />
-    )
-  }
-
+  // route.screen === 'notFound'
   return (
     <StateView
       state="empty"
-      title="Màn hình đang được xây dựng"
-      description={`${managerScreenCode[route.screen]} sẽ có ở pha tiếp theo.`}
+      title="Không tìm thấy màn hình"
+      description="Đường dẫn này không tồn tại trong khu vực Manager."
+      action={
+        <a
+          className="odm-btn odm-btn-p"
+          href={managerHref({ screen: 'dashboard' })}
+        >
+          Về Dashboard
+        </a>
+      }
     />
   )
 }

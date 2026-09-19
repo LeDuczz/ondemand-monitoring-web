@@ -342,6 +342,10 @@ h2 span {
   padding-top: 16px;
   border-top: 1px solid var(--color-border);
 }
+.portal-logout-button {
+  width: 100%;
+  justify-content: flex-start;
+}
 .portal-main {
   width: calc(100% - 248px);
   min-width: 0;

@@ -1,5 +1,5 @@
 // MNG-08: Mission list + detail panel
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
@@ -24,10 +24,7 @@ const STATUS_CHIPS: Array<{ value: StatusChip; label: string }> = [
   { value: 'CREATED', label: 'Mới tạo' },
 ]
 
-function formatScheduled(
-  start: string | null,
-  end: string | null,
-): string {
+function formatScheduled(start: string | null, end: string | null): string {
   if (!start) return '—'
   const d = new Date(start)
   const dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
@@ -79,7 +76,13 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
         gap: 12,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <span style={{ fontWeight: 600, fontSize: 14 }}>
           {mission.missionCode}
         </span>
@@ -99,7 +102,14 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
         </StatusBadge>
       </div>
 
-      <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div
+        style={{
+          fontSize: 13,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
         {mission.orderCode && (
           <div>
             <span style={{ color: 'var(--tx3)' }}>Đơn hàng: </span>
@@ -118,7 +128,9 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
         </div>
         <div>
           <span style={{ color: 'var(--tx3)' }}>Lịch bay: </span>
-          <span>{formatScheduled(mission.scheduledStartAt, mission.scheduledEndAt)}</span>
+          <span>
+            {formatScheduled(mission.scheduledStartAt, mission.scheduledEndAt)}
+          </span>
         </div>
         {mission.droneCode && (
           <div>
@@ -176,8 +188,7 @@ type MissionsListPageProps = {
   missionId?: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function MissionsListPage({ missionId: _missionId }: MissionsListPageProps) {
+export function MissionsListPage({ missionId }: MissionsListPageProps) {
   const [statusFilter, setStatusFilter] = useState<StatusChip>('ALL')
   const [selectedMission, setSelectedMission] =
     useState<MissionCalendarItem | null>(null)
@@ -192,6 +203,13 @@ export function MissionsListPage({ missionId: _missionId }: MissionsListPageProp
   )
 
   const missions = query.data?.items ?? []
+
+  useEffect(() => {
+    if (missionId && missions.length > 0) {
+      const found = missions.find((m) => m.id === missionId) ?? null
+      setSelectedMission(found)
+    }
+  }, [missionId, missions])
 
   function handleRetried(newId: string) {
     query.reload()
@@ -213,7 +231,9 @@ export function MissionsListPage({ missionId: _missionId }: MissionsListPageProp
       </div>
 
       {/* Filter chips */}
-      <div style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}>
+      <div
+        style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}
+      >
         {STATUS_CHIPS.map((chip) => (
           <button
             key={chip.value}
@@ -235,7 +255,10 @@ export function MissionsListPage({ missionId: _missionId }: MissionsListPageProp
               style={{ padding: 40, textAlign: 'center', color: 'var(--tx3)' }}
               aria-busy="true"
             >
-              <div className="odm-sk" style={{ height: 300, borderRadius: 8 }} />
+              <div
+                className="odm-sk"
+                style={{ height: 300, borderRadius: 8 }}
+              />
             </div>
           )}
 
@@ -250,7 +273,12 @@ export function MissionsListPage({ missionId: _missionId }: MissionsListPageProp
               {query.error instanceof ApiError && (
                 <code
                   className="odm-mono"
-                  style={{ display: 'block', fontSize: 11, color: 'var(--tx3)', marginTop: 8 }}
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    color: 'var(--tx3)',
+                    marginTop: 8,
+                  }}
                 >
                   GET /api/missions · {query.error.status ?? '—'}
                 </code>
@@ -282,13 +310,25 @@ export function MissionsListPage({ missionId: _missionId }: MissionsListPageProp
                     textAlign: 'left',
                   }}
                 >
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Mission</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Đơn hàng</th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    Mission
+                  </th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    Đơn hàng
+                  </th>
                   <th style={{ padding: '8px 12px', fontWeight: 500 }}>Lần</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Lịch bay</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Drone</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Phi công</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Trạng thái</th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    Lịch bay
+                  </th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    Drone
+                  </th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    Phi công
+                  </th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    Trạng thái
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -299,9 +339,7 @@ export function MissionsListPage({ missionId: _missionId }: MissionsListPageProp
                       borderBottom: '1px solid var(--border)',
                       cursor: 'pointer',
                       background:
-                        selectedMission?.id === m.id
-                          ? 'var(--bg2)'
-                          : undefined,
+                        selectedMission?.id === m.id ? 'var(--bg2)' : undefined,
                     }}
                     onClick={() =>
                       setSelectedMission(

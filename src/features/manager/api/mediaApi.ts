@@ -15,10 +15,7 @@ export const mediaApi = {
   },
 
   /** `POST /api/manual-upload-tasks/{id}/reassign` [ĐỀ XUẤT]. */
-  reassignTask(
-    taskId: string,
-    operatorId: string,
-  ): Promise<ManualUploadTask> {
+  reassignTask(taskId: string, operatorId: string): Promise<ManualUploadTask> {
     return apiRequest<ManualUploadTask>(
       `/api/manual-upload-tasks/${taskId}/reassign`,
       { method: 'POST', body: { operatorId } },
@@ -37,7 +34,12 @@ export const mediaApi = {
   deliverOrder(
     orderId: string,
     deliveryNote?: string,
-  ): Promise<{ id: string; code: string; status: string; deliveredAt: string }> {
+  ): Promise<{
+    id: string
+    code: string
+    status: string
+    deliveredAt: string
+  }> {
     return apiRequest(`/api/orders/${orderId}/deliver`, {
       method: 'POST',
       body: { deliveryNote: deliveryNote ?? '' },

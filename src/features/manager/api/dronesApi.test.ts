@@ -30,7 +30,11 @@ describe('dronesApi.listDrones', () => {
 
 describe('dronesApi.patchDroneStatus', () => {
   it('updates drone status', async () => {
-    const result = await dronesApi.patchDroneStatus('drn-01', 'MAINTENANCE', 'Bảo trì định kỳ')
+    const result = await dronesApi.patchDroneStatus(
+      'drn-01',
+      'MAINTENANCE',
+      'Bảo trì định kỳ',
+    )
     expect(result.status).toBe('MAINTENANCE')
   })
 

@@ -21,7 +21,11 @@ type SeedDrone = {
   distanceKmToNhaBe?: number | null
   enduranceMarginPct?: number | null
   hasThermalSensor?: boolean | null
-  existingBookings?: { missionCode: string; start: string | null; end: string | null }[]
+  existingBookings?: {
+    missionCode: string
+    start: string | null
+    end: string | null
+  }[]
   openTicketSeverity?: string
 }
 
@@ -93,8 +97,7 @@ registerMockRoutes([
         })
       }
 
-      const validNext =
-        VALID_TRANSITIONS[drone.status as DroneStatus] ?? []
+      const validNext = VALID_TRANSITIONS[drone.status as DroneStatus] ?? []
       if (!req.status || !validNext.includes(req.status)) {
         return fail(
           422,

@@ -38,7 +38,9 @@ describe('ReportsPage', () => {
   it('shows section headings', async () => {
     render(<ReportsPage />)
     await waitFor(() => {
-      expect(screen.getByText('Tỉ lệ mission thành công theo tuần')).toBeTruthy()
+      expect(
+        screen.getByText('Tỉ lệ mission thành công theo tuần'),
+      ).toBeTruthy()
     })
     expect(screen.getByText('Phân bổ đơn theo dịch vụ')).toBeTruthy()
     expect(screen.getByText('Utilization từng drone')).toBeTruthy()

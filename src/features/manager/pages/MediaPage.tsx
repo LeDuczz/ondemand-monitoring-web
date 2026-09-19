@@ -83,7 +83,12 @@ type ReassignModalProps = {
   onSuccess: () => void
 }
 
-function ReassignModal({ task, operators, onClose, onSuccess }: ReassignModalProps) {
+function ReassignModal({
+  task,
+  operators,
+  onClose,
+  onSuccess,
+}: ReassignModalProps) {
   const [selectedId, setSelectedId] = useState(task.assignedOperatorId)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,14 +107,28 @@ function ReassignModal({ task, operators, onClose, onSuccess }: ReassignModalPro
   }
 
   return (
-    <div style={OVERLAY_STYLE} role="dialog" aria-modal="true" aria-label="Giao lại cho phi công">
+    <div
+      style={OVERLAY_STYLE}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Giao lại cho phi công"
+    >
       <div style={{ ...DLG_STYLE, width: 460, maxWidth: 'calc(100% - 48px)' }}>
         <div style={DLG_HEAD_STYLE}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}>
+            <div
+              style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}
+            >
               Giao lại cho phi công
             </div>
-            <div style={{ color: 'var(--tx3)', marginTop: 3, fontSize: 12.5, lineHeight: 1.45 }}>
+            <div
+              style={{
+                color: 'var(--tx3)',
+                marginTop: 3,
+                fontSize: 12.5,
+                lineHeight: 1.45,
+              }}
+            >
               Cập nhật manual_upload_task.assigned_operator_id
             </div>
           </div>
@@ -124,7 +143,15 @@ function ReassignModal({ task, operators, onClose, onSuccess }: ReassignModalPro
         </div>
         <div style={DLG_BODY_STYLE}>
           <label style={{ display: 'block' }}>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
+            <span
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--tx2)',
+                marginBottom: 4,
+              }}
+            >
               Phi công
             </span>
             <select
@@ -134,13 +161,18 @@ function ReassignModal({ task, operators, onClose, onSuccess }: ReassignModalPro
             >
               {operators.map((op) => (
                 <option key={op.id} value={op.id}>
-                  {op.name}{op.id === task.assignedOperatorId ? ' (đang giao)' : ''}
+                  {op.name}
+                  {op.id === task.assignedOperatorId ? ' (đang giao)' : ''}
                 </option>
               ))}
             </select>
           </label>
           {error && (
-            <div style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 4 }}>{error}</div>
+            <div
+              style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 4 }}
+            >
+              {error}
+            </div>
           )}
         </div>
         <div style={DLG_FOOT_STYLE}>
@@ -167,8 +199,14 @@ type ReuploadModalProps = {
   onSuccess: () => void
 }
 
-function ReuploadModal({ media: _media, onClose, onSuccess }: ReuploadModalProps) {
-  const [reason, setReason] = useState('Tệp bị lỗi khi xác thực, vui lòng upload lại từ thiết bị.')
+function ReuploadModal({
+  media: _media,
+  onClose,
+  onSuccess,
+}: ReuploadModalProps) {
+  const [reason, setReason] = useState(
+    'Tệp bị lỗi khi xác thực, vui lòng upload lại từ thiết bị.',
+  )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -186,14 +224,28 @@ function ReuploadModal({ media: _media, onClose, onSuccess }: ReuploadModalProps
   }
 
   return (
-    <div style={OVERLAY_STYLE} role="dialog" aria-modal="true" aria-label="Yêu cầu upload lại">
+    <div
+      style={OVERLAY_STYLE}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Yêu cầu upload lại"
+    >
       <div style={{ ...DLG_STYLE, width: 460, maxWidth: 'calc(100% - 48px)' }}>
         <div style={DLG_HEAD_STYLE}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}>
+            <div
+              style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}
+            >
               Yêu cầu upload lại?
             </div>
-            <div style={{ color: 'var(--tx3)', marginTop: 3, fontSize: 12.5, lineHeight: 1.45 }}>
+            <div
+              style={{
+                color: 'var(--tx3)',
+                marginTop: 3,
+                fontSize: 12.5,
+                lineHeight: 1.45,
+              }}
+            >
               Media về trạng thái PENDING_UPLOAD và phi công nhận thông báo.
             </div>
           </div>
@@ -208,7 +260,15 @@ function ReuploadModal({ media: _media, onClose, onSuccess }: ReuploadModalProps
         </div>
         <div style={DLG_BODY_STYLE}>
           <label style={{ display: 'block' }}>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
+            <span
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--tx2)',
+                marginBottom: 4,
+              }}
+            >
               Ghi chú cho phi công
             </span>
             <textarea
@@ -219,7 +279,11 @@ function ReuploadModal({ media: _media, onClose, onSuccess }: ReuploadModalProps
             />
           </label>
           {error && (
-            <div style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 4 }}>{error}</div>
+            <div
+              style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 4 }}
+            >
+              {error}
+            </div>
           )}
         </div>
         <div style={DLG_FOOT_STYLE}>
@@ -265,15 +329,30 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
   }
 
   return (
-    <div style={OVERLAY_STYLE} role="dialog" aria-modal="true" aria-label="Giao kết quả cho khách">
+    <div
+      style={OVERLAY_STYLE}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Giao kết quả cho khách"
+    >
       <div style={{ ...DLG_STYLE, width: 640, maxWidth: 'calc(100% - 48px)' }}>
         <div style={DLG_HEAD_STYLE}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}>
+            <div
+              style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}
+            >
               Giao kết quả cho khách
             </div>
-            <div style={{ color: 'var(--tx3)', marginTop: 3, fontSize: 12.5, lineHeight: 1.45 }}>
-              {mission.missionCode} · {mission.customerName} · {mission.companyName}
+            <div
+              style={{
+                color: 'var(--tx3)',
+                marginTop: 3,
+                fontSize: 12.5,
+                lineHeight: 1.45,
+              }}
+            >
+              {mission.missionCode} · {mission.customerName} ·{' '}
+              {mission.companyName}
             </div>
           </div>
           <button
@@ -285,13 +364,28 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
             ✕
           </button>
         </div>
-        <div style={{ ...DLG_BODY_STYLE, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div
+          style={{
+            ...DLG_BODY_STYLE,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
           <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
             Xem trước {mission.totalFiles} tệp ({mission.photoCount} ảnh,{' '}
             {mission.videoCount} video) · tất cả VALIDATED
           </div>
           <label style={{ display: 'block' }}>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
+            <span
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--tx2)',
+                marginBottom: 4,
+              }}
+            >
               note (hiển thị cho khách)
             </span>
             <textarea
@@ -313,12 +407,16 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
             }}
           >
             Khi xác nhận hệ thống sẽ: đặt{' '}
-            <span className="odm-mono">available_at</span> cho {mission.totalFiles} tệp →
-            tạo <span className="odm-mono">media_delivery</span> (media_count ={' '}
-            {mission.totalFiles}) → gửi <span className="odm-mono">notification</span> tới khách.
+            <span className="odm-mono">available_at</span> cho{' '}
+            {mission.totalFiles} tệp → tạo{' '}
+            <span className="odm-mono">media_delivery</span> (media_count ={' '}
+            {mission.totalFiles}) → gửi{' '}
+            <span className="odm-mono">notification</span> tới khách.
           </div>
           {error && (
-            <div style={{ fontSize: 11.5, color: 'var(--red-fg)' }}>{error}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--red-fg)' }}>
+              {error}
+            </div>
           )}
         </div>
         <div style={DLG_FOOT_STYLE}>
@@ -365,13 +463,24 @@ export function MediaPage() {
   if (query.loading && !data) {
     return (
       <div>
-        <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 600, letterSpacing: '-.01em' }}>
+        <h1
+          style={{
+            margin: '0 0 16px',
+            fontSize: 20,
+            fontWeight: 600,
+            letterSpacing: '-.01em',
+          }}
+        >
           Media và giao kết quả
         </h1>
         <div className="odm-card" style={{ padding: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="odm-sk" style={{ width: '100%', height: 44 }} />
+              <div
+                key={i}
+                className="odm-sk"
+                style={{ width: '100%', height: 44 }}
+              />
             ))}
           </div>
         </div>
@@ -382,7 +491,14 @@ export function MediaPage() {
   if (query.error) {
     return (
       <div>
-        <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 600, letterSpacing: '-.01em' }}>
+        <h1
+          style={{
+            margin: '0 0 16px',
+            fontSize: 20,
+            fontWeight: 600,
+            letterSpacing: '-.01em',
+          }}
+        >
           Media và giao kết quả
         </h1>
         <StateView
@@ -400,7 +516,14 @@ export function MediaPage() {
   if (!data || totalItems === 0) {
     return (
       <div>
-        <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 600, letterSpacing: '-.01em' }}>
+        <h1
+          style={{
+            margin: '0 0 16px',
+            fontSize: 20,
+            fontWeight: 600,
+            letterSpacing: '-.01em',
+          }}
+        >
           Media và giao kết quả
         </h1>
         <StateView
@@ -414,14 +537,30 @@ export function MediaPage() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: 16,
+          marginBottom: 16,
+        }}
+      >
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-.01em', lineHeight: 1.25 }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              letterSpacing: '-.01em',
+              lineHeight: 1.25,
+            }}
+          >
             Media và giao kết quả
           </h1>
           <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-            {manualCount} tệp cần upload thủ công · {badCount} tệp lỗi xác thực ·{' '}
-            {waitCount} mission chờ giao
+            {manualCount} tệp cần upload thủ công · {badCount} tệp lỗi xác thực
+            · {waitCount} mission chờ giao
           </div>
         </div>
       </div>
@@ -429,7 +568,12 @@ export function MediaPage() {
       {/* Tabs */}
       <div
         role="tablist"
-        style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--bd)', marginBottom: 14 }}
+        style={{
+          display: 'flex',
+          gap: 2,
+          borderBottom: '1px solid var(--bd)',
+          marginBottom: 14,
+        }}
       >
         {(
           [
@@ -448,7 +592,10 @@ export function MediaPage() {
               height: 38,
               padding: '0 14px',
               border: 0,
-              borderBottom: activeTab === tab.id ? '2px solid var(--ink)' : '2px solid transparent',
+              borderBottom:
+                activeTab === tab.id
+                  ? '2px solid var(--ink)'
+                  : '2px solid transparent',
               marginBottom: -1,
               background: 'transparent',
               font: "600 13px 'IBM Plex Sans',system-ui,sans-serif",
@@ -461,7 +608,13 @@ export function MediaPage() {
           >
             {tab.label}
             <span
-              style={{ fontSize: 11, padding: '1px 6px', borderRadius: 9, background: 'var(--sf3)', color: 'var(--tx2)' }}
+              style={{
+                fontSize: 11,
+                padding: '1px 6px',
+                borderRadius: 9,
+                background: 'var(--sf3)',
+                color: 'var(--tx2)',
+              }}
             >
               {tab.count}
             </span>
@@ -489,7 +642,9 @@ export function MediaPage() {
                 {data.manualUploadTasks.map((task) => (
                   <tr key={task.id}>
                     <td>
-                      <div style={{ fontWeight: 600 }} className="odm-mono">{task.fileName}</div>
+                      <div style={{ fontWeight: 600 }} className="odm-mono">
+                        {task.fileName}
+                      </div>
                       <div style={{ color: 'var(--tx3)', fontSize: 11.5 }}>
                         {task.mediaType} · {task.fileSizeLabel} ·{' '}
                         <StatusBadge tone={mediaStatusTone[task.mediaStatus]}>
@@ -497,8 +652,12 @@ export function MediaPage() {
                         </StatusBadge>
                       </div>
                     </td>
-                    <td><span className="odm-mono">{task.missionCode}</span></td>
-                    <td><span style={{ lineHeight: 1.4 }}>{task.reason}</span></td>
+                    <td>
+                      <span className="odm-mono">{task.missionCode}</span>
+                    </td>
+                    <td>
+                      <span style={{ lineHeight: 1.4 }}>{task.reason}</span>
+                    </td>
                     <td>{task.assignedOperatorName}</td>
                     <td>
                       <StatusBadge tone="yellow">
@@ -525,7 +684,8 @@ export function MediaPage() {
             </table>
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-            Phi công bị lỗi upload 3 lần liên tiếp ở OPR-08 sẽ tự sinh manual_upload_task.
+            Phi công bị lỗi upload 3 lần liên tiếp ở OPR-08 sẽ tự sinh
+            manual_upload_task.
           </div>
         </div>
       )}
@@ -548,12 +708,16 @@ export function MediaPage() {
               {data.badMediaItems.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <div className="odm-mono" style={{ fontWeight: 600 }}>{item.fileName}</div>
+                    <div className="odm-mono" style={{ fontWeight: 600 }}>
+                      {item.fileName}
+                    </div>
                     <div style={{ color: 'var(--tx3)', fontSize: 11.5 }}>
                       {item.mediaType} · {item.fileSizeLabel}
                     </div>
                   </td>
-                  <td><span className="odm-mono">{item.missionCode}</span></td>
+                  <td>
+                    <span className="odm-mono">{item.missionCode}</span>
+                  </td>
                   <td>
                     <StatusBadge tone={mediaStatusTone[item.mediaStatus]}>
                       {mediaStatusLabel[item.mediaStatus]}
@@ -569,7 +733,9 @@ export function MediaPage() {
                     <button
                       type="button"
                       className="odm-btn odm-btn-sm"
-                      onClick={() => setModal({ kind: 'reupload', media: item })}
+                      onClick={() =>
+                        setModal({ kind: 'reupload', media: item })
+                      }
                     >
                       Yêu cầu upload lại
                     </button>
@@ -588,35 +754,94 @@ export function MediaPage() {
             <div key={mission.missionId} className="odm-card">
               <div
                 className="odm-card-body"
-                style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 18, alignItems: 'center' }}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0,1fr) auto',
+                  gap: 18,
+                  alignItems: 'center',
+                }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <span className="odm-mono" style={{ fontWeight: 700 }}>{mission.missionCode}</span>
-                    <StatusBadge tone={missionStatusTone[mission.missionStatus]}>
+                  <div
+                    style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                  >
+                    <span className="odm-mono" style={{ fontWeight: 700 }}>
+                      {mission.missionCode}
+                    </span>
+                    <StatusBadge
+                      tone={missionStatusTone[mission.missionStatus]}
+                    >
                       {missionStatusLabel[mission.missionStatus]}
                     </StatusBadge>
                   </div>
-                  <div style={{ fontWeight: 600, margin: '3px 0' }}>{mission.missionTitle}</div>
-                  <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-                    {mission.orderCode} · {mission.customerName} · {mission.companyName}
+                  <div style={{ fontWeight: 600, margin: '3px 0' }}>
+                    {mission.missionTitle}
                   </div>
-                  <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
+                    {mission.orderCode} · {mission.customerName} ·{' '}
+                    {mission.companyName}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 6,
+                      display: 'flex',
+                      gap: 6,
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                    }}
+                  >
                     <span
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 22, padding: '0 8px', borderRadius: 5, background: 'var(--sf3)', color: 'var(--tx2)', fontSize: 11.5, fontWeight: 500, border: '1px solid var(--bd)' }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        height: 22,
+                        padding: '0 8px',
+                        borderRadius: 5,
+                        background: 'var(--sf3)',
+                        color: 'var(--tx2)',
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        border: '1px solid var(--bd)',
+                      }}
                     >
                       {mission.serviceType}
                     </span>
                     <span
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 22, padding: '0 8px', borderRadius: 5, background: 'var(--sf3)', color: 'var(--tx2)', fontSize: 11.5, fontWeight: 500, border: '1px solid var(--bd)' }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        height: 22,
+                        padding: '0 8px',
+                        borderRadius: 5,
+                        background: 'var(--sf3)',
+                        color: 'var(--tx2)',
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        border: '1px solid var(--bd)',
+                      }}
                     >
-                      {mission.totalFiles} tệp · {mission.photoCount} ảnh · {mission.videoCount} video
+                      {mission.totalFiles} tệp · {mission.photoCount} ảnh ·{' '}
+                      {mission.videoCount} video
                     </span>
                     {mission.allValidated && (
                       <StatusBadge tone="green">Đã xác thực</StatusBadge>
                     )}
                     <span
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 22, padding: '0 8px', borderRadius: 5, background: 'var(--sf3)', color: 'var(--tx2)', fontSize: 11.5, fontWeight: 500, border: '1px solid var(--bd)' }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        height: 22,
+                        padding: '0 8px',
+                        borderRadius: 5,
+                        background: 'var(--sf3)',
+                        color: 'var(--tx2)',
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        border: '1px solid var(--bd)',
+                      }}
                     >
                       validated_at {formatVnDate(mission.validatedAt)}
                     </span>
@@ -648,21 +873,30 @@ export function MediaPage() {
             { id: 'op-ly-thanh-son', name: 'Lý Thanh Sơn' },
           ]}
           onClose={() => setModal(null)}
-          onSuccess={() => { setModal(null); reload() }}
+          onSuccess={() => {
+            setModal(null)
+            reload()
+          }}
         />
       )}
       {modal?.kind === 'reupload' && (
         <ReuploadModal
           media={modal.media}
           onClose={() => setModal(null)}
-          onSuccess={() => { setModal(null); reload() }}
+          onSuccess={() => {
+            setModal(null)
+            reload()
+          }}
         />
       )}
       {modal?.kind === 'deliver' && (
         <DeliverModal
           mission={modal.mission}
           onClose={() => setModal(null)}
-          onSuccess={() => { setModal(null); reload() }}
+          onSuccess={() => {
+            setModal(null)
+            reload()
+          }}
         />
       )}
     </div>

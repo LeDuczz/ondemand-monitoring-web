@@ -14,7 +14,8 @@ import { dronesApi } from '../api/dronesApi'
 import type { DroneItem } from '../types/drones'
 import '../manager.css'
 
-type FilterChip = 'ALL' | 'AVAILABLE' | 'FLYING' | 'MAINTENANCE' | 'OUT_OF_SERVICE'
+type FilterChip =
+  'ALL' | 'AVAILABLE' | 'FLYING' | 'MAINTENANCE' | 'OUT_OF_SERVICE'
 
 const FILTER_CHIPS: Array<{ value: FilterChip; label: string }> = [
   { value: 'ALL', label: 'Tất cả' },
@@ -52,7 +53,11 @@ type StatusChangeModalProps = {
   onChanged: (updated: DroneItem) => void
 }
 
-function StatusChangeModal({ drone, onClose, onChanged }: StatusChangeModalProps) {
+function StatusChangeModal({
+  drone,
+  onClose,
+  onChanged,
+}: StatusChangeModalProps) {
   const nextStatuses = MANUAL_TRANSITIONS[drone.status] ?? []
   const [selectedStatus, setSelectedStatus] = useState<DroneStatus | ''>(
     nextStatuses[0] ?? '',
@@ -114,7 +119,12 @@ function StatusChangeModal({ drone, onClose, onChanged }: StatusChangeModalProps
             <div>
               <label
                 htmlFor="drone-new-status"
-                style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+                style={{
+                  fontSize: 12,
+                  color: 'var(--tx2)',
+                  display: 'block',
+                  marginBottom: 4,
+                }}
               >
                 Trạng thái mới
               </label>
@@ -138,7 +148,12 @@ function StatusChangeModal({ drone, onClose, onChanged }: StatusChangeModalProps
             <div>
               <label
                 htmlFor="drone-reason"
-                style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+                style={{
+                  fontSize: 12,
+                  color: 'var(--tx2)',
+                  display: 'block',
+                  marginBottom: 4,
+                }}
               >
                 Lý do *
               </label>
@@ -154,10 +169,14 @@ function StatusChangeModal({ drone, onClose, onChanged }: StatusChangeModalProps
             </div>
 
             {error && (
-              <div style={{ color: 'var(--red-fg)', fontSize: 13 }}>{error}</div>
+              <div style={{ color: 'var(--red-fg)', fontSize: 13 }}>
+                {error}
+              </div>
             )}
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <div
+              style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}
+            >
               <button
                 type="button"
                 className="odm-btn"
@@ -231,7 +250,9 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
       </div>
 
       {/* Filter chips */}
-      <div style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}>
+      <div
+        style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}
+      >
         {FILTER_CHIPS.map((chip) => (
           <button
             key={chip.value}
@@ -246,10 +267,7 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
 
       {/* Content */}
       {query.loading && (
-        <div
-          style={{ padding: 40, textAlign: 'center' }}
-          aria-busy="true"
-        >
+        <div style={{ padding: 40, textAlign: 'center' }} aria-busy="true">
           <div className="odm-sk" style={{ height: 300, borderRadius: 8 }} />
         </div>
       )}
@@ -265,7 +283,12 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
           {query.error instanceof ApiError && (
             <code
               className="odm-mono"
-              style={{ display: 'block', fontSize: 11, color: 'var(--tx3)', marginTop: 8 }}
+              style={{
+                display: 'block',
+                fontSize: 11,
+                color: 'var(--tx3)',
+                marginTop: 8,
+              }}
             >
               GET /api/drones · {query.error.status ?? '—'}
             </code>
@@ -283,7 +306,9 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
 
       {!query.loading && !query.error && visible.length > 0 && (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table
+            style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}
+          >
             <thead>
               <tr
                 style={{
@@ -294,12 +319,20 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
               >
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>Drone</th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>Model</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Trạng thái</th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  Trạng thái
+                </th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>Pin</th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>Trạm</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Payload</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Giờ bay</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Hoạt động cuối</th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  Payload
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  Giờ bay
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  Hoạt động cuối
+                </th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }} />
               </tr>
             </thead>
@@ -315,7 +348,13 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                     <td style={{ padding: '8px 12px', fontWeight: 500 }}>
                       {drone.code}
                       {drone.name ? (
-                        <span style={{ fontWeight: 400, color: 'var(--tx2)', marginLeft: 4 }}>
+                        <span
+                          style={{
+                            fontWeight: 400,
+                            color: 'var(--tx2)',
+                            marginLeft: 4,
+                          }}
+                        >
                           {drone.name}
                         </span>
                       ) : null}

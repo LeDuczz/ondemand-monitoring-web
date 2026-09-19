@@ -44,7 +44,11 @@
       { "droneCode": "DRN-05", "droneName": "Diều Hâu", "utilizationPct": 64 },
       { "droneCode": "DRN-08", "droneName": "Cò Trắng", "utilizationPct": 61 },
       { "droneCode": "DRN-06", "droneName": "Cú Mèo", "utilizationPct": 55 },
-      { "droneCode": "DRN-04", "droneName": "Sếu Đầu Đỏ", "utilizationPct": 47 },
+      {
+        "droneCode": "DRN-04",
+        "droneName": "Sếu Đầu Đỏ",
+        "utilizationPct": 47
+      },
       { "droneCode": "DRN-03", "droneName": "Chim Én", "utilizationPct": 38 },
       { "droneCode": "DRN-07", "droneName": "Vạc", "utilizationPct": 12 }
     ],

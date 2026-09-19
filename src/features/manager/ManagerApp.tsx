@@ -16,11 +16,7 @@ import { ReportsPage } from './pages/ReportsPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
 import { SchedulePage } from './pages/SchedulePage'
-import {
-  managerHref,
-  parseManagerRoute,
-  type ManagerRoute,
-} from './routes'
+import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash)

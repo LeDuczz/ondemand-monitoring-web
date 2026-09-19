@@ -32,7 +32,10 @@ describe('GET /api/drones', () => {
   })
 
   it('filters by status', async () => {
-    const { status, payload } = await call('GET', '/api/drones?status=AVAILABLE')
+    const { status, payload } = await call(
+      'GET',
+      '/api/drones?status=AVAILABLE',
+    )
     expect(status).toBe(200)
     for (const item of payload.data.items) {
       expect(item.status).toBe('AVAILABLE')
@@ -40,7 +43,10 @@ describe('GET /api/drones', () => {
   })
 
   it('returns empty list for unknown status', async () => {
-    const { status, payload } = await call('GET', '/api/drones?status=UNKNOWN_STATUS')
+    const { status, payload } = await call(
+      'GET',
+      '/api/drones?status=UNKNOWN_STATUS',
+    )
     expect(status).toBe(200)
     expect(payload.data.items).toHaveLength(0)
     expect(payload.data.total).toBe(0)
@@ -64,10 +70,14 @@ describe('PATCH /api/drones/:id/status', () => {
   })
 
   it('400s when reason is empty', async () => {
-    const { status, payload } = await call('PATCH', '/api/drones/drn-01/status', {
-      status: 'MAINTENANCE',
-      reason: '',
-    })
+    const { status, payload } = await call(
+      'PATCH',
+      '/api/drones/drn-01/status',
+      {
+        status: 'MAINTENANCE',
+        reason: '',
+      },
+    )
     expect(status).toBe(400)
     expect(payload.errors?.reason).toBeTruthy()
   })
@@ -83,10 +93,14 @@ describe('PATCH /api/drones/:id/status', () => {
 
   it('updates drone status on valid transition', async () => {
     // DRN-01 is AVAILABLE → MAINTENANCE is valid
-    const { status, payload } = await call('PATCH', '/api/drones/drn-01/status', {
-      status: 'MAINTENANCE',
-      reason: 'Scheduled check',
-    })
+    const { status, payload } = await call(
+      'PATCH',
+      '/api/drones/drn-01/status',
+      {
+        status: 'MAINTENANCE',
+        reason: 'Scheduled check',
+      },
+    )
     expect(status).toBe(200)
     expect(payload.data.status).toBe('MAINTENANCE')
   })

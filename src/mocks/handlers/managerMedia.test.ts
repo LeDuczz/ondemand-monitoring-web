@@ -52,7 +52,12 @@ describe('POST /api/manual-upload-tasks/:id/reassign', () => {
 
 describe('POST /api/media/:id/request-reupload', () => {
   it('requests reupload and resets status to PENDING_UPLOAD', async () => {
-    const result = await mediaApi.requestReupload('med-003', 'File rỗng, cần upload lại')
-    expect((result as unknown as Record<string, unknown>)['mediaStatus']).toBe('PENDING_UPLOAD')
+    const result = await mediaApi.requestReupload(
+      'med-003',
+      'File rỗng, cần upload lại',
+    )
+    expect((result as unknown as Record<string, unknown>)['mediaStatus']).toBe(
+      'PENDING_UPLOAD',
+    )
   })
 })

@@ -89,18 +89,16 @@ describe('ManagerApp', () => {
     })
   })
 
-  it('shows the "under construction" placeholder for screens not built yet', async () => {
+  it('renders the real MediaPage (MNG-11) for #portal/staff/media', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    // Use a screen that is still a placeholder (MNG-11 media)
     window.location.hash = '#portal/staff/media'
     render(<ManagerApp />)
 
     await waitFor(() =>
       expect(
-        screen.getByText('Màn hình đang được xây dựng'),
-      ).toBeInTheDocument(),
+        screen.getAllByText('Media và giao kết quả').length,
+      ).toBeGreaterThan(0),
     )
-    expect(screen.getByText(/MNG-11/)).toBeInTheDocument()
   })
 
   it('renders the real QueuePage (MNG-02) for #portal/staff/orders', async () => {

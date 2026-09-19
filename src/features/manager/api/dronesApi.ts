@@ -9,15 +9,22 @@ export const dronesApi = {
     page?: number
     pageSize?: number
     signal?: AbortSignal
-  }): Promise<{ items: DroneItem[]; total: number; page: number; pageSize: number }> {
+  }): Promise<{
+    items: DroneItem[]
+    total: number
+    page: number
+    pageSize: number
+  }> {
     const query: Record<string, string> = {}
     if (options?.status) query['status'] = options.status
     if (options?.page != null) query['page'] = String(options.page)
     if (options?.pageSize != null) query['pageSize'] = String(options.pageSize)
-    return apiRequest<{ items: DroneItem[]; total: number; page: number; pageSize: number }>(
-      '/api/drones',
-      { query, signal: options?.signal },
-    )
+    return apiRequest<{
+      items: DroneItem[]
+      total: number
+      page: number
+      pageSize: number
+    }>('/api/drones', { query, signal: options?.signal })
   },
 
   /** `PATCH /api/drones/{id}/status` [ĐỀ XUẤT]. */

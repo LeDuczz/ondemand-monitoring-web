@@ -151,7 +151,13 @@ function DetailPanel({ ticket, onClose }: DetailPanelProps) {
         flexShrink: 0,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <span style={{ fontWeight: 600, fontSize: 14 }}>{ticket.code}</span>
         <button
           type="button"
@@ -174,7 +180,14 @@ function DetailPanel({ ticket, onClose }: DetailPanelProps) {
         </StatusBadge>
       </div>
 
-      <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div
+        style={{
+          fontSize: 13,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
         <div>
           <span style={{ color: 'var(--tx3)' }}>Drone: </span>
           <span>
@@ -318,7 +331,12 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
           <div>
             <label
               htmlFor="ct-drone"
-              style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+              style={{
+                fontSize: 12,
+                color: 'var(--tx2)',
+                display: 'block',
+                marginBottom: 4,
+              }}
             >
               Drone *
             </label>
@@ -334,7 +352,12 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
           <div>
             <label
               htmlFor="ct-title"
-              style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+              style={{
+                fontSize: 12,
+                color: 'var(--tx2)',
+                display: 'block',
+                marginBottom: 4,
+              }}
             >
               Tiêu đề *
             </label>
@@ -350,7 +373,12 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
           <div>
             <label
               htmlFor="ct-priority"
-              style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+              style={{
+                fontSize: 12,
+                color: 'var(--tx2)',
+                display: 'block',
+                marginBottom: 4,
+              }}
             >
               Mức độ ưu tiên
             </label>
@@ -371,7 +399,12 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
           <div>
             <label
               htmlFor="ct-issue"
-              style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+              style={{
+                fontSize: 12,
+                color: 'var(--tx2)',
+                display: 'block',
+                marginBottom: 4,
+              }}
             >
               Loại sự cố
             </label>
@@ -387,7 +420,12 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
           <div>
             <label
               htmlFor="ct-desc"
-              style={{ fontSize: 12, color: 'var(--tx2)', display: 'block', marginBottom: 4 }}
+              style={{
+                fontSize: 12,
+                color: 'var(--tx2)',
+                display: 'block',
+                marginBottom: 4,
+              }}
             >
               Mô tả
             </label>
@@ -432,11 +470,15 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
 
 export function MaintenancePage() {
   const [tickets, setTickets] = useState<MaintenanceTicket[] | null>(null)
-  const [selectedTicket, setSelectedTicket] = useState<MaintenanceTicket | null>(null)
+  const [selectedTicket, setSelectedTicket] =
+    useState<MaintenanceTicket | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [transitionError, setTransitionError] = useState<string | null>(null)
 
-  const query = useApiQuery((signal) => maintenanceApi.listTickets({ signal }), [])
+  const query = useApiQuery(
+    (signal) => maintenanceApi.listTickets({ signal }),
+    [],
+  )
 
   const allTickets = tickets ?? query.data?.items ?? []
 
@@ -466,7 +508,10 @@ export function MaintenancePage() {
   ) {
     setTransitionError(null)
     try {
-      const updated = await maintenanceApi.patchTicketStatus(ticket.id, newStatus)
+      const updated = await maintenanceApi.patchTicketStatus(
+        ticket.id,
+        newStatus,
+      )
       const base = tickets ?? query.data?.items ?? []
       setTickets(base.map((t) => (t.id === updated.id ? updated : t)))
       if (selectedTicket?.id === updated.id) {
@@ -538,7 +583,12 @@ export function MaintenancePage() {
           {query.error instanceof ApiError && (
             <code
               className="odm-mono"
-              style={{ display: 'block', fontSize: 11, color: 'var(--tx3)', marginTop: 8 }}
+              style={{
+                display: 'block',
+                fontSize: 11,
+                color: 'var(--tx3)',
+                marginTop: 8,
+              }}
             >
               GET /api/maintenance-tickets · {query.error.status ?? '—'}
             </code>
@@ -592,7 +642,14 @@ export function MaintenancePage() {
                     {byColumn[col].length}
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    overflowY: 'auto',
+                  }}
+                >
                   {byColumn[col].length === 0 && (
                     <div
                       style={{

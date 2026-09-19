@@ -28,7 +28,11 @@ registerMockRoutes([
     handler: ({ query }) => {
       const needsAction = query.get('needs_action')
       if (needsAction !== 'true') {
-        return ok({ manualUploadTasks: [], badMediaItems: [], waitingDeliveryMissions: [] })
+        return ok({
+          manualUploadTasks: [],
+          badMediaItems: [],
+          waitingDeliveryMissions: [],
+        })
       }
       return ok({
         manualUploadTasks: [...manualUploadTasks],

@@ -283,7 +283,11 @@ registerMockRoutes([
       const order = findOrder(params.id)
       if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
       if (order.status !== 'COMPLETED' && order.status !== 'IN_PROGRESS') {
-        return fail(409, 'ORDER_NOT_DELIVERABLE', 'Đơn chưa hoàn thành, chưa thể giao kết quả.')
+        return fail(
+          409,
+          'ORDER_NOT_DELIVERABLE',
+          'Đơn chưa hoàn thành, chưa thể giao kết quả.',
+        )
       }
       const b = body as { deliveryNote?: string } | null
       order.status = 'COMPLETED'

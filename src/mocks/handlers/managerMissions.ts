@@ -312,6 +312,38 @@ registerMockRoutes([
     },
   },
 
+  // ── MNG-08: retry a FAILED mission [ĐỀ XUẤT] ──────────────────────────
+  {
+    method: 'POST',
+    path: '/api/missions/:id/retry',
+    handler: ({ params }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      if (mission.status !== 'FAILED') {
+        return fail(
+          422,
+          'INVALID_STATUS',
+          'Chỉ có thể tạo lại mission ở trạng thái FAILED',
+        )
+      }
+      const newMissionId = `${mission.id}-retry-${Date.now()}`
+      // Create a shallow copy as the new mission
+      const newMission: StoredMission = {
+        ...mission,
+        id: newMissionId,
+        missionCode: `${mission.missionCode}-RETRY`,
+        status: 'CREATED',
+        attemptNumber: (mission.attemptNumber ?? 1) + 1,
+        droneId: null,
+        operatorId: null,
+        droneAssignmentId: null,
+        operatorAssignmentId: null,
+      }
+      missions.push(newMission)
+      return ok({ newMissionId }, 'Đã tạo lại mission')
+    },
+  },
+
   // ── MNG-07: cancel a mission [ĐỀ XUẤT — field cancellation_reason BRIEF A6] ──
   {
     method: 'POST',

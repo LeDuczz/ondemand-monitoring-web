@@ -144,6 +144,17 @@ export const missionsApi = {
   },
 
   /**
+   * `POST /api/missions/{id}/retry` [ĐỀ XUẤT]. Creates a new mission from a
+   * FAILED mission. Returns the new mission id.
+   */
+  retryMission(missionId: string): Promise<{ newMissionId: string }> {
+    return apiRequest<{ newMissionId: string }>(
+      `/api/missions/${missionId}/retry`,
+      { method: 'POST' },
+    )
+  },
+
+  /**
    * `POST /api/missions/{id}/cancel` [ĐỀ XUẤT — field `cancellation_reason`
    * in BRIEF A6]. The UI must confirm with a 2-step modal (MNG-07 design).
    */

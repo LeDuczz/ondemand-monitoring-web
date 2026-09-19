@@ -6,9 +6,14 @@
 //   POST /api/missions/{id}/assign-drone?droneId=        [BE]
 //   POST /api/missions/{id}/assign-operator?operatorId=  [BE]
 //   POST /api/missions/{id}/assignments/{aid}/release    [BRIEF C4 = TK]
-import type { Mission } from '../../features/manager/types/missions'
+import type {
+  Mission,
+  ResourceSuggestions,
+} from '../../features/manager/types/missions'
 import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
+import { createCollection } from '../db'
 import { fail, ok, created, registerMockRoutes } from '../mockServer'
+import resourceSuggestionsSeed from '../data/resource-suggestions.json'
 import { findOrder } from './ordersStore'
 import {
   findMissionById,
@@ -21,6 +26,10 @@ import {
 // PROPOSED deterministic trigger for the 422 FLIGHT_PLAN_GENERATION_FAILED
 // state [TK MNG-04] — no source gives a real generator failure condition.
 const FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M = 800
+
+const suggestions = createCollection(
+  resourceSuggestionsSeed,
+) as typeof resourceSuggestionsSeed
 
 function toMissionDto(m: StoredMission): Mission {
   return {
@@ -135,6 +144,77 @@ registerMockRoutes([
       const mission = findMissionById(params.id)
       if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
       return ok(toMissionDto(mission))
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/missions/:id/resource-suggestions',
+    handler: ({ params, query }) => {
+      const mission = findMissionById(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      const scenarios = (
+        suggestions as unknown as {
+          byMission: Record<
+            string,
+            {
+              default: ResourceSuggestions
+              insufficient: ResourceSuggestions
+            }
+          >
+          timeline: Record<string, ResourceSuggestions['timeline']>
+        }
+      ).byMission[mission.id]
+      if (!scenarios) {
+        return fail(
+          404,
+          'NOT_FOUND',
+          'Chưa có gợi ý nguồn lực cho mission này.',
+        )
+      }
+      const scenario = query.get('scenario')
+      const base =
+        scenario === 'insufficient' ? scenarios.insufficient : scenarios.default
+      const timeline = (
+        suggestions as unknown as {
+          timeline: Record<string, ResourceSuggestions['timeline']>
+        }
+      ).timeline[mission.id]
+
+      const response: ResourceSuggestions = {
+        ...base,
+        missionCode: mission.missionCode,
+        attemptNumber: mission.attemptNumber,
+        scheduledStart: mission.scheduledStartAt ?? '',
+        scheduledEnd: mission.scheduledEndAt ?? '',
+        addressText: mission.addressText,
+        centerLat: mission.centerLat,
+        centerLon: mission.centerLon,
+        radiusM: mission.radiusM,
+        mediaSummary:
+          mission.mediaRequirements.length > 0
+            ? mission.mediaRequirements
+                .map((r) =>
+                  r.mediaType === 'VIDEO'
+                    ? `VIDEO ${r.quantity} × ${r.durationSec} s`
+                    : r.mediaType === 'PHOTO'
+                      ? `PHOTO ${r.quantity}${'width' in r ? ` · ${r.width}×${r.height}` : ''}`
+                      : `LIVESTREAM ${r.quantity} × ${r.durationSec} s`,
+                )
+                .join(' · ')
+            : null,
+        requiredDurationLabel: mission.flightPlan
+          ? `T_required ≈ ${Math.round(mission.flightPlan.estimatedDurationSec / 60)} phút (${mission.flightPlan.planType}, ${mission.flightPlan.altitudeM} m)`
+          : null,
+        requiredSensor: mission.requiredSensor,
+        nearestBase: mission.nearestBase,
+        timeline: timeline ?? {
+          date: '',
+          windowStart: '',
+          windowEnd: '',
+          resources: [],
+        },
+      }
+      return ok(response)
     },
   },
 ])

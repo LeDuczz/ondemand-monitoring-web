@@ -78,3 +78,98 @@ export type CreateMissionRequest = {
   flightPlan: FlightPlan
   waypoints: MissionWaypoint[]
 }
+
+export type ResourceCandidateBase = {
+  score: number
+  /** (AI diễn giải, điểm số do hệ thống tính) [TK MNG-05]. */
+  reason: string
+}
+
+export type DroneCandidate = ResourceCandidateBase & {
+  code: string
+  name: string
+  serialNumber: string
+  droneModelName: string
+  batteryPct: number
+  distanceKm: number
+  enduranceMarginPct: number
+  payload: string
+  hoursSinceMaintenance: number
+}
+
+export type OperatorCandidate = ResourceCandidateBase & {
+  code: string
+  fullName: string
+  licenseClass: string
+  licenseNumber: string
+  licenseExpiry: string
+  missionsWithModel: number
+  successRatePct: number
+  acceptanceRatePct: number
+  missionsThisWeek: number
+}
+
+export type RejectedDrone = { code: string; reason: string }
+export type RejectedOperator = { name: string; reason: string }
+
+export type AlternativeSlot = {
+  priority: number
+  label: string
+  dateLabel: string
+  windowLabel: string
+  eligibleDroneCount: number
+  eligibleOperatorCount: number
+}
+
+export type TimelineBooking = {
+  missionCode: string
+  start: string | null
+  end: string | null
+  conflict: boolean
+}
+
+export type TimelineResource = {
+  code: string
+  name: string
+  kind: 'DRONE' | 'OPERATOR'
+  rejected: boolean
+  rejectedReason: string | null
+  bookings: TimelineBooking[]
+}
+
+/**
+ * `GET /api/missions/{id}/resource-suggestions` [BRIEF C4]. `feasible:
+ * false` mirrors the MNG-05 "không đủ nguồn lực" state — `topDrones`/
+ * `topOperators` are then empty and `alternatives` lists replacement dates.
+ */
+export type ResourceSuggestions = {
+  feasible: boolean
+  missionCode: string
+  attemptNumber: number
+  scheduledStart: string
+  scheduledEnd: string
+  addressText: string | null
+  centerLat: number | null
+  centerLon: number | null
+  radiusM: number | null
+  mediaSummary: string | null
+  requiredDurationLabel: string | null
+  requiredSensor: string | null
+  nearestBase: string | null
+  eligibleDroneCount: number
+  eligibleOperatorCount: number
+  topDrones: DroneCandidate[]
+  topOperators: OperatorCandidate[]
+  rejected: {
+    drones: RejectedDrone[]
+    operators: RejectedOperator[]
+  }
+  explanation: string
+  timeline: {
+    date: string
+    windowStart: string
+    windowEnd: string
+    resources: TimelineResource[]
+  }
+  alternatives: AlternativeSlot[]
+}

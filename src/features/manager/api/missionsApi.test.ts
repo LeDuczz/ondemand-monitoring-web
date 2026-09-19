@@ -76,4 +76,23 @@ describe('missionsApi (mock mode)', () => {
       missionsApi.getMission('does-not-exist'),
     ).rejects.toMatchObject({ status: 404 })
   })
+
+  it('getResourceSuggestions resolves the default feasible scenario', async () => {
+    setHttpTransport(mockFetch)
+    const suggestions =
+      await missionsApi.getResourceSuggestions('msn-2609-0153-1')
+    expect(suggestions.feasible).toBe(true)
+    expect(suggestions.topDrones).toHaveLength(3)
+    expect(suggestions.topDrones[0].code).toBe('DRN-01')
+  })
+
+  it('getResourceSuggestions resolves the insufficient scenario via query flag', async () => {
+    setHttpTransport(mockFetch)
+    const suggestions = await missionsApi.getResourceSuggestions(
+      'msn-2609-0153-1',
+      { scenario: 'insufficient' },
+    )
+    expect(suggestions.feasible).toBe(false)
+    expect(suggestions.alternatives).toHaveLength(3)
+  })
 })

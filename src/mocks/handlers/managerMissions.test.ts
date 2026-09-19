@@ -127,3 +127,45 @@ describe('GET /api/missions/{id}', () => {
     expect(status).toBe(404)
   })
 })
+
+describe('GET /api/missions/{id}/resource-suggestions', () => {
+  it('returns the feasible default scenario with 3 ranked drones/operators', async () => {
+    const { status, payload } = await call(
+      'GET',
+      '/api/missions/msn-2609-0153-1/resource-suggestions',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.feasible).toBe(true)
+    expect(payload.data.topDrones).toHaveLength(3)
+    expect(payload.data.topDrones[0]).toMatchObject({
+      code: 'DRN-01',
+      score: 91,
+    })
+    expect(payload.data.topOperators[0]).toMatchObject({
+      code: 'HT',
+      score: 88,
+    })
+    expect(payload.data.rejected.drones).toHaveLength(6)
+    expect(payload.data.rejected.operators).toHaveLength(3)
+  })
+
+  it('returns the insufficient scenario with alternatives via ?scenario=insufficient', async () => {
+    const { status, payload } = await call(
+      'GET',
+      '/api/missions/msn-2609-0153-1/resource-suggestions?scenario=insufficient',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.feasible).toBe(false)
+    expect(payload.data.topDrones).toHaveLength(0)
+    expect(payload.data.alternatives).toHaveLength(3)
+  })
+
+  it('404s for a mission with no seeded suggestions', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approve')
+    const { status } = await call(
+      'GET',
+      '/api/missions/msn-2609-0157-1/resource-suggestions',
+    )
+    expect(status).toBe(404)
+  })
+})

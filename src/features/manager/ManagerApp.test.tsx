@@ -5,6 +5,7 @@ import { authSession } from '../auth/api/authApi'
 import { managerApi } from './api/dashboardApi'
 import { ordersApi } from './api/ordersApi'
 import { ManagerApp } from './ManagerApp'
+import type { OrderMissionBrief } from './types/orders'
 import type { ManagerDashboardResponse } from './types/dashboard'
 
 const sampleData: ManagerDashboardResponse = {
@@ -109,6 +110,32 @@ describe('ManagerApp', () => {
 
     await waitFor(() =>
       expect(screen.getByText('Hàng đợi duyệt đơn')).toBeInTheDocument(),
+    )
+  })
+
+  it('renders the real CreateMissionPage (MNG-04) for #portal/staff/orders/:id/mission', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
+    const brief: OrderMissionBrief = {
+      id: 'ord-2609-0153',
+      code: 'ORD-2609-0153',
+      serviceName: 'Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước',
+      customerFullName: 'Trần Thị Thu Hà',
+      preferredDate: '24/09',
+      preferredTimeName: 'Sáng',
+      addressText: 'KCN Hiệp Phước, Nhà Bè',
+      center: { lat: 10.6402, lon: 106.74 },
+      radiusM: 300,
+      nearestBase: 'Trạm Nhà Bè',
+      mediaRequirements: [],
+    }
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    window.location.hash = '#portal/staff/orders/ord-2609-0153/mission'
+    render(<ManagerApp />)
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Tạo mission' }),
+      ).toBeInTheDocument(),
     )
   })
 

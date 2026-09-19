@@ -4,6 +4,7 @@ import { StateView } from '../../shared/components/odm/StateView'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
 import { managerApi } from './api/dashboardApi'
 import { ManagerLayout } from './components/ManagerLayout'
+import { CreateMissionPage } from './pages/CreateMissionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
@@ -28,7 +29,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
   dashboard: 'Dashboard',
   orderQueue: 'Duyệt đơn',
   orderReview: 'Duyệt đơn',
-  missionCreate: 'Duyệt đơn',
+  missionCreate: 'Mission',
   missionDispatch: 'Mission',
   schedule: 'Lịch mission',
   live: 'Giám sát realtime',
@@ -87,6 +88,8 @@ function renderScreen(route: ManagerRoute) {
   if (route.screen === 'orderQueue') return <QueuePage />
   if (route.screen === 'orderReview')
     return <OrderReviewPage orderId={route.orderId} />
+  if (route.screen === 'missionCreate')
+    return <CreateMissionPage orderId={route.orderId} />
 
   if (route.screen === 'notFound') {
     return (

@@ -47,4 +47,12 @@ export const missionsApi = {
       },
     )
   },
+
+  /** `POST /api/missions/{id}/assign-drone?droneId=` [BE]. */
+  assignDrone(missionId: string, droneId: string): Promise<Mission> {
+    return apiRequest<Mission>(`/api/missions/${missionId}/assign-drone`, {
+      method: 'POST',
+      query: { droneId },
+    })
+  },
 }

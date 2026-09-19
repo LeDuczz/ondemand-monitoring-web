@@ -169,3 +169,41 @@ describe('GET /api/missions/{id}/resource-suggestions', () => {
     expect(status).toBe(404)
   })
 })
+
+describe('POST /api/missions/{id}/assign-drone', () => {
+  it('assigns and moves the mission to RESOURCE_ASSIGNING', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone?droneId=DRN-01',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('RESOURCE_ASSIGNING')
+    expect(payload.data.droneId).toBe('drn-01')
+  })
+
+  it('409s SCHEDULE_CONFLICT for DRN-04 against MSN-2609-0150-1', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone?droneId=DRN-04',
+    )
+    expect(status).toBe(409)
+    expect(payload.code).toBe('SCHEDULE_CONFLICT')
+    expect(payload.message).toContain('MSN-2609-0150-1')
+  })
+
+  it('400s when droneId is missing', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone',
+    )
+    expect(status).toBe(400)
+  })
+
+  it('404s for an unknown drone', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0153-1/assign-drone?droneId=DRN-99',
+    )
+    expect(status).toBe(404)
+  })
+})

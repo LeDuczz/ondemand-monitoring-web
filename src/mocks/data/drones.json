@@ -1,0 +1,162 @@
+{
+  "_note": "Drone roster [BE DroneResponse fields (id/serialNumber/droneModelName/status) + brief-only fields camelCase]. Status values are the BACKEND DroneStatus enum verbatim (AVAILABLE/MAINTENANCE/OUT_OF_SERVICE/…) — the P5 task brief's 'ASSIGNED→RESERVED, IN_FLIGHT→IN_MISSION, RETIRED→OUT_OF_SERVICE' mapping note describes design-copy wording only; DroneStatus.java already has RESERVED/IN_MISSION/OUT_OF_SERVICE as native values, so no translation layer is needed here (documented in evd/P5 report). All 9 drones (DRN-01..DRN-09) plus their per-field values are copied verbatim from evd/design/MNG-05.dc.html's 'Đã bị loại ở hard filter' + top-3 drone cards. Fields with no design/brief source (e.g. DRN-04's battery/endurance — its rejection reason only cites a schedule conflict) are null.",
+  "drones": [
+    {
+      "id": "drn-01",
+      "code": "DRN-01",
+      "name": "Đại Bàng",
+      "serialNumber": "1ZNBJ4K00C3A21",
+      "droneModelName": "DJI Matrice 350 RTK",
+      "status": "AVAILABLE",
+      "baseStation": "Trạm Nhà Bè",
+      "batteryPct": 96,
+      "distanceKmToNhaBe": 2.2,
+      "enduranceMarginPct": 62,
+      "payload": "THERMAL · Zenmuse H20T",
+      "hasThermalSensor": true,
+      "hoursSinceMaintenance": 38
+    },
+    {
+      "id": "drn-02",
+      "code": "DRN-02",
+      "name": null,
+      "serialNumber": null,
+      "droneModelName": null,
+      "status": "AVAILABLE",
+      "baseStation": null,
+      "batteryPct": 71,
+      "distanceKmToNhaBe": null,
+      "enduranceMarginPct": null,
+      "payload": "RGB",
+      "hasThermalSensor": false,
+      "hoursSinceMaintenance": null
+    },
+    {
+      "id": "drn-03",
+      "code": "DRN-03",
+      "name": null,
+      "serialNumber": null,
+      "droneModelName": null,
+      "status": "AVAILABLE",
+      "baseStation": null,
+      "batteryPct": 62,
+      "distanceKmToNhaBe": null,
+      "enduranceMarginPct": null,
+      "payload": null,
+      "hasThermalSensor": null,
+      "hoursSinceMaintenance": null
+    },
+    {
+      "id": "drn-04",
+      "code": "DRN-04",
+      "name": "Sếu Đầu Đỏ",
+      "serialNumber": null,
+      "droneModelName": null,
+      "status": "AVAILABLE",
+      "baseStation": null,
+      "batteryPct": null,
+      "distanceKmToNhaBe": null,
+      "enduranceMarginPct": null,
+      "payload": null,
+      "hasThermalSensor": null,
+      "hoursSinceMaintenance": null,
+      "existingBookings": [
+        {
+          "missionCode": "MSN-2609-0150-1",
+          "start": "2026-09-24T07:30:00+07:00",
+          "end": "2026-09-24T09:00:00+07:00"
+        }
+      ]
+    },
+    {
+      "id": "drn-05",
+      "code": "DRN-05",
+      "name": "Diều Hâu",
+      "serialNumber": "1ZNCE7M00A1F41",
+      "droneModelName": "DJI Matrice 30T",
+      "status": "AVAILABLE",
+      "baseStation": "Trạm Nhà Bè",
+      "batteryPct": 88,
+      "distanceKmToNhaBe": 2.4,
+      "enduranceMarginPct": 51,
+      "payload": "THERMAL · M30T tích hợp",
+      "hasThermalSensor": true,
+      "hoursSinceMaintenance": 27,
+      "existingBookings": [
+        {
+          "missionCode": "MSN-2609-0149-1",
+          "start": null,
+          "end": null
+        }
+      ]
+    },
+    {
+      "id": "drn-06",
+      "code": "DRN-06",
+      "name": null,
+      "serialNumber": null,
+      "droneModelName": null,
+      "status": "AVAILABLE",
+      "baseStation": null,
+      "batteryPct": null,
+      "distanceKmToNhaBe": null,
+      "enduranceMarginPct": null,
+      "payload": "RGB",
+      "hasThermalSensor": false,
+      "hoursSinceMaintenance": null
+    },
+    {
+      "id": "drn-07",
+      "code": "DRN-07",
+      "name": null,
+      "serialNumber": null,
+      "droneModelName": null,
+      "status": "MAINTENANCE",
+      "baseStation": null,
+      "batteryPct": null,
+      "distanceKmToNhaBe": null,
+      "enduranceMarginPct": null,
+      "payload": null,
+      "hasThermalSensor": null,
+      "hoursSinceMaintenance": null,
+      "openTicketSeverity": "CRITICAL"
+    },
+    {
+      "id": "drn-08",
+      "code": "DRN-08",
+      "name": "Cò Trắng",
+      "serialNumber": "2AEV4T0025KQ08",
+      "droneModelName": "Autel EVO Max 4T",
+      "status": "AVAILABLE",
+      "baseStation": "Trạm Nhà Bè",
+      "batteryPct": 92,
+      "distanceKmToNhaBe": 2.6,
+      "enduranceMarginPct": 55,
+      "payload": "THERMAL · EVO Max 4T tích hợp",
+      "hasThermalSensor": true,
+      "hoursSinceMaintenance": 19,
+      "existingBookings": [
+        {
+          "missionCode": "MSN-2609-0151-1",
+          "start": null,
+          "end": null
+        }
+      ]
+    },
+    {
+      "id": "drn-09",
+      "code": "DRN-09",
+      "name": null,
+      "serialNumber": null,
+      "droneModelName": null,
+      "status": "OUT_OF_SERVICE",
+      "baseStation": null,
+      "batteryPct": null,
+      "distanceKmToNhaBe": null,
+      "enduranceMarginPct": null,
+      "payload": null,
+      "hasThermalSensor": null,
+      "hoursSinceMaintenance": null
+    }
+  ]
+}

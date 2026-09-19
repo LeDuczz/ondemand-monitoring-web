@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import {
+  ApiError,
   resetHttpTransport,
   setHttpTransport,
 } from '../../../shared/api/httpClient'
@@ -94,5 +95,24 @@ describe('missionsApi (mock mode)', () => {
     )
     expect(suggestions.feasible).toBe(false)
     expect(suggestions.alternatives).toHaveLength(3)
+  })
+
+  it('assignDrone assigns and moves the mission to RESOURCE_ASSIGNING', async () => {
+    setHttpTransport(mockFetch)
+    const mission = await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-01')
+    expect(mission.status).toBe('RESOURCE_ASSIGNING')
+    expect(mission.droneId).toBe('drn-01')
+  })
+
+  it('assignDrone 409s SCHEDULE_CONFLICT for DRN-04 against the seeded booking', async () => {
+    setHttpTransport(mockFetch)
+    try {
+      await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-04')
+      throw new Error('expected rejection')
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError)
+      expect((err as ApiError).status).toBe(409)
+      expect((err as ApiError).code).toBe('SCHEDULE_CONFLICT')
+    }
   })
 })

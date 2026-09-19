@@ -11,9 +11,11 @@ import type {
   ResourceSuggestions,
 } from '../../features/manager/types/missions'
 import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
+import { hasScheduleConflict } from '../../features/manager/lib/schedule'
 import { createCollection } from '../db'
 import { fail, ok, created, registerMockRoutes } from '../mockServer'
 import resourceSuggestionsSeed from '../data/resource-suggestions.json'
+import dronesSeed from '../data/drones.json'
 import { findOrder } from './ordersStore'
 import {
   findMissionById,
@@ -27,9 +29,17 @@ import {
 // state [TK MNG-04] — no source gives a real generator failure condition.
 const FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M = 800
 
+type SeedDrone = {
+  id: string
+  code: string
+  status: string
+  existingBookings?: { missionCode: string; start: string; end: string }[]
+}
+
 const suggestions = createCollection(
   resourceSuggestionsSeed,
 ) as typeof resourceSuggestionsSeed
+const drones = createCollection(dronesSeed.drones) as SeedDrone[]
 
 function toMissionDto(m: StoredMission): Mission {
   return {
@@ -217,7 +227,44 @@ registerMockRoutes([
       return ok(response)
     },
   },
+  {
+    method: 'POST',
+    path: '/api/missions/:id/assign-drone',
+    handler: ({ params, query }) => {
+      const mission = findMissionById(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      const droneId = query.get('droneId')
+      if (!droneId) {
+        return fail(400, 'VALIDATION_ERROR', 'Thiếu droneId', {
+          droneId: 'droneId là bắt buộc',
+        })
+      }
+      const drone = drones.find((d) => d.id === droneId || d.code === droneId)
+      if (!drone) return fail(404, 'NOT_FOUND', 'Không tìm thấy drone')
+
+      if (mission.scheduledStartAt && mission.scheduledEndAt) {
+        const conflict = hasScheduleConflict(
+          { start: mission.scheduledStartAt, end: mission.scheduledEndAt },
+          drone.existingBookings ?? [],
+        )
+        if (conflict) {
+          return fail(
+            409,
+            'SCHEDULE_CONFLICT',
+            `Máy chủ từ chối: khung ${conflict.start.slice(11, 16)}–${conflict.end.slice(11, 16)} vừa bị ${conflict.missionCode} chiếm (ràng buộc EXCLUDE trên scheduled_range). Chọn drone khác hoặc đổi giờ mission.`,
+          )
+        }
+      }
+
+      mission.droneId = drone.id
+      mission.droneAssignmentId = `mda-${mission.id}-${drone.id}`
+      mission.status = mission.operatorId
+        ? 'WAITING_OPERATOR_ACCEPTANCE'
+        : 'RESOURCE_ASSIGNING'
+      return ok(toMissionDto(mission), 'Đã gán Drone thành công')
+    },
+  },
 ])
 
 /** Test-only escape hatch to assert on the in-memory mock collections. */
-export const __testing = { missions }
+export const __testing = { missions, drones }

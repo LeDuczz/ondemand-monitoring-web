@@ -12,5 +12,7 @@ import './handlers/managerOrders'
 import './handlers/managerMissions'
 import './handlers/managerDrones'
 import './handlers/managerMaintenance'
+import './handlers/managerMedia'
+import './handlers/managerReports'
 
 export { mockFetch } from './mockServer'

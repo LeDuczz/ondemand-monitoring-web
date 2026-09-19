@@ -1,5 +1,5 @@
-// Mock handlers for the MNG-02 (order queue) and MNG-03 (order review) APIs.
-// Endpoints, per evd/00-PLAN.md §3 and the P4 task brief:
+// Mock handlers for the MNG-02 (order queue) and MNG-03 (order review) APIs,
+// and MNG-11 (deliver results). Endpoints per evd/00-PLAN.md §3:
 //   GET  /api/orders?status=PENDING          [TK path; BE OrderStatus value]
 //   GET  /api/orders/{id}                    [TK]
 //   GET  /api/orders/{id}/analysis/latest    [BRIEF C4]
@@ -7,6 +7,7 @@
 //   PUT  /api/orders/{id}/internal-note      PROPOSED (no source endpoint)
 //   POST /api/orders/{id}/approve            [BE] (creates a mission)
 //   POST /api/orders/{id}/approval           [BRIEF C4] {decision, reason}
+//   POST /api/orders/{id}/deliver            [BRIEF C4] mark as delivered
 import type {
   ApprovalDecision,
   OrderAnalysis,
@@ -271,6 +272,27 @@ registerMockRoutes([
         radiusM: order.radiusM,
         nearestBase: order.nearestBase,
         mediaRequirements: order.mediaRequirements,
+      })
+    },
+  },
+  // ── MNG-11: POST /api/orders/:id/deliver [BRIEF C4] ──────────────────
+  {
+    method: 'POST',
+    path: '/api/orders/:id/deliver',
+    handler: ({ params, body }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (order.status !== 'COMPLETED' && order.status !== 'IN_PROGRESS') {
+        return fail(409, 'ORDER_NOT_DELIVERABLE', 'Đơn chưa hoàn thành, chưa thể giao kết quả.')
+      }
+      const b = body as { deliveryNote?: string } | null
+      order.status = 'COMPLETED'
+      return ok({
+        id: order.id,
+        code: order.code,
+        status: order.status,
+        deliveryNote: b?.deliveryNote ?? null,
+        deliveredAt: new Date().toISOString(),
       })
     },
   },

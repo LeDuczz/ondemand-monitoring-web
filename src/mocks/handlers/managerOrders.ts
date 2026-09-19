@@ -2,14 +2,17 @@
 // Endpoints, per evd/00-PLAN.md §3 and the P4 task brief:
 //   GET  /api/orders?status=PENDING          [TK path; BE OrderStatus value]
 //   GET  /api/orders/{id}                    [TK]
+//   GET  /api/orders/{id}/analysis/latest    [BRIEF C4]
 import type { AiVerdict, OrderStatus } from '../../shared/types/domain'
 import type {
+  OrderAnalysis,
   OrderDetail,
   OrderQueueItem,
 } from '../../features/manager/types/orders'
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import ordersSeed from '../data/orders.json'
+import analysesSeed from '../data/order-analyses.json'
 
 type SeedOrder = {
   id: string
@@ -50,6 +53,10 @@ type SeedOrder = {
 // replaced in place). Reading `createCollection(seed).nested` instead would
 // leave `nested` pointing at the pre-reset value forever.
 const orders = createCollection(ordersSeed.orders) as SeedOrder[]
+const analyses = createCollection(analysesSeed.analyses) as unknown as Record<
+  string,
+  OrderAnalysis
+>
 
 function findOrder(id: string): SeedOrder | undefined {
   return orders.find((o) => o.id === id || o.code === id)
@@ -121,6 +128,26 @@ registerMockRoutes([
         )
       }
       return ok(toDetail(order))
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/orders/:id/analysis/latest',
+    handler: ({ params }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      const found = analyses[order.code]
+      if (found) return ok(found)
+      const fallback: OrderAnalysis = {
+        overallVerdict: order.aiVerdict,
+        blockerCount: order.blockerCount,
+        warningCount: order.warningCount,
+        ruleEngineMs: 0,
+        createdAt: order.submittedAt,
+        llmSummary: '',
+        findings: [],
+      }
+      return ok(fallback)
     },
   },
 ])

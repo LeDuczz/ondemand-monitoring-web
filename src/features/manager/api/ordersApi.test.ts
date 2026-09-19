@@ -27,4 +27,11 @@ describe('ordersApi (mock mode)', () => {
     expect(detail.customer.fullName).toBe('Lê Quốc Bảo')
     expect(detail.radiusM).toBe(600)
   })
+
+  it('getLatestAnalysis resolves findings for a known order', async () => {
+    setHttpTransport(mockFetch)
+    const analysis = await ordersApi.getLatestAnalysis('ord-2609-0157')
+    expect(analysis.overallVerdict).toBe('FEASIBLE')
+    expect(analysis.findings).toHaveLength(2)
+  })
 })

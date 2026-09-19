@@ -3,7 +3,11 @@
 // overlap; fields only described in [BRIEF]/[TK] are added alongside and
 // marked in comments. Enums come from `shared/types/domain.ts` (backend
 // truth) plus `AiVerdict`/`FindingSeverity` (brief A4).
-import type { AiVerdict, OrderStatus } from '../../../shared/types/domain'
+import type {
+  AiVerdict,
+  FindingSeverity,
+  OrderStatus,
+} from '../../../shared/types/domain'
 
 export type OrderCustomerSummary = {
   fullName: string
@@ -62,4 +66,25 @@ export type OrderDetail = {
   mediaRequirements: OrderMediaRequirement[]
   purpose: string
   attachments: OrderAttachment[]
+}
+
+export type FindingCustomerAction = 'ACCEPTED' | 'IGNORED' | 'AUTO_FIXED' | null
+
+/** `ai_finding` row [BRIEF A4]. */
+export type AnalysisFinding = {
+  severity: FindingSeverity
+  message: string
+  evidence: Record<string, string>
+  customerAction: FindingCustomerAction
+}
+
+/** `GET /api/orders/{id}/analysis/latest` [BRIEF C4]. */
+export type OrderAnalysis = {
+  overallVerdict: AiVerdict
+  blockerCount: number
+  warningCount: number
+  ruleEngineMs: number
+  createdAt: string
+  llmSummary: string
+  findings: AnalysisFinding[]
 }

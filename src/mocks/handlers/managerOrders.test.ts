@@ -58,3 +58,33 @@ describe('GET /api/orders/{id}', () => {
     expect(payload.data.addressText).toContain('Cát Lái')
   })
 })
+
+describe('GET /api/orders/{id}/analysis/latest', () => {
+  it('returns design findings for ORD-2609-0157 (FEASIBLE)', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0157/analysis/latest',
+    )
+    expect(payload.data.overallVerdict).toBe('FEASIBLE')
+    expect(payload.data.findings).toHaveLength(2)
+  })
+
+  it('returns design findings for ORD-2609-0160 (RISKY)', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0160/analysis/latest',
+    )
+    expect(payload.data.overallVerdict).toBe('RISKY')
+    expect(payload.data.warningCount).toBe(2)
+    expect(payload.data.findings).toHaveLength(2)
+  })
+
+  it('falls back to the queue verdict/counts with empty findings for other orders', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/orders/ord-2609-0161/analysis/latest',
+    )
+    expect(payload.data.overallVerdict).toBe('RISKY')
+    expect(payload.data.findings).toEqual([])
+  })
+})

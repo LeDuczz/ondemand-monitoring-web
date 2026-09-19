@@ -15,13 +15,16 @@ function diffMinutes(now: Date, iso: string): number {
 /**
  * Order pending-review age, e.g. "31 giờ · quá 24h" once past
  * `overdueHours` (default 24, per [TK MNG-01]), otherwise just "5 giờ".
+ *
+ * Uses `floor` (not `round`) so an order that has been waiting 23h59m still
+ * reads "23 giờ" instead of rounding up to a premature "24 giờ · quá 24h".
  */
 export function formatOrderAge(
   now: Date,
   submittedAtIso: string,
   overdueHours = 24,
 ): string {
-  const hours = Math.round(
+  const hours = Math.floor(
     (now.getTime() - new Date(submittedAtIso).getTime()) / HOUR_MS,
   )
   return hours >= overdueHours
@@ -56,14 +59,32 @@ export function formatTicketAge(now: Date, openedAtIso: string): string {
   return `Mở ${days} ngày`
 }
 
-/** Minutes-ago label for recent events, e.g. "42 phút trước". */
+/**
+ * "Ago" label for recent events, e.g. "42 phút trước", that stays readable
+ * for any elapsed duration instead of growing an unbounded minute count
+ * (e.g. "294 phút trước"): under 60 minutes it's minutes, under 24 hours
+ * it's hours, and beyond that it falls back to whole days.
+ */
 export function formatMinutesAgo(now: Date, createdAtIso: string): string {
-  return `${diffMinutes(now, createdAtIso)} phút trước`
+  const minutes = diffMinutes(now, createdAtIso)
+  if (minutes < 60) return `${minutes} phút trước`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} giờ trước`
+  const days = Math.floor(hours / 24)
+  return `${days} ngày trước`
 }
 
-/** In-flight duration label for the action list, e.g. "Bay 58 phút". */
+/**
+ * In-flight duration label for the action list, e.g. "Bay 58 phút". Beyond
+ * 60 minutes it switches to "Bay X giờ Y phút" rather than an ever-growing
+ * minute count, matching the same tiering as `formatMinutesAgo`.
+ */
 export function formatFlightMinutes(now: Date, startedAtIso: string): string {
-  return `Bay ${diffMinutes(now, startedAtIso)} phút`
+  const minutes = diffMinutes(now, startedAtIso)
+  if (minutes < 60) return `Bay ${minutes} phút`
+  const hours = Math.floor(minutes / 60)
+  const remainderMinutes = minutes % 60
+  return `Bay ${hours} giờ ${remainderMinutes} phút`
 }
 
 function pad2(value: number): string {

@@ -29,6 +29,17 @@ describe('formatOrderAge', () => {
   it('does not add the overdue suffix under the threshold', () => {
     expect(formatOrderAge(NOW, '2026-09-19T09:32:00+07:00')).toBe('5 giờ')
   })
+
+  it('boundary: 23h59m stays under the threshold (floor, not round)', () => {
+    // NOW - 23h59m = 2026-09-18T14:33:00+07:00
+    expect(formatOrderAge(NOW, '2026-09-18T14:33:00+07:00')).toBe('23 giờ')
+  })
+
+  it('boundary: exactly 24h00m flags as overdue', () => {
+    expect(formatOrderAge(NOW, '2026-09-18T14:32:00+07:00')).toBe(
+      '24 giờ · quá 24h',
+    )
+  })
 })
 
 describe('formatMissionCountdown', () => {
@@ -63,12 +74,56 @@ describe('formatMinutesAgo', () => {
       '42 phút trước',
     )
   })
+
+  it('boundary: 59 minutes still reads in minutes', () => {
+    expect(formatMinutesAgo(NOW, '2026-09-19T13:33:00+07:00')).toBe(
+      '59 phút trước',
+    )
+  })
+
+  it('boundary: exactly 60 minutes switches to hours', () => {
+    expect(formatMinutesAgo(NOW, '2026-09-19T13:32:00+07:00')).toBe(
+      '1 giờ trước',
+    )
+  })
+
+  it('does not blow up into a huge minute count once far past "now" (regression: was "294 phút trước")', () => {
+    // NOW - 4h54m
+    expect(formatMinutesAgo(NOW, '2026-09-19T09:38:00+07:00')).toBe(
+      '4 giờ trước',
+    )
+  })
+
+  it('boundary: 23h59m still reads in hours', () => {
+    expect(formatMinutesAgo(NOW, '2026-09-18T14:33:00+07:00')).toBe(
+      '23 giờ trước',
+    )
+  })
+
+  it('boundary: exactly 24h switches to days', () => {
+    expect(formatMinutesAgo(NOW, '2026-09-18T14:32:00+07:00')).toBe(
+      '1 ngày trước',
+    )
+  })
 })
 
 describe('formatFlightMinutes', () => {
   it('matches the design sample (Bay 58 phút)', () => {
     expect(formatFlightMinutes(NOW, '2026-09-19T13:34:00+07:00')).toBe(
       'Bay 58 phút',
+    )
+  })
+
+  it('boundary: exactly 60 minutes switches to "giờ phút"', () => {
+    expect(formatFlightMinutes(NOW, '2026-09-19T13:32:00+07:00')).toBe(
+      'Bay 1 giờ 0 phút',
+    )
+  })
+
+  it('keeps reading in hours + minutes for a long flight', () => {
+    // NOW - 2h5m
+    expect(formatFlightMinutes(NOW, '2026-09-19T12:27:00+07:00')).toBe(
+      'Bay 2 giờ 5 phút',
     )
   })
 })

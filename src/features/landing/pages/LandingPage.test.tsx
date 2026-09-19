@@ -92,7 +92,7 @@ describe('LandingPage', () => {
     }
   })
 
-  it('opens the first FAQ item by default and toggles others on click', () => {
+  it('opens the only FAQ item that has answer copy, expanded by default', () => {
     render(<LandingPage />)
     const firstQuestion = screen.getByRole('button', {
       name: /Tôi cần chuẩn bị gì để tạo một yêu cầu giám sát\?/,
@@ -102,14 +102,20 @@ describe('LandingPage', () => {
       screen.getByText(/Bạn chỉ cần tài khoản khách hàng/),
     ).toBeInTheDocument()
 
-    const secondQuestion = screen.getByRole('button', {
-      name: /Bao lâu thì đơn được duyệt\?/,
-    })
-    expect(secondQuestion).toHaveAttribute('aria-expanded', 'false')
-
-    fireEvent.click(secondQuestion)
-    expect(secondQuestion).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(firstQuestion)
     expect(firstQuestion).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      screen.queryByText(/Bạn chỉ cần tài khoản khách hàng/),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders FAQ questions without answer copy as static, non-expandable rows', () => {
+    render(<LandingPage />)
+    const question = 'Bao lâu thì đơn được duyệt?'
+    expect(screen.getByText(question)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: question }),
+    ).not.toBeInTheDocument()
   })
 
   it('flips document.documentElement.dataset.theme when the theme toggle is clicked', () => {

@@ -1,0 +1,101 @@
+{
+  "_note": "Mock data for GET /api/orders?status=PENDING [TK MNG-02]. Field names follow [BE] OrderCreateResponse (camelCase). submittedAt values are chosen so that relative to now=2026-09-19T14:32:00+07:00 the wait matches [TK MNG-02] exactly: ORD-2609-0157=31h, ORD-2609-0149=26h, ORD-2609-0162=6h, ORD-2609-0160=19h, ORD-2609-0161=12h, ORD-2609-0163=3h.",
+  "orders": [
+    {
+      "id": "ord-2609-0157",
+      "code": "ORD-2609-0157",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Lê Quốc Bảo",
+        "companyName": "Công ty CP Logistics Cát Lái"
+      },
+      "serviceName": "Tuần tra an ninh khu vực",
+      "preferredDate": "25/09",
+      "preferredTimeName": "Chiều",
+      "submittedAt": "2026-09-18T07:32:00+07:00",
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    },
+    {
+      "id": "ord-2609-0149",
+      "code": "ORD-2609-0149",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Nguyễn Minh Khoa",
+        "companyName": "Công ty CP Xây dựng Phú Thịnh"
+      },
+      "serviceName": "Tuần tra an ninh khu vực",
+      "preferredDate": "23/09",
+      "preferredTimeName": "Chiều",
+      "submittedAt": "2026-09-18T12:32:00+07:00",
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    },
+    {
+      "id": "ord-2609-0162",
+      "code": "ORD-2609-0162",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Trần Thị Thu Hà",
+        "companyName": "Công ty TNHH Bao bì Hiệp Phước"
+      },
+      "serviceName": "Kiểm tra nhiệt mái và tấm pin",
+      "preferredDate": "24/09",
+      "preferredTimeName": "Sáng",
+      "submittedAt": "2026-09-19T08:32:00+07:00",
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    },
+    {
+      "id": "ord-2609-0160",
+      "code": "ORD-2609-0160",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Võ Thanh Tùng",
+        "companyName": "Công ty CP Đầu tư Sóng Thần"
+      },
+      "serviceName": "Tuần tra an ninh khu vực",
+      "preferredDate": "24/09",
+      "preferredTimeName": "Sáng",
+      "submittedAt": "2026-09-18T19:32:00+07:00",
+      "aiVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 2
+    },
+    {
+      "id": "ord-2609-0161",
+      "code": "ORD-2609-0161",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Phạm Ngọc Anh",
+        "companyName": "HTX Nông nghiệp Phú Mỹ Hưng"
+      },
+      "serviceName": "GS cây trồng",
+      "preferredDate": "27/09",
+      "preferredTimeName": "Sáng",
+      "submittedAt": "2026-09-19T02:32:00+07:00",
+      "aiVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 1
+    },
+    {
+      "id": "ord-2609-0163",
+      "code": "ORD-2609-0163",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Lê Quốc Bảo",
+        "companyName": "Công ty CP Logistics Cát Lái"
+      },
+      "serviceName": "GS giao thông và sự kiện",
+      "preferredDate": "21/09",
+      "preferredTimeName": "Chiều",
+      "submittedAt": "2026-09-19T11:32:00+07:00",
+      "aiVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 2
+    }
+  ]
+}

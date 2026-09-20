@@ -7,6 +7,8 @@ import type {
   FlightToken,
   ChecklistScenario,
   NavId,
+  OperatorMission,
+  OperatorProfile,
 } from './types'
 import {
   DRONE_PRIMARY,
@@ -18,6 +20,7 @@ import {
   CHECKLIST,
   REPLACEMENT_DRONES,
 } from './mockData'
+import missionsJson from '../../../mocks/data/operator-missions.json'
 
 import Sidebar from './components/Sidebar'
 
@@ -38,6 +41,11 @@ import MissionFailed from './screens/MissionFailed'
 import MediaUpload from './screens/MediaUpload'
 import ManualUpload from './screens/ManualUpload'
 import SimulationZones from './screens/SimulationZones'
+import AvailabilityPage from './screens/AvailabilityPage'
+import PreflightChecklist from './screens/PreflightChecklist'
+
+const OP_MISSIONS: OperatorMission[] = missionsJson.missions as OperatorMission[]
+const OP_PROFILE: OperatorProfile = missionsJson.operator as OperatorProfile
 
 function makeToken(missionId: string, droneId: string): FlightToken {
   const now = Date.now()
@@ -166,8 +174,8 @@ function adaptBackendMission(mission: BackendMission): Mission {
 }
 
 export default function OperatorWorkspace() {
-  const [screen, setScreen] = useState<Screen>('in-flight')
-  const [navId, setNavId] = useState<NavId>('mission-control')
+  const [screen, setScreen] = useState<Screen>('mission-list')
+  const [navId, setNavId] = useState<NavId>('my-missions')
   const [scenario, setScenario] = useState<ChecklistScenario>('all-pass')
   const [mission, setMission] = useState<Mission>({ ...ALL_MISSIONS[0] })
   const [drone, setDrone] = useState<Drone>({ ...DRONE_PRIMARY })
@@ -199,6 +207,10 @@ export default function OperatorWorkspace() {
       cancelled = true
     }
   }, [])
+
+  // New operator-flow state
+  const [opMissions, setOpMissions] = useState<OperatorMission[]>(OP_MISSIONS)
+  const [selectedOpMission, setSelectedOpMission] = useState<OperatorMission | null>(null)
 
   const droneForScenario: Record<ChecklistScenario, Drone> = {
     'all-pass': DRONE_PRIMARY,
@@ -248,6 +260,7 @@ export default function OperatorWorkspace() {
       return
     }
     if (id === 'my-missions') setScreen('mission-list')
+    else if (id === 'availability') setScreen('availability')
     else if (id === 'zone-map') setScreen('simulation-zones')
     else if (id === 'dashboard') setScreen('operator-overview')
     else setScreen('operator-overview')
@@ -260,10 +273,32 @@ export default function OperatorWorkspace() {
     setNavId('my-missions')
   }
 
+  function handleOpMissionView(m: OperatorMission) {
+    setSelectedOpMission(m)
+    setScreen('mission-detail')
+    setNavId('my-missions')
+  }
+
   function handleAccept() {
     setMission((m) => ({ ...m, state: 'RESOURCE_ASSIGNING' }))
     setDrone({ ...droneForScenario[scenario] })
     setScreen('gcs-connect')
+  }
+
+  function handleOpAccept(id: string) {
+    setOpMissions((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, state: 'SCHEDULED' } : m)),
+    )
+    if (selectedOpMission?.id === id) {
+      setSelectedOpMission((prev) => prev ? { ...prev, state: 'SCHEDULED' } : prev)
+    }
+  }
+
+  function handleOpReject(id: string, reason: string, _notes?: string) {
+    setOpMissions((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, state: 'CANCELLED', rejectionReason: reason } : m)),
+    )
+    setScreen('mission-list')
   }
 
   function handleReject(reason: string) {
@@ -272,12 +307,13 @@ export default function OperatorWorkspace() {
   }
 
   function handleGCSConnected() {
-    setScreen('preflight')
+    setScreen('control-handover')
   }
+
   function handleHandoverComplete() {
     const t = makeToken(mission.id, drone.id)
     setToken(t)
-    setScreen('ready-to-fly')
+    setScreen('preflight')
   }
 
   function handleStartMission() {
@@ -306,12 +342,6 @@ export default function OperatorWorkspace() {
     setScreen('mission-completed')
   }
 
-  function handlePostflightFault() {
-    setDrone((d) => ({ ...d, state: 'MAINTENANCE' }))
-    setFailReason('Post-flight hardware fault detected')
-    setScreen('mission-failed')
-  }
-
   function handleReplaceDrone(replacement: Drone) {
     setDrone({ ...replacement })
     setScreen('preflight')
@@ -332,6 +362,7 @@ export default function OperatorWorkspace() {
     ['operator-overview', 'Overview'],
     ['mission-list', 'Missions'],
     ['mission-detail', 'Detail'],
+    ['availability', 'Lịch rảnh'],
     ['accept-reject', 'Accept/Reject'],
     ['gcs-connect', 'GCS Connect'],
     ['preflight', 'Pre-flight'],
@@ -349,6 +380,40 @@ export default function OperatorWorkspace() {
     ['simulation-zones', 'Zone Map'],
   ]
 
+  // Build a compatible OperatorMission for the current selected mission for new screens
+  const activeMission: OperatorMission = selectedOpMission ?? {
+    id: mission.id,
+    orderRef: mission.orderRef,
+    title: mission.title,
+    subtitle: mission.notes ?? '',
+    state: displayMission.state,
+    scheduledAt: mission.scheduledAt,
+    endAt: new Date(new Date(mission.scheduledAt).getTime() + mission.estimatedMinutes * 60000).toISOString(),
+    estimatedMinutes: mission.estimatedMinutes,
+    location: mission.location,
+    droneId: displayDrone.id,
+    droneName: displayDrone.name,
+    droneModel: displayDrone.model,
+    payload: 'Zenmuse H20T',
+    stationName: 'Trạm Nhà Bè',
+    stationDistanceKm: mission.distanceKm,
+    droneBattery: displayDrone.battery,
+    droneHoursFromMaintenance: 38,
+    droneStatus: displayDrone.state,
+    lat: mission.lat,
+    lng: mission.lng,
+    surveillanceRadiusM: 300,
+    maxAltitudeM: mission.maxAltitudeM,
+    photoCount: 40,
+    photoSpec: 'nhiệt',
+    videoCount: 1,
+    videoDurationSec: 180,
+    videoResolution: '1080p',
+    managerNote: mission.notes ?? null,
+    managerName: 'Lê Thị Thanh Hằng',
+    responseDeadline: null,
+  }
+
   return (
     <div
       style={{
@@ -363,7 +428,7 @@ export default function OperatorWorkspace() {
         role="operator"
         active={navId}
         onChange={handleNavChange}
-        alerts={1}
+        alerts={opMissions.filter((m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE').length}
       />
 
       <div
@@ -375,7 +440,6 @@ export default function OperatorWorkspace() {
           minWidth: 0,
         }}
       >
-        {/* Mission Control transition banner */}
         {isDark && (
           <div
             style={{
@@ -407,22 +471,33 @@ export default function OperatorWorkspace() {
             />
           )}
 
-          {/* Operator flow */}
+          {/* New OPR-01 mission list */}
           {screen === 'mission-list' && (
             <MissionList
-              missions={ALL_MISSIONS}
-              onSelect={handleSelectMission}
-              onScreen={goScreen}
+              profile={OP_PROFILE}
+              missions={opMissions}
+              onView={handleOpMissionView}
             />
           )}
-          {screen === 'mission-detail' && (
+
+          {/* New OPR-02 mission detail */}
+          {screen === 'mission-detail' && selectedOpMission && (
             <MissionDetail
-              mission={displayMission}
-              drone={displayDrone}
-              onScreen={goScreen}
+              mission={selectedOpMission}
               onBack={() => setScreen('mission-list')}
+              onAccept={handleOpAccept}
+              onReject={handleOpReject}
+              onContinue={(m) => {
+                setSelectedOpMission(m)
+                setScreen('gcs-connect')
+              }}
             />
           )}
+
+          {/* OPR-03 availability */}
+          {screen === 'availability' && <AvailabilityPage />}
+
+          {/* Legacy accept-reject (from demo bar) */}
           {screen === 'accept-reject' && (
             <AcceptReject
               mission={displayMission}
@@ -432,15 +507,28 @@ export default function OperatorWorkspace() {
               onBack={() => setScreen('mission-detail')}
             />
           )}
+
+          {/* OPR-04 GCS connect */}
           {screen === 'gcs-connect' && (
             <GCSConnection
-              mission={displayMission}
-              drone={displayDrone}
+              mission={activeMission}
               onConnected={handleGCSConnected}
               onBack={() => setScreen('mission-detail')}
             />
           )}
-          {screen === 'preflight' && (
+
+          {/* OPR-06 preflight checklist (new) */}
+          {screen === 'preflight' && selectedOpMission && (
+            <PreflightChecklist
+              mission={activeMission}
+              onPass={() => setScreen('ready-to-fly')}
+              onFail={() => setScreen('preflight-failure')}
+              onBack={() => setScreen('control-handover')}
+            />
+          )}
+
+          {/* Legacy preflight with no selected op mission */}
+          {screen === 'preflight' && !selectedOpMission && (
             <InFlightControl
               mission={displayMission}
               drone={displayDrone}
@@ -448,6 +536,7 @@ export default function OperatorWorkspace() {
               onEmergency={handleEmergency}
             />
           )}
+
           {screen === 'preflight-failure' && (
             <PreflightFailure
               checklist={checklist}
@@ -465,14 +554,16 @@ export default function OperatorWorkspace() {
               onBack={() => setScreen('preflight-failure')}
             />
           )}
+
+          {/* OPR-05 control handover */}
           {screen === 'control-handover' && (
             <ControlHandover
-              mission={displayMission}
-              drone={displayDrone}
+              mission={activeMission}
               onComplete={handleHandoverComplete}
-              onBack={() => setScreen('preflight')}
+              onBack={() => setScreen('gcs-connect')}
             />
           )}
+
           {screen === 'ready-to-fly' && token && (
             <ReadyToFly
               mission={displayMission}
@@ -493,13 +584,16 @@ export default function OperatorWorkspace() {
           {screen === 'return-to-base' && (
             <ReturnToBase drone={displayDrone} onLanded={handleLanded} />
           )}
+
+          {/* OPR-09 postflight */}
           {screen === 'postflight' && (
             <PostflightCheck
-              drone={displayDrone}
+              mission={activeMission}
               onComplete={handlePostflightComplete}
-              onFault={handlePostflightFault}
+              onBack={() => setScreen('media-upload')}
             />
           )}
+
           {screen === 'mission-completed' && (
             <MissionCompleted
               mission={displayMission}
@@ -517,10 +611,12 @@ export default function OperatorWorkspace() {
               onMissions={() => setScreen('mission-list')}
             />
           )}
+
+          {/* OPR-08 media upload */}
           {screen === 'media-upload' && (
             <MediaUpload
-              mission={displayMission}
-              onDone={() => setScreen('mission-list')}
+              mission={activeMission}
+              onDone={() => setScreen('postflight')}
               onManual={() => setScreen('manual-upload')}
             />
           )}
@@ -534,7 +630,7 @@ export default function OperatorWorkspace() {
           {screen === 'simulation-zones' && <SimulationZones />}
         </div>
 
-        {/* Demo bar — hidden during GCS flight view */}
+        {/* Demo bar */}
         {!isDark && (
           <div
             style={{
@@ -548,57 +644,16 @@ export default function OperatorWorkspace() {
               overflowX: 'auto',
             }}
           >
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-                letterSpacing: '.08em',
-                marginRight: 5,
-                flexShrink: 0,
-              }}
-            >
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.08em', marginRight: 5, flexShrink: 0 }}>
               Role:
             </span>
-            <span
-              style={{
-                flexShrink: 0,
-                padding: '3px 8px',
-                borderRadius: 4,
-                fontSize: 9,
-                fontWeight: 600,
-                marginRight: 2,
-                background: '#111827',
-                color: '#fff',
-                border: '1px solid #111827',
-              }}
-            >
+            <span style={{ flexShrink: 0, padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 600, marginRight: 2, background: '#111827', color: '#fff', border: '1px solid #111827' }}>
               Drone Operator
             </span>
 
-            <div
-              style={{
-                width: 1,
-                height: 14,
-                background: '#d1d5db',
-                margin: '0 8px',
-                flexShrink: 0,
-              }}
-            />
+            <div style={{ width: 1, height: 14, background: '#d1d5db', margin: '0 8px', flexShrink: 0 }} />
 
-            {/* Screen nav (operator-relevant) */}
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-                letterSpacing: '.08em',
-                marginRight: 4,
-                flexShrink: 0,
-              }}
-            >
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.08em', marginRight: 4, flexShrink: 0 }}>
               Screen:
             </span>
             {OPERATOR_SCREENS.map(([s, label]) => (
@@ -623,18 +678,8 @@ export default function OperatorWorkspace() {
               </button>
             ))}
 
-            <div
-              style={{
-                marginLeft: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af' }}>
-                Preflight:
-              </span>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              <span style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af' }}>Preflight:</span>
               {SCENARIO_OPTIONS.map((o) => (
                 <button
                   key={o.id}
@@ -647,10 +692,7 @@ export default function OperatorWorkspace() {
                     cursor: 'pointer',
                     background: scenario === o.id ? '#fffbeb' : 'transparent',
                     color: scenario === o.id ? '#92400e' : '#9ca3af',
-                    border:
-                      scenario === o.id
-                        ? '1px solid #fde68a'
-                        : '1px solid transparent',
+                    border: scenario === o.id ? '1px solid #fde68a' : '1px solid transparent',
                   }}
                 >
                   {o.label}

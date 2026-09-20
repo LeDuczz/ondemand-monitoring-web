@@ -13,8 +13,7 @@ import { CustomerApp } from '../features/customer/CustomerApp'
 import { ManagerApp } from '../features/manager/ManagerApp'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
-import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
-import { AdminAccountCreatePage } from '../features/admin/pages/AdminAccountCreatePage'
+import { AdminApp } from '../features/admin/AdminApp'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
 
 function RoleRoute({
@@ -86,16 +85,10 @@ export function Router() {
         <SystemOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/admin')
+  if (hash === '#portal/admin' || hash.startsWith('#portal/admin/'))
     return (
       <RoleRoute role="ADMIN">
-        <AdminHomePage />
-      </RoleRoute>
-    )
-  if (hash === '#portal/admin/accounts/new')
-    return (
-      <RoleRoute role="ADMIN">
-        <AdminAccountCreatePage />
+        <AdminApp />
       </RoleRoute>
     )
   if (hash === '#operator') return <OperatorDashboardPage />

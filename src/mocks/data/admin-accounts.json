@@ -1,0 +1,125 @@
+{
+  "_note": "Dữ liệu mock tài khoản hệ thống cho Admin portal. Trạng thái: ACTIVE/INACTIVE/PENDING.",
+  "accounts": [
+    {
+      "id": "mock-admin-main",
+      "fullName": "Trần Quốc Bình",
+      "email": "binh.tran@odms.vn",
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-01-01T08:00:00+07:00",
+      "lastLoginAt": "2026-09-20T08:30:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-staff-hang-le",
+      "fullName": "Lê Thị Thanh Hằng",
+      "email": "hang.le@odms.vn",
+      "role": "STAFF",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-03-15T09:00:00+07:00",
+      "lastLoginAt": "2026-09-19T17:45:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-staff-nam-nguyen",
+      "fullName": "Nguyễn Văn Nam",
+      "email": "nam.nguyen@odms.vn",
+      "role": "STAFF",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-04-01T10:00:00+07:00",
+      "lastLoginAt": "2026-09-18T14:20:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-drone-op-duc",
+      "fullName": "Hoàng Đức Thắng",
+      "email": "duc.hoang@odms.vn",
+      "role": "DRONE_OPERATOR",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-03-20T08:30:00+07:00",
+      "lastLoginAt": "2026-09-20T06:00:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-drone-op-minh",
+      "fullName": "Lê Văn Minh",
+      "email": "minh.le@odms.vn",
+      "role": "DRONE_OPERATOR",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-05-10T09:00:00+07:00",
+      "lastLoginAt": "2026-09-17T10:30:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-drone-op-hoa",
+      "fullName": "Phạm Thị Hoa",
+      "email": "hoa.pham@odms.vn",
+      "role": "DRONE_OPERATOR",
+      "status": "INACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-02-14T11:00:00+07:00",
+      "lastLoginAt": "2026-08-01T09:00:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-sys-op-khoa",
+      "fullName": "Trần Minh Khoa",
+      "email": "khoa.tran@odms.vn",
+      "role": "SYSTEM_OPERATOR",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-03-01T07:00:00+07:00",
+      "lastLoginAt": "2026-09-20T07:15:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-customer-bao-le",
+      "fullName": "Lê Quốc Bảo",
+      "email": "bao.le@logisticscatlai.vn",
+      "role": "CUSTOMER",
+      "status": "ACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-06-01T10:00:00+07:00",
+      "lastLoginAt": "2026-09-20T09:15:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-customer-linh",
+      "fullName": "Nguyễn Thị Linh",
+      "email": "linh.nguyen@constructionvn.com",
+      "role": "CUSTOMER",
+      "status": "PENDING",
+      "emailVerified": false,
+      "createdAt": "2026-09-18T15:30:00+07:00",
+      "lastLoginAt": null,
+      "linkedProviders": [],
+      "avatarUrl": null
+    },
+    {
+      "id": "mock-locked-demo",
+      "fullName": "Tài khoản demo (đã khoá)",
+      "email": "locked.demo@odms.vn",
+      "role": "STAFF",
+      "status": "INACTIVE",
+      "emailVerified": true,
+      "createdAt": "2026-01-15T08:00:00+07:00",
+      "lastLoginAt": "2026-07-20T10:00:00+07:00",
+      "linkedProviders": [],
+      "avatarUrl": null
+    }
+  ]
+}

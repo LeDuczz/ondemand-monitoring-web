@@ -127,14 +127,9 @@ function adaptBackendMission(mission: BackendMission): Mission {
           : undefined,
       reason: point.reason ?? 'CRUISE',
     }))
-  const lastRoutePoint = routePoints[routePoints.length - 1]
-  const orderTarget =
-    typeof mission.longitude === 'number' && typeof mission.latitude === 'number'
-      ? {
-          simX: Number(mission.longitude),
-          simY: Number(mission.latitude),
-        }
-      : null
+  const routeTargetPoint =
+    routePoints.find((point) => point.reason?.toUpperCase() === 'TARGET') ??
+    routePoints[routePoints.length - 1]
 
   return {
     id: mission.missionCode ?? mission.id,
@@ -164,9 +159,9 @@ function adaptBackendMission(mission: BackendMission): Mission {
         ? plan.maxPlannedAltitudeM
         : MISSION_PRIMARY.maxAltitudeM,
     notes: mission.description ?? MISSION_PRIMARY.notes,
-    targetSimX: orderTarget?.simX ?? lastRoutePoint?.simX,
-    targetSimY: orderTarget?.simY ?? lastRoutePoint?.simY,
-    routePoints,
+    targetSimX: routeTargetPoint?.simX ?? MISSION_PRIMARY.targetSimX,
+    targetSimY: routeTargetPoint?.simY ?? MISSION_PRIMARY.targetSimY,
+    routePoints: routePoints.length > 0 ? routePoints : MISSION_PRIMARY.routePoints,
   }
 }
 

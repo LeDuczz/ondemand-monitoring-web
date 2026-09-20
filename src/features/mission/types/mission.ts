@@ -26,6 +26,44 @@ export type DeviceStatus =
 
 export type MediaType = 'IMAGE' | 'VIDEO' | 'THERMAL'
 
+export type PlanningAlgorithm =
+  | 'DIRECT'
+  | 'ASTAR_SHORTEST'
+  | 'ASTAR_ENERGY_AWARE'
+
+export type FeasibilityStatus =
+  | 'FEASIBLE'
+  | 'INSUFFICIENT_BATTERY'
+  | 'NO_SAFE_ROUTE'
+  | 'INVALID_TARGET'
+
+export interface PlanWaypoint {
+  id: string
+  sequence: number
+  simX: number
+  simY: number
+  altitudeM: number
+  plannedSpeedMps?: number | null
+  reason: 'START' | 'CRUISE' | 'TARGET'
+}
+
+export interface MissionPlan {
+  id: string
+  planningAlgorithm: PlanningAlgorithm
+  plannedDistanceM?: number | null
+  plannedDurationSec?: number | null
+  plannedCruiseSpeedMps?: number | null
+  maxPlannedAltitudeM?: number | null
+  estimatedEnergyMah?: number | null
+  estimatedBatteryUsedPercent?: number | null
+  availableBatteryPercentAtPlanning?: number | null
+  safetyReservePercent?: number | null
+  requiredBatteryPercent?: number | null
+  feasibilityStatus: FeasibilityStatus
+  planningTimeMs?: number | null
+  waypoints: PlanWaypoint[]
+}
+
 export interface Mission {
   id: string
   missionCode: string
@@ -43,6 +81,7 @@ export interface Mission {
   failureReason?: string
   rejectionReason?: string
   mediaType?: MediaType
+  plan?: MissionPlan | null
 }
 
 export interface PreflightCheck {

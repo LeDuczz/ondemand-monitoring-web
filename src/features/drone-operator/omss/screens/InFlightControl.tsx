@@ -847,7 +847,7 @@ const RealMiniMap = memo(function RealMiniMap({
           return { x, y }
         })()
       : null
-  const missionTargetPoint = orderTargetPoint ?? routeTargetPoint
+  const missionTargetPoint = routeTargetPoint ?? orderTargetPoint
   const viewWidth = width / zoom
   const viewHeight = height / zoom
   const viewX = follow

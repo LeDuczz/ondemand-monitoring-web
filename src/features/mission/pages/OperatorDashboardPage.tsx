@@ -31,6 +31,55 @@ const STEP_BY_STATUS: Record<string, number> = {
   COMPLETED: 4,
 }
 
+function formatNumber(value?: number | null, digits = 1) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(digits)
+    : '—'
+}
+
+function formatMeters(value?: number | null) {
+  return `${formatNumber(value)} m`
+}
+
+function formatSeconds(value?: number | null) {
+  return `${formatNumber(value)} s`
+}
+
+function formatMah(value?: number | null) {
+  return `${formatNumber(value)} mAh`
+}
+
+function formatPercent(value?: number | null) {
+  return `${formatNumber(value, 2)}%`
+}
+
+function PlanMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        border: '1px solid var(--color-border)',
+        borderRadius: '8px',
+        padding: '12px',
+        background: 'var(--color-surface)',
+      }}
+    >
+      <div
+        style={{
+          fontSize: '0.68rem',
+          color: 'var(--color-muted)',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </div>
+      <div className="mono" style={{ marginTop: '4px', fontWeight: 800 }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
 export function OperatorDashboardPage() {
   const [mission, setMission] = useState<Mission | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,6 +91,7 @@ export function OperatorDashboardPage() {
   )
   const [flightToken, setFlightToken] = useState<FlightToken | null>(null)
   const [isGcsConnected, setIsGcsConnected] = useState(false)
+  const [isAccepting, setIsAccepting] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isPostflightOpen, setIsPostflightOpen] = useState(false)
@@ -168,12 +218,20 @@ export function OperatorDashboardPage() {
   }
 
   const currentStep = STEP_BY_STATUS[mission.status] ?? 1
+  const plan = mission.plan
+  const planIsFeasible = plan?.feasibilityStatus === 'FEASIBLE'
+  const canEnterPreflight =
+    (mission.status === 'SCHEDULED' ||
+      mission.status === 'CONNECTED' ||
+      mission.status === 'READY_TO_FLY') &&
+    planIsFeasible
 
   // ---------------------------------------------------------------------------
   // Flow 3 Pure Backend API Handlers (No Demo Fallbacks)
   // ---------------------------------------------------------------------------
 
   const handleAccept = async () => {
+    setIsAccepting(true)
     try {
       const updated = await missionApi.acceptMission(
         mission.id,
@@ -182,6 +240,8 @@ export function OperatorDashboardPage() {
       setMission(updated)
     } catch (err) {
       alert(`[Lỗi API Accept]: ${(err as Error).message}`)
+    } finally {
+      setIsAccepting(false)
     }
   }
 
@@ -549,9 +609,12 @@ export function OperatorDashboardPage() {
                 variant="primary"
                 icon="check"
                 onClick={handleAccept}
+                disabled={isAccepting}
                 style={{ backgroundColor: '#15803d', padding: '0 32px' }}
               >
-                CHẤP NHẬN NHIỆM VỤ (ACCEPT)
+                {isAccepting
+                  ? 'ĐANG TẠO MISSION PLAN...'
+                  : 'CHẤP NHẬN NHIỆM VỤ (ACCEPT)'}
               </Button>
 
               <Button
@@ -566,12 +629,74 @@ export function OperatorDashboardPage() {
           </div>
         )}
 
+        {plan && (
+          <div
+            className="card"
+            style={{
+              padding: '24px',
+              marginBottom: '32px',
+              borderColor: planIsFeasible ? '#bbf7d0' : '#fecaca',
+              background: planIsFeasible
+                ? 'color-mix(in srgb, #166534 5%, var(--color-surface))'
+                : 'color-mix(in srgb, #991b1b 5%, var(--color-surface))',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+                marginBottom: '18px',
+              }}
+            >
+              <div>
+                <p className="eyebrow" style={{ margin: '0 0 4px' }}>
+                  AUTO MISSION PLANNING
+                </p>
+                <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
+                  {plan.planningAlgorithm}
+                </h2>
+              </div>
+              <span
+                className="mono"
+                style={{
+                  color: planIsFeasible ? '#15803d' : '#b91c1c',
+                  fontWeight: 800,
+                }}
+              >
+                {plan.feasibilityStatus}
+              </span>
+            </div>
+
+            {planIsFeasible ? (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gap: '12px',
+                }}
+              >
+                <PlanMetric label="Distance" value={formatMeters(plan.plannedDistanceM)} />
+                <PlanMetric label="Duration" value={formatSeconds(plan.plannedDurationSec)} />
+                <PlanMetric label="World Z" value={formatMeters(plan.maxPlannedAltitudeM)} />
+                <PlanMetric label="Energy" value={formatMah(plan.estimatedEnergyMah)} />
+                <PlanMetric label="Battery Use" value={formatPercent(plan.estimatedBatteryUsedPercent)} />
+                <PlanMetric label="Required Battery" value={formatPercent(plan.requiredBatteryPercent)} />
+                <PlanMetric label="Waypoints" value={`${plan.waypoints?.length ?? 0}`} />
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: '#b91c1c', fontWeight: 700 }}>
+                No safe route could be generated for this mission.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ------------------------------------------------------------------ */}
         {/* PHASE 2 & 3: GCS CONNECT & PREFLIGHT DIAGNOSTICS (F3.2) */}
         {/* ------------------------------------------------------------------ */}
-        {(mission.status === 'SCHEDULED' ||
-          mission.status === 'CONNECTED' ||
-          mission.status === 'READY_TO_FLY' ||
+        {(canEnterPreflight ||
           mission.status === 'PENDING_APPROVAL') && (
           <div style={{ marginBottom: '32px' }}>
             <PreflightDiagnosticCard

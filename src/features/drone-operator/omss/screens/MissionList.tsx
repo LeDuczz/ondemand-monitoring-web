@@ -52,22 +52,22 @@ export default function MissionList({ profile, missions, loading, error, onView,
   return (
     <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
       {/* Breadcrumb */}
-      <div style={{ fontSize: 13, color: 'var(--tx3)', marginBottom: 4 }}>
-        <span style={{ fontWeight: 600, color: 'var(--tx2)' }}>Mission của tôi</span>
+      <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 4 }}>
+        <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>Mission của tôi</span>
         {profile && (
           <span> · {profile.fullName} · phi công hạng {profile.licenseGrade}</span>
         )}
       </div>
 
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: '0 0 12px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 12px' }}>
         Mission của tôi
       </h1>
 
       {/* Cert warning */}
       {certMsg && (
         <div style={{
-          background: 'var(--yellow-solid)1a',
-          border: '1px solid var(--yellow-solid)',
+          background: 'var(--amber-bg)',
+          border: '1px solid var(--amber-border)',
           borderRadius: 8,
           padding: '8px 14px',
           marginBottom: 16,
@@ -75,7 +75,7 @@ export default function MissionList({ profile, missions, loading, error, onView,
           alignItems: 'center',
           gap: 8,
           fontSize: 13,
-          color: 'var(--tx)',
+          color: 'var(--text)',
         }}>
           <span>⚠</span>
           <span>{certMsg}</span>
@@ -83,7 +83,7 @@ export default function MissionList({ profile, missions, loading, error, onView,
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--bd)', marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -92,8 +92,8 @@ export default function MissionList({ profile, missions, loading, error, onView,
               padding: '8px 14px',
               background: 'none',
               border: 'none',
-              borderBottom: tab === t.id ? '2px solid var(--blue-solid)' : '2px solid transparent',
-              color: tab === t.id ? 'var(--blue-solid)' : 'var(--tx2)',
+              borderBottom: tab === t.id ? '2px solid var(--blue)' : '2px solid transparent',
+              color: tab === t.id ? 'var(--blue)' : 'var(--text-2)',
               fontWeight: tab === t.id ? 600 : 400,
               fontSize: 14,
               cursor: 'pointer',
@@ -109,8 +109,8 @@ export default function MissionList({ profile, missions, loading, error, onView,
                 minWidth: 18,
                 height: 18,
                 borderRadius: 9,
-                background: tab === t.id ? 'var(--blue-solid)' : 'var(--sf3)',
-                color: tab === t.id ? '#fff' : 'var(--tx2)',
+                background: tab === t.id ? 'var(--blue)' : 'var(--surface-2)',
+                color: tab === t.id ? '#fff' : 'var(--text-2)',
                 fontSize: 11,
                 fontWeight: 700,
                 display: 'flex',
@@ -127,22 +127,22 @@ export default function MissionList({ profile, missions, loading, error, onView,
 
       {/* Content */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--tx3)' }}>Đang tải...</div>
+        <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-3)' }}>Đang tải...</div>
       )}
 
       {!loading && error && (
         <div style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ color: 'var(--red-solid)', marginBottom: 12, fontSize: 14 }}>{error}</div>
+          <div style={{ color: 'var(--red)', marginBottom: 12, fontSize: 14 }}>{error}</div>
           {onRetry && (
-            <button className="odm-btn odm-btn-gh" onClick={onRetry}>Thử lại</button>
+            <button className="op-btn op-btn-ghost" onClick={onRetry}>Thử lại</button>
           )}
         </div>
       )}
 
       {!loading && !error && visible.length === 0 && (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--tx3)' }}>
+        <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-3)' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>Chưa có mission nào</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>Chưa có mission nào</div>
           <div style={{ fontSize: 13 }}>
             {tab === 'pending' ? 'Không có mission nào đang chờ phản hồi' :
               tab === 'upcoming' ? 'Không có mission nào sắp tới' :

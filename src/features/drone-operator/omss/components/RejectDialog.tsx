@@ -40,8 +40,8 @@ export default function RejectDialog({ onConfirm, onCancel }: Props) {
     >
       <div
         style={{
-          background: 'var(--sf)',
-          border: '1px solid var(--bd)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
           borderRadius: 12,
           padding: '28px 28px 24px',
           width: 480,
@@ -49,10 +49,10 @@ export default function RejectDialog({ onConfirm, onCancel }: Props) {
           boxShadow: '0 8px 40px rgba(0,0,0,.18)',
         }}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--tx)', margin: '0 0 6px' }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>
           Từ chối mission
         </h2>
-        <p style={{ fontSize: 14, color: 'var(--tx2)', margin: '0 0 20px' }}>
+        <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 20px' }}>
           Vui lòng chọn lý do từ chối để quản lý có thể điều phối lại.
         </p>
 
@@ -66,11 +66,11 @@ export default function RejectDialog({ onConfirm, onCancel }: Props) {
                 gap: 10,
                 padding: '10px 12px',
                 borderRadius: 8,
-                border: `1px solid ${selected === r.id ? 'var(--blue-solid)' : 'var(--bd)'}`,
-                background: selected === r.id ? 'var(--sf2)' : 'transparent',
+                border: `1px solid ${selected === r.id ? 'var(--blue)' : 'var(--border)'}`,
+                background: selected === r.id ? 'var(--surface-2)' : 'transparent',
                 cursor: 'pointer',
                 fontSize: 14,
-                color: 'var(--tx)',
+                color: 'var(--text)',
               }}
             >
               <input
@@ -79,7 +79,7 @@ export default function RejectDialog({ onConfirm, onCancel }: Props) {
                 value={r.id}
                 checked={selected === r.id}
                 onChange={() => setSelected(r.id)}
-                style={{ accentColor: 'var(--blue-solid)' }}
+                style={{ accentColor: 'var(--blue)' }}
               />
               {r.label}
             </label>
@@ -88,7 +88,7 @@ export default function RejectDialog({ onConfirm, onCancel }: Props) {
 
         {selected === 'other' && (
           <textarea
-            className="odm-input"
+            className="op-input"
             placeholder="Nhập ghi chú thêm..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -98,14 +98,13 @@ export default function RejectDialog({ onConfirm, onCancel }: Props) {
         )}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="odm-btn odm-btn-gh" onClick={onCancel}>
+          <button className="op-btn op-btn-ghost" onClick={onCancel}>
             Huỷ
           </button>
           <button
-            className="odm-btn odm-btn-p"
+            className="op-btn op-btn-danger"
             onClick={handleConfirm}
             disabled={!canConfirm}
-            style={{ background: canConfirm ? 'var(--red-solid)' : undefined, opacity: canConfirm ? 1 : .5 }}
           >
             Xác nhận từ chối
           </button>

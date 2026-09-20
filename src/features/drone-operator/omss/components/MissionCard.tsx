@@ -1,5 +1,5 @@
 import type { OperatorMission, MissionState } from '../types'
-import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
+import { OpBadge } from './OpBadge'
 
 interface Props {
   mission: OperatorMission
@@ -34,15 +34,15 @@ function countdown(iso: string) {
   return `Còn ${hours} giờ ${mins} phút`
 }
 
-const STATE_BADGE: Record<MissionState, { tone: 'blue' | 'green' | 'yellow' | 'orange' | 'red' | 'gray'; label: string }> = {
-  WAITING_OPERATOR_ACCEPTANCE: { tone: 'yellow', label: 'Chờ phản hồi' },
+const STATE_BADGE: Record<MissionState, { tone: 'blue' | 'green' | 'amber' | 'orange' | 'red' | 'gray'; label: string }> = {
+  WAITING_OPERATOR_ACCEPTANCE: { tone: 'amber', label: 'Chờ phản hồi' },
   RESOURCE_ASSIGNING: { tone: 'blue', label: 'Đang chuẩn bị' },
   SCHEDULED: { tone: 'blue', label: 'Đã nhận' },
   CONNECTED: { tone: 'blue', label: 'Đã kết nối' },
   PREFLIGHT_CHECKING: { tone: 'blue', label: 'Kiểm tra trước bay' },
   READY_TO_FLY: { tone: 'green', label: 'Sẵn sàng bay' },
   FAILED_PREFLIGHT: { tone: 'red', label: 'Lỗi kiểm tra' },
-  PENDING_APPROVAL: { tone: 'yellow', label: 'Chờ duyệt' },
+  PENDING_APPROVAL: { tone: 'amber', label: 'Chờ duyệt' },
   IN_FLIGHT: { tone: 'green', label: 'Đang bay' },
   RETURNING: { tone: 'blue', label: 'Đang trở về' },
   POSTFLIGHT_CHECKING: { tone: 'blue', label: 'Kiểm tra sau bay' },
@@ -67,8 +67,8 @@ export default function MissionCard({ mission, onView }: Props) {
   return (
     <div
       style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 10,
         padding: '16px 18px',
         cursor: 'pointer',
@@ -79,40 +79,40 @@ export default function MissionCard({ mission, onView }: Props) {
       onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = 'none')}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontFamily: 'var(--font-data)', fontSize: 12, color: 'var(--tx3)', letterSpacing: '.02em' }}>
+        <span style={{ fontFamily: 'var(--font-data)', fontSize: 12, color: 'var(--text-3)', letterSpacing: '.02em' }}>
           {mission.id}
         </span>
-        <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
+        <OpBadge tone={badge.tone}>{badge.label}</OpBadge>
       </div>
 
-      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginBottom: 8, lineHeight: 1.3 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8, lineHeight: 1.3 }}>
         {mission.title}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{date}&nbsp;&nbsp;{time}–{endTime}</span>
-        <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{mission.location}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{date}&nbsp;&nbsp;{time}–{endTime}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{mission.location}</span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, color: 'var(--tx2)', fontWeight: 500 }}>
+        <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>
           {mission.droneId} {mission.droneName}
         </span>
         {mission.subtitle && (
-          <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{mission.subtitle}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{mission.subtitle}</span>
         )}
       </div>
 
       {mission.state === 'CANCELLED' && mission.rejectionReason && (
-        <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
           Lý do từ chối: {mission.rejectionReason}
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{cd ?? ''}</span>
+        <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{cd ?? ''}</span>
         <button
-          className="odm-btn odm-btn-gh"
+          className="op-btn op-btn-ghost"
           style={{ fontSize: 13, padding: '5px 14px' }}
           onClick={(e) => { e.stopPropagation(); onView(mission) }}
         >

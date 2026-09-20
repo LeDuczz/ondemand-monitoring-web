@@ -68,7 +68,7 @@ export default function PostflightCheck({ mission, onComplete, onBack }: Props) 
             <div>Mission: <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span></div>
             <div>Drone: {mission.droneId} {mission.droneName}</div>
           </div>
-          <button className="odm-btn odm-btn-p" onClick={onBack}>Về danh sách mission</button>
+          <button className="op-btn op-btn-primary" onClick={onBack}>Về danh sách mission</button>
         </div>
       </div>
     )
@@ -76,22 +76,22 @@ export default function PostflightCheck({ mission, onComplete, onBack }: Props) 
 
   return (
     <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', maxWidth: 680 }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
         ← Quay lại
       </button>
 
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
         Postflight check · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--tx)', margin: '0 0 6px' }}>Postflight check</h1>
-      <div style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>Postflight check</h1>
+      <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
 
-      <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, marginBottom: 16 }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--bd)', fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 16 }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
           Kiểm tra thiết bị sau chuyến bay
         </div>
         {ITEMS.map((item, i) => (
-          <div key={item.id} style={{ borderBottom: i < ITEMS.length - 1 ? '1px solid var(--bd)' : 'none' }}>
+          <div key={item.id} style={{ borderBottom: i < ITEMS.length - 1 ? '1px solid var(--border)' : 'none' }}>
             <PreflightItem
               id={item.id}
               label={item.label}
@@ -111,7 +111,7 @@ export default function PostflightCheck({ mission, onComplete, onBack }: Props) 
             Nên tạo ticket bảo trì.
           </div>
           {!ticketCreated ? (
-            <button className="odm-btn odm-btn-gh" style={{ fontSize: 12, borderColor: 'var(--yellow-solid)', color: '#92400e' }} onClick={() => setShowTicket(true)}>
+            <button className="op-btn op-btn-ghost" style={{ fontSize: 12, borderColor: 'var(--amber)', color: '#92400e' }} onClick={() => setShowTicket(true)}>
               Tạo ticket bảo trì
             </button>
           ) : (
@@ -121,13 +121,13 @@ export default function PostflightCheck({ mission, onComplete, onBack }: Props) 
       )}
 
       {allAnswered && (
-        <button className="odm-btn odm-btn-p" onClick={handleComplete}>
+        <button className="op-btn op-btn-primary" onClick={handleComplete}>
           Hoàn tất mission
         </button>
       )}
 
       {!allAnswered && (
-        <div style={{ fontSize: 13, color: 'var(--tx3)' }}>
+        <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
           {answered}/{ITEMS.length} mục đã kiểm tra
         </div>
       )}

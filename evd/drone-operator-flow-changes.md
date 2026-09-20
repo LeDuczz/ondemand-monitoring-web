@@ -103,3 +103,54 @@ Added 3 import lines for new handler modules.
 ## Type Safety
 - `npx tsc --noEmit` → 0 errors
 - `npx vitest run` → 107 tests pass (12 test files)
+
+---
+
+## Design-system fix (post-review)
+
+The 12 new drone operator files were originally written against the **ODM design
+system** (`var(--tx)`, `var(--sf)`, `var(--blue-solid)`, `.odm-btn`, `.odm-input`,
+`shared/components/odm/StatusBadge`) — tokens/classes that only exist inside the
+`.odm { ... }` scope in `src/styles/odm.css`. `OperatorWorkspace` renders outside
+that scope (`<div className={isDark ? 'dark-ws' : ''}>`) and has its own design
+system in `src/features/drone-operator/omss/operator.css`, so every new screen
+rendered with black default text, invisible borders/backgrounds, and unstyled
+buttons/inputs.
+
+Fixed by remapping all 12 files to `operator.css` tokens/classes:
+- Token remap: `var(--tx/tx2/tx3)` → `var(--text/-2/-3)`, `var(--bd)` → `var(--border)`,
+  `var(--sf/sf2/sf3)` → `var(--surface/-2)`, `var(--blue-solid)` → `var(--blue)`,
+  `var(--yellow-solid)` → `var(--amber)`, `var(--red-solid)` → `var(--red)`,
+  `var(--green-solid)` → `var(--green)`, `var(--ink)` → `var(--text)`.
+- Fixed invalid CSS `'var(--yellow-solid)1a'` in `MissionList.tsx` (cert warning
+  banner) → `var(--amber-bg)` background + `var(--amber-border)` border.
+- Added `.op-btn` / `.op-btn-primary` / `.op-btn-ghost` / `.op-btn-danger` /
+  `.op-input` utility classes to `operator.css`, replacing `.odm-btn`/`.odm-input`
+  across all 12 files (RejectDialog's confirm button now uses `op-btn-danger`
+  instead of an inline red-background override).
+- Created `components/OpBadge.tsx` (tones: gray/blue/green/amber/orange/red,
+  driven by `operator.css` tokens) to replace
+  `shared/components/odm/StatusBadge` imports in `MissionCard.tsx`,
+  `MissionDetail.tsx`, `GCSConnection.tsx`, `MediaUpload.tsx`, and
+  `ControlHandover.tsx`; `tone="yellow"` usages switched to `tone="amber"`.
+- `operator.css` dark mode (`.dark-ws` selector) left untouched and still
+  applies to the new screens since they now consume the same tokens.
+
+Files touched: `screens/MissionList.tsx`, `screens/MissionDetail.tsx`,
+`screens/AvailabilityPage.tsx`, `screens/GCSConnection.tsx`,
+`screens/ControlHandover.tsx`, `screens/PreflightChecklist.tsx`,
+`screens/MediaUpload.tsx`, `screens/PostflightCheck.tsx`,
+`components/MissionCard.tsx`, `components/RejectDialog.tsx`,
+`components/PreflightItem.tsx`, `components/MaintenanceTicketDialog.tsx`,
+`operator.css` (new utilities appended), `components/OpBadge.tsx` (new).
+
+No logic/layout changes — design-system only. Verified:
+`grep -rE "var\(--(tx|bd|sf|blue-solid|yellow-solid|red-solid|green-solid)|odm-btn|odm-input|shared/components/odm" screens/ components/` → empty.
+`npx tsc --noEmit` → 0 errors. `npx vitest run` → 107 tests pass (12 files),
+same count as before the fix.
+
+Note: `AvailabilityPage.tsx` (344 lines) and `GCSConnection.tsx` (263 lines)
+were already over the 250-line guideline before this fix; this pass only did
+in-place token/class substitution (equal insertions/deletions in `git diff
+--stat`), so their line counts are unchanged. Splitting them was out of scope
+since this task is design-system-only and must not change structure.

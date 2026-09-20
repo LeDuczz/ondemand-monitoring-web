@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { OperatorMission, MediaFile, MediaFileStatus } from '../types'
-import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
+import { OpBadge } from '../components/OpBadge'
 import mediaData from '../../../../mocks/data/operator-media.json'
 
 interface Props {
@@ -17,12 +17,12 @@ const STATUS_LABEL: Record<MediaFileStatus, string> = {
   QUEUED: 'Trong hàng',
 }
 
-const STATUS_TONE: Record<MediaFileStatus, 'green' | 'blue' | 'red' | 'gray' | 'yellow'> = {
+const STATUS_TONE: Record<MediaFileStatus, 'green' | 'blue' | 'red' | 'gray' | 'amber'> = {
   DONE: 'green',
   UPLOADING: 'blue',
   FAILED: 'red',
   PENDING: 'gray',
-  QUEUED: 'yellow',
+  QUEUED: 'amber',
 }
 
 export default function MediaUpload({ mission, onDone }: Props) {
@@ -63,11 +63,11 @@ export default function MediaUpload({ mission, onDone }: Props) {
 
   return (
     <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
         Upload media · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--tx)', margin: '0 0 4px' }}>Upload media</h1>
-      <div style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px' }}>Upload media</h1>
+      <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
 
       {/* Offline banner */}
       {offline && (
@@ -87,8 +87,8 @@ export default function MediaUpload({ mission, onDone }: Props) {
 
       {/* Summary strip */}
       <div style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 10,
         padding: '14px 18px',
         marginBottom: 16,
@@ -98,24 +98,24 @@ export default function MediaUpload({ mission, onDone }: Props) {
         flexWrap: 'wrap',
         gap: 10,
       }}>
-        <div style={{ fontSize: 13, color: 'var(--tx)' }}>
+        <div style={{ fontSize: 13, color: 'var(--text)' }}>
           <strong>{done}/{total}</strong> file đã lên
           {uploading > 0 && <span style={{ marginLeft: 10 }}>· <strong>{uploading}</strong> đang lên</span>}
           {failed > 0 && <span style={{ marginLeft: 10 }}>· <strong>{failed}</strong> cần xử lý thủ công</span>}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {uploading > 0 && (
-            <span style={{ fontSize: 12, color: 'var(--tx3)' }}>Tốc độ 3,2 MB/s · còn khoảng 6 phút</span>
+            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Tốc độ 3,2 MB/s · còn khoảng 6 phút</span>
           )}
         </div>
       </div>
 
       {/* File table */}
-      <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
         {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 80px 1fr 60px 100px 80px', gap: 0, padding: '10px 16px', background: 'var(--sf2)', borderBottom: '1px solid var(--bd)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 80px 1fr 60px 100px 80px', gap: 0, padding: '10px 16px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
           {['Tên tệp', 'Loại', 'Dung lượng', 'Tiến trình', 'Lần thử', 'Trạng thái', ''].map((h) => (
-            <div key={h} style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx3)' }}>{h}</div>
+            <div key={h} style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>{h}</div>
           ))}
         </div>
 
@@ -128,29 +128,29 @@ export default function MediaUpload({ mission, onDone }: Props) {
               gap: 0,
               padding: '10px 16px',
               alignItems: 'center',
-              borderBottom: i < files.length - 1 ? '1px solid var(--bd)' : 'none',
+              borderBottom: i < files.length - 1 ? '1px solid var(--border)' : 'none',
             }}
           >
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
             <span>
-              <StatusBadge tone={f.type === 'PHOTO' ? 'blue' : 'orange'}>{f.type === 'PHOTO' ? 'PHOTO' : 'VIDEO'}</StatusBadge>
+              <OpBadge tone={f.type === 'PHOTO' ? 'blue' : 'orange'}>{f.type === 'PHOTO' ? 'PHOTO' : 'VIDEO'}</OpBadge>
             </span>
-            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{fmtSize(f.sizeMB)}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{fmtSize(f.sizeMB)}</span>
             <div style={{ paddingRight: 12 }}>
               {f.status === 'UPLOADING' || f.status === 'DONE' ? (
-                <div style={{ height: 6, background: 'var(--sf3)', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${f.progressPct}%`, background: f.status === 'DONE' ? 'var(--green-solid)' : 'var(--blue-solid)', borderRadius: 3, transition: 'width .3s' }} />
+                <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${f.progressPct}%`, background: f.status === 'DONE' ? 'var(--green)' : 'var(--blue)', borderRadius: 3, transition: 'width .3s' }} />
                 </div>
               ) : (
-                <span style={{ fontSize: 11, color: 'var(--tx3)' }}>—</span>
+                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>—</span>
               )}
             </div>
-            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{f.attempts}/{f.maxAttempts}</span>
-            <span><StatusBadge tone={STATUS_TONE[f.status]}>{STATUS_LABEL[f.status]}</StatusBadge></span>
+            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{f.attempts}/{f.maxAttempts}</span>
+            <span><OpBadge tone={STATUS_TONE[f.status]}>{STATUS_LABEL[f.status]}</OpBadge></span>
             <span>
               {f.status === 'FAILED' && f.attempts < f.maxAttempts && (
                 <button
-                  className="odm-btn odm-btn-gh"
+                  className="op-btn op-btn-ghost"
                   style={{ fontSize: 11, padding: '3px 8px' }}
                   onClick={() => handleRetry(f.id)}
                 >
@@ -164,7 +164,7 @@ export default function MediaUpload({ mission, onDone }: Props) {
 
       {/* Footer */}
       {allProcessed && (
-        <button className="odm-btn odm-btn-p" onClick={onDone}>
+        <button className="op-btn op-btn-primary" onClick={onDone}>
           Tiếp tục sang Postflight →
         </button>
       )}

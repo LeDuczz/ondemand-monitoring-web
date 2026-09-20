@@ -48,23 +48,23 @@ export default function PreflightChecklist({ mission, onPass, onFail, onBack }: 
 
   return (
     <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', maxWidth: 700 }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
         ← Quay lại
       </button>
 
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
         Preflight checklist · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--tx)', margin: '0 0 6px' }}>Preflight checklist</h1>
-      <div style={{ fontSize: 13, color: 'var(--tx2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>Preflight checklist</h1>
+      <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
 
       {groups.map((group) => (
-        <div key={group} style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, marginBottom: 16 }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--bd)', fontSize: 13, fontWeight: 600, color: 'var(--tx2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+        <div key={group} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 16 }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
             {group}
           </div>
           {CHECKLIST.filter((c) => c.group === group).map((item, idx, arr) => (
-            <div key={item.id} style={{ borderBottom: idx < arr.length - 1 ? '1px solid var(--bd)' : 'none' }}>
+            <div key={item.id} style={{ borderBottom: idx < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
               <PreflightItem
                 id={item.id}
                 label={item.label}
@@ -95,11 +95,11 @@ export default function PreflightChecklist({ mission, onPass, onFail, onBack }: 
             {passed}/{total} mục đạt {failed > 0 ? 'FAIL · CHẶN BAY' : 'PASS · đủ điều kiện cất cánh'}
           </span>
           {failed > 0 ? (
-            <button className="odm-btn odm-btn-gh" style={{ fontSize: 12, borderColor: 'var(--red-solid)', color: 'var(--red-solid)' }} onClick={onFail}>
+            <button className="op-btn op-btn-ghost" style={{ fontSize: 12, borderColor: 'var(--red)', color: 'var(--red)' }} onClick={onFail}>
               Báo cáo sự cố
             </button>
           ) : (
-            <button className="odm-btn odm-btn-p" onClick={onPass}>
+            <button className="op-btn op-btn-primary" onClick={onPass}>
               Tiếp tục tới buồng lái →
             </button>
           )}
@@ -107,7 +107,7 @@ export default function PreflightChecklist({ mission, onPass, onFail, onBack }: 
       )}
 
       {!allAnswered && (
-        <div style={{ fontSize: 13, color: 'var(--tx3)', padding: '8px 0' }}>
+        <div style={{ fontSize: 13, color: 'var(--text-3)', padding: '8px 0' }}>
           {answered}/{total} mục đã kiểm tra · Hoàn tất các mục còn lại
         </div>
       )}

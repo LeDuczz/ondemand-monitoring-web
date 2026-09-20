@@ -36,24 +36,24 @@ export default function MaintenanceTicketDialog({ missionId, droneId, droneName,
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
     >
-      <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 12, padding: '28px', width: 500, maxWidth: 'calc(100vw - 32px)', boxShadow: '0 8px 40px rgba(0,0,0,.18)' }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--tx)', margin: '0 0 18px' }}>Tạo ticket bảo trì</h2>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '28px', width: 500, maxWidth: 'calc(100vw - 32px)', boxShadow: '0 8px 40px rgba(0,0,0,.18)' }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '0 0 18px' }}>Tạo ticket bảo trì</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>Drone</div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>{droneId} {droneName}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>Drone</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{droneId} {droneName}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>Mission</div>
-            <div style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: 'var(--tx)' }}>{missionId}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>Mission</div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-data)', color: 'var(--text)' }}>{missionId}</div>
           </div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 6 }}>Loại lỗi</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 6 }}>Loại lỗi</div>
           <select
-            className="odm-input"
+            className="op-input"
             value={issueType}
             onChange={(e) => setIssueType(e.target.value as MaintenanceFaultType)}
             style={{ fontSize: 13 }}
@@ -65,7 +65,7 @@ export default function MaintenanceTicketDialog({ missionId, droneId, droneName,
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 8 }}>Mức độ nghiêm trọng</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>Mức độ nghiêm trọng</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {SEVERITIES.map((s) => (
               <button
@@ -75,9 +75,9 @@ export default function MaintenanceTicketDialog({ missionId, droneId, droneName,
                   flex: 1,
                   padding: '7px 0',
                   borderRadius: 6,
-                  border: `1px solid ${severity === s.id ? s.color : 'var(--bd)'}`,
-                  background: severity === s.id ? s.color + '1a' : 'var(--sf)',
-                  color: severity === s.id ? s.color : 'var(--tx2)',
+                  border: `1px solid ${severity === s.id ? s.color : 'var(--border)'}`,
+                  background: severity === s.id ? s.color + '1a' : 'var(--surface)',
+                  color: severity === s.id ? s.color : 'var(--text-2)',
                   fontSize: 12,
                   fontWeight: severity === s.id ? 600 : 400,
                   cursor: 'pointer',
@@ -90,9 +90,9 @@ export default function MaintenanceTicketDialog({ missionId, droneId, droneName,
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 6 }}>Mô tả</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 6 }}>Mô tả</div>
           <textarea
-            className="odm-input"
+            className="op-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
@@ -101,8 +101,8 @@ export default function MaintenanceTicketDialog({ missionId, droneId, droneName,
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="odm-btn odm-btn-gh" onClick={onCancel}>Huỷ</button>
-          <button className="odm-btn odm-btn-p" onClick={() => onConfirm(issueType, severity, description)}>Tạo ticket</button>
+          <button className="op-btn op-btn-ghost" onClick={onCancel}>Huỷ</button>
+          <button className="op-btn op-btn-primary" onClick={() => onConfirm(issueType, severity, description)}>Tạo ticket</button>
         </div>
       </div>
     </div>

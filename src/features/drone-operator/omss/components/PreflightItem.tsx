@@ -13,11 +13,11 @@ export default function PreflightItem({ id, label, value, result, onResult }: Pr
       alignItems: 'center',
       gap: 12,
       padding: '12px 16px',
-      borderBottom: '1px solid var(--bd)',
+      borderBottom: '1px solid var(--border)',
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--tx)' }}>{label}</div>
-        <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 2 }}>{value}</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{label}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{value}</div>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <button
@@ -25,9 +25,9 @@ export default function PreflightItem({ id, label, value, result, onResult }: Pr
           style={{
             padding: '5px 14px',
             borderRadius: 6,
-            border: `1px solid ${result === 'PASS' ? 'var(--green-solid)' : 'var(--bd)'}`,
-            background: result === 'PASS' ? 'var(--green-solid)' : 'var(--sf)',
-            color: result === 'PASS' ? '#fff' : 'var(--tx2)',
+            border: `1px solid ${result === 'PASS' ? 'var(--green)' : 'var(--border)'}`,
+            background: result === 'PASS' ? 'var(--green)' : 'var(--surface)',
+            color: result === 'PASS' ? '#fff' : 'var(--text-2)',
             fontSize: 12,
             fontWeight: 600,
             cursor: 'pointer',
@@ -40,9 +40,9 @@ export default function PreflightItem({ id, label, value, result, onResult }: Pr
           style={{
             padding: '5px 14px',
             borderRadius: 6,
-            border: `1px solid ${result === 'FAIL' ? 'var(--red-solid)' : 'var(--bd)'}`,
-            background: result === 'FAIL' ? 'var(--red-solid)' : 'var(--sf)',
-            color: result === 'FAIL' ? '#fff' : 'var(--tx2)',
+            border: `1px solid ${result === 'FAIL' ? 'var(--red)' : 'var(--border)'}`,
+            background: result === 'FAIL' ? 'var(--red)' : 'var(--surface)',
+            color: result === 'FAIL' ? '#fff' : 'var(--text-2)',
             fontSize: 12,
             fontWeight: 600,
             cursor: 'pointer',

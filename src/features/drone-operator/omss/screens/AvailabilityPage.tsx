@@ -194,22 +194,22 @@ export default function AvailabilityPage() {
       style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', userSelect: 'none' }}
       onMouseUp={handleMouseUp}
     >
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4, fontFamily: 'var(--font-data)' }}>operator_availability</div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: '0 0 18px' }}>Lịch rảnh của tôi</h1>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4, fontFamily: 'var(--font-data)' }}>operator_availability</div>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 18px' }}>Lịch rảnh của tôi</h1>
 
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button className="odm-btn odm-btn-gh" style={{ padding: '5px 10px', fontSize: 13 }} onClick={prevWeek}>‹</button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx2)', minWidth: 200, textAlign: 'center' }}>{formatWeekLabel()}</span>
-          <button className="odm-btn odm-btn-gh" style={{ padding: '5px 10px', fontSize: 13 }} onClick={nextWeek}>›</button>
+          <button className="op-btn op-btn-ghost" style={{ padding: '5px 10px', fontSize: 13 }} onClick={prevWeek}>‹</button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', minWidth: 200, textAlign: 'center' }}>{formatWeekLabel()}</span>
+          <button className="op-btn op-btn-ghost" style={{ padding: '5px 10px', fontSize: 13 }} onClick={nextWeek}>›</button>
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
           {(['AVAILABLE', 'BUSY', 'OFF'] as AvailabilityStatus[]).map((s) => (
             <button
               key={s}
-              className="odm-btn odm-btn-gh"
+              className="op-btn op-btn-ghost"
               style={{ fontSize: 12, padding: '5px 12px', opacity: selecting.size === 0 ? .5 : 1 }}
               onClick={() => applyStatus(s)}
               disabled={selecting.size === 0}
@@ -218,11 +218,11 @@ export default function AvailabilityPage() {
             </button>
           ))}
           {selecting.size > 0 && (
-            <button className="odm-btn odm-btn-gh" style={{ fontSize: 12, padding: '5px 10px' }} onClick={clearSelection}>Bỏ chọn</button>
+            <button className="op-btn op-btn-ghost" style={{ fontSize: 12, padding: '5px 10px' }} onClick={clearSelection}>Bỏ chọn</button>
           )}
         </div>
 
-        <button className="odm-btn odm-btn-p" style={{ marginLeft: 'auto', fontSize: 13 }} onClick={handleSave}>
+        <button className="op-btn op-btn-primary" style={{ marginLeft: 'auto', fontSize: 13 }} onClick={handleSave}>
           Lưu thay đổi
         </button>
       </div>
@@ -234,7 +234,7 @@ export default function AvailabilityPage() {
       )}
 
       {selectionLabel && (
-        <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 8, fontStyle: 'italic' }}>{selectionLabel}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, fontStyle: 'italic' }}>{selectionLabel}</div>
       )}
 
       {/* Grid */}
@@ -244,7 +244,7 @@ export default function AvailabilityPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
             <div />
             {dates.map((d, i) => (
-              <div key={i} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', padding: '4px 0' }}>
+              <div key={i} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', padding: '4px 0' }}>
                 {WEEKDAY_SHORT[i]} {fmtDate(d)}
               </div>
             ))}
@@ -257,7 +257,7 @@ export default function AvailabilityPage() {
                 key={`${hour}_${minute}`}
                 style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)', gap: 2, marginBottom: 2 }}
               >
-                <div style={{ fontSize: 11, color: 'var(--tx3)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6 }}>
                   {minute === 0 ? `${String(hour).padStart(2, '0')}:00` : ''}
                 </div>
                 {dates.map((d, di) => {
@@ -269,7 +269,7 @@ export default function AvailabilityPage() {
                   const isOff = status === 'OFF'
 
                   let bg = '#f9fafb'
-                  let border = 'var(--bd)'
+                  let border = 'var(--border)'
                   let opacity = 1
 
                   if (overlay) {
@@ -282,8 +282,8 @@ export default function AvailabilityPage() {
                     bg = '#dcfce7'
                     border = '#86efac'
                   } else if (status === 'BUSY') {
-                    bg = 'var(--sf3)'
-                    border = 'var(--bd)'
+                    bg = 'var(--surface-2)'
+                    border = 'var(--border)'
                   } else if (isOff) {
                     bg = 'transparent'
                     opacity = .5
@@ -324,8 +324,8 @@ export default function AvailabilityPage() {
       <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
         {[
           { bg: '#dcfce7', border: '#86efac', label: 'Rảnh' },
-          { bg: 'var(--sf3)', border: 'var(--bd)', label: 'Bận' },
-          { bg: 'transparent', border: 'var(--bd)', label: 'Nghỉ', striped: true },
+          { bg: 'var(--surface-2)', border: 'var(--border)', label: 'Bận' },
+          { bg: 'transparent', border: 'var(--border)', label: 'Nghỉ', striped: true },
           { bg: '#ede9fe', border: '#a78bfa', label: 'Mission đã xếp' },
           { bg: '#dbeafe', border: '#3b82f6', label: 'Đang chọn' },
         ].map((l) => (
@@ -335,7 +335,7 @@ export default function AvailabilityPage() {
               background: l.bg, border: `1px solid ${l.border}`,
               backgroundImage: l.striped ? 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px)' : undefined,
             }} />
-            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>{l.label}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{l.label}</span>
           </div>
         ))}
       </div>

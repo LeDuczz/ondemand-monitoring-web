@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { OperatorMission } from '../types'
-import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
+import { OpBadge } from '../components/OpBadge'
 
 interface Props {
   mission: OperatorMission
@@ -95,11 +95,11 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
 
   return (
     <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
         ← Quay lại
       </button>
 
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
         Kết nối drone · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
       </div>
 
@@ -109,63 +109,63 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
           <div key={i} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6,
-              background: i === 0 ? 'var(--blue-solid)' : 'var(--sf2)',
-              color: i === 0 ? '#fff' : 'var(--tx3)',
+              background: i === 0 ? 'var(--blue)' : 'var(--surface-2)',
+              color: i === 0 ? '#fff' : 'var(--text-3)',
               fontSize: 12, fontWeight: i === 0 ? 600 : 400,
             }}>
               <span style={{
                 width: 18, height: 18, borderRadius: '50%',
-                background: i === 0 ? 'rgba(255,255,255,.25)' : 'var(--bd)',
+                background: i === 0 ? 'rgba(255,255,255,.25)' : 'var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 10, fontWeight: 700,
               }}>{i + 1}</span>
               {s}
             </div>
-            {i < STEPPER.length - 1 && <div style={{ width: 20, height: 1, background: 'var(--bd)' }} />}
+            {i < STEPPER.length - 1 && <div style={{ width: 20, height: 1, background: 'var(--border)' }} />}
           </div>
         ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'start' }}>
         {/* Mission card */}
-        <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px' }}>
-          <div style={{ fontSize: 11, color: 'var(--tx3)', fontFamily: 'var(--font-data)', marginBottom: 6 }}>{mission.id}</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 10, lineHeight: 1.3 }}>{mission.title}</div>
-          <div style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>{mission.location}</div>
-          <div style={{ fontSize: 12, color: 'var(--tx2)' }}>{mission.droneId} {mission.droneName}</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-data)', marginBottom: 6 }}>{mission.id}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 10, lineHeight: 1.3 }}>{mission.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>{mission.location}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)' }}>{mission.droneId} {mission.droneName}</div>
         </div>
 
         {/* Connect form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Step 1: Token */}
-          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '20px' }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '20px' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
               1. Nhập hoặc quét mã flight_token
             </div>
-            <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
               device_code: <code style={{ fontFamily: 'var(--font-data)' }}>{DEVICE_CODE}</code>
               {status !== 'idle' && status !== 'expired' && (
-                <span style={{ marginLeft: 12, color: remaining < 60 ? 'var(--red-solid)' : 'var(--tx2)' }}>{fmtCountdown(remaining)}</span>
+                <span style={{ marginLeft: 12, color: remaining < 60 ? 'var(--red)' : 'var(--text-2)' }}>{fmtCountdown(remaining)}</span>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
-                className="odm-input"
+                className="op-input"
                 placeholder="Nhập flight_token..."
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 disabled={status === 'connecting' || status === 'connected'}
                 style={{ flex: 1, fontFamily: 'var(--font-data)', fontSize: 13 }}
               />
-              <button className="odm-btn odm-btn-gh" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+              <button className="op-btn op-btn-ghost" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
                 Quét QR
               </button>
             </div>
           </div>
 
           {/* Step 2: GCS */}
-          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '20px' }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 12 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '20px' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>
               2. Chọn hoặc nhập gcs_identifier
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
@@ -178,7 +178,7 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
                     checked={!useCustom && gcsId === d.id}
                     onChange={() => { setGcsId(d.id); setUseCustom(false) }}
                     disabled={status === 'connecting' || status === 'connected'}
-                    style={{ accentColor: 'var(--blue-solid)' }}
+                    style={{ accentColor: 'var(--blue)' }}
                   />
                   <span style={{ fontFamily: 'var(--font-data)', fontSize: 12 }}>{d.label}</span>
                 </label>
@@ -190,14 +190,14 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
                   checked={useCustom}
                   onChange={() => setUseCustom(true)}
                   disabled={status === 'connecting' || status === 'connected'}
-                  style={{ accentColor: 'var(--blue-solid)' }}
+                  style={{ accentColor: 'var(--blue)' }}
                 />
                 Nhập mã khác...
               </label>
             </div>
             {useCustom && (
               <input
-                className="odm-input"
+                className="op-input"
                 placeholder="gcs_identifier"
                 value={customGcs}
                 onChange={(e) => setCustomGcs(e.target.value)}
@@ -209,7 +209,7 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
           {/* Connect button */}
           {(status === 'idle' || status === 'failed') && (
             <button
-              className="odm-btn odm-btn-p"
+              className="op-btn op-btn-primary"
               onClick={handleConnect}
               disabled={!token.trim()}
             >
@@ -220,31 +220,31 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
           {status === 'expired' && (
             <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#991b1b' }}>Mã đã hết hạn</span>
-              <button className="odm-btn odm-btn-gh" style={{ fontSize: 12 }} onClick={handleRequestNew}>Yêu cầu mã mới</button>
+              <button className="op-btn op-btn-ghost" style={{ fontSize: 12 }} onClick={handleRequestNew}>Yêu cầu mã mới</button>
             </div>
           )}
 
           {/* Connection status tracker */}
           {(status === 'connecting' || status === 'connected' || status === 'failed') && (
-            <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', marginBottom: 12 }}>Trạng thái kết nối</div>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>Trạng thái kết nối</div>
               {steps.map((step) => (
                 <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <span style={{ fontSize: 16 }}>
                     {step.status === 'ok' ? '✅' : step.status === 'error' ? '❌' : step.status === 'loading' ? '⏳' : '⬜'}
                   </span>
                   <div>
-                    <div style={{ fontSize: 13, color: 'var(--tx)' }}>{step.label}</div>
-                    {step.detail && <div style={{ fontSize: 12, color: 'var(--tx3)', fontFamily: 'var(--font-data)' }}>{step.detail}</div>}
+                    <div style={{ fontSize: 13, color: 'var(--text)' }}>{step.label}</div>
+                    {step.detail && <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-data)' }}>{step.detail}</div>}
                   </div>
                 </div>
               ))}
 
               {status === 'connected' && (
                 <div style={{ marginTop: 12 }}>
-                  <StatusBadge tone="green">Đã kết nối</StatusBadge>
+                  <OpBadge tone="green">Đã kết nối</OpBadge>
                   <div style={{ marginTop: 12 }}>
-                    <button className="odm-btn odm-btn-p" onClick={onConnected}>
+                    <button className="op-btn op-btn-primary" onClick={onConnected}>
                       Tiếp tục: bàn giao quyền điều khiển →
                     </button>
                   </div>
@@ -252,7 +252,7 @@ export default function GCSConnection({ mission, onConnected, onBack }: Props) {
               )}
 
               {status === 'failed' && (
-                <button className="odm-btn odm-btn-gh" style={{ marginTop: 8 }} onClick={handleRequestNew}>Thử lại</button>
+                <button className="op-btn op-btn-ghost" style={{ marginTop: 8 }} onClick={handleRequestNew}>Thử lại</button>
               )}
             </div>
           )}

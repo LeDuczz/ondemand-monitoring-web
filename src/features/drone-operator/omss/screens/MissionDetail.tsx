@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { OperatorMission } from '../types'
-import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
+import { OpBadge } from '../components/OpBadge'
 import RejectDialog from '../components/RejectDialog'
 
 interface Props {
@@ -25,9 +25,9 @@ function fmtTime(iso: string) {
 
 function KV({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--bd)' }}>
-      <span style={{ fontSize: 13, color: 'var(--tx3)', minWidth: 160 }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)', textAlign: 'right', fontFamily: mono ? 'var(--font-data)' : undefined }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: 13, color: 'var(--text-3)', minWidth: 160 }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', textAlign: 'right', fontFamily: mono ? 'var(--font-data)' : undefined }}>{value}</span>
     </div>
   )
 }
@@ -57,7 +57,7 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
       {/* Back */}
       <button
         onClick={onBack}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20 }}
       >
         ← Quay lại danh sách
       </button>
@@ -65,8 +65,8 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'start' }}>
         {/* Left: Map placeholder */}
         <div style={{
-          background: 'var(--sf2)',
-          border: '1px solid var(--bd)',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
           borderRadius: 10,
           minHeight: 400,
           display: 'flex',
@@ -74,7 +74,7 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
           alignItems: 'center',
           justifyContent: 'center',
           gap: 12,
-          color: 'var(--tx3)',
+          color: 'var(--text-3)',
           position: 'relative',
           overflow: 'hidden',
         }}>
@@ -96,7 +96,7 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
               {['H', '1', '2', '3', '4'].map((wp) => (
                 <div key={wp} style={{
                   width: 28, height: 28, borderRadius: '50%',
-                  background: wp === 'H' ? 'var(--green-solid)' : 'var(--blue-solid)',
+                  background: wp === 'H' ? 'var(--green)' : 'var(--blue)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 11, fontWeight: 700,
                 }}>
@@ -112,15 +112,15 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Header */}
           <div style={{
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
             borderRadius: 10,
             padding: '18px 18px 14px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{ fontFamily: 'var(--font-data)', fontSize: 12, color: 'var(--tx3)' }}>{mission.id}</span>
-              <StatusBadge tone={
-                mission.state === 'WAITING_OPERATOR_ACCEPTANCE' ? 'yellow' :
+              <span style={{ fontFamily: 'var(--font-data)', fontSize: 12, color: 'var(--text-3)' }}>{mission.id}</span>
+              <OpBadge tone={
+                mission.state === 'WAITING_OPERATOR_ACCEPTANCE' ? 'amber' :
                   mission.state === 'IN_FLIGHT' ? 'green' :
                     mission.state === 'COMPLETED' ? 'green' :
                       mission.state === 'CANCELLED' ? 'red' : 'blue'
@@ -130,17 +130,17 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
                     mission.state === 'IN_FLIGHT' ? 'Đang bay' :
                       mission.state === 'COMPLETED' ? 'Hoàn thành' :
                         mission.state === 'CANCELLED' ? 'Bị từ chối' : mission.state}
-              </StatusBadge>
+              </OpBadge>
             </div>
 
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--tx)', marginBottom: 4, lineHeight: 1.3 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 4, lineHeight: 1.3 }}>
               {mission.title}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--tx2)' }}>{mission.subtitle} · {mission.orderRef}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>{mission.subtitle} · {mission.orderRef}</div>
           </div>
 
           {/* Details */}
-          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '14px 18px' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 18px' }}>
             <KV label="Ngày bay" value={fmtDate(mission.scheduledAt)} />
             <KV label="Khung giờ" value={`${fmtTime(mission.scheduledAt)}–${fmtTime(mission.endAt)} · ${mission.estimatedMinutes} phút`} />
             <KV label="Địa điểm" value={mission.location} />
@@ -154,16 +154,16 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
           </div>
 
           {/* Drone */}
-          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '14px 18px' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.04em' }}>Drone</div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 18px' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.04em' }}>Drone</div>
             <KV label="Tên" value={`${mission.droneId} ${mission.droneName} · ${mission.droneModel}`} />
             <KV label="Payload" value={mission.payload} />
             <KV label="Trạm xuất phát" value={`${mission.stationName}, cách ${mission.stationDistanceKm} km`} />
             <KV label="Pin / Giờ bay" value={`${mission.droneBattery}% · ${mission.droneHoursFromMaintenance}h từ bảo trì`} />
             <div style={{ padding: '9px 0' }}>
-              <StatusBadge tone={mission.droneStatus === 'AVAILABLE' ? 'green' : 'yellow'} size="md">
+              <OpBadge tone={mission.droneStatus === 'AVAILABLE' ? 'green' : 'amber'} size="md">
                 {mission.droneStatus === 'AVAILABLE' ? 'Sẵn sàng' : mission.droneStatus}
-              </StatusBadge>
+              </OpBadge>
             </div>
           </div>
 
@@ -191,14 +191,14 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
           {isWaiting && !accepted && (
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                className="odm-btn odm-btn-gh"
+                className="op-btn op-btn-ghost"
                 style={{ flex: 1 }}
                 onClick={() => setShowReject(true)}
               >
                 Từ chối
               </button>
               <button
-                className="odm-btn odm-btn-p"
+                className="op-btn op-btn-primary"
                 style={{ flex: 2 }}
                 onClick={handleAccept}
               >
@@ -209,15 +209,15 @@ export default function MissionDetail({ mission, onBack, onAccept, onReject, onC
 
           {(accepted || (!isWaiting && !isActive && mission.state !== 'CANCELLED')) && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
+              <span style={{ fontSize: 13, color: 'var(--text-2)' }}>
                 Bạn đã chấp nhận mission này lúc {acceptedAt}
               </span>
-              <button className="odm-btn odm-btn-gh" onClick={onBack}>Về danh sách</button>
+              <button className="op-btn op-btn-ghost" onClick={onBack}>Về danh sách</button>
             </div>
           )}
 
           {isActive && !accepted && onContinue && (
-            <button className="odm-btn odm-btn-p" onClick={() => onContinue(mission)}>
+            <button className="op-btn op-btn-primary" onClick={() => onContinue(mission)}>
               Tiếp tục bay
             </button>
           )}

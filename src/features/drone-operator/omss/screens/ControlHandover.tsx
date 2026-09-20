@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { OperatorMission } from '../types'
-import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
+import { OpBadge } from '../components/OpBadge'
 
 interface Props {
   mission: OperatorMission
@@ -34,14 +34,14 @@ export default function ControlHandover({ mission, gcsLabel, connectedAt, revoke
 
   return (
     <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', maxWidth: 680 }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
         ← Quay lại
       </button>
 
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
         Bàn giao quyền điều khiển · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--tx)', margin: '0 0 18px' }}>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 18px' }}>
         Bàn giao quyền điều khiển
       </h1>
 
@@ -49,14 +49,14 @@ export default function ControlHandover({ mission, gcsLabel, connectedAt, revoke
       {revoked && (
         <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 13, color: '#991b1b', fontWeight: 600 }}>⚠ Quyền điều khiển đã bị thu hồi</span>
-          <button className="odm-btn odm-btn-p" style={{ fontSize: 12 }} onClick={() => setChecks([false, false, false, false])}>Xác nhận lại</button>
+          <button className="op-btn op-btn-primary" style={{ fontSize: 12 }} onClick={() => setChecks([false, false, false, false])}>Xác nhận lại</button>
         </div>
       )}
 
       {/* Drone status strip */}
       <div style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 10,
         padding: '14px 18px',
         marginBottom: 20,
@@ -67,19 +67,19 @@ export default function ControlHandover({ mission, gcsLabel, connectedAt, revoke
         gap: 12,
       }}>
         <div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
             {mission.droneId} {mission.droneName} · {mission.id}
           </span>
-          <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 3 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 3 }}>
             Đã kết nối GCS {gcs} lúc {connTime} · telemetry hoạt động
           </div>
         </div>
-        <StatusBadge tone="green">Đã kết nối</StatusBadge>
+        <OpBadge tone="green">Đã kết nối</OpBadge>
       </div>
 
       {/* Safety checklist */}
-      <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, marginBottom: 20 }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--bd)', fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 20 }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
           Cam kết an toàn bay
         </div>
         {SAFETY_ITEMS.map((item, i) => (
@@ -88,38 +88,38 @@ export default function ControlHandover({ mission, gcsLabel, connectedAt, revoke
             alignItems: 'flex-start',
             gap: 12,
             padding: '14px 18px',
-            borderBottom: i < SAFETY_ITEMS.length - 1 ? '1px solid var(--bd)' : 'none',
+            borderBottom: i < SAFETY_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
             cursor: 'pointer',
           }}>
             <input
               type="checkbox"
               checked={checks[i] ?? false}
               onChange={() => toggleCheck(i)}
-              style={{ marginTop: 2, accentColor: 'var(--blue-solid)', flexShrink: 0 }}
+              style={{ marginTop: 2, accentColor: 'var(--blue)', flexShrink: 0 }}
             />
-            <span style={{ fontSize: 13, color: 'var(--tx)', lineHeight: 1.5 }}>{item}</span>
+            <span style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>{item}</span>
           </label>
         ))}
       </div>
 
       {/* Final confirmation */}
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20, padding: '12px 16px', background: 'var(--sf2)', borderRadius: 8, border: '1px solid var(--bd)' }}>
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20, padding: '12px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
         <input
           type="checkbox"
           checked={confirmed}
           onChange={(e) => setConfirmed(e.target.checked)}
-          style={{ marginTop: 2, accentColor: 'var(--blue-solid)', flexShrink: 0 }}
+          style={{ marginTop: 2, accentColor: 'var(--blue)', flexShrink: 0 }}
         />
-        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
           Tôi xác nhận đã kiểm soát drone và chịu trách nhiệm vận hành
         </span>
       </label>
 
       {/* Footer */}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button className="odm-btn odm-btn-gh" onClick={onBack}>Quay lại</button>
+        <button className="op-btn op-btn-ghost" onClick={onBack}>Quay lại</button>
         <button
-          className="odm-btn odm-btn-p"
+          className="op-btn op-btn-primary"
           onClick={onComplete}
           disabled={!allChecked}
           style={{ opacity: allChecked ? 1 : .5, flex: 1 }}

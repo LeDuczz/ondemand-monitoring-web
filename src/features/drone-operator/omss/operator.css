@@ -318,3 +318,57 @@ input[type='checkbox'] {
     padding-right: 0;
   }
 }
+
+/* ── Operator screen utilities (buttons/inputs) ──────────── */
+.op-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.op-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.op-btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.op-btn-primary:hover:not(:disabled) {
+  background: var(--accent-2);
+}
+.op-btn-ghost {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.op-btn-ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.op-btn-danger {
+  background: var(--red);
+  color: #fff;
+}
+.op-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.op-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

@@ -18,5 +18,6 @@ import './handlers/adminConfig'
 import './handlers/adminAiKnowledge'
 import './handlers/adminAuditLog'
 import './handlers/operatorMissions'
+import './handlers/operatorAvailability'
 
 export { mockFetch } from './mockServer'

@@ -9,7 +9,7 @@ import {
 } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { env } from '../../../../config/env'
-import type { Drone, Mission } from '../types'
+import type { Drone, Mission, MissionRoutePoint } from '../types'
 import RuntimePreflightCheck from './RuntimePreflightCheck'
 
 interface Props {
@@ -33,6 +33,7 @@ type FlightCommand =
   | 'land'
   | 'return_to_base'
   | 'emergency_stop'
+  | 'auto_plan_start'
   | 'camera_switch'
   | 'camera_monitor_toggle'
   | 'lidar_monitor_toggle'
@@ -92,6 +93,12 @@ type ControlStatus = {
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
   batteryDrainMode?:
     'LANDED' | 'IDLE' | 'HOVER' | 'CRUISE' | 'ASCEND' | 'DESCEND'
+  autoPlan?: {
+    active?: boolean
+    status?: string
+    currentIndex?: number
+    total?: number
+  }
   cameraMode?: 'FRONT' | 'DOWN'
   cameraPitchDeg?: number
   thermalEnabled?: boolean
@@ -194,6 +201,7 @@ const flightControls: {
   tone?: 'danger' | 'amber'
 }[] = [
   { command: 'takeoff', label: 'Take off', icon: 'takeoff' },
+  { command: 'auto_plan_start', label: 'Auto Plan', icon: 'map', tone: 'amber' },
   { command: 'land', label: 'Land', icon: 'land' },
   { command: 'emergency_stop', label: 'E-Stop', icon: 'alert', tone: 'danger' },
 ]
@@ -2047,6 +2055,9 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
       ? `${mission.distanceKm.toFixed(1)} km`
       : '--'
   const routePointCount = mission.routePoints?.length ?? 0
+  const routePoints = (mission.routePoints ?? [])
+    .slice()
+    .sort((a, b) => a.sequence - b.sequence)
 
   return (
     <GlassPanel
@@ -2076,10 +2087,15 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
         ['Order', mission.orderRef],
         ['Progress', `${progress.toFixed(1)}%`],
         ['Distance', distance],
-        ['Plan', mission.flightPlanId],
         ['Points', routePointCount > 0 ? `${routePointCount}` : '--'],
         ['Max Alt', `${mission.maxAltitudeM.toFixed(0)} m`],
         ['Heading', yaw],
+        [
+          'Auto',
+          status?.autoPlan?.active
+            ? `WP ${status.autoPlan.currentIndex ?? 0}/${status.autoPlan.total ?? routePointCount}`
+            : status?.autoPlan?.status ?? 'Manual',
+        ],
       ].map(([label, value]) => (
         <div
           key={label}
@@ -2113,9 +2129,136 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
           </strong>
         </div>
       ))}
+      <FlightPlanGuide routePoints={routePoints} />
     </GlassPanel>
   )
 })
+
+function planReasonLabel(point: MissionRoutePoint) {
+  const reason = point.reason.toUpperCase()
+  if (reason === 'START') return 'Start'
+  if (reason === 'TARGET') return 'Order'
+  if (reason === 'TARGET_APPROACH') return 'Approach'
+  if (reason === 'TERRAIN_CLEARANCE') return 'Clear'
+  if (reason === 'RETURN') return 'Return'
+  return 'Cruise'
+}
+
+function planSpeedLabel(point: MissionRoutePoint) {
+  return typeof point.speedMps === 'number' && Number.isFinite(point.speedMps)
+    ? `${point.speedMps.toFixed(1)} m/s`
+    : '--'
+}
+
+function planHeadingLabel(
+  point: MissionRoutePoint,
+  nextPoint: MissionRoutePoint | undefined,
+) {
+  if (!nextPoint) return 'Hold'
+  const dx = nextPoint.simX - point.simX
+  const dy = nextPoint.simY - point.simY
+  if (Math.hypot(dx, dy) < 0.001) return 'Hold'
+  const headingDeg = (Math.atan2(dx, dy) * 180) / Math.PI
+  return `${Math.round((headingDeg + 360) % 360)}°`
+}
+
+function FlightPlanGuide({ routePoints }: { routePoints: MissionRoutePoint[] }) {
+  if (routePoints.length === 0) return null
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        paddingTop: 9,
+        borderTop: '1px solid rgba(148,163,184,.18)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          marginBottom: 7,
+        }}
+      >
+        <span
+          style={{
+            color: '#cbd5e1',
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Waypoint Guide
+        </span>
+        <strong
+          style={{
+            color: '#67e8f9',
+            fontSize: 10,
+            fontFamily: 'var(--font-data)',
+          }}
+        >
+          HDG / ALT / SPD
+        </strong>
+      </div>
+      <div style={{ display: 'grid', gap: 5 }}>
+        {routePoints.map((point, index) => (
+          <div
+            key={point.id}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '28px 1fr auto',
+              alignItems: 'center',
+              gap: 7,
+              minHeight: 28,
+              padding: '5px 7px',
+              border: '1px solid rgba(148,163,184,.16)',
+              borderRadius: 7,
+              background: 'rgba(15,23,42,.42)',
+            }}
+          >
+            <strong
+              style={{
+                color: '#f8fafc',
+                fontSize: 11,
+                fontFamily: 'var(--font-data)',
+              }}
+            >
+              {point.sequence}
+            </strong>
+            <span
+              style={{
+                minWidth: 0,
+                color: '#cbd5e1',
+                fontSize: 11,
+                fontWeight: 800,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {planReasonLabel(point)}
+            </span>
+            <span
+              style={{
+                color: '#e5edf8',
+                fontSize: 10,
+                fontFamily: 'var(--font-data)',
+                textAlign: 'right',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {planHeadingLabel(point, routePoints[index + 1])} /{' '}
+              {point.altitudeM.toFixed(0)}m / {planSpeedLabel(point)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const CameraStatusPanel = memo(function CameraStatusPanel({
   status,
@@ -2582,16 +2725,42 @@ export default function InFlightControl({
         setLastCommand('Preflight required')
         return
       }
+      const routePoints = (mission.routePoints ?? [])
+        .slice()
+        .sort((a, b) => a.sequence - b.sequence)
+      if (command === 'auto_plan_start' && routePoints.length === 0) {
+        setLastCommand('No mission plan waypoints')
+        return
+      }
       setBusyCommand(command)
       try {
         const response = await fetch(`${controlBaseUrl}/api/control/command`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }),
+          body: JSON.stringify({
+            command,
+            ...(command === 'auto_plan_start'
+              ? {
+                  missionId: mission.id,
+                  waypoints: routePoints.map((point) => ({
+                    sequence: point.sequence,
+                    simX: point.simX,
+                    simY: point.simY,
+                    altitudeM: point.altitudeM,
+                    speedMps: point.speedMps,
+                    reason: point.reason,
+                  })),
+                }
+              : {}),
+          }),
         })
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        setLastCommand(`${command.replaceAll('_', ' ')} sent`)
+        setLastCommand(
+          command === 'auto_plan_start'
+            ? `Auto plan started (${routePoints.length} points)`
+            : `${command.replaceAll('_', ' ')} sent`,
+        )
         setIsOnline(true)
 
         if (command === 'return_to_base') onRTB()
@@ -2603,7 +2772,7 @@ export default function InFlightControl({
         setBusyCommand(null)
       }
     },
-    [onEmergency, onRTB, preflightReady],
+    [mission.id, mission.routePoints, onEmergency, onRTB, preflightReady],
   )
 
   const telemetryBattery =

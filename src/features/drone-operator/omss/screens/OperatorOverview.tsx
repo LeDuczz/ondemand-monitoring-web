@@ -1,5 +1,5 @@
 import type { Mission, Drone } from '../types'
-import { ALL_MISSIONS, DRONE_PRIMARY } from '../mockData'
+import { DRONE_PRIMARY } from '../mockData'
 
 interface Props {
   allMissions: Mission[]

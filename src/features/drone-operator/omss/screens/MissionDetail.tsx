@@ -1,4 +1,6 @@
-import type { Mission, Drone, Screen } from '../types'
+import { useEffect, useState } from 'react'
+import { env } from '../../../../config/env'
+import type { Mission, Drone, Screen, MissionRoutePoint } from '../types'
 import {
   MissionBadge,
   DroneBadge,
@@ -45,6 +47,270 @@ function KV({
         {value}
       </span>
     </div>
+  )
+}
+
+const MAP_WIDTH = 400
+const MAP_HEIGHT = 300
+const MAP_PADDING = 42
+
+type SimulationMapMeta = {
+  image?: string
+  imageVersion?: string
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+  imageBounds?: {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+  }
+}
+
+function useSimulationMapMeta() {
+  const [meta, setMeta] = useState<SimulationMapMeta | null>(null)
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadMeta() {
+      try {
+        const response = await fetch(
+          `${env.apiBaseUrl}/simulation-viewer/simulation-map.json`,
+          { cache: 'no-store' },
+        )
+        if (!response.ok) return
+        const payload = (await response.json()) as SimulationMapMeta
+        if (alive) setMeta(payload)
+      } catch {
+        if (alive) setMeta(null)
+      }
+    }
+
+    void loadMeta()
+
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  return meta
+}
+
+function formatPointValue(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function planBounds(points: MissionRoutePoint[]) {
+  const xs = points.map((point) => point.simX)
+  const ys = points.map((point) => point.simY)
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  }
+}
+
+function mapPlanPoint(point: MissionRoutePoint, bounds: ReturnType<typeof planBounds>) {
+  const spanX = Math.max(1, bounds.maxX - bounds.minX)
+  const spanY = Math.max(1, bounds.maxY - bounds.minY)
+  const drawableWidth = MAP_WIDTH - MAP_PADDING * 2
+  const drawableHeight = MAP_HEIGHT - MAP_PADDING * 2
+  const scale = Math.min(drawableWidth / spanX, drawableHeight / spanY)
+  const routeWidth = spanX * scale
+  const routeHeight = spanY * scale
+  const offsetX = (MAP_WIDTH - routeWidth) / 2
+  const offsetY = (MAP_HEIGHT - routeHeight) / 2
+
+  return {
+    x: offsetX + (point.simX - bounds.minX) * scale,
+    y: offsetY + (bounds.maxY - point.simY) * scale,
+  }
+}
+
+function mapSimulationPoint(point: MissionRoutePoint, meta: SimulationMapMeta) {
+  const bounds = meta.imageBounds ?? meta
+  const spanX = Math.max(1, bounds.maxX - bounds.minX)
+  const spanY = Math.max(1, bounds.maxY - bounds.minY)
+
+  return {
+    x: ((point.simX - bounds.minX) / spanX) * MAP_WIDTH,
+    y: MAP_HEIGHT - ((point.simY - bounds.minY) / spanY) * MAP_HEIGHT,
+  }
+}
+
+function waypointLabel(point: MissionRoutePoint) {
+  const reason = point.reason.replaceAll('_', ' ').toLowerCase()
+  return `${point.sequence}. ${reason} | x ${formatPointValue(point.simX)}, y ${formatPointValue(point.simY)}, z ${formatPointValue(point.altitudeM)}m`
+}
+
+function MissionPlanMap({ mission }: { mission: Mission }) {
+  const meta = useSimulationMapMeta()
+  const routePoints = (mission.routePoints ?? [])
+    .slice()
+    .sort((a, b) => a.sequence - b.sequence)
+  const hasRoute = routePoints.length > 0
+  const bounds = hasRoute && !meta ? planBounds(routePoints) : null
+  const screenPoints =
+    !hasRoute
+      ? []
+      : routePoints.map((point) => ({
+          point,
+          screen: meta
+            ? mapSimulationPoint(point, meta)
+            : mapPlanPoint(point, bounds as ReturnType<typeof planBounds>),
+        }))
+  const targetPoint =
+    screenPoints.find(({ point }) => point.reason.toUpperCase() === 'TARGET') ??
+    screenPoints[screenPoints.length - 1]
+  const routePolyline = screenPoints
+    .map(({ screen }) => `${screen.x.toFixed(2)},${screen.y.toFixed(2)}`)
+    .join(' ')
+  const mapImagePath = meta?.image ?? '/simulation-viewer/simulation_map_top.png'
+  const mapImageVersion = meta?.imageVersion
+    ? `?v=${encodeURIComponent(meta.imageVersion)}`
+    : ''
+  const mapImageUrl = `${env.apiBaseUrl}${mapImagePath}${mapImageVersion}`
+
+  return (
+    <svg
+      width="100%"
+      height="300"
+      viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+      style={{ display: 'block' }}
+    >
+      <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="#d7ded7" />
+      <image
+        href={mapImageUrl}
+        x="0"
+        y="0"
+        width={MAP_WIDTH}
+        height={MAP_HEIGHT}
+        preserveAspectRatio="none"
+      />
+      <rect
+        width={MAP_WIDTH}
+        height={MAP_HEIGHT}
+        fill="rgba(255,255,255,.08)"
+      />
+
+      {hasRoute ? (
+        <>
+          <polyline
+            points={routePolyline}
+            fill="none"
+            stroke="rgba(6,182,212,.95)"
+            strokeWidth="3"
+            strokeDasharray="5,4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {screenPoints.map(({ point, screen }) => {
+            const reason = point.reason.toUpperCase()
+            const isStart = reason === 'START'
+            const isTarget = reason === 'TARGET'
+            return (
+              <g key={point.id}>
+                <title>{waypointLabel(point)}</title>
+                <circle
+                  cx={screen.x}
+                  cy={screen.y}
+                  r={isTarget ? 7 : 5}
+                  fill={isStart ? '#10b981' : isTarget ? '#ef4444' : '#f59e0b'}
+                  stroke="#ffffff"
+                  strokeWidth="2"
+                />
+                <text
+                  x={screen.x + 8}
+                  y={screen.y - 8}
+                  fill="#ffffff"
+                  fontSize="9"
+                  fontWeight="700"
+                  paintOrder="stroke"
+                  stroke="rgba(15,23,42,.85)"
+                  strokeWidth="2"
+                >
+                  {point.sequence}
+                </text>
+              </g>
+            )
+          })}
+          {targetPoint && (
+            <>
+              <circle
+                cx={targetPoint.screen.x}
+                cy={targetPoint.screen.y}
+                r="16"
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2"
+                opacity=".55"
+              />
+              <text
+                x={targetPoint.screen.x}
+                y={Math.max(18, targetPoint.screen.y - 22)}
+                textAnchor="middle"
+                fill="#fee2e2"
+                fontSize="10"
+                fontWeight="700"
+                paintOrder="stroke"
+                stroke="rgba(15,23,42,.9)"
+                strokeWidth="2"
+              >
+                ORDER
+              </text>
+            </>
+          )}
+          <text
+            x="14"
+            y="278"
+            fill="#f8fafc"
+            fontSize="10"
+            fontWeight="700"
+            paintOrder="stroke"
+            stroke="rgba(15,23,42,.9)"
+            strokeWidth="2"
+          >
+            {routePoints.length} mission plan waypoints
+          </text>
+        </>
+      ) : (
+        <text
+          x={MAP_WIDTH / 2}
+          y={MAP_HEIGHT / 2}
+          textAnchor="middle"
+          fill="#6b7280"
+          fontSize="12"
+          fontWeight="600"
+        >
+          No mission plan waypoints
+        </text>
+      )}
+
+      <text
+        x="370"
+        y="26"
+        fill="#f8fafc"
+        fontSize="11"
+        fontWeight="800"
+        paintOrder="stroke"
+        stroke="rgba(15,23,42,.9)"
+        strokeWidth="2"
+      >
+        N
+      </text>
+      <line
+        x1="374"
+        y1="30"
+        x2="374"
+        y2="42"
+        stroke="#f8fafc"
+        strokeWidth="1.5"
+      />
+    </svg>
   )
 }
 
@@ -267,94 +533,11 @@ export default function MissionDetail({
               Location map
             </h2>
             <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>
-              {mission.location}
+              {mission.location} · {mission.routePoints?.length ?? 0} waypoint
+              {(mission.routePoints?.length ?? 0) === 1 ? '' : 's'}
             </p>
           </div>
-          <svg
-            width="100%"
-            height="300"
-            viewBox="0 0 400 300"
-            style={{ display: 'block' }}
-          >
-            <rect width="400" height="300" fill="#eef0f3" />
-            {/* Grid */}
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <line
-                key={`h${i}`}
-                x1="0"
-                y1={i * 60}
-                x2="400"
-                y2={i * 60}
-                stroke="#dde0e4"
-                strokeWidth=".5"
-              />
-            ))}
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <line
-                key={`v${i}`}
-                x1={i * 60}
-                y1="0"
-                x2={i * 60}
-                y2="300"
-                stroke="#dde0e4"
-                strokeWidth=".5"
-              />
-            ))}
-            {/* Route */}
-            <polyline
-              points="80,220 140,160 200,130 260,110 320,120 360,140"
-              fill="none"
-              stroke="#4f46e5"
-              strokeWidth="2"
-              strokeDasharray="5,4"
-              opacity=".7"
-            />
-            {/* Waypoints */}
-            {[
-              [80, 220],
-              [140, 160],
-              [200, 130],
-              [260, 110],
-              [320, 120],
-              [360, 140],
-            ].map(([x, y], i) => (
-              <circle key={i} cx={x} cy={y} r="5" fill="#4f46e5" opacity=".8" />
-            ))}
-            {/* Target */}
-            <circle
-              cx="200"
-              cy="130"
-              r="14"
-              fill="none"
-              stroke="#4f46e5"
-              strokeWidth="2"
-              opacity=".4"
-            />
-            <circle cx="200" cy="130" r="5" fill="#4f46e5" />
-            {/* Label */}
-            <text
-              x="200"
-              y="112"
-              textAnchor="middle"
-              fill="#4f46e5"
-              fontSize="10"
-              fontWeight="600"
-            >
-              Mission area
-            </text>
-            {/* Compass */}
-            <text x="370" y="26" fill="#6b7280" fontSize="11" fontWeight="600">
-              N
-            </text>
-            <line
-              x1="374"
-              y1="30"
-              x2="374"
-              y2="42"
-              stroke="#6b7280"
-              strokeWidth="1.5"
-            />
-          </svg>
+          <MissionPlanMap mission={mission} />
         </div>
 
         {/* Drone */}

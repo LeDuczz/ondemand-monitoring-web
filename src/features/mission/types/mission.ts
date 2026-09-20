@@ -72,6 +72,8 @@ export interface Mission {
   missionCode: string
   status: MissionStatus
   operatorId?: string
+  deviceId?: string
+  deviceCode?: string
   droneId?: string
   droneCode?: string
   latitude?: number

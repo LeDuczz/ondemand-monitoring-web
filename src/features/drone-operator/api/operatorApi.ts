@@ -1,6 +1,14 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 import type { AvailabilityStatus } from '../lib/availabilitySlots'
-import type { OperatorMission, OperatorMissionTab, OperatorProfile } from '../types/mission'
+import type {
+  ControlHandover,
+  FlightConnection,
+  OperatorMission,
+  OperatorMissionTab,
+  OperatorProfile,
+  PreflightItem,
+  PreflightRecord,
+} from '../types/mission'
 
 export const operatorApi = {
   getProfile: (signal?: AbortSignal) =>
@@ -8,13 +16,18 @@ export const operatorApi = {
 
   listMissions: (tab?: OperatorMissionTab, signal?: AbortSignal) => {
     const query = tab ? `?tab=${tab}` : ''
-    return apiRequest<{ items: OperatorMission[] }>(`/api/operator/missions${query}`, {
-      signal,
-    })
+    return apiRequest<{ items: OperatorMission[] }>(
+      `/api/operator/missions${query}`,
+      {
+        signal,
+      },
+    )
   },
 
   getMission: (missionId: string, signal?: AbortSignal) =>
-    apiRequest<OperatorMission>(`/api/operator/missions/${missionId}`, { signal }),
+    apiRequest<OperatorMission>(`/api/operator/missions/${missionId}`, {
+      signal,
+    }),
 
   acceptMission: (missionId: string, signal?: AbortSignal) =>
     apiRequest<OperatorMission>(`/api/operator/missions/${missionId}/accept`, {
@@ -47,6 +60,43 @@ export const operatorApi = {
       '/api/operator/availability',
       {
         method: 'PUT',
+        body,
+        signal,
+      },
+    ),
+
+  connectGCS: (
+    missionId: string,
+    body: { token: string; gcsId: string },
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<FlightConnection>(
+      `/api/operator/missions/${missionId}/connect`,
+      {
+        method: 'POST',
+        body,
+        signal,
+      },
+    ),
+
+  confirmHandover: (missionId: string, signal?: AbortSignal) =>
+    apiRequest<ControlHandover>(
+      `/api/operator/missions/${missionId}/handover`,
+      {
+        method: 'POST',
+        signal,
+      },
+    ),
+
+  savePreflight: (
+    missionId: string,
+    body: { items: PreflightItem[] },
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<PreflightRecord>(
+      `/api/operator/missions/${missionId}/preflight`,
+      {
+        method: 'POST',
         body,
         signal,
       },

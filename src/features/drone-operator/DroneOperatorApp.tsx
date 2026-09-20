@@ -12,6 +12,9 @@ import { MissionDetailScreen } from './pages/MissionDetailScreen'
 import { MissionListPage } from './pages/MissionListPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { AvailabilityScreen } from './pages/AvailabilityScreen'
+import { ConnectDroneScreen } from './pages/ConnectDroneScreen'
+import { HandoverScreen } from './pages/HandoverScreen'
+import { PreflightScreen } from './pages/PreflightScreen'
 import { operatorActiveLabel } from './OperatorSidebar'
 import { parseOperatorRoute, type OperatorRoute } from './routes'
 
@@ -30,9 +33,16 @@ export function DroneOperatorApp() {
   const route = parseOperatorRoute(hash)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const missionsQuery = useApiQuery((signal) => operatorApi.listMissions(undefined, signal), [])
+  const missionsQuery = useApiQuery(
+    (signal) => operatorApi.listMissions(undefined, signal),
+    [],
+  )
   const now = demoNow()
-  const pendingCount = missionsByTab(missionsQuery.data?.items ?? [], 'pending', now).length
+  const pendingCount = missionsByTab(
+    missionsQuery.data?.items ?? [],
+    'pending',
+    now,
+  ).length
 
   // Buồng lái renders full-screen without the shell, same as OMSS.
   if (route.screen === 'flight') {
@@ -62,9 +72,18 @@ export function DroneOperatorApp() {
 }
 
 function renderScreen(route: OperatorRoute, searchQuery: string) {
-  if (route.screen === 'missions') return <MissionListPage searchQuery={searchQuery} />
-  if (route.screen === 'missionDetail') return <MissionDetailScreen missionId={route.missionId} />
+  if (route.screen === 'missions')
+    return <MissionListPage searchQuery={searchQuery} />
+  if (route.screen === 'missionDetail')
+    return <MissionDetailScreen missionId={route.missionId} />
   if (route.screen === 'availability') return <AvailabilityScreen />
+  if (route.screen === 'connect') return <ConnectDroneScreen />
+  if (route.screen === 'handover') return <HandoverScreen />
+  if (route.screen === 'preflight') return <PreflightScreen />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
-  return <PlaceholderPage title={operatorActiveLabel(route.screen) || 'Không tìm thấy'} />
+  return (
+    <PlaceholderPage
+      title={operatorActiveLabel(route.screen) || 'Không tìm thấy'}
+    />
+  )
 }

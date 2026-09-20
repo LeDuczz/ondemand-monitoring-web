@@ -1,9 +1,5 @@
 export type OperatorMissionStatus =
-  | 'PENDING'
-  | 'ACCEPTED'
-  | 'IN_FLIGHT'
-  | 'COMPLETED'
-  | 'REJECTED'
+  'PENDING' | 'ACCEPTED' | 'IN_FLIGHT' | 'COMPLETED' | 'REJECTED'
 
 export type OperatorMission = {
   id: string
@@ -48,3 +44,40 @@ export type OperatorProfile = {
 }
 
 export type OperatorMissionTab = 'pending' | 'upcoming' | 'history'
+
+export type FlightConnection = {
+  status: 'CONNECTING' | 'CONNECTED' | 'FAILED'
+  token: string
+  gcsId: string
+  connectedAt: string
+  disconnectReason?: string
+}
+
+export type ControlHandover = {
+  status: 'CONFIRMED' | 'REVOKED'
+  confirmedAt: string
+}
+
+export type PreflightItemKey =
+  | 'battery'
+  | 'gps'
+  | 'camera'
+  | 'motor'
+  | 'compass'
+  | 'link'
+  | 'payload'
+  | 'weather'
+  | 'airspace'
+
+export type PreflightItemResult = 'ok' | 'fail'
+
+export type PreflightItem = {
+  key: PreflightItemKey
+  result: PreflightItemResult
+  note?: string
+}
+
+export type PreflightRecord = {
+  items: PreflightItem[]
+  savedAt: string
+}

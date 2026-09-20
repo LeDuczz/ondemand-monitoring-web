@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { env } from '../../../config/env'
+import { authenticatedFetch } from '../../auth/api/authApi'
 import type {
   Screen,
   Mission,
@@ -170,16 +171,19 @@ export default function OperatorWorkspace() {
   const [navId, setNavId] = useState<NavId>('mission-control')
   const [scenario, setScenario] = useState<ChecklistScenario>('all-pass')
   const [mission, setMission] = useState<Mission>({ ...ALL_MISSIONS[0] })
+  const [allMissions, setAllMissions] = useState<Mission[]>([...ALL_MISSIONS])
+  const [missionsLoading, setMissionsLoading] = useState(false)
   const [drone, setDrone] = useState<Drone>({ ...DRONE_PRIMARY })
   const [token, setToken] = useState<FlightToken | null>(null)
   const [failReason, setFailReason] = useState('Pre-flight hardware failure')
 
+  // Load single mission detail (for mission-control screen)
   useEffect(() => {
     let cancelled = false
 
     async function loadMissionFromBackend() {
       try {
-        const response = await fetch(
+        const response = await authenticatedFetch(
           `${env.apiBaseUrl}/api/missions/code/${encodeURIComponent(
             MISSION_PRIMARY.id,
           )}`,
@@ -194,6 +198,36 @@ export default function OperatorWorkspace() {
     }
 
     loadMissionFromBackend()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Load missions list for "My Missions" screen (GET /api/missions?operatorId=...)
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAllMissions() {
+      setMissionsLoading(true)
+      try {
+        const operatorId = MISSION_PRIMARY.operatorId ?? 'OP-001'
+        const response = await authenticatedFetch(
+          `${env.apiBaseUrl}/api/missions?operatorId=${encodeURIComponent(operatorId)}`,
+        )
+        if (!response.ok) return
+        const payload = (await response.json()) as ApiResponse<BackendMission[]>
+        if (cancelled || !payload.data || !Array.isArray(payload.data)) return
+        const adapted = payload.data.map(adaptBackendMission)
+        if (adapted.length > 0) setAllMissions(adapted)
+      } catch {
+        // Keep the built-in demo missions when the backend is not running.
+      } finally {
+        if (!cancelled) setMissionsLoading(false)
+      }
+    }
+
+    loadAllMissions()
 
     return () => {
       cancelled = true
@@ -253,11 +287,29 @@ export default function OperatorWorkspace() {
     else setScreen('operator-overview')
   }
 
-  function handleSelectMission(m: Mission) {
+  async function handleSelectMission(m: Mission) {
     setMission({ ...m })
     setDrone({ ...droneForScenario[scenario] })
     setScreen('mission-detail')
     setNavId('my-missions')
+
+    try {
+      const response = await authenticatedFetch(
+        `${env.apiBaseUrl}/api/missions/code/${encodeURIComponent(m.id)}`,
+      )
+      if (!response.ok) return
+      const payload = (await response.json()) as ApiResponse<BackendMission>
+      if (!payload.data) return
+      const detailedMission = adaptBackendMission(payload.data)
+      setMission(detailedMission)
+      setAllMissions((missions) =>
+        missions.map((missionItem) =>
+          missionItem.id === detailedMission.id ? detailedMission : missionItem,
+        ),
+      )
+    } catch {
+      // Keep the selected mission from the list when detail loading is unavailable.
+    }
   }
 
   function handleAccept() {
@@ -399,6 +451,7 @@ export default function OperatorWorkspace() {
           {/* Operator overview */}
           {screen === 'operator-overview' && (
             <OperatorOverview
+              allMissions={allMissions}
               onGoMissions={() => {
                 setScreen('mission-list')
                 setNavId('my-missions')
@@ -410,7 +463,7 @@ export default function OperatorWorkspace() {
           {/* Operator flow */}
           {screen === 'mission-list' && (
             <MissionList
-              missions={ALL_MISSIONS}
+              missions={missionsLoading ? [] : allMissions}
               onSelect={handleSelectMission}
               onScreen={goScreen}
             />

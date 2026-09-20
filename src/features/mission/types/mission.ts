@@ -66,13 +66,16 @@ export interface MissionPlan {
 
 export interface Mission {
   id: string
+  orderId?: string
+  orderTitle?: string
+  customerName?: string
   missionCode: string
   status: MissionStatus
-  deviceId?: string
-  deviceCode?: string
   operatorId?: string
-  latitude: number
-  longitude: number
+  droneId?: string
+  droneCode?: string
+  latitude?: number
+  longitude?: number
   address?: string
   scheduledStartAt?: string
   startedAt?: string

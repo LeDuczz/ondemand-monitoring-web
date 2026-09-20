@@ -13,14 +13,16 @@ interface ApiResponse<T> {
   data: T
 }
 
+import { authenticatedFetch } from '../../auth/api/authApi'
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Operator-Id': 'OP-001',
-      ...options?.headers,
-    },
+  const headers = new Headers(options?.headers)
+  headers.set('Content-Type', 'application/json')
+  headers.set('X-Operator-Id', 'OP-001')
+
+  const res = await authenticatedFetch(url, {
     ...options,
+    headers,
   })
 
   if (!res.ok) {
@@ -35,6 +37,13 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const missionApi = {
+  // GET /api/missions?operatorId={id} – list all missions for an operator
+  getMissionsByOperator: async (operatorId: string): Promise<Mission[]> => {
+    return request<Mission[]>(
+      `${API_BASE}/missions?operatorId=${encodeURIComponent(operatorId)}`,
+    )
+  },
+
   // Query Mission Details
   getMissionById: async (missionId: string): Promise<Mission> => {
     return request<Mission>(`${API_BASE}/missions/${missionId}`)

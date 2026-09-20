@@ -2,6 +2,7 @@ import type { Mission, Drone } from '../types'
 import { ALL_MISSIONS, DRONE_PRIMARY } from '../mockData'
 
 interface Props {
+  allMissions: Mission[]
   onGoMissions: () => void
   onGoMission: (m: Mission) => void
 }
@@ -82,8 +83,8 @@ const RESULT_CFG = {
   },
 }
 
-export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
-  const activeMission = ALL_MISSIONS.find(
+export default function OperatorOverview({ allMissions, onGoMissions, onGoMission }: Props) {
+  const activeMission = allMissions.find(
     (m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE',
   )
   const drone: Drone = DRONE_PRIMARY

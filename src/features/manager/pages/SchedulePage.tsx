@@ -14,6 +14,7 @@ import {
   prevWeek,
   toISODate,
 } from '../lib/calendarWeek'
+import { managerHref } from '../routes'
 import type { MissionCalendarItem } from '../types/missions'
 import '../manager.css'
 
@@ -165,11 +166,19 @@ function ReschedulePanel({
         </button>
       </div>
 
-      {/* Status badge */}
-      <div style={{ padding: '8px 16px 0' }}>
+      {/* Status badge + dispatch shortcut */}
+      <div style={{ padding: '8px 16px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <StatusBadge tone={tone}>
           {missionStatusLabel[mission.status] ?? mission.status}
         </StatusBadge>
+        {(mission.status === 'CREATED' || mission.status === 'RESOURCE_ASSIGNING') && (
+          <a
+            href={managerHref({ screen: 'missionDispatch', missionId: mission.id })}
+            className="odm-btn odm-btn-p odm-btn-sm"
+          >
+            Phân công nguồn lực →
+          </a>
+        )}
       </div>
 
       {/* Mission info */}

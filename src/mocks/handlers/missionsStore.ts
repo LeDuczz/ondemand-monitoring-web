@@ -10,6 +10,7 @@
 import type { MissionStatus } from '../../shared/types/domain'
 import { createCollection } from '../db'
 import missionsSeed from '../data/missions.json'
+import calendarSeed from '../data/missions-calendar.json'
 
 export type StoredMediaRequirement =
   | { mediaType: 'VIDEO'; quantity: number; durationSec: number }
@@ -59,9 +60,13 @@ export type StoredMission = {
   waypoints: StoredWaypoint[]
 }
 
-export const missions = createCollection(
-  missionsSeed.missions,
-) as unknown as StoredMission[]
+const mainIds = new Set(missionsSeed.missions.map((m) => m.id))
+const merged = [
+  ...missionsSeed.missions,
+  ...calendarSeed.missions.filter((m) => !mainIds.has(m.id)),
+]
+
+export const missions = createCollection(merged) as unknown as StoredMission[]
 
 export function findMissionById(id: string): StoredMission | undefined {
   return missions.find((m) => m.id === id || m.missionCode === id)

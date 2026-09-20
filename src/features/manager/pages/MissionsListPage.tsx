@@ -11,6 +11,7 @@ import {
 } from '../../../shared/lib/statusTone'
 import type { MissionStatus } from '../../../shared/types/domain'
 import { missionsApi } from '../api/missionsApi'
+import { managerHref } from '../routes'
 import type { MissionCalendarItem } from '../types/missions'
 import '../manager.css'
 
@@ -96,10 +97,18 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
         </button>
       </div>
 
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <StatusBadge tone={missionStatusTone[mission.status]}>
           {missionStatusLabel[mission.status]}
         </StatusBadge>
+        {(mission.status === 'CREATED' || mission.status === 'RESOURCE_ASSIGNING') && (
+          <a
+            href={managerHref({ screen: 'missionDispatch', missionId: mission.id })}
+            className="odm-btn odm-btn-p odm-btn-sm"
+          >
+            Phân công →
+          </a>
+        )}
       </div>
 
       <div

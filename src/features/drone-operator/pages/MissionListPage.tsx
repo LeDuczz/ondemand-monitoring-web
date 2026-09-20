@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { operatorApi } from '../api/operatorApi'
@@ -7,7 +8,7 @@ import { computeKpis } from '../lib/computeKpis'
 import { demoNow } from '../lib/demoNow'
 import { filterMissions, missionsByTab } from '../lib/filterMissions'
 import { operatorHref } from '../routes'
-import type { OperatorMissionTab } from '../types/mission'
+import type { OperatorMission, OperatorMissionTab } from '../types/mission'
 import { MissionListTable } from './MissionListTable'
 
 const TAB_LABEL: Record<OperatorMissionTab, string> = {
@@ -137,53 +138,126 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
           sub={`hết hạn ${kpis.certExpiryLabel}`} />
       </div>
 
-      <div style={{ marginTop: 16 }}>
-        <div
-          role="tablist"
-          style={{
-            display: 'flex',
-            gap: 2,
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
-            borderRadius: '8px 8px 0 0',
-            padding: '0 8px',
-          }}
-        >
-          {(Object.keys(TAB_LABEL) as OperatorMissionTab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
-              style={{
-                height: 38,
-                padding: '0 14px',
-                border: 0,
-                borderBottom: `2px solid ${tab === t ? 'var(--ink)' : 'transparent'}`,
-                marginBottom: -1,
-                background: 'transparent',
-                fontWeight: 600,
-                fontSize: 13,
-                color: tab === t ? 'var(--tx)' : 'var(--tx3)',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              {TAB_LABEL[t]}
-              <span
-                className="odm-tn"
-                style={{ fontSize: 11, padding: '1px 6px', borderRadius: 9, background: 'var(--sf3)' }}
+      <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
+        <div>
+          <div
+            role="tablist"
+            style={{
+              display: 'flex',
+              gap: 2,
+              background: 'var(--sf)',
+              border: '1px solid var(--bd)',
+              borderRadius: '8px 8px 0 0',
+              padding: '0 8px',
+            }}
+          >
+            {(Object.keys(TAB_LABEL) as OperatorMissionTab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="tab"
+                aria-selected={tab === t}
+                onClick={() => setTab(t)}
+                style={{
+                  height: 38,
+                  padding: '0 14px',
+                  border: 0,
+                  borderBottom: `2px solid ${tab === t ? 'var(--ink)' : 'transparent'}`,
+                  marginBottom: -1,
+                  background: 'transparent',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: tab === t ? 'var(--tx)' : 'var(--tx3)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
               >
-                {counts[t]}
-              </span>
-            </button>
-          ))}
+                {TAB_LABEL[t]}
+                <span
+                  className="odm-tn"
+                  style={{ fontSize: 11, padding: '1px 6px', borderRadius: 9, background: 'var(--sf3)' }}
+                >
+                  {counts[t]}
+                </span>
+              </button>
+            ))}
+          </div>
+          <MissionListTable missions={tabItems} now={now} />
         </div>
-        <MissionListTable missions={tabItems} now={now} />
+        <UpcomingRail missions={allMissions} now={now} />
       </div>
+    </div>
+  )
+}
+
+function UpcomingRail({ missions, now }: { missions: OperatorMission[]; now: Date }) {
+  const today = now.toISOString().slice(0, 10)
+  const next = missions
+    .filter((m) => m.status === 'ACCEPTED')
+    .map((m) => ({ m, start: new Date(`${m.date}T${m.startTime}:00+07:00`) }))
+    .filter(({ start }) => start.getTime() > now.getTime())
+    .sort((a, b) => a.start.getTime() - b.start.getTime())[0]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="odm-card">
+        <div className="odm-card-body" style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Sắp tới giờ</div>
+          {!next ? (
+            <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>Không có mission sắp bay.</div>
+          ) : (
+            <NextFlightCard mission={next.m} start={next.start} now={now} today={today} />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function NextFlightCard({
+  mission,
+  start,
+  now,
+  today,
+}: {
+  mission: OperatorMission
+  start: Date
+  now: Date
+  today: string
+}) {
+  const totalMinutes = Math.max(0, Math.round((start.getTime() - now.getTime()) / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  const dayLabel = mission.date === today ? 'Hôm nay' : start.toLocaleDateString('vi-VN')
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span className="odm-mono" style={{ fontWeight: 600, fontSize: 12.5 }}>
+          {mission.id}
+        </span>
+        <StatusBadge tone="green">Đã nhận</StatusBadge>
+      </div>
+      <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 8 }}>
+        còn {hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{mission.title}</div>
+      <div className="odm-tn" style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 4 }}>
+        {mission.startTime}–{mission.endTime} · {dayLabel}
+      </div>
+      <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 4 }}>{mission.location}</div>
+      <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 12 }}>
+        {mission.droneCode} {mission.droneName}
+      </div>
+      <a
+        className="odm-btn odm-btn-ok"
+        style={{ width: '100%', justifyContent: 'center' }}
+        href={operatorHref({ screen: 'connect' })}
+      >
+        Bắt đầu chuyến bay
+      </a>
     </div>
   )
 }

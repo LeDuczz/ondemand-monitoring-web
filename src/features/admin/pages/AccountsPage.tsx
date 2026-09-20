@@ -4,33 +4,44 @@ import { EmptyState, ErrorState, LoadingState } from '../../../shared/components
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { adminApi } from '../api/adminApi'
-import { ACCOUNT_STATUS_META, fmtDateTime, ROLE_LABEL } from '../lib/accountStatus'
+import { ACCOUNT_STATUS_META, fmtDate, fmtDateTime, ROLE_LABEL } from '../lib/accountStatus'
 import { adminHref } from '../routes'
+import { CertExpiryBanner } from '../components/CertExpiryBanner'
+import { ChangeRoleDialog } from '../components/ChangeRoleDialog'
+import { LockAccountDialog } from '../components/LockAccountDialog'
+import { ResetPasswordDialog } from '../components/ResetPasswordDialog'
 import type { UserRole } from '../../auth/types'
-import type { AccountStatus } from '../types/accounts'
+import type { AccountStatus, AdminAccountItem } from '../types/accounts'
 
 type RoleFilter = UserRole | ''
 type StatusFilter = AccountStatus | ''
+type DialogState =
+  | { type: 'changeRole'; account: AdminAccountItem }
+  | { type: 'lock'; account: AdminAccountItem }
+  | { type: 'resetPwd'; account: AdminAccountItem }
+  | null
 
 const ROLE_FILTERS: Array<{ label: string; value: RoleFilter }> = [
-  { label: 'Tất cả vai trò', value: '' },
-  { label: 'Quản trị', value: 'ADMIN' },
-  { label: 'Nhân viên', value: 'STAFF' },
-  { label: 'Phi công', value: 'DRONE_OPERATOR' },
-  { label: 'Vận hành', value: 'SYSTEM_OPERATOR' },
-  { label: 'Khách hàng', value: 'CUSTOMER' },
+  { label: 'Tat ca vai tro', value: '' },
+  { label: 'Khach hang', value: 'CUSTOMER' },
+  { label: 'Nhan vien', value: 'STAFF' },
+  { label: 'Phi cong', value: 'DRONE_OPERATOR' },
+  { label: 'Van hanh', value: 'SYSTEM_OPERATOR' },
+  { label: 'Quan tri', value: 'ADMIN' },
+  { label: 'Kiem toan', value: 'AUDITOR' },
 ]
 
 const STATUS_FILTERS: Array<{ label: string; value: StatusFilter }> = [
-  { label: 'Tất cả trạng thái', value: '' },
-  { label: 'Hoạt động', value: 'ACTIVE' },
-  { label: 'Chờ xác minh', value: 'PENDING' },
-  { label: 'Vô hiệu', value: 'INACTIVE' },
+  { label: 'Moi trang thai', value: '' },
+  { label: 'Hoat dong', value: 'ACTIVE' },
+  { label: 'Da khoa', value: 'INACTIVE' },
+  { label: 'Chua xac thuc', value: 'PENDING' },
 ]
 
 export function AccountsPage() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
+  const [dialog, setDialog] = useState<DialogState>(null)
 
   const { data, loading, error, reload } = useApiQuery(
     (signal) =>
@@ -42,6 +53,11 @@ export function AccountsPage() {
     [roleFilter, statusFilter],
   )
 
+  function handleDialogSuccess() {
+    setDialog(null)
+    reload()
+  }
+
   return (
     <div>
       <div
@@ -49,16 +65,27 @@ export function AccountsPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 16,
+          marginBottom: 12,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Quản lý tài khoản</h1>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, lineHeight: 1.3 }}>
+            Nguoi dung
+          </h1>
+          {data && (
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
+              {data.items.length} tai khoan
+            </p>
+          )}
+        </div>
         <a className="odm-btn odm-btn-p" href={adminHref({ screen: 'createAccount' })}>
-          + Tạo tài khoản
+          + Tao nguoi dung noi bo
         </a>
       </div>
 
-      <div className="odm-adm-filter-row">
+      {data && <CertExpiryBanner accounts={data.items} />}
+
+      <div className="odm-adm-filter-row" style={{ marginBottom: 6 }}>
         {ROLE_FILTERS.map((f) => (
           <button
             key={f.value}
@@ -70,7 +97,7 @@ export function AccountsPage() {
           </button>
         ))}
       </div>
-      <div className="odm-adm-filter-row">
+      <div className="odm-adm-filter-row" style={{ marginBottom: 16 }}>
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
@@ -89,11 +116,11 @@ export function AccountsPage() {
 
       {!loading && data && data.items.length === 0 && (
         <EmptyState
-          title="Không tìm thấy tài khoản"
-          description="Thử thay đổi bộ lọc hoặc tạo tài khoản mới."
+          title="Khong tim thay tai khoan"
+          description="Thu thay doi bo loc hoac tao tai khoan moi."
           action={
             <a className="odm-btn odm-btn-p" href={adminHref({ screen: 'createAccount' })}>
-              Tạo tài khoản
+              Tao tai khoan
             </a>
           }
         />
@@ -108,25 +135,15 @@ export function AccountsPage() {
             overflow: 'hidden',
           }}
         >
-          <div
-            style={{
-              padding: '10px 16px',
-              borderBottom: '1px solid var(--bd)',
-              fontSize: 12,
-              color: 'var(--tx3)',
-            }}
-          >
-            {data.items.length} tài khoản
-          </div>
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Họ tên</th>
-                <th>Email</th>
-                <th>Vai trò</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th>Đăng nhập gần nhất</th>
+                <th>Nguoi dung</th>
+                <th>Vai tro</th>
+                <th>Trang thai</th>
+                <th>Chung chi het han</th>
+                <th>Dang nhap cuoi</th>
+                <th>Thao tac</th>
               </tr>
             </thead>
             <tbody>
@@ -135,39 +152,78 @@ export function AccountsPage() {
                 return (
                   <tr key={acc.id}>
                     <td>
-                      <a
-                        href={adminHref({ screen: 'accountDetail', accountId: acc.id })}
-                        style={{ color: 'var(--tx)', textDecoration: 'none', fontWeight: 500 }}
-                      >
-                        {acc.fullName}
-                        {!acc.emailVerified && (
-                          <span
-                            style={{
-                              marginLeft: 6,
-                              fontSize: 10,
-                              color: 'var(--tx3)',
-                              fontStyle: 'italic',
-                            }}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            background: 'var(--blue-solid)',
+                            color: 'var(--inkfg)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            flexShrink: 0,
+                          }}
+                          aria-hidden="true"
+                        >
+                          {acc.fullName.split(' ').slice(-2).map((w) => w[0]).join('').toUpperCase()}
+                        </span>
+                        <div>
+                          <a
+                            href={adminHref({ screen: 'accountDetail', accountId: acc.id })}
+                            style={{ color: 'var(--tx)', textDecoration: 'none', fontWeight: 500, fontSize: 13 }}
                           >
-                            (chưa xác minh)
-                          </span>
-                        )}
-                      </a>
+                            {acc.fullName}
+                          </a>
+                          <div style={{ fontSize: 11, color: 'var(--tx3)' }}>{acc.email}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td style={{ color: 'var(--tx2)', fontSize: 12 }}>{acc.email}</td>
                     <td>
-                      <span className="odm-adm-role">
-                        {ROLE_LABEL[acc.role] ?? acc.role}
-                      </span>
+                      <span style={{ fontSize: 12 }}>{ROLE_LABEL[acc.role] ?? acc.role}</span>
                     </td>
                     <td>
                       <StatusBadge tone={statusMeta.tone}>{statusMeta.label}</StatusBadge>
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--tx3)' }}>
-                      {fmtDateTime(acc.createdAt)}
+                    <td style={{ fontSize: 12, color: acc.certExpiry ? 'var(--tx2)' : 'var(--tx3)' }}>
+                      {acc.certExpiry ? fmtDate(acc.certExpiry) : '—'}
                     </td>
                     <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--tx3)' }}>
                       {acc.lastLoginAt ? fmtDateTime(acc.lastLoginAt) : '—'}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                          type="button"
+                          className="odm-btn odm-btn-gh"
+                          style={{ fontSize: 11, padding: '3px 8px' }}
+                          onClick={() => setDialog({ type: 'changeRole', account: acc })}
+                          title="Doi vai tro"
+                        >
+                          Doi vai tro
+                        </button>
+                        <button
+                          type="button"
+                          className="odm-btn odm-btn-gh"
+                          style={{ fontSize: 11, padding: '3px 8px' }}
+                          onClick={() => setDialog({ type: 'lock', account: acc })}
+                          title={acc.status === 'INACTIVE' ? 'Mo khoa' : 'Khoa'}
+                        >
+                          {acc.status === 'INACTIVE' ? 'Mo khoa' : 'Khoa'}
+                        </button>
+                        <button
+                          type="button"
+                          className="odm-btn odm-btn-gh"
+                          style={{ fontSize: 11, padding: '3px 8px' }}
+                          onClick={() => setDialog({ type: 'resetPwd', account: acc })}
+                          title="Reset mat khau"
+                        >
+                          Reset MK
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -175,6 +231,28 @@ export function AccountsPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {dialog?.type === 'changeRole' && (
+        <ChangeRoleDialog
+          account={dialog.account}
+          onClose={() => setDialog(null)}
+          onSuccess={handleDialogSuccess}
+        />
+      )}
+      {dialog?.type === 'lock' && (
+        <LockAccountDialog
+          account={dialog.account}
+          onClose={() => setDialog(null)}
+          onSuccess={handleDialogSuccess}
+        />
+      )}
+      {dialog?.type === 'resetPwd' && (
+        <ResetPasswordDialog
+          account={dialog.account}
+          onClose={() => setDialog(null)}
+          onSuccess={handleDialogSuccess}
+        />
       )}
     </div>
   )

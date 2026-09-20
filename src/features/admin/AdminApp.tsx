@@ -18,13 +18,23 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { CreateAccountPage } from './pages/CreateAccountPage'
 import { AccountDetailPage } from './pages/AccountDetailPage'
+import { RolesPage } from './pages/RolesPage'
+import { CatalogPage } from './pages/CatalogPage'
+import { OperatingConfigPage } from './pages/OperatingConfigPage'
+import { AiKnowledgePage } from './pages/AiKnowledgePage'
+import { AuditLogPage } from './pages/AuditLogPage'
 import type { AdminRoute } from './routes'
 
 const BREADCRUMB: Record<AdminRoute['screen'], string> = {
   dashboard: 'Tổng quan',
-  accounts: 'Tài khoản',
+  accounts: 'Người dùng',
   createAccount: 'Tạo tài khoản',
   accountDetail: 'Chi tiết tài khoản',
+  roles: 'Vai trò',
+  catalog: 'Danh mục',
+  operatingConfig: 'Cấu hình vận hành',
+  aiKnowledge: 'Tri thức AI và luật',
+  auditLog: 'Nhật ký hệ thống',
   notFound: 'Không tìm thấy',
 }
 
@@ -38,6 +48,16 @@ function renderScreen(route: AdminRoute) {
       return <CreateAccountPage />
     case 'accountDetail':
       return <AccountDetailPage accountId={route.accountId} />
+    case 'roles':
+      return <RolesPage />
+    case 'catalog':
+      return <CatalogPage />
+    case 'operatingConfig':
+      return <OperatingConfigPage />
+    case 'aiKnowledge':
+      return <AiKnowledgePage />
+    case 'auditLog':
+      return <AuditLogPage />
     default:
       return (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--tx3)' }}>

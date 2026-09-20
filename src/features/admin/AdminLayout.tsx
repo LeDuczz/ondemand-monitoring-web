@@ -9,14 +9,24 @@ type NavItem = { label: string; icon: string; route: AdminRoute; pendingBadge?: 
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Tổng quan', icon: '⊞', route: { screen: 'dashboard' } },
-  { label: 'Tài khoản', icon: '👤', route: { screen: 'accounts' } },
+  { label: 'Người dùng', icon: '◉', route: { screen: 'accounts' } },
+  { label: 'Vai trò', icon: '◈', route: { screen: 'roles' } },
+  { label: 'Danh mục', icon: '▦', route: { screen: 'catalog' } },
+  { label: 'Cấu hình vận hành', icon: '⚙', route: { screen: 'operatingConfig' } },
+  { label: 'Tri thức AI và luật', icon: '◆', route: { screen: 'aiKnowledge' } },
+  { label: 'Nhật ký hệ thống', icon: '◎', route: { screen: 'auditLog' } },
 ]
 
 const activeScreen: Record<AdminScreen, string> = {
   dashboard: 'Tổng quan',
-  accounts: 'Tài khoản',
-  createAccount: 'Tài khoản',
-  accountDetail: 'Tài khoản',
+  accounts: 'Người dùng',
+  createAccount: 'Người dùng',
+  accountDetail: 'Người dùng',
+  roles: 'Vai trò',
+  catalog: 'Danh mục',
+  operatingConfig: 'Cấu hình vận hành',
+  aiKnowledge: 'Tri thức AI và luật',
+  auditLog: 'Nhật ký hệ thống',
   notFound: '',
 }
 
@@ -69,7 +79,7 @@ export function AdminLayout({
             <div className="odm-adm-navg">Menu</div>
             {NAV_ITEMS.map((item) => {
               const isActive = item.label === active
-              const badge = item.label === 'Tài khoản' && (pendingCount ?? 0) > 0
+              const badge = item.label === 'Người dùng' && (pendingCount ?? 0) > 0
                 ? pendingCount
                 : undefined
               return (

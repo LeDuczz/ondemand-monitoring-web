@@ -73,7 +73,7 @@ export function Router() {
         <ManagerApp />
       </RoleRoute>
     )
-  if (hash === '#portal/drone-operator')
+  if (hash === '#portal/drone-operator' || hash.startsWith('#portal/drone-operator/'))
     return (
       <RoleRoute role="DRONE_OPERATOR">
         <DroneOperatorHomePage />

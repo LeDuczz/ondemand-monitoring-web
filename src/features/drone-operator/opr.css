@@ -1,0 +1,278 @@
+/*
+ * Drone-operator portal shell (top header bar + vertical sidebar), scoped
+ * under `.odm-opr`. Ported from evd/design OPR-xxW.
+ */
+
+.odm-opr {
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.odm-opr-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Top header bar ---------- */
+
+.odm-opr-topbar {
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  background: var(--sf);
+  border-bottom: 1px solid var(--bd);
+}
+
+.odm-opr-brand {
+  width: 232px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.odm-opr-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--inkfg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.odm-opr-brand-name {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.odm-opr-brand-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+.odm-opr-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  min-width: 0;
+  flex: 1;
+  color: var(--tx3);
+}
+
+.odm-opr-breadcrumb strong {
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.odm-opr-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  flex: none;
+}
+
+.odm-opr-search {
+  position: relative;
+  width: 260px;
+}
+
+.odm-opr-search-icon {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  color: var(--tx3);
+  pointer-events: none;
+}
+
+.odm-opr-search input {
+  padding-left: 30px;
+  height: 32px;
+}
+
+/* ---------- Body: sidebar + content ---------- */
+
+.odm-opr-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.odm-opr-side {
+  width: 232px;
+  flex: none;
+  background: var(--sf);
+  border-right: 1px solid var(--bd);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  overflow: auto;
+}
+
+.odm-opr-nav-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+}
+
+.odm-opr-navg {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tx3);
+  padding: 12px 10px 4px;
+  letter-spacing: 0.02em;
+}
+
+.odm-opr-navi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  color: var(--tx2);
+  font-weight: 500;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.odm-opr-navi:hover {
+  background: var(--sf3);
+}
+
+.odm-opr-navi.is-active {
+  background: var(--sel);
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.odm-opr-navc {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--inkfg);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.odm-opr-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 6px 2px;
+  border-top: 1px solid var(--bd);
+  margin-top: 8px;
+}
+
+.odm-opr-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sf3);
+  border: 1px solid var(--bd);
+  color: var(--tx2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex: none;
+}
+
+.odm-opr-user-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+}
+
+.odm-opr-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-opr-user-email {
+  font-size: 11px;
+  color: var(--tx3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-opr-logout {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.odm-opr-main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+.odm-opr-content {
+  padding: 20px 24px 28px;
+}
+
+/* ---------- Chip (service label pill) ---------- */
+
+.odm-opr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--bd);
+  white-space: nowrap;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 767px) {
+  .odm-opr-brand-sub,
+  .odm-opr-search {
+    display: none;
+  }
+  .odm-opr-brand {
+    width: auto;
+  }
+  .odm-opr-side {
+    width: 64px;
+  }
+  .odm-opr-navi span:not(:first-child),
+  .odm-opr-navg,
+  .odm-opr-user-text {
+    display: none;
+  }
+}

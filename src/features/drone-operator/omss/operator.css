@@ -236,8 +236,31 @@ input[type='checkbox'] {
   position: relative;
   z-index: 1;
   display: flex;
+  flex-direction: column;
   align-items: start;
-  overflow: visible;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.45) transparent;
+}
+
+.mission-control-lidar > * {
+  flex-shrink: 0;
+}
+
+.mission-control-lidar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.mission-control-lidar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mission-control-lidar::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.42);
+  border-radius: 999px;
 }
 
 .mission-control-controls {
@@ -321,6 +344,7 @@ input[type='checkbox'] {
   .mission-control-lidar {
     grid-column: 2;
     grid-row: 1;
+    max-height: 100%;
   }
 
   .mission-control-controls {
@@ -355,6 +379,7 @@ input[type='checkbox'] {
     grid-column: auto;
     grid-row: auto;
     overflow: visible;
+    max-height: none;
   }
 
   .mission-control-controls {

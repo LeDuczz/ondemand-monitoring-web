@@ -85,6 +85,8 @@ type ControlStatus = {
   positionNed?: { northM: number; eastM: number; downM: number }
   yawDeg?: number
   altitudeM?: number
+  pressurePa?: number
+  airPressurePa?: number
   speedMps?: number
   batteryPercent?: number
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
@@ -180,6 +182,10 @@ const px4HomeSimX = Number(import.meta.env.VITE_GEOFENCE_PX4_HOME_SIM_X_M ?? 0)
 const px4HomeSimY = Number(
   import.meta.env.VITE_GEOFENCE_PX4_HOME_SIM_Y_M ?? -280,
 )
+const standardPressurePa = 101_325
+const standardTemperatureK = 288.15
+const standardLapseRateKPerM = 0.0065
+const barometricExponent = 5.255877
 
 const flightControls: {
   command: FlightCommand
@@ -1232,6 +1238,197 @@ const TelemetryPanel = memo(function TelemetryPanel({
     </GlassPanel>
   )
 })
+
+const AirPressurePanel = memo(function AirPressurePanel({
+  status,
+}: {
+  status: ControlStatus | null
+}) {
+  useRenderDiagnostics('AirPressurePanel')
+  const altitudeM =
+    typeof status?.altitudeM === 'number' && Number.isFinite(status.altitudeM)
+      ? Math.max(0, status.altitudeM)
+      : null
+  const directPressure =
+    typeof status?.airPressurePa === 'number' &&
+    Number.isFinite(status.airPressurePa)
+      ? status.airPressurePa
+      : typeof status?.pressurePa === 'number' &&
+          Number.isFinite(status.pressurePa)
+        ? status.pressurePa
+        : null
+  const pressurePa =
+    directPressure ?? (altitudeM === null ? null : pressureFromAltitude(altitudeM))
+  const pressureDisplay =
+    pressurePa === null ? '--' : `${Math.round(pressurePa).toLocaleString()} Pa`
+  const pressureKpa =
+    pressurePa === null ? '--' : `${(pressurePa / 1000).toFixed(2)} kPa`
+  const altitudeDisplay =
+    altitudeM === null ? '--' : `${altitudeM.toFixed(1)} m`
+  const deltaDisplay =
+    pressurePa === null
+      ? '--'
+      : `${Math.round(pressurePa - standardPressurePa).toLocaleString()} Pa`
+  const trend =
+    pressurePa !== null && pressurePa < standardPressurePa
+      ? 'Decreases with altitude'
+      : 'Sea-level reference'
+
+  return (
+    <GlassPanel
+      style={{
+        width: '100%',
+        padding: 12,
+        border: '1px solid rgba(56,189,248,.28)',
+        background:
+          'linear-gradient(180deg, rgba(8,18,33,.88), rgba(8,13,24,.76))',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            color: '#67e8f9',
+            fontSize: 12,
+            fontWeight: 950,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Icon name="gauge" size={14} />
+          Air Pressure
+        </span>
+        <strong
+          style={{
+            borderRadius: 999,
+            padding: '4px 9px',
+            color: status?.online === false ? '#fecaca' : '#bbf7d0',
+            background:
+              status?.online === false
+                ? 'rgba(127,29,29,.36)'
+                : 'rgba(20,83,45,.34)',
+            border:
+              status?.online === false
+                ? '1px solid rgba(248,113,113,.36)'
+                : '1px solid rgba(34,197,94,.32)',
+            fontSize: 10,
+            fontWeight: 950,
+          }}
+        >
+          {status?.online === false ? 'OFFLINE' : 'LIVE'}
+        </strong>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1.25fr .75fr',
+          gap: 8,
+          alignItems: 'stretch',
+        }}
+      >
+        <div
+          style={{
+            borderRadius: 10,
+            padding: '11px 12px',
+            background: 'rgba(15,23,42,.62)',
+            border: '1px solid rgba(56,189,248,.2)',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 800 }}>
+            Pressure
+          </div>
+          <strong
+            style={{
+              display: 'block',
+              marginTop: 5,
+              color: '#e0f2fe',
+              fontFamily: 'var(--font-data)',
+              fontSize: 18,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {pressureDisplay}
+          </strong>
+          <div
+            style={{
+              marginTop: 7,
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 8,
+              color: '#93c5fd',
+              fontFamily: 'var(--font-data)',
+              fontSize: 11,
+            }}
+          >
+            <span>{pressureKpa}</span>
+            <span>{deltaDisplay}</span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            borderRadius: 10,
+            padding: '11px 10px',
+            background: 'rgba(15,23,42,.5)',
+            border: '1px solid rgba(148,163,184,.14)',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 800 }}>
+            Altitude
+          </div>
+          <strong
+            style={{
+              display: 'block',
+              marginTop: 5,
+              color: '#f8fafc',
+              fontFamily: 'var(--font-data)',
+              fontSize: 16,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {altitudeDisplay}
+          </strong>
+          <div
+            style={{
+              marginTop: 7,
+              color: '#cbd5e1',
+              fontSize: 10,
+              lineHeight: 1.25,
+            }}
+          >
+            {trend}
+          </div>
+        </div>
+      </div>
+    </GlassPanel>
+  )
+})
+
+function pressureFromAltitude(altitudeM: number) {
+  const ratio =
+    1 - (standardLapseRateKPerM * altitudeM) / standardTemperatureK
+  if (ratio <= 0) return null
+  return standardPressurePa * Math.pow(ratio, barometricExponent)
+}
 
 function getLidarFresh(lidar: ControlStatus['lidar']) {
   return (
@@ -2853,6 +3050,7 @@ export default function InFlightControl({
 
         <section className="mission-control-lidar">
           <LidarRadarOverlay status={controlStatus} />
+          <AirPressurePanel status={controlStatus} />
         </section>
 
         <section className="mission-control-controls">

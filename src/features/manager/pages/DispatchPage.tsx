@@ -206,7 +206,12 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
-type LockedDrone = { code: string; name: string; assignmentId: string }
+type LockedDrone = {
+  candidate: DroneCandidate | null
+  code: string
+  name: string
+  assignmentId: string
+}
 
 function DispatchBody({
   mission: initialMission,
@@ -219,18 +224,18 @@ function DispatchBody({
 }) {
   const [mission, setMission] = useState(initialMission)
   // Phase 1: null = drone not yet locked; set = drone locked via API
-  const [lockedDrone, setLockedDrone] = useState<LockedDrone | null>(() =>
-    initialMission.droneId && initialMission.droneAssignmentId
-      ? {
-          code: initialMission.droneId,
-          name:
-            suggestions.topDrones.find(
-              (d) => d.code === initialMission.droneId,
-            )?.name ?? initialMission.droneId,
-          assignmentId: initialMission.droneAssignmentId,
-        }
-      : null,
-  )
+  const [lockedDrone, setLockedDrone] = useState<LockedDrone | null>(() => {
+    if (!initialMission.droneId || !initialMission.droneAssignmentId) return null
+    const candidate =
+      suggestions.topDrones.find((d) => d.code === initialMission.droneId) ??
+      null
+    return {
+      candidate,
+      code: initialMission.droneId,
+      name: candidate?.name ?? initialMission.droneId,
+      assignmentId: initialMission.droneAssignmentId,
+    }
+  })
   // Phase 2: operator selection
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null)
   const [lockingDrone, setLockingDrone] = useState(false)
@@ -258,8 +263,10 @@ function DispatchBody({
     try {
       const updated = await missionsApi.assignDrone(mission.id, droneCode)
       setMission(updated)
-      const candidate = suggestions.topDrones.find((d) => d.code === droneCode)
+      const candidate =
+        suggestions.topDrones.find((d) => d.code === droneCode) ?? null
       setLockedDrone({
+        candidate,
         code: droneCode,
         name: candidate?.name ?? droneCode,
         assignmentId: updated.droneAssignmentId ?? '',
@@ -312,6 +319,7 @@ function DispatchBody({
       updated = await missionsApi.assignDrone(mission.id, topDrone.code)
       setMission(updated)
       setLockedDrone({
+        candidate: topDrone,
         code: topDrone.code,
         name: topDrone.name,
         assignmentId: updated.droneAssignmentId ?? '',
@@ -539,7 +547,7 @@ function DispatchBody({
         </div>
       ) : (
         <>
-          {/* Locked drone banner */}
+          {/* Locked drone card */}
           <div
             className="odm-card"
             style={{
@@ -547,32 +555,16 @@ function DispatchBody({
               borderLeft: '3px solid var(--blue-solid)',
             }}
           >
-            <div className="odm-card-body" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: 'var(--blue-solid)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: 2,
-                  }}
-                >
-                  Bước 1 hoàn tất — Drone đã khóa
-                </div>
-                <div style={{ fontWeight: 700 }}>
-                  {lockedDrone.code} · {lockedDrone.name}
-                </div>
-              </div>
-              <a
-                href={managerHref({ screen: 'drones' })}
-                className="odm-btn odm-btn-sm"
-                style={{ whiteSpace: 'nowrap' }}
-              >
-                Đổi drone → Đội drone
-              </a>
+            <div className="odm-card-header" style={{ color: 'var(--blue-solid)' }}>
+              Bước 1 hoàn tất — Drone đã khóa
             </div>
+            {lockedDrone.candidate ? (
+              <LockedDroneCard drone={lockedDrone.candidate} />
+            ) : (
+              <div className="odm-card-body" style={{ fontWeight: 700 }}>
+                {lockedDrone.code} · {lockedDrone.name}
+              </div>
+            )}
           </div>
 
           {/* ── Bước 2: chọn phi công ──────────────────────────────────────── */}
@@ -687,6 +679,48 @@ function DispatchBody({
           onConfirm={handleRelease}
         />
       ) : null}
+    </div>
+  )
+}
+
+function LockedDroneCard({ drone }: { drone: DroneCandidate }) {
+  return (
+    <div className="odm-mgr-candidate-card selected">
+      <div className="odm-mgr-candidate-head">
+        <ScoreRing score={drone.score} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700 }}>
+            {drone.code} · {drone.name}
+          </div>
+          <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
+            {drone.serialNumber} · {drone.droneModelName}
+          </div>
+        </div>
+      </div>
+      <div className="odm-mgr-candidate-metrics">
+        <span>
+          Pin <b className="odm-tn">{drone.batteryPct}%</b>
+        </span>
+        <span>
+          Cách trạm <b className="odm-tn">{drone.distanceKm} km</b>
+        </span>
+        <span>
+          Thời gian bay dư <b className="odm-tn">{drone.enduranceMarginPct}%</b>
+        </span>
+        <span>
+          Payload <b>{drone.payload}</b>
+        </span>
+        <span>
+          Giờ bay từ lần bảo trì{' '}
+          <b className="odm-tn">{drone.hoursSinceMaintenance}h</b>
+        </span>
+      </div>
+      <a
+        href={managerHref({ screen: 'drones' })}
+        className="odm-btn odm-btn-sm"
+      >
+        Đổi drone → Đội drone
+      </a>
     </div>
   )
 }

@@ -425,3 +425,250 @@ input[type='checkbox'] {
   outline: none;
   border-color: var(--accent);
 }
+
+/* ── ODM bridge: retheme the operator screens (which read the legacy
+   --text/--surface/--accent tokens above) to the ODM design-system
+   palette + IBM Plex fonts, per OPR-xxW. Scoped so the immersive
+   in-flight console (rendered outside this wrapper) keeps its own
+   indigo/dark palette untouched. ─────────────────────────────── */
+.odm-opr-scope {
+  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --surface: var(--sf);
+  --surface-2: var(--sf2);
+  --border: var(--bd);
+  --border-2: var(--bd2);
+  --text: var(--tx);
+  --text-2: var(--tx2);
+  --text-3: var(--tx3);
+  --accent: var(--blue-solid);
+  --accent-2: var(--blue-solid);
+  --accent-bg: var(--blue-bg);
+  --green: var(--green-solid);
+  --green-bg: var(--green-bg);
+  --green-border: var(--green-dot);
+  --green-text: var(--green-fg);
+  --amber: var(--yellow-solid);
+  --amber-bg: var(--yellow-bg);
+  --amber-border: var(--yellow-dot);
+  --amber-text: var(--yellow-fg);
+  --red: var(--red-solid);
+  --red-bg: var(--red-bg);
+  --red-border: var(--red-dot);
+  --red-text: var(--red-fg);
+  --blue: var(--blue-solid);
+  --blue-bg: var(--blue-bg);
+  --blue-border: var(--blue-dot);
+  --blue-text: var(--blue-fg);
+}
+
+/* The zone-map screen keeps its original (pre-ODM) palette + font even
+   inside the bridged shell, per explicit instruction to leave it as-is. */
+.odm-opr-scope .op-zone-map {
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --border: #e5e7eb;
+  --border-2: #d1d5db;
+  --text: #111827;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
+  --accent: #4f46e5;
+  --accent-2: #4338ca;
+  --accent-bg: #eef2ff;
+}
+
+/* ── Operator shell: vertical sidebar + content, per OPR-xxW ─────── */
+.odm-opr-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.odm-opr-side {
+  width: 232px;
+  flex: none;
+  background: var(--sf);
+  border-right: 1px solid var(--bd);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  overflow-y: auto;
+}
+
+.odm-opr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 6px 12px;
+}
+
+.odm-opr-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--inkfg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 16px;
+}
+
+.odm-opr-brand-name {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--tx);
+}
+
+.odm-opr-brand-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+.odm-opr-nav-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.odm-opr-navg {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tx3);
+  padding: 12px 10px 4px;
+  letter-spacing: 0.02em;
+}
+
+.odm-opr-navi {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tx2);
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.odm-opr-navi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  font-size: 13px;
+  flex: none;
+}
+
+.odm-opr-navi:hover {
+  background: var(--sf3);
+}
+
+.odm-opr-navi.is-active {
+  background: var(--sel);
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.odm-opr-navc {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--inkfg);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.odm-opr-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 6px;
+  border-top: 1px solid var(--bd);
+  margin-top: 4px;
+}
+
+.odm-opr-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--sf3);
+  color: var(--tx);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex: none;
+}
+
+.odm-opr-user-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.odm-opr-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-opr-user-email {
+  font-size: 11px;
+  color: var(--tx3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-opr-logout {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.odm-opr-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.odm-opr-breadcrumb {
+  padding: 8px 20px;
+  font-size: 13px;
+  color: var(--tx3);
+  border-bottom: 1px solid var(--bd);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.odm-opr-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}

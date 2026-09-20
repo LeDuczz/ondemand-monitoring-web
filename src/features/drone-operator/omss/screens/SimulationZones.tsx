@@ -1,7 +1,7 @@
 export default function SimulationZones() {
   return (
     <div
-      className="fade-in"
+      className="fade-in op-zone-map"
       style={{
         flex: 1,
         minHeight: 0,

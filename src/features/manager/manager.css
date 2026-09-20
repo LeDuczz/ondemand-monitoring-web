@@ -5,14 +5,15 @@
  */
 
 .odm-mgr {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--bg);
 }
 
 .odm-mgr-shell {
   display: flex;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
 }
 
 /* ---------- Sidebar ---------- */

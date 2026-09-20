@@ -160,13 +160,15 @@ describe('GET /api/missions/{id}/resource-suggestions', () => {
     expect(payload.data.alternatives).toHaveLength(3)
   })
 
-  it('404s for a mission with no seeded suggestions', async () => {
+  it('falls back to default suggestions for a mission with no seeded data', async () => {
     await call('POST', '/api/orders/ord-2609-0157/approve')
-    const { status } = await call(
+    const { status, payload } = await call(
       'GET',
       '/api/missions/msn-2609-0157-1/resource-suggestions',
     )
-    expect(status).toBe(404)
+    expect(status).toBe(200)
+    expect(payload.data.topDrones.length).toBeGreaterThan(0)
+    expect(payload.data.topOperators.length).toBeGreaterThan(0)
   })
 })
 

@@ -472,11 +472,31 @@ registerMockRoutes([
         }
       ).byMission[mission.id]
       if (!scenarios) {
-        return fail(
-          404,
-          'NOT_FOUND',
-          'Chưa có gợi ý nguồn lực cho mission này.',
-        )
+        const fallback = (
+          suggestions as unknown as {
+            byMission: Record<
+              string,
+              { default: ResourceSuggestions; insufficient: ResourceSuggestions }
+            >
+          }
+        ).byMission['msn-2609-0153-1']
+        if (!fallback)
+          return fail(404, 'NOT_FOUND', 'Chưa có gợi ý nguồn lực.')
+        const scenario = query.get('scenario')
+        const base =
+          scenario === 'insufficient' ? fallback.insufficient : fallback.default
+        return ok({
+          ...base,
+          missionCode: mission.missionCode,
+          attemptNumber: mission.attemptNumber,
+          scheduledStart: mission.scheduledStartAt ?? '',
+          scheduledEnd: mission.scheduledEndAt ?? '',
+          addressText: mission.addressText,
+          centerLat: mission.centerLat,
+          centerLon: mission.centerLon,
+          radiusM: mission.radiusM,
+          timeline: { date: '', windowStart: '', windowEnd: '', resources: [] },
+        })
       }
       const scenario = query.get('scenario')
       const base =

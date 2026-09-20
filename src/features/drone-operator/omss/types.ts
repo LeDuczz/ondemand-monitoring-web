@@ -133,7 +133,8 @@ export type FlightConnection = {
 }
 
 // ── Media upload ──────────────────────────────────────────────
-export type MediaFileStatus = 'PENDING' | 'UPLOADING' | 'DONE' | 'FAILED' | 'QUEUED'
+export type MediaFileStatus =
+  'PENDING' | 'UPLOADING' | 'DONE' | 'FAILED' | 'QUEUED'
 
 export type MediaFile = {
   id: string
@@ -223,6 +224,8 @@ export type Screen =
   | 'manual-upload'
   | 'simulation-zones'
   | 'availability'
+  | 'notifications'
+  | 'profile'
 
 export type NavId =
   | 'dashboard'

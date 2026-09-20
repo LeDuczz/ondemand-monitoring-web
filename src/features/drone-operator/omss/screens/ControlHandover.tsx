@@ -1,131 +1,384 @@
 import { useState } from 'react'
-import type { OperatorMission } from '../types'
-import { OpBadge } from '../components/OpBadge'
+import type { Mission, Drone } from '../types'
 
 interface Props {
-  mission: OperatorMission
-  gcsLabel?: string
-  connectedAt?: string
-  revoked?: boolean
+  mission: Mission
+  drone: Drone
   onComplete: () => void
   onBack: () => void
 }
+type Phase = 'request' | 'awaiting' | 'approved'
 
-const SAFETY_ITEMS = [
-  'Tôi đã kiểm tra khu vực bay, không có người và phương tiện trong vùng an toàn, và tuân thủ mọi vùng cấm bay được cảnh báo trong mission.',
-  'Tôi giữ drone trong tầm nhìn khi có thể, không bay quá độ cao 120 m và không vượt bán kính vùng giám sát 500 m.',
-  'Tôi sẵn sàng bấm RTL hoặc LAND ngay khi có cảnh báo pin thấp, mất telemetry hoặc thời tiết xấu.',
-  'Tôi chịu trách nhiệm an toàn vận hành từ lúc xác nhận cho tới khi drone hạ cánh và tắt động cơ.',
-]
-
-export default function ControlHandover({ mission, gcsLabel, connectedAt, revoked, onComplete, onBack }: Props) {
-  const [checks, setChecks] = useState<boolean[]>([false, false, false, false])
+export default function ControlHandover({
+  mission,
+  drone,
+  onComplete,
+  onBack,
+}: Props) {
+  const [phase, setPhase] = useState<Phase>('request')
+  const [code, setCode] = useState('')
   const [confirmed, setConfirmed] = useState(false)
 
-  const allChecked = checks.every(Boolean) && confirmed
-  const gcs = gcsLabel ?? 'DJI-RC-PLUS-7A31'
-  const connTime = connectedAt ?? '13:26:41'
-
-  function toggleCheck(i: number) {
-    const next = [...checks]
-    next[i] = !next[i]
-    setChecks(next)
+  function request() {
+    setPhase('awaiting')
+    setTimeout(() => setPhase('approved'), 3000)
   }
 
+  const steps = [
+    { label: 'Submit request', done: phase !== 'request' },
+    { label: 'Manager approves', done: phase === 'approved' },
+    { label: 'Enter auth code', done: false },
+  ]
+
   return (
-    <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', maxWidth: 680 }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
-        ← Quay lại
+    <div
+      className="fade-in"
+      style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}
+    >
+      <button
+        onClick={onBack}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'none',
+          border: 'none',
+          color: 'var(--text-2)',
+          fontSize: 13,
+          cursor: 'pointer',
+          padding: 0,
+          marginBottom: 20,
+        }}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M9 2L4 7l5 5" />
+        </svg>
+        Pre-flight check
       </button>
 
-      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
-        Bàn giao quyền điều khiển · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
-      </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 18px' }}>
-        Bàn giao quyền điều khiển
-      </h1>
+      <div style={{ maxWidth: 520 }}>
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: 'var(--text)',
+            margin: '0 0 6px',
+          }}
+        >
+          Control handover
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
+          Request authorisation from your supervising manager before starting
+          the mission.
+        </p>
 
-      {/* Revoked banner */}
-      {revoked && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, color: '#991b1b', fontWeight: 600 }}>⚠ Quyền điều khiển đã bị thu hồi</span>
-          <button className="op-btn op-btn-primary" style={{ fontSize: 12 }} onClick={() => setChecks([false, false, false, false])}>Xác nhận lại</button>
+        {/* Step tracker */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 28 }}>
+          {steps.map((s, i) => (
+            <div
+              key={s.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                flex: i < steps.length - 1 ? 1 : undefined,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: s.done ? 'var(--green)' : 'var(--surface-2)',
+                    border: `1.5px solid ${s.done ? 'var(--green)' : 'var(--border-2)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: s.done ? '#fff' : 'var(--text-3)',
+                  }}
+                >
+                  {s.done ? '✓' : i + 1}
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: s.done ? 'var(--green-text)' : 'var(--text-3)',
+                    textAlign: 'center',
+                    maxWidth: 80,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {s.label}
+                </span>
+              </div>
+              {i < steps.length - 1 && (
+                <div
+                  style={{
+                    flex: 1,
+                    height: 1,
+                    background: steps[i].done
+                      ? 'var(--green)'
+                      : 'var(--border)',
+                    margin: '0 8px',
+                    marginBottom: 20,
+                  }}
+                />
+              )}
+            </div>
+          ))}
         </div>
-      )}
 
-      {/* Drone status strip */}
-      <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 10,
-        padding: '14px 18px',
-        marginBottom: 20,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 12,
-      }}>
-        <div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-            {mission.droneId} {mission.droneName} · {mission.id}
-          </span>
-          <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 3 }}>
-            Đã kết nối GCS {gcs} lúc {connTime} · telemetry hoạt động
+        {/* Mission card */}
+        <div
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '16px 20px',
+            marginBottom: 20,
+            boxShadow: 'var(--shadow)',
+          }}
+        >
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
+          >
+            {[
+              ['Mission', mission.id],
+              ['Drone', drone.id],
+              ['Operator', 'J. Martinez (OPR-112)'],
+              [
+                'Scheduled',
+                new Date(mission.scheduledAt).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                }) + ' UTC',
+              ],
+            ].map(([l, v]) => (
+              <div key={l}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-3)',
+                    marginBottom: 2,
+                  }}
+                >
+                  {l}
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: 'var(--text)',
+                    fontFamily:
+                      l === 'Mission' || l === 'Drone'
+                        ? 'var(--font-data)'
+                        : undefined,
+                  }}
+                >
+                  {v}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-        <OpBadge tone="green">Đã kết nối</OpBadge>
-      </div>
 
-      {/* Safety checklist */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 20 }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-          Cam kết an toàn bay
-        </div>
-        {SAFETY_ITEMS.map((item, i) => (
-          <label key={i} style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 12,
-            padding: '14px 18px',
-            borderBottom: i < SAFETY_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
-            cursor: 'pointer',
-          }}>
-            <input
-              type="checkbox"
-              checked={checks[i] ?? false}
-              onChange={() => toggleCheck(i)}
-              style={{ marginTop: 2, accentColor: 'var(--blue)', flexShrink: 0 }}
+        {phase === 'request' && (
+          <button
+            onClick={request}
+            style={{
+              width: '100%',
+              padding: '11px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--accent)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              cursor: 'pointer',
+              marginBottom: 12,
+            }}
+          >
+            Request handover authorisation
+          </button>
+        )}
+
+        {phase === 'awaiting' && (
+          <div
+            style={{
+              background: 'var(--blue-bg)',
+              border: '1px solid var(--blue-border)',
+              borderRadius: 10,
+              padding: '20px',
+              textAlign: 'center',
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                border: '3px solid var(--blue-border)',
+                borderTopColor: 'var(--blue)',
+                borderRadius: '50%',
+                margin: '0 auto 12px',
+              }}
+              className="spin"
             />
-            <span style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>{item}</span>
-          </label>
-        ))}
-      </div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--blue-text)',
+              }}
+            >
+              Awaiting manager approval
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                color: 'var(--blue-text)',
+                opacity: 0.8,
+                marginTop: 4,
+              }}
+            >
+              A notification has been sent to the supervising manager.
+            </div>
+          </div>
+        )}
 
-      {/* Final confirmation */}
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20, padding: '12px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-        <input
-          type="checkbox"
-          checked={confirmed}
-          onChange={(e) => setConfirmed(e.target.checked)}
-          style={{ marginTop: 2, accentColor: 'var(--blue)', flexShrink: 0 }}
-        />
-        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
-          Tôi xác nhận đã kiểm soát drone và chịu trách nhiệm vận hành
-        </span>
-      </label>
+        {phase === 'approved' && (
+          <>
+            <div
+              style={{
+                background: 'var(--green-bg)',
+                border: '1px solid var(--green-border)',
+                borderRadius: 8,
+                padding: '12px 16px',
+                marginBottom: 20,
+                display: 'flex',
+                gap: 10,
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ fontSize: 16, color: 'var(--green)' }}>✓</span>
+              <div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: 'var(--green-text)',
+                  }}
+                >
+                  Handover approved by manager
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--green-text)',
+                    opacity: 0.8,
+                  }}
+                >
+                  Enter the authorisation code provided by your manager to
+                  continue.
+                </div>
+              </div>
+            </div>
 
-      {/* Footer */}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button className="op-btn op-btn-ghost" onClick={onBack}>Quay lại</button>
-        <button
-          className="op-btn op-btn-primary"
-          onClick={onComplete}
-          disabled={!allChecked}
-          style={{ opacity: allChecked ? 1 : .5, flex: 1 }}
-        >
-          Xác nhận bàn giao
-        </button>
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--text)',
+                  display: 'block',
+                  marginBottom: 6,
+                }}
+              >
+                Authorisation code
+              </label>
+              <input
+                type="password"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: 16,
+                  fontFamily: 'var(--font-data)',
+                  letterSpacing: '.2em',
+                  textAlign: 'center',
+                }}
+                maxLength={6}
+              />
+            </div>
+
+            <label
+              style={{
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+                cursor: 'pointer',
+                marginBottom: 20,
+                padding: '12px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+              />
+              <span
+                style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}
+              >
+                I confirm that control has been handed over and I accept full
+                operational responsibility for this mission.
+              </span>
+            </label>
+
+            <button
+              onClick={onComplete}
+              disabled={code.length < 4 || !confirmed}
+              style={{
+                width: '100%',
+                padding: '11px',
+                borderRadius: 8,
+                border: 'none',
+                background:
+                  code.length >= 4 && confirmed
+                    ? 'var(--accent)'
+                    : 'var(--surface-2)',
+                fontSize: 14,
+                fontWeight: 600,
+                color: code.length >= 4 && confirmed ? '#fff' : 'var(--text-3)',
+                cursor:
+                  code.length >= 4 && confirmed ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Complete handover
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

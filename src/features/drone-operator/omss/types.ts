@@ -100,106 +100,6 @@ export interface FlightToken {
 
 export type Role = 'operator' | 'customer' | 'manager' | 'sysop' | 'admin'
 
-// ── Operator availability ─────────────────────────────────────
-export type AvailabilityStatus = 'AVAILABLE' | 'BUSY' | 'OFF'
-
-export type AvailabilitySlot = {
-  date: string // YYYY-MM-DD
-  hour: number // 0–23
-  minute: number // 0 or 30
-  status: AvailabilityStatus
-}
-
-export type MissionOverlay = {
-  missionId: string
-  date: string
-  startHour: number
-  startMinute: number
-  endHour: number
-  endMinute: number
-}
-
-// ── GCS / connection ──────────────────────────────────────────
-export type GCSDevice = { id: string; label: string }
-
-export type FlightConnection = {
-  id: string
-  missionId: string
-  droneId: string
-  gcsId: string
-  tokenUsedAt: string
-  connectedAt: string
-  status: 'CONNECTED' | 'DISCONNECTED' | 'FAILED'
-}
-
-// ── Media upload ──────────────────────────────────────────────
-export type MediaFileStatus =
-  'PENDING' | 'UPLOADING' | 'DONE' | 'FAILED' | 'QUEUED'
-
-export type MediaFile = {
-  id: string
-  name: string
-  type: 'PHOTO' | 'VIDEO'
-  sizeMB: number
-  progressPct: number
-  attempts: number
-  maxAttempts: number
-  status: MediaFileStatus
-}
-
-// ── Maintenance ───────────────────────────────────────────────
-export type MaintenanceFaultType =
-  | 'MOTOR_VIBRATION'
-  | 'SIGNAL_LOSS'
-  | 'BATTERY_DEGRADED'
-  | 'CAMERA_GIMBAL'
-  | 'PHYSICAL_DAMAGE'
-  | 'OTHER'
-
-// ── Operator profile ──────────────────────────────────────────
-export type OperatorProfile = {
-  id: string
-  fullName: string
-  licenseGrade: string
-  certExpiryDate: string
-  station: string
-}
-
-// ── Operator-extended Mission (from API) ──────────────────────
-export type OperatorMission = {
-  id: string
-  orderRef: string
-  title: string
-  subtitle: string
-  state: MissionState
-  scheduledAt: string
-  endAt: string
-  estimatedMinutes: number
-  location: string
-  droneId: string
-  droneName: string
-  droneModel: string
-  payload: string
-  stationName: string
-  stationDistanceKm: number
-  droneBattery: number
-  droneHoursFromMaintenance: number
-  droneStatus: DroneState
-  lat: number
-  lng: number
-  surveillanceRadiusM: number
-  maxAltitudeM: number
-  photoCount: number
-  photoSpec: string | null
-  videoCount: number
-  videoDurationSec: number
-  videoResolution: string | null
-  managerNote: string | null
-  managerName: string
-  responseDeadline: string | null
-  rejectionReason?: string
-}
-
 export type Screen =
   | 'operator-overview'
   | 'customer-overview'
@@ -223,14 +123,10 @@ export type Screen =
   | 'media-upload'
   | 'manual-upload'
   | 'simulation-zones'
-  | 'availability'
-  | 'notifications'
-  | 'profile'
 
 export type NavId =
   | 'dashboard'
   | 'my-missions'
-  | 'availability'
   | 'mission-control'
   | 'preflight'
   | 'media'

@@ -1,116 +1,371 @@
 import { useState } from 'react'
-import type { OperatorMission } from '../types'
-import PreflightItem from '../components/PreflightItem'
+import type { CheckItem } from '../types'
 
 interface Props {
-  mission: OperatorMission
-  droneBattery?: number
+  checklist: CheckItem[]
   onPass: () => void
   onFail: () => void
   onBack: () => void
 }
 
-type ItemResult = 'PASS' | 'FAIL' | null
+export default function PreflightChecklist({
+  checklist,
+  onPass,
+  onFail,
+  onBack,
+}: Props) {
+  const [ran, setRan] = useState(false)
+  const [running, setRunning] = useState(false)
 
-interface CheckItem {
-  id: string
-  group: string
-  label: string
-  value: string
-}
-
-const CHECKLIST: CheckItem[] = [
-  { id: 'battery', group: 'Thiết bị', label: 'Pin drone', value: '100% · battery_ok' },
-  { id: 'gps', group: 'Thiết bị', label: 'GPS', value: '18 vệ tinh · gps_ok' },
-  { id: 'camera', group: 'Thiết bị', label: 'Camera', value: 'Zenmuse P1 · camera_ok' },
-  { id: 'motor', group: 'Thiết bị', label: 'Động cơ', value: 'motor_ok' },
-  { id: 'compass', group: 'Thiết bị', label: 'La bàn', value: 'compass_ok' },
-  { id: 'link', group: 'Thiết bị', label: 'Kết nối', value: 'Liên kết telemetry heartbeat 10 Hz · link_ok' },
-  { id: 'payload', group: 'Thiết bị', label: 'Payload', value: 'Đã gắn đúng · payload_mounted_ok' },
-  { id: 'weather', group: 'Môi trường', label: 'Thời tiết', value: 'Gió 6 m/s · dự báo không mưa · weather_ok' },
-  { id: 'airspace', group: 'Môi trường', label: 'Không phận', value: 'Không giao với vùng cấm · airspace_ok' },
-]
-
-export default function PreflightChecklist({ mission, onPass, onFail, onBack }: Props) {
-  const [results, setResults] = useState<Record<string, ItemResult>>({})
-
-  function handleResult(id: string, r: 'PASS' | 'FAIL') {
-    setResults((prev) => ({ ...prev, [id]: r }))
+  function runChecks() {
+    setRunning(true)
+    setTimeout(() => {
+      setRunning(false)
+      setRan(true)
+    }, 1800)
   }
 
-  const answered = Object.values(results).filter((r) => r !== null).length
-  const passed = Object.values(results).filter((r) => r === 'PASS').length
-  const failed = Object.values(results).filter((r) => r === 'FAIL').length
-  const total = CHECKLIST.length
-  const allAnswered = answered === total
+  const passed = ran ? checklist.filter((c) => c.status === 'PASS').length : 0
+  const failed = ran ? checklist.filter((c) => c.status === 'FAIL').length : 0
+  const warned = ran
+    ? checklist.filter((c) => c.status === 'WARNING').length
+    : 0
+  const allPass = ran && failed === 0
 
-  const groups = ['Thiết bị', 'Môi trường']
+  const statusColor = {
+    PASS: 'var(--green)',
+    FAIL: 'var(--red)',
+    WARNING: 'var(--amber)',
+    PENDING: 'var(--text-3)',
+  }
+  const statusBg = {
+    PASS: 'var(--green-bg)',
+    FAIL: 'var(--red-bg)',
+    WARNING: 'var(--amber-bg)',
+    PENDING: 'var(--surface-2)',
+  }
+  const statusBorder = {
+    PASS: 'var(--green-border)',
+    FAIL: 'var(--red-border)',
+    WARNING: 'var(--amber-border)',
+    PENDING: 'var(--border)',
+  }
+  const statusLabel = {
+    PASS: 'Passed',
+    FAIL: 'Failed',
+    WARNING: 'Warning',
+    PENDING: 'Pending',
+  }
+  const statusIcon = { PASS: '✓', FAIL: '✕', WARNING: '⚠', PENDING: '—' }
 
   return (
-    <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', maxWidth: 700 }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
-        ← Quay lại
-      </button>
-
-      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
-        Preflight checklist · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
-      </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>Preflight checklist</h1>
-      <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 18 }}>{mission.droneId} {mission.droneName}</div>
-
-      {groups.map((group) => (
-        <div key={group} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 16 }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-            {group}
-          </div>
-          {CHECKLIST.filter((c) => c.group === group).map((item, idx, arr) => (
-            <div key={item.id} style={{ borderBottom: idx < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
-              <PreflightItem
-                id={item.id}
-                label={item.label}
-                value={item.value}
-                result={results[item.id] ?? null}
-                onResult={handleResult}
-              />
-            </div>
-          ))}
-        </div>
-      ))}
-
-      {/* Summary */}
-      {allAnswered && (
-        <div style={{
-          background: failed > 0 ? '#fef2f2' : '#f0fdf4',
-          border: `1px solid ${failed > 0 ? '#fca5a5' : '#86efac'}`,
-          borderRadius: 10,
-          padding: '14px 18px',
-          marginBottom: 16,
+    <div
+      className="fade-in"
+      style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}
+    >
+      <button
+        onClick={onBack}
+        style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 10,
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: failed > 0 ? '#991b1b' : '#166534' }}>
-            {passed}/{total} mục đạt {failed > 0 ? 'FAIL · CHẶN BAY' : 'PASS · đủ điều kiện cất cánh'}
-          </span>
-          {failed > 0 ? (
-            <button className="op-btn op-btn-ghost" style={{ fontSize: 12, borderColor: 'var(--red)', color: 'var(--red)' }} onClick={onFail}>
-              Báo cáo sự cố
-            </button>
-          ) : (
-            <button className="op-btn op-btn-primary" onClick={onPass}>
-              Tiếp tục tới buồng lái →
-            </button>
+          gap: 6,
+          background: 'none',
+          border: 'none',
+          color: 'var(--text-2)',
+          fontSize: 13,
+          cursor: 'pointer',
+          padding: 0,
+          marginBottom: 20,
+        }}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M9 2L4 7l5 5" />
+        </svg>
+        Back
+      </button>
+
+      <div style={{ maxWidth: 640 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            marginBottom: 28,
+          }}
+        >
+          <div>
+            <h1
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: 'var(--text)',
+                margin: '0 0 6px',
+              }}
+            >
+              Pre-flight check
+            </h1>
+            <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
+              Automated safety checks before flight authorisation.
+            </p>
+          </div>
+          {ran && (
+            <div style={{ textAlign: 'right' }}>
+              <div
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  color: allPass ? 'var(--green)' : 'var(--red)',
+                  lineHeight: 1,
+                }}
+              >
+                {passed}/{checklist.length}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                checks passed
+              </div>
+            </div>
           )}
         </div>
-      )}
 
-      {!allAnswered && (
-        <div style={{ fontSize: 13, color: 'var(--text-3)', padding: '8px 0' }}>
-          {answered}/{total} mục đã kiểm tra · Hoàn tất các mục còn lại
+        {/* Progress bar */}
+        {ran && (
+          <div
+            style={{
+              height: 6,
+              background: 'var(--border)',
+              borderRadius: 3,
+              overflow: 'hidden',
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                width: `${(passed / checklist.length) * 100}%`,
+                height: '100%',
+                background: allPass ? 'var(--green)' : 'var(--red)',
+                borderRadius: 3,
+                transition: 'width .5s',
+              }}
+            />
+          </div>
+        )}
+
+        {/* Checklist items */}
+        <div
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            overflow: 'hidden',
+            boxShadow: 'var(--shadow)',
+            marginBottom: 20,
+          }}
+        >
+          {checklist.map((item, i) => {
+            const s = ran ? item.status : 'PENDING'
+            return (
+              <div
+                key={item.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto',
+                  gap: 16,
+                  padding: '16px 20px',
+                  borderBottom:
+                    i < checklist.length - 1
+                      ? '1px solid var(--border)'
+                      : 'none',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: 'var(--text)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  {ran && (
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--text-2)',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {item.value}
+                    </div>
+                  )}
+                  {item.explanation && !ran && (
+                    <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                      {item.explanation}
+                    </div>
+                  )}
+                </div>
+                {ran && (
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontFamily: 'var(--font-data)',
+                      fontWeight: 600,
+                      color:
+                        item.status === 'FAIL'
+                          ? 'var(--red)'
+                          : item.status === 'WARNING'
+                            ? 'var(--amber)'
+                            : 'var(--text)',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                )}
+                <div
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    background: statusBg[s],
+                    border: `1px solid ${statusBorder[s]}`,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: statusColor[s],
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span>{statusIcon[s]}</span>
+                  {statusLabel[s]}
+                </div>
+              </div>
+            )
+          })}
         </div>
-      )}
+
+        {/* Result banner */}
+        {ran && (
+          <div
+            style={{
+              padding: '14px 16px',
+              borderRadius: 10,
+              marginBottom: 20,
+              background: allPass ? 'var(--green-bg)' : 'var(--red-bg)',
+              border: `1px solid ${allPass ? 'var(--green-border)' : 'var(--red-border)'}`,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: allPass ? 'var(--green-text)' : 'var(--red-text)',
+              }}
+            >
+              {allPass
+                ? `All ${passed} checks passed — ready to proceed.`
+                : `${failed} check${failed > 1 ? 's' : ''} failed${warned > 0 ? `, ${warned} warning${warned > 1 ? 's' : ''}` : ''} — review the results below.`}
+            </div>
+          </div>
+        )}
+
+        {!ran && !running && (
+          <button
+            onClick={runChecks}
+            style={{
+              width: '100%',
+              padding: '11px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--accent)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            Run pre-flight checks
+          </button>
+        )}
+        {running && (
+          <button
+            disabled
+            style={{
+              width: '100%',
+              padding: '11px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--surface-2)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--text-3)',
+              cursor: 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                width: 14,
+                height: 14,
+                border: '2px solid var(--border-2)',
+                borderTopColor: 'var(--accent)',
+                borderRadius: '50%',
+              }}
+              className="spin"
+            />
+            Running checks…
+          </button>
+        )}
+        {ran && allPass && (
+          <button
+            onClick={onPass}
+            style={{
+              width: '100%',
+              padding: '11px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--accent)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            Continue to control handover
+          </button>
+        )}
+        {ran && !allPass && (
+          <button
+            onClick={onFail}
+            style={{
+              width: '100%',
+              padding: '11px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--red)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            View failure report
+          </button>
+        )}
+      </div>
     </div>
   )
 }

@@ -51,6 +51,23 @@ describe('POST /api/v1/auth/login', () => {
     })
   })
 
+  it('logs in an admin mock user with the right password and returns ADMIN role', async () => {
+    const response = await postJson('/api/v1/auth/login', {
+      email: 'binh.tran@odms.vn',
+      password: 'Demo@123',
+    })
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload.success).toBe(true)
+    expect(payload.data.accessToken).toBe('mock-admin-token')
+    expect(payload.data.user).toMatchObject({
+      email: 'binh.tran@odms.vn',
+      role: 'ADMIN',
+      fullName: 'Trần Quốc Bình',
+    })
+  })
+
   it('rejects a known mock user with the wrong password (INVALID_CREDENTIALS)', async () => {
     const response = await postJson('/api/v1/auth/login', {
       email: 'hang.le@odms.vn',

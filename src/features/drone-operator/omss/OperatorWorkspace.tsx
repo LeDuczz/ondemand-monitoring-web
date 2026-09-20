@@ -21,7 +21,9 @@ import {
 } from './mockData'
 import missionsJson from '../../../mocks/data/operator-missions.json'
 
-import OperatorTopNav, { BREADCRUMB_LABELS } from './components/OperatorTopNav'
+import OperatorSidebar, {
+  BREADCRUMB_LABELS,
+} from './components/OperatorSidebar'
 
 import OperatorOverview from './screens/OperatorOverview'
 import MissionList from './screens/MissionList'
@@ -183,6 +185,13 @@ export default function OperatorWorkspace() {
   const [drone, setDrone] = useState<Drone>({ ...DRONE_PRIMARY })
   const [token, setToken] = useState<FlightToken | null>(null)
   const [failReason, setFailReason] = useState('Pre-flight hardware failure')
+  const [dark, setDark] = useState(
+    () => document.documentElement.dataset.theme === 'dark',
+  )
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  }, [dark])
 
   useEffect(() => {
     let cancelled = false
@@ -378,42 +387,21 @@ export default function OperatorWorkspace() {
     responseDeadline: null,
   }
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        overflow: 'hidden',
-        fontFamily: 'var(--font-ui)',
-        background: 'var(--bg)',
-      }}
-    >
-      {!isImmersive && (
-        <OperatorTopNav
-          screen={screen}
-          onNavigate={handleTopNavChange}
-          pendingCount={pendingCount}
-          notificationCount={pendingCount}
-        />
-      )}
-
-      {!isImmersive && (
-        <div
-          style={{
-            padding: '8px 20px',
-            fontSize: 13,
-            color: 'var(--text-3)',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--bg)',
-            flexShrink: 0,
-          }}
-        >
-          Phi công · {BREADCRUMB_LABELS[screen] ?? ''}
-        </div>
-      )}
-
-      {isImmersive && (
+  // The in-flight console is a full-screen immersive experience — no
+  // sidebar, no ODM retheme, keeps its own dark indigo palette.
+  if (isImmersive) {
+    return (
+      <div
+        className="dark-ws"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          overflow: 'hidden',
+          fontFamily: 'var(--font-ui)',
+          background: 'var(--bg)',
+        }}
+      >
         <div
           style={{
             height: 3,
@@ -421,18 +409,46 @@ export default function OperatorWorkspace() {
             flexShrink: 0,
           }}
         />
-      )}
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          <InFlightControl
+            mission={displayMission}
+            drone={displayDrone}
+            onRTB={handleRTB}
+            onEmergency={handleEmergency}
+          />
+        </div>
+      </div>
+    )
+  }
 
-      <div
-        className={isImmersive ? 'dark-ws' : ''}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
+  return (
+    <div className="odm odm-opr odm-opr-scope" style={{ height: '100vh', overflow: 'hidden' }}>
+      <div className="odm-opr-shell">
+        <OperatorSidebar
+          screen={screen}
+          onNavigate={handleTopNavChange}
+          pendingCount={pendingCount}
+          notificationCount={pendingCount}
+        />
+        <div className="odm-opr-main">
+          <div
+            className="odm-opr-breadcrumb"
+            style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+          >
+            <span style={{ flex: 1 }}>
+              Phi công · {BREADCRUMB_LABELS[screen] ?? ''}
+            </span>
+            <button
+              type="button"
+              className="odm-btn odm-btn-gh odm-btn-ic1"
+              aria-label="Đổi giao diện sáng / tối"
+              onClick={() => setDark((v) => !v)}
+            >
+              {dark ? '☀' : '☾'}
+            </button>
+          </div>
+
+          <div className="odm-opr-content">
         {/* Operator overview */}
         {screen === 'operator-overview' && (
           <OperatorOverview
@@ -544,14 +560,6 @@ export default function OperatorWorkspace() {
             onAbort={() => setScreen('control-handover')}
           />
         )}
-        {screen === 'in-flight' && (
-          <InFlightControl
-            mission={displayMission}
-            drone={displayDrone}
-            onRTB={handleRTB}
-            onEmergency={handleEmergency}
-          />
-        )}
         {screen === 'return-to-base' && (
           <ReturnToBase drone={displayDrone} onLanded={handleLanded} />
         )}
@@ -603,6 +611,8 @@ export default function OperatorWorkspace() {
         {/* Account: notifications & profile */}
         {screen === 'notifications' && <NotificationsPage />}
         {screen === 'profile' && <ProfilePage profile={OP_PROFILE} />}
+          </div>
+        </div>
       </div>
     </div>
   )

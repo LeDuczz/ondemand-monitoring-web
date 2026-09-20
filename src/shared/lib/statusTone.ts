@@ -22,13 +22,15 @@ import type {
 } from '../types/domain'
 
 export const orderStatusTone: Record<OrderStatus, StatusTone> = {
-  PENDING: 'gray', // brief: PENDING → gray
-  APPROVED: 'green', // brief: APPROVED → green
-  REJECTED: 'red', // brief: REJECTED → red
-  IN_PROGRESS: 'blue', // brief: IN_PROGRESS → blue
-  COMPLETED: 'green', // brief: COMPLETED → green
-  // mapping by meaning: terminal, non-error stop — same family as CANCELLED
-  // mission/drone states, treated as neutral rather than an error.
+  DRAFT: 'gray',
+  AI_ANALYZED: 'blue',
+  SUBMITTED: 'yellow',
+  PENDING: 'gray',
+  APPROVED: 'green',
+  SCHEDULED: 'blue',
+  REJECTED: 'red',
+  IN_PROGRESS: 'blue',
+  COMPLETED: 'green',
   CANCELLED: 'gray',
 }
 
@@ -121,8 +123,12 @@ export const mediaStatusTone: Record<MediaStatus, StatusTone> = {
 }
 
 export const orderStatusLabel: Record<OrderStatus, string> = {
+  DRAFT: 'Nháp',
+  AI_ANALYZED: 'Đã phân tích AI',
+  SUBMITTED: 'Đã gửi duyệt',
   PENDING: 'Chờ duyệt',
   APPROVED: 'Đã duyệt',
+  SCHEDULED: 'Đã lên lịch',
   REJECTED: 'Từ chối',
   IN_PROGRESS: 'Đang thực hiện',
   COMPLETED: 'Hoàn thành',

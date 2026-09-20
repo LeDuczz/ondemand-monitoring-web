@@ -3,11 +3,15 @@ import type { OrderStatus, MissionStatus, StatusTone } from '../../../shared/typ
 type StatusMeta = { label: string; tone: StatusTone }
 
 export const ORDER_STATUS_META: Record<OrderStatus, StatusMeta> = {
-  PENDING: { label: 'Chờ duyệt', tone: 'yellow' },
+  DRAFT: { label: 'Nháp', tone: 'gray' },
+  AI_ANALYZED: { label: 'Đã phân tích AI', tone: 'blue' },
+  SUBMITTED: { label: 'Đã gửi duyệt', tone: 'yellow' },
+  PENDING: { label: 'Đang duyệt', tone: 'yellow' },
   APPROVED: { label: 'Đã duyệt', tone: 'blue' },
-  REJECTED: { label: 'Từ chối', tone: 'red' },
-  IN_PROGRESS: { label: 'Đang thực hiện', tone: 'blue' },
+  SCHEDULED: { label: 'Đã lên lịch', tone: 'blue' },
+  IN_PROGRESS: { label: 'Đang thực hiện', tone: 'green' },
   COMPLETED: { label: 'Hoàn thành', tone: 'green' },
+  REJECTED: { label: 'Bị từ chối', tone: 'red' },
   CANCELLED: { label: 'Đã huỷ', tone: 'gray' },
 }
 

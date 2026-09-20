@@ -16,6 +16,9 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tổng quan', icon: '⊞', route: { screen: 'dashboard' } },
   { label: 'Đơn của tôi', icon: '≡', route: { screen: 'orders' } },
   { label: 'Tạo yêu cầu', icon: '+', route: { screen: 'createOrder' } },
+  { label: 'Xem trực tiếp', icon: '▶', route: { screen: 'liveHub' } },
+  { label: 'Thư viện kết quả', icon: '⊟', route: { screen: 'mediaLibrary' }, newMediaBadge: true },
+  { label: 'Thông báo', icon: '🔔', route: { screen: 'notifications' } },
 ]
 
 const activeScreen: Record<CustomerScreen, string> = {
@@ -24,8 +27,12 @@ const activeScreen: Record<CustomerScreen, string> = {
   createOrder: 'Tạo yêu cầu',
   orderDetail: 'Đơn của tôi',
   analysis: 'Đơn của tôi',
-  live: 'Đơn của tôi',
-  media: 'Đơn của tôi',
+  live: 'Xem trực tiếp',
+  liveHub: 'Xem trực tiếp',
+  media: 'Thư viện kết quả',
+  mediaLibrary: 'Thư viện kết quả',
+  mediaDetail: 'Thư viện kết quả',
+  notifications: 'Thông báo',
   notFound: '',
 }
 
@@ -81,7 +88,7 @@ export function CustomerLayout({
             {NAV_ITEMS.map((item) => {
               const isActive = item.label === active
               const badge =
-                item.label === 'Đơn của tôi' && (newMediaCount ?? 0) > 0
+                item.newMediaBadge && (newMediaCount ?? 0) > 0
                   ? newMediaCount
                   : undefined
               return (

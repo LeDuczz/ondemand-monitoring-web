@@ -8,7 +8,11 @@ import { AnalysisPage } from './pages/AnalysisPage'
 import { CreateOrderPage } from './pages/CreateOrderPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LivePage } from './pages/LivePage'
+import { LiveHubPage } from './pages/LiveHubPage'
+import { MediaDetailPage } from './pages/MediaDetailPage'
+import { MediaLibraryPage } from './pages/MediaLibraryPage'
 import { MediaPage } from './pages/MediaPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { OrderDetailPage } from './pages/OrderDetailPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { customerHref, parseCustomerRoute, type CustomerRoute } from './routes'
@@ -29,8 +33,12 @@ const breadcrumbLabel: Record<CustomerRoute['screen'], string> = {
   createOrder: 'Tạo yêu cầu',
   orderDetail: 'Chi tiết đơn hàng',
   analysis: 'Phân tích AI',
-  live: 'Giám sát realtime',
+  live: 'Xem trực tiếp',
+  liveHub: 'Xem trực tiếp',
   media: 'Thư viện media',
+  mediaLibrary: 'Thư viện kết quả',
+  mediaDetail: 'Chi tiết media',
+  notifications: 'Thông báo',
   notFound: 'Không tìm thấy',
 }
 
@@ -62,6 +70,10 @@ function renderScreen(route: CustomerRoute) {
     return <AnalysisPage orderId={route.orderId} />
   if (route.screen === 'live') return <LivePage orderId={route.orderId} />
   if (route.screen === 'media') return <MediaPage orderId={route.orderId} />
+  if (route.screen === 'liveHub') return <LiveHubPage />
+  if (route.screen === 'mediaLibrary') return <MediaLibraryPage />
+  if (route.screen === 'mediaDetail') return <MediaDetailPage mediaId={route.mediaId} />
+  if (route.screen === 'notifications') return <NotificationsPage />
 
   return (
     <EmptyState

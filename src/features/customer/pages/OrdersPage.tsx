@@ -16,8 +16,12 @@ type FilterOption = { label: string; value: OrderStatus | '' }
 
 const FILTERS: FilterOption[] = [
   { label: 'Tất cả', value: '' },
-  { label: 'Chờ duyệt', value: 'PENDING' },
+  { label: 'Nháp', value: 'DRAFT' },
+  { label: 'Đã phân tích AI', value: 'AI_ANALYZED' },
+  { label: 'Đã gửi duyệt', value: 'SUBMITTED' },
+  { label: 'Đang duyệt', value: 'PENDING' },
   { label: 'Đã duyệt', value: 'APPROVED' },
+  { label: 'Đã lên lịch', value: 'SCHEDULED' },
   { label: 'Đang thực hiện', value: 'IN_PROGRESS' },
   { label: 'Hoàn thành', value: 'COMPLETED' },
   { label: 'Từ chối', value: 'REJECTED' },
@@ -100,7 +104,9 @@ export function OrdersPage() {
                 <th>Địa điểm</th>
                 <th>Ngày bay</th>
                 <th>Dịch vụ</th>
+                <th>Bán kính</th>
                 <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -143,8 +149,30 @@ export function OrdersPage() {
                     <td style={{ fontSize: 12 }}>
                       {order.serviceNames.join(', ') || '—'}
                     </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                      {order.radiusM != null ? `${order.radiusM} m` : '—'}
+                    </td>
                     <td>
                       <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                    </td>
+                    <td>
+                      <a
+                        href={customerHref({ screen: 'orderDetail', orderId: order.id })}
+                        style={{ fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+                      >
+                        Xem
+                      </a>
+                      {(order.status === 'DRAFT' || order.status === 'AI_ANALYZED') && (
+                        <>
+                          {' · '}
+                          <a
+                            href={customerHref({ screen: 'analysis', orderId: order.id })}
+                            style={{ fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+                          >
+                            AI
+                          </a>
+                        </>
+                      )}
                     </td>
                   </tr>
                 )

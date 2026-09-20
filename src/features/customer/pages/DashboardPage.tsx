@@ -37,6 +37,43 @@ export function DashboardPage() {
         </a>
       </div>
 
+      {/* Live banner */}
+      {data.activeLiveMission && (
+        <a
+          href={customerHref({ screen: 'live', orderId: data.activeLiveMission.orderId })}
+          className="odm-cus-live-banner"
+          style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: '#ef4444',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 11,
+                borderRadius: 4,
+                padding: '2px 8px',
+                letterSpacing: '0.05em',
+              }}
+            >
+              ● LIVE
+            </span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>
+              {data.activeLiveMission.orderTitle}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+              {data.activeLiveMission.missionCode}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 'auto' }}>
+              👥 {data.activeLiveMission.viewerCount} đang xem →
+            </span>
+          </div>
+        </a>
+      )}
+
       {/* KPI cards */}
       <div className="odm-cus-kpi-row">
         <div className="odm-cus-kpi-card">

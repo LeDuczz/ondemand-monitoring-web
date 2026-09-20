@@ -12,9 +12,14 @@ import {
 } from '../lib/orderStatus'
 import { customerHref } from '../routes'
 
+const VERDICT_TONE = { FEASIBLE: 'green', RISKY: 'yellow', INFEASIBLE: 'red' } as const
+const VERDICT_LABEL = { FEASIBLE: 'Khả thi', RISKY: 'Có rủi ro', INFEASIBLE: 'Không khả thi' } as const
+
 export function OrderDetailPage({ orderId }: { orderId: string }) {
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [showAi, setShowAi] = useState(false)
 
   const { data, loading, error, reload } = useApiQuery(
     (signal) => customerApi.getOrder(orderId, signal),
@@ -25,7 +30,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
   if (error || !data) return <ErrorState error={error} onRetry={reload} />
 
   const statusMeta = ORDER_STATUS_META[data.status]
-  const canCancel = data.status === 'PENDING' || data.status === 'APPROVED'
+  const canCancel = data.canCancel
 
   async function handleCancel() {
     if (!confirm('Bạn có chắc muốn huỷ đơn hàng này?')) return
@@ -111,7 +116,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           </div>
           <div>
             <div className="odm-cus-detail-label">Ngày nộp</div>
-            <div className="odm-cus-detail-value">{fmtDateTime(data.submittedAt)}</div>
+            <div className="odm-cus-detail-value">
+              {data.submittedAt ? fmtDateTime(data.submittedAt) : '—'}
+            </div>
           </div>
           <div>
             <div className="odm-cus-detail-label">Địa điểm</div>
@@ -144,6 +151,157 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           )}
         </div>
       </div>
+
+      {/* Approval card */}
+      {data.approvalDecision === 'APPROVED' && (
+        <div
+          style={{
+            background: 'var(--green-muted, #dcfce7)',
+            border: '1px solid var(--green-solid)',
+            borderRadius: 10,
+            padding: '14px 16px',
+            marginBottom: 16,
+            fontSize: 13,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+            ✓ Đã được duyệt
+            {data.approvalActorName ? ` bởi ${data.approvalActorName}` : ''}
+            {data.approvalAt ? ` · ${fmtDateTime(data.approvalAt)}` : ''}
+          </div>
+          {data.approvalReason && (
+            <div style={{ color: 'var(--tx2)' }}>{data.approvalReason}</div>
+          )}
+        </div>
+      )}
+
+      {/* AI summary collapsible */}
+      {data.aiSummary && (
+        <div
+          style={{
+            background: 'var(--sf)',
+            border: '1px solid var(--bd)',
+            borderRadius: 10,
+            marginBottom: 16,
+            overflow: 'hidden',
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '12px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--tx)',
+              textAlign: 'left',
+            }}
+            onClick={() => setShowAi((v) => !v)}
+          >
+            <span>{showAi ? '▾' : '▸'}</span>
+            <span>Kết quả phân tích AI</span>
+            <StatusBadge tone={VERDICT_TONE[data.aiSummary.verdict]}>
+              {VERDICT_LABEL[data.aiSummary.verdict]}
+            </StatusBadge>
+            <a
+              href={customerHref({ screen: 'analysis', orderId })}
+              style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Chi tiết →
+            </a>
+          </button>
+          {showAi && (
+            <div style={{ padding: '0 16px 14px', fontSize: 13, color: 'var(--tx2)' }}>
+              {data.aiSummary.blockerCount > 0 && (
+                <span style={{ marginRight: 12 }}>🚫 {data.aiSummary.blockerCount} blocker</span>
+              )}
+              {data.aiSummary.warningCount > 0 && (
+                <span style={{ marginRight: 12 }}>⚠ {data.aiSummary.warningCount} cảnh báo</span>
+              )}
+              {data.aiSummary.blockerCount === 0 && data.aiSummary.warningCount === 0 && (
+                <span>Không có vấn đề.</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Status history collapsible */}
+      {data.statusHistory.length > 0 && (
+        <div
+          style={{
+            background: 'var(--sf)',
+            border: '1px solid var(--bd)',
+            borderRadius: 10,
+            marginBottom: 16,
+            overflow: 'hidden',
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--tx)',
+              textAlign: 'left',
+            }}
+            onClick={() => setShowHistory((v) => !v)}
+          >
+            <span>{showHistory ? '▾' : '▸'}</span>
+            <span>Lịch sử trạng thái</span>
+            <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--tx3)', marginLeft: 4 }}>
+              {data.statusHistory.length} sự kiện
+            </span>
+          </button>
+          {showHistory && (
+            <div style={{ padding: '0 16px 16px' }}>
+              <div className="odm-cus-timeline">
+                {[...data.statusHistory].reverse().map((evt, i) => {
+                  const meta = ORDER_STATUS_META[evt.status]
+                  return (
+                    <div key={i} className="odm-cus-timeline-item">
+                      <div className="odm-cus-timeline-dot" />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                          {evt.actorName && (
+                            <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                              bởi {evt.actorName}
+                            </span>
+                          )}
+                          <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--tx3)', marginLeft: 'auto' }}>
+                            {fmtDateTime(evt.at)}
+                          </span>
+                        </div>
+                        {evt.note && (
+                          <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
+                            {evt.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Missions */}
       {data.missions.length > 0 && (
@@ -207,6 +365,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
                       <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>
                         {fmtDateTime(m.scheduledStartAt)}
                         {m.scheduledEndAt ? ` → ${fmtDateTime(m.scheduledEndAt)}` : ''}
+                      </div>
+                    )}
+                    {m.failureReason && (
+                      <div style={{ fontSize: 12, color: 'var(--red-solid)', marginTop: 4 }}>
+                        ⚠ {m.failureReason}
                       </div>
                     )}
                   </div>

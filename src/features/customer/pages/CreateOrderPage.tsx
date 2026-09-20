@@ -87,14 +87,13 @@ export function CreateOrderPage() {
         title: form.title.trim(),
         purpose: form.purpose.trim() || undefined,
         description: form.description.trim() || undefined,
-        serviceId: selectedService,
+        serviceIds: selectedService ? [selectedService] : [],
         addressText: form.addressText.trim(),
         centerLat: 0,
         centerLon: 0,
         radiusM: 300,
         preferredDate: form.preferredDate,
         preferredTimeName: form.preferredTimeName,
-        mediaItems: [],
       }
       const result = await customerApi.createOrder(payload)
       setCreatedId(result.id)

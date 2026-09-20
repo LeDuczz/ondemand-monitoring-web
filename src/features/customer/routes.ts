@@ -1,11 +1,3 @@
-// Customer (role CUSTOMER) client-side routing. All customer screens live under
-// the `#portal/customer` hash prefix.
-//
-// Screen -> design code:
-//  dashboard   CUS-01   createOrder  CUS-02   analysis    CUS-03
-//  orders      CUS-04   orderDetail  CUS-05   live        CUS-06
-//  media       CUS-07
-
 export const CUSTOMER_ROOT = '#portal/customer'
 
 export type CustomerRoute =
@@ -15,21 +7,14 @@ export type CustomerRoute =
   | { screen: 'analysis'; orderId: string }
   | { screen: 'orderDetail'; orderId: string }
   | { screen: 'live'; orderId: string }
+  | { screen: 'liveHub' }
+  | { screen: 'mediaLibrary' }
+  | { screen: 'mediaDetail'; mediaId: string }
   | { screen: 'media'; orderId: string }
+  | { screen: 'notifications' }
   | { screen: 'notFound' }
 
 export type CustomerScreen = CustomerRoute['screen']
-
-export const customerScreenCode: Record<CustomerScreen, string> = {
-  dashboard: 'CUS-01',
-  createOrder: 'CUS-02',
-  analysis: 'CUS-03',
-  orders: 'CUS-04',
-  orderDetail: 'CUS-05',
-  live: 'CUS-06',
-  media: 'CUS-07',
-  notFound: '',
-}
 
 export function parseCustomerRoute(hash: string): CustomerRoute {
   if (hash !== CUSTOMER_ROOT && !hash.startsWith(`${CUSTOMER_ROOT}/`)) {
@@ -56,6 +41,15 @@ export function parseCustomerRoute(hash: string): CustomerRoute {
         return { screen: 'media', orderId: tail[0] }
       return { screen: 'notFound' }
     }
+    case 'live':
+      return { screen: 'liveHub' }
+    case 'media': {
+      if (tail.length === 0) return { screen: 'mediaLibrary' }
+      if (tail.length === 1) return { screen: 'mediaDetail', mediaId: tail[0] }
+      return { screen: 'notFound' }
+    }
+    case 'notifications':
+      return { screen: 'notifications' }
     default:
       return { screen: 'notFound' }
   }
@@ -75,8 +69,16 @@ export function customerHref(route: CustomerRoute): string {
       return `${CUSTOMER_ROOT}/orders/${route.orderId}`
     case 'live':
       return `${CUSTOMER_ROOT}/orders/${route.orderId}/live`
+    case 'liveHub':
+      return `${CUSTOMER_ROOT}/live`
+    case 'mediaLibrary':
+      return `${CUSTOMER_ROOT}/media`
+    case 'mediaDetail':
+      return `${CUSTOMER_ROOT}/media/${route.mediaId}`
     case 'media':
       return `${CUSTOMER_ROOT}/orders/${route.orderId}/media`
+    case 'notifications':
+      return `${CUSTOMER_ROOT}/notifications`
     case 'notFound':
       return CUSTOMER_ROOT
   }

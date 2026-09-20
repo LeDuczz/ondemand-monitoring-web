@@ -10,11 +10,15 @@
 export type StatusTone = 'gray' | 'yellow' | 'blue' | 'green' | 'orange' | 'red'
 
 export type OrderStatus =
+  | 'DRAFT'
+  | 'AI_ANALYZED'
+  | 'SUBMITTED'
   | 'PENDING'
   | 'APPROVED'
-  | 'REJECTED'
+  | 'SCHEDULED'
   | 'IN_PROGRESS'
   | 'COMPLETED'
+  | 'REJECTED'
   | 'CANCELLED'
 
 export type MissionStatus =

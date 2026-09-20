@@ -14,6 +14,7 @@ const roleLabels: Record<UserRole, string> = {
   DRONE_OPERATOR: 'Drone operations',
   SYSTEM_OPERATOR: 'System operations',
   ADMIN: 'Administration',
+  AUDITOR: 'Audit workspace',
 }
 
 const navItems: Record<UserRole, PortalNavItem[]> = {
@@ -61,6 +62,9 @@ const navItems: Record<UserRole, PortalNavItem[]> = {
     { label: 'Users', icon: 'users', href: '#portal/admin/accounts/new' },
     { label: 'Missions', icon: 'route', href: '#portal/admin/missions' },
     { label: 'Audit logs', icon: 'clipboard', href: '#portal/admin/audit' },
+  ],
+  AUDITOR: [
+    { label: 'Audit log', icon: 'clipboard', href: '#portal/admin/audit-log' },
   ],
 }
 

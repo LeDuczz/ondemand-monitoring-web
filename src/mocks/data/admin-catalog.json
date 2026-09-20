@@ -1,0 +1,173 @@
+{
+  "_note": "Mock catalog data: services, timeslots, stations for ADM-03.",
+  "services": [
+    {
+      "id": "svc-construction",
+      "code": "CONSTRUCTION_PROGRESS",
+      "name": "Theo dõi tiến độ xây dựng",
+      "description": "Bay chụp ảnh tiến độ công trình, so sánh với bản vẽ.",
+      "defaultDurationMin": 60,
+      "minAltitudeM": 30,
+      "maxAltitudeM": 120,
+      "sensors": [
+        { "sensor": "RGB", "isMandatory": true },
+        { "sensor": "ZOOM", "isMandatory": false }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "svc-thermal",
+      "code": "THERMAL_INSPECTION",
+      "name": "Kiểm tra nhiệt hồng ngoại",
+      "description": "Phát hiện rò rỉ nhiệt, kiểm tra tấm pin mặt trời, hệ thống điện.",
+      "defaultDurationMin": 45,
+      "minAltitudeM": 20,
+      "maxAltitudeM": 80,
+      "sensors": [
+        { "sensor": "THERMAL", "isMandatory": true },
+        { "sensor": "RGB", "isMandatory": false }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "svc-patrol",
+      "code": "AREA_PATROL",
+      "name": "Tuần tra khu vực",
+      "description": "Bay tuần tra an ninh, giám sát khu vực rộng lớn.",
+      "defaultDurationMin": 90,
+      "minAltitudeM": 50,
+      "maxAltitudeM": 200,
+      "sensors": [
+        { "sensor": "RGB", "isMandatory": true },
+        { "sensor": "ZOOM", "isMandatory": true }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "svc-ndvi",
+      "code": "CROP_NDVI",
+      "name": "Phân tích chỉ số thực vật NDVI",
+      "description": "Đánh giá sức khỏe cây trồng, phát hiện sâu bệnh sớm.",
+      "defaultDurationMin": 75,
+      "minAltitudeM": 30,
+      "maxAltitudeM": 100,
+      "sensors": [
+        { "sensor": "MULTISPECTRAL", "isMandatory": true },
+        { "sensor": "RGB", "isMandatory": false }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "svc-traffic",
+      "code": "TRAFFIC_EVENT",
+      "name": "Ghi nhận sự kiện giao thông",
+      "description": "Ghi hình sự cố, ùn tắc, hỗ trợ xử lý tai nạn giao thông.",
+      "defaultDurationMin": 30,
+      "minAltitudeM": 40,
+      "maxAltitudeM": 150,
+      "sensors": [
+        { "sensor": "RGB", "isMandatory": true },
+        { "sensor": "ZOOM", "isMandatory": true }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "svc-mapping",
+      "code": "MAPPING_2D3D",
+      "name": "Lập bản đồ 2D/3D",
+      "description": "Tạo bản đồ địa hình, mô hình 3D khu vực dự án.",
+      "defaultDurationMin": 120,
+      "minAltitudeM": 80,
+      "maxAltitudeM": 300,
+      "sensors": [
+        { "sensor": "RGB", "isMandatory": true },
+        { "sensor": "MULTISPECTRAL", "isMandatory": false }
+      ],
+      "isActive": true
+    }
+  ],
+  "timeslots": [
+    {
+      "id": "ts-morning-v1",
+      "code": "MORNING",
+      "name": "Khung sáng",
+      "version": "1.0",
+      "startTime": "06:00",
+      "endTime": "11:00",
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2026-06-30"
+    },
+    {
+      "id": "ts-morning-v2",
+      "code": "MORNING",
+      "name": "Khung sáng",
+      "version": "2.0",
+      "startTime": "06:30",
+      "endTime": "11:30",
+      "effectiveFrom": "2026-07-01",
+      "effectiveTo": null
+    },
+    {
+      "id": "ts-afternoon-v1",
+      "code": "AFTERNOON",
+      "name": "Khung chiều",
+      "version": "1.0",
+      "startTime": "13:00",
+      "endTime": "17:30",
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "2026-06-30"
+    },
+    {
+      "id": "ts-afternoon-v2",
+      "code": "AFTERNOON",
+      "name": "Khung chiều",
+      "version": "2.0",
+      "startTime": "13:30",
+      "endTime": "18:00",
+      "effectiveFrom": "2026-07-01",
+      "effectiveTo": null
+    }
+  ],
+  "stations": [
+    {
+      "id": "sta-thu-duc",
+      "code": "STA_THU_DUC",
+      "name": "Trạm Thủ Đức",
+      "address": "Đường số 10, Khu CNC, Thủ Đức, TP.HCM",
+      "lat": 10.8461,
+      "lon": 106.7986,
+      "maxServiceRadiusM": 10000,
+      "isActive": true
+    },
+    {
+      "id": "sta-binh-thanh",
+      "code": "STA_BINH_THANH",
+      "name": "Trạm Bình Thạnh",
+      "address": "25 Đinh Tiên Hoàng, Bình Thạnh, TP.HCM",
+      "lat": 10.8031,
+      "lon": 106.7152,
+      "maxServiceRadiusM": 8000,
+      "isActive": true
+    },
+    {
+      "id": "sta-nha-be",
+      "code": "STA_NHA_BE",
+      "name": "Trạm Nhà Bè",
+      "address": "KCN Hiệp Phước, Nhà Bè, TP.HCM",
+      "lat": 10.6831,
+      "lon": 106.7231,
+      "maxServiceRadiusM": 6000,
+      "isActive": true
+    },
+    {
+      "id": "sta-binh-chanh",
+      "code": "STA_BINH_CHANH",
+      "name": "Trạm Bình Chánh",
+      "address": "QL1A, Bình Chánh, TP.HCM",
+      "lat": 10.6931,
+      "lon": 106.5831,
+      "maxServiceRadiusM": 10000,
+      "isActive": false
+    }
+  ]
+}

@@ -33,6 +33,7 @@ function toItem(a: SeedAccount): AdminAccountItem {
     emailVerified: a.emailVerified,
     createdAt: a.createdAt,
     lastLoginAt: a.lastLoginAt,
+    certExpiry: (a as unknown as { certExpiry?: string | null }).certExpiry ?? null,
   }
 }
 
@@ -171,6 +172,17 @@ registerMockRoutes([
         return fail(409, 'ALREADY_ACTIVE', 'Tài khoản đã đang hoạt động.')
       acc.status = 'ACTIVE'
       return ok(toDetail(acc))
+    },
+  },
+
+  // Reset password (sends email, returns success)
+  {
+    method: 'POST',
+    path: '/api/admin/accounts/:id/reset-password',
+    handler: ({ params }) => {
+      const acc = accounts.find((a) => a.id === params.id)
+      if (!acc) return fail(404, 'NOT_FOUND', 'Không tìm thấy tài khoản.')
+      return ok({ sent: true, email: acc.email })
     },
   },
 ])

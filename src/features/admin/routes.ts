@@ -1,9 +1,5 @@
 // Admin (role ADMIN) client-side routing. All admin screens live under
 // the `#portal/admin` hash prefix.
-//
-// Screen -> design code:
-//  dashboard   ADM-01   accounts    ADM-02
-//  createAccount ADM-03  accountDetail ADM-04
 
 export const ADMIN_ROOT = '#portal/admin'
 
@@ -12,6 +8,11 @@ export type AdminRoute =
   | { screen: 'accounts' }
   | { screen: 'createAccount' }
   | { screen: 'accountDetail'; accountId: string }
+  | { screen: 'roles' }
+  | { screen: 'catalog' }
+  | { screen: 'operatingConfig' }
+  | { screen: 'aiKnowledge' }
+  | { screen: 'auditLog' }
   | { screen: 'notFound' }
 
 export type AdminScreen = AdminRoute['screen']
@@ -35,6 +36,16 @@ export function parseAdminRoute(hash: string): AdminRoute {
       if (tail.length === 1) return { screen: 'accountDetail', accountId: tail[0] }
       return { screen: 'notFound' }
     }
+    case 'roles':
+      return { screen: 'roles' }
+    case 'catalog':
+      return { screen: 'catalog' }
+    case 'operating-config':
+      return { screen: 'operatingConfig' }
+    case 'ai-knowledge':
+      return { screen: 'aiKnowledge' }
+    case 'audit-log':
+      return { screen: 'auditLog' }
     default:
       return { screen: 'notFound' }
   }
@@ -50,6 +61,16 @@ export function adminHref(route: AdminRoute): string {
       return `${ADMIN_ROOT}/accounts/new`
     case 'accountDetail':
       return `${ADMIN_ROOT}/accounts/${route.accountId}`
+    case 'roles':
+      return `${ADMIN_ROOT}/roles`
+    case 'catalog':
+      return `${ADMIN_ROOT}/catalog`
+    case 'operatingConfig':
+      return `${ADMIN_ROOT}/operating-config`
+    case 'aiKnowledge':
+      return `${ADMIN_ROOT}/ai-knowledge`
+    case 'auditLog':
+      return `${ADMIN_ROOT}/audit-log`
     case 'notFound':
       return ADMIN_ROOT
   }

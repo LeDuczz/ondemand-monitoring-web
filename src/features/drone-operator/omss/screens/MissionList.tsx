@@ -1,391 +1,163 @@
-import type { Mission, Screen } from '../types'
-import { MissionBadge, PriorityBadge } from '../components/StatusBadge'
+import { useState } from 'react'
+import type { OperatorMission, OperatorProfile } from '../types'
+import MissionCard from '../components/MissionCard'
 
 interface Props {
-  missions: Mission[]
-  onSelect: (m: Mission) => void
-  onScreen: (s: Screen) => void
+  profile: OperatorProfile | null
+  missions: OperatorMission[]
+  loading?: boolean
+  error?: string | null
+  onView: (m: OperatorMission) => void
+  onRetry?: () => void
 }
 
-function fmtDate(iso: string) {
-  const d = new Date(iso)
-  return (
-    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-    ', ' +
-    d.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
+type Tab = 'pending' | 'upcoming' | 'history'
+
+function certWarning(dateStr: string): string | null {
+  const diff = new Date(dateStr).getTime() - Date.now()
+  const days = Math.floor(diff / 86400000)
+  if (days > 30) return null
+  if (days <= 0) return `Chứng chỉ đã hết hạn`
+  return `Chứng chỉ hết hạn ${dateStr.split('T')[0]?.split('-').reverse().join('/')} · còn ${days} ngày`
+}
+
+function tabMissions(missions: OperatorMission[], tab: Tab): OperatorMission[] {
+  if (tab === 'pending') return missions.filter((m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE')
+  if (tab === 'upcoming') return missions.filter(
+    (m) => m.state === 'SCHEDULED' || m.state === 'IN_FLIGHT' || m.state === 'CONNECTED' ||
+      m.state === 'PREFLIGHT_CHECKING' || m.state === 'READY_TO_FLY' || m.state === 'RETURNING' ||
+      m.state === 'POSTFLIGHT_CHECKING',
   )
+  return missions.filter((m) => m.state === 'COMPLETED' || m.state === 'CANCELLED')
 }
 
-const PENDING_STATES = new Set([
-  'WAITING_OPERATOR_ACCEPTANCE',
-  'RESOURCE_ASSIGNING',
-  'SCHEDULED',
-  'CONNECTED',
-  'PREFLIGHT_CHECKING',
-  'READY_TO_FLY',
-  'FAILED_PREFLIGHT',
-  'PENDING_APPROVAL',
-])
+export default function MissionList({ profile, missions, loading, error, onView, onRetry }: Props) {
+  const [tab, setTab] = useState<Tab>('pending')
 
-export default function MissionList({ missions, onSelect, onScreen }: Props) {
-  const awaiting = missions.filter(
-    (m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE',
-  ).length
-  const scheduledToday = missions.filter(
-    (m) =>
-      PENDING_STATES.has(m.state) && m.state !== 'WAITING_OPERATOR_ACCEPTANCE',
-  ).length
-  const inFlight = missions.filter(
-    (m) => m.state === 'IN_FLIGHT' || m.state === 'RETURNING',
-  ).length
-  const completed = missions.filter((m) => m.state === 'COMPLETED').length
+  const pending = missions.filter((m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE')
+  const upcoming = tabMissions(missions, 'upcoming')
+  const history = tabMissions(missions, 'history')
+
+  const counts: Record<Tab, number> = { pending: pending.length, upcoming: upcoming.length, history: history.length }
+  const visible = tabMissions(missions, tab)
+
+  const certMsg = profile ? certWarning(profile.certExpiryDate) : null
+
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'pending', label: 'Chờ phản hồi' },
+    { id: 'upcoming', label: 'Sắp tới' },
+    { id: 'history', label: 'Lịch sử' },
+  ]
 
   return (
-    <div
-      className="fade-in"
-      style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}
-    >
-      {/* Page header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: 24,
-              fontWeight: 700,
-              color: 'var(--text)',
-              margin: '0 0 4px',
-            }}
-          >
-            My missions
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            Track, review and manage your assigned monitoring missions.
-          </p>
-        </div>
-        <div style={{ position: 'relative' }}>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="var(--text-3)"
-            strokeWidth="1.5"
-            style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-            }}
-          >
-            <circle cx="7" cy="7" r="5" />
-            <line x1="11" y1="11" x2="14" y2="14" />
-          </svg>
-          <input
-            placeholder="Search missions"
-            style={{ padding: '8px 12px 8px 32px', width: 220, fontSize: 14 }}
-          />
-        </div>
+    <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+      {/* Breadcrumb */}
+      <div style={{ fontSize: 13, color: 'var(--tx3)', marginBottom: 4 }}>
+        <span style={{ fontWeight: 600, color: 'var(--tx2)' }}>Mission của tôi</span>
+        {profile && (
+          <span> · {profile.fullName} · phi công hạng {profile.licenseGrade}</span>
+        )}
       </div>
 
-      {/* Alert banner */}
-      {awaiting > 0 && (
-        <div
-          style={{
-            background: 'var(--amber-bg)',
-            border: '1px solid var(--amber-border)',
-            borderRadius: 8,
-            padding: '10px 14px',
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            style={{ flexShrink: 0 }}
-          >
-            <path
-              d="M8 1L15 13H1L8 1z"
-              stroke="var(--amber)"
-              strokeWidth="1.5"
-              fill="none"
-              strokeLinejoin="round"
-            />
-            <line
-              x1="8"
-              y1="6"
-              x2="8"
-              y2="10"
-              stroke="var(--amber)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <circle cx="8" cy="12" r=".7" fill="var(--amber)" />
-          </svg>
-          <span style={{ fontSize: 14, color: 'var(--amber-text)' }}>
-            <strong>
-              {awaiting} mission{awaiting > 1 ? 's' : ''}
-            </strong>{' '}
-            require{awaiting === 1 ? 's' : ''} your response. Review and accept
-            before the scheduled launch.
-          </span>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: '0 0 12px' }}>
+        Mission của tôi
+      </h1>
+
+      {/* Cert warning */}
+      {certMsg && (
+        <div style={{
+          background: 'var(--yellow-solid)1a',
+          border: '1px solid var(--yellow-solid)',
+          borderRadius: 8,
+          padding: '8px 14px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 13,
+          color: 'var(--tx)',
+        }}>
+          <span>⚠</span>
+          <span>{certMsg}</span>
         </div>
       )}
 
-      {/* Summary cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4,1fr)',
-          gap: 16,
-          marginBottom: 28,
-        }}
-      >
-        {[
-          {
-            label: 'Awaiting acceptance',
-            value: awaiting,
-            color: 'var(--amber)',
-            dotColor: 'var(--amber-bg)',
-          },
-          {
-            label: 'Scheduled today',
-            value: scheduledToday,
-            color: 'var(--blue)',
-            dotColor: 'var(--blue-bg)',
-          },
-          {
-            label: 'In flight',
-            value: inFlight,
-            color: 'var(--green)',
-            dotColor: 'var(--green-bg)',
-          },
-          {
-            label: 'Completed today',
-            value: completed,
-            color: 'var(--text-2)',
-            dotColor: 'var(--surface-2)',
-          },
-        ].map((c) => (
-          <div
-            key={c.label}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--bd)', marginBottom: 20 }}>
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
             style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              padding: '16px',
-              boxShadow: 'var(--shadow)',
+              padding: '8px 14px',
+              background: 'none',
+              border: 'none',
+              borderBottom: tab === t.id ? '2px solid var(--blue-solid)' : '2px solid transparent',
+              color: tab === t.id ? 'var(--blue-solid)' : 'var(--tx2)',
+              fontWeight: tab === t.id ? 600 : 400,
+              fontSize: 14,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              marginBottom: -1,
             }}
           >
-            <div
-              style={{
+            {t.label}
+            {counts[t.id] > 0 && (
+              <span style={{
+                minWidth: 18,
+                height: 18,
+                borderRadius: 9,
+                background: tab === t.id ? 'var(--blue-solid)' : 'var(--sf3)',
+                color: tab === t.id ? '#fff' : 'var(--tx2)',
+                fontSize: 11,
+                fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                marginBottom: 10,
-              }}
-            >
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: c.dotColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: c.color,
-                  }}
-                />
-              </div>
-            </div>
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 700,
-                color: 'var(--text)',
-                lineHeight: 1,
-              }}
-            >
-              {c.value}
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
-              {c.label}
-            </div>
-          </div>
+                justifyContent: 'center',
+                padding: '0 5px',
+              }}>
+                {counts[t.id]}
+              </span>
+            )}
+          </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          boxShadow: 'var(--shadow)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Table header */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1.5fr 100px 130px 1fr 90px 90px',
-            gap: 0,
-            padding: '10px 20px',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--surface-2)',
-          }}
-        >
-          {[
-            'Mission',
-            'Customer',
-            'Drone',
-            'Scheduled',
-            'Status',
-            'Priority',
-            'Action',
-          ].map((h) => (
-            <div
-              key={h}
-              style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}
-            >
-              {h}
-            </div>
+      {/* Content */}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: 48, color: 'var(--tx3)' }}>Đang tải...</div>
+      )}
+
+      {!loading && error && (
+        <div style={{ textAlign: 'center', padding: 48 }}>
+          <div style={{ color: 'var(--red-solid)', marginBottom: 12, fontSize: 14 }}>{error}</div>
+          {onRetry && (
+            <button className="odm-btn odm-btn-gh" onClick={onRetry}>Thử lại</button>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && visible.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 48, color: 'var(--tx3)' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>Chưa có mission nào</div>
+          <div style={{ fontSize: 13 }}>
+            {tab === 'pending' ? 'Không có mission nào đang chờ phản hồi' :
+              tab === 'upcoming' ? 'Không có mission nào sắp tới' :
+                'Lịch sử mission trống'}
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && visible.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {visible.map((m) => (
+            <MissionCard key={m.id} mission={m} onView={onView} />
           ))}
         </div>
-
-        {missions.map((m, i) => (
-          <div
-            key={m.id}
-            onClick={() => {
-              onSelect(m)
-              onScreen('mission-detail')
-            }}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 1.5fr 100px 130px 1fr 90px 90px',
-              gap: 0,
-              padding: '14px 20px',
-              cursor: 'pointer',
-              borderBottom:
-                i < missions.length - 1 ? '1px solid var(--border)' : 'none',
-              transition: 'background .1s',
-            }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLDivElement).style.background =
-                'var(--surface-2)')
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLDivElement).style.background =
-                'transparent')
-            }
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: 'var(--text)',
-                  lineHeight: 1.3,
-                }}
-              >
-                {m.title}
-              </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: 'var(--text-3)',
-                  marginTop: 2,
-                  fontFamily: 'var(--font-data)',
-                }}
-              >
-                {m.id}
-              </div>
-            </div>
-            <div
-              style={{
-                fontSize: 13,
-                color: 'var(--text-2)',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              {m.customer}
-            </div>
-            <div
-              style={{
-                fontSize: 13,
-                fontFamily: 'var(--font-data)',
-                color: 'var(--text-2)',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              {m.droneId}
-            </div>
-            <div
-              style={{
-                fontSize: 13,
-                color: 'var(--text-2)',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              {fmtDate(m.scheduledAt)}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <MissionBadge state={m.state} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <PriorityBadge priority={m.priority} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelect(m)
-                  onScreen('mission-detail')
-                }}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: 6,
-                  border: '1px solid var(--border-2)',
-                  background: 'var(--surface)',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--text)',
-                  cursor: 'pointer',
-                }}
-              >
-                Review
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      )}
     </div>
   )
 }

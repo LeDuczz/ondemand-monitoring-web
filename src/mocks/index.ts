@@ -6,7 +6,9 @@
 //   import './handlers/managerDashboard'
 //   import './handlers/orders'
 //
-// No manager/customer endpoints exist yet (P0 only ships the mock
-// infrastructure), so there is nothing to import here yet.
+// Drone operator flow handlers
+import './handlers/operatorMissions'
+import './handlers/operatorAvailability'
+import './handlers/operatorFlight'
 
 export { mockFetch } from './mockServer'

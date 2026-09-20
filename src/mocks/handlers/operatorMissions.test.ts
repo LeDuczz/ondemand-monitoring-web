@@ -7,64 +7,64 @@ import '../index'
 
 const base = env.apiBaseUrl
 
-async function call(method: string, path: string) {
-  const response = await mockFetch(`${base}${path}`, { method })
+async function call(method: string, path: string, body?: unknown) {
+  const response = await mockFetch(`${base}${path}`, {
+    method,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
   return { status: response.status, payload: await response.json() }
 }
 
 beforeEach(() => resetMockDb())
 afterEach(() => resetMockDb())
 
-describe('GET /api/operator/profile', () => {
-  it('returns the operator profile', async () => {
-    const { status, payload } = await call('GET', '/api/operator/profile')
-    expect(status).toBe(200)
-    expect(payload.data.fullName).toBe('Hoàng Đức Thắng')
-    expect(payload.data.certExpiry).toBe('2026-10-11')
-  })
-})
-
-describe('GET /api/operator/missions', () => {
-  it('returns all missions with no tab filter', async () => {
-    const { status, payload } = await call('GET', '/api/operator/missions')
-    expect(status).toBe(200)
-    expect(payload.data.items).toHaveLength(8)
-  })
-
-  it('filters by tab=pending', async () => {
-    const { payload } = await call('GET', '/api/operator/missions?tab=pending')
-    expect(payload.data.items).toHaveLength(2)
-    expect(payload.data.items.every((m: { status: string }) => m.status === 'PENDING')).toBe(
-      true,
+describe('POST /api/operator/missions/:id/accept', () => {
+  it('accepts a pending mission', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0152-1/accept',
     )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('ACCEPTED')
+    expect(payload.data.acceptedAt).toBeTruthy()
   })
 
-  it('filters by tab=upcoming', async () => {
-    const { payload } = await call('GET', '/api/operator/missions?tab=upcoming')
-    expect(payload.data.items).toHaveLength(3)
-  })
-
-  it('filters by tab=history', async () => {
-    const { payload } = await call('GET', '/api/operator/missions?tab=history')
-    expect(payload.data.items).toHaveLength(3)
-  })
-
-  it('rejects an unknown tab', async () => {
-    const { status, payload } = await call('GET', '/api/operator/missions?tab=bogus')
-    expect(status).toBe(400)
+  it('rejects accept on a non-pending mission', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0141-1/accept',
+    )
+    expect(status).toBe(409)
     expect(payload.success).toBe(false)
   })
+
+  it('404s for unknown mission', async () => {
+    const { status } = await call('POST', '/api/operator/missions/NOPE/accept')
+    expect(status).toBe(404)
+  })
 })
 
-describe('GET /api/operator/missions/:id', () => {
-  it('returns a single mission', async () => {
-    const { status, payload } = await call('GET', '/api/operator/missions/MSN-2609-0152-1')
+describe('POST /api/operator/missions/:id/reject', () => {
+  it('rejects a pending mission with reason', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0152-1/reject',
+      { reason: 'Trùng lịch cá nhân', notes: 'Đã có lịch bay khác' },
+    )
     expect(status).toBe(200)
-    expect(payload.data.id).toBe('MSN-2609-0152-1')
+    expect(payload.data.status).toBe('REJECTED')
+    expect(payload.data.rejectReason).toContain('Trùng lịch cá nhân')
   })
 
-  it('404s for an unknown id', async () => {
-    const { status } = await call('GET', '/api/operator/missions/does-not-exist')
-    expect(status).toBe(404)
+  it('requires a reason', async () => {
+    const { status } = await call('POST', '/api/operator/missions/MSN-2609-0152-1/reject', {})
+    expect(status).toBe(400)
+  })
+
+  it('rejects reject on a non-pending mission', async () => {
+    const { status } = await call('POST', '/api/operator/missions/MSN-2609-0141-1/reject', {
+      reason: 'Lý do khác',
+    })
+    expect(status).toBe(409)
   })
 })

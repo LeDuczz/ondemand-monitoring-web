@@ -8,8 +8,10 @@ import { OperatorLayout } from './OperatorLayout'
 import { DRONE_PRIMARY, MISSION_PRIMARY } from './omss/mockData'
 import SimulationZonesScreen from './omss/screens/SimulationZones'
 import InFlightControlScreen from './omss/screens/InFlightControl'
+import { MissionDetailScreen } from './pages/MissionDetailScreen'
 import { MissionListPage } from './pages/MissionListPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { AvailabilityScreen } from './pages/AvailabilityScreen'
 import { operatorActiveLabel } from './OperatorSidebar'
 import { parseOperatorRoute, type OperatorRoute } from './routes'
 
@@ -61,6 +63,8 @@ export function DroneOperatorApp() {
 
 function renderScreen(route: OperatorRoute, searchQuery: string) {
   if (route.screen === 'missions') return <MissionListPage searchQuery={searchQuery} />
+  if (route.screen === 'missionDetail') return <MissionDetailScreen missionId={route.missionId} />
+  if (route.screen === 'availability') return <AvailabilityScreen />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return <PlaceholderPage title={operatorActiveLabel(route.screen) || 'Không tìm thấy'} />
 }

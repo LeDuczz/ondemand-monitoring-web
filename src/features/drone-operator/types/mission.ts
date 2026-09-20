@@ -19,6 +19,23 @@ export type OperatorMission = {
   flightStartedAt?: string
   completedAt?: string
   rejectReason?: string
+  acceptedAt?: string
+  managerNote?: string
+  managerName?: string
+  respondBy?: string
+  radiusMeters?: number
+  ceilingMeters?: number
+  photoCount?: number
+  photoNote?: string
+  videoCount?: number
+  videoSeconds?: number
+  videoResolution?: string
+  droneModel?: string
+  dronePayload?: string
+  droneStation?: string
+  droneStationDistanceKm?: number
+  droneReadinessPct?: number
+  droneHoursSinceMaintenance?: number
 }
 
 export type OperatorProfile = {

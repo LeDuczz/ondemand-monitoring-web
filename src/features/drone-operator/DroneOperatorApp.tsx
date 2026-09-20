@@ -14,7 +14,9 @@ import { PlaceholderPage } from './pages/PlaceholderPage'
 import { AvailabilityScreen } from './pages/AvailabilityScreen'
 import { ConnectDroneScreen } from './pages/ConnectDroneScreen'
 import { HandoverScreen } from './pages/HandoverScreen'
+import { PostflightScreen } from './pages/PostflightScreen'
 import { PreflightScreen } from './pages/PreflightScreen'
+import { UploadMediaScreen } from './pages/UploadMediaScreen'
 import { operatorActiveLabel } from './OperatorSidebar'
 import { parseOperatorRoute, type OperatorRoute } from './routes'
 
@@ -80,6 +82,8 @@ function renderScreen(route: OperatorRoute, searchQuery: string) {
   if (route.screen === 'connect') return <ConnectDroneScreen />
   if (route.screen === 'handover') return <HandoverScreen />
   if (route.screen === 'preflight') return <PreflightScreen />
+  if (route.screen === 'upload') return <UploadMediaScreen />
+  if (route.screen === 'postflight') return <PostflightScreen />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return (
     <PlaceholderPage

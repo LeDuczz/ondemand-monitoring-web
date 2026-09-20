@@ -2,10 +2,16 @@ import { apiRequest } from '../../../shared/api/httpClient'
 import type { AvailabilityStatus } from '../lib/availabilitySlots'
 import type {
   ControlHandover,
+  FaultType,
   FlightConnection,
+  MaintenanceSeverity,
+  MaintenanceTicket,
+  MediaFile,
   OperatorMission,
   OperatorMissionTab,
   OperatorProfile,
+  PostflightItem,
+  PostflightRecord,
   PreflightItem,
   PreflightRecord,
 } from '../types/mission'
@@ -100,5 +106,41 @@ export const operatorApi = {
         body,
         signal,
       },
+    ),
+
+  getMedia: (missionId: string, signal?: AbortSignal) =>
+    apiRequest<{ files: MediaFile[] }>(
+      `/api/operator/missions/${missionId}/media`,
+      { signal },
+    ),
+
+  retryUpload: (missionId: string, fileId: string, signal?: AbortSignal) =>
+    apiRequest<MediaFile>(
+      `/api/operator/missions/${missionId}/media/${fileId}/retry`,
+      { method: 'POST', signal },
+    ),
+
+  savePostflight: (
+    missionId: string,
+    body: { items: PostflightItem[]; notes?: string },
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<PostflightRecord>(
+      `/api/operator/missions/${missionId}/postflight`,
+      { method: 'POST', body, signal },
+    ),
+
+  createMaintenanceTicket: (
+    missionId: string,
+    body: {
+      issueType: FaultType
+      severity: MaintenanceSeverity
+      description: string
+    },
+    signal?: AbortSignal,
+  ) =>
+    apiRequest<MaintenanceTicket>(
+      `/api/operator/missions/${missionId}/maintenance-ticket`,
+      { method: 'POST', body, signal },
     ),
 }

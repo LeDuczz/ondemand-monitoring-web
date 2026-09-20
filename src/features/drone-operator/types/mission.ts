@@ -81,3 +81,63 @@ export type PreflightRecord = {
   items: PreflightItem[]
   savedAt: string
 }
+
+export type MediaFileType = 'PHOTO' | 'VIDEO'
+
+export type MediaFileStatus =
+  | 'UPLOADED'
+  | 'UPLOADING'
+  | 'FAILED'
+  | 'PENDING_UPLOAD'
+
+export type MediaFile = {
+  id: string
+  name: string
+  type: MediaFileType
+  sizeBytes: number
+  progressPct: number
+  attempt: number
+  maxAttempts: number
+  status: MediaFileStatus
+  manualTaskCreated?: boolean
+}
+
+export type PostflightItemKey =
+  | 'battery_ok'
+  | 'motor_ok'
+  | 'camera_ok'
+  | 'gps_ok'
+  | 'communication_ok'
+  | 'physical_condition_ok'
+
+export type PostflightItem = {
+  key: PostflightItemKey
+  result: PreflightItemResult
+}
+
+export type PostflightRecord = {
+  items: PostflightItem[]
+  overallOk: boolean
+  notes?: string
+  savedAt: string
+}
+
+export type FaultType =
+  | 'MOTOR_VIBRATION'
+  | 'SIGNAL_LOSS'
+  | 'BATTERY_DEGRADED'
+  | 'CAMERA_GIMBAL'
+  | 'PHYSICAL_DAMAGE'
+  | 'OTHER'
+
+export type MaintenanceSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+
+export type MaintenanceTicket = {
+  id: string
+  droneCode: string
+  missionId: string
+  issueType: FaultType
+  severity: MaintenanceSeverity
+  description: string
+  createdAt: string
+}

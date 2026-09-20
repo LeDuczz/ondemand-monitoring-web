@@ -206,3 +206,142 @@ describe('POST /api/operator/missions/:id/preflight', () => {
     expect(status).toBe(404)
   })
 })
+
+describe('GET /api/operator/missions/:id/media', () => {
+  it('returns the seeded media queue for the mission', async () => {
+    const { status, payload } = await call(
+      'GET',
+      '/api/operator/missions/MSN-2609-0142-1/media',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.files).toHaveLength(20)
+  })
+
+  it('404s for unknown mission', async () => {
+    const { status } = await call('GET', '/api/operator/missions/NOPE/media')
+    expect(status).toBe(404)
+  })
+})
+
+describe('POST /api/operator/missions/:id/media/:fileId/retry', () => {
+  it('bumps the attempt and marks the file uploaded', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/media/IMG_0211.JPG/retry',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('UPLOADED')
+    expect(payload.data.attempt).toBe(2)
+  })
+
+  it('refuses to retry a file that already used all attempts', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/media/VID_0031.MP4/retry',
+    )
+    expect(status).toBe(409)
+  })
+
+  it('404s for unknown file', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/media/NOPE.JPG/retry',
+    )
+    expect(status).toBe(404)
+  })
+})
+
+describe('POST /api/operator/missions/:id/postflight', () => {
+  const ALL_OK = [
+    { key: 'battery_ok', result: 'ok' },
+    { key: 'motor_ok', result: 'ok' },
+    { key: 'camera_ok', result: 'ok' },
+    { key: 'gps_ok', result: 'ok' },
+    { key: 'communication_ok', result: 'ok' },
+    { key: 'physical_condition_ok', result: 'ok' },
+  ]
+
+  it('saves the checklist and completes the mission when overall_ok', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/postflight',
+      { items: ALL_OK },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.overallOk).toBe(true)
+    expect(payload.data.savedAt).toBeTruthy()
+
+    const mission = await call('GET', '/api/operator/missions/MSN-2609-0142-1')
+    expect(mission.payload.data.status).toBe('COMPLETED')
+  })
+
+  it('does not complete the mission when an item fails', async () => {
+    const items = ALL_OK.map((i) =>
+      i.key === 'motor_ok' ? { ...i, result: 'fail' } : i,
+    )
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/postflight',
+      { items },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.overallOk).toBe(false)
+
+    const mission = await call('GET', '/api/operator/missions/MSN-2609-0142-1')
+    expect(mission.payload.data.status).not.toBe('COMPLETED')
+  })
+
+  it('requires all 6 items', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/postflight',
+      { items: [{ key: 'battery_ok', result: 'ok' }] },
+    )
+    expect(status).toBe(400)
+  })
+
+  it('404s for unknown mission', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/operator/missions/NOPE/postflight',
+      { items: ALL_OK },
+    )
+    expect(status).toBe(404)
+  })
+})
+
+describe('POST /api/operator/missions/:id/maintenance-ticket', () => {
+  it('creates a ticket with the given issue type and severity', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/maintenance-ticket',
+      {
+        issueType: 'MOTOR_VIBRATION',
+        severity: 'HIGH',
+        description: 'Rung động cơ bất thường',
+      },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.id).toBeTruthy()
+    expect(payload.data.issueType).toBe('MOTOR_VIBRATION')
+    expect(payload.data.droneCode).toBeTruthy()
+  })
+
+  it('requires issueType and severity', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/operator/missions/MSN-2609-0142-1/maintenance-ticket',
+      { description: 'x' },
+    )
+    expect(status).toBe(400)
+  })
+
+  it('404s for unknown mission', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/operator/missions/NOPE/maintenance-ticket',
+      { issueType: 'OTHER', severity: 'LOW' },
+    )
+    expect(status).toBe(404)
+  })
+})

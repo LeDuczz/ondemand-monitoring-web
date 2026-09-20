@@ -23,9 +23,15 @@ const OPERATOR_NAV: NavItem[] = [
   },
   {
     id: 'my-missions',
-    label: 'My missions',
+    label: 'Mission của tôi',
     screen: 'mission-list',
     icon: <ListIcon />,
+  },
+  {
+    id: 'availability',
+    label: 'Lịch rảnh',
+    screen: 'availability',
+    icon: <CalendarIcon />,
   },
   {
     id: 'mission-control',
@@ -34,12 +40,6 @@ const OPERATOR_NAV: NavItem[] = [
     icon: <RadioIcon />,
   },
   { id: 'media', label: 'Media', screen: 'media-upload', icon: <MediaIcon /> },
-  {
-    id: 'history',
-    label: 'Mission history',
-    screen: 'mission-list',
-    icon: <HistoryIcon />,
-  },
   {
     id: 'zone-map',
     label: 'Zone map',
@@ -712,6 +712,26 @@ function MapIcon() {
     >
       <path d="M1.5 4.5l4-2 5 2 4-2v9l-4 2-5-2-4 2v-9z" />
       <path d="M5.5 2.5v9M10.5 4.5v9" />
+    </svg>
+  )
+}
+function CalendarIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="2" width="14" height="13" rx="1.5" />
+      <line x1="1" y1="6" x2="15" y2="6" />
+      <line x1="5" y1="1" x2="5" y2="4" />
+      <line x1="11" y1="1" x2="11" y2="4" />
+      <circle cx="5" cy="9.5" r=".8" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="9.5" r=".8" fill="currentColor" stroke="none" />
+      <circle cx="11" cy="9.5" r=".8" fill="currentColor" stroke="none" />
     </svg>
   )
 }

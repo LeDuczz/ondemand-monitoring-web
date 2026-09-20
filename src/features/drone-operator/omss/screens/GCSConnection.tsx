@@ -1,358 +1,262 @@
-import { useState } from 'react'
-import type { Mission, Drone } from '../types'
+import { useState, useEffect } from 'react'
+import type { OperatorMission } from '../types'
+import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
 
 interface Props {
-  mission: Mission
-  drone: Drone
+  mission: OperatorMission
   onConnected: () => void
   onBack: () => void
 }
 
-type Phase = 'idle' | 'discover' | 'handshake' | 'sync' | 'done' | 'fail'
+type ConnStatus = 'idle' | 'connecting' | 'connected' | 'failed' | 'expired'
+type Step = { id: string; label: string; detail?: string; status: 'pending' | 'ok' | 'error' | 'loading' }
 
-const STEPS = [
-  {
-    id: 'discover',
-    label: 'Discover drone',
-    detail: 'Scanning MAVLink endpoints',
-  },
-  {
-    id: 'handshake',
-    label: 'Establish link',
-    detail: 'Negotiating heartbeat protocol',
-  },
-  {
-    id: 'sync',
-    label: 'Sync parameters',
-    detail: 'Downloading flight parameters',
-  },
-  { id: 'done', label: 'Connection ready', detail: 'GCS link established' },
+const GCS_DEVICES = [
+  { id: 'DJI-RC-PLUS-7A31', label: 'DJI-RC-PLUS-7A31 (điều khiển cầm tay)' },
+  { id: 'GCS-CLOUD-BTHANH-01', label: 'GCS-CLOUD-BTHANH-01 (trạm Bình Thạnh)' },
 ]
 
-interface LogEntry {
-  t: string
-  msg: string
-  ok: boolean
-}
+const DEVICE_CODE = 'TAB-OPR-0412'
+const TOKEN_TTL = 5 * 60 // 5 minutes in seconds
 
-export default function GCSConnection({
-  mission,
-  drone,
-  onConnected,
-  onBack,
-}: Props) {
-  const [phase, setPhase] = useState<Phase>('idle')
-  const [log, setLog] = useState<LogEntry[]>([])
+export default function GCSConnection({ mission, onConnected, onBack }: Props) {
+  const [token, setToken] = useState('')
+  const [gcsId, setGcsId] = useState(GCS_DEVICES[0]!.id)
+  const [customGcs, setCustomGcs] = useState('')
+  const [useCustom, setUseCustom] = useState(false)
+  const [status, setStatus] = useState<ConnStatus>('idle')
+  const [remaining, setRemaining] = useState(TOKEN_TTL)
+  const [steps, setSteps] = useState<Step[]>([
+    { id: 'token', label: 'Xác thực mã token', status: 'pending' },
+    { id: 'gcs', label: 'Mở liên kết tới GCS', status: 'pending' },
+    { id: 'telemetry', label: 'Nhận heartbeat telemetry', status: 'pending' },
+  ])
 
-  function ts() {
-    return new Date().toISOString().slice(11, 22)
-  }
-  function addLog(msg: string, ok = true) {
-    setLog((prev) => [...prev, { t: ts(), msg, ok }])
-  }
+  useEffect(() => {
+    if (status !== 'connecting' && status !== 'connected') return
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 0) { setStatus('expired'); clearInterval(id); return 0 }
+        return r - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [status])
 
-  function start() {
-    setPhase('discover')
-    addLog('Initiating GCS connection…')
-    setTimeout(() => {
-      addLog(
-        `Drone ${drone.id} found at 192.168.1.${Math.floor(Math.random() * 200 + 50)}`,
-      )
-      setPhase('handshake')
-    }, 1200)
-    setTimeout(() => {
-      addLog('MAVLink heartbeat established')
-      setPhase('sync')
-    }, 2400)
-    setTimeout(() => {
-      addLog('Downloading 247 parameters')
-    }, 3000)
-    setTimeout(() => {
-      addLog('Parameter sync complete — 247/247')
-      setPhase('done')
-      addLog('GCS link ready ✓')
-    }, 4200)
+  function fmtCountdown(sec: number) {
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    return `còn ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
 
-  const stepsDone = {
-    idle: 0,
-    discover: 0,
-    handshake: 1,
-    sync: 2,
-    done: 4,
-    fail: 0,
-  }[phase]
+  async function handleConnect() {
+    if (!token.trim()) return
+    setStatus('connecting')
+    const finalGcs = useCustom ? customGcs : gcsId
+
+    // Simulate 3-step connection
+    const simulate = (steps: Step[], idx: number, ok: boolean) => {
+      const updated = [...steps]
+      updated[idx] = { ...updated[idx]!, status: 'loading' }
+      setSteps([...updated])
+      setTimeout(() => {
+        updated[idx] = { ...updated[idx]!, status: ok ? 'ok' : 'error', detail: ok ? getStepDetail(idx, finalGcs) : 'Lỗi kết nối' }
+        setSteps([...updated])
+        if (idx < 2 && ok) {
+          simulate(updated, idx + 1, true)
+        } else if (idx === 2 && ok) {
+          setStatus('connected')
+        } else {
+          setStatus('failed')
+        }
+      }, 1200)
+    }
+    simulate(steps, 0, true)
+  }
+
+  function getStepDetail(idx: number, gcs: string): string {
+    if (idx === 0) return 'Hợp lệ ✓'
+    if (idx === 1) return gcs
+    return 'telemetry_active · 10 Hz'
+  }
+
+  function handleRequestNew() {
+    setStatus('idle')
+    setToken('')
+    setRemaining(TOKEN_TTL)
+    setSteps([
+      { id: 'token', label: 'Xác thực mã token', status: 'pending' },
+      { id: 'gcs', label: 'Mở liên kết tới GCS', status: 'pending' },
+      { id: 'telemetry', label: 'Nhận heartbeat telemetry', status: 'pending' },
+    ])
+  }
+
+  const STEPPER = ['Kết nối', 'Bàn giao', 'Preflight', 'Bay', 'Upload', 'Postflight']
 
   return (
-    <div
-      className="fade-in"
-      style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}
-    >
-      <button
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'none',
-          border: 'none',
-          color: 'var(--text-2)',
-          fontSize: 13,
-          cursor: 'pointer',
-          padding: 0,
-          marginBottom: 20,
-        }}
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 14 14"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path d="M9 2L4 7l5 5" />
-        </svg>
-        Mission detail
+    <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
+        ← Quay lại
       </button>
 
-      <div style={{ maxWidth: 560 }}>
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            color: 'var(--text)',
-            margin: '0 0 6px',
-          }}
-        >
-          GCS connection
-        </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          Connecting to <strong>{drone.name}</strong> ({drone.id}) for mission{' '}
-          <strong>{mission.id}</strong>.
-        </p>
+      <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 4 }}>
+        Kết nối drone · <span style={{ fontFamily: 'var(--font-data)' }}>{mission.id}</span>
+      </div>
 
-        {/* Steps */}
-        <div
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            padding: '20px',
-            marginBottom: 20,
-            boxShadow: 'var(--shadow)',
-          }}
-        >
-          {STEPS.map((step, i) => {
-            const done = stepsDone > i
-            const active =
-              stepsDone === i && phase !== 'idle' && phase !== 'done'
-            return (
-              <div
-                key={step.id}
-                style={{
-                  display: 'flex',
-                  gap: 14,
-                  marginBottom: i < STEPS.length - 1 ? 20 : 0,
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: done
-                        ? 'var(--green-bg)'
-                        : active
-                          ? 'var(--accent-bg)'
-                          : 'var(--surface-2)',
-                      border: `1.5px solid ${done ? 'var(--green)' : active ? 'var(--accent)' : 'var(--border-2)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {done ? (
-                      <span
-                        style={{
-                          color: 'var(--green)',
-                          fontSize: 13,
-                          fontWeight: 700,
-                        }}
-                      >
-                        ✓
-                      </span>
-                    ) : active ? (
-                      <div
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          border: '2px solid var(--accent)',
-                          borderTopColor: 'transparent',
-                        }}
-                        className="spin"
-                      />
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: 'var(--text-3)',
-                        }}
-                      >
-                        {i + 1}
-                      </span>
-                    )}
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div
-                      style={{
-                        width: 1,
-                        flex: 1,
-                        background: done ? 'var(--green)' : 'var(--border)',
-                        marginTop: 4,
-                        minHeight: 16,
-                        opacity: 0.5,
-                      }}
-                    />
-                  )}
-                </div>
-                <div
-                  style={{
-                    paddingTop: 4,
-                    paddingBottom: i < STEPS.length - 1 ? 16 : 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: done
-                        ? 'var(--green-text)'
-                        : active
-                          ? 'var(--accent)'
-                          : 'var(--text-2)',
-                    }}
-                  >
-                    {step.label}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-3)',
-                      marginTop: 2,
-                    }}
-                  >
-                    {step.detail}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+      {/* Stepper */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, overflowX: 'auto' }}>
+        {STEPPER.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6,
+              background: i === 0 ? 'var(--blue-solid)' : 'var(--sf2)',
+              color: i === 0 ? '#fff' : 'var(--tx3)',
+              fontSize: 12, fontWeight: i === 0 ? 600 : 400,
+            }}>
+              <span style={{
+                width: 18, height: 18, borderRadius: '50%',
+                background: i === 0 ? 'rgba(255,255,255,.25)' : 'var(--bd)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, fontWeight: 700,
+              }}>{i + 1}</span>
+              {s}
+            </div>
+            {i < STEPPER.length - 1 && <div style={{ width: 20, height: 1, background: 'var(--bd)' }} />}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'start' }}>
+        {/* Mission card */}
+        <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px' }}>
+          <div style={{ fontSize: 11, color: 'var(--tx3)', fontFamily: 'var(--font-data)', marginBottom: 6 }}>{mission.id}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 10, lineHeight: 1.3 }}>{mission.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>{mission.location}</div>
+          <div style={{ fontSize: 12, color: 'var(--tx2)' }}>{mission.droneId} {mission.droneName}</div>
         </div>
 
-        {/* Log */}
-        {log.length > 0 && (
-          <div
-            style={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '14px',
-              marginBottom: 20,
-              maxHeight: 160,
-              overflowY: 'auto',
-            }}
-          >
-            {log.map((entry, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  gap: 10,
-                  marginBottom: 4,
-                  fontSize: 12,
-                  fontFamily: 'var(--font-data)',
-                }}
-              >
-                <span style={{ color: 'var(--text-3)', flexShrink: 0 }}>
-                  {entry.t}
-                </span>
-                <span
-                  style={{ color: entry.ok ? 'var(--text-2)' : 'var(--red)' }}
-                >
-                  {entry.msg}
-                </span>
-              </div>
-            ))}
+        {/* Connect form */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Step 1: Token */}
+          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '20px' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4 }}>
+              1. Nhập hoặc quét mã flight_token
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 12 }}>
+              device_code: <code style={{ fontFamily: 'var(--font-data)' }}>{DEVICE_CODE}</code>
+              {status !== 'idle' && status !== 'expired' && (
+                <span style={{ marginLeft: 12, color: remaining < 60 ? 'var(--red-solid)' : 'var(--tx2)' }}>{fmtCountdown(remaining)}</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                className="odm-input"
+                placeholder="Nhập flight_token..."
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                disabled={status === 'connecting' || status === 'connected'}
+                style={{ flex: 1, fontFamily: 'var(--font-data)', fontSize: 13 }}
+              />
+              <button className="odm-btn odm-btn-gh" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                Quét QR
+              </button>
+            </div>
           </div>
-        )}
 
-        {phase === 'idle' && (
-          <button
-            onClick={start}
-            style={{
-              width: '100%',
-              padding: '11px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--accent)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            Connect to drone
-          </button>
-        )}
-        {(phase === 'discover' ||
-          phase === 'handshake' ||
-          phase === 'sync') && (
-          <button
-            disabled
-            style={{
-              width: '100%',
-              padding: '11px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--surface-2)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--text-3)',
-              cursor: 'not-allowed',
-            }}
-          >
-            Connecting…
-          </button>
-        )}
-        {phase === 'done' && (
-          <button
-            onClick={onConnected}
-            style={{
-              width: '100%',
-              padding: '11px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--green)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            Continue to pre-flight check
-          </button>
-        )}
+          {/* Step 2: GCS */}
+          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '20px' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 12 }}>
+              2. Chọn hoặc nhập gcs_identifier
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+              {GCS_DEVICES.map((d) => (
+                <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="gcs"
+                    value={d.id}
+                    checked={!useCustom && gcsId === d.id}
+                    onChange={() => { setGcsId(d.id); setUseCustom(false) }}
+                    disabled={status === 'connecting' || status === 'connected'}
+                    style={{ accentColor: 'var(--blue-solid)' }}
+                  />
+                  <span style={{ fontFamily: 'var(--font-data)', fontSize: 12 }}>{d.label}</span>
+                </label>
+              ))}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="gcs"
+                  checked={useCustom}
+                  onChange={() => setUseCustom(true)}
+                  disabled={status === 'connecting' || status === 'connected'}
+                  style={{ accentColor: 'var(--blue-solid)' }}
+                />
+                Nhập mã khác...
+              </label>
+            </div>
+            {useCustom && (
+              <input
+                className="odm-input"
+                placeholder="gcs_identifier"
+                value={customGcs}
+                onChange={(e) => setCustomGcs(e.target.value)}
+                style={{ fontFamily: 'var(--font-data)', fontSize: 12 }}
+              />
+            )}
+          </div>
+
+          {/* Connect button */}
+          {(status === 'idle' || status === 'failed') && (
+            <button
+              className="odm-btn odm-btn-p"
+              onClick={handleConnect}
+              disabled={!token.trim()}
+            >
+              Kết nối
+            </button>
+          )}
+
+          {status === 'expired' && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, color: '#991b1b' }}>Mã đã hết hạn</span>
+              <button className="odm-btn odm-btn-gh" style={{ fontSize: 12 }} onClick={handleRequestNew}>Yêu cầu mã mới</button>
+            </div>
+          )}
+
+          {/* Connection status tracker */}
+          {(status === 'connecting' || status === 'connected' || status === 'failed') && (
+            <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', marginBottom: 12 }}>Trạng thái kết nối</div>
+              {steps.map((step) => (
+                <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 16 }}>
+                    {step.status === 'ok' ? '✅' : step.status === 'error' ? '❌' : step.status === 'loading' ? '⏳' : '⬜'}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: 13, color: 'var(--tx)' }}>{step.label}</div>
+                    {step.detail && <div style={{ fontSize: 12, color: 'var(--tx3)', fontFamily: 'var(--font-data)' }}>{step.detail}</div>}
+                  </div>
+                </div>
+              ))}
+
+              {status === 'connected' && (
+                <div style={{ marginTop: 12 }}>
+                  <StatusBadge tone="green">Đã kết nối</StatusBadge>
+                  <div style={{ marginTop: 12 }}>
+                    <button className="odm-btn odm-btn-p" onClick={onConnected}>
+                      Tiếp tục: bàn giao quyền điều khiển →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {status === 'failed' && (
+                <button className="odm-btn odm-btn-gh" style={{ marginTop: 8 }} onClick={handleRequestNew}>Thử lại</button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

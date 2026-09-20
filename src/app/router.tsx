@@ -1,4 +1,5 @@
 import '../styles/global.css'
+import '../styles/odm.css'
 
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -8,13 +9,11 @@ import { SocialCallbackPage } from '../features/auth/pages/SocialCallbackPage'
 import { authSession } from '../features/auth/api/authApi'
 import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
-import { CustomerHomePage } from '../features/customer/pages/CustomerHomePage'
-import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
-import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
+import { CustomerApp } from '../features/customer/CustomerApp'
+import { ManagerApp } from '../features/manager/ManagerApp'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
-import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
-import { AdminAccountCreatePage } from '../features/admin/pages/AdminAccountCreatePage'
+import { AdminApp } from '../features/admin/AdminApp'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
 
 function RoleRoute({
@@ -54,24 +53,24 @@ export function Router() {
   if (pathname === '/social/callback') {
     return <SocialCallbackPage />
   }
-  if (hash === '#auth/register') return <AuthPage initialMode="register" />
-  if (hash === '#auth/login') return <AuthPage initialMode="login" />
-  if (hash === '#portal/customer')
+  // `key` forces a fresh AuthPage instance when the hash flips between
+  // register/login — without it React reuses the same component and
+  // `useState(initialMode)` never re-runs, so the visible form gets stuck
+  // on whichever mode it first mounted with.
+  if (hash === '#auth/register')
+    return <AuthPage key="register" initialMode="register" />
+  if (hash === '#auth/login')
+    return <AuthPage key="login" initialMode="login" />
+  if (hash === '#portal/customer' || hash.startsWith('#portal/customer/'))
     return (
       <RoleRoute role="CUSTOMER">
-        <CustomerHomePage />
+        <CustomerApp />
       </RoleRoute>
     )
-  if (hash === '#portal/customer/request')
-    return (
-      <RoleRoute role="CUSTOMER">
-        <CustomerCreateRequestPage />
-      </RoleRoute>
-    )
-  if (hash === '#portal/staff')
+  if (hash === '#portal/staff' || hash.startsWith('#portal/staff/'))
     return (
       <RoleRoute role="STAFF">
-        <StaffHomePage />
+        <ManagerApp />
       </RoleRoute>
     )
   if (hash === '#portal/drone-operator')
@@ -86,16 +85,10 @@ export function Router() {
         <SystemOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/admin')
+  if (hash === '#portal/admin' || hash.startsWith('#portal/admin/'))
     return (
       <RoleRoute role="ADMIN">
-        <AdminHomePage />
-      </RoleRoute>
-    )
-  if (hash === '#portal/admin/accounts/new')
-    return (
-      <RoleRoute role="ADMIN">
-        <AdminAccountCreatePage />
+        <AdminApp />
       </RoleRoute>
     )
   if (hash === '#operator') return <OperatorDashboardPage />

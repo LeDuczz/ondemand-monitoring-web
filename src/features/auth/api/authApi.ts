@@ -81,6 +81,20 @@ async function refreshAccessTokenOnce() {
   return refreshPromise
 }
 
+// Same transport choice as `src/shared/api/httpClient.ts`: mockFetch when
+// `env.useMockApi` is on, otherwise the real network. Dynamic import keeps
+// `src/mocks` out of the module graph unless mocking is actually used.
+async function transportFetch(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  if (env.useMockApi) {
+    const { mockFetch } = await import('../../../mocks')
+    return mockFetch(url, init)
+  }
+  return fetch(url, init)
+}
+
 export async function authenticatedFetch(
   url: string,
   init: RequestInit = {},
@@ -88,7 +102,7 @@ export async function authenticatedFetch(
   const request = (token?: string) => {
     const headers = new Headers(init.headers)
     if (token) headers.set('Authorization', `Bearer ${token}`)
-    return fetch(url, { ...init, credentials: 'include', headers })
+    return transportFetch(url, { ...init, credentials: 'include', headers })
   }
 
   const response = await request(authSession.getAccessToken() ?? undefined)
@@ -108,7 +122,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
 
   let response: Response
   try {
-    response = await fetch(`${env.apiBaseUrl}${path}`, {
+    response = await transportFetch(`${env.apiBaseUrl}${path}`, {
       ...requestInit,
       body: body === undefined ? undefined : JSON.stringify(body),
       credentials: 'include',

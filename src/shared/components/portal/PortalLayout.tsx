@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
-import { authApi, authSession } from '../../../features/auth/api/authApi'
+import { authSession } from '../../../features/auth/api/authApi'
+import { LogoutButton } from '../../../features/auth/components/LogoutButton'
 import { getRoleHomePath } from '../../../features/auth/routing'
 import type { UserRole } from '../../../features/auth/types'
 import { Icon, type IconName } from '../Icon'
@@ -13,6 +14,7 @@ const roleLabels: Record<UserRole, string> = {
   DRONE_OPERATOR: 'Drone operations',
   SYSTEM_OPERATOR: 'System operations',
   ADMIN: 'Administration',
+  AUDITOR: 'Audit workspace',
 }
 
 const navItems: Record<UserRole, PortalNavItem[]> = {
@@ -61,6 +63,9 @@ const navItems: Record<UserRole, PortalNavItem[]> = {
     { label: 'Missions', icon: 'route', href: '#portal/admin/missions' },
     { label: 'Audit logs', icon: 'clipboard', href: '#portal/admin/audit' },
   ],
+  AUDITOR: [
+    { label: 'Audit log', icon: 'clipboard', href: '#portal/admin/audit-log' },
+  ],
 }
 
 export function PortalLayout({
@@ -83,16 +88,6 @@ export function PortalLayout({
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
-
-  const logout = async () => {
-    const token = authSession.getAccessToken()
-    try {
-      if (token) await authApi.logout(token)
-    } finally {
-      authSession.clear()
-      window.location.hash = '#auth/login'
-    }
-  }
 
   return (
     <div className="portal-shell">
@@ -127,14 +122,7 @@ export function PortalLayout({
             <Icon name={dark ? 'sun' : 'moon'} />
             <span>{dark ? 'Light mode' : 'Dark mode'}</span>
           </button>
-          <button
-            type="button"
-            className="portal-utility-button"
-            onClick={logout}
-          >
-            <Icon name="arrow-left" />
-            <span>Sign out</span>
-          </button>
+          <LogoutButton className="portal-logout-button" />
         </div>
       </aside>
       {menuOpen ? (

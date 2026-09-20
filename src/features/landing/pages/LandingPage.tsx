@@ -1,30 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
-import { Button } from '../../../shared/components/Button'
-import { Icon } from '../../../shared/components/Icon'
+import { authSession } from '../../auth/api/authApi'
+import { Icon, type IconName } from '../../../shared/components/Icon'
+import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import {
-  dashboardActivities,
-  requestSteps,
-  telemetryMetrics,
-} from '../mock-data'
-
-const goToAuth = (mode: 'login' | 'register') => {
-  window.location.hash = `auth/${mode}`
-}
+  aiVerdictTone,
+  findingSeverityTone,
+  missionStatusTone,
+} from '../../../shared/lib/statusTone'
+import type { StatusTone } from '../../../shared/types/domain'
+import * as content from '../content'
+import { resolveCreateRequestTarget } from '../resolveCreateRequestTarget'
+import type { FeasibilityCheck } from '../types'
+import '../landing.css'
 
 function BrandMark() {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <span />
+    <span className="lp-brand-mark" aria-hidden="true">
+      <Icon name="cpu" />
     </span>
   )
 }
 
 function Logo() {
   return (
-    <a className="logo" href="#top" aria-label="Fieldwise home">
+    <a
+      className="lp-logo"
+      href="#top"
+      aria-label={`${content.brandName} - trang chủ`}
+    >
       <BrandMark />
-      <span>FIELDWISE</span>
+      <span>{content.brandName}</span>
     </a>
   )
 }
@@ -37,14 +43,14 @@ function SectionIntro({
 }: {
   eyebrow: string
   title: string
-  copy: string
+  copy?: string
   align?: 'left' | 'center'
 }) {
   return (
-    <div className={`section-intro section-intro--${align}`}>
-      <p className="eyebrow">{eyebrow}</p>
+    <div className={`lp-section-intro lp-section-intro--${align}`}>
+      <p className="lp-eyebrow">{eyebrow}</p>
       <h2>{title}</h2>
-      <p className="section-copy">{copy}</p>
+      {copy ? <p className="lp-section-copy">{copy}</p> : null}
     </div>
   )
 }
@@ -57,55 +63,72 @@ function ThemeToggle() {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
   return (
-    <button
-      className="icon-button"
-      type="button"
-      aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`}
-      onClick={() => setDark(!dark)}
-    >
-      <Icon name={dark ? 'sun' : 'moon'} />
-    </button>
+    <div className="lp-theme-toggle">
+      <span>Giao diện</span>
+      <button
+        className="lp-theme-toggle-btn"
+        type="button"
+        aria-label={`Đổi sang giao diện ${dark ? 'sáng' : 'tối'}`}
+        onClick={() => setDark((value) => !value)}
+      >
+        <Icon name={dark ? 'sun' : 'moon'} />
+      </button>
+    </div>
   )
 }
 
-function Header() {
+function Header({ createRequestTarget }: { createRequestTarget: string }) {
   const [menuOpen, setMenuOpen] = useState(false)
   return (
-    <header className="site-header">
-      <div className="container nav-shell">
+    <header className="lp-header">
+      <div className="lp-container lp-header-inner">
         <Logo />
         <nav
-          className={`site-nav ${menuOpen ? 'site-nav--open' : ''}`}
-          aria-label="Primary navigation"
+          className={`lp-nav ${menuOpen ? 'lp-nav--open' : ''}`}
+          aria-label="Điều hướng chính"
         >
-          <a href="#how-it-works" onClick={() => setMenuOpen(false)}>
-            How it works
-          </a>
-          <a href="#tracking" onClick={() => setMenuOpen(false)}>
-            Tracking
-          </a>
-          <a href="#reports" onClick={() => setMenuOpen(false)}>
-            Reports
-          </a>
-          <a href="#security" onClick={() => setMenuOpen(false)}>
-            Safety
-          </a>
+          {content.navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
+            </a>
+          ))}
+          <div className="lp-nav-actions">
+            <a className="odm-btn odm-btn-gh odm-btn-lg" href="#auth/login">
+              Đăng nhập
+            </a>
+            <a
+              className="odm-btn odm-btn-p odm-btn-lg"
+              href={createRequestTarget}
+            >
+              Tạo yêu cầu
+            </a>
+          </div>
         </nav>
-        <div className="nav-actions">
+        <div className="lp-header-actions">
           <ThemeToggle />
-          <Button variant="secondary" onClick={() => goToAuth('login')}>
-            Sign in
-          </Button>
-          <Button icon="arrow-up-right" onClick={() => goToAuth('register')}>
-            Create a request
-          </Button>
+          <a
+            className="odm-btn odm-btn-gh odm-btn-lg lp-header-actions-login"
+            href="#auth/login"
+          >
+            Đăng nhập
+          </a>
+          <a
+            className="odm-btn odm-btn-p odm-btn-lg lp-header-actions-cta"
+            href={createRequestTarget}
+          >
+            Tạo yêu cầu
+          </a>
         </div>
         <button
-          className="menu-toggle"
+          className="lp-menu-btn"
           type="button"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => setMenuOpen((value) => !value)}
         >
           <Icon name={menuOpen ? 'x' : 'menu'} />
         </button>
@@ -114,526 +137,465 @@ function Header() {
   )
 }
 
-function DashboardPreview() {
+function HeroIllustration() {
+  const { heroAiCard, heroMissionCard } = content
   return (
     <div
-      className="dashboard-preview"
-      aria-label="Mock customer dashboard showing request tracking and report status"
+      className="lp-hero-art"
+      role="img"
+      aria-label="Minh hoạ bản đồ giám sát với thẻ AI kiểm tra khả thi và thẻ mission đang bay"
     >
-      <div className="dashboard-header">
-        <div>
-          <span className="dashboard-kicker">CUSTOMER DASHBOARD</span>
-          <h3>Good morning, Alex</h3>
+      <svg viewBox="0 0 480 400" className="lp-hero-map" aria-hidden="true">
+        <rect width="480" height="400" rx="20" fill="var(--map-bg)" />
+        <rect
+          x="36"
+          y="36"
+          width="110"
+          height="84"
+          rx="8"
+          fill="var(--map-block)"
+        />
+        <rect
+          x="190"
+          y="76"
+          width="84"
+          height="130"
+          rx="8"
+          fill="var(--map-block)"
+        />
+        <rect
+          x="310"
+          y="28"
+          width="140"
+          height="64"
+          rx="8"
+          fill="var(--map-block)"
+        />
+        <rect x="0" y="206" width="480" height="16" fill="var(--map-road)" />
+        <rect x="0" y="211" width="480" height="2" fill="var(--map-road2)" />
+        <circle cx="336" cy="284" r="66" fill="var(--map-water)" />
+        <circle cx="112" cy="300" r="46" fill="var(--map-park)" />
+        <circle cx="280" cy="168" r="6" fill="var(--blue-solid)" />
+        <circle
+          cx="280"
+          cy="168"
+          r="15"
+          fill="none"
+          stroke="var(--blue-solid)"
+          strokeWidth="2"
+          opacity="0.45"
+        />
+      </svg>
+      <div className="odm-card lp-ai-card">
+        <div className="lp-ai-card-top">
+          <span className="lp-ai-card-score">{heroAiCard.score}</span>
+          <StatusBadge tone="green">PASS</StatusBadge>
         </div>
-        <span className="workspace-pill">
-          Northstar Energy <Icon name="chevron-down" />
-        </span>
-      </div>
-      <div className="dashboard-tabs">
-        <span className="active">Overview</span>
-        <span>
-          Requests <b>12</b>
-        </span>
-        <span>
-          Reports <b>08</b>
-        </span>
-      </div>
-      <div className="dashboard-stats">
-        {telemetryMetrics.map((metric) => (
-          <div className="dashboard-stat" key={metric.label}>
-            <span>{metric.label}</span>
-            <strong>
-              {metric.value}
-              <small>{metric.unit}</small>
-            </strong>
-            <em>{metric.trend}</em>
-          </div>
-        ))}
-      </div>
-      <div className="dashboard-body">
-        <div className="request-card">
-          <div className="card-heading">
-            <span>Active request</span>
-            <span className="status-badge status-badge--blue">In progress</span>
-          </div>
-          <h4>Cooling tower B · thermal inspection</h4>
-          <p>Ticket #MON-2481 · East site</p>
-          <div className="progress-track">
-            <span />
-          </div>
-          <div className="request-meta">
-            <span>Inspection scheduled</span>
-            <strong>65% complete</strong>
-          </div>
+        <div className="lp-ai-card-body">
+          <strong>{heroAiCard.label}</strong>
+          <span>{heroAiCard.status}</span>
         </div>
-        <div className="activity-card">
-          <div className="card-heading">
-            <span>Recent activity</span>
-            <Icon name="arrow-up-right" />
+      </div>
+      <div className="odm-card lp-mission-card">
+        <div className="lp-mission-card-top">
+          <span className="odm-mono">{heroMissionCard.code}</span>
+          <StatusBadge tone={missionStatusTone.IN_FLIGHT}>
+            {heroMissionCard.status}
+          </StatusBadge>
+        </div>
+        <p>{heroMissionCard.title}</p>
+        <div className="lp-mission-card-meta">
+          <span className="odm-mono">{heroMissionCard.drone}</span>
+          <span>{heroMissionCard.battery}</span>
+          <span>{heroMissionCard.altitude}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FeatureList({
+  items,
+}: {
+  items: { title: string; detail: string; icon: IconName }[]
+}) {
+  return (
+    <ul className="lp-feature-list">
+      {items.map((item) => (
+        <li key={item.title}>
+          <span className="lp-feature-list-icon" aria-hidden="true">
+            <Icon name={item.icon} />
+          </span>
+          <span>
+            <strong>{item.title}</strong>
+            <p>{item.detail}</p>
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+const checkTone: Record<FeasibilityCheck['result'], StatusTone> = {
+  PASS: 'green',
+  WARNING: findingSeverityTone.WARNING,
+  BLOCKER: findingSeverityTone.BLOCKER,
+}
+
+function AiResultPanel() {
+  const { aiResultPanel, aiFeasibilityChecks } = content
+  return (
+    <div className="odm-card lp-panel">
+      <div className="odm-card-header">
+        <span>{aiResultPanel.title}</span>
+        <StatusBadge tone={aiVerdictTone.RISKY}>
+          {aiResultPanel.verdictLabel} {aiResultPanel.score}
+        </StatusBadge>
+      </div>
+      <div className="odm-card-body lp-panel-body">
+        <div className="lp-panel-verdict">
+          <strong>{aiResultPanel.verdictTitle}</strong>
+          <p>{aiResultPanel.verdictDetail}</p>
+        </div>
+        <ul className="lp-check-list">
+          {aiFeasibilityChecks.map((check) => (
+            <li key={check.label}>
+              <span>{check.label}</span>
+              <StatusBadge tone={checkTone[check.result]}>
+                {check.result}
+              </StatusBadge>
+            </li>
+          ))}
+        </ul>
+        <div className="lp-alt-suggestion">
+          <div>
+            <span>Gợi ý ngày thay thế</span>
+            <strong>{aiResultPanel.altSuggestion}</strong>
           </div>
-          {dashboardActivities.map((activity) => (
-            <div className="activity-item" key={activity.label}>
-              <span
-                className={`activity-icon activity-icon--${activity.status}`}
-              >
-                <Icon name={activity.icon} />
-              </span>
-              <span>
-                <strong>{activity.label}</strong>
-                <small>{activity.detail}</small>
+          <button className="odm-btn odm-btn-p odm-btn-sm" type="button">
+            Chọn
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LivePanel() {
+  const { livePanel, liveResultFiles } = content
+  return (
+    <div className="odm-card lp-panel">
+      <div className="odm-card-header">
+        <span>{livePanel.title}</span>
+        <StatusBadge tone="green">{livePanel.status}</StatusBadge>
+      </div>
+      <div className="odm-card-body lp-panel-body">
+        <div className="lp-live-meta">
+          <span>
+            <Icon name="activity" /> {livePanel.battery}
+          </span>
+          <span>
+            <Icon name="chart" /> {livePanel.altitude}
+          </span>
+        </div>
+        <div className="lp-live-results-head">
+          <strong>{livePanel.resultsTitle}</strong>
+          <span className="odm-mono">{livePanel.fileCount}</span>
+        </div>
+        <ul className="lp-results-list">
+          {liveResultFiles.map((file) => (
+            <li key={file.name}>
+              <span className="odm-mono">{file.name}</span>
+              <StatusBadge tone={file.status === 'PASS' ? 'green' : 'yellow'}>
+                {file.status}
+              </StatusBadge>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+function FaqAccordion() {
+  // Only the design's first FAQ item has answer copy (see content.ts / the
+  // FaqItem.answer doc comment in ../types); the other four are shown as
+  // static rows instead of accordion buttons that would expand into an
+  // empty panel. Once the team supplies answers for them, adding `answer`
+  // in content.ts is enough to turn them into accordion items too.
+  const firstExpandableIndex = content.faqItems.findIndex((item) => item.answer)
+  const [openIndex, setOpenIndex] = useState<number | null>(
+    firstExpandableIndex,
+  )
+
+  return (
+    <div className="lp-faq-list">
+      {content.faqItems.map((item, index) => {
+        if (!item.answer) {
+          return (
+            <div
+              className="lp-faq-item lp-faq-item--static"
+              key={item.question}
+            >
+              <span className="lp-faq-question lp-faq-question--static">
+                {item.question}
               </span>
             </div>
-          ))}
-        </div>
-      </div>
-      <div className="dashboard-footer">
-        <span>
-          <span className="live-dot" /> Service team online
-        </span>
-        <span>Updated just now</span>
-      </div>
+          )
+        }
+
+        const open = openIndex === index
+        const buttonId = `lp-faq-button-${index}`
+        const panelId = `lp-faq-panel-${index}`
+        return (
+          <div className="lp-faq-item" key={item.question}>
+            <h3 className="lp-faq-question-wrap">
+              <button
+                id={buttonId}
+                className="lp-faq-question"
+                type="button"
+                aria-expanded={open}
+                aria-controls={panelId}
+                onClick={() => setOpenIndex(open ? null : index)}
+              >
+                <span>{item.question}</span>
+                <Icon name={open ? 'minus' : 'plus'} />
+              </button>
+            </h3>
+            {open ? (
+              <div
+                id={panelId}
+                role="region"
+                aria-labelledby={buttonId}
+                className="lp-faq-answer"
+              >
+                {item.answer}
+              </div>
+            ) : null}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-function RequestFormPreview() {
+function TwoColumnFeature({
+  copy,
+  panel,
+  reverse,
+}: {
+  copy: ReactNode
+  panel: ReactNode
+  reverse?: boolean
+}) {
   return (
-    <div className="request-form-preview">
-      <div className="form-window-top">
-        <span className="window-dots">
-          <i />
-          <i />
-          <i />
-        </span>
-        <span>New monitoring request</span>
-        <Icon name="x" />
-      </div>
-      <div className="form-window-body">
-        <span className="form-kicker">STEP 1 OF 3</span>
-        <h3>What would you like us to inspect?</h3>
-        <label>
-          Request type
-          <span className="fake-input">
-            Thermal inspection <Icon name="chevron-down" />
-          </span>
-        </label>
-        <label>
-          Site or asset
-          <span className="fake-input">
-            East site · Cooling tower B <Icon name="chevron-down" />
-          </span>
-        </label>
-        <div className="form-row">
-          <label>
-            Priority
-            <span className="fake-input">
-              Standard <Icon name="chevron-down" />
-            </span>
-          </label>
-          <label>
-            Preferred date
-            <span className="fake-input">
-              24 Sep 2026 <Icon name="clock" />
-            </span>
-          </label>
-        </div>
-        <Button icon="arrow-right">Continue request</Button>
-      </div>
-    </div>
-  )
-}
-
-function TicketPreview() {
-  return (
-    <div className="ticket-preview">
-      <div className="ticket-head">
-        <div>
-          <span className="dashboard-kicker">TICKET #MON-2481</span>
-          <h3>Cooling tower B · thermal inspection</h3>
-        </div>
-        <span className="status-badge status-badge--blue">In progress</span>
-      </div>
-      <div className="ticket-line">
-        <div className="ticket-node ticket-node--done">
-          <Icon name="check" />
-        </div>
-        <div className="ticket-copy">
-          <strong>Request reviewed and assigned</strong>
-          <small>
-            Our operations team confirmed the scope and scheduled the
-            inspection.
-          </small>
-          <span>Today, 08:42</span>
-        </div>
-      </div>
-      <div className="ticket-line">
-        <div className="ticket-node ticket-node--active">
-          <Icon name="radio" />
-        </div>
-        <div className="ticket-copy">
-          <strong>Remote inspection in progress</strong>
-          <small>Specialist is collecting thermal evidence at East site.</small>
-          <span>Today, 09:30 · Current step</span>
-        </div>
-      </div>
-      <div className="ticket-line ticket-line--pending">
-        <div className="ticket-node">
-          <Icon name="file-text" />
-        </div>
-        <div className="ticket-copy">
-          <strong>Results and report delivered</strong>
-          <small>
-            Findings will appear here when the inspection is complete.
-          </small>
-        </div>
-      </div>
-      <div className="ticket-footer">
-        <span>
-          <Icon name="users" /> Assigned service team
-        </span>
-        <span>
-          <Icon name="clock" /> Est. completion 14:00
-        </span>
-      </div>
-    </div>
-  )
-}
-
-function ReportPreview() {
-  return (
-    <div className="report-preview">
-      <div className="report-cover">
-        <div className="report-brand">
-          <BrandMark />
-          <span>FIELDWISE REPORT</span>
-        </div>
-        <span className="report-label">INSPECTION RESULT</span>
-        <h3>
-          East site
-          <br />
-          <strong>Cooling tower B</strong>
-        </h3>
-        <div className="report-cover-bottom">
-          <span>24 September 2026</span>
-          <span>Report #RPT-1048</span>
-        </div>
-      </div>
-      <div className="report-summary">
-        <div className="summary-head">
-          <span>Executive summary</span>
-          <span className="status-badge status-badge--green">
-            No critical findings
-          </span>
-        </div>
-        <p>
-          Thermal scan completed across 18 inspection points. One area requires
-          planned maintenance within 30 days.
-        </p>
-        <div className="summary-grid">
-          <div>
-            <strong>18</strong>
-            <span>Points inspected</span>
-          </div>
-          <div>
-            <strong>01</strong>
-            <span>Action to plan</span>
-          </div>
-          <div>
-            <strong>100%</strong>
-            <span>Evidence attached</span>
-          </div>
-        </div>
-        <div className="evidence-row">
-          <span>
-            <Icon name="camera" /> 18 images
-          </span>
-          <span>
-            <Icon name="chart" /> Thermal data
-          </span>
-          <span>
-            <Icon name="file-text" /> PDF report
-          </span>
-        </div>
-      </div>
+    <div
+      className={`lp-container lp-feature-grid${reverse ? ' lp-feature-grid--reverse' : ''}`}
+    >
+      {reverse ? (
+        <>
+          <div className="lp-feature-panel">{panel}</div>
+          <div className="lp-feature-copy">{copy}</div>
+        </>
+      ) : (
+        <>
+          <div className="lp-feature-copy">{copy}</div>
+          <div className="lp-feature-panel">{panel}</div>
+        </>
+      )}
     </div>
   )
 }
 
 export function LandingPage() {
+  const createRequestTarget = resolveCreateRequestTarget(authSession.getUser())
+
   return (
-    <div id="top" className="landing-page">
-      <a className="skip-link" href="#main-content">
-        Skip to content
+    <div id="top" className="odm odm-landing">
+      <a className="lp-skip-link" href="#main-content">
+        Bỏ qua tới nội dung
       </a>
-      <Header />
+      <Header createRequestTarget={createRequestTarget} />
       <main id="main-content">
-        <section className="hero section-pad">
-          <div className="container hero-grid">
-            <div className="hero-copy">
-              <p className="eyebrow">Remote inspection, made customer-first</p>
+        <section className="lp-hero">
+          <div className="lp-container lp-hero-grid">
+            <div className="lp-hero-copy">
+              <span className="lp-chip">
+                <Icon name="sparkle" />
+                {content.heroChip}
+              </span>
               <h1>
-                Get the insight.
+                {content.heroTitleLines[0]}
                 <br />
-                <span>Skip the risk.</span>
+                <span>{content.heroTitleLines[1]}</span>
               </h1>
-              <p className="hero-lede">
-                Fieldwise helps enterprise teams request monitoring, track every
-                step, and receive clear inspection results—without sending
-                people into dangerous or hard-to-reach places.
-              </p>
-              <div className="hero-actions">
-                <Button
-                  icon="arrow-up-right"
-                  onClick={() => goToAuth('register')}
+              <p className="lp-hero-lede">{content.heroLede}</p>
+              <ul className="lp-hero-checklist">
+                {content.heroChecklist.map((item) => (
+                  <li key={item}>
+                    <Icon name="check" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="lp-hero-actions">
+                <a
+                  className="odm-btn odm-btn-p odm-btn-xl"
+                  href={createRequestTarget}
                 >
-                  Create a monitoring request
-                </Button>
-                <a className="text-link" href="#how-it-works">
-                  See how it works <Icon name="arrow-right" />
+                  Tạo yêu cầu giám sát
+                </a>
+                <a className="odm-btn odm-btn-gh odm-btn-xl" href="#auth/login">
+                  Đăng nhập
                 </a>
               </div>
-              <div className="hero-proof">
-                <span className="proof-mark">
-                  <Icon name="shield" />
-                </span>
-                <span>
-                  Safer operations · Faster decisions · Full transparency
-                </span>
+            </div>
+            <HeroIllustration />
+          </div>
+        </section>
+
+        <section className="lp-stats">
+          <div className="lp-container lp-stats-grid">
+            {content.heroStats.map((stat) => (
+              <div className="lp-stat" key={stat.label}>
+                <strong className="odm-mono">{stat.value}</strong>
+                <span>{stat.label}</span>
               </div>
-            </div>
-            <DashboardPreview />
-          </div>
-          <div className="container hero-foot">
-            <span>Customer-led inspection services</span>
-            <div className="hero-line" />
-            <span className="mono">REQUEST / TRACK / ACT</span>
+            ))}
           </div>
         </section>
-        <section className="value-strip">
-          <div className="container value-grid">
-            <div>
-              <p className="eyebrow">A better way to inspect</p>
-              <h2>
-                Put the request
-                <br />
-                at the center.
-              </h2>
-            </div>
-            <p className="value-copy">
-              You bring the operational question. Fieldwise coordinates the
-              technical work behind it, then gives your team one clear place to
-              follow progress, review evidence, and decide what happens next.
-            </p>
-            <div className="value-stat">
-              <strong>2.4×</strong>
-              <span>
-                faster turnaround
-                <br />
-                from request to result
-              </span>
-            </div>
-          </div>
-        </section>
-        <section id="how-it-works" className="request-section section-pad">
-          <div className="container request-grid">
-            <RequestFormPreview />
-            <div className="request-copy">
-              <p className="eyebrow">Start with what you need to know</p>
-              <h2>
-                Create a request.
-                <br />
-                <span>We handle the complexity.</span>
-              </h2>
-              <p className="section-copy">
-                Submit a monitoring or inspection request in a few simple steps.
-                Describe the asset, the concern, and the outcome you need. Our
-                service team takes it from there.
-              </p>
-              <div className="check-list">
-                <span>
-                  <Icon name="check" /> No drone operation or technical setup
-                  required
-                </span>
-                <span>
-                  <Icon name="check" /> Scope, timing, and access coordinated
-                  for you
-                </span>
-                <span>
-                  <Icon name="check" /> One request, one accountable service
-                  team
-                </span>
-              </div>
-              <a className="text-link" href="#workflow">
-                Learn about the request process <Icon name="arrow-right" />
-              </a>
-            </div>
-          </div>
-        </section>
-        <section id="workflow" className="workflow section-pad">
-          <div className="container">
+
+        <section id="how-it-works" className="lp-section">
+          <div className="lp-container">
             <SectionIntro
-              eyebrow="A transparent service workflow"
-              title="Know what is happening at every step."
-              copy="From your first request to the final report, every handoff is visible and every next step has an owner."
+              eyebrow={content.workflowSection.eyebrow}
+              title={content.workflowSection.title}
               align="center"
             />
-            <div className="workflow-grid">
-              {requestSteps.map((step, index) => (
-                <div className="workflow-card" key={step.label}>
-                  <div className="workflow-card-top">
-                    <span>0{index + 1}</span>
+            <div className="lp-workflow-grid">
+              {content.workflowSteps.map((step) => (
+                <div className="odm-card lp-workflow-card" key={step.no}>
+                  <div className="lp-workflow-card-top">
+                    <span className="odm-mono">{step.no}</span>
                     <Icon name={step.icon} />
                   </div>
-                  <h3>{step.label}</h3>
+                  <h3>{step.title}</h3>
                   <p>{step.detail}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
-        <section id="tracking" className="tracking section-pad">
-          <div className="container tracking-grid">
-            <div className="tracking-copy">
-              <p className="eyebrow">Ticket-based progress tracking</p>
-              <h2>
-                No black boxes.
-                <br />
-                <span>No status chasing.</span>
-              </h2>
-              <p className="section-copy">
-                Each request becomes a ticket your team can follow. See what has
-                been completed, what is happening now, and when to expect your
-                result—all in one shared view.
-              </p>
-              <div className="ticket-highlights">
-                <span>
-                  <Icon name="ticket" />
-                  <strong>One source of truth</strong>
-                  <small>Keep the request, updates, and owner together.</small>
-                </span>
-                <span>
-                  <Icon name="clock" />
-                  <strong>Clear expectations</strong>
-                  <small>See timing and progress without extra calls.</small>
-                </span>
-              </div>
+
+        <section id="features" className="lp-section">
+          <TwoColumnFeature
+            copy={
+              <>
+                <SectionIntro
+                  eyebrow={content.aiFeatureSection.eyebrow}
+                  title={content.aiFeatureSection.title}
+                  copy={content.aiFeatureSection.copy}
+                />
+                <FeatureList items={content.aiFeatureHighlights} />
+              </>
+            }
+            panel={<AiResultPanel />}
+          />
+        </section>
+
+        <section className="lp-section">
+          <TwoColumnFeature
+            reverse
+            copy={
+              <>
+                <SectionIntro
+                  eyebrow={content.liveFeatureSection.eyebrow}
+                  title={content.liveFeatureSection.title}
+                  copy={content.liveFeatureSection.copy}
+                />
+                <FeatureList items={content.liveFeatureHighlights} />
+              </>
+            }
+            panel={<LivePanel />}
+          />
+        </section>
+
+        <section id="industries" className="lp-section">
+          <div className="lp-container">
+            <SectionIntro
+              eyebrow={content.industriesSection.eyebrow}
+              title={content.industriesSection.title}
+              copy={content.industriesSection.copy}
+              align="center"
+            />
+            <div className="lp-industries-grid">
+              {content.industries.map((card) => (
+                <div className="odm-card lp-industry-card" key={card.title}>
+                  <span className="lp-industry-icon" aria-hidden="true">
+                    <Icon name={card.icon} />
+                  </span>
+                  <h3>{card.title}</h3>
+                  <p>{card.detail}</p>
+                  <span className="lp-industry-location">
+                    <Icon name="map-pin" />
+                    {card.location}
+                  </span>
+                </div>
+              ))}
             </div>
-            <TicketPreview />
           </div>
         </section>
-        <section id="reports" className="reports section-pad">
-          <div className="container reports-grid">
-            <ReportPreview />
-            <div className="reports-copy">
-              <p className="eyebrow">Evidence you can use</p>
-              <h2>
-                Results that move
-                <br />
-                <span>work forward.</span>
-              </h2>
-              <p className="section-copy">
-                When the inspection is complete, your team receives a concise
-                result summary with evidence, findings, and recommended next
-                steps—not a folder of files to interpret alone.
-              </p>
-              <div className="result-list">
-                <span>
-                  <Icon name="file-text" />
-                  <strong>Review the executive summary</strong>
-                </span>
-                <span>
-                  <Icon name="camera" />
-                  <strong>Open supporting evidence</strong>
-                </span>
-                <span>
-                  <Icon name="chart" />
-                  <strong>Share and act on the findings</strong>
-                </span>
-              </div>
-              <a className="text-link" href="#contact">
-                See what a report includes <Icon name="arrow-right" />
+
+        <section id="faq" className="lp-section">
+          <div className="lp-container lp-faq">
+            <SectionIntro
+              eyebrow={content.faqSection.eyebrow}
+              title={content.faqSection.title}
+              copy={content.faqSection.copy}
+              align="center"
+            />
+            <FaqAccordion />
+          </div>
+        </section>
+
+        <section className="lp-cta">
+          <div className="lp-container lp-cta-inner">
+            <p className="lp-eyebrow">{content.ctaSection.eyebrow}</p>
+            <h2>{content.ctaSection.title}</h2>
+            <div className="lp-cta-actions">
+              <a
+                className="odm-btn odm-btn-p odm-btn-xl"
+                href={createRequestTarget}
+              >
+                Tạo yêu cầu giám sát
+              </a>
+              <a className="odm-btn odm-btn-gh odm-btn-xl" href="#auth/login">
+                Đăng nhập
               </a>
             </div>
           </div>
         </section>
-        <section id="security" className="security section-pad">
-          <div className="container security-panel">
-            <div className="security-copy">
-              <p className="eyebrow">The value for your operation</p>
-              <h2>
-                Safer work.
-                <br />
-                Faster answers.
-              </h2>
-              <p className="section-copy">
-                Fieldwise keeps people out of avoidable risk and gives
-                decision-makers the evidence they need while the situation is
-                still actionable.
-              </p>
-              <Button variant="secondary" icon="arrow-right">
-                Talk to our team
-              </Button>
-            </div>
-            <div className="benefit-grid">
-              <div>
-                <Icon name="shield" />
-                <strong>Reduce exposure</strong>
-                <p>
-                  Use remote inspection for hazardous, elevated, or
-                  difficult-to-access areas.
-                </p>
-              </div>
-              <div>
-                <Icon name="clock" />
-                <strong>Shorten turnaround</strong>
-                <p>
-                  Move from request to useful findings without coordinating
-                  every technical detail.
-                </p>
-              </div>
-              <div>
-                <Icon name="chart" />
-                <strong>Decide with confidence</strong>
-                <p>
-                  Give operations and maintenance teams a shared view of
-                  evidence and next steps.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section className="cta section-pad" id="contact">
-          <div className="container cta-inner">
-            <p className="eyebrow">Ready when you are</p>
-            <h2>
-              Make your next inspection
-              <br />
-              <span>a clearer decision.</span>
-            </h2>
-            <p>
-              Create a request and let our service team take care of the
-              operational details.
-            </p>
-            <Button icon="arrow-up-right" onClick={() => goToAuth('register')}>
-              Create a monitoring request
-            </Button>
-          </div>
-        </section>
       </main>
-      <footer className="site-footer">
-        <div className="container footer-top">
-          <Logo />
-          <p>Customer-first monitoring and inspection services.</p>
-          <div className="footer-links">
-            <a href="#how-it-works">How it works</a>
-            <a href="#tracking">Tracking</a>
-            <a href="#reports">Reports</a>
-            <a href="#security">Safety</a>
+      <footer className="lp-footer">
+        <div className="lp-container lp-footer-grid">
+          <div className="lp-footer-brand">
+            <Logo />
+            <p>{content.footerTagline}</p>
           </div>
+          {content.footerLinkGroups.map((group) => (
+            <div key={group.title}>
+              <h4>{group.title}</h4>
+              <ul>
+                {group.links.map((link) => (
+                  <li key={link}>{link}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        <div className="container footer-bottom">
-          <span>© 2026 Fieldwise Systems</span>
-          <span>Built for safer, faster decisions.</span>
+        <div className="lp-container lp-footer-bottom">
+          <span>{content.footerCopyright}</span>
+          <span>{content.footerLegal}</span>
         </div>
       </footer>
     </div>

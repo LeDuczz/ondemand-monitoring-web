@@ -1,0 +1,55 @@
+{
+  "_note": "Mock roles for ADM-02. System roles cannot be edited/deleted. AUDITOR is custom.",
+  "roles": [
+    {
+      "id": "role-customer",
+      "code": "CUSTOMER",
+      "name": "Khách hàng",
+      "description": "Người dùng đặt dịch vụ bay drone, xem kết quả và báo cáo.",
+      "type": "SYSTEM",
+      "isSystemRole": true,
+      "isActive": true,
+      "userCount": 5
+    },
+    {
+      "id": "role-staff",
+      "code": "STAFF",
+      "name": "Nhân viên điều hành",
+      "description": "Xử lý đơn hàng, lập lịch bay, phê duyệt mission.",
+      "type": "SYSTEM",
+      "isSystemRole": true,
+      "isActive": true,
+      "userCount": 1
+    },
+    {
+      "id": "role-drone-operator",
+      "code": "DRONE_OPERATOR",
+      "name": "Phi công drone",
+      "description": "Thực hiện chuyến bay, cập nhật trạng thái mission.",
+      "type": "SYSTEM",
+      "isSystemRole": true,
+      "isActive": true,
+      "userCount": 5
+    },
+    {
+      "id": "role-admin",
+      "code": "ADMIN",
+      "name": "Quản trị viên",
+      "description": "Toàn quyền quản lý hệ thống, người dùng, cấu hình.",
+      "type": "SYSTEM",
+      "isSystemRole": true,
+      "isActive": true,
+      "userCount": 1
+    },
+    {
+      "id": "role-auditor",
+      "code": "AUDITOR",
+      "name": "Kiểm toán",
+      "description": "Xem nhật ký hệ thống, kiểm tra hoạt động, báo cáo tuân thủ.",
+      "type": "CUSTOM",
+      "isSystemRole": false,
+      "isActive": true,
+      "userCount": 1
+    }
+  ]
+}

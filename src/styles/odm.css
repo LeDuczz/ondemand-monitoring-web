@@ -1,0 +1,483 @@
+/*
+ * Design tokens + primitives for the OnDemand Monitor manager UI
+ * (Landing / auth / MNG-* screens), copied from evd/design/Landing.dc.html
+ * and evd/design/MNG-01.dc.html <helmet><style> blocks.
+ *
+ * Everything is scoped under `.odm` so it never touches the existing
+ * customer/operator styles in src/styles/global.css.
+ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+.odm {
+  --bg: #f2f4f7;
+  --sf: #ffffff;
+  --sf2: #f7f8fa;
+  --sf3: #edeff3;
+  --bd: #e0e4ea;
+  --bd2: #c9cfd9;
+  --tx: #11151c;
+  --tx2: #454e5e;
+  --tx3: #5b6577;
+  --ink: #11151c;
+  --inkfg: #ffffff;
+  --sel: #e6eaf1;
+  --focus: #2f7be8;
+  --gray-bg: #eceef2;
+  --gray-fg: #434c5c;
+  --gray-dot: #98a1b0;
+  --yellow-bg: #fff2bf;
+  --yellow-fg: #6b4f00;
+  --yellow-dot: #e0a800;
+  --blue-bg: #dceaff;
+  --blue-fg: #0a4aa0;
+  --blue-dot: #2f7be8;
+  --green-bg: #d8f1e1;
+  --green-fg: #0e5f34;
+  --green-dot: #1fa45a;
+  --orange-bg: #ffe4cb;
+  --orange-fg: #8a3a00;
+  --orange-dot: #f08a1c;
+  --red-bg: #ffdada;
+  --red-fg: #9a1818;
+  --red-dot: #dc3545;
+  --gray-solid: #5b6577;
+  --gray-on: #fff;
+  --yellow-solid: #f2be1a;
+  --yellow-on: #1b1500;
+  --blue-solid: #1f6fd6;
+  --blue-on: #fff;
+  --green-solid: #178a4c;
+  --green-on: #fff;
+  --orange-solid: #c2570c;
+  --orange-on: #fff;
+  --red-solid: #c62828;
+  --red-on: #fff;
+  --map-bg: #e8ebef;
+  --map-block: #dce0e6;
+  --map-road: #ffffff;
+  --map-road2: #cdd3db;
+  --map-water: #bbd7ea;
+  --map-park: #cfe6cf;
+  --map-tx: #6b7686;
+  --shadow: 0 1px 2px rgb(17 21 28 / 6%), 0 4px 16px rgb(17 21 28 / 6%);
+
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  color: var(--tx);
+  background: var(--bg);
+}
+
+:root[data-theme='dark'] .odm {
+  --bg: #0a0d12;
+  --sf: #131820;
+  --sf2: #191f28;
+  --sf3: #212833;
+  --bd: #252d39;
+  --bd2: #364152;
+  --tx: #e8ecf2;
+  --tx2: #aab3c2;
+  --tx3: #8b96a8;
+  --ink: #e8ecf2;
+  --inkfg: #0a0d12;
+  --sel: #232b37;
+  --focus: #5aa0ff;
+  --gray-bg: #232a35;
+  --gray-fg: #b8c0cc;
+  --gray-dot: #7d8899;
+  --yellow-bg: #3a3107;
+  --yellow-fg: #f4d25a;
+  --yellow-dot: #e5ae00;
+  --blue-bg: #0f2f5c;
+  --blue-fg: #98c4ff;
+  --blue-dot: #4c93f0;
+  --green-bg: #0e3823;
+  --green-fg: #7cdca5;
+  --green-dot: #2fbf71;
+  --orange-bg: #4a2606;
+  --orange-fg: #ffba7c;
+  --orange-dot: #f59a3b;
+  --red-bg: #4b1518;
+  --red-fg: #ffa6a6;
+  --red-dot: #ef5b69;
+  --gray-solid: #7d8899;
+  --gray-on: #0a0d12;
+  --yellow-solid: #f2c233;
+  --yellow-on: #1b1500;
+  --blue-solid: #4c93f0;
+  --blue-on: #06152b;
+  --green-solid: #2fbf71;
+  --green-on: #04150c;
+  --orange-solid: #f59a3b;
+  --orange-on: #1f0f00;
+  --red-solid: #ef5b69;
+  --red-on: #1a0507;
+  --map-bg: #171d26;
+  --map-block: #1e2631;
+  --map-road: #2e3847;
+  --map-road2: #0f141b;
+  --map-water: #14304a;
+  --map-park: #182f22;
+  --map-tx: #7f8b9d;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 6px 20px rgb(0 0 0 / 35%);
+}
+
+.odm * {
+  box-sizing: border-box;
+}
+
+.odm a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.odm-mono {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.odm-tn {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Buttons ---------- */
+.odm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--bd2);
+  border-radius: 6px;
+  background: var(--sf);
+  color: var(--tx);
+  font:
+    600 13px/1 'IBM Plex Sans',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.odm-btn:hover {
+  background: var(--sf3);
+}
+
+.odm-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.odm-btn.odm-btn-p {
+  background: var(--ink);
+  color: var(--inkfg);
+  border-color: var(--ink);
+}
+
+.odm-btn.odm-btn-p:hover {
+  opacity: 0.88;
+  background: var(--ink);
+}
+
+.odm-btn.odm-btn-ok {
+  background: var(--green-solid);
+  color: var(--green-on);
+  border-color: var(--green-solid);
+}
+
+.odm-btn.odm-btn-rd {
+  background: var(--red-solid);
+  color: var(--red-on);
+  border-color: var(--red-solid);
+}
+
+.odm-btn.odm-btn-yl {
+  background: var(--yellow-solid);
+  color: var(--yellow-on);
+  border-color: var(--yellow-solid);
+}
+
+.odm-btn.odm-btn-or {
+  background: var(--orange-solid);
+  color: var(--orange-on);
+  border-color: var(--orange-solid);
+}
+
+.odm-btn.odm-btn-bl {
+  background: var(--blue-solid);
+  color: var(--blue-on);
+  border-color: var(--blue-solid);
+}
+
+.odm-btn.odm-btn-ok:hover,
+.odm-btn.odm-btn-rd:hover,
+.odm-btn.odm-btn-yl:hover,
+.odm-btn.odm-btn-or:hover,
+.odm-btn.odm-btn-bl:hover {
+  opacity: 0.9;
+}
+
+.odm-btn.odm-btn-ol-rd {
+  color: var(--red-fg);
+  border-color: var(--red-dot);
+  background: transparent;
+}
+
+.odm-btn.odm-btn-gh {
+  border-color: transparent;
+  background: transparent;
+}
+
+.odm-btn.odm-btn-gh:hover {
+  background: var(--sf3);
+}
+
+.odm-btn.odm-btn-sm {
+  height: 26px;
+  padding: 0 9px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+
+.odm-btn.odm-btn-lg {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.odm-btn.odm-btn-xl {
+  height: 56px;
+  padding: 0 24px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.odm-btn.odm-btn-ic1 {
+  width: 32px;
+  padding: 0;
+}
+
+.odm-btn.odm-btn-ic1.odm-btn-sm {
+  width: 26px;
+}
+
+.odm-btn.odm-btn-dis {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.odm-btn.odm-btn-dis:hover {
+  background: inherit;
+}
+
+/* ---------- Status badge ---------- */
+.odm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px 0 7px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.odm-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.odm-badge.odm-badge-lg {
+  height: 26px;
+  font-size: 13px;
+  padding: 0 12px 0 10px;
+  border-radius: 13px;
+}
+
+.odm-badge.odm-badge-lg .odm-badge-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.odm-badge-gray {
+  background: var(--gray-bg);
+  color: var(--gray-fg);
+}
+.odm-badge-gray .odm-badge-dot {
+  background: var(--gray-dot);
+}
+
+.odm-badge-yellow {
+  background: var(--yellow-bg);
+  color: var(--yellow-fg);
+}
+.odm-badge-yellow .odm-badge-dot {
+  background: var(--yellow-dot);
+}
+
+.odm-badge-blue {
+  background: var(--blue-bg);
+  color: var(--blue-fg);
+}
+.odm-badge-blue .odm-badge-dot {
+  background: var(--blue-dot);
+}
+
+.odm-badge-green {
+  background: var(--green-bg);
+  color: var(--green-fg);
+}
+.odm-badge-green .odm-badge-dot {
+  background: var(--green-dot);
+}
+
+.odm-badge-orange {
+  background: var(--orange-bg);
+  color: var(--orange-fg);
+}
+.odm-badge-orange .odm-badge-dot {
+  background: var(--orange-dot);
+}
+
+.odm-badge-red {
+  background: var(--red-bg);
+  color: var(--red-fg);
+}
+.odm-badge-red .odm-badge-dot {
+  background: var(--red-dot);
+}
+
+/* ---------- Surfaces ---------- */
+.odm-card {
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+}
+
+.odm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--bd);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.odm-card-body {
+  padding: 14px;
+}
+
+/* ---------- Table ---------- */
+.odm-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+}
+
+.odm-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--tx3);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bd);
+  background: var(--sf2);
+  white-space: nowrap;
+}
+
+.odm-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--bd);
+  vertical-align: middle;
+}
+
+.odm-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.odm-table tbody tr:hover td {
+  background: var(--sf2);
+}
+
+.odm-table.odm-table-dense td {
+  padding: 6px 10px;
+}
+
+/* ---------- Form inputs ---------- */
+.odm-inp {
+  height: 34px;
+  width: 100%;
+  border: 1px solid var(--bd2);
+  border-radius: 6px;
+  background: var(--sf);
+  color: var(--tx);
+  padding: 0 10px;
+  font:
+    400 13px 'IBM Plex Sans',
+    system-ui,
+    sans-serif;
+}
+
+.odm-inp::placeholder {
+  color: var(--tx3);
+}
+
+.odm-inp:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+  border-color: var(--focus);
+}
+
+.odm-inp.odm-inp-err {
+  border-color: var(--red-dot);
+}
+
+/* ---------- Skeleton / motion ---------- */
+.odm-sk {
+  background: linear-gradient(
+    90deg,
+    var(--sf3) 25%,
+    var(--sf2) 50%,
+    var(--sf3) 75%
+  );
+  background-size: 200% 100%;
+  animation: odm-shim 1.5s infinite linear;
+  border-radius: 5px;
+}
+
+@keyframes odm-shim {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes odm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.odm-spin {
+  animation: odm-spin 1s linear infinite;
+}
+
+.odm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,50 @@
+{
+  "_note": "Tài khoản mock cho đăng nhập demo (P2). password là mật khẩu demo dùng riêng cho mock server, không phải dữ liệu thật. Chỉ các email liệt kê ở đây được mock server chặn lại; mọi email khác đi thẳng ra backend thật (passThrough).",
+  "users": [
+    {
+      "id": "mock-staff-hang-le",
+      "email": "hang.le@odms.vn",
+      "password": "Demo@123",
+      "_passwordNote": "Mật khẩu demo mock-only, không phải mật khẩu thật.",
+      "fullName": "Lê Thị Thanh Hằng",
+      "role": "STAFF",
+      "emailVerified": true,
+      "isActive": true,
+      "accessToken": "mock-staff-token"
+    },
+    {
+      "id": "mock-admin-main",
+      "email": "binh.tran@odms.vn",
+      "password": "Demo@123",
+      "_passwordNote": "Mật khẩu demo mock-only, không phải mật khẩu thật.",
+      "fullName": "Trần Quốc Bình",
+      "role": "ADMIN",
+      "emailVerified": true,
+      "isActive": true,
+      "accessToken": "mock-admin-token"
+    },
+    {
+      "id": "mock-customer-bao-le",
+      "email": "bao.le@logisticscatlai.vn",
+      "password": "Demo@123",
+      "_passwordNote": "Mật khẩu demo mock-only, không phải mật khẩu thật.",
+      "fullName": "Lê Quốc Bảo",
+      "role": "CUSTOMER",
+      "emailVerified": true,
+      "isActive": true,
+      "accessToken": "mock-customer-token"
+    },
+    {
+      "id": "mock-locked-demo",
+      "email": "locked.demo@odms.vn",
+      "password": "Demo@123",
+      "_passwordNote": "Mật khẩu demo mock-only, không phải mật khẩu thật.",
+      "_note": "Tài khoản demo trạng thái khoá — dữ liệu mẫu",
+      "fullName": "Tài khoản demo (đã khoá)",
+      "role": "STAFF",
+      "emailVerified": true,
+      "isActive": false,
+      "accessToken": "mock-locked-token"
+    }
+  ]
+}

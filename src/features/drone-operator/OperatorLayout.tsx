@@ -11,6 +11,7 @@ export function OperatorLayout({
   notificationCount,
   searchQuery,
   onSearchChange,
+  fillContent,
   children,
 }: {
   route: OperatorRoute
@@ -18,6 +19,7 @@ export function OperatorLayout({
   notificationCount?: number
   searchQuery: string
   onSearchChange: (value: string) => void
+  fillContent?: boolean
   children: ReactNode
 }) {
   const [dark, setDark] = useState(
@@ -45,7 +47,15 @@ export function OperatorLayout({
             notificationCount={notificationCount}
           />
           <main className="odm-opr-main">
-            <div className="odm-opr-content">{children}</div>
+            <div
+              className={
+                fillContent
+                  ? 'odm-opr-content odm-opr-content--fill'
+                  : 'odm-opr-content'
+              }
+            >
+              {children}
+            </div>
           </main>
         </div>
       </div>

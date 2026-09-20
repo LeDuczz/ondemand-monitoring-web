@@ -67,6 +67,7 @@ export function DroneOperatorApp() {
       notificationCount={2}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
+      fillContent={route.screen === 'zoneMap'}
     >
       {renderScreen(route, searchQuery)}
     </OperatorLayout>

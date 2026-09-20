@@ -170,7 +170,7 @@ afterEach(() => {
 })
 
 describe('DispatchPage', () => {
-  it('shows a loading state, then renders suggestions', async () => {
+  it('shows a loading state, then renders drone suggestions (phase 1)', async () => {
     vi.spyOn(missionsApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
     render(<DispatchPage missionId="msn-2609-0153-1" />)
@@ -178,16 +178,22 @@ describe('DispatchPage', () => {
     await waitFor(() =>
       expect(screen.getByText('DRN-01 · Đại Bàng')).toBeInTheDocument(),
     )
-    expect(screen.getByText('Hoàng Đức Thắng')).toBeInTheDocument()
+    // Operator section is hidden until drone is locked (phase 2)
+    expect(screen.queryByText('Hoàng Đức Thắng')).not.toBeInTheDocument()
   })
 
-  it('selecting a drone and operator then Phân công calls assign-drone then assign-operator', async () => {
+  it('sequential flow: lock drone → select operator → Phân công calls assign-drone then assign-operator', async () => {
     vi.spyOn(missionsApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
     const calls: string[] = []
     vi.spyOn(missionsApi, 'assignDrone').mockImplementation(async () => {
       calls.push('drone')
-      return { ...mission, droneId: 'drn-01', status: 'RESOURCE_ASSIGNING' }
+      return {
+        ...mission,
+        droneId: 'drn-01',
+        droneAssignmentId: 'mda-1',
+        status: 'RESOURCE_ASSIGNING',
+      }
     })
     vi.spyOn(missionsApi, 'assignOperator').mockImplementation(async () => {
       calls.push('operator')
@@ -202,15 +208,20 @@ describe('DispatchPage', () => {
     await waitFor(() =>
       expect(screen.getByText('DRN-01 · Đại Bàng')).toBeInTheDocument(),
     )
+    // Phase 1: lock drone
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Chọn drone này' })[0],
+    )
+    // Phase 2: operator section now visible after drone locked
+    await waitFor(() =>
+      expect(screen.getByText('Hoàng Đức Thắng')).toBeInTheDocument(),
     )
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Chọn phi công này' })[0],
     )
     fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
     await waitFor(() =>
-      expect(screen.getByText('Đã phân công.')).toBeInTheDocument(),
+      expect(screen.getByText(/Đã phân công thành công/)).toBeInTheDocument(),
     )
     expect(calls).toEqual(['drone', 'operator'])
   })
@@ -220,7 +231,12 @@ describe('DispatchPage', () => {
     vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
     const droneSpy = vi
       .spyOn(missionsApi, 'assignDrone')
-      .mockResolvedValue({ ...mission, droneId: 'drn-01' })
+      .mockResolvedValue({
+        ...mission,
+        droneId: 'drn-01',
+        droneAssignmentId: 'mda-1',
+        status: 'RESOURCE_ASSIGNING',
+      })
     const operatorSpy = vi
       .spyOn(missionsApi, 'assignOperator')
       .mockResolvedValue({
@@ -234,16 +250,18 @@ describe('DispatchPage', () => {
       expect(screen.getByText('DRN-01 · Đại Bàng')).toBeInTheDocument(),
     )
     fireEvent.click(
-      screen.getByRole('button', { name: 'Phân công tự động (chọn hạng 1)' }),
+      screen.getByRole('button', { name: 'Phân công tự động (hạng 1)' }),
     )
     await waitFor(() =>
-      expect(screen.getByText('Đã phân công.')).toBeInTheDocument(),
+      expect(
+        screen.getByText(/Đã phân công tự động thành công/),
+      ).toBeInTheDocument(),
     )
     expect(droneSpy).toHaveBeenCalledWith('msn-2609-0153-1', 'DRN-01')
     expect(operatorSpy).toHaveBeenCalledWith('msn-2609-0153-1', 'HT')
   })
 
-  it('shows the schedule-conflict message on a 409 SCHEDULE_CONFLICT', async () => {
+  it('shows the drone-conflict error when locking a conflicting drone', async () => {
     vi.spyOn(missionsApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
     vi.spyOn(missionsApi, 'assignDrone').mockRejectedValue(
@@ -261,13 +279,10 @@ describe('DispatchPage', () => {
     await waitFor(() =>
       expect(screen.getByText('DRN-01 · Đại Bàng')).toBeInTheDocument(),
     )
+    // Conflict surfaces immediately when locking the drone
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Chọn drone này' })[0],
     )
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Chọn phi công này' })[0],
-    )
-    fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
     await waitFor(() =>
       expect(screen.getByText(/MSN-2609-0150-1 chiếm/)).toBeInTheDocument(),
     )
@@ -321,8 +336,11 @@ describe('DispatchPage', () => {
     vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
     const releaseSpy = vi.spyOn(missionsApi, 'releaseAssignment')
     render(<DispatchPage missionId="msn-2609-0153-1" />)
+    // When drone is already assigned, locked-drone banner shows (phase 2)
     await waitFor(() =>
-      expect(screen.getByText('DRN-01 · Đại Bàng')).toBeInTheDocument(),
+      expect(
+        screen.getByText('Bước 1 hoàn tất — Drone đã khóa'),
+      ).toBeInTheDocument(),
     )
     fireEvent.click(screen.getByRole('button', { name: 'Thu hồi phân công' }))
     const dialog = screen.getByRole('dialog')

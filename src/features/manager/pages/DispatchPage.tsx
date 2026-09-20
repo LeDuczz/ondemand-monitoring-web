@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
@@ -8,6 +8,7 @@ import {
 } from '../../../shared/lib/statusTone'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { missionsApi } from '../api/missionsApi'
+import { managerHref } from '../routes'
 import type {
   DroneCandidate,
   Mission,
@@ -205,6 +206,8 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
+type LockedDrone = { code: string; name: string; assignmentId: string }
+
 function DispatchBody({
   mission: initialMission,
   suggestions,
@@ -215,38 +218,80 @@ function DispatchBody({
   onMissionChanged: () => void
 }) {
   const [mission, setMission] = useState(initialMission)
-  const [selectedDrone, setSelectedDrone] = useState<string | null>(null)
+  // Phase 1: null = drone not yet locked; set = drone locked via API
+  const [lockedDrone, setLockedDrone] = useState<LockedDrone | null>(() =>
+    initialMission.droneId && initialMission.droneAssignmentId
+      ? {
+          code: initialMission.droneId,
+          name:
+            suggestions.topDrones.find(
+              (d) => d.code === initialMission.droneId,
+            )?.name ?? initialMission.droneId,
+          assignmentId: initialMission.droneAssignmentId,
+        }
+      : null,
+  )
+  // Phase 2: operator selection
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null)
-  const [conflict, setConflict] = useState<string | null>(null)
+  const [lockingDrone, setLockingDrone] = useState(false)
   const [assigning, setAssigning] = useState(false)
-  const [assignedDone, setAssignedDone] = useState(false)
+  const [droneError, setDroneError] = useState<string | null>(null)
+  const [assignError, setAssignError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
   const [rejectedOpen, setRejectedOpen] = useState(false)
   const [releaseModal, setReleaseModal] = useState(false)
 
-  const selectedDroneCandidate = suggestions.topDrones.find(
-    (d) => d.code === selectedDrone,
-  )
+  // Auto-dismiss toast after 4 s
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(t)
+  }, [toast])
+
   const selectedOperatorCandidate = suggestions.topOperators.find(
     (o) => o.code === selectedOperator,
   )
 
-  async function doAssign(droneCode: string, operatorCode: string) {
-    setAssigning(true)
-    setConflict(null)
+  async function handleLockDrone(droneCode: string) {
+    setLockingDrone(true)
+    setDroneError(null)
     try {
-      const afterDrone = await missionsApi.assignDrone(mission.id, droneCode)
-      const afterOperator = await missionsApi.assignOperator(
-        mission.id,
-        operatorCode,
+      const updated = await missionsApi.assignDrone(mission.id, droneCode)
+      setMission(updated)
+      const candidate = suggestions.topDrones.find((d) => d.code === droneCode)
+      setLockedDrone({
+        code: droneCode,
+        name: candidate?.name ?? droneCode,
+        assignmentId: updated.droneAssignmentId ?? '',
+      })
+    } catch (err) {
+      setDroneError(
+        err instanceof ApiError ? err.message : 'Không thể chọn drone này.',
       )
-      setMission(afterOperator)
-      void afterDrone
-      setAssignedDone(true)
+    } finally {
+      setLockingDrone(false)
+    }
+  }
+
+  async function handleAssignOperator() {
+    if (!lockedDrone || !selectedOperator) return
+    setAssigning(true)
+    setAssignError(null)
+    try {
+      const updated = await missionsApi.assignOperator(
+        mission.id,
+        selectedOperator,
+      )
+      setMission(updated)
+      const name = selectedOperatorCandidate?.fullName ?? selectedOperator
+      setToast(
+        `Đã phân công thành công. Phi công ${name} đã được gán. Thông báo đã gửi tới phi công (chờ phản hồi).`,
+      )
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SCHEDULE_CONFLICT') {
-        setConflict(err.message)
+        setAssignError(err.message)
       } else {
-        setConflict(
+        setAssignError(
           err instanceof ApiError ? err.message : 'Phân công thất bại.',
         )
       }
@@ -255,18 +300,54 @@ function DispatchBody({
     }
   }
 
-  async function handleAssign() {
-    if (!selectedDrone || !selectedOperator) return
-    await doAssign(selectedDrone, selectedOperator)
-  }
-
   async function handleAutoAssign() {
     const topDrone = suggestions.topDrones[0]
     const topOperator = suggestions.topOperators[0]
     if (!topDrone || !topOperator) return
-    setSelectedDrone(topDrone.code)
-    setSelectedOperator(topOperator.code)
-    await doAssign(topDrone.code, topOperator.code)
+    // Step 1: lock drone
+    setLockingDrone(true)
+    setDroneError(null)
+    let updated: Mission
+    try {
+      updated = await missionsApi.assignDrone(mission.id, topDrone.code)
+      setMission(updated)
+      setLockedDrone({
+        code: topDrone.code,
+        name: topDrone.name,
+        assignmentId: updated.droneAssignmentId ?? '',
+      })
+    } catch (err) {
+      setDroneError(
+        err instanceof ApiError ? err.message : 'Không thể chọn drone này.',
+      )
+      setLockingDrone(false)
+      return
+    }
+    setLockingDrone(false)
+    // Step 2: assign operator
+    setAssigning(true)
+    setAssignError(null)
+    try {
+      const afterOp = await missionsApi.assignOperator(
+        mission.id,
+        topOperator.code,
+      )
+      setMission(afterOp)
+      setSelectedOperator(topOperator.code)
+      setToast(
+        `Đã phân công tự động thành công. Drone ${topDrone.name} + phi công ${topOperator.fullName} đã được gán. Thông báo đã gửi tới phi công.`,
+      )
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'SCHEDULE_CONFLICT') {
+        setAssignError(err.message)
+      } else {
+        setAssignError(
+          err instanceof ApiError ? err.message : 'Phân công thất bại.',
+        )
+      }
+    } finally {
+      setAssigning(false)
+    }
   }
 
   async function handleRelease(reason: string) {
@@ -285,8 +366,7 @@ function DispatchBody({
       )
     }
     setReleaseModal(false)
-    setAssignedDone(false)
-    setSelectedDrone(null)
+    setLockedDrone(null)
     setSelectedOperator(null)
     onMissionChanged()
   }
@@ -295,12 +375,36 @@ function DispatchBody({
 
   return (
     <div className="odm-mgr-dash">
+      {/* Toast notification */}
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            background: 'var(--green-solid, #22c55e)',
+            color: '#fff',
+            borderRadius: 8,
+            padding: '12px 20px',
+            maxWidth: 420,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+            fontSize: 14,
+            fontWeight: 500,
+            lineHeight: 1.5,
+          }}
+        >
+          {toast}
+        </div>
+      ) : null}
+
       <div className="odm-mgr-dash-head">
         <div>
           <h1 className="odm-mgr-dash-title">Phân công nguồn lực</h1>
           <div className="odm-mgr-dash-date">
-            Gợi ý xếp hạng theo hard filter + điểm số · AI chỉ diễn giải, người
-            duyệt quyết định
+            Gợi ý xếp hạng theo hard filter + điểm số · Người duyệt quyết định
           </div>
         </div>
         <StatusBadge tone={missionStatusTone[mission.status]} size="lg">
@@ -399,29 +503,23 @@ function DispatchBody({
         </div>
       ) : null}
 
-      {conflict ? (
+      {droneError ? (
         <div className="odm-mgr-modal-error" style={{ marginBottom: 10 }}>
-          {conflict}
+          {droneError}
         </div>
       ) : null}
 
-      {assignedDone ? (
+      {assignError ? (
+        <div className="odm-mgr-modal-error" style={{ marginBottom: 10 }}>
+          {assignError}
+        </div>
+      ) : null}
+
+      {/* ── Bước 1: chọn drone ─────────────────────────────────────────────── */}
+      {!lockedDrone ? (
         <div className="odm-card" style={{ marginBottom: 14 }}>
-          <div className="odm-card-body">
-            <div style={{ fontWeight: 700 }}>Đã phân công.</div>
-            <div style={{ color: 'var(--tx3)' }}>
-              Drone {selectedDroneCandidate?.name ?? selectedDrone} và phi công{' '}
-              {selectedOperatorCandidate?.fullName ?? selectedOperator} đã được
-              gán. Thông báo đã gửi tới phi công (chờ phản hồi).
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="odm-mgr-dispatch-grid">
-        <div className="odm-card">
           <div className="odm-card-header">
-            Gợi ý drone
+            Bước 1 — Chọn drone
             <span
               style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}
             >
@@ -434,33 +532,76 @@ function DispatchBody({
               key={d.code}
               rank={i + 1}
               drone={d}
-              selected={selectedDrone === d.code}
-              onSelect={() => setSelectedDrone(d.code)}
+              locking={lockingDrone}
+              onLock={() => handleLockDrone(d.code)}
             />
           ))}
         </div>
-
-        <div className="odm-card">
-          <div className="odm-card-header">
-            Gợi ý phi công
-            <span
-              style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}
-            >
-              top {suggestions.topOperators.length} /{' '}
-              {suggestions.eligibleOperatorCount} đủ điều kiện
-            </span>
+      ) : (
+        <>
+          {/* Locked drone banner */}
+          <div
+            className="odm-card"
+            style={{
+              marginBottom: 14,
+              borderLeft: '3px solid var(--blue-solid)',
+            }}
+          >
+            <div className="odm-card-body" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--blue-solid)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: 2,
+                  }}
+                >
+                  Bước 1 hoàn tất — Drone đã khóa
+                </div>
+                <div style={{ fontWeight: 700 }}>
+                  {lockedDrone.code} · {lockedDrone.name}
+                </div>
+              </div>
+              <a
+                href={managerHref({ screen: 'drones' })}
+                className="odm-btn odm-btn-sm"
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                Đổi drone → Đội drone
+              </a>
+            </div>
           </div>
-          {suggestions.topOperators.map((o, i) => (
-            <OperatorCard
-              key={o.code}
-              rank={i + 1}
-              operator={o}
-              selected={selectedOperator === o.code}
-              onSelect={() => setSelectedOperator(o.code)}
-            />
-          ))}
-        </div>
-      </div>
+
+          {/* ── Bước 2: chọn phi công ──────────────────────────────────────── */}
+          <div className="odm-card" style={{ marginBottom: 14 }}>
+            <div className="odm-card-header">
+              Bước 2 — Chọn phi công
+              <span
+                style={{
+                  fontWeight: 500,
+                  color: 'var(--tx3)',
+                  fontSize: 11.5,
+                }}
+              >
+                top {suggestions.topOperators.length} /{' '}
+                {suggestions.eligibleOperatorCount} đủ điều kiện
+              </span>
+            </div>
+            {suggestions.topOperators.map((o, i) => (
+              <OperatorCard
+                key={o.code}
+                rank={i + 1}
+                operator={o}
+                selected={selectedOperator === o.code}
+                onSelect={() => setSelectedOperator(o.code)}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="odm-card" style={{ marginTop: 14 }}>
         <button
@@ -510,10 +651,6 @@ function DispatchBody({
       <TimelineCard timeline={suggestions.timeline} />
 
       <div className="odm-mgr-dispatch-bottombar">
-        <span>
-          Đã chọn: {selectedDroneCandidate?.name ?? '—'} +{' '}
-          {selectedOperatorCandidate?.fullName ?? '—'}
-        </span>
         <span style={{ flex: 1 }} />
         <button
           type="button"
@@ -523,22 +660,25 @@ function DispatchBody({
         >
           Thu hồi phân công
         </button>
-        <button
-          type="button"
-          className="odm-btn"
-          onClick={handleAutoAssign}
-          disabled={assigning || !suggestions.feasible}
-        >
-          Phân công tự động (chọn hạng 1)
-        </button>
-        <button
-          type="button"
-          className="odm-btn odm-btn-ok"
-          onClick={handleAssign}
-          disabled={!selectedDrone || !selectedOperator || assigning}
-        >
-          Phân công
-        </button>
+        {!lockedDrone ? (
+          <button
+            type="button"
+            className="odm-btn"
+            onClick={handleAutoAssign}
+            disabled={lockingDrone || assigning || !suggestions.feasible}
+          >
+            Phân công tự động (hạng 1)
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="odm-btn odm-btn-ok"
+            onClick={handleAssignOperator}
+            disabled={!selectedOperator || assigning}
+          >
+            {assigning ? 'Đang phân công…' : 'Phân công'}
+          </button>
+        )}
       </div>
 
       {releaseModal ? (
@@ -554,16 +694,16 @@ function DispatchBody({
 function DroneCard({
   rank,
   drone,
-  selected,
-  onSelect,
+  locking,
+  onLock,
 }: {
   rank: number
   drone: DroneCandidate
-  selected: boolean
-  onSelect: () => void
+  locking: boolean
+  onLock: () => void
 }) {
   return (
-    <div className={`odm-mgr-candidate-card${selected ? ' selected' : ''}`}>
+    <div className="odm-mgr-candidate-card">
       <div className="odm-mgr-candidate-head">
         <span
           className="odm-tn"
@@ -608,12 +748,11 @@ function DroneCard({
       </div>
       <button
         type="button"
-        className={
-          selected ? 'odm-btn odm-btn-ok odm-btn-sm' : 'odm-btn odm-btn-sm'
-        }
-        onClick={onSelect}
+        className="odm-btn odm-btn-p odm-btn-sm"
+        onClick={onLock}
+        disabled={locking}
       >
-        {selected ? 'Đã chọn' : 'Chọn drone này'}
+        {locking ? 'Đang khóa…' : 'Chọn drone này'}
       </button>
     </div>
   )

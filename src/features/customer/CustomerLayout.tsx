@@ -16,7 +16,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tổng quan', icon: '⊞', route: { screen: 'dashboard' } },
   { label: 'Đơn của tôi', icon: '≡', route: { screen: 'orders' } },
   { label: 'Tạo yêu cầu', icon: '+', route: { screen: 'createOrder' } },
-  { label: 'Xem trực tiếp', icon: '▶', route: { screen: 'liveHub' } },
   { label: 'Thư viện kết quả', icon: '⊟', route: { screen: 'mediaLibrary' }, newMediaBadge: true },
   { label: 'Thông báo', icon: '🔔', route: { screen: 'notifications' } },
 ]

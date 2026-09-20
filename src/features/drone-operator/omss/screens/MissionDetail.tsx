@@ -1,579 +1,234 @@
-import type { Mission, Drone, Screen } from '../types'
-import {
-  MissionBadge,
-  DroneBadge,
-  PriorityBadge,
-} from '../components/StatusBadge'
+import { useState } from 'react'
+import type { OperatorMission } from '../types'
+import { StatusBadge } from '../../../../shared/components/odm/StatusBadge'
+import RejectDialog from '../components/RejectDialog'
 
 interface Props {
-  mission: Mission
-  drone: Drone
-  onScreen: (s: Screen) => void
+  mission: OperatorMission
   onBack: () => void
+  onAccept: (id: string) => void
+  onReject: (id: string, reason: string, notes?: string) => void
+  onContinue?: (mission: OperatorMission) => void
 }
 
-function KV({
-  label,
-  value,
-  mono,
-}: {
-  label: string
-  value: string
-  mono?: boolean
-}) {
+const WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+
+function fmtDate(iso: string) {
+  const d = new Date(iso)
+  return `${WEEKDAYS[d.getDay()]}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
+function fmtTime(iso: string) {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function KV({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '10px 0',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <span style={{ fontSize: 13, color: 'var(--text-2)', minWidth: 140 }}>
-        {label}
-      </span>
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: 'var(--text)',
-          textAlign: 'right',
-          fontFamily: mono ? 'var(--font-data)' : undefined,
-        }}
-      >
-        {value}
-      </span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--bd)' }}>
+      <span style={{ fontSize: 13, color: 'var(--tx3)', minWidth: 160 }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)', textAlign: 'right', fontFamily: mono ? 'var(--font-data)' : undefined }}>{value}</span>
     </div>
   )
 }
 
-export default function MissionDetail({
-  mission,
-  drone,
-  onScreen,
-  onBack,
-}: Props) {
-  const isAcceptable = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
+export default function MissionDetail({ mission, onBack, onAccept, onReject, onContinue }: Props) {
+  const [showReject, setShowReject] = useState(false)
+  const [accepted, setAccepted] = useState(false)
+  const [acceptedAt] = useState(() => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }))
+
+  const isWaiting = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
+  const isActive = mission.state === 'IN_FLIGHT' || mission.state === 'SCHEDULED' ||
+    mission.state === 'CONNECTED' || mission.state === 'PREFLIGHT_CHECKING' ||
+    mission.state === 'READY_TO_FLY'
+
+  function handleAccept() {
+    setAccepted(true)
+    onAccept(mission.id)
+  }
+
+  function handleReject(reason: string, notes?: string) {
+    setShowReject(false)
+    onReject(mission.id, reason, notes)
+  }
 
   return (
-    <div
-      className="fade-in"
-      style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}
-    >
-      {/* Breadcrumb */}
+    <div className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+      {/* Back */}
       <button
         onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'none',
-          border: 'none',
-          color: 'var(--text-2)',
-          fontSize: 13,
-          cursor: 'pointer',
-          padding: 0,
-          marginBottom: 20,
-        }}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20 }}
       >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 14 14"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path d="M9 2L4 7l5 5" />
-        </svg>
-        My missions
+        ← Quay lại danh sách
       </button>
 
-      {/* Page header */}
-      <div
-        style={{
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'start' }}>
+        {/* Left: Map placeholder */}
+        <div style={{
+          background: 'var(--sf2)',
+          border: '1px solid var(--bd)',
+          borderRadius: 10,
+          minHeight: 400,
           display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          marginBottom: 28,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              marginBottom: 6,
-            }}
-          >
-            <h1
-              style={{
-                fontSize: 22,
-                fontWeight: 700,
-                color: 'var(--text)',
-                margin: 0,
-              }}
-            >
-              {mission.title}
-            </h1>
-            <PriorityBadge priority={mission.priority} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span
-              style={{
-                fontSize: 13,
-                fontFamily: 'var(--font-data)',
-                color: 'var(--text-3)',
-              }}
-            >
-              {mission.id}
-            </span>
-            <MissionBadge state={mission.state} />
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          color: 'var(--tx3)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Grid lines */}
+          <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: .12 }}>
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+
+          <div style={{ position: 'relative', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{mission.location}</div>
+            <div style={{ fontSize: 12, marginBottom: 16 }}>GRID · trần bay {mission.maxAltitudeM}m</div>
+            {/* Waypoints */}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {['H', '1', '2', '3', '4'].map((wp) => (
+                <div key={wp} style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: wp === 'H' ? 'var(--green-solid)' : 'var(--blue-solid)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 11, fontWeight: 700,
+                }}>
+                  {wp}
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, marginTop: 12 }}>Bán kính {mission.surveillanceRadiusM}m</div>
           </div>
         </div>
-        {isAcceptable && (
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={() => onScreen('accept-reject')}
-              style={{
-                padding: '9px 18px',
-                borderRadius: 8,
-                border: '1px solid var(--border-2)',
-                background: 'var(--surface)',
-                fontSize: 14,
-                fontWeight: 500,
-                color: 'var(--text)',
-                cursor: 'pointer',
-              }}
-            >
-              Reject
-            </button>
-            <button
-              onClick={() => onScreen('accept-reject')}
-              style={{
-                padding: '9px 20px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'var(--accent)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#fff',
-                cursor: 'pointer',
-              }}
-            >
-              Accept mission
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* Three-column layout */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 280px',
-          gap: 20,
-        }}
-      >
-        {/* Mission details */}
-        <div
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
+        {/* Right: Info panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Header */}
+          <div style={{
+            background: 'var(--sf)',
+            border: '1px solid var(--bd)',
             borderRadius: 10,
-            padding: '20px',
-            boxShadow: 'var(--shadow)',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--text)',
-              margin: '0 0 4px',
-            }}
-          >
-            Mission details
-          </h2>
-          <p
-            style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 16px' }}
-          >
-            Assignment and operational parameters
-          </p>
-          <KV label="Customer" value={mission.customer} />
-          <KV label="Mission type" value="Infrastructure survey" />
-          <KV label="Target location" value={mission.location} />
-          <KV
-            label="Scheduled"
-            value={new Date(mission.scheduledAt).toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-            })}
-          />
-          <KV
-            label="Duration estimate"
-            value={`${mission.estimatedMinutes} min`}
-          />
-          <KV label="Max altitude" value={`${mission.maxAltitudeM} m AGL`} />
-          <KV label="Distance" value={`${mission.distanceKm} km`} />
-          <KV label="Flight plan" value={mission.flightPlanId} mono />
-          {mission.notes && (
-            <div
-              style={{
-                marginTop: 14,
-                padding: 12,
-                background: 'var(--surface-2)',
-                borderRadius: 8,
-                fontSize: 13,
-                color: 'var(--text-2)',
-                lineHeight: 1.55,
-              }}
-            >
-              {mission.notes}
+            padding: '18px 18px 14px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ fontFamily: 'var(--font-data)', fontSize: 12, color: 'var(--tx3)' }}>{mission.id}</span>
+              <StatusBadge tone={
+                mission.state === 'WAITING_OPERATOR_ACCEPTANCE' ? 'yellow' :
+                  mission.state === 'IN_FLIGHT' ? 'green' :
+                    mission.state === 'COMPLETED' ? 'green' :
+                      mission.state === 'CANCELLED' ? 'red' : 'blue'
+              }>
+                {mission.state === 'WAITING_OPERATOR_ACCEPTANCE' ? 'Chờ phản hồi' :
+                  mission.state === 'SCHEDULED' ? 'Đã nhận' :
+                    mission.state === 'IN_FLIGHT' ? 'Đang bay' :
+                      mission.state === 'COMPLETED' ? 'Hoàn thành' :
+                        mission.state === 'CANCELLED' ? 'Bị từ chối' : mission.state}
+              </StatusBadge>
+            </div>
+
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--tx)', marginBottom: 4, lineHeight: 1.3 }}>
+              {mission.title}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--tx2)' }}>{mission.subtitle} · {mission.orderRef}</div>
+          </div>
+
+          {/* Details */}
+          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '14px 18px' }}>
+            <KV label="Ngày bay" value={fmtDate(mission.scheduledAt)} />
+            <KV label="Khung giờ" value={`${fmtTime(mission.scheduledAt)}–${fmtTime(mission.endAt)} · ${mission.estimatedMinutes} phút`} />
+            <KV label="Địa điểm" value={mission.location} />
+            <KV label="Vùng giám sát" value={`Bán kính ${mission.surveillanceRadiusM} m · trần bay ${mission.maxAltitudeM} m`} />
+            {(mission.photoCount > 0 || mission.videoCount > 0) && (
+              <KV label="Yêu cầu media" value={[
+                mission.photoCount > 0 ? `PHOTO × ${mission.photoCount}${mission.photoSpec ? ' · ' + mission.photoSpec : ''}` : '',
+                mission.videoCount > 0 ? `VIDEO × ${mission.videoCount} · ${mission.videoDurationSec} giây · ${mission.videoResolution ?? ''}` : '',
+              ].filter(Boolean).join(' | ')} />
+            )}
+          </div>
+
+          {/* Drone */}
+          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: '14px 18px' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx3)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.04em' }}>Drone</div>
+            <KV label="Tên" value={`${mission.droneId} ${mission.droneName} · ${mission.droneModel}`} />
+            <KV label="Payload" value={mission.payload} />
+            <KV label="Trạm xuất phát" value={`${mission.stationName}, cách ${mission.stationDistanceKm} km`} />
+            <KV label="Pin / Giờ bay" value={`${mission.droneBattery}% · ${mission.droneHoursFromMaintenance}h từ bảo trì`} />
+            <div style={{ padding: '9px 0' }}>
+              <StatusBadge tone={mission.droneStatus === 'AVAILABLE' ? 'green' : 'yellow'} size="md">
+                {mission.droneStatus === 'AVAILABLE' ? 'Sẵn sàng' : mission.droneStatus}
+              </StatusBadge>
+            </div>
+          </div>
+
+          {/* Manager note */}
+          {mission.managerNote && (
+            <div style={{
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
+              borderRadius: 10,
+              padding: '14px 18px',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#92400e', marginBottom: 6 }}>
+                Ghi chú từ {mission.managerName}
+              </div>
+              <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.5 }}>{mission.managerNote}</div>
+              {mission.responseDeadline && (
+                <div style={{ fontSize: 12, color: '#92400e', marginTop: 8, fontWeight: 500 }}>
+                  Hãy phản hồi trước {fmtDate(mission.responseDeadline)} {fmtTime(mission.responseDeadline)}
+                </div>
+              )}
             </div>
           )}
-        </div>
 
-        {/* Map */}
-        <div
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            overflow: 'hidden',
-            boxShadow: 'var(--shadow)',
-          }}
-        >
-          <div
-            style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <h2
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--text)',
-                margin: '0 0 2px',
-              }}
-            >
-              Location map
-            </h2>
-            <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>
-              {mission.location}
-            </p>
-          </div>
-          <svg
-            width="100%"
-            height="300"
-            viewBox="0 0 400 300"
-            style={{ display: 'block' }}
-          >
-            <rect width="400" height="300" fill="#eef0f3" />
-            {/* Grid */}
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <line
-                key={`h${i}`}
-                x1="0"
-                y1={i * 60}
-                x2="400"
-                y2={i * 60}
-                stroke="#dde0e4"
-                strokeWidth=".5"
-              />
-            ))}
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <line
-                key={`v${i}`}
-                x1={i * 60}
-                y1="0"
-                x2={i * 60}
-                y2="300"
-                stroke="#dde0e4"
-                strokeWidth=".5"
-              />
-            ))}
-            {/* Route */}
-            <polyline
-              points="80,220 140,160 200,130 260,110 320,120 360,140"
-              fill="none"
-              stroke="#4f46e5"
-              strokeWidth="2"
-              strokeDasharray="5,4"
-              opacity=".7"
-            />
-            {/* Waypoints */}
-            {[
-              [80, 220],
-              [140, 160],
-              [200, 130],
-              [260, 110],
-              [320, 120],
-              [360, 140],
-            ].map(([x, y], i) => (
-              <circle key={i} cx={x} cy={y} r="5" fill="#4f46e5" opacity=".8" />
-            ))}
-            {/* Target */}
-            <circle
-              cx="200"
-              cy="130"
-              r="14"
-              fill="none"
-              stroke="#4f46e5"
-              strokeWidth="2"
-              opacity=".4"
-            />
-            <circle cx="200" cy="130" r="5" fill="#4f46e5" />
-            {/* Label */}
-            <text
-              x="200"
-              y="112"
-              textAnchor="middle"
-              fill="#4f46e5"
-              fontSize="10"
-              fontWeight="600"
-            >
-              Mission area
-            </text>
-            {/* Compass */}
-            <text x="370" y="26" fill="#6b7280" fontSize="11" fontWeight="600">
-              N
-            </text>
-            <line
-              x1="374"
-              y1="30"
-              x2="374"
-              y2="42"
-              stroke="#6b7280"
-              strokeWidth="1.5"
-            />
-          </svg>
-        </div>
-
-        {/* Drone */}
-        <div
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            padding: '20px',
-            boxShadow: 'var(--shadow)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0,
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--text)',
-              margin: '0 0 4px',
-            }}
-          >
-            Assigned drone
-          </h2>
-          <p
-            style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 16px' }}
-          >
-            Current status and readiness
-          </p>
-
-          <div
-            style={{
-              background: 'var(--surface-2)',
-              borderRadius: 8,
-              padding: '14px',
-              marginBottom: 16,
-              textAlign: 'center',
-            }}
-          >
-            <svg
-              width="64"
-              height="48"
-              viewBox="0 0 64 48"
-              fill="none"
-              style={{ display: 'block', margin: '0 auto 10px' }}
-            >
-              <rect
-                x="26"
-                y="20"
-                width="12"
-                height="8"
-                rx="2"
-                fill="#4f46e5"
-                opacity=".15"
-                stroke="#4f46e5"
-                strokeWidth="1.2"
-              />
-              {[
-                [8, 8],
-                [48, 8],
-                [8, 32],
-                [48, 32],
-              ].map(([x, y], i) => (
-                <circle
-                  key={i}
-                  cx={x}
-                  cy={y}
-                  r="5"
-                  fill="none"
-                  stroke="#4f46e5"
-                  strokeWidth="1.2"
-                  opacity=".5"
-                />
-              ))}
-              {[
-                [8, 8],
-                [48, 8],
-                [8, 32],
-                [48, 32],
-              ].map(([x, y], i) => (
-                <line
-                  key={i}
-                  x1={x}
-                  y1={y}
-                  x2={[27, 37, 27, 37][i]}
-                  y2={[22, 22, 26, 26][i]}
-                  stroke="#6b7280"
-                  strokeWidth="1"
-                />
-              ))}
-              <circle cx="32" cy="24" r="3" fill="#4f46e5" />
-            </svg>
-            <div
-              style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}
-            >
-              {drone.name}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                fontFamily: 'var(--font-data)',
-                color: 'var(--text-3)',
-                marginTop: 2,
-              }}
-            >
-              {drone.id}
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <DroneBadge state={drone.state} />
-            </div>
-          </div>
-
-          {[
-            { label: 'Model', value: drone.model },
-            { label: 'Serial', value: drone.serialNumber },
-            { label: 'Battery', value: `${drone.battery}%` },
-            { label: 'GPS', value: `${drone.gpsCount} satellites` },
-            {
-              label: 'Storage',
-              value: `${(drone.storageMB / 1024).toFixed(1)} GB free`,
-            },
-          ].map((r) => (
-            <div
-              key={r.label}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '8px 0',
-                borderBottom: '1px solid var(--border)',
-              }}
-            >
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                {r.label}
-              </span>
-              <span
-                style={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: 'var(--text)',
-                  fontFamily:
-                    r.label === 'Serial' ? 'var(--font-data)' : undefined,
-                }}
+          {/* Footer actions */}
+          {isWaiting && !accepted && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="odm-btn odm-btn-gh"
+                style={{ flex: 1 }}
+                onClick={() => setShowReject(true)}
               >
-                {r.value}
-              </span>
+                Từ chối
+              </button>
+              <button
+                className="odm-btn odm-btn-p"
+                style={{ flex: 2 }}
+                onClick={handleAccept}
+              >
+                Chấp nhận
+              </button>
             </div>
-          ))}
+          )}
 
-          {/* Weather */}
-          <div
-            style={{
-              marginTop: 16,
-              padding: '12px',
-              background: 'var(--green-bg)',
-              border: '1px solid var(--green-border)',
-              borderRadius: 8,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'var(--green-text)',
-                marginBottom: 4,
-              }}
-            >
-              Weather — Good to fly
+          {(accepted || (!isWaiting && !isActive && mission.state !== 'CANCELLED')) && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                Bạn đã chấp nhận mission này lúc {acceptedAt}
+              </span>
+              <button className="odm-btn odm-btn-gh" onClick={onBack}>Về danh sách</button>
             </div>
-            <div
-              style={{ fontSize: 12, color: 'var(--green-text)', opacity: 0.8 }}
-            >
-              Wind 8 km/h · Visibility 14 km · Partly cloudy
-            </div>
-          </div>
+          )}
+
+          {isActive && !accepted && onContinue && (
+            <button className="odm-btn odm-btn-p" onClick={() => onContinue(mission)}>
+              Tiếp tục bay
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Bottom actions */}
-      {isAcceptable && (
-        <div
-          style={{
-            marginTop: 24,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 12,
-          }}
-        >
-          <button
-            onClick={() => onScreen('accept-reject')}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              border: '1px solid var(--border-2)',
-              background: 'var(--surface)',
-              fontSize: 14,
-              fontWeight: 500,
-              color: 'var(--text-2)',
-              cursor: 'pointer',
-            }}
-          >
-            Reject mission
-          </button>
-          <button
-            onClick={() => onScreen('accept-reject')}
-            style={{
-              padding: '10px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--accent)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            Accept mission
-          </button>
-        </div>
+      {showReject && (
+        <RejectDialog
+          onConfirm={handleReject}
+          onCancel={() => setShowReject(false)}
+        />
       )}
     </div>
   )

@@ -1,5 +1,5 @@
 import type { StatusTone } from '../../../shared/types/domain'
-import type { AccountStatus } from '../types/accounts'
+import type { AccountStatus, AdminAccountItem } from '../types/accounts'
 import type { UserRole } from '../../auth/types'
 
 type Meta = { label: string; tone: StatusTone }
@@ -35,6 +35,31 @@ export function fmtDate(iso: string): string {
     month: '2-digit',
     year: 'numeric',
   })
+}
+
+export type AccountCounts = {
+  total: number
+  pilots: number
+  locked: number
+}
+
+export function computeAccountCounts(items: AdminAccountItem[]): AccountCounts {
+  let pilots = 0
+  let locked = 0
+  for (const acc of items) {
+    if (acc.role === 'DRONE_OPERATOR') pilots += 1
+    if (acc.status === 'INACTIVE') locked += 1
+  }
+  return { total: items.length, pilots, locked }
+}
+
+export function accountsSubtitle(counts: AccountCounts): string {
+  return `${counts.total} tài khoản · ${counts.pilots} phi công · ${counts.locked} tài khoản bị khoá`
+}
+
+export function pageRangeLabel(currentCount: number, total: number): string {
+  if (total === 0) return 'Hiển thị 0/0'
+  return `Hiển thị 1–${currentCount}/${total}`
 }
 
 export function daysDiff(isoDate: string): number {

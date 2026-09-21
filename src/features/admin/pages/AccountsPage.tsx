@@ -10,8 +10,11 @@ import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { adminApi } from '../api/adminApi'
 import {
   ACCOUNT_STATUS_META,
+  accountsSubtitle,
+  computeAccountCounts,
   fmtDate,
   fmtDateTime,
+  pageRangeLabel,
   ROLE_LABEL,
 } from '../lib/accountStatus'
 import { adminHref } from '../routes'
@@ -90,7 +93,7 @@ export function AccountsPage() {
           </h1>
           {data && (
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-              {data.items.length} tài khoản
+              {accountsSubtitle(computeAccountCounts(data.items))}
             </p>
           )}
         </div>
@@ -296,6 +299,16 @@ export function AccountsPage() {
               })}
             </tbody>
           </table>
+          <div
+            style={{
+              padding: '10px 14px',
+              fontSize: 12,
+              color: 'var(--tx3)',
+              borderTop: '1px solid var(--bd)',
+            }}
+          >
+            {pageRangeLabel(data.items.length, data.items.length)}
+          </div>
         </div>
       )}
 

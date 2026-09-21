@@ -9,9 +9,9 @@ import type { StatusTone } from '../../../../shared/types/domain'
 function timeslotStatus(effectiveFrom: string, effectiveTo: string | null): { label: string; tone: StatusTone } {
   const now = new Date()
   const from = new Date(effectiveFrom)
-  if (effectiveTo && new Date(effectiveTo) < now) return { label: 'Da het', tone: 'gray' }
-  if (from > now) return { label: 'Sap toi', tone: 'blue' }
-  return { label: 'Dang hieu luc', tone: 'green' }
+  if (effectiveTo && new Date(effectiveTo) < now) return { label: 'Đã hết', tone: 'gray' }
+  if (from > now) return { label: 'Sắp tới', tone: 'blue' }
+  return { label: 'Đang hiệu lực', tone: 'green' }
 }
 
 export function TimeslotsTab() {
@@ -40,7 +40,7 @@ export function TimeslotsTab() {
       setEffectiveFrom('')
       reload()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khi tao khung gio.')
+      setError(err instanceof Error ? err.message : 'Lỗi khi tạo khung giờ.')
     } finally {
       setLoading(false)
     }
@@ -54,7 +54,7 @@ export function TimeslotsTab() {
           className="odm-btn odm-btn-p"
           onClick={() => setShowCreate((v) => !v)}
         >
-          + Tao phien ban moi
+          + Tạo phiên bản mới
         </button>
       </div>
 
@@ -72,34 +72,34 @@ export function TimeslotsTab() {
             gap: 12,
           }}
         >
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Tao phien ban khung gio</h3>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Tạo phiên bản khung giờ</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ma code *</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Mã code *</label>
               <input className="odm-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="MORNING" required />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ten *</label>
-              <input className="odm-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Khung sang" required />
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Tên *</label>
+              <input className="odm-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Khung sáng" required />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Bat dau</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Bắt đầu</label>
               <input className="odm-input" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ket thuc</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Kết thúc</label>
               <input className="odm-input" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Hieu luc tu *</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Hiệu lực từ *</label>
               <input className="odm-input" type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} required />
             </div>
           </div>
           {error && <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" className="odm-btn odm-btn-gh" onClick={() => setShowCreate(false)}>Huy</button>
+            <button type="button" className="odm-btn odm-btn-gh" onClick={() => setShowCreate(false)}>Hủy</button>
             <button type="submit" className="odm-btn odm-btn-p" disabled={loading}>
-              {loading ? 'Dang tao...' : 'Tao phien ban'}
+              {loading ? 'Đang tạo...' : 'Tạo phiên bản'}
             </button>
           </div>
         </form>
@@ -113,12 +113,12 @@ export function TimeslotsTab() {
             <thead>
               <tr>
                 <th>Code</th>
-                <th>Ten</th>
+                <th>Tên</th>
                 <th>Version</th>
-                <th>Khung gio</th>
-                <th>Hieu luc tu</th>
-                <th>Hieu luc den</th>
-                <th>Trang thai</th>
+                <th>Khung giờ</th>
+                <th>Hiệu lực từ</th>
+                <th>Hiệu lực đến</th>
+                <th>Trạng thái</th>
               </tr>
             </thead>
             <tbody>

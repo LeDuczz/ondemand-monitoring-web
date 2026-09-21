@@ -7,9 +7,9 @@ import { StationsTab } from '../components/catalog/StationsTab'
 type Tab = 'services' | 'timeslots' | 'stations'
 
 const TABS: Array<{ key: Tab; label: string }> = [
-  { key: 'services', label: 'Dich vu' },
-  { key: 'timeslots', label: 'Khung gio' },
-  { key: 'stations', label: 'Tram' },
+  { key: 'services', label: 'Dịch vụ' },
+  { key: 'timeslots', label: 'Khung giờ' },
+  { key: 'stations', label: 'Trạm' },
 ]
 
 export function CatalogPage() {
@@ -17,7 +17,7 @@ export function CatalogPage() {
 
   return (
     <div>
-      <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 700 }}>Danh muc</h1>
+      <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 700 }}>Danh mục</h1>
       <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--bd)', marginBottom: 20 }}>
         {TABS.map((t) => (
           <button

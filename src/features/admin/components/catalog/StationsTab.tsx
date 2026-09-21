@@ -37,7 +37,7 @@ function StationDialog({
       }
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khi luu tram.')
+      setError(err instanceof Error ? err.message : 'Lỗi khi lưu trạm.')
     } finally {
       setLoading(false)
     }
@@ -47,45 +47,45 @@ function StationDialog({
     <div className="odm-dialog-backdrop" onClick={onClose}>
       <div className="odm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }} role="dialog" aria-modal="true">
         <div className="odm-dialog-header">
-          <h2 className="odm-dialog-title">{isEdit ? 'Sua tram' : 'Tao tram moi'}</h2>
+          <h2 className="odm-dialog-title">{isEdit ? 'Sửa trạm' : 'Tạo trạm mới'}</h2>
           <button type="button" className="odm-dialog-close" onClick={onClose}>x</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="odm-dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {!isEdit && (
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ma tram *</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Mã trạm *</label>
                 <input className="odm-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required />
               </div>
             )}
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ten tram *</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Tên trạm *</label>
               <input className="odm-input" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Dia chi</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Địa chỉ</label>
               <input className="odm-input" value={address} onChange={(e) => setAddress(e.target.value)} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Vi do (lat)</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Vĩ độ (lat)</label>
                 <input className="odm-input" type="number" step="0.0001" value={lat} onChange={(e) => setLat(Number(e.target.value))} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Kinh do (lon)</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Kinh độ (lon)</label>
                 <input className="odm-input" type="number" step="0.0001" value={lon} onChange={(e) => setLon(Number(e.target.value))} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ban kinh (m)</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Bán kính (m)</label>
                 <input className="odm-input" type="number" value={radius} onChange={(e) => setRadius(Number(e.target.value))} />
               </div>
             </div>
             {error && <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>{error}</p>}
           </div>
           <div className="odm-dialog-footer">
-            <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Huy</button>
+            <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Hủy</button>
             <button type="submit" className="odm-btn odm-btn-p" disabled={loading}>
-              {loading ? 'Dang luu...' : 'Luu'}
+              {loading ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>
         </form>
@@ -102,7 +102,7 @@ export function StationsTab() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <button type="button" className="odm-btn odm-btn-p" onClick={() => setDialog({})}>
-          + Them tram
+          + Thêm trạm
         </button>
       </div>
       {loading && <LoadingState />}
@@ -112,12 +112,12 @@ export function StationsTab() {
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Tram</th>
-                <th>Dia chi</th>
-                <th>Toa do</th>
-                <th>Ban kinh dich vu</th>
-                <th>Trang thai</th>
-                <th>Thao tac</th>
+                <th>Trạm</th>
+                <th>Địa chỉ</th>
+                <th>Tọa độ</th>
+                <th>Bán kính dịch vụ</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +134,7 @@ export function StationsTab() {
                   <td style={{ fontSize: 12 }}>{(sta.maxServiceRadiusM / 1000).toFixed(0)} km</td>
                   <td>
                     <StatusBadge tone={sta.isActive ? 'green' : 'gray'}>
-                      {sta.isActive ? 'Hoat dong' : 'Tam tat'}
+                      {sta.isActive ? 'Hoạt động' : 'Tạm tắt'}
                     </StatusBadge>
                   </td>
                   <td>
@@ -144,7 +144,7 @@ export function StationsTab() {
                       style={{ fontSize: 11, padding: '3px 8px' }}
                       onClick={() => setDialog({ station: sta })}
                     >
-                      Sua
+                      Sửa
                     </button>
                   </td>
                 </tr>

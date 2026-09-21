@@ -47,7 +47,7 @@ function EditServiceDialog({
       await adminApi.updateService(service.id, { name, defaultDurationMin: duration, minAltitudeM: minAlt, maxAltitudeM: maxAlt, sensors, isActive })
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khi luu dich vu.')
+      setError(err instanceof Error ? err.message : 'Lỗi khi lưu dịch vụ.')
     } finally {
       setLoading(false)
     }
@@ -57,31 +57,31 @@ function EditServiceDialog({
     <div className="odm-dialog-backdrop" onClick={onClose}>
       <div className="odm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }} role="dialog" aria-modal="true">
         <div className="odm-dialog-header">
-          <h2 className="odm-dialog-title">Sua dich vu: {service.code}</h2>
+          <h2 className="odm-dialog-title">Sửa dịch vụ: {service.code}</h2>
           <button type="button" className="odm-dialog-close" onClick={onClose}>x</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="odm-dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Ten dich vu</label>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Tên dịch vụ</label>
               <input className="odm-input" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Thoi luong (phut)</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Thời lượng (phút)</label>
                 <input className="odm-input" type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Do cao min (m)</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Độ cao min (m)</label>
                 <input className="odm-input" type="number" value={minAlt} onChange={(e) => setMinAlt(Number(e.target.value))} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Do cao max (m)</label>
+                <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>Độ cao max (m)</label>
                 <input className="odm-input" type="number" value={maxAlt} onChange={(e) => setMaxAlt(Number(e.target.value))} />
               </div>
             </div>
             <div>
-              <p style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 6 }}>Sensor:</p>
+              <p style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 6 }}>Cảm biến:</p>
               {SENSORS.map((s) => {
                 const entry = sensors.find((x) => x.sensor === s)
                 return (
@@ -91,7 +91,7 @@ function EditServiceDialog({
                     {entry && (
                       <>
                         <input type="checkbox" checked={entry.isMandatory} onChange={() => toggleMandatory(s)} id={`mandatory-${s}`} />
-                        <label htmlFor={`mandatory-${s}`} style={{ fontSize: 11, color: 'var(--tx2)' }}>Bat buoc</label>
+                        <label htmlFor={`mandatory-${s}`} style={{ fontSize: 11, color: 'var(--tx2)' }}>Bắt buộc</label>
                       </>
                     )}
                   </div>
@@ -100,14 +100,14 @@ function EditServiceDialog({
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-              Dang hoat dong
+              Đang hoạt động
             </label>
             {error && <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>{error}</p>}
           </div>
           <div className="odm-dialog-footer">
-            <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Huy</button>
+            <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Hủy</button>
             <button type="submit" className="odm-btn odm-btn-p" disabled={loading}>
-              {loading ? 'Dang luu...' : 'Luu'}
+              {loading ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>
         </form>
@@ -129,13 +129,13 @@ export function ServicesTab() {
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Ten dich vu</th>
+                <th>Tên dịch vụ</th>
                 <th>Code</th>
-                <th>Thoi luong (phut)</th>
-                <th>Do cao (m)</th>
-                <th>Sensor</th>
-                <th>Trang thai</th>
-                <th>Thao tac</th>
+                <th>Thời lượng (phút)</th>
+                <th>Độ cao (m)</th>
+                <th>Cảm biến</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -150,7 +150,7 @@ export function ServicesTab() {
                   </td>
                   <td>
                     <StatusBadge tone={svc.isActive ? 'green' : 'gray'}>
-                      {svc.isActive ? 'Hoat dong' : 'Tam tat'}
+                      {svc.isActive ? 'Hoạt động' : 'Tạm tắt'}
                     </StatusBadge>
                   </td>
                   <td>
@@ -160,7 +160,7 @@ export function ServicesTab() {
                       style={{ fontSize: 11, padding: '3px 8px' }}
                       onClick={() => setEditing(svc)}
                     >
-                      Sua
+                      Sửa
                     </button>
                   </td>
                 </tr>

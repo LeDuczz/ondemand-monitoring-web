@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import type { NavId, Screen, Role } from '../types'
+import { authApi, authSession } from '../../../auth/api/authApi'
 
 interface Props {
   role: Role
@@ -96,11 +97,6 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'integrations', label: 'Integrations', icon: <ServerIcon /> },
 ]
 
-const WORKSPACE: NavItem[] = [
-  { id: 'notifications', label: 'Notifications', icon: <BellIcon /> },
-  { id: 'profile', label: 'Profile', icon: <UserIcon /> },
-]
-
 const ROLE_NAV: Record<Role, NavItem[]> = {
   operator: OPERATOR_NAV,
   customer: CUSTOMER_NAV,
@@ -109,337 +105,97 @@ const ROLE_NAV: Record<Role, NavItem[]> = {
   admin: ADMIN_NAV,
 }
 
-const ROLE_META: Record<
-  Role,
-  { title: string; profile: string; initials: string; id: string }
-> = {
-  operator: {
-    title: 'Operator Workspace',
-    profile: 'J. Martinez',
-    initials: 'JM',
-    id: 'Drone Operator · OPR-112',
-  },
-  customer: {
-    title: 'Client Portal',
-    profile: 'A. Chen',
-    initials: 'AC',
-    id: 'Premium Client · ACC-4421',
-  },
-  manager: {
-    title: 'Operations Console',
-    profile: 'S. Kim',
-    initials: 'SK',
-    id: 'Operations Manager · MGR-007',
-  },
-  sysop: {
-    title: 'System Console',
-    profile: 'R. Patel',
-    initials: 'RP',
-    id: 'System Admin · SYS-003',
-  },
-  admin: {
-    title: 'Administration',
-    profile: 'L. Torres',
-    initials: 'LT',
-    id: 'Platform Admin · ADM-001',
-  },
+const ROLE_LABEL: Record<Role, string> = {
+  operator: 'Drone operations',
+  customer: 'Client portal',
+  manager: 'Operations console',
+  sysop: 'System operations',
+  admin: 'Administration',
 }
 
-function NavRow({
-  item,
-  active,
-  onChange,
-  badge,
-}: {
-  item: NavItem
-  active: boolean
-  onChange: Props['onChange']
-  badge?: number
-}) {
-  return (
-    <button
-      onClick={() => onChange(item.id, item.screen)}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%',
-        padding: '8px 12px',
-        borderRadius: 8,
-        border: 'none',
-        cursor: 'pointer',
-        textAlign: 'left',
-        background: active ? 'var(--accent-bg)' : 'transparent',
-        color: active ? 'var(--accent)' : 'var(--text-2)',
-        fontFamily: 'var(--font-ui)',
-        fontSize: 14,
-        fontWeight: active ? 600 : 400,
-        transition: 'background .1s, color .1s',
-      }}
-    >
-      <span
-        style={{
-          color: active ? 'var(--accent)' : 'var(--text-3)',
-          display: 'flex',
-          flexShrink: 0,
-        }}
-      >
-        {item.icon}
-      </span>
-      <span style={{ flex: 1 }}>{item.label}</span>
-      {badge ? (
-        <span
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: '50%',
-            background: 'var(--red)',
-            color: '#fff',
-            fontSize: 10,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {badge}
-        </span>
-      ) : null}
-    </button>
-  )
-}
 
 export default function Sidebar({ role, active, onChange, alerts }: Props) {
   const nav = ROLE_NAV[role] ?? ROLE_NAV['operator']
-  const meta = ROLE_META[role] ?? ROLE_META['operator']
+  const roleLabel = ROLE_LABEL[role] ?? 'Drone operations'
+
+  const [dark, setDark] = useState(
+    () => document.documentElement.dataset.theme === 'dark',
+  )
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  }, [dark])
+
+  const logout = async () => {
+    const token = authSession.getAccessToken()
+    try {
+      if (token) await authApi.logout(token)
+    } finally {
+      authSession.clear()
+      window.location.hash = '#auth/login'
+    }
+  }
 
   return (
-    <aside
-      style={{
-        width: 240,
-        flexShrink: 0,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--surface)',
-        borderRight: '1px solid var(--border)',
-      }}
-    >
-      {/* Brand */}
-      <div
-        style={{
-          padding: '18px 16px 14px',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'var(--accent)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path
-                d="M9 2L16 7v9H2V7L9 2z"
-                stroke="#fff"
-                strokeWidth="1.5"
-                fill="none"
-                strokeLinejoin="round"
-              />
-              <circle cx="9" cy="10" r="2" fill="#fff" opacity=".85" />
-            </svg>
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: 'var(--text)',
-                lineHeight: 1.2,
-              }}
-            >
-              OMSS
-            </div>
-            <div
-              style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.3 }}
-            >
-              {meta.title}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Profile */}
-      <div
-        style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-        }}
-      >
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: '50%',
-            background: 'var(--accent-bg)',
-            border: '2px solid var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}
-          >
-            {meta.initials}
-          </span>
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text)',
-              lineHeight: 1.3,
-            }}
-          >
-            {meta.profile}
-          </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: 'var(--text-3)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {meta.id}
-          </div>
-        </div>
-        <div
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            background: 'var(--green)',
-            flexShrink: 0,
-            marginLeft: 'auto',
-          }}
-        />
-      </div>
+    <aside className="portal-sidebar">
+      {/* Brand — identical to PortalLayout */}
+      <a className="portal-brand" href="#portal/drone-operator">
+        <span className="brand-mark" aria-hidden="true">
+          <span />
+        </span>
+        <span>FIELDWISE</span>
+      </a>
+      <div className="portal-role-label">{roleLabel}</div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '10px 8px' }}>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'var(--text-3)',
-            padding: '4px 12px 6px',
-            letterSpacing: '.04em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Navigation
-        </div>
+      <nav className="portal-nav" aria-label="Drone operator navigation">
         {nav.map((item) => (
-          <NavRow
+          <button
             key={item.id}
-            item={item}
-            active={active === item.id}
-            onChange={onChange}
-          />
-        ))}
-
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'var(--text-3)',
-            padding: '14px 12px 6px',
-            letterSpacing: '.04em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Workspace
-        </div>
-        {WORKSPACE.map((item) => (
-          <NavRow
-            key={item.id}
-            item={item}
-            active={active === item.id}
-            onChange={onChange}
-            badge={item.id === 'notifications' ? alerts : undefined}
-          />
+            onClick={() => onChange(item.id, item.screen)}
+            className={`portal-nav-btn${active === item.id ? ' portal-nav-btn--active' : ''}`}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              width: '100%',
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              background: active === item.id ? 'var(--accent-bg)' : 'transparent',
+              color: active === item.id ? 'var(--accent)' : 'var(--text-2)',
+              fontFamily: 'var(--font-ui)',
+              fontSize: 14,
+              fontWeight: active === item.id ? 600 : 400,
+              transition: 'background .1s, color .1s',
+            }}
+          >
+            <span style={{ color: active === item.id ? 'var(--accent)' : 'var(--text-3)', display: 'flex', flexShrink: 0 }}>
+              {item.icon}
+            </span>
+            <span style={{ flex: 1 }}>{item.label}</span>
+            {item.id === 'notifications' && alerts > 0 ? (
+              <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--red)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {alerts}
+              </span>
+            ) : null}
+          </button>
         ))}
       </nav>
 
-      {/* System status */}
-      <div
-        style={{ padding: '12px 16px', borderTop: '1px solid var(--border)' }}
-      >
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'var(--text-3)',
-            marginBottom: 8,
-          }}
-        >
-          System status
-        </div>
-        {[
-          { label: 'GCS connection', ok: true },
-          { label: 'Server', ok: true },
-        ].map((s) => (
-          <div
-            key={s.label}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 5,
-            }}
-          >
-            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
-              {s.label}
-            </span>
-            <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 12,
-                color: s.ok ? 'var(--green)' : 'var(--red)',
-                fontWeight: 500,
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: s.ok ? 'var(--green)' : 'var(--red)',
-                  display: 'inline-block',
-                }}
-              />
-              {s.ok ? 'Online' : 'Offline'}
-            </span>
-          </div>
-        ))}
+      {/* Footer — identical to PortalLayout */}
+      <div className="portal-sidebar-footer">
+        <button type="button" className="portal-utility-button" onClick={() => setDark(!dark)}>
+          {dark ? <SunIcon /> : <MoonIcon />}
+          <span>{dark ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <button type="button" className="portal-utility-button" onClick={logout}>
+          <ArrowLeftIcon />
+          <span>Sign out</span>
+        </button>
       </div>
     </aside>
   )
@@ -561,21 +317,7 @@ function BellIcon() {
     </svg>
   )
 }
-function UserIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <circle cx="8" cy="5" r="3" />
-      <path d="M1 14c0-3.3 3.1-6 7-6s7 2.7 7 6" />
-    </svg>
-  )
-}
+
 function TeamIcon() {
   return (
     <svg
@@ -715,3 +457,29 @@ function MapIcon() {
     </svg>
   )
 }
+
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" />
+    </svg>
+  )
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M10 3L5 8l5 5" />
+    </svg>
+  )
+}
+

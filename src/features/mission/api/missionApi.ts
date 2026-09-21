@@ -49,6 +49,18 @@ export const missionApi = {
     return request<Mission>(`${API_BASE}/missions/${missionId}`)
   },
 
+  getPendingAssignmentMissions: async (): Promise<Mission[]> => {
+    return request<Mission[]>('/api/missions/pending-assignment')
+  },
+
+  assignDrone: async (missionId: string, droneId: string): Promise<Mission> => {
+    return request<Mission>(`/api/missions/${missionId}/assign-drone?droneId=${droneId}`, { method: 'POST' })
+  },
+
+  assignOperator: async (missionId: string, operatorId: string): Promise<Mission> => {
+    return request<Mission>(`/api/missions/${missionId}/assign-operator?operatorId=${operatorId}`, { method: 'POST' })
+  },
+
   // F3.1 Accept mission (PATCH /api/missions/{id}/accept)
   acceptMission: async (
     missionId: string,

@@ -103,4 +103,10 @@ export const orderApi = {
   getPreferredTimes: () => request<PreferredTime[]>('/api/preferred-times'),
   createOrder: (body: OrderCreatePayload) =>
     request<OrderCreateResponse>('/api/orders', { method: 'POST', body }),
+  getPendingOrders: () =>
+    request<OrderCreateResponse[]>('/api/orders/pending', { method: 'GET' }),
+  approveOrder: (orderId: string) =>
+    request<void>(`/api/orders/${encodeURIComponent(orderId)}/approve`, {
+      method: 'POST',
+    }),
 }

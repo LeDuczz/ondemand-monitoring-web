@@ -169,7 +169,7 @@ function adaptBackendMission(mission: BackendMission): Mission {
 export default function OperatorWorkspace() {
   const [screen, setScreen] = useState<Screen>('mission-list')
   const [navId, setNavId] = useState<NavId>('my-missions')
-  const [scenario, setScenario] = useState<ChecklistScenario>('all-pass')
+  const [scenario] = useState<ChecklistScenario>('all-pass')
   const [mission, setMission] = useState<Mission>({ ...ALL_MISSIONS[0] })
   const [allMissions, setAllMissions] = useState<Mission[]>([...ALL_MISSIONS])
   const [missionsLoading, setMissionsLoading] = useState(false)
@@ -394,44 +394,11 @@ export default function OperatorWorkspace() {
   const checklist = CHECKLIST[scenario]
   const isDark = screen === 'in-flight'
 
-  const SCENARIO_OPTIONS: { id: ChecklistScenario; label: string }[] = [
-    { id: 'all-pass', label: 'All Pass' },
-    { id: 'battery-fail', label: 'Battery Fail' },
-    { id: 'hardware-fail', label: 'Hardware Fail' },
-    { id: 'telemetry-stale', label: 'Telemetry Stale' },
-    { id: 'weather-warn', label: 'Weather Warn' },
-  ]
-
-  const OPERATOR_SCREENS: [Screen, string][] = [
-    ['operator-overview', 'Overview'],
-    ['mission-list', 'Missions'],
-    ['mission-detail', 'Detail'],
-    ['accept-reject', 'Accept/Reject'],
-    ['gcs-connect', 'GCS Connect'],
-    ['preflight', 'Pre-flight'],
-    ['preflight-failure', 'PF Failure'],
-    ['drone-replacement', 'Replace Drone'],
-    ['control-handover', 'Handover'],
-    ['ready-to-fly', 'Ready to Fly'],
-    ['in-flight', 'In-Flight'],
-    ['return-to-base', 'RTB'],
-    ['postflight', 'Post-flight'],
-    ['mission-completed', 'Completed'],
-    ['mission-failed', 'Failed'],
-    ['media-upload', 'Media Upload'],
-    ['manual-upload', 'Manual Upload'],
-    ['simulation-zones', 'Zone Map'],
-  ]
 
   return (
     <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        fontFamily: 'var(--font-ui)',
-        background: 'var(--bg)',
-      }}
+      className="portal-shell"
+      style={{ fontFamily: 'var(--font-ui)' }}
     >
       <Sidebar
         role="operator"
@@ -440,15 +407,7 @@ export default function OperatorWorkspace() {
         alerts={1}
       />
 
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          minWidth: 0,
-        }}
-      >
+      <main className="portal-main" style={{ padding: 0 }}>
         {/* Mission Control transition banner */}
         {isDark && (
           <div
@@ -614,132 +573,11 @@ export default function OperatorWorkspace() {
           {screen === 'simulation-zones' && <SimulationZones />}
         </div>
 
-        {/* Demo bar — hidden during GCS flight view */}
-        {!isDark && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0,
-              padding: '5px 12px',
-              background: '#f1f3f5',
-              borderTop: '1px solid #e5e7eb',
-              flexShrink: 0,
-              overflowX: 'auto',
-            }}
-          >
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-                letterSpacing: '.08em',
-                marginRight: 5,
-                flexShrink: 0,
-              }}
-            >
-              Role:
-            </span>
-            <span
-              style={{
-                flexShrink: 0,
-                padding: '3px 8px',
-                borderRadius: 4,
-                fontSize: 9,
-                fontWeight: 600,
-                marginRight: 2,
-                background: '#111827',
-                color: '#fff',
-                border: '1px solid #111827',
-              }}
-            >
-              Drone Operator
-            </span>
-
-            <div
-              style={{
-                width: 1,
-                height: 14,
-                background: '#d1d5db',
-                margin: '0 8px',
-                flexShrink: 0,
-              }}
-            />
-
-            {/* Screen nav (operator-relevant) */}
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-                letterSpacing: '.08em',
-                marginRight: 4,
-                flexShrink: 0,
-              }}
-            >
-              Screen:
-            </span>
-            {OPERATOR_SCREENS.map(([s, label]) => (
-              <button
-                key={s}
-                onClick={() => goScreen(s)}
-                style={{
-                  flexShrink: 0,
-                  padding: '3px 8px',
-                  borderRadius: 4,
-                  fontSize: 9,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  marginRight: 2,
-                  background: screen === s ? '#4f46e5' : 'transparent',
-                  color: screen === s ? '#fff' : '#6b7280',
-                  border: '1px solid transparent',
-                  transition: 'all .1s',
-                }}
-              >
-                {label}
-              </button>
-            ))}
-
-            <div
-              style={{
-                marginLeft: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af' }}>
-                Preflight:
-              </span>
-              {SCENARIO_OPTIONS.map((o) => (
-                <button
-                  key={o.id}
-                  onClick={() => setScenario(o.id)}
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: 4,
-                    fontSize: 9,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    background: scenario === o.id ? '#fffbeb' : 'transparent',
-                    color: scenario === o.id ? '#92400e' : '#9ca3af',
-                    border:
-                      scenario === o.id
-                        ? '1px solid #fde68a'
-                        : '1px solid transparent',
-                  }}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   )
 }
+
+
+
+

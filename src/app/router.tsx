@@ -11,6 +11,8 @@ import type { UserRole } from '../features/auth/types'
 import { CustomerHomePage } from '../features/customer/pages/CustomerHomePage'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
 import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
+import { StaffRequestQueuePage } from '../features/staff/pages/StaffRequestQueuePage'
+import { StaffAssignmentPage } from '../features/staff/pages/StaffAssignmentPage'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
@@ -72,6 +74,18 @@ export function Router() {
     return (
       <RoleRoute role="STAFF">
         <StaffHomePage />
+      </RoleRoute>
+    )
+  if (hash === '#portal/staff/queue')
+    return (
+      <RoleRoute role="STAFF">
+        <StaffRequestQueuePage />
+      </RoleRoute>
+    )
+  if (hash === '#portal/staff/assignments')
+    return (
+      <RoleRoute role="STAFF">
+        <StaffAssignmentPage />
       </RoleRoute>
     )
   if (hash === '#portal/drone-operator')

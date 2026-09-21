@@ -55,13 +55,13 @@ export const adminApi = {
   createAccount: (payload: CreateAdminAccountPayload) =>
     apiRequest<AdminAccountDetail>('/api/admin/accounts', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   updateAccount: (accountId: string, payload: UpdateAccountPayload) =>
     apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   deactivateAccount: (accountId: string) =>
@@ -87,18 +87,24 @@ export const adminApi = {
   createRole: (payload: CreateRolePayload) =>
     apiRequest<AdminRole>('/api/admin/roles', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   updateRole: (roleId: string, payload: UpdateRolePayload) =>
     apiRequest<AdminRole>(`/api/admin/roles/${roleId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   deleteRole: (roleId: string) =>
     apiRequest<{ deleted: boolean }>(`/api/admin/roles/${roleId}`, {
       method: 'DELETE',
+    }),
+
+  toggleRoleActive: (roleId: string, isActive: boolean) =>
+    apiRequest<AdminRole>(`/api/admin/roles/${roleId}/toggle-active`, {
+      method: 'PATCH',
+      body: { isActive },
     }),
 
   // Catalog — Services
@@ -108,7 +114,13 @@ export const adminApi = {
   updateService: (serviceId: string, payload: UpdateServicePayload) =>
     apiRequest<AdminService>(`/api/admin/catalog/services/${serviceId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
+    }),
+
+  toggleServiceActive: (serviceId: string, isActive: boolean) =>
+    apiRequest<AdminService>(`/api/admin/catalog/services/${serviceId}`, {
+      method: 'PATCH',
+      body: { isActive },
     }),
 
   // Catalog — Timeslots
@@ -118,7 +130,7 @@ export const adminApi = {
   createTimeslot: (payload: CreateTimeslotPayload) =>
     apiRequest<TimeslotVersion>('/api/admin/catalog/timeslots', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // Catalog — Stations
@@ -128,13 +140,19 @@ export const adminApi = {
   createStation: (payload: CreateStationPayload) =>
     apiRequest<AdminStation>('/api/admin/catalog/stations', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   updateStation: (stationId: string, payload: UpdateStationPayload) =>
     apiRequest<AdminStation>(`/api/admin/catalog/stations/${stationId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
+    }),
+
+  toggleStationActive: (stationId: string, isActive: boolean) =>
+    apiRequest<AdminStation>(`/api/admin/catalog/stations/${stationId}`, {
+      method: 'PATCH',
+      body: { isActive },
     }),
 
   // Operating Config — Policies
@@ -144,7 +162,7 @@ export const adminApi = {
   updatePolicy: (policyId: string, payload: UpdatePolicyPayload) =>
     apiRequest<OperatingPolicy>(`/api/admin/config/policies/${policyId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // Operating Config — Dispatch Weights
@@ -154,7 +172,7 @@ export const adminApi = {
   updateWeights: (payload: UpdateWeightsPayload) =>
     apiRequest<{ items: DispatchWeight[] }>('/api/admin/config/weights', {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // Operating Config — No-fly Zones
@@ -164,13 +182,13 @@ export const adminApi = {
   createNoFlyZone: (payload: CreateNoFlyZonePayload) =>
     apiRequest<NoFlyZone>('/api/admin/config/no-fly-zones', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   updateNoFlyZone: (zoneId: string, payload: UpdateNoFlyZonePayload) =>
     apiRequest<NoFlyZone>(`/api/admin/config/no-fly-zones/${zoneId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // AI Knowledge — Docs
@@ -180,7 +198,7 @@ export const adminApi = {
   createDoc: (payload: CreateDocPayload) =>
     apiRequest<KnowledgeDoc>('/api/admin/ai-knowledge/docs', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   reindexDoc: (docId: string) =>
@@ -195,7 +213,7 @@ export const adminApi = {
   updateRule: (ruleId: string, payload: UpdateRulePayload) =>
     apiRequest<FeasibilityRule>(`/api/admin/ai-knowledge/rules/${ruleId}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // Audit Log

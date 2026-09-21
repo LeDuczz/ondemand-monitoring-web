@@ -72,6 +72,18 @@ registerMockRoutes([
   },
 
   {
+    method: 'PATCH',
+    path: '/api/admin/roles/:id/toggle-active',
+    handler: ({ params, body }) => {
+      const role = roles.find((r) => r.id === params.id)
+      if (!role) return fail(404, 'NOT_FOUND', 'Không tìm thấy vai trò.')
+      const payload = body as { isActive?: boolean }
+      if (payload.isActive !== undefined) role.isActive = payload.isActive
+      return ok(role)
+    },
+  },
+
+  {
     method: 'DELETE',
     path: '/api/admin/roles/:id',
     handler: ({ params }) => {

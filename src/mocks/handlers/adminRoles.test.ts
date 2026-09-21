@@ -90,6 +90,29 @@ describe('PATCH /api/admin/roles/:id', () => {
   })
 })
 
+describe('PATCH /api/admin/roles/:id/toggle-active', () => {
+  it('toggles is_active on a custom role', async () => {
+    const listRes = await call('GET', '/api/admin/roles')
+    const customRole = listRes.payload.data.items.find((r: any) => !r.isSystemRole)
+    const { status, payload } = await call('PATCH', `/api/admin/roles/${customRole.id}/toggle-active`, { isActive: false })
+    expect(status).toBe(200)
+    expect(payload.data.isActive).toBe(false)
+  })
+
+  it('toggles is_active on a system role (allowed, unlike full edit)', async () => {
+    const listRes = await call('GET', '/api/admin/roles')
+    const sysRole = listRes.payload.data.items.find((r: any) => r.isSystemRole)
+    const { status, payload } = await call('PATCH', `/api/admin/roles/${sysRole.id}/toggle-active`, { isActive: false })
+    expect(status).toBe(200)
+    expect(payload.data.isActive).toBe(false)
+  })
+
+  it('returns 404 for unknown id', async () => {
+    const { status } = await call('PATCH', '/api/admin/roles/nope/toggle-active', { isActive: false })
+    expect(status).toBe(404)
+  })
+})
+
 describe('DELETE /api/admin/roles/:id', () => {
   it('deletes a custom role with 0 users', async () => {
     const createRes = await call('POST', '/api/admin/roles', { code: 'DELETEME', name: 'Del', description: '', isActive: true })

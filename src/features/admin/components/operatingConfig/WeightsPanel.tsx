@@ -35,14 +35,14 @@ function WeightGroup({
   }
 
   async function handleSave() {
-    if (!isValid) { setError(`Tong trong so phai bang 100%, hien tai: ${sum}%.`); return }
+    if (!isValid) { setError(`Tổng trọng số phải bằng 100%, hiện tại: ${sum}%.`); return }
     setSaving(true)
     setError(null)
     try {
       const weights = Object.entries(values).map(([key, value]) => ({ key, value }))
       await onSave(weights)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khi luu trong so.')
+      setError(err instanceof Error ? err.message : 'Lỗi khi lưu trọng số.')
     } finally {
       setSaving(false)
     }
@@ -51,7 +51,7 @@ function WeightGroup({
   return (
     <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: 16 }}>
       <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
-        Trong so {label} ({group === 'DRONE' ? 'Drone' : 'Phi cong'})
+        Trong so {label} ({group === 'DRONE' ? 'Drone' : 'Phi công'})
       </h3>
       {items.map((w) => (
         <div key={w.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -80,11 +80,11 @@ function WeightGroup({
       ))}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
         <span style={{ fontSize: 13, color: isValid ? 'var(--green-solid)' : 'var(--red-solid)', fontWeight: 600 }}>
-          Tong: {sum}%{isValid ? ' (hop le)' : ' (phai bang 100%)'}
+          Tổng: {sum}%{isValid ? ' (hợp lệ)' : ' (phải bằng 100%)'}
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="odm-btn odm-btn-gh" onClick={handleReset}>
-            Dat lai mac dinh
+            Đặt lại mặc định
           </button>
           <button
             type="button"
@@ -92,7 +92,7 @@ function WeightGroup({
             disabled={!isValid || saving}
             onClick={handleSave}
           >
-            {saving ? 'Dang luu...' : 'Luu thay doi'}
+            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
         </div>
       </div>
@@ -123,13 +123,13 @@ export function WeightsPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <WeightGroup
         group="DRONE"
-        label="goi y drone"
+        label="gợi ý drone"
         items={droneWeights}
         onSave={(w) => saveGroup('DRONE', w)}
       />
       <WeightGroup
         group="OPERATOR"
-        label="goi y phi cong"
+        label="gợi ý phi công"
         items={operatorWeights}
         onSave={(w) => saveGroup('OPERATOR', w)}
       />

@@ -15,9 +15,9 @@ const DOC_STATUS_TONE: Record<DocStatus, StatusTone> = {
   FAILED: 'red',
 }
 const DOC_STATUS_LABEL: Record<DocStatus, string> = {
-  INDEXED: 'Da index',
-  PENDING: 'Cho xu ly',
-  FAILED: 'That bai',
+  INDEXED: 'Đã index',
+  PENDING: 'Chờ xử lý',
+  FAILED: 'Thất bại',
 }
 const CATEGORY_TONE: Record<RuleCategory, StatusTone> = {
   SCHEDULE: 'blue',
@@ -52,7 +52,7 @@ function DocsTab() {
           fontSize: 13,
         }}
       >
-        Keo thu muc hoac click de tai len tai lieu (PDF, DOCX) — Tinh nang se san sang sau
+        Kéo thư mục hoặc nhấp để tải lên tài liệu (PDF, DOCX) — Tính năng sẽ sẵn sàng sau
       </div>
       {loading && <LoadingState />}
       {!loading && (error || !data) && <ErrorState error={error} onRetry={reload} />}
@@ -61,13 +61,13 @@ function DocsTab() {
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Tieu de</th>
-                <th>Loai</th>
-                <th>Phien ban</th>
-                <th>Hieu luc tu</th>
-                <th>Trang thai</th>
-                <th>So chunk</th>
-                <th>Thao tac</th>
+                <th>Tiêu đề</th>
+                <th>Loại</th>
+                <th>Phiên bản</th>
+                <th>Hiệu lực từ</th>
+                <th>Trạng thái</th>
+                <th>Số chunk</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -93,7 +93,7 @@ function DocsTab() {
                       disabled={submitting === doc.id}
                       onClick={() => handleReindex(doc.id)}
                     >
-                      {submitting === doc.id ? '...' : 'Index lai'}
+                      {submitting === doc.id ? '...' : 'Index lại'}
                     </button>
                   </td>
                 </tr>
@@ -141,12 +141,12 @@ function RulesTab() {
         <thead>
           <tr>
             <th>Code</th>
-            <th>Ten luat</th>
-            <th>Loai</th>
-            <th>Muc do</th>
+            <th>Tên luật</th>
+            <th>Loại</th>
+            <th>Mức độ</th>
             <th>Trong so</th>
-            <th>Trang thai</th>
-            <th>Thao tac</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -191,7 +191,7 @@ function RulesTab() {
                 </td>
                 <td>
                   <StatusBadge tone={rule.isActive ? 'green' : 'gray'}>
-                    {rule.isActive ? 'Bat' : 'Tat'}
+                    {rule.isActive ? 'Bật' : 'Tắt'}
                   </StatusBadge>
                 </td>
                 <td>
@@ -204,7 +204,7 @@ function RulesTab() {
                         disabled={saving === rule.id}
                         onClick={() => handleSave(rule.id)}
                       >
-                        {saving === rule.id ? '...' : 'Luu'}
+                        {saving === rule.id ? '...' : 'Lưu'}
                       </button>
                     )}
                     <button
@@ -213,7 +213,7 @@ function RulesTab() {
                       style={{ fontSize: 11, padding: '3px 8px' }}
                       onClick={() => handleToggle(rule.id, rule.isActive)}
                     >
-                      {rule.isActive ? 'Tat' : 'Bat'}
+                      {rule.isActive ? 'Tắt' : 'Bật'}
                     </button>
                   </div>
                 </td>
@@ -231,7 +231,7 @@ export function AiKnowledgePage() {
 
   return (
     <div>
-      <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 700 }}>Tri thuc AI va luat</h1>
+      <h1 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 700 }}>Tri thức AI và luật</h1>
       <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--bd)', marginBottom: 20 }}>
         {(['docs', 'rules'] as Tab[]).map((t) => (
           <button
@@ -250,7 +250,7 @@ export function AiKnowledgePage() {
               marginBottom: -1,
             }}
           >
-            {t === 'docs' ? 'Tai lieu' : 'Luat kha thi'}
+            {t === 'docs' ? 'Tài liệu' : 'Luật khả thi'}
           </button>
         ))}
       </div>

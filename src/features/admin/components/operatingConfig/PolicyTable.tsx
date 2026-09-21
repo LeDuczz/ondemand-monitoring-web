@@ -42,11 +42,11 @@ export function PolicyTable() {
       <table className="odm-adm-table">
         <thead>
           <tr>
-            <th>Tham so</th>
-            <th>Mo ta</th>
-            <th>Gia tri</th>
-            <th>Don vi</th>
-            <th>Thao tac</th>
+            <th>Tham số</th>
+            <th>Mô tả</th>
+            <th>Giá trị</th>
+            <th>Đơn vị</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -75,7 +75,7 @@ export function PolicyTable() {
                       disabled={saving === policy.id}
                       onClick={() => handleSave(policy)}
                     >
-                      {saving === policy.id ? '...' : 'Luu'}
+                      {saving === policy.id ? '...' : 'Lưu'}
                     </button>
                   )}
                 </td>

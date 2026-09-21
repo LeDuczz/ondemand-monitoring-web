@@ -17,16 +17,16 @@ const ACTION_TONE: Record<AuditAction, StatusTone> = {
 }
 
 const ACTION_LABEL: Record<AuditAction, string> = {
-  CREATE: 'Tao moi',
-  UPDATE: 'Cap nhat',
-  DELETE: 'Xoa',
-  APPROVE: 'Phe duyet',
-  STATUS_CHANGE: 'Doi trang thai',
+  CREATE: 'Tạo mới',
+  UPDATE: 'Cập nhật',
+  DELETE: 'Xóa',
+  APPROVE: 'Phê duyệt',
+  STATUS_CHANGE: 'Đổi trạng thái',
 }
 
 function DiffPanel({ entry, onClose }: { entry: AuditEntry; onClose: () => void }) {
   const formatJSON = (obj: Record<string, unknown> | null) => {
-    if (!obj) return '(khong co)'
+    if (!obj) return '(không có)'
     return JSON.stringify(obj, null, 2)
   }
 
@@ -56,25 +56,25 @@ function DiffPanel({ entry, onClose }: { entry: AuditEntry; onClose: () => void 
         }}
       >
         <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Chi tiet thay doi</p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Chi tiết thay đổi</p>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--tx3)' }}>
             {entry.entityType} / {entry.entityId}
           </p>
         </div>
-        <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Dong</button>
+        <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Đóng</button>
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
-          <strong>Thoi gian:</strong> {fmtDateTime(entry.createdAt)}
+          <strong>Thời gian:</strong> {fmtDateTime(entry.createdAt)}
         </div>
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
-          <strong>Nguoi thuc hien:</strong> {entry.actorName}
+          <strong>Người thực hiện:</strong> {entry.actorName}
         </div>
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
           <strong>IP:</strong> {entry.ip}
         </div>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--red-solid)' }}>Truoc</p>
+          <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--red-solid)' }}>Trước</p>
           <pre
             style={{
               background: 'var(--sf2)',
@@ -141,7 +141,7 @@ export function AuditLogPage() {
   )
 
   function handleExport() {
-    alert('Da xuat CSV thanh cong. (Placeholder — se ket noi API xuat file)')
+    alert('Đã xuất CSV thành công. (Placeholder — sẽ kết nối API xuất file)')
   }
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 1
@@ -150,13 +150,13 @@ export function AuditLogPage() {
     <div style={{ position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Nhat ky he thong</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Nhật ký hệ thống</h1>
           <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-            audit_log — chi doc
+            audit_log — chỉ đọc
           </p>
         </div>
         <button type="button" className="odm-btn odm-btn-gh" onClick={handleExport}>
-          Xuat CSV
+          Xuất CSV
         </button>
       </div>
 
@@ -167,16 +167,16 @@ export function AuditLogPage() {
           onChange={(e) => { setActionFilter(e.target.value); setPage(1) }}
           style={{ width: 160 }}
         >
-          <option value="">Tat ca hanh dong</option>
-          <option value="CREATE">Tao moi</option>
-          <option value="UPDATE">Cap nhat</option>
-          <option value="DELETE">Xoa</option>
-          <option value="APPROVE">Phe duyet</option>
-          <option value="STATUS_CHANGE">Doi trang thai</option>
+          <option value="">Tất cả hành động</option>
+          <option value="CREATE">Tạo mới</option>
+          <option value="UPDATE">Cập nhật</option>
+          <option value="DELETE">Xóa</option>
+          <option value="APPROVE">Phê duyệt</option>
+          <option value="STATUS_CHANGE">Đổi trạng thái</option>
         </select>
         <input
           className="odm-input"
-          placeholder="Loai thuc the..."
+          placeholder="Loại thực thể..."
           value={entityTypeFilter}
           onChange={(e) => { setEntityTypeFilter(e.target.value); setPage(1) }}
           style={{ width: 160 }}
@@ -206,13 +206,13 @@ export function AuditLogPage() {
             <table className="odm-adm-table">
               <thead>
                 <tr>
-                  <th>Thoi gian</th>
-                  <th>Nguoi thuc hien</th>
-                  <th>Hanh dong</th>
-                  <th>Loai thuc the</th>
-                  <th>ID thuc the</th>
+                  <th>Thời gian</th>
+                  <th>Người thực hiện</th>
+                  <th>Hành động</th>
+                  <th>Loại thực thể</th>
+                  <th>ID thực thể</th>
                   <th>IP</th>
-                  <th>Thao tac</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -277,7 +277,7 @@ export function AuditLogPage() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Trang truoc
+                Trang trước
               </button>
               <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
                 {page} / {totalPages}

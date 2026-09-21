@@ -6,7 +6,11 @@ import type {
   CreateAdminAccountPayload,
   UpdateAccountPayload,
 } from '../types/accounts'
-import type { AdminRole, CreateRolePayload, UpdateRolePayload } from '../types/roles'
+import type {
+  AdminRole,
+  CreateRolePayload,
+  UpdateRolePayload,
+} from '../types/roles'
 import type {
   AdminService,
   AdminStation,
@@ -26,6 +30,7 @@ import type {
   UpdateWeightsPayload,
 } from '../types/operatingConfig'
 import type {
+  AnalysisLog,
   CreateDocPayload,
   FeasibilityRule,
   KnowledgeDoc,
@@ -39,18 +44,27 @@ export const adminApi = {
     apiRequest<AdminDashboard>('/api/admin/dashboard', { signal }),
 
   // Accounts
-  listAccounts: (params: { role?: string; status?: string; signal?: AbortSignal }) => {
+  listAccounts: (params: {
+    role?: string
+    status?: string
+    signal?: AbortSignal
+  }) => {
     const qs = new URLSearchParams()
     if (params.role) qs.set('role', params.role)
     if (params.status) qs.set('status', params.status)
     const query = qs.toString() ? `?${qs.toString()}` : ''
-    return apiRequest<{ items: AdminAccountItem[] }>(`/api/admin/accounts${query}`, {
-      signal: params.signal,
-    })
+    return apiRequest<{ items: AdminAccountItem[] }>(
+      `/api/admin/accounts${query}`,
+      {
+        signal: params.signal,
+      },
+    )
   },
 
   getAccount: (accountId: string, signal?: AbortSignal) =>
-    apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}`, { signal }),
+    apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}`, {
+      signal,
+    }),
 
   createAccount: (payload: CreateAdminAccountPayload) =>
     apiRequest<AdminAccountDetail>('/api/admin/accounts', {
@@ -65,14 +79,20 @@ export const adminApi = {
     }),
 
   deactivateAccount: (accountId: string) =>
-    apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}/deactivate`, {
-      method: 'POST',
-    }),
+    apiRequest<AdminAccountDetail>(
+      `/api/admin/accounts/${accountId}/deactivate`,
+      {
+        method: 'POST',
+      },
+    ),
 
   activateAccount: (accountId: string) =>
-    apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}/activate`, {
-      method: 'POST',
-    }),
+    apiRequest<AdminAccountDetail>(
+      `/api/admin/accounts/${accountId}/activate`,
+      {
+        method: 'POST',
+      },
+    ),
 
   resetPassword: (accountId: string) =>
     apiRequest<{ sent: boolean; email: string }>(
@@ -109,7 +129,9 @@ export const adminApi = {
 
   // Catalog — Services
   listServices: (signal?: AbortSignal) =>
-    apiRequest<{ items: AdminService[] }>('/api/admin/catalog/services', { signal }),
+    apiRequest<{ items: AdminService[] }>('/api/admin/catalog/services', {
+      signal,
+    }),
 
   updateService: (serviceId: string, payload: UpdateServicePayload) =>
     apiRequest<AdminService>(`/api/admin/catalog/services/${serviceId}`, {
@@ -125,7 +147,9 @@ export const adminApi = {
 
   // Catalog — Timeslots
   listTimeslots: (signal?: AbortSignal) =>
-    apiRequest<{ items: TimeslotVersion[] }>('/api/admin/catalog/timeslots', { signal }),
+    apiRequest<{ items: TimeslotVersion[] }>('/api/admin/catalog/timeslots', {
+      signal,
+    }),
 
   createTimeslot: (payload: CreateTimeslotPayload) =>
     apiRequest<TimeslotVersion>('/api/admin/catalog/timeslots', {
@@ -135,7 +159,9 @@ export const adminApi = {
 
   // Catalog — Stations
   listStations: (signal?: AbortSignal) =>
-    apiRequest<{ items: AdminStation[] }>('/api/admin/catalog/stations', { signal }),
+    apiRequest<{ items: AdminStation[] }>('/api/admin/catalog/stations', {
+      signal,
+    }),
 
   createStation: (payload: CreateStationPayload) =>
     apiRequest<AdminStation>('/api/admin/catalog/stations', {
@@ -157,7 +183,9 @@ export const adminApi = {
 
   // Operating Config — Policies
   listPolicies: (signal?: AbortSignal) =>
-    apiRequest<{ items: OperatingPolicy[] }>('/api/admin/config/policies', { signal }),
+    apiRequest<{ items: OperatingPolicy[] }>('/api/admin/config/policies', {
+      signal,
+    }),
 
   updatePolicy: (policyId: string, payload: UpdatePolicyPayload) =>
     apiRequest<OperatingPolicy>(`/api/admin/config/policies/${policyId}`, {
@@ -167,7 +195,9 @@ export const adminApi = {
 
   // Operating Config — Dispatch Weights
   listWeights: (signal?: AbortSignal) =>
-    apiRequest<{ items: DispatchWeight[] }>('/api/admin/config/weights', { signal }),
+    apiRequest<{ items: DispatchWeight[] }>('/api/admin/config/weights', {
+      signal,
+    }),
 
   updateWeights: (payload: UpdateWeightsPayload) =>
     apiRequest<{ items: DispatchWeight[] }>('/api/admin/config/weights', {
@@ -177,7 +207,9 @@ export const adminApi = {
 
   // Operating Config — No-fly Zones
   listNoFlyZones: (signal?: AbortSignal) =>
-    apiRequest<{ items: NoFlyZone[] }>('/api/admin/config/no-fly-zones', { signal }),
+    apiRequest<{ items: NoFlyZone[] }>('/api/admin/config/no-fly-zones', {
+      signal,
+    }),
 
   createNoFlyZone: (payload: CreateNoFlyZonePayload) =>
     apiRequest<NoFlyZone>('/api/admin/config/no-fly-zones', {
@@ -193,7 +225,9 @@ export const adminApi = {
 
   // AI Knowledge — Docs
   listDocs: (signal?: AbortSignal) =>
-    apiRequest<{ items: KnowledgeDoc[] }>('/api/admin/ai-knowledge/docs', { signal }),
+    apiRequest<{ items: KnowledgeDoc[] }>('/api/admin/ai-knowledge/docs', {
+      signal,
+    }),
 
   createDoc: (payload: CreateDocPayload) =>
     apiRequest<KnowledgeDoc>('/api/admin/ai-knowledge/docs', {
@@ -208,13 +242,22 @@ export const adminApi = {
 
   // AI Knowledge — Rules
   listRules: (signal?: AbortSignal) =>
-    apiRequest<{ items: FeasibilityRule[] }>('/api/admin/ai-knowledge/rules', { signal }),
+    apiRequest<{ items: FeasibilityRule[] }>('/api/admin/ai-knowledge/rules', {
+      signal,
+    }),
 
   updateRule: (ruleId: string, payload: UpdateRulePayload) =>
     apiRequest<FeasibilityRule>(`/api/admin/ai-knowledge/rules/${ruleId}`, {
       method: 'PATCH',
       body: payload,
     }),
+
+  // AI Knowledge — Analysis logs
+  listAnalysisLogs: (signal?: AbortSignal) =>
+    apiRequest<{ items: AnalysisLog[] }>(
+      '/api/admin/ai-knowledge/analysis-logs',
+      { signal },
+    ),
 
   // Audit Log
   listAuditLog: (filters: AuditLogFilters = {}, signal?: AbortSignal) => {

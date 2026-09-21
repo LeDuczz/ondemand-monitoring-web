@@ -26,6 +26,20 @@ export type FeasibilityRule = {
   isActive: boolean
 }
 
+export type AnalysisVerdict = 'FEASIBLE' | 'RISKY' | 'INFEASIBLE'
+
+export type AnalysisLog = {
+  id: string
+  orderId: string
+  overallVerdict: AnalysisVerdict
+  blockerCount: number
+  warningCount: number
+  ruleEngineMs: number
+  llmTokens: number
+  triggeredBy: string
+  createdAt: string
+}
+
 export type CreateDocPayload = {
   title: string
   docType: DocType

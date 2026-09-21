@@ -176,5 +176,117 @@
       "weight": 30,
       "isActive": true
     }
+  ],
+  "analysisLogs": [
+    {
+      "id": "S-0184",
+      "orderId": "ORD-2609-0163",
+      "overallVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 2,
+      "ruleEngineMs": 186,
+      "llmTokens": 1512,
+      "triggeredBy": "Lê Quốc Bảo",
+      "createdAt": "2026-09-19T09:12:00Z"
+    },
+    {
+      "id": "S-0183",
+      "orderId": "ORD-2609-0162",
+      "overallVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0,
+      "ruleEngineMs": 158,
+      "llmTokens": 1240,
+      "triggeredBy": "Trần Thị Thu Hà",
+      "createdAt": "2026-09-19T08:47:00Z"
+    },
+    {
+      "id": "S-0182",
+      "orderId": "ORD-2609-0160",
+      "overallVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 2,
+      "ruleEngineMs": 201,
+      "llmTokens": 1466,
+      "triggeredBy": "Nguyễn Văn An",
+      "createdAt": "2026-09-19T08:15:00Z"
+    },
+    {
+      "id": "S-0181",
+      "orderId": "ORD-2609-0158",
+      "overallVerdict": "INFEASIBLE",
+      "blockerCount": 1,
+      "warningCount": 1,
+      "ruleEngineMs": 172,
+      "llmTokens": 1380,
+      "triggeredBy": "Phạm Thị Mai",
+      "createdAt": "2026-09-18T16:40:00Z"
+    },
+    {
+      "id": "S-0180",
+      "orderId": "ORD-2609-0155",
+      "overallVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0,
+      "ruleEngineMs": 144,
+      "llmTokens": 1190,
+      "triggeredBy": "Lê Quốc Bảo",
+      "createdAt": "2026-09-18T14:22:00Z"
+    },
+    {
+      "id": "S-0179",
+      "orderId": "ORD-2609-0151",
+      "overallVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 1,
+      "ruleEngineMs": 190,
+      "llmTokens": 1420,
+      "triggeredBy": "Trần Thị Thu Hà",
+      "createdAt": "2026-09-18T11:05:00Z"
+    },
+    {
+      "id": "S-0178",
+      "orderId": "ORD-2609-0148",
+      "overallVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0,
+      "ruleEngineMs": 133,
+      "llmTokens": 1108,
+      "triggeredBy": "Nguyễn Văn An",
+      "createdAt": "2026-09-17T15:30:00Z"
+    },
+    {
+      "id": "S-0177",
+      "orderId": "ORD-2609-0144",
+      "overallVerdict": "INFEASIBLE",
+      "blockerCount": 2,
+      "warningCount": 0,
+      "ruleEngineMs": 210,
+      "llmTokens": 1510,
+      "triggeredBy": "Phạm Thị Mai",
+      "createdAt": "2026-09-17T10:18:00Z"
+    },
+    {
+      "id": "S-0176",
+      "orderId": "ORD-2609-0140",
+      "overallVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0,
+      "ruleEngineMs": 149,
+      "llmTokens": 1225,
+      "triggeredBy": "Lê Quốc Bảo",
+      "createdAt": "2026-09-16T09:52:00Z"
+    },
+    {
+      "id": "S-0175",
+      "orderId": "ORD-2609-0137",
+      "overallVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 1,
+      "ruleEngineMs": 178,
+      "llmTokens": 1355,
+      "triggeredBy": "Trần Thị Thu Hà",
+      "createdAt": "2026-09-15T13:40:00Z"
+    }
   ]
 }

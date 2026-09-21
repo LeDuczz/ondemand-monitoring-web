@@ -103,3 +103,22 @@ describe('PATCH /api/admin/ai-knowledge/rules/:id', () => {
     expect(updated.isActive).toBe(false)
   })
 })
+
+describe('GET /api/admin/ai-knowledge/analysis-logs', () => {
+  it('returns analysis logs sorted by createdAt desc', async () => {
+    const { status, payload } = await call('GET', '/api/admin/ai-knowledge/analysis-logs')
+    expect(status).toBe(200)
+    expect(Array.isArray(payload.data.items)).toBe(true)
+    expect(payload.data.items.length).toBe(10)
+    const dates = (payload.data.items as any[]).map((i) => new Date(i.createdAt).getTime())
+    expect(dates).toEqual([...dates].sort((a, b) => b - a))
+  })
+
+  it('has items with overallVerdict and rule/llm metrics', async () => {
+    const { payload } = await call('GET', '/api/admin/ai-knowledge/analysis-logs')
+    const first = payload.data.items[0]
+    expect(['FEASIBLE', 'RISKY', 'INFEASIBLE']).toContain(first.overallVerdict)
+    expect(typeof first.ruleEngineMs).toBe('number')
+    expect(typeof first.llmTokens).toBe('number')
+  })
+})

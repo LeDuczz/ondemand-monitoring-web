@@ -3455,6 +3455,26 @@ export default function InFlightControl({
           >
             In Flight
           </span>
+          {onCompleteMission && (
+            <button
+              onClick={onCompleteMission}
+              disabled={busyCommand !== null}
+              style={{
+                height: 30,
+                padding: '0 14px',
+                borderRadius: 999,
+                border: '1px solid rgba(74,222,128,.36)',
+                background: 'rgba(22,101,52,.92)',
+                color: '#bbf7d0',
+                fontSize: 11,
+                fontWeight: 950,
+                cursor: busyCommand === null ? 'pointer' : 'not-allowed',
+              }}
+              title="Complete mission and release drone"
+            >
+              Complete mission
+            </button>
+          )}
         </div>
       </footer>
     </div>

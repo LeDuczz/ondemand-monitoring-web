@@ -105,6 +105,8 @@ type ApiResponse<T> = {
   data: T
 }
 
+const COMPLETED_MISSION_STORAGE_KEY = 'omss.droneOperator.completedMissionIds'
+
 type RoutePoint = Mission['routePoints'] extends (infer Point)[] | undefined
   ? Point
   : never
@@ -226,6 +228,10 @@ function adaptBackendMission(mission: BackendMission): Mission {
     routePoints.find((point) => point.reason?.toUpperCase() === 'TARGET') ??
     routePoints.find((point) => point.reason?.toUpperCase() === 'ORDER') ??
     routePoints[routePoints.length - 1]
+  const plannedStatus =
+    mission.status === 'WAITING_OPERATOR_ACCEPTANCE' && routePoints.length > 0
+      ? 'SCHEDULED'
+      : mission.status
 
   return {
     id: mission.missionCode ?? mission.id,
@@ -233,7 +239,7 @@ function adaptBackendMission(mission: BackendMission): Mission {
     orderRef: mission.orderId ?? MISSION_PRIMARY.orderRef,
     orderTitle: mission.orderTitle,
     title: mission.orderTitle ?? MISSION_PRIMARY.title,
-    state: mission.status ?? MISSION_PRIMARY.state,
+    state: plannedStatus ?? MISSION_PRIMARY.state,
     priority: MISSION_PRIMARY.priority,
     droneId: mission.droneCode ?? mission.droneId ?? MISSION_PRIMARY.droneId,
     operatorId: mission.operatorId ?? MISSION_PRIMARY.operatorId,
@@ -263,6 +269,15 @@ function adaptBackendMission(mission: BackendMission): Mission {
 }
 
 export default function OperatorWorkspace() {
+  const [completedMissionIds, setCompletedMissionIds] = useState<Set<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem(COMPLETED_MISSION_STORAGE_KEY)
+      const parsed = raw ? JSON.parse(raw) : []
+      return new Set(Array.isArray(parsed) ? parsed.map(String) : [])
+    } catch {
+      return new Set()
+    }
+  })
   const [screen, setScreen] = useState<Screen>('mission-list')
   const [navId, setNavId] = useState<NavId>('my-missions')
   const [scenario] = useState<ChecklistScenario>('all-pass')
@@ -274,6 +289,33 @@ export default function OperatorWorkspace() {
   const [failReason, setFailReason] = useState('Pre-flight hardware failure')
   const [autoStartPlanRequested, setAutoStartPlanRequested] = useState(false)
   const [flightSessionStarted, setFlightSessionStarted] = useState(false)
+
+  function applyLocalCompletionState(missionItem: Mission) {
+    if (
+      completedMissionIds.has(missionItem.id) ||
+      (missionItem.backendId && completedMissionIds.has(missionItem.backendId))
+    ) {
+      return { ...missionItem, state: 'COMPLETED' as const }
+    }
+    return missionItem
+  }
+
+  function rememberCompletedMission(missionItem: Mission) {
+    setCompletedMissionIds((current) => {
+      const next = new Set(current)
+      next.add(missionItem.id)
+      if (missionItem.backendId) next.add(missionItem.backendId)
+      try {
+        window.localStorage.setItem(
+          COMPLETED_MISSION_STORAGE_KEY,
+          JSON.stringify([...next]),
+        )
+      } catch {
+        // Keep in-memory completion state even if localStorage is unavailable.
+      }
+      return next
+    })
+  }
 
   // Load single mission detail (for mission-control screen)
   useEffect(() => {
@@ -289,7 +331,7 @@ export default function OperatorWorkspace() {
         if (!response.ok) return
         const payload = (await response.json()) as ApiResponse<BackendMission>
         if (cancelled || !payload.data) return
-        setMission(adaptBackendMission(payload.data))
+        setMission(applyLocalCompletionState(adaptBackendMission(payload.data)))
       } catch {
         // Keep the built-in demo mission when the backend is not running.
       }
@@ -316,7 +358,9 @@ export default function OperatorWorkspace() {
         if (!response.ok) return
         const payload = (await response.json()) as ApiResponse<BackendMission[]>
         if (cancelled || !payload.data || !Array.isArray(payload.data)) return
-        const adapted = payload.data.map(adaptBackendMission)
+        const adapted = payload.data
+          .map(adaptBackendMission)
+          .map(applyLocalCompletionState)
         if (adapted.length > 0) setAllMissions(adapted)
       } catch {
         // Keep the built-in demo missions when the backend is not running.
@@ -417,10 +461,11 @@ export default function OperatorWorkspace() {
       const payload = (await response.json()) as ApiResponse<BackendMission>
       if (!payload.data) return
       const detailedMission = adaptBackendMission(payload.data)
-      setMission(detailedMission)
+      const visibleMission = applyLocalCompletionState(detailedMission)
+      setMission(visibleMission)
       setAllMissions((missions) =>
         missions.map((missionItem) =>
-          missionItem.id === detailedMission.id ? detailedMission : missionItem,
+          missionItem.id === visibleMission.id ? visibleMission : missionItem,
         ),
       )
     } catch {
@@ -480,7 +525,15 @@ export default function OperatorWorkspace() {
     } catch {
       // Keep the local completion flow available when the demo API is offline.
     }
+    rememberCompletedMission(mission)
     setMission((m) => ({ ...m, state: 'COMPLETED' }))
+    setAllMissions((missions) =>
+      missions.map((missionItem) =>
+        missionItem.id === mission.id
+          ? { ...missionItem, state: 'COMPLETED' }
+          : missionItem,
+      ),
+    )
     setFlightSessionStarted(false)
     setAutoStartPlanRequested(false)
     setScreen('mission-completed')

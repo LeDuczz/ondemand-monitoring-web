@@ -11,12 +11,12 @@ export function StaffAssignmentPage() {
 
   // Demo hardcoded operators and drones for assignment dropdown
   const operators = [
-    { id: 'OPR-112', name: 'Tr?n ��nh B?o (OPR-112)' },
-    { id: 'OPR-105', name: 'Nguy?n Khoa (OPR-105)' },
+    { id: 'OPR-112', name: 'Seed Operator (OPR-112)' },
+    { id: 'OPR-105', name: 'Backup Operator (OPR-105)' },
   ]
   const drones = [
-    { id: '30000000-0000-0000-0000-000000000005', name: 'Seed Drone X500 (SIM)' },
-    { id: 'DRONE-01', name: 'DJI Matrice 300' },
+    { id: '30000000-0000-0000-0000-000000000006', name: 'Eagle-48 X500 (SIM)' },
+    { id: '30000000-0000-0000-0000-000000000005', name: 'Eagle-47 X500 (active demo)' },
   ]
 
   const [selectedDrone, setSelectedDrone] = useState<Record<string, string>>({})
@@ -44,7 +44,7 @@ export function StaffAssignmentPage() {
     const operatorId = selectedOperator[missionId]
     
     if (!droneId || !operatorId) {
-      alert('Vui l�ng ch?n c? Drone v� Operator tru?c khi g�n!')
+      alert('Please choose both a drone and an operator before assigning.')
       return
     }
     
@@ -52,10 +52,10 @@ export function StaffAssignmentPage() {
       // Must assign drone first as per backend validation
       await missionApi.assignDrone(missionId, droneId)
       await missionApi.assignOperator(missionId, operatorId)
-      alert('G�n th�nh c�ng!')
+      alert('Assigned successfully. The mission is now visible to the operator.')
       fetchMissions()
     } catch (e: any) {
-      alert(e.message || 'L?i khi g�n')
+      alert(e.message || 'Assignment failed')
     }
   }
 

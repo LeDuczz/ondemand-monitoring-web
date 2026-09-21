@@ -19,6 +19,8 @@ interface Props {
   onEmergency: () => void
   autoStartPlan: boolean
   onAutoStartPlanConsumed: () => void
+  onPreflightReady?: () => void
+  onCompleteMission?: () => void
 }
 
 type FlightCommand =
@@ -79,6 +81,7 @@ type IconName =
   | 'activity'
   | 'shield'
   | 'thermometer'
+  | 'check'
   | 'chevronRight'
 
 type ControlStatus = {
@@ -423,6 +426,7 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
           <path {...common} d="M12 7v7" />
         </>
       )}
+      {name === 'check' && <path {...common} d="m5 12 4 4 10-10" />}
       {name === 'chevronRight' && <path {...common} d="m9 6 6 6-6 6" />}
     </svg>
   )
@@ -2375,6 +2379,7 @@ const FlightControls = memo(function FlightControls({
   status,
   onCommand,
   onToggleMore,
+  onCompleteMission,
 }: {
   busyCommand: FlightCommand | null
   lidarDetailsOpen: boolean
@@ -2382,6 +2387,7 @@ const FlightControls = memo(function FlightControls({
   status: ControlStatus | null
   onCommand: (command: FlightCommand) => void
   onToggleMore: () => void
+  onCompleteMission?: () => void
 }) {
   useRenderDiagnostics('FlightControls')
   const thermalEnabled = status?.thermalEnabled === true
@@ -2459,6 +2465,22 @@ const FlightControls = memo(function FlightControls({
             <Icon name="joystick" size={14} />
             <span>Hover</span>
           </button>
+          {onCompleteMission && (
+            <button
+              onClick={onCompleteMission}
+              disabled={busyCommand !== null}
+              style={{
+                ...buttonStyle(),
+                background: 'rgba(22,101,52,.88)',
+                color: '#bbf7d0',
+                width: 70,
+              }}
+              title="Complete mission"
+            >
+              <Icon name="check" size={14} />
+              <span>Complete</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -2598,6 +2620,8 @@ export default function InFlightControl({
   onEmergency,
   autoStartPlan,
   onAutoStartPlanConsumed,
+  onPreflightReady,
+  onCompleteMission,
 }: Props) {
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
   const [elapsed, setElapsed] = useState(5)
@@ -2865,15 +2889,18 @@ export default function InFlightControl({
     }
     setPreflightReady(true)
     setLastCommand('Preflight completed')
-  }, [preflightStorageKey])
+    onPreflightReady?.()
+  }, [onPreflightReady, preflightStorageKey])
 
   return (
     <div
       style={{
         flex: 1,
         minHeight: 0,
+        height: '100vh',
+        maxHeight: '100vh',
         display: 'grid',
-        gridTemplateRows: '76px minmax(0,1fr) 42px',
+        gridTemplateRows: '76px 1fr 42px',
         background: '#020617',
         color: '#e5edf8',
         overflow: 'hidden',
@@ -2979,9 +3006,46 @@ export default function InFlightControl({
         </div>
       </header>
 
-      <main className="mission-control-workspace">
-        <section className="mission-control-primary">
-          <div className="mission-control-camera-card">
+      <main
+        className="mission-control-workspace"
+        style={{
+          minHeight: 0,
+          height: '100%',
+          overflow: 'hidden',
+          display: 'grid',
+          gridTemplateColumns:
+            'minmax(0, 1.45fr) minmax(360px, 0.74fr) minmax(280px, 0.62fr)',
+          gridTemplateRows: 'minmax(420px, 1fr) auto',
+          alignItems: 'stretch',
+          gap: 12,
+          padding: '12px 16px',
+          background:
+            'radial-gradient(circle at 28% 10%, rgba(37, 99, 235, 0.12), transparent 34%), #020617',
+        }}
+      >
+        <section
+          className="mission-control-primary"
+          style={{
+            minWidth: 0,
+            minHeight: 0,
+            height: '100%',
+            display: 'grid',
+          }}
+        >
+          <div
+            className="mission-control-camera-card"
+            style={{
+              position: 'relative',
+              minWidth: 0,
+              minHeight: 420,
+              height: '100%',
+              overflow: 'hidden',
+              borderRadius: 10,
+              border: '1px solid rgba(59, 130, 246, 0.32)',
+              background: '#020617',
+              boxShadow: '0 18px 45px rgba(0, 0, 0, 0.24)',
+            }}
+          >
             <CameraFeed
               streamUrl={streamUrl}
               preflightReady={preflightReady}
@@ -3239,12 +3303,34 @@ export default function InFlightControl({
           </div>
         </section>
 
-        <section className="mission-control-lidar">
+        <section
+          className="mission-control-lidar"
+          style={{
+            minWidth: 0,
+            minHeight: 0,
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: 8,
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            paddingRight: 2,
+          }}
+        >
           <LidarRadarOverlay status={controlStatus} />
           <AirPressurePanel status={controlStatus} />
         </section>
 
-        <section className="mission-control-controls">
+        <section
+          className="mission-control-controls"
+          style={{
+            gridColumn: '1 / 3',
+            minWidth: 0,
+            overflow: 'visible',
+          }}
+        >
           <FlightControls
             busyCommand={busyCommand}
             lidarDetailsOpen={lidarDetailsOpen}
@@ -3252,10 +3338,27 @@ export default function InFlightControl({
             status={controlStatus}
             onCommand={handleCommand}
             onToggleMore={handleToggleMore}
+            onCompleteMission={onCompleteMission}
           />
         </section>
 
-        <aside className="mission-control-side">
+        <aside
+          className="mission-control-side"
+          style={{
+            gridColumn: 3,
+            gridRow: '1 / 3',
+            minWidth: 0,
+            minHeight: 0,
+            height: '100%',
+            maxHeight: '100%',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            paddingRight: 4,
+          }}
+        >
           <TelemetryPanel status={controlStatus} />
           {lidarDetailsOpen && <LidarDetailPanel status={controlStatus} />}
           <MissionInfoPanel

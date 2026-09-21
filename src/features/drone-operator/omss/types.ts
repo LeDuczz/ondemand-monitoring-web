@@ -57,6 +57,7 @@ export interface Drone {
 
 export interface Mission {
   id: string
+  backendId?: string
   orderRef: string
   orderTitle?: string
   title: string

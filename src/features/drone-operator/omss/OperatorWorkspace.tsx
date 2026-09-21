@@ -105,9 +105,103 @@ type ApiResponse<T> = {
   data: T
 }
 
+type RoutePoint = Mission['routePoints'] extends (infer Point)[] | undefined
+  ? Point
+  : never
+
+const IMPORTANT_ROUTE_REASONS = new Set([
+  'START',
+  'TARGET',
+  'ORDER',
+  'TARGET_APPROACH',
+  'TERRAIN_CLEARANCE',
+  'RETURN',
+  'HOME',
+])
+
+function perpendicularDistance(
+  point: RoutePoint,
+  start: RoutePoint,
+  end: RoutePoint,
+) {
+  const dx = end.simX - start.simX
+  const dy = end.simY - start.simY
+  if (dx === 0 && dy === 0) {
+    return Math.hypot(point.simX - start.simX, point.simY - start.simY)
+  }
+  return (
+    Math.abs(
+      dy * point.simX -
+        dx * point.simY +
+        end.simX * start.simY -
+        end.simY * start.simX,
+    ) / Math.hypot(dx, dy)
+  )
+}
+
+function simplifySegment(points: RoutePoint[], toleranceM: number): RoutePoint[] {
+  if (points.length <= 2) return points
+
+  let maxDistance = 0
+  let splitIndex = 0
+  const start = points[0]
+  const end = points[points.length - 1]
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const distance = perpendicularDistance(points[index], start, end)
+    if (distance > maxDistance) {
+      maxDistance = distance
+      splitIndex = index
+    }
+  }
+
+  if (maxDistance <= toleranceM) return [start, end]
+
+  const left = simplifySegment(points.slice(0, splitIndex + 1), toleranceM)
+  const right = simplifySegment(points.slice(splitIndex), toleranceM)
+  return [...left.slice(0, -1), ...right]
+}
+
+function simplifyRoutePoints(points: RoutePoint[]) {
+  if (points.length <= 30) return points
+
+  const importantIndexes = new Set<number>([0, points.length - 1])
+  points.forEach((point, index) => {
+    if (IMPORTANT_ROUTE_REASONS.has(point.reason.toUpperCase())) {
+      importantIndexes.add(index)
+    }
+  })
+
+  const important = [...importantIndexes].sort((a, b) => a - b)
+  const simplified: RoutePoint[] = []
+
+  for (let index = 0; index < important.length - 1; index += 1) {
+    const from = important[index]
+    const to = important[index + 1]
+    const segment = simplifySegment(points.slice(from, to + 1), 12)
+    simplified.push(...(index === 0 ? segment : segment.slice(1)))
+  }
+
+  const capped =
+    simplified.length <= 30
+      ? simplified
+      : simplified.filter((point, index) => {
+          if (index === 0 || index === simplified.length - 1) return true
+          if (IMPORTANT_ROUTE_REASONS.has(point.reason.toUpperCase())) return true
+          const keepEvery = Math.ceil(simplified.length / 30)
+          return index % keepEvery === 0
+        })
+
+  return capped.map((point, index) => ({
+    ...point,
+    sequence: index,
+    id: `${point.id}-op-${index}`,
+  }))
+}
+
 function adaptBackendMission(mission: BackendMission): Mission {
   const plan = mission.plan
-  const routePoints = (plan?.waypoints ?? [])
+  const routePoints = simplifyRoutePoints((plan?.waypoints ?? [])
     .filter(
       (point) =>
         typeof point.sequence === 'number' &&
@@ -127,13 +221,15 @@ function adaptBackendMission(mission: BackendMission): Mission {
           ? point.plannedSpeedMps
           : undefined,
       reason: point.reason ?? 'CRUISE',
-    }))
+    })))
   const routeTargetPoint =
     routePoints.find((point) => point.reason?.toUpperCase() === 'TARGET') ??
+    routePoints.find((point) => point.reason?.toUpperCase() === 'ORDER') ??
     routePoints[routePoints.length - 1]
 
   return {
     id: mission.missionCode ?? mission.id,
+    backendId: mission.id,
     orderRef: mission.orderId ?? MISSION_PRIMARY.orderRef,
     orderTitle: mission.orderTitle,
     title: mission.orderTitle ?? MISSION_PRIMARY.title,
@@ -360,6 +456,45 @@ export default function OperatorWorkspace() {
     setNavId('mission-control')
   }
 
+  async function handleCompleteMission() {
+    const backendMissionId = mission.backendId ?? mission.id
+    try {
+      const response = await authenticatedFetch(
+        `${env.apiBaseUrl}/api/missions/${encodeURIComponent(backendMissionId)}/complete`,
+        { method: 'POST' },
+      )
+      if (response.ok) {
+        const payload = (await response.json()) as ApiResponse<BackendMission>
+        if (payload.data) {
+          const completedMission = adaptBackendMission(payload.data)
+          setMission(completedMission)
+          setAllMissions((missions) =>
+            missions.map((missionItem) =>
+              missionItem.id === completedMission.id
+                ? completedMission
+                : missionItem,
+            ),
+          )
+        }
+      }
+    } catch {
+      // Keep the local completion flow available when the demo API is offline.
+    }
+    setMission((m) => ({ ...m, state: 'COMPLETED' }))
+    setFlightSessionStarted(false)
+    setAutoStartPlanRequested(false)
+    setScreen('mission-completed')
+    setNavId('my-missions')
+  }
+
+  function handleRuntimePreflightReady() {
+    setMission((m) => ({ ...m, state: 'IN_FLIGHT' }))
+    setFlightSessionStarted(true)
+    setAutoStartPlanRequested(true)
+    setScreen('in-flight')
+    setNavId('mission-control')
+  }
+
   function handleRTB() {
     setMission((m) => ({ ...m, state: 'RETURNING' }))
     setScreen('return-to-base')
@@ -483,6 +618,7 @@ export default function OperatorWorkspace() {
               onEmergency={handleEmergency}
               autoStartPlan={false}
               onAutoStartPlanConsumed={() => undefined}
+              onPreflightReady={handleRuntimePreflightReady}
             />
           )}
           {screen === 'preflight-failure' && (
@@ -527,6 +663,7 @@ export default function OperatorWorkspace() {
               onEmergency={handleEmergency}
               autoStartPlan={autoStartPlanRequested}
               onAutoStartPlanConsumed={() => setAutoStartPlanRequested(false)}
+              onCompleteMission={handleCompleteMission}
             />
           )}
           {screen === 'return-to-base' && (

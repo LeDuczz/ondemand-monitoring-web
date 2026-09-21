@@ -324,7 +324,10 @@ export default function MissionDetail({
 }: Props) {
   const isAcceptable = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
   const hasPlan = (mission.routePoints?.length ?? 0) > 0
-  const canStartFlight = hasPlan && mission.state !== 'COMPLETED' && mission.state !== 'CANCELLED'
+  const canStartFlight =
+    hasPlan &&
+    !isAcceptable &&
+    !['COMPLETED', 'CANCELLED', 'FAILED'].includes(mission.state)
 
   return (
     <div

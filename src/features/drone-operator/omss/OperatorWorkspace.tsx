@@ -167,8 +167,8 @@ function adaptBackendMission(mission: BackendMission): Mission {
 }
 
 export default function OperatorWorkspace() {
-  const [screen, setScreen] = useState<Screen>('in-flight')
-  const [navId, setNavId] = useState<NavId>('mission-control')
+  const [screen, setScreen] = useState<Screen>('mission-list')
+  const [navId, setNavId] = useState<NavId>('my-missions')
   const [scenario, setScenario] = useState<ChecklistScenario>('all-pass')
   const [mission, setMission] = useState<Mission>({ ...ALL_MISSIONS[0] })
   const [allMissions, setAllMissions] = useState<Mission[]>([...ALL_MISSIONS])
@@ -176,6 +176,8 @@ export default function OperatorWorkspace() {
   const [drone, setDrone] = useState<Drone>({ ...DRONE_PRIMARY })
   const [token, setToken] = useState<FlightToken | null>(null)
   const [failReason, setFailReason] = useState('Pre-flight hardware failure')
+  const [autoStartPlanRequested, setAutoStartPlanRequested] = useState(false)
+  const [flightSessionStarted, setFlightSessionStarted] = useState(false)
 
   // Load single mission detail (for mission-control screen)
   useEffect(() => {
@@ -269,6 +271,11 @@ export default function OperatorWorkspace() {
   }
 
   function goScreen(s: Screen) {
+    if (s === 'in-flight' && !flightSessionStarted) {
+      setScreen('mission-detail')
+      setNavId('my-missions')
+      return
+    }
     if (s === 'ready-to-fly' && !token) {
       setToken(makeToken(mission.id, drone.id))
     }
@@ -276,6 +283,17 @@ export default function OperatorWorkspace() {
   }
 
   function handleNavChange(id: NavId, s?: Screen) {
+    if (id === 'mission-control' || s === 'in-flight') {
+      if (flightSessionStarted) {
+        setNavId('mission-control')
+        setScreen('in-flight')
+      } else {
+        setNavId('my-missions')
+        setScreen('mission-detail')
+      }
+      return
+    }
+
     setNavId(id)
     if (s) {
       setScreen(s)
@@ -290,6 +308,8 @@ export default function OperatorWorkspace() {
   async function handleSelectMission(m: Mission) {
     setMission({ ...m })
     setDrone({ ...droneForScenario[scenario] })
+    setFlightSessionStarted(false)
+    setAutoStartPlanRequested(false)
     setScreen('mission-detail')
     setNavId('my-missions')
 
@@ -334,6 +354,8 @@ export default function OperatorWorkspace() {
 
   function handleStartMission() {
     setMission((m) => ({ ...m, state: 'IN_FLIGHT' }))
+    setFlightSessionStarted(true)
+    setAutoStartPlanRequested(true)
     setScreen('in-flight')
     setNavId('mission-control')
   }
@@ -474,6 +496,7 @@ export default function OperatorWorkspace() {
               drone={displayDrone}
               onScreen={goScreen}
               onBack={() => setScreen('mission-list')}
+              onStartFlight={handleStartMission}
             />
           )}
           {screen === 'accept-reject' && (
@@ -499,6 +522,8 @@ export default function OperatorWorkspace() {
               drone={displayDrone}
               onRTB={handleRTB}
               onEmergency={handleEmergency}
+              autoStartPlan={false}
+              onAutoStartPlanConsumed={() => undefined}
             />
           )}
           {screen === 'preflight-failure' && (
@@ -541,6 +566,8 @@ export default function OperatorWorkspace() {
               drone={displayDrone}
               onRTB={handleRTB}
               onEmergency={handleEmergency}
+              autoStartPlan={autoStartPlanRequested}
+              onAutoStartPlanConsumed={() => setAutoStartPlanRequested(false)}
             />
           )}
           {screen === 'return-to-base' && (

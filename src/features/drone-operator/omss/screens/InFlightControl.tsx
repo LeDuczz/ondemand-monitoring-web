@@ -17,6 +17,8 @@ interface Props {
   drone: Drone
   onRTB: () => void
   onEmergency: () => void
+  autoStartPlan: boolean
+  onAutoStartPlanConsumed: () => void
 }
 
 type FlightCommand =
@@ -2594,6 +2596,8 @@ export default function InFlightControl({
   drone,
   onRTB,
   onEmergency,
+  autoStartPlan,
+  onAutoStartPlanConsumed,
 }: Props) {
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
   const [elapsed, setElapsed] = useState(5)
@@ -2774,6 +2778,24 @@ export default function InFlightControl({
     },
     [mission.id, mission.routePoints, onEmergency, onRTB, preflightReady],
   )
+
+  useEffect(() => {
+    if (!autoStartPlan) return
+    if (!preflightReady) return
+    if ((mission.routePoints?.length ?? 0) === 0) {
+      setLastCommand('No mission plan waypoints')
+      onAutoStartPlanConsumed()
+      return
+    }
+    onAutoStartPlanConsumed()
+    void sendCommand('auto_plan_start')
+  }, [
+    autoStartPlan,
+    mission.routePoints,
+    onAutoStartPlanConsumed,
+    preflightReady,
+    sendCommand,
+  ])
 
   const telemetryBattery =
     typeof controlStatus?.batteryPercent === 'number' &&

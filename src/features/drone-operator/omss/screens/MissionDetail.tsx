@@ -12,6 +12,7 @@ interface Props {
   drone: Drone
   onScreen: (s: Screen) => void
   onBack: () => void
+  onStartFlight: () => void
 }
 
 function KV({
@@ -319,8 +320,11 @@ export default function MissionDetail({
   drone,
   onScreen,
   onBack,
+  onStartFlight,
 }: Props) {
   const isAcceptable = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
+  const hasPlan = (mission.routePoints?.length ?? 0) > 0
+  const canStartFlight = hasPlan && mission.state !== 'COMPLETED' && mission.state !== 'CANCELLED'
 
   return (
     <div
@@ -399,8 +403,27 @@ export default function MissionDetail({
             <MissionBadge state={mission.state} />
           </div>
         </div>
-        {isAcceptable && (
-          <div style={{ display: 'flex', gap: 10 }}>
+        {(isAcceptable || canStartFlight) && (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {canStartFlight && (
+              <button
+                onClick={onStartFlight}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: '#16a34a',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Start flight
+              </button>
+            )}
+            {isAcceptable && (
+              <>
             <button
               onClick={() => onScreen('accept-reject')}
               style={{
@@ -431,6 +454,8 @@ export default function MissionDetail({
             >
               Accept mission
             </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -488,7 +513,10 @@ export default function MissionDetail({
           />
           <KV label="Max altitude" value={`${mission.maxAltitudeM} m AGL`} />
           <KV label="Distance" value={`${mission.distanceKm} km`} />
-          <KV label="Flight plan" value={mission.flightPlanId} mono />
+          <KV
+            label="Flight plan"
+            value={hasPlan ? `${mission.routePoints?.length ?? 0} waypoints ready` : 'No plan'}
+          />
           {mission.notes && (
             <div
               style={{

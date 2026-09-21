@@ -68,3 +68,36 @@ export function daysDiff(isoDate: string): number {
   const diff = target.getTime() - now.getTime()
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
+
+const CERT_WARNING_DAYS = 30
+
+export function certDaysLeftLabel(isoDate: string): string | null {
+  const days = daysDiff(isoDate)
+  if (days < 0 || days > CERT_WARNING_DAYS) return null
+  return `Còn ${days} ngày`
+}
+
+export type AccountFilters = {
+  query?: string
+  role?: UserRole | ''
+  status?: AccountStatus | ''
+}
+
+export function filterAccounts(
+  items: AdminAccountItem[],
+  filters: AccountFilters,
+): AdminAccountItem[] {
+  const query = (filters.query ?? '').trim().toLowerCase()
+  return items.filter((acc) => {
+    if (filters.role && acc.role !== filters.role) return false
+    if (filters.status && acc.status !== filters.status) return false
+    if (
+      query &&
+      !acc.fullName.toLowerCase().includes(query) &&
+      !acc.email.toLowerCase().includes(query)
+    ) {
+      return false
+    }
+    return true
+  })
+}

@@ -48,6 +48,14 @@ describe('PATCH /api/admin/catalog/services/:id', () => {
     const { status } = await call('PATCH', '/api/admin/catalog/services/nope', { name: 'X' })
     expect(status).toBe(404)
   })
+
+  it('toggles is_active only', async () => {
+    const listRes = await call('GET', '/api/admin/catalog/services')
+    const svc = listRes.payload.data.items[0]
+    const { status, payload } = await call('PATCH', `/api/admin/catalog/services/${svc.id}`, { isActive: !svc.isActive })
+    expect(status).toBe(200)
+    expect(payload.data.isActive).toBe(!svc.isActive)
+  })
 })
 
 describe('GET /api/admin/catalog/timeslots', () => {
@@ -114,5 +122,15 @@ describe('POST /api/admin/catalog/stations', () => {
     await call('POST', '/api/admin/catalog/stations', { code: 'DUP_STA', name: 'Dup', address: '', lat: 0, lon: 0, maxServiceRadiusM: 1000 })
     const { status } = await call('POST', '/api/admin/catalog/stations', { code: 'DUP_STA', name: 'Dup2', address: '', lat: 0, lon: 0, maxServiceRadiusM: 1000 })
     expect(status).toBe(409)
+  })
+})
+
+describe('PATCH /api/admin/catalog/stations/:id (toggle is_active)', () => {
+  it('toggles is_active', async () => {
+    const listRes = await call('GET', '/api/admin/catalog/stations')
+    const sta = listRes.payload.data.items[0]
+    const { status, payload } = await call('PATCH', `/api/admin/catalog/stations/${sta.id}`, { isActive: !sta.isActive })
+    expect(status).toBe(200)
+    expect(payload.data.isActive).toBe(!sta.isActive)
   })
 })

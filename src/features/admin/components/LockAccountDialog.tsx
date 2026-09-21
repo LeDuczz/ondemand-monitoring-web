@@ -25,7 +25,9 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
       }
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khi thay doi trang thai.')
+      setError(
+        err instanceof Error ? err.message : 'Lỗi khi thay đổi trạng thái.',
+      )
     } finally {
       setLoading(false)
     }
@@ -39,25 +41,35 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
         style={{ maxWidth: 400 }}
         role="dialog"
         aria-modal="true"
-        aria-label={isLocked ? 'Mo khoa tai khoan' : 'Khoa tai khoan'}
+        aria-label={isLocked ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
       >
         <div className="odm-dialog-header">
           <h2 className="odm-dialog-title">
-            {isLocked ? 'Mo khoa tai khoan' : 'Khoa tai khoan'}
+            {isLocked ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
           </h2>
-          <button type="button" className="odm-dialog-close" onClick={onClose} aria-label="Dong">
+          <button
+            type="button"
+            className="odm-dialog-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
             x
           </button>
         </div>
-        <div className="odm-dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div
+          className="odm-dialog-body"
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
           <p style={{ margin: 0, color: 'var(--tx)' }}>
             {isLocked ? (
               <>
-                Mo khoa tai khoan <strong>{account.fullName}</strong>? Tai khoan se duoc dang nhap lai.
+                Mở khoá tài khoản <strong>{account.fullName}</strong>? Tài khoản
+                sẽ được đăng nhập lại.
               </>
             ) : (
               <>
-                Khoa tai khoan <strong>{account.fullName}</strong>? Nguoi dung se khong the dang nhap.
+                Khoá tài khoản <strong>{account.fullName}</strong>? Người dùng
+                sẽ không thể đăng nhập.
               </>
             )}
           </p>
@@ -71,16 +83,23 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
                 fontSize: 12,
               }}
             >
-              Canh bao: Neu nguoi dung con mission dang thuc hien, hay ket thuc truoc khi khoa.
+              Cảnh báo: Nếu người dùng còn nhiệm vụ đang thực hiện, hãy kết thúc
+              trước khi khoá.
             </div>
           )}
           {error && (
-            <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>{error}</p>
+            <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>
+              {error}
+            </p>
           )}
         </div>
         <div className="odm-dialog-footer">
-          <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
-            Huy
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onClose}
+          >
+            Huỷ
           </button>
           <button
             type="button"
@@ -89,7 +108,7 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
             onClick={handleConfirm}
             disabled={loading}
           >
-            {loading ? 'Dang xu ly...' : isLocked ? 'Mo khoa' : 'Khoa'}
+            {loading ? 'Đang xử lý...' : isLocked ? 'Mở khoá' : 'Khoá'}
           </button>
         </div>
       </div>

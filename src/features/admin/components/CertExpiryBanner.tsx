@@ -35,9 +35,9 @@ export function CertExpiryBanner({ accounts }: Props) {
         alignItems: 'flex-start',
       }}
     >
-      <span style={{ fontWeight: 700, flexShrink: 0 }}>Canh bao:</span>
+      <span style={{ fontWeight: 700, flexShrink: 0 }}>Cảnh báo:</span>
       <span>
-        {expiring.length} phi cong co chung chi sap het han: {names}
+        {expiring.length} phi công có chứng chỉ sắp hết hạn: {names}
       </span>
     </div>
   )

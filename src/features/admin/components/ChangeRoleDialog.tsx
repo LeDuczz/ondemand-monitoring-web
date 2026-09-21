@@ -27,14 +27,20 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (role === account.role) { onClose(); return }
+    if (role === account.role) {
+      onClose()
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      await adminApi.updateAccount(account.id, { role, reason: reason.trim() || undefined })
+      await adminApi.updateAccount(account.id, {
+        role,
+        reason: reason.trim() || undefined,
+      })
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loi khi doi vai tro.')
+      setError(err instanceof Error ? err.message : 'Lỗi khi đổi vai trò.')
     } finally {
       setLoading(false)
     }
@@ -48,22 +54,37 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
         style={{ maxWidth: 420 }}
         role="dialog"
         aria-modal="true"
-        aria-label="Doi vai tro"
+        aria-label="Đổi vai trò"
       >
         <div className="odm-dialog-header">
-          <h2 className="odm-dialog-title">Doi vai tro</h2>
-          <button type="button" className="odm-dialog-close" onClick={onClose} aria-label="Dong">
+          <h2 className="odm-dialog-title">Đổi vai trò</h2>
+          <button
+            type="button"
+            className="odm-dialog-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
             x
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="odm-dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div
+            className="odm-dialog-body"
+            style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+          >
             <p style={{ margin: 0, color: 'var(--tx2)', fontSize: 13 }}>
-              Nguoi dung: <strong>{account.fullName}</strong>
+              Người dùng: <strong>{account.fullName}</strong>
             </p>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>
-                Vai tro moi
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  color: 'var(--tx2)',
+                  marginBottom: 4,
+                }}
+              >
+                Vai trò mới
               </label>
               <select
                 className="odm-input"
@@ -71,31 +92,50 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
                 onChange={(e) => setRole(e.target.value as UserRole)}
               >
                 {ASSIGNABLE_ROLES.map((r) => (
-                  <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+                  <option key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>
-                Ly do (tuy chon)
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  color: 'var(--tx2)',
+                  marginBottom: 4,
+                }}
+              >
+                Lý do (tuỳ chọn)
               </label>
               <input
                 className="odm-input"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Vi du: Thang chuc, chuyen bo phan..."
+                placeholder="Ví dụ: Thăng chức, chuyển bộ phận..."
               />
             </div>
             {error && (
-              <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>{error}</p>
+              <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>
+                {error}
+              </p>
             )}
           </div>
           <div className="odm-dialog-footer">
-            <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
-              Huy
+            <button
+              type="button"
+              className="odm-btn odm-btn-gh"
+              onClick={onClose}
+            >
+              Huỷ
             </button>
-            <button type="submit" className="odm-btn odm-btn-p" disabled={loading}>
-              {loading ? 'Dang luu...' : 'Luu thay doi'}
+            <button
+              type="submit"
+              className="odm-btn odm-btn-p"
+              disabled={loading}
+            >
+              {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>
         </form>

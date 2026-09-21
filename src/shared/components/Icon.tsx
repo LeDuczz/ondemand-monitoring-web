@@ -35,6 +35,9 @@ export type IconName =
   | 'home'
   | 'minus'
   | 'sparkle'
+  | 'search'
+  | 'bell'
+  | 'key'
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName }
 
@@ -215,6 +218,24 @@ export function Icon({ name, ...props }: IconProps) {
       <>
         <path d="M12 3 14 9 20 11 14 13 12 19 10 13 4 11 10 9Z" />
         <path d="M19 3v3M17.5 4.5h3" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="M20 20l-4.2-4.2" />
+      </>
+    ),
+    bell: (
+      <>
+        <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z" />
+        <path d="M10 20a2 2 0 0 0 4 0" />
+      </>
+    ),
+    key: (
+      <>
+        <circle cx="8" cy="15" r="4" />
+        <path d="M11 12l9-9M16 7l3 3" />
       </>
     ),
     google: (

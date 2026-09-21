@@ -25,7 +25,7 @@ export function parseAdminRoute(hash: string): AdminRoute {
   const rest = hash.slice(ADMIN_ROOT.length)
   const segments = rest.split('/').filter(Boolean).map(decodeURIComponent)
 
-  if (segments.length === 0) return { screen: 'dashboard' }
+  if (segments.length === 0) return { screen: 'accounts' }
 
   const [head, ...tail] = segments
 

@@ -2,13 +2,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
+import { Icon } from '../../shared/components/Icon'
 import { adminHref, type AdminRoute, type AdminScreen } from './routes'
 import './admin.css'
 
 type NavItem = { label: string; icon: string; route: AdminRoute; pendingBadge?: boolean }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Tổng quan', icon: '⊞', route: { screen: 'dashboard' } },
   { label: 'Người dùng', icon: '◉', route: { screen: 'accounts' } },
   { label: 'Vai trò', icon: '◈', route: { screen: 'roles' } },
   { label: 'Danh mục', icon: '▦', route: { screen: 'catalog' } },
@@ -67,11 +67,11 @@ export function AdminLayout({
           aria-label="Điều hướng quản trị"
           className={`odm-adm-side ${menuOpen ? 'is-open' : ''}`}
         >
-          <a className="odm-adm-brand" href={adminHref({ screen: 'dashboard' })}>
+          <a className="odm-adm-brand" href={adminHref({ screen: 'accounts' })}>
             <span className="odm-adm-brand-mark" aria-hidden="true">⚙</span>
             <span>
               <span className="odm-adm-brand-name">OnDemand Monitor</span>
-              <span className="odm-adm-brand-sub">Quản trị hệ thống</span>
+              <span className="odm-adm-brand-sub">Quản trị viên</span>
             </span>
           </a>
 
@@ -133,6 +133,15 @@ export function AdminLayout({
             </button>
             <div className="odm-adm-breadcrumb">{breadcrumb}</div>
             <div className="odm-adm-topbar-spacer" />
+            <div className="odm-adm-search">
+              <Icon name="search" width={15} height={15} className="odm-adm-search-icon" />
+              <input
+                className="odm-inp odm-adm-search-input"
+                type="search"
+                aria-label="Tìm kiếm"
+                placeholder="Tìm mã đơn, mission, drone..."
+              />
+            </div>
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1"
@@ -140,6 +149,14 @@ export function AdminLayout({
               onClick={() => setDark((v) => !v)}
             >
               {dark ? '☀' : '☾'}
+            </button>
+            <button
+              type="button"
+              className="odm-btn odm-btn-gh odm-btn-ic1 odm-adm-bell"
+              aria-label="Thông báo"
+            >
+              <Icon name="bell" width={17} height={17} />
+              <span className="odm-adm-bell-dot" aria-hidden="true" />
             </button>
           </header>
           <main className="odm-adm-content">{children}</main>

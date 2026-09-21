@@ -181,7 +181,7 @@
   gap: 10px;
   padding: 0 20px;
   border-bottom: 1px solid var(--bd);
-  background: var(--bg);
+  background: var(--sf);
 }
 
 .odm-adm-breadcrumb {
@@ -192,6 +192,53 @@
 
 .odm-adm-topbar-spacer {
   flex: 1;
+}
+
+.odm-adm-search {
+  position: relative;
+  width: 320px;
+  flex: none;
+}
+
+.odm-adm-search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tx3);
+  pointer-events: none;
+}
+
+.odm-adm-search-input {
+  height: 32px;
+  padding-left: 30px;
+}
+
+.odm-adm-bell {
+  position: relative;
+}
+
+.odm-adm-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red-dot);
+  border: 2px solid var(--sf);
+}
+
+@media (max-width: 900px) {
+  .odm-adm-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 640px) {
+  .odm-adm-search {
+    display: none;
+  }
 }
 
 .odm-adm-content {
@@ -284,6 +331,66 @@
   font-weight: 600;
   background: var(--sf2);
   color: var(--tx2);
+}
+
+/* ---------- Role code chip ---------- */
+
+.odm-adm-rolechip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--bd);
+  white-space: nowrap;
+}
+
+/* ---------- Accounts filters ---------- */
+
+.odm-adm-account-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.odm-adm-account-search {
+  width: 280px;
+  max-width: 100%;
+}
+
+.odm-adm-account-select {
+  width: 180px;
+  max-width: 100%;
+}
+
+/* ---------- Account row status / cert sub-notes ---------- */
+
+.odm-adm-subnote {
+  font-size: 11.5px;
+  margin-top: 3px;
+}
+
+.odm-adm-subnote-warn {
+  color: var(--yellow-fg);
+}
+
+.odm-adm-subnote-cert {
+  color: var(--orange-fg);
+  font-weight: 700;
+}
+
+/* ---------- Row actions ---------- */
+
+.odm-adm-account-actions {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
 }
 
 /* ---------- Mobile ---------- */

@@ -195,7 +195,7 @@ export function NoFlyZonesTable() {
                         style={{ fontSize: 11, padding: '3px 8px' }}
                         onClick={() => setDialog({ zone })}
                       >
-                        Sua
+                        Sửa
                       </button>
                       <button
                         type="button"

@@ -144,7 +144,7 @@ function RulesTab() {
             <th>Tên luật</th>
             <th>Loại</th>
             <th>Mức độ</th>
-            <th>Trong so</th>
+            <th>Trọng số</th>
             <th>Trạng thái</th>
             <th>Thao tác</th>
           </tr>

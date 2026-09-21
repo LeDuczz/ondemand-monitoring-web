@@ -51,7 +51,7 @@ function WeightGroup({
   return (
     <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: 16 }}>
       <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
-        Trong so {label} ({group === 'DRONE' ? 'Drone' : 'Phi công'})
+        Trọng số {label} ({group === 'DRONE' ? 'Drone' : 'Phi công'})
       </h3>
       {items.map((w) => (
         <div key={w.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>

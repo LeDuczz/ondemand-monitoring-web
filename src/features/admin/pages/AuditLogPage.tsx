@@ -1,7 +1,10 @@
 import { useState } from 'react'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
-import { ErrorState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { adminApi } from '../api/adminApi'
 import { fmtDateTime } from '../lib/accountStatus'
@@ -24,7 +27,13 @@ const ACTION_LABEL: Record<AuditAction, string> = {
   STATUS_CHANGE: 'Đổi trạng thái',
 }
 
-function DiffPanel({ entry, onClose }: { entry: AuditEntry; onClose: () => void }) {
+function DiffPanel({
+  entry,
+  onClose,
+}: {
+  entry: AuditEntry
+  onClose: () => void
+}) {
   const formatJSON = (obj: Record<string, unknown> | null) => {
     if (!obj) return '(không có)'
     return JSON.stringify(obj, null, 2)
@@ -56,14 +65,27 @@ function DiffPanel({ entry, onClose }: { entry: AuditEntry; onClose: () => void 
         }}
       >
         <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Chi tiết thay đổi</p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
+            Chi tiết thay đổi
+          </p>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--tx3)' }}>
             {entry.entityType} / {entry.entityId}
           </p>
         </div>
-        <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>Đóng</button>
+        <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
+          Đóng
+        </button>
       </div>
-      <div style={{ flex: 1, overflow: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
           <strong>Thời gian:</strong> {fmtDateTime(entry.createdAt)}
         </div>
@@ -74,7 +96,16 @@ function DiffPanel({ entry, onClose }: { entry: AuditEntry; onClose: () => void 
           <strong>IP:</strong> {entry.ip}
         </div>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--red-solid)' }}>Trước</p>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              marginBottom: 6,
+              color: 'var(--red-solid)',
+            }}
+          >
+            Trước
+          </p>
           <pre
             style={{
               background: 'var(--sf2)',
@@ -93,7 +124,16 @@ function DiffPanel({ entry, onClose }: { entry: AuditEntry; onClose: () => void 
           </pre>
         </div>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--green-solid)' }}>Sau</p>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              marginBottom: 6,
+              color: 'var(--green-solid)',
+            }}
+          >
+            Sau
+          </p>
           <pre
             style={{
               background: 'var(--sf2)',
@@ -128,7 +168,7 @@ export function AuditLogPage() {
     (signal) =>
       adminApi.listAuditLog(
         {
-          action: actionFilter as AuditAction || undefined,
+          action: (actionFilter as AuditAction) || undefined,
           entityType: entityTypeFilter || undefined,
           from: fromDate || undefined,
           to: toDate || undefined,
@@ -148,23 +188,41 @@ export function AuditLogPage() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+        }}
+      >
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Nhật ký hệ thống</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+            Nhật ký hệ thống
+          </h1>
           <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
             audit_log — chỉ đọc
           </p>
         </div>
-        <button type="button" className="odm-btn odm-btn-gh" onClick={handleExport}>
+        <button
+          type="button"
+          className="odm-btn odm-btn-gh"
+          onClick={handleExport}
+        >
           Xuất CSV
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div
+        style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}
+      >
         <select
           className="odm-input"
           value={actionFilter}
-          onChange={(e) => { setActionFilter(e.target.value); setPage(1) }}
+          onChange={(e) => {
+            setActionFilter(e.target.value)
+            setPage(1)
+          }}
           style={{ width: 160 }}
         >
           <option value="">Tất cả hành động</option>
@@ -178,51 +236,81 @@ export function AuditLogPage() {
           className="odm-input"
           placeholder="Loại thực thể..."
           value={entityTypeFilter}
-          onChange={(e) => { setEntityTypeFilter(e.target.value); setPage(1) }}
+          onChange={(e) => {
+            setEntityTypeFilter(e.target.value)
+            setPage(1)
+          }}
           style={{ width: 160 }}
         />
         <input
           className="odm-input"
           type="date"
           value={fromDate}
-          onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
+          onChange={(e) => {
+            setFromDate(e.target.value)
+            setPage(1)
+          }}
           style={{ width: 140 }}
         />
         <input
           className="odm-input"
           type="date"
           value={toDate}
-          onChange={(e) => { setToDate(e.target.value); setPage(1) }}
+          onChange={(e) => {
+            setToDate(e.target.value)
+            setPage(1)
+          }}
           style={{ width: 140 }}
         />
       </div>
 
       {loading && <LoadingState />}
-      {!loading && (error || !data) && <ErrorState error={error} onRetry={reload} />}
+      {!loading && (error || !data) && (
+        <ErrorState error={error} onRetry={reload} />
+      )}
 
       {!loading && data && (
         <>
-          <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, overflow: 'hidden' }}>
+          <div
+            style={{
+              background: 'var(--sf)',
+              border: '1px solid var(--bd)',
+              borderRadius: 10,
+              overflow: 'hidden',
+            }}
+          >
             <table className="odm-adm-table">
               <thead>
                 <tr>
-                  <th>Thời gian</th>
-                  <th>Người thực hiện</th>
-                  <th>Hành động</th>
-                  <th>Loại thực thể</th>
-                  <th>ID thực thể</th>
-                  <th>IP</th>
+                  <th>created_at</th>
+                  <th>actor</th>
+                  <th>action</th>
+                  <th>entity_type</th>
+                  <th>entity_id</th>
+                  <th>ip</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.map((entry) => (
                   <tr key={entry.id}>
-                    <td style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--tx3)' }}>
+                    <td
+                      style={{
+                        fontSize: 11,
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--tx3)',
+                      }}
+                    >
                       {fmtDateTime(entry.createdAt)}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
                         <span
                           style={{
                             width: 26,
@@ -238,7 +326,12 @@ export function AuditLogPage() {
                             flexShrink: 0,
                           }}
                         >
-                          {entry.actorName.split(' ').slice(-2).map((w: string) => w[0]).join('').toUpperCase()}
+                          {entry.actorName
+                            .split(' ')
+                            .slice(-2)
+                            .map((w: string) => w[0])
+                            .join('')
+                            .toUpperCase()}
                         </span>
                         <span style={{ fontSize: 12 }}>{entry.actorName}</span>
                       </div>
@@ -248,11 +341,24 @@ export function AuditLogPage() {
                         {ACTION_LABEL[entry.action]}
                       </StatusBadge>
                     </td>
-                    <td style={{ fontSize: 12, color: 'var(--tx2)' }}>{entry.entityType}</td>
-                    <td style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--tx3)' }}>
-                      {entry.entityId.slice(0, 20)}{entry.entityId.length > 20 ? '...' : ''}
+                    <td style={{ fontSize: 12, color: 'var(--tx2)' }}>
+                      {entry.entityType}
                     </td>
-                    <td style={{ fontSize: 11, fontFamily: 'var(--font-mono)' }}>{entry.ip}</td>
+                    <td
+                      style={{
+                        fontSize: 11,
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--tx3)',
+                      }}
+                    >
+                      {entry.entityId.slice(0, 20)}
+                      {entry.entityId.length > 20 ? '...' : ''}
+                    </td>
+                    <td
+                      style={{ fontSize: 11, fontFamily: 'var(--font-mono)' }}
+                    >
+                      {entry.ip}
+                    </td>
                     <td>
                       <button
                         type="button"
@@ -270,7 +376,15 @@ export function AuditLogPage() {
           </div>
 
           {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                justifyContent: 'center',
+                marginTop: 16,
+              }}
+            >
               <button
                 type="button"
                 className="odm-btn odm-btn-gh"
@@ -296,7 +410,10 @@ export function AuditLogPage() {
       )}
 
       {selectedEntry && (
-        <DiffPanel entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
+        <DiffPanel
+          entry={selectedEntry}
+          onClose={() => setSelectedEntry(null)}
+        />
       )}
     </div>
   )

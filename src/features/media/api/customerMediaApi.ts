@@ -33,6 +33,8 @@ async function request<T>(path: string): Promise<T> {
 }
 
 export const customerMediaApi = {
+  listMine: () => request<AvailableMedia[]>('/customer/available-media'),
+  myNotifications: () => request<MediaNotification[]>('/customer/media-notifications'),
   list: (missionId: string) => request<AvailableMedia[]>(
     `/missions/${encodeURIComponent(missionId)}/available-media`,
   ),

@@ -106,8 +106,8 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
                     <button disabled={!canApprove} onClick={() => void approve(item)}>
                       {busyId === item.localMediaId ? 'Uploading…' : 'Approve & upload'}
                     </button>
-                    <button disabled={!!busyId || !['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status)} onClick={() => void discard(item)}>
-                      Discard
+                    <button disabled={!!busyId || !(['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status) || backendStatus === 'AVAILABLE')} onClick={() => void discard(item)}>
+                      {backendStatus === 'AVAILABLE' ? 'Remove local copy' : 'Discard'}
                     </button>
                   </div>
                 </div>

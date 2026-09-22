@@ -90,7 +90,7 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
           {items.map((item) => {
             const backendStatus = item.backendMediaId ? status[item.backendMediaId] : undefined
             const effective = backendStatus ?? item.status
-            const canApprove = !busyId && ['REVIEW_PENDING', 'UPLOAD_FAILED', 'RETRY_REQUIRED', 'MANUAL_UPLOAD_REQUIRED'].includes(effective)
+            const canApprove = !busyId && ['REVIEW_PENDING', 'UPLOAD_FAILED', 'UPLOAD_PENDING', 'RETRY_REQUIRED', 'MANUAL_UPLOAD_REQUIRED'].includes(effective)
             return (
               <article key={item.localMediaId} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--surface)' }}>
                 {item.mediaType === 'IMAGE' ? (

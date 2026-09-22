@@ -88,30 +88,33 @@ export const operatorMediaApi = {
     }
     if (!plan.uploadMethod || !plan.attemptId) throw new Error('No upload attempt available')
     const attemptPath = `${mediaPath}/upload-attempts/${encodeURIComponent(plan.attemptId)}`
-    try {
-      let partUrls: Array<{ partNumber: number; uploadUrl: string; uploadHeaders: Record<string, string[]> }> = []
-      if (plan.uploadMethod === 'MULTIPART') {
-        for (let partNumber = 1; partNumber <= plan.partCount; partNumber++) {
-          const part = await backend<UploadPlan>(`${attemptPath}/parts/${partNumber}/url`, 'POST')
-          if (!part.uploadUrl) throw new Error(`Missing signed URL for part ${partNumber}`)
-          partUrls.push({ partNumber, uploadUrl: part.uploadUrl, uploadHeaders: part.uploadHeaders })
-        }
+    const partUrls: Array<{ partNumber: number; uploadUrl: string; uploadHeaders: Record<string, string[]> }> = []
+    if (plan.uploadMethod === 'MULTIPART') {
+      for (let partNumber = 1; partNumber <= plan.partCount; partNumber++) {
+        const part = await backend<UploadPlan>(`${attemptPath}/parts/${partNumber}/url`, 'POST')
+        if (!part.uploadUrl) throw new Error(`Missing signed URL for part ${partNumber}`)
+        partUrls.push({ partNumber, uploadUrl: part.uploadUrl, uploadHeaders: part.uploadHeaders })
       }
-      const transferred = await controller<{ parts: Array<{ partNumber: number; eTag: string }> }>(
+    }
+    let transferred: { parts: Array<{ partNumber: number; eTag: string }> }
+    try {
+      transferred = await controller<{ parts: Array<{ partNumber: number; eTag: string }> }>(
         `/api/media/local/${encodeURIComponent(item.localMediaId)}/transfer`, 'POST', { ...plan, partUrls },
       )
-      if (plan.uploadMethod === 'MULTIPART') {
-        await backend(`${attemptPath}/complete-multipart`, 'POST', { parts: transferred.parts })
-      } else {
-        await backend(`${attemptPath}/uploaded`, 'POST')
-      }
-      return plan.mediaId
     } catch (error) {
       await backend(`${attemptPath}/failures`, 'POST', {
         code: 'TRANSFER_FAILED', message: error instanceof Error ? error.message.slice(0, 400) : 'Transfer failed',
       }).catch(() => undefined)
       throw error
     }
+    // An acknowledgement failure is not an S3 transfer failure. The object may
+    // already be in S3 (and its ObjectCreated event may already be processing).
+    if (plan.uploadMethod === 'MULTIPART') {
+      await backend(`${attemptPath}/complete-multipart`, 'POST', { parts: transferred.parts })
+    } else {
+      await backend(`${attemptPath}/uploaded`, 'POST')
+    }
+    return plan.mediaId
   },
   status(mediaId: string) {
     return backend<UploadPlan>(`/media/${encodeURIComponent(mediaId)}/upload-status`)

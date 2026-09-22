@@ -34,6 +34,7 @@ export type PlanningAlgorithm =
 export type FeasibilityStatus =
   | 'FEASIBLE'
   | 'INSUFFICIENT_BATTERY'
+  | 'BATTERY_DATA_UNAVAILABLE'
   | 'NO_SAFE_ROUTE'
   | 'INVALID_TARGET'
 
@@ -56,7 +57,9 @@ export interface MissionPlan {
   maxPlannedAltitudeM?: number | null
   estimatedEnergyMah?: number | null
   estimatedBatteryUsedPercent?: number | null
+  batteryCapacityMah?: number | null
   availableBatteryPercentAtPlanning?: number | null
+  estimatedRemainingBatteryPercent?: number | null
   safetyReservePercent?: number | null
   requiredBatteryPercent?: number | null
   feasibilityStatus: FeasibilityStatus

@@ -79,6 +79,20 @@ export interface Mission {
   targetSimX?: number
   targetSimY?: number
   routePoints?: MissionRoutePoint[]
+  planSummary?: MissionPlanSummary
+}
+
+export interface MissionPlanSummary {
+  planningAlgorithm?: string
+  plannedDistanceM?: number | null
+  estimatedEnergyMah?: number | null
+  estimatedBatteryUsedPercent?: number | null
+  batteryCapacityMah?: number | null
+  availableBatteryPercentAtPlanning?: number | null
+  estimatedRemainingBatteryPercent?: number | null
+  safetyReservePercent?: number | null
+  requiredBatteryPercent?: number | null
+  feasibilityStatus?: string
 }
 
 export interface MissionRoutePoint {

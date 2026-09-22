@@ -53,6 +53,16 @@ function formatPercent(value?: number | null) {
   return `${formatNumber(value, 2)}%`
 }
 
+function planFeasibilityMessage(status?: string) {
+  if (status === 'INSUFFICIENT_BATTERY') {
+    return 'Mission battery estimate is below the configured safety reserve.'
+  }
+  if (status === 'BATTERY_DATA_UNAVAILABLE') {
+    return 'Current drone battery telemetry is unavailable; mission cannot be marked safe.'
+  }
+  return 'No safe route could be generated for this mission.'
+}
+
 function PlanMetric({ label, value }: { label: string; value: string }) {
   return (
     <div
@@ -681,13 +691,17 @@ export function OperatorDashboardPage() {
                 <PlanMetric label="Duration" value={formatSeconds(plan.plannedDurationSec)} />
                 <PlanMetric label="World Z" value={formatMeters(plan.maxPlannedAltitudeM)} />
                 <PlanMetric label="Energy" value={formatMah(plan.estimatedEnergyMah)} />
+                <PlanMetric label="Battery Capacity" value={formatMah(plan.batteryCapacityMah)} />
+                <PlanMetric label="Current Battery" value={formatPercent(plan.availableBatteryPercentAtPlanning)} />
                 <PlanMetric label="Battery Use" value={formatPercent(plan.estimatedBatteryUsedPercent)} />
+                <PlanMetric label="After Mission" value={formatPercent(plan.estimatedRemainingBatteryPercent)} />
+                <PlanMetric label="Safety Reserve" value={formatPercent(plan.safetyReservePercent)} />
                 <PlanMetric label="Required Battery" value={formatPercent(plan.requiredBatteryPercent)} />
                 <PlanMetric label="Waypoints" value={`${plan.waypoints?.length ?? 0}`} />
               </div>
             ) : (
               <p style={{ margin: 0, color: '#b91c1c', fontWeight: 700 }}>
-                No safe route could be generated for this mission.
+                {planFeasibilityMessage(plan.feasibilityStatus)}
               </p>
             )}
           </div>

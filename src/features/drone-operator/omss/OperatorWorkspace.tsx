@@ -86,9 +86,18 @@ type BackendMission = {
   mediaType?: string
   plan?: {
     id?: string
-    plannedDistanceM?: number
-    plannedDurationSec?: number
-    maxPlannedAltitudeM?: number
+    planningAlgorithm?: string
+    plannedDistanceM?: number | null
+    plannedDurationSec?: number | null
+    estimatedEnergyMah?: number | null
+    estimatedBatteryUsedPercent?: number | null
+    batteryCapacityMah?: number | null
+    availableBatteryPercentAtPlanning?: number | null
+    estimatedRemainingBatteryPercent?: number | null
+    safetyReservePercent?: number | null
+    requiredBatteryPercent?: number | null
+    feasibilityStatus?: string
+    maxPlannedAltitudeM?: number | null
     waypoints?: {
       id?: string
       sequence?: number
@@ -265,6 +274,22 @@ function adaptBackendMission(mission: BackendMission): Mission {
     targetSimX: routeTargetPoint?.simX ?? MISSION_PRIMARY.targetSimX,
     targetSimY: routeTargetPoint?.simY ?? MISSION_PRIMARY.targetSimY,
     routePoints: routePoints.length > 0 ? routePoints : MISSION_PRIMARY.routePoints,
+    planSummary: plan
+      ? {
+          planningAlgorithm: plan.planningAlgorithm,
+          plannedDistanceM: plan.plannedDistanceM,
+          estimatedEnergyMah: plan.estimatedEnergyMah,
+          estimatedBatteryUsedPercent: plan.estimatedBatteryUsedPercent,
+          batteryCapacityMah: plan.batteryCapacityMah,
+          availableBatteryPercentAtPlanning:
+            plan.availableBatteryPercentAtPlanning,
+          estimatedRemainingBatteryPercent:
+            plan.estimatedRemainingBatteryPercent,
+          safetyReservePercent: plan.safetyReservePercent,
+          requiredBatteryPercent: plan.requiredBatteryPercent,
+          feasibilityStatus: plan.feasibilityStatus,
+        }
+      : undefined,
   }
 }
 

@@ -104,6 +104,38 @@ function formatPointValue(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1)
 }
 
+function formatPlanNumber(value?: number | null, digits = 1) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(digits)
+    : '--'
+}
+
+function formatPlanPercent(value?: number | null) {
+  return `${formatPlanNumber(value, 1)}%`
+}
+
+function formatPlanMah(value?: number | null) {
+  return `${formatPlanNumber(value, 0)} mAh`
+}
+
+function formatPlanDistance(value?: number | null) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '--'
+  return value >= 1000
+    ? `${(value / 1000).toFixed(2)} km`
+    : `${value.toFixed(0)} m`
+}
+
+function formatPlanStatus(value?: string) {
+  return value ? value.replaceAll('_', ' ') : '--'
+}
+
+function planStatusColor(value?: string) {
+  if (value === 'FEASIBLE') return '#15803d'
+  if (value === 'INSUFFICIENT_BATTERY') return '#b91c1c'
+  if (value === 'BATTERY_DATA_UNAVAILABLE') return '#b45309'
+  return 'var(--text)'
+}
+
 function planBounds(points: MissionRoutePoint[]) {
   const xs = points.map((point) => point.simX)
   const ys = points.map((point) => point.simY)
@@ -323,6 +355,7 @@ export default function MissionDetail({
   onStartFlight,
 }: Props) {
   const hasPlan = (mission.routePoints?.length ?? 0) > 0
+  const planSummary = mission.planSummary
   const isAcceptable =
     mission.state === 'WAITING_OPERATOR_ACCEPTANCE' && !hasPlan
   const canStartFlight =
@@ -520,6 +553,97 @@ export default function MissionDetail({
             label="Flight plan"
             value={hasPlan ? `${mission.routePoints?.length ?? 0} waypoints ready` : 'No plan'}
           />
+          {planSummary && (
+            <div
+              style={{
+                marginTop: 16,
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  padding: '10px 12px',
+                  background: 'var(--surface-2)',
+                  borderBottom: '1px solid var(--border)',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'var(--text)',
+                  }}
+                >
+                  Mission Planning
+                </div>
+              </div>
+              <div style={{ padding: '0 12px 2px' }}>
+                <KV
+                  label="Algorithm"
+                  value={formatPlanStatus(planSummary.planningAlgorithm)}
+                />
+                <KV
+                  label="Route distance"
+                  value={formatPlanDistance(planSummary.plannedDistanceM)}
+                />
+                <KV
+                  label="Estimated energy"
+                  value={formatPlanMah(planSummary.estimatedEnergyMah)}
+                />
+                <KV
+                  label="Current battery"
+                  value={formatPlanPercent(
+                    planSummary.availableBatteryPercentAtPlanning,
+                  )}
+                />
+                <KV
+                  label="Battery usage"
+                  value={formatPlanPercent(
+                    planSummary.estimatedBatteryUsedPercent,
+                  )}
+                />
+                <KV
+                  label="After mission"
+                  value={formatPlanPercent(
+                    planSummary.estimatedRemainingBatteryPercent,
+                  )}
+                />
+                <KV
+                  label="Safety reserve"
+                  value={formatPlanPercent(planSummary.safetyReservePercent)}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '10px 0',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-2)',
+                      minWidth: 140,
+                    }}
+                  >
+                    Feasibility
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 800,
+                      color: planStatusColor(planSummary.feasibilityStatus),
+                      textAlign: 'right',
+                    }}
+                  >
+                    {formatPlanStatus(planSummary.feasibilityStatus)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           {mission.notes && (
             <div
               style={{

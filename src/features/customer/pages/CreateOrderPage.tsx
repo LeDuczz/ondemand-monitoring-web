@@ -910,9 +910,8 @@ export function CreateOrderPage() {
     setMapPoint({ x: mapX, y: mapY })
 
     if (mapMeta) {
-      const bounds = getMapBounds(mapMeta)
-      const simX = bounds.minX + (mapX / 100) * (bounds.maxX - bounds.minX)
-      const simY = bounds.maxY - (mapY / 100) * (bounds.maxY - bounds.minY)
+      const simX = mapMeta.minX + (mapX / 100) * (mapMeta.maxX - mapMeta.minX)
+      const simY = mapMeta.maxY - (mapY / 100) * (mapMeta.maxY - mapMeta.minY)
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
@@ -1253,7 +1252,21 @@ function StepLocation({
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
   const isBlocked = !restrictedValidation.valid
   const bounds = mapMeta ? getMapBounds(mapMeta) : null
-  const mapAspectRatio = bounds ? `${bounds.maxX - bounds.minX} / ${bounds.maxY - bounds.minY}` : '1 / 1'
+  const activeLeft = mapMeta && bounds ? ((mapMeta.minX - bounds.minX) / (bounds.maxX - bounds.minX)) * 100 : 0
+  const activeTop = mapMeta && bounds ? ((bounds.maxY - mapMeta.maxY) / (bounds.maxY - bounds.minY)) * 100 : 0
+  const activeWidth = mapMeta && bounds ? ((mapMeta.maxX - mapMeta.minX) / (bounds.maxX - bounds.minX)) * 100 : 100
+  const activeHeight = mapMeta && bounds ? ((mapMeta.maxY - mapMeta.minY) / (bounds.maxY - bounds.minY)) * 100 : 100
+  const mapAspectRatio = mapMeta
+    ? `${mapMeta.maxX - mapMeta.minX} / ${mapMeta.maxY - mapMeta.minY}`
+    : '1 / 1'
+  const layerStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: `${-(activeLeft / activeWidth) * 100}%`,
+    top: `${-(activeTop / activeHeight) * 100}%`,
+    width: `${(100 / activeWidth) * 100}%`,
+    height: `${(100 / activeHeight) * 100}%`,
+    pointerEvents: 'none',
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
@@ -1275,11 +1288,7 @@ function StepLocation({
         }}
       >
         <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-          }}
+          style={layerStyle}
         >
           <img
             alt="3D simulation map"
@@ -1319,9 +1328,9 @@ function StepLocation({
               />
             )
           })}
-          <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: isBlocked ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)' }} />
-          <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: isBlocked ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)' }} />
         </div>
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: isBlocked ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: isBlocked ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', left: 12, bottom: 12, display: 'flex', gap: 8, alignItems: 'center', background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
           <span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(220,38,38,.22)', border: '1px solid var(--red-fg)' }} />
           Vùng cấm bay

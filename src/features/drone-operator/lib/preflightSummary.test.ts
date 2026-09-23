@@ -14,13 +14,13 @@ describe('preflightSummary', () => {
     const summary = preflightSummary(
       items([
         ['battery', 'ok'],
-        ['gps', 'ok'],
+        ['localPosition', 'ok'],
       ]),
-      9,
+      12,
     )
     expect(summary).toMatchObject({
       nOk: 2,
-      nTotal: 9,
+      nTotal: 12,
       nFail: 0,
       isProgress: true,
       isPass: false,
@@ -30,34 +30,37 @@ describe('preflightSummary', () => {
 
   it('is PASS only when every item is ok', () => {
     const all: PreflightItem['key'][] = [
+      'gazebo',
+      'px4',
+      'mavsdk',
+      'px4Control',
+      'localPosition',
+      'mavsdkHealth',
       'battery',
-      'gps',
+      'lidar',
       'camera',
-      'motor',
-      'compass',
-      'link',
-      'payload',
-      'weather',
-      'airspace',
+      'backend',
+      'media',
+      'modules',
     ]
-    const summary = preflightSummary(items(all.map((k) => [k, 'ok'])), 9)
+    const summary = preflightSummary(items(all.map((k) => [k, 'ok'])), 12)
     expect(summary.isPass).toBe(true)
     expect(summary.isFail).toBe(false)
-    expect(summary.nOk).toBe(9)
+    expect(summary.nOk).toBe(12)
   })
 
   it('is FAIL and lists the failing keys as soon as one item fails', () => {
     const summary = preflightSummary(
       items([
         ['battery', 'ok'],
-        ['weather', 'fail'],
-        ['airspace', 'fail'],
+        ['px4', 'fail'],
+        ['mavsdk', 'fail'],
       ]),
-      9,
+      12,
     )
     expect(summary.isFail).toBe(true)
     expect(summary.isPass).toBe(false)
     expect(summary.nFail).toBe(2)
-    expect(summary.failKeys).toEqual(['weather', 'airspace'])
+    expect(summary.failKeys).toEqual(['px4', 'mavsdk'])
   })
 })

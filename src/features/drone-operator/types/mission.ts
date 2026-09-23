@@ -59,15 +59,18 @@ export type ControlHandover = {
 }
 
 export type PreflightItemKey =
+  | 'gazebo'
+  | 'px4'
+  | 'mavsdk'
+  | 'px4Control'
+  | 'localPosition'
+  | 'mavsdkHealth'
   | 'battery'
-  | 'gps'
+  | 'lidar'
   | 'camera'
-  | 'motor'
-  | 'compass'
-  | 'link'
-  | 'payload'
-  | 'weather'
-  | 'airspace'
+  | 'backend'
+  | 'media'
+  | 'modules'
 
 export type PreflightItemResult = 'ok' | 'fail'
 

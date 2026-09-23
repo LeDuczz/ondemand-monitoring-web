@@ -73,6 +73,7 @@ const STEP_LABELS: Record<Step, string> = {
 
 const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
+const SIM_RADIUS_SCALE = 6
 
 const card: React.CSSProperties = {
   background: 'var(--sf)',
@@ -224,6 +225,68 @@ function polygonContainsPoint(ring: [number, number][], point: [number, number])
 
 function findContainingZone(point: [number, number], zones: SimulationZone[]) {
   return zones.find((zone) => polygonContainsPoint(zone.coordinates, point))
+}
+
+function distanceBetweenPoints(a: [number, number], b: [number, number]) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1])
+}
+
+function distancePointToSegment(
+  point: [number, number],
+  start: [number, number],
+  end: [number, number],
+) {
+  const dx = end[0] - start[0]
+  const dy = end[1] - start[1]
+  if (dx === 0 && dy === 0) return distanceBetweenPoints(point, start)
+
+  const t = clamp(
+    ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / (dx * dx + dy * dy),
+    0,
+    1,
+  )
+  return distanceBetweenPoints(point, [start[0] + t * dx, start[1] + t * dy])
+}
+
+function circleIntersectsPolygon(
+  center: [number, number],
+  radius: number,
+  ring: [number, number][],
+) {
+  if (polygonContainsPoint(ring, center)) return true
+  if (ring.some((point) => distanceBetweenPoints(center, point) <= radius)) return true
+
+  for (let index = 0; index < ring.length - 1; index += 1) {
+    if (distancePointToSegment(center, ring[index], ring[index + 1]) <= radius) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function validateRestrictedZones(
+  center: [number, number],
+  radiusM: number,
+  zones: SimulationZone[],
+) {
+  const simulationRadius = radiusM / SIM_RADIUS_SCALE
+  const restrictedZones = zones.filter((zone) => zone.restricted)
+  const blockedZones = restrictedZones.filter((zone) =>
+    circleIntersectsPolygon(center, simulationRadius, zone.coordinates),
+  )
+
+  return {
+    valid: blockedZones.length === 0,
+    blockedZones,
+  }
+}
+
+function simPointToPercent(point: [number, number], meta: SimulationMapMeta) {
+  return {
+    x: ((point[0] - meta.minX) / (meta.maxX - meta.minX)) * 100,
+    y: ((meta.maxY - point[1]) / (meta.maxY - meta.minY)) * 100,
+  }
 }
 
 function useSimulationZones() {
@@ -667,6 +730,14 @@ export function CreateOrderPage() {
   const mapImageUrl = `${env.apiBaseUrl}${mapMeta?.image ?? '/simulation-viewer/simulation_map_top.png'}${
     mapMeta?.imageVersion ? `?v=${encodeURIComponent(mapMeta.imageVersion)}` : ''
   }`
+  const selectedSimPoint = useMemo<[number, number]>(
+    () => [toNumber(form.longitude, 0), toNumber(form.latitude, 0)],
+    [form.longitude, form.latitude],
+  )
+  const restrictedValidation = useMemo(
+    () => validateRestrictedZones(selectedSimPoint, form.radiusM, zones),
+    [selectedSimPoint, form.radiusM, zones],
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -847,6 +918,11 @@ export function CreateOrderPage() {
       if (!form.address.trim()) nextErrors.address = 'Nhập địa chỉ/khu vực cần giám sát.'
       if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = 'Latitude không hợp lệ.'
       if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = 'Longitude không hợp lệ.'
+      if (!restrictedValidation.valid) {
+        nextErrors.address = `Vùng giám sát chạm vùng cấm: ${restrictedValidation.blockedZones
+          .map((zone) => zone.name)
+          .join(', ')}. Vui lòng chọn điểm hoặc giảm bán kính.`
+      }
     }
     if (targetStep >= 2) {
       if (!form.serviceId) nextErrors.serviceId = 'Chọn dịch vụ giám sát.'
@@ -1075,7 +1151,10 @@ export function CreateOrderPage() {
         <StepLocation
           form={form}
           mapImageUrl={mapImageUrl}
+          mapMeta={mapMeta}
           mapPoint={mapPoint}
+          zones={zones}
+          restrictedValidation={restrictedValidation}
           errors={errors}
           onMapClick={handleMapClick}
           update={update}
@@ -1138,19 +1217,28 @@ export function CreateOrderPage() {
 function StepLocation({
   form,
   mapImageUrl,
+  mapMeta,
   mapPoint,
+  zones,
+  restrictedValidation,
   errors,
   onMapClick,
   update,
 }: {
   form: FormState
   mapImageUrl: string
+  mapMeta: SimulationMapMeta | null
   mapPoint: MapPoint
+  zones: SimulationZone[]
+  restrictedValidation: ReturnType<typeof validateRestrictedZones>
   errors: Partial<Record<keyof FormState, string>>
   onMapClick: (event: React.MouseEvent<HTMLDivElement>) => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
-  const radiusPx = clamp(form.radiusM / 6, 34, 145)
+  const radiusPx = clamp(form.radiusM / SIM_RADIUS_SCALE, 34, 145)
+  const restrictedZones = zones.filter((zone) => zone.restricted)
+  const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
+  const isBlocked = !restrictedValidation.valid
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
@@ -1163,8 +1251,11 @@ function StepLocation({
           minHeight: 620,
           overflow: 'hidden',
           cursor: 'crosshair',
-          background: '#cfd4d9',
+          background: 'transparent',
+          border: 0,
           borderRadius: 0,
+          boxShadow: 'none',
+          outline: 'none',
         }}
       >
         <img
@@ -1175,14 +1266,45 @@ function StepLocation({
             inset: 0,
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
+            objectFit: 'cover',
+            objectPosition: 'center bottom',
             opacity: 0.96,
             userSelect: 'none',
             pointerEvents: 'none',
+            border: 0,
+            outline: 'none',
+            transform: 'scale(1.28) translateY(-12%)',
+            transformOrigin: 'center center',
           }}
         />
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: '2px solid var(--blue-solid)', background: 'rgba(31,111,214,.16)' }} />
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: 'var(--blue-solid)', border: '2px solid #fff', boxShadow: '0 2px 10px rgba(31,111,214,.55)' }} />
+        {mapMeta && restrictedZones.map((zone) => {
+          const points = zone.coordinates
+            .map((point) => simPointToPercent(point, mapMeta))
+            .map((point) => `${point.x}% ${point.y}%`)
+            .join(', ')
+          const blocked = blockedZoneIds.has(zone.id)
+
+          return (
+            <div
+              key={zone.id}
+              title={zone.name}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                clipPath: `polygon(${points})`,
+                background: blocked ? 'rgba(220,38,38,.28)' : 'rgba(220,38,38,.14)',
+                border: 0,
+                pointerEvents: 'none',
+              }}
+            />
+          )
+        })}
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: isBlocked ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)' }} />
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: isBlocked ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)' }} />
+        <div style={{ position: 'absolute', left: 12, bottom: 12, display: 'flex', gap: 8, alignItems: 'center', background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
+          <span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(220,38,38,.22)', border: '1px solid var(--red-fg)' }} />
+          Vùng cấm bay
+        </div>
       </div>
 
       <div style={card}>
@@ -1202,9 +1324,25 @@ function StepLocation({
           <Field label={`Bán kính giám sát: ${form.radiusM} m`}>
             <input type="range" min={100} max={1500} step={50} value={form.radiusM} onChange={(event) => update('radiusM', Number(event.target.value))} style={{ width: '100%' }} />
           </Field>
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              border: `1px solid ${isBlocked ? 'var(--red-fg)' : 'var(--green-dot)'}`,
+              background: isBlocked ? 'var(--red-bg)' : 'var(--green-bg)',
+              color: isBlocked ? 'var(--red-fg)' : 'var(--green-fg)',
+              fontSize: 12,
+              lineHeight: 1.5,
+              fontWeight: 700,
+            }}
+          >
+            {isBlocked
+              ? `Không hợp lệ: vùng giám sát chạm vùng cấm ${restrictedValidation.blockedZones.map((zone) => zone.name).join(', ')}.`
+              : 'Hợp lệ: không chạm vùng cấm bay.'}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Metric label="Diện tích ước tính" value={`${calcArea(form.radiusM)} ha`} />
-            <Metric label="Coverage" value="GeoJSON Polygon" />
+            <Metric label="Vùng cấm" value={isBlocked ? 'Không hợp lệ' : 'Đã kiểm tra'} />
           </div>
         </div>
       </div>

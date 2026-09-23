@@ -1,28 +1,60 @@
 import type { IconName } from '../../../shared/components/Icon'
+import type { StatusTone } from '../../../shared/types/domain'
 
-export type Feature = {
-  title: string
-  description: string
-  icon: IconName
-  accent: 'blue' | 'mint' | 'amber'
-}
-
-export type TelemetryMetric = {
-  label: string
+export type HeroStat = {
   value: string
-  unit: string
-  trend?: string
+  label: string
 }
 
-export type RequestStep = {
-  label: string
+export type WorkflowStep = {
+  no: string
+  title: string
   detail: string
   icon: IconName
 }
 
-export type DashboardActivity = {
+export type FeasibilityCheck = {
   label: string
+  detail?: string
+  result: 'PASS' | 'WARNING' | 'BLOCKER'
+}
+
+export type FeatureHighlight = {
+  title: string
   detail: string
-  status: 'complete' | 'active' | 'pending'
   icon: IconName
+}
+
+export type ResultFile = {
+  name: string
+  status: 'PASS' | 'UPLOADING'
+}
+
+export type IndustryCard = {
+  title: string
+  detail: string
+  location: string
+  icon: IconName
+}
+
+export type FaqItem = {
+  question: string
+  /**
+   * The design (evd/design/Landing.dc.html) only rendered the answer body for
+   * the first FAQ question; the other four are shown collapsed with no answer
+   * markup at all. Per the "no invention" rule we do not write copy that is
+   * not in the design, so `answer` is left undefined for those and the
+   * accordion panel renders empty when expanded.
+   */
+  answer?: string
+}
+
+export type FooterLinkGroup = {
+  title: string
+  links: string[]
+}
+
+export type StatusTag = {
+  label: string
+  tone: StatusTone
 }

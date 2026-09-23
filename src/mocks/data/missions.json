@@ -1,0 +1,40 @@
+{
+  "_note": "Mock collection for missions. Started (P4) as the record POST /api/orders/{id}/approve [BE] creates; extended (P5) with the flight_plan/waypoint/media/assignment fields MNG-04/05 need [BRIEF §A6]. `msn-2609-0153-1` is the seeded demo mission for ORD-2609-0153 (Trần Thị Thu Hà · Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước), copied from evd/design/MNG-05.dc.html's default state: it already carries the schedule + flight plan a completed MNG-04 run would have attached, status CREATED (no drone/operator assigned yet) so MNG-05's default state renders directly against it. `waypoints` is left empty — the design never renders a waypoint table for this already-approved mission, so there is no source for real coordinates here (CreateMissionPage generates its own preview waypoints client-side for orders that don't have a plan yet). Reset by resetMockDb().",
+  "missions": [
+    {
+      "id": "msn-2609-0153-1",
+      "orderId": "ord-2609-0153",
+      "orderCode": "ORD-2609-0153",
+      "missionCode": "MSN-2609-0153-1",
+      "status": "CREATED",
+      "attemptNumber": 1,
+      "droneId": null,
+      "operatorId": null,
+      "droneAssignmentId": null,
+      "operatorAssignmentId": null,
+      "scheduledStartAt": "2026-09-24T08:00:00+07:00",
+      "scheduledEndAt": "2026-09-24T09:30:00+07:00",
+      "addressText": "KCN Hiệp Phước, Nhà Bè",
+      "centerLat": 10.6402,
+      "centerLon": 106.74,
+      "radiusM": 300,
+      "requiredSensor": "THERMAL",
+      "nearestBase": "Trạm Nhà Bè",
+      "mediaRequirements": [
+        { "mediaType": "VIDEO", "quantity": 1, "durationSec": 240 },
+        { "mediaType": "PHOTO", "quantity": 30, "width": 640, "height": 512 }
+      ],
+      "flightPlan": {
+        "planType": "ORBIT",
+        "centerLat": 10.6402,
+        "centerLon": 106.74,
+        "radiusM": 300,
+        "altitudeM": 60,
+        "speedMs": null,
+        "estimatedDurationSec": 1260,
+        "generatedBy": "SYSTEM"
+      },
+      "waypoints": []
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 export type UserRole =
-  'CUSTOMER' | 'STAFF' | 'DRONE_OPERATOR' | 'SYSTEM_OPERATOR' | 'ADMIN'
+  'CUSTOMER' | 'STAFF' | 'DRONE_OPERATOR' | 'SYSTEM_OPERATOR' | 'ADMIN' | 'AUDITOR'
 
 export type AuthProvider = 'LOCAL' | 'GOOGLE'
 export type SocialAuthIntent = 'LOGIN_ONLY' | 'LOGIN_OR_REGISTER'

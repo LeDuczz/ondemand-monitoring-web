@@ -80,6 +80,7 @@ const STEP_LABELS: Record<Step, string> = {
 const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
+const MAP_TOP_CROP_PERCENT = 22
 
 const card: React.CSSProperties = {
   background: 'var(--sf)',
@@ -910,8 +911,9 @@ export function CreateOrderPage() {
     setMapPoint({ x: mapX, y: mapY })
 
     if (mapMeta) {
+      const visibleMapY = MAP_TOP_CROP_PERCENT + mapY * ((100 - MAP_TOP_CROP_PERCENT) / 100)
       const simX = mapMeta.minX + (mapX / 100) * (mapMeta.maxX - mapMeta.minX)
-      const simY = mapMeta.maxY - (mapY / 100) * (mapMeta.maxY - mapMeta.minY)
+      const simY = mapMeta.maxY - (visibleMapY / 100) * (mapMeta.maxY - mapMeta.minY)
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
@@ -1252,12 +1254,15 @@ function StepLocation({
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
   const isBlocked = !restrictedValidation.valid
   const bounds = mapMeta ? getMapBounds(mapMeta) : null
-  const activeLeft = mapMeta && bounds ? ((mapMeta.minX - bounds.minX) / (bounds.maxX - bounds.minX)) * 100 : 0
-  const activeTop = mapMeta && bounds ? ((bounds.maxY - mapMeta.maxY) / (bounds.maxY - bounds.minY)) * 100 : 0
+  const rawActiveLeft = mapMeta && bounds ? ((mapMeta.minX - bounds.minX) / (bounds.maxX - bounds.minX)) * 100 : 0
+  const rawActiveTop = mapMeta && bounds ? ((bounds.maxY - mapMeta.maxY) / (bounds.maxY - bounds.minY)) * 100 : 0
   const activeWidth = mapMeta && bounds ? ((mapMeta.maxX - mapMeta.minX) / (bounds.maxX - bounds.minX)) * 100 : 100
-  const activeHeight = mapMeta && bounds ? ((mapMeta.maxY - mapMeta.minY) / (bounds.maxY - bounds.minY)) * 100 : 100
+  const rawActiveHeight = mapMeta && bounds ? ((mapMeta.maxY - mapMeta.minY) / (bounds.maxY - bounds.minY)) * 100 : 100
+  const activeLeft = rawActiveLeft
+  const activeTop = rawActiveTop + rawActiveHeight * (MAP_TOP_CROP_PERCENT / 100)
+  const activeHeight = rawActiveHeight * ((100 - MAP_TOP_CROP_PERCENT) / 100)
   const mapAspectRatio = mapMeta
-    ? `${mapMeta.maxX - mapMeta.minX} / ${mapMeta.maxY - mapMeta.minY}`
+    ? `${mapMeta.maxX - mapMeta.minX} / ${(mapMeta.maxY - mapMeta.minY) * ((100 - MAP_TOP_CROP_PERCENT) / 100)}`
     : '1 / 1'
   const layerStyle: React.CSSProperties = {
     position: 'absolute',

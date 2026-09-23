@@ -1,403 +1,1133 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { customerApi, type CreateOrderPayload } from '../api/customerApi'
+import { env } from '../../../config/env'
+import { ApiError } from '../../../shared/api/httpClient'
+import { authSession } from '../../auth/api/authApi'
+import {
+  customerApi,
+  type CreateOrderPayload,
+  type CustomerConsultation,
+  type ConsultationMessage,
+  type PreferredTimeOption,
+  type ServiceDeliverableOption,
+  type ServiceOption,
+} from '../api/customerApi'
 import { customerHref } from '../routes'
 
-// ── Constants ─────────────────────────────────────────────
-
 type Step = 1 | 2 | 3 | 4
+type MapPoint = { x: number; y: number }
+type AiScore = { score: number; level: 'good' | 'warn' | 'bad'; notes: string[] }
+
+type SimulationMapMeta = {
+  image?: string
+  imageVersion?: string
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+  width?: number
+  height?: number
+}
+
+type ZonePayload = {
+  id?: string
+  code?: string
+  name?: string
+  zoneType?: string
+  restricted?: boolean
+  coordinates?: number[][]
+}
+
+type SimulationZone = {
+  id: string
+  code: string
+  name: string
+  zoneType: string
+  restricted: boolean
+  coordinates: [number, number][]
+}
+
+type FormState = {
+  title: string
+  description: string
+  address: string
+  latitude: string
+  longitude: string
+  radiusM: number
+  serviceId: string
+  preferredDateFrom: string
+  preferredDateTo: string
+  preferredTimeId: string
+  deliverableTypeId: string
+  mediaType: 'IMAGE' | 'VIDEO'
+  quantity: number
+  resolution: string
+}
 
 const STEP_LABELS: Record<Step, string> = {
   1: 'Vị trí giám sát',
-  2: 'Dịch vụ và mục đích',
-  3: 'Thời gian và media',
-  4: 'Xem lại và phân tích',
+  2: 'AI tư vấn & mục tiêu',
+  3: 'Thời gian và kết quả',
+  4: 'Xác nhận & gửi yêu cầu',
 }
 
-type ServiceDef = {
-  id: string
-  label: string
-  description: string
-  sensors: string[]
-  durationMin: number
-  heightRange: string
-}
-
-const SERVICES: ServiceDef[] = [
-  {
-    id: 'svc-construction',
-    label: 'Giám sát tiến độ công trình',
-    description: 'Ghi hình định kỳ để đối chiếu tiến độ thi công theo từng mốc.',
-    sensors: ['RGB'],
-    durationMin: 40,
-    heightRange: '30–120 m',
-  },
-  {
-    id: 'svc-thermal',
-    label: 'Kiểm tra nhiệt mái và tấm pin',
-    description: 'Phát hiện điểm nóng bất thường trên mái nhà xưởng, tủ điện, tấm pin.',
-    sensors: ['THERMAL'],
-    durationMin: 35,
-    heightRange: '20–100 m',
-  },
-  {
-    id: 'svc-security',
-    label: 'Tuần tra an ninh khu vực',
-    description: 'Bay tuần tra theo vòng bán kính, ghi hình và phát trực tiếp.',
-    sensors: ['RGB', 'ZOOM (tuỳ chọn)'],
-    durationMin: 30,
-    heightRange: '40–120 m',
-  },
-  {
-    id: 'svc-ndvi',
-    label: 'Giám sát cây trồng (NDVI)',
-    description: 'Đánh giá sức khoẻ cây trồng bằng ảnh đa phổ.',
-    sensors: ['MULTISPECTRAL'],
-    durationMin: 45,
-    heightRange: '30–120 m',
-  },
-  {
-    id: 'svc-traffic',
-    label: 'Giám sát giao thông và sự kiện',
-    description: 'Quan sát lưu lượng phương tiện, mật độ đám đông theo thời gian thực.',
-    sensors: ['RGB', 'ZOOM'],
-    durationMin: 30,
-    heightRange: '60–120 m',
-  },
-  {
-    id: 'svc-mapping',
-    label: 'Bản đồ 2D/3D (orthomosaic)',
-    description: 'Bay lưới, xuất ảnh ghép và mô hình địa hình.',
-    sensors: ['RGB'],
-    durationMin: 50,
-    heightRange: '60–120 m',
-  },
-]
-
-const TIME_SLOTS = [
-  { id: 'MORNING', label: 'Buổi sáng', detail: '07:00–11:00' },
-  { id: 'AFTERNOON', label: 'Buổi chiều', detail: '13:00–17:00' },
-]
-
-const MONTH_NAMES = [
-  'Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
-  'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12',
-]
-const DAY_NAMES = ['T2','T3','T4','T5','T6','T7','CN']
-
-function buildCalendar(year: number, month: number) {
-  const firstDay = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const cells: (number | null)[] = []
-  const startOffset = (firstDay + 6) % 7
-  for (let i = 0; i < startOffset; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-  return cells
-}
-
-function calcArea(radiusM: number): string {
-  const ha = (Math.PI * radiusM * radiusM) / 10000
-  return ha < 1 ? `${(ha * 10000).toFixed(0)} m²` : `${ha.toFixed(1)} ha`
-}
-
-function fmtDateVi(iso: string): string {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
-}
-
-// ── Form state ────────────────────────────────────────────
-
-type FormState = {
-  addressText: string
-  centerLat: string
-  centerLon: string
-  radiusM: number
-  serviceIds: string[]
-  title: string
-  purpose: string
-  description: string
-  preferredDate: string
-  preferredTimeId: string
-}
-
-// ── Shared layout tokens ──────────────────────────────────
+const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
+const ORDER_TITLE_MAX_LENGTH = 255
 
 const card: React.CSSProperties = {
   background: 'var(--sf)',
   border: '1px solid var(--bd)',
-  borderRadius: 10,
+  borderRadius: 8,
 }
 
 const cardHead: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '10px 16px',
+  padding: '12px 16px',
   borderBottom: '1px solid var(--bd)',
   fontWeight: 700,
   fontSize: 13,
 }
 
-const cardBody: React.CSSProperties = {
-  padding: '16px',
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  height: 36,
+  border: '1px solid var(--bd2)',
+  borderRadius: 6,
+  padding: '0 10px',
+  background: 'var(--sf)',
+  color: 'var(--tx)',
 }
 
-// ── Component ─────────────────────────────────────────────
+function todayPlus(days: number) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function calcArea(radiusM: number) {
+  return ((Math.PI * radiusM * radiusM) / 10000).toFixed(1)
+}
+
+function toNumber(value: string, fallback: number) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+async function withConsultationTimeout<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+) {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => {
+    controller.abort()
+  }, CONSULTATION_REQUEST_TIMEOUT_MS)
+
+  try {
+    return await run(controller.signal)
+  } finally {
+    window.clearTimeout(timeoutId)
+  }
+}
+
+function buildCoverageArea(longitude: number, latitude: number, radiusM: number) {
+  const points = 24
+  const latDelta = radiusM / 111_320
+  const lonDelta = radiusM / (111_320 * Math.cos((latitude * Math.PI) / 180))
+  const ring: number[][] = []
+
+  for (let i = 0; i < points; i += 1) {
+    const angle = (Math.PI * 2 * i) / points
+    ring.push([
+      Number((longitude + Math.cos(angle) * lonDelta).toFixed(7)),
+      Number((latitude + Math.sin(angle) * latDelta).toFixed(7)),
+    ])
+  }
+  ring.push(ring[0])
+
+  return { type: 'Polygon' as const, coordinates: [ring] }
+}
+
+function formatTimeLabel(time: PreferredTimeOption) {
+  const range = [time.startTime, time.endTime].filter(Boolean).join(' - ')
+  return range ? `${time.name} (${range})` : time.name
+}
+
+function useSimulationMapMeta() {
+  const [meta, setMeta] = useState<SimulationMapMeta | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadMeta() {
+      try {
+        const response = await fetch(
+          `${env.apiBaseUrl}/simulation-viewer/simulation-map.json`,
+          { cache: 'no-store' },
+        )
+        const payload = (await response.json()) as SimulationMapMeta
+        if (alive) setMeta(payload)
+      } catch {
+        if (alive) setError('Không tải được map mô phỏng 3D.')
+      }
+    }
+
+    void loadMeta()
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  return { meta, error }
+}
+
+function normalizeRing(coordinates: number[][] | undefined): [number, number][] {
+  if (!coordinates) return []
+  const ring = coordinates
+    .map((point) => [Number(point[0]), Number(point[1])] as [number, number])
+    .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y))
+
+  if (ring.length < 3) return []
+  const first = ring[0]
+  const last = ring[ring.length - 1]
+  if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first)
+  return ring
+}
+
+function pointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const cross = (px - ax) * (by - ay) - (py - ay) * (bx - ax)
+  if (Math.abs(cross) > 1e-9) return false
+  return (px - ax) * (px - bx) + (py - ay) * (py - by) <= 1e-9
+}
+
+function polygonContainsPoint(ring: [number, number][], point: [number, number]) {
+  const [px, py] = point
+  let inside = false
+
+  for (let index = 0; index < ring.length - 1; index += 1) {
+    const [ax, ay] = ring[index]
+    const [bx, by] = ring[index + 1]
+    if (pointOnSegment(px, py, ax, ay, bx, by)) return true
+    if (ay > py !== by > py) {
+      const xAtY = ax + ((py - ay) * (bx - ax)) / (by - ay)
+      if (px < xAtY) inside = !inside
+    }
+  }
+
+  return inside
+}
+
+function findContainingZone(point: [number, number], zones: SimulationZone[]) {
+  return zones.find((zone) => polygonContainsPoint(zone.coordinates, point))
+}
+
+function useSimulationZones() {
+  const [zones, setZones] = useState<SimulationZone[]>([])
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadZones() {
+      try {
+        const response = await fetch(`${env.apiBaseUrl}/api/zones`, {
+          cache: 'no-store',
+        })
+        const payload = await response.json()
+        const items = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload)
+            ? payload
+            : []
+        const normalized = (items as ZonePayload[])
+          .map((zone) => ({
+            id: String(zone.id ?? zone.code ?? zone.name ?? 'zone'),
+            code: String(zone.code ?? ''),
+            name: String(zone.name ?? zone.code ?? 'Monitoring zone'),
+            zoneType: String(zone.zoneType ?? ''),
+            restricted: Boolean(zone.restricted),
+            coordinates: normalizeRing(zone.coordinates),
+          }))
+          .filter((zone) => zone.coordinates.length >= 4)
+        if (alive) setZones(normalized)
+      } catch {
+        if (alive) setZones([])
+      }
+    }
+
+    void loadZones()
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  return zones
+}
+
+function scoreRequest(form: FormState): AiScore {
+  const notes: string[] = []
+  let score = 92
+
+  if (!form.address.trim()) {
+    score -= 18
+    notes.push('Thiếu địa chỉ mô tả khu vực giám sát.')
+  }
+  if (!form.serviceId) {
+    score -= 20
+    notes.push('Chưa chọn dịch vụ giám sát.')
+  }
+  if (!form.deliverableTypeId) {
+    score -= 14
+    notes.push('Chưa chọn kết quả bàn giao.')
+  }
+  if (!form.preferredDateFrom || !form.preferredDateTo || !form.preferredTimeId) {
+    score -= 18
+    notes.push('Thiếu ngày hoặc khung giờ bay.')
+  }
+  if (form.radiusM > 900) {
+    score -= 12
+    notes.push('Bán kính lớn, nên chia khu vực thành nhiều lượt bay.')
+  }
+  if (notes.length === 0) notes.push('Thông tin đủ để gửi yêu cầu cho bộ phận vận hành kiểm tra.')
+
+  return {
+    score: clamp(score, 0, 100),
+    level: score >= 80 ? 'good' : score >= 55 ? 'warn' : 'bad',
+    notes,
+  }
+}
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+}
+
+function findRecommendedService(
+  consultation: CustomerConsultation | null,
+  services: ServiceOption[],
+) {
+  if (!consultation) return undefined
+
+  if (consultation.recommendedServiceId) {
+    const byId = services.find((service) => service.id === consultation.recommendedServiceId)
+    if (byId) return byId
+  }
+
+  if (consultation.recommendedServiceName) {
+    const recommendedName = normalizeText(consultation.recommendedServiceName)
+    return services.find((service) => {
+      const serviceName = normalizeText(service.name)
+      return serviceName === recommendedName || serviceName.includes(recommendedName) || recommendedName.includes(serviceName)
+    })
+  }
+
+  return undefined
+}
+
+function firstSentence(value: string) {
+  return value
+    .split(/[.!?\n]/)
+    .map((item) => item.trim())
+    .find(Boolean) ?? ''
+}
+
+function cleanRequirementText(value: string) {
+  return value
+    .replace(/^tôi muốn tạo yêu cầu giám sát:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function truncateText(value: string, maxLength: number) {
+  const trimmed = value.trim()
+  if (trimmed.length <= maxLength) return trimmed
+  return `${trimmed.slice(0, Math.max(0, maxLength - 3)).trim()}...`
+}
+
+function buildConsultationTitle(
+  sourceText: string,
+  service?: ServiceOption,
+) {
+  const normalized = normalizeText(sourceText)
+  const object =
+    normalized.includes('toa nha') || normalized.includes('cong trinh')
+      ? 'công trình'
+      : normalized.includes('kho bai') || normalized.includes('logistics') || normalized.includes('container')
+        ? 'kho bãi/logistics'
+        : normalized.includes('su kien') || normalized.includes('dong nguoi') || normalized.includes('dam dong')
+          ? 'sự kiện/khu đông người'
+          : normalized.includes('nha may') || normalized.includes('khu cong nghiep')
+            ? 'nhà máy/khu công nghiệp'
+      : normalized.includes('cay trong') || normalized.includes('nong nghiep') || normalized.includes('ca phe')
+        ? 'cây trồng'
+        : normalized.includes('moi truong') || normalized.includes('ngap') || normalized.includes('sat lo')
+          ? 'môi trường'
+          : normalized.includes('chay rung') || normalized.includes('diem nhiet')
+            ? 'cháy rừng/điểm nhiệt'
+            : normalized.includes('giao thong')
+              ? 'giao thông'
+                    : normalized.includes('duong ong') || normalized.includes('ro ri')
+                      ? 'đường ống/hành lang tuyến'
+                      : normalized.includes('cau') || normalized.includes('mat duong') || normalized.includes('sut lun')
+                        ? 'cầu/đường'
+                        : normalized.includes('tam pin') || normalized.includes('solar')
+                ? 'tấm pin năng lượng mặt trời'
+                : normalized.includes('duong day dien') || normalized.includes('tram bien ap')
+                  ? 'đường dây điện/trạm biến áp'
+                  : service?.name?.toLowerCase() || 'khu vực'
+
+  const goals: string[] = []
+  if (normalized.includes('nut vo') || normalized.includes('hu hong')) goals.push('nứt vỡ/hư hỏng')
+  if (normalized.includes('diem nong') || normalized.includes('nhiet')) goals.push('điểm nóng')
+  if (normalized.includes('an toan')) goals.push('an toàn')
+  if (normalized.includes('tien do')) goals.push('tiến độ')
+  if (normalized.includes('thieu nuoc')) goals.push('thiếu nước')
+  if (normalized.includes('sau benh')) goals.push('sâu bệnh')
+  if (normalized.includes('sinh truong')) goals.push('sinh trưởng bất thường')
+  if (normalized.includes('ngap')) goals.push('ngập')
+  if (normalized.includes('sat lo') || normalized.includes('xoi mon')) goals.push('sạt lở/xói mòn')
+  if (normalized.includes('kiem ke')) goals.push('kiểm kê')
+  if (normalized.includes('qua tai')) goals.push('quá tải')
+  if (normalized.includes('dong nguoi') || normalized.includes('dam dong')) goals.push('mật độ đám đông')
+  if (normalized.includes('ro ri')) goals.push('rò rỉ')
+  if (normalized.includes('sut lun')) goals.push('sụt lún')
+  if (normalized.includes('hanh lang an toan')) goals.push('hành lang an toàn')
+
+  const uniqueGoals = [...new Set(goals)].slice(0, 2)
+  const title = uniqueGoals.length
+    ? `Giám sát ${object} phát hiện ${uniqueGoals.join(' và ')}`
+    : `Giám sát ${object}`
+
+  return truncateText(title, 96)
+}
+
+function buildDraftFromConsultation(
+  consultation: CustomerConsultation,
+  messages: ConsultationMessage[],
+  service?: ServiceOption,
+) {
+  const customerMessages = messages
+    .filter((message) => message.senderType === 'CUSTOMER')
+    .map((message) => cleanRequirementText(message.message))
+    .filter(Boolean)
+
+  const assistantMessages = messages
+    .filter((message) => message.senderType === 'ASSISTANT')
+    .map((message) => message.message.trim())
+    .filter(Boolean)
+
+  const summarySource =
+    consultation.requirementSummary ||
+    firstSentence(assistantMessages.at(-1) ?? '') ||
+    customerMessages.at(-1) ||
+    ''
+
+  const title = buildConsultationTitle(
+    [
+      summarySource,
+      ...customerMessages,
+      ...assistantMessages,
+      service?.name ?? '',
+    ].join('\n'),
+    service,
+  )
+
+  const descriptionParts = [
+    summarySource,
+    service?.name ? `Dịch vụ AI đề xuất: ${service.name}.` : '',
+  ].filter(Boolean)
+
+  return {
+    title,
+    description: descriptionParts.join('\n\n'),
+  }
+}
+
+function isChatAnswerTitle(
+  title: string,
+  messages: ConsultationMessage[],
+) {
+  const normalizedTitle = normalizeText(title.trim())
+  if (!normalizedTitle) return true
+
+  return messages
+    .filter((message) => message.senderType === 'CUSTOMER')
+    .map((message) => normalizeText(cleanRequirementText(message.message)))
+    .some((message) => message === normalizedTitle)
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
+
+function buildQuickReplies(messages: ConsultationMessage[]) {
+  const lastAssistantMessage = [...messages]
+    .reverse()
+    .find((message) => message.senderType === 'ASSISTANT')
+  const lastCustomerMessage = [...messages]
+    .reverse()
+    .find((message) => message.senderType === 'CUSTOMER')
+  if (!lastAssistantMessage) {
+    return [
+      'Tôi muốn giám sát công trình.',
+      'Tôi muốn theo dõi cây trồng bất thường.',
+      'Tôi cần kiểm tra kho bãi/logistics.',
+      'Tôi muốn giám sát sự kiện đông người.',
+    ]
+  }
+
+  const text = normalizeText(lastAssistantMessage.message)
+  const latestUserText = normalizeText(lastCustomerMessage?.message ?? '')
+  if (latestUserText.includes('kho bai') || latestUserText.includes('logistics') || latestUserText.includes('container')) {
+    return [
+      'Tôi muốn kiểm kê container/xe/vật tư.',
+      'Tôi muốn phát hiện khu vực quá tải.',
+      'Tôi muốn theo dõi luồng ra vào.',
+      'Tôi cần ảnh tổng quan và báo cáo bất thường.',
+    ]
+  }
+  if (latestUserText.includes('nha may') || latestUserText.includes('khu cong nghiep')) {
+    return [
+      'Kiểm tra mái nhà và bồn chứa.',
+      'Kiểm tra hàng rào và lối ra vào.',
+      'Phát hiện điểm nóng/rò rỉ.',
+      'Kiểm kê tài sản ngoài trời.',
+    ]
+  }
+  if (latestUserText.includes('su kien') || latestUserText.includes('dong nguoi') || latestUserText.includes('dam dong')) {
+    return [
+      'Tôi muốn theo dõi mật độ đám đông.',
+      'Tôi muốn phát hiện điểm ùn ứ.',
+      'Tôi muốn giám sát bãi đỗ xe.',
+      'Tôi cần cảnh báo theo thời gian thực.',
+    ]
+  }
+  if (text.includes('nong nghiep') || text.includes('cay trong')) {
+    return [
+      'Tôi muốn phát hiện cây sinh trưởng kém.',
+      'Tôi muốn tìm vùng thiếu nước.',
+      'Tôi muốn phát hiện sâu bệnh.',
+      'Tôi muốn theo dõi định kỳ để so sánh thay đổi.',
+    ]
+  }
+  if (text.includes('moi truong') || text.includes('ngap') || text.includes('sat lo')) {
+    return [
+      'Tôi muốn theo dõi khu vực ngập.',
+      'Tôi muốn phát hiện sạt lở/xói mòn.',
+      'Tôi muốn kiểm tra ô nhiễm nguồn nước.',
+      'Tôi cần bản đồ vùng rủi ro kèm tọa độ.',
+    ]
+  }
+  if (text.includes('chay rung') || text.includes('diem nhiet')) {
+    return [
+      'Cảnh báo ngay khi phát hiện khói/điểm nhiệt.',
+      'Tôi cần bản đồ nguy cơ cháy.',
+      'Theo dõi định kỳ trong mùa khô.',
+      'Thông báo qua email và SMS.',
+    ]
+  }
+  if (text.includes('kho bai') || text.includes('logistics')) {
+    return [
+      'Tôi muốn kiểm kê container/xe/vật tư.',
+      'Tôi muốn phát hiện khu vực quá tải.',
+      'Tôi muốn theo dõi luồng ra vào.',
+      'Tôi cần ảnh tổng quan và báo cáo bất thường.',
+    ]
+  }
+  if (text.includes('su kien') || text.includes('dong nguoi') || text.includes('dam dong')) {
+    return [
+      'Tôi muốn theo dõi mật độ đám đông.',
+      'Tôi muốn phát hiện điểm ùn ứ.',
+      'Tôi muốn giám sát bãi đỗ xe.',
+      'Tôi cần cảnh báo theo thời gian thực.',
+    ]
+  }
+  if (text.includes('tam pin') || text.includes('nang luong mat troi')) {
+    return [
+      'Tôi muốn phát hiện điểm nóng.',
+      'Tôi muốn tìm tấm lỗi/bụi bẩn.',
+      'Tôi cần ảnh nhiệt theo từng dãy pin.',
+      'Tôi muốn báo cáo tổng hợp hiệu suất.',
+    ]
+  }
+  if (text.includes('duong day dien') || text.includes('tram bien ap')) {
+    return [
+      'Kiểm tra cột, sứ và dây dẫn.',
+      'Phát hiện điểm nhiệt thiết bị.',
+      'Kiểm tra hành lang an toàn.',
+      'Báo cáo theo từng vị trí/cột.',
+    ]
+  }
+  if (text.includes('ban do') || text.includes('2d') || text.includes('3d')) {
+    return [
+      'Tôi cần orthomosaic 2D.',
+      'Tôi cần mô hình 3D/point cloud.',
+      'Tôi muốn đo diện tích/thể tích.',
+      'Tôi cần bản đồ hiện trạng chi tiết.',
+    ]
+  }
+  if (text.includes('muc tieu') || text.includes('mục tiêu')) {
+    return [
+      'Kiểm tra nứt vỡ và hư hỏng.',
+      'Phát hiện điểm nóng bất thường.',
+      'Rà soát an toàn khu vực.',
+      'Theo dõi tiến độ định kỳ.',
+    ]
+  }
+  if (text.includes('khu vuc') || text.includes('ưu tiên') || text.includes('uu tien')) {
+    return [
+      'Ưu tiên mặt đứng và mặt tiền.',
+      'Ưu tiên mái và khu kỹ thuật.',
+      'Kiểm tra toàn bộ công trình.',
+      'Chỉ kiểm tra khu vực có dấu hiệu bất thường.',
+    ]
+  }
+  if (text.includes('ket qua') || text.includes('minh chung') || text.includes('bao cao')) {
+    return [
+      'Tôi muốn ảnh/video minh chứng.',
+      'Tôi muốn báo cáo đánh dấu vị trí bất thường.',
+      'Tôi muốn bản đồ khu vực có vấn đề.',
+      'Tôi muốn cả báo cáo và ảnh minh chứng.',
+    ]
+  }
+  if (text.includes('thong bao') || text.includes('email') || text.includes('sms')) {
+    return [
+      'Thông báo cho tôi qua email.',
+      'Thông báo qua SMS/tin nhắn.',
+      'Chỉ tổng hợp trong báo cáo sau chuyến bay.',
+      'Cảnh báo ngay nếu có bất thường nghiêm trọng.',
+    ]
+  }
+  if (text.includes('tan suat') || text.includes('định kỳ') || text.includes('dinh ky')) {
+    return [
+      'Tôi cần kiểm tra một lần.',
+      'Tôi cần theo dõi hàng tuần.',
+      'Tôi cần theo dõi hàng tháng.',
+      'Tôi muốn so sánh thay đổi theo thời gian.',
+    ]
+  }
+
+  return [
+    'Tôi chưa chắc nguyên nhân, AI hỏi tiếp giúp tôi.',
+    'Tôi muốn request đủ rõ để đội vận hành lập kế hoạch bay.',
+    'Tôi muốn ưu tiên khu vực có dấu hiệu bất thường.',
+    'Tôi muốn nhận báo cáo kèm ảnh minh chứng.',
+  ]
+}
 
 export function CreateOrderPage() {
-  const today = new Date()
+  const { meta: mapMeta, error: mapError } = useSimulationMapMeta()
+  const zones = useSimulationZones()
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<FormState>({
-    addressText: '',
-    centerLat: '',
-    centerLon: '',
-    radiusM: 300,
-    serviceIds: [],
     title: '',
-    purpose: '',
     description: '',
-    preferredDate: '',
-    preferredTimeId: 'MORNING',
+    address: '',
+    latitude: '10.6402',
+    longitude: '106.6912',
+    radiusM: 300,
+    serviceId: '',
+    preferredDateFrom: todayPlus(1),
+    preferredDateTo: todayPlus(1),
+    preferredTimeId: '',
+    deliverableTypeId: '',
+    mediaType: 'IMAGE',
+    quantity: 10,
+    resolution: '4K',
   })
-  const [calYear, setCalYear] = useState(today.getFullYear())
-  const [calMonth, setCalMonth] = useState(today.getMonth())
-  const [errors, setErrors] = useState<Partial<Record<string, string>>>({})
+  const [services, setServices] = useState<ServiceOption[]>([])
+  const [preferredTimes, setPreferredTimes] = useState<PreferredTimeOption[]>([])
+  const [deliverables, setDeliverables] = useState<ServiceDeliverableOption[]>([])
+  const [loadingMeta, setLoadingMeta] = useState(true)
+  const [metaError, setMetaError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [mapPoint, setMapPoint] = useState<MapPoint>({ x: 50, y: 50 })
+  const [consultation, setConsultation] = useState<CustomerConsultation | null>(null)
+  const [chatMessages, setChatMessages] = useState<ConsultationMessage[]>([])
+  const [chatText, setChatText] = useState('')
+  const [chatBusy, setChatBusy] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
+  const [autoDraft, setAutoDraft] = useState({ title: '', description: '' })
+
+  const selectedService = services.find((service) => service.id === form.serviceId)
+  const selectedTime = preferredTimes.find((time) => time.id === form.preferredTimeId)
+  const selectedDeliverable = deliverables.find((item) => item.deliverableTypeId === form.deliverableTypeId)
+  const score = useMemo(() => scoreRequest(form), [form])
+  const mapImageUrl = `${env.apiBaseUrl}${mapMeta?.image ?? '/simulation-viewer/simulation_map_top.png'}${
+    mapMeta?.imageVersion ? `?v=${encodeURIComponent(mapMeta.imageVersion)}` : ''
+  }`
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setLoadingMeta(true)
+    setMetaError(null)
+
+    Promise.all([
+      customerApi.listServices(controller.signal),
+      customerApi.listPreferredTimes(controller.signal),
+    ])
+      .then(([serviceItems, timeItems]) => {
+        setServices(serviceItems)
+        setPreferredTimes(timeItems)
+        setForm((current) => ({
+          ...current,
+          preferredTimeId: current.preferredTimeId || timeItems[0]?.id || '',
+        }))
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setMetaError(error instanceof Error ? error.message : 'Không tải được dữ liệu tạo yêu cầu.')
+      })
+      .finally(() => setLoadingMeta(false))
+
+    return () => controller.abort()
+  }, [])
+
+  useEffect(() => {
+    if (!form.serviceId) {
+      setDeliverables([])
+      return
+    }
+
+    const controller = new AbortController()
+    customerApi
+      .listServiceDeliverables(form.serviceId, controller.signal)
+      .then((items) => {
+        setDeliverables(items)
+        setForm((current) => {
+          const valid = items.some((item) => item.deliverableTypeId === current.deliverableTypeId)
+          return {
+            ...current,
+            deliverableTypeId: valid ? current.deliverableTypeId : items[0]?.deliverableTypeId || '',
+          }
+        })
+      })
+      .catch(() => setDeliverables([]))
+
+    return () => controller.abort()
+  }, [form.serviceId])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [key]: value }))
-    setErrors((e) => ({ ...e, [key]: undefined }))
+    setForm((current) => ({ ...current, [key]: value }))
+    setErrors((current) => ({ ...current, [key]: undefined }))
+    setSubmitError(null)
   }
 
-  function toggleService(id: string) {
-    setForm((f) => {
-      const next = f.serviceIds.includes(id)
-        ? f.serviceIds.filter((s) => s !== id)
-        : [...f.serviceIds, id]
-      return { ...f, serviceIds: next }
-    })
-    setErrors((e) => ({ ...e, serviceIds: undefined }))
+  function applyConsultationToRequest(nextConsultation: CustomerConsultation) {
+    const nextService = findRecommendedService(nextConsultation, services)
+    const nextMessages = nextConsultation.messages?.length ? nextConsultation.messages : chatMessages
+    const draft = buildDraftFromConsultation(nextConsultation, nextMessages, nextService)
+
+    setForm((current) => ({
+      ...current,
+      serviceId: nextService?.id ?? current.serviceId,
+      title:
+        !current.title.trim()
+        || current.title === autoDraft.title
+        || isChatAnswerTitle(current.title, nextMessages)
+          ? draft.title || current.title
+          : current.title,
+      description:
+        !current.description.trim() || current.description === autoDraft.description
+          ? draft.description || current.description
+          : current.description,
+    }))
+    setAutoDraft(draft)
+    setErrors((current) => ({
+      ...current,
+      serviceId: nextService ? undefined : current.serviceId,
+      title: draft.title ? undefined : current.title,
+    }))
   }
 
-  function validateStep1(): boolean {
-    const errs: typeof errors = {}
-    if (!form.addressText.trim()) errs.addressText = 'Vui lòng nhập địa chỉ khu vực giám sát'
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+  function receiveConsultation(nextConsultation: CustomerConsultation) {
+    setConsultation(nextConsultation)
+    if (nextConsultation.messages?.length) {
+      setChatMessages(nextConsultation.messages)
+    }
+    applyConsultationToRequest(nextConsultation)
+    setSubmitError(null)
   }
 
-  function validateStep2(): boolean {
-    const errs: typeof errors = {}
-    if (form.serviceIds.length === 0) errs.serviceIds = 'Vui lòng chọn ít nhất một dịch vụ'
-    if (!form.title.trim()) errs.title = 'Tiêu đề là bắt buộc'
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+  function appendChatNotice(message: string) {
+    setChatMessages((current) => [
+      ...current,
+      {
+        id: `local-error-${Date.now()}`,
+        senderType: 'ASSISTANT',
+        message,
+      },
+    ])
   }
 
-  function validateStep3(): boolean {
-    const errs: typeof errors = {}
-    if (!form.preferredDate) errs.preferredDate = 'Vui lòng chọn ngày bay'
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+  function describeChatError(error: unknown) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return 'AI phản hồi quá lâu. Hệ thống đã dừng chờ để tránh treo màn hình, vui lòng gửi lại hoặc thử câu ngắn hơn.'
+    }
+    if (error instanceof ApiError) {
+      const status = error.status ? ` · ${error.status}` : ''
+      return `${error.message} (${error.method} ${error.path}${status})`
+    }
+    if (error instanceof Error && error.message) return error.message
+    return 'Không nhận được phản hồi từ backend.'
+  }
+
+  async function recoverConsultationAfterSendFailure(consultationId: string) {
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      if (attempt > 0) await wait(1200)
+      const latest = await customerApi.getConsultation(consultationId)
+      const hasAssistantReply = latest.messages?.some(
+        (message) => message.senderType === 'ASSISTANT',
+      )
+      if (hasAssistantReply) {
+        receiveConsultation(latest)
+        return true
+      }
+    }
+    return false
+  }
+
+  function buildConsultationRequestContext() {
+    return [
+      'Thông tin vị trí/phạm vi từ Step 1:',
+      `- Địa chỉ/khu vực: ${form.address || 'chưa nhập'}.`,
+      `- Latitude: ${form.latitude || 'chưa nhập'}.`,
+      `- Longitude: ${form.longitude || 'chưa nhập'}.`,
+      `- Bán kính giám sát: ${form.radiusM}m.`,
+      `- Diện tích ước tính: ${calcArea(form.radiusM)} ha.`,
+      `- Điểm chọn trên bản đồ mô phỏng: x=${mapPoint.x.toFixed(1)}%, y=${mapPoint.y.toFixed(1)}%.`,
+      `- Vùng map nhận diện: ${form.address || 'chưa xác định zone'}.`,
+      '',
+      'Thông tin request hiện tại:',
+      `- Tiêu đề: ${form.title || 'chưa nhập'}.`,
+      `- Mô tả đang có: ${form.description || 'chưa nhập'}.`,
+      `- Service đang chọn: ${selectedService?.name || 'chưa chọn'}.`,
+      `- Deliverable đang chọn: ${selectedDeliverable?.deliverableTypeName || 'chưa chọn'}.`,
+      `- Thời gian dự kiến: ${form.preferredDateFrom || 'chưa chọn'} đến ${form.preferredDateTo || 'chưa chọn'}.`,
+      `- Khung giờ: ${selectedTime ? formatTimeLabel(selectedTime) : 'chưa chọn'}.`,
+      `- Media: ${form.mediaType}, số lượng ${form.quantity}, độ phân giải ${form.resolution}.`,
+    ].join('\n')
+  }
+
+  function handleMapClick(event: React.MouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const rawX = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100)
+    const rawY = clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)
+    setMapPoint({ x: rawX, y: rawY })
+
+    if (mapMeta) {
+      const simX = mapMeta.minX + (rawX / 100) * (mapMeta.maxX - mapMeta.minX)
+      const simY = mapMeta.maxY - (rawY / 100) * (mapMeta.maxY - mapMeta.minY)
+      update('latitude', simY.toFixed(3))
+      update('longitude', simX.toFixed(3))
+      const zone = findContainingZone([simX, simY], zones)
+      update('address', zone?.name ?? 'Outside configured monitoring zones')
+      return
+    }
+
+    update('latitude', (10.6402 + (50 - rawY) * 0.00035).toFixed(6))
+    update('longitude', (106.6912 + (rawX - 50) * 0.00042).toFixed(6))
+  }
+
+  function validateStep(targetStep: Step) {
+    const nextErrors: Partial<Record<keyof FormState, string>> = {}
+
+    if (targetStep >= 1) {
+      if (!form.address.trim()) nextErrors.address = 'Nhập địa chỉ/khu vực cần giám sát.'
+      if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = 'Latitude không hợp lệ.'
+      if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = 'Longitude không hợp lệ.'
+    }
+    if (targetStep >= 2) {
+      if (!form.serviceId) nextErrors.serviceId = 'Chọn dịch vụ giám sát.'
+      if (!form.title.trim()) nextErrors.title = 'Nhập tiêu đề yêu cầu.'
+    }
+    if (targetStep >= 3) {
+      if (!form.preferredDateFrom) nextErrors.preferredDateFrom = 'Chọn ngày bắt đầu.'
+      if (!form.preferredDateTo) nextErrors.preferredDateTo = 'Chọn ngày kết thúc.'
+      if (form.preferredDateFrom && form.preferredDateTo && form.preferredDateFrom > form.preferredDateTo) {
+        nextErrors.preferredDateTo = 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.'
+      }
+      if (!form.preferredTimeId) nextErrors.preferredTimeId = 'Chọn khung giờ.'
+      if (!form.deliverableTypeId) nextErrors.deliverableTypeId = 'Chọn kết quả bàn giao.'
+    }
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
   }
 
   function handleNext() {
-    if (step === 1 && !validateStep1()) return
-    if (step === 2 && !validateStep2()) return
-    if (step === 3 && !validateStep3()) return
-    if (step < 4) setStep((s) => (s + 1) as Step)
+    if (!validateStep(step)) return
+    setStep((current) => Math.min(4, current + 1) as Step)
   }
 
-  function handleBack() {
-    if (step > 1) setStep((s) => (s - 1) as Step)
+  async function startConsultation() {
+    if (!authSession.getAccessToken()) {
+      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      return
+    }
+    setChatBusy(true)
+    let startedConsultationId = ''
+    const localMessage: ConsultationMessage = {
+      id: `local-${Date.now()}`,
+      senderType: 'CUSTOMER',
+      message: '',
+    }
+    const seedMessage = [
+      `Tôi muốn tạo yêu cầu giám sát: ${form.title || selectedService?.name || 'chưa đặt tiêu đề'}.`,
+      `Địa điểm: ${form.address || 'chưa nhập'}.`,
+      `Bán kính: ${form.radiusM}m.`,
+      `Dịch vụ: ${selectedService?.name || 'chưa chọn'}.`,
+      `Kết quả mong muốn: ${selectedDeliverable?.deliverableTypeName || form.mediaType}.`,
+      'Bạn tư vấn giúp tôi cần bổ sung gì trước khi gửi request.',
+    ].join(' ')
+    localMessage.message = seedMessage
+    const requestContext = buildConsultationRequestContext()
+    setChatMessages([localMessage])
+    try {
+      const session = await withConsultationTimeout((signal) =>
+        customerApi.startConsultation(signal),
+      )
+      startedConsultationId = session.id
+      const nextConsultation = await withConsultationTimeout((signal) =>
+        customerApi.sendConsultationMessage(session.id, seedMessage, {
+          signal,
+          requestContext,
+        }),
+      )
+      receiveConsultation(nextConsultation)
+    } catch (error) {
+      console.error('Start AI consultation failed', error)
+      const recovered = startedConsultationId
+        ? await recoverConsultationAfterSendFailure(startedConsultationId).catch(() => false)
+        : false
+      if (!recovered) {
+        const message = `Không lấy được phản hồi AI. ${describeChatError(error)}`
+        appendChatNotice(message)
+        setSubmitError(message)
+      }
+    } finally {
+      setChatBusy(false)
+    }
+  }
+
+  async function sendChatMessage() {
+    const text = chatText.trim()
+    if (!text) return
+    if (!authSession.getAccessToken()) {
+      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      return
+    }
+    let activeConsultationId = consultation?.id
+    const localMessage: ConsultationMessage = {
+      id: `local-${Date.now()}`,
+      senderType: 'CUSTOMER',
+      message: text,
+    }
+    setChatBusy(true)
+    setChatText('')
+    setChatMessages((current) => [
+      ...current,
+      localMessage,
+    ])
+    const requestContext = buildConsultationRequestContext()
+    try {
+      const session = consultation ?? (await withConsultationTimeout((signal) =>
+        customerApi.startConsultation(signal),
+      ))
+      if (!consultation) setConsultation(session)
+      activeConsultationId = session.id
+      const nextConsultation = await withConsultationTimeout((signal) =>
+        customerApi.sendConsultationMessage(session.id, text, {
+          signal,
+          requestContext,
+        }),
+      )
+      receiveConsultation(nextConsultation)
+    } catch (error) {
+      console.error('Send AI consultation message failed', error)
+      const recovered = activeConsultationId
+        ? await recoverConsultationAfterSendFailure(activeConsultationId).catch(() => false)
+        : false
+      if (!recovered) {
+        const message = `Không lấy được phản hồi AI. ${describeChatError(error)}`
+        appendChatNotice(message)
+        setSubmitError(message)
+      }
+    } finally {
+      setChatBusy(false)
+    }
+  }
+
+  function buildPayload(): CreateOrderPayload {
+    const latitude = toNumber(form.latitude, 10.6402)
+    const longitude = toNumber(form.longitude, 106.6912)
+    return {
+      title: truncateText(form.title, ORDER_TITLE_MAX_LENGTH),
+      description: form.description.trim() || undefined,
+      serviceId: form.serviceId,
+      address: form.address.trim(),
+      longitude,
+      latitude,
+      coverageArea: buildCoverageArea(longitude, latitude, form.radiusM),
+      preferredDateFrom: form.preferredDateFrom,
+      preferredDateTo: form.preferredDateTo,
+      preferredTimeId: form.preferredTimeId,
+      deliverables: [
+        {
+          deliverableTypeId: form.deliverableTypeId,
+          requirement: {
+            mediaType: form.mediaType,
+            quantity: form.quantity,
+            resolution: form.resolution,
+            radiusM: form.radiusM,
+            estimatedAreaHa: Number(calcArea(form.radiusM)),
+            consultationId: consultation?.id,
+            readinessScore: score.score,
+          },
+        },
+      ],
+    }
   }
 
   async function handleSubmit() {
+    if (!validateStep(4)) return
     setSubmitting(true)
     setSubmitError(null)
-    const slotDef = TIME_SLOTS.find((t) => t.id === form.preferredTimeId)
     try {
-      const payload: CreateOrderPayload = {
-        title: form.title.trim(),
-        purpose: form.purpose.trim() || undefined,
-        description: form.description.trim() || undefined,
-        serviceIds: form.serviceIds,
-        addressText: form.addressText.trim(),
-        centerLat: form.centerLat ? parseFloat(form.centerLat) : 0,
-        centerLon: form.centerLon ? parseFloat(form.centerLon) : 0,
-        radiusM: form.radiusM,
-        preferredDate: form.preferredDate,
-        preferredTimeName: slotDef ? `${slotDef.label} ${slotDef.detail}` : '',
-      }
-      const result = await customerApi.createOrder(payload)
+      const result = await customerApi.createOrder(buildPayload())
       setCreatedId(result.id)
-    } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : 'Có lỗi xảy ra. Vui lòng thử lại.')
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : 'Không tạo được request.')
+    } finally {
       setSubmitting(false)
     }
   }
 
-  // ── Success redirect ─────────────────────────────────────
-
   if (createdId) {
     return (
-      <div style={{ maxWidth: 480, margin: '60px auto', textAlign: 'center' }}>
-        <div
-          style={{
-            width: 56, height: 56, borderRadius: '50%',
-            background: 'var(--green-bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, margin: '0 auto 20px',
-          }}
-        >
+      <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
+        <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--green-bg)', color: 'var(--green-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 18px' }}>
           ✓
         </div>
-        <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700 }}>Đơn đã được lưu!</h2>
-        <p style={{ color: 'var(--tx3)', fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
-          Tiếp theo hệ thống sẽ phân tích tính khả thi. Bạn cần xem kết quả và gửi duyệt để hoàn tất.
+        <h2 style={{ margin: 0, fontSize: 22 }}>Đã tạo request</h2>
+        <p style={{ color: 'var(--tx3)', lineHeight: 1.6 }}>
+          Yêu cầu đã được gửi qua API thật. Bộ phận vận hành có thể thấy trong hàng chờ để review và approve.
         </p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href={customerHref({ screen: 'analysis', orderId: createdId })} className="odm-btn odm-btn-p">
-            Xem phân tích AI →
-          </a>
-          <a href={customerHref({ screen: 'orderDetail', orderId: createdId })} className="odm-btn odm-btn-gh">
-            Xem đơn hàng
-          </a>
-        </div>
+        <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-p">
+          Xem đơn của tôi
+        </a>
       </div>
     )
   }
 
-  // ── Wizard shell ─────────────────────────────────────────
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}>
-      {/* ── Top header bar ── */}
-      <div
-        style={{
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-          gap: 16, marginBottom: 14,
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-.01em', lineHeight: 1.25 }}>
-            Tạo yêu cầu giám sát
-          </h1>
+          <h1 style={{ margin: 0, fontSize: 22 }}>Tạo yêu cầu giám sát</h1>
+          <div style={{ marginTop: 4, color: 'var(--tx3)', fontSize: 13 }}>
+            Chọn vị trí trên bản đồ mô phỏng, nhập thông tin cần thiết, dùng AI tư vấn rồi gửi request.
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-          <a
-            href={customerHref({ screen: 'orders' })}
-            className="odm-btn odm-btn-gh"
-            style={{ fontSize: 13, height: 32 }}
+        <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-gh">
+          Huỷ
+        </a>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', border: '1px solid var(--bd)', borderRadius: 8, overflow: 'hidden' }}>
+        {([1, 2, 3, 4] as Step[]).map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => item < step && setStep(item)}
+            style={{
+              minHeight: 48,
+              border: 0,
+              borderRight: item === 4 ? 0 : '1px solid var(--bd)',
+              background: step === item ? 'var(--ink)' : item < step ? 'var(--sf2)' : 'var(--sf)',
+              color: step === item ? 'var(--inkfg)' : 'var(--tx)',
+              fontWeight: 700,
+              textAlign: 'left',
+              padding: '0 16px',
+              cursor: item < step ? 'pointer' : 'default',
+            }}
           >
-            Huỷ
-          </a>
-        </div>
+            <span style={{ marginRight: 10, color: step === item ? 'inherit' : 'var(--tx3)' }}>{item}</span>
+            {STEP_LABELS[item]}
+          </button>
+        ))}
       </div>
 
-      {/* ── Step tabs ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 16 }}>
-        {([1, 2, 3, 4] as Step[]).map((s) => {
-          const done = step > s
-          const active = step === s
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => {
-                if (done) setStep(s)
-              }}
-              style={{
-                flex: 1,
-                display: 'flex', alignItems: 'center', gap: 10,
-                height: 44, padding: '0 14px',
-                border: '1px solid var(--bd)',
-                background: active ? 'var(--ink)' : done ? 'var(--sf2)' : 'var(--sf)',
-                cursor: done ? 'pointer' : 'default',
-                font: `600 13px 'IBM Plex Sans',system-ui,sans-serif`,
-                color: active ? 'var(--inkfg)' : done ? 'var(--tx2)' : 'var(--tx3)',
-                textAlign: 'left',
-                borderRadius:
-                  s === 1 ? '8px 0 0 8px' : s === 4 ? '0 8px 8px 0' : '0',
-                marginLeft: s > 1 ? -1 : 0,
-                transition: 'background .15s',
-              }}
-            >
-              <span
-                style={{
-                  width: 22, height: 22, borderRadius: '50%',
-                  background: active ? 'rgba(255,255,255,.2)' : done ? 'var(--green-bg)' : 'var(--sf3)',
-                  color: active ? 'var(--inkfg)' : done ? 'var(--green-fg)' : 'var(--tx2)',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, flexShrink: 0,
-                }}
-              >
-                {done ? '✓' : s}
-              </span>
-              {STEP_LABELS[s]}
-            </button>
-          )
-        })}
-      </div>
+      {(metaError || mapError) && <Notice tone="error">{metaError || mapError}</Notice>}
 
-      {/* ── Step content ── */}
       {step === 1 && (
-        <Step1Location form={form} update={update} errors={errors} />
-      )}
-      {step === 2 && (
-        <Step2Services form={form} update={update} toggleService={toggleService} errors={errors} />
-      )}
-      {step === 3 && (
-        <Step3Time
-          form={form} update={update} errors={errors}
-          calYear={calYear} calMonth={calMonth}
-          setCalYear={setCalYear} setCalMonth={setCalMonth}
-          today={today}
+        <StepLocation
+          form={form}
+          mapImageUrl={mapImageUrl}
+          mapPoint={mapPoint}
+          errors={errors}
+          onMapClick={handleMapClick}
+          update={update}
         />
       )}
-      {step === 4 && <Step4Review form={form} />}
-
-      {/* ── Footer nav ── */}
-      {submitError && (
-        <div
-          role="alert"
-          style={{
-            marginTop: 12,
-            background: 'var(--red-bg)', border: '1px solid var(--red-dot)',
-            borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red-fg)',
-          }}
-        >
-          {submitError}
-        </div>
+      {step === 2 && (
+        <StepService
+          form={form}
+          services={services}
+          loadingMeta={loadingMeta}
+          errors={errors}
+          consultation={consultation}
+          chatMessages={chatMessages}
+          chatText={chatText}
+          chatBusy={chatBusy}
+          selectedService={selectedService}
+          setChatText={setChatText}
+          startConsultation={startConsultation}
+          sendChatMessage={sendChatMessage}
+          update={update}
+        />
       )}
-      <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center' }}>
+      {step === 3 && (
+        <StepSchedule form={form} preferredTimes={preferredTimes} deliverables={deliverables} errors={errors} update={update} />
+      )}
+      {step === 4 && (
+        <StepReview
+          form={form}
+          score={score}
+          selectedService={selectedService}
+          selectedTime={selectedTime}
+          selectedDeliverable={selectedDeliverable}
+          consultation={consultation}
+        />
+      )}
+
+      {submitError && <Notice tone="error">{submitError}</Notice>}
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         {step > 1 && (
-          <button type="button" className="odm-btn odm-btn-gh" onClick={handleBack}>
-            ← Quay lại
+          <button type="button" className="odm-btn odm-btn-gh" onClick={() => setStep((current) => (current - 1) as Step)}>
+            Quay lại
           </button>
         )}
         <div style={{ flex: 1 }} />
         {step < 4 ? (
-          <button
-            type="button"
-            className="odm-btn odm-btn-p"
-            style={{ height: 38, padding: '0 20px' }}
-            onClick={handleNext}
-          >
-            Tiếp tục: {STEP_LABELS[(step + 1) as Step]} →
+          <button type="button" className="odm-btn odm-btn-p" onClick={handleNext}>
+            Tiếp tục: {STEP_LABELS[(step + 1) as Step]}
           </button>
         ) : (
-          <button
-            type="button"
-            className="odm-btn odm-btn-p"
-            style={{ height: 40, padding: '0 24px', fontSize: 14 }}
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? 'Đang phân tích...' : '🔍 Phân tích tính khả thi'}
+          <button type="button" className="odm-btn odm-btn-p" onClick={handleSubmit} disabled={submitting || loadingMeta}>
+            {submitting ? 'Đang gửi request...' : 'Gửi request'}
           </button>
         )}
       </div>
@@ -405,184 +1135,76 @@ export function CreateOrderPage() {
   )
 }
 
-// ── Step 1: Vị trí giám sát ───────────────────────────────
-// Layout: Left = Map | Right = form card 330px
-
-function Step1Location({
-  form, update, errors,
+function StepLocation({
+  form,
+  mapImageUrl,
+  mapPoint,
+  errors,
+  onMapClick,
+  update,
 }: {
   form: FormState
-  update: <K extends keyof FormState>(k: K, v: FormState[K]) => void
-  errors: Partial<Record<string, string>>
+  mapImageUrl: string
+  mapPoint: MapPoint
+  errors: Partial<Record<keyof FormState, string>>
+  onMapClick: (event: React.MouseEvent<HTMLDivElement>) => void
+  update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
-  const area = calcArea(form.radiusM)
-  const circleR = Math.max(20, Math.min(160, form.radiusM / 5))
+  const radiusPx = clamp(form.radiusM / 6, 34, 145)
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 330px', gap: 14 }}>
-      {/* ── Left: Map ── */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
       <div
+        role="button"
+        tabIndex={0}
+        onClick={onMapClick}
         style={{
-          ...card,
-          position: 'relative', height: 560, overflow: 'hidden',
+          position: 'relative',
+          minHeight: 620,
+          overflow: 'hidden',
+          cursor: 'crosshair',
+          background: '#cfd4d9',
+          borderRadius: 0,
         }}
       >
-        {/* Map grid background */}
-        <div
-          style={{
-            position: 'absolute', inset: 0,
-            background: 'var(--map-bg)',
-          }}
-        />
-        {/* Roads H */}
-        {[168, 347].map((y) => (
-          <div key={y} style={{ position: 'absolute', left: 0, right: 0, top: y, height: 12, background: 'var(--map-road2)' }} />
-        ))}
-        {/* Roads V */}
-        {[224, 528].map((x) => (
-          <div key={x} style={{ position: 'absolute', top: 0, bottom: 0, left: x, width: 12, background: 'var(--map-road2)' }} />
-        ))}
-        {/* Park blocks */}
-        {[{ x: 48, y: 56, w: 96, h: 90 }, { x: 592, y: 44, w: 112, h: 101 }].map((r, i) => (
-          <div key={i} style={{ position: 'absolute', left: r.x, top: r.y, width: r.w, height: r.h, background: 'var(--map-park)', borderRadius: 10 }} />
-        ))}
-        {/* Building blocks */}
-        {[
-          { x: 280, y: 200, w: 80, h: 60 }, { x: 400, y: 180, w: 100, h: 80 },
-          { x: 120, y: 300, w: 70, h: 50 }, { x: 500, y: 310, w: 90, h: 65 },
-        ].map((r, i) => (
-          <div key={i} style={{ position: 'absolute', left: r.x, top: r.y, width: r.w, height: r.h, background: 'var(--map-block)', borderRadius: 4 }} />
-        ))}
-        {/* Radius circle + center pin */}
-        <div
+        <img
+          alt="3D simulation map"
+          src={mapImageUrl}
           style={{
             position: 'absolute',
-            left: '50%', top: '50%',
-            width: circleR * 2, height: circleR * 2,
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            border: '2px solid var(--blue-solid)',
-            background: 'rgba(31,111,214,.12)',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            opacity: 0.96,
+            userSelect: 'none',
+            pointerEvents: 'none',
           }}
         />
-        <div
-          style={{
-            position: 'absolute', left: '50%', top: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 12, height: 12, borderRadius: '50%',
-            background: 'var(--blue-solid)', border: '2px solid #fff',
-            boxShadow: '0 2px 6px rgba(31,111,214,.5)',
-          }}
-        />
-        {/* Legend */}
-        <div
-          style={{
-            position: 'absolute', right: 12, bottom: 12,
-            padding: '8px 10px', borderRadius: 8,
-            background: 'var(--sf)', border: '1px solid var(--bd)',
-            fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 5,
-            boxShadow: 'var(--shadow)',
-          }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--red-bg)', border: '1.5px solid var(--red-dot)', display: 'inline-block' }} />
-            Vùng cấm bay
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--green-bg)', border: '1.5px dashed var(--green-dot)', display: 'inline-block' }} />
-            Vùng phủ trạm
-          </span>
-        </div>
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: '2px solid var(--blue-solid)', background: 'rgba(31,111,214,.16)' }} />
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: 'var(--blue-solid)', border: '2px solid #fff', boxShadow: '0 2px 10px rgba(31,111,214,.55)' }} />
       </div>
 
-      {/* ── Right: Form card ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-        <div style={card}>
-          <div style={cardHead}>Vị trí và bán kính</div>
-          <div style={{ ...cardBody, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Address */}
-            <div>
-              <label htmlFor="cus-addr" className="odm-cus-detail-label" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
-                Địa chỉ (address_text)
-              </label>
-              <textarea
-                id="cus-addr"
-                className="odm-input"
-                rows={3}
-                placeholder="VD: KCN Long Hậu, xã Long Hậu, huyện Cần Giuộc, tỉnh Long An"
-                value={form.addressText}
-                onChange={(e) => update('addressText', e.target.value)}
-                style={{ resize: 'none', paddingTop: 8, lineHeight: 1.5, fontSize: 13 }}
-              />
-              {form.addressText && (
-                <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-                  Tự điền từ ghim, có thể chỉnh sửa
-                </div>
-              )}
-              {errors.addressText && (
-                <div style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 4 }}>{errors.addressText}</div>
-              )}
-            </div>
-
-            {/* Lat / Lon */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>center_lat</label>
-                <input
-                  className="odm-input"
-                  type="text"
-                  placeholder="10.6402"
-                  value={form.centerLat}
-                  onChange={(e) => update('centerLat', e.target.value)}
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: 12, height: 34 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>center_lon</label>
-                <input
-                  className="odm-input"
-                  type="text"
-                  placeholder="106.6912"
-                  value={form.centerLon}
-                  onChange={(e) => update('centerLon', e.target.value)}
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: 12, height: 34 }}
-                />
-              </div>
-            </div>
-
-            {/* Radius slider */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx2)' }}>
-                  Bán kính giám sát (radius_m)
-                </label>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--blue-solid)' }}>
-                  {form.radiusM} m
-                </span>
-              </div>
-              <input
-                type="range"
-                min={100} max={1500} step={50}
-                value={form.radiusM}
-                onChange={(e) => update('radiusM', parseInt(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--blue-solid)' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--tx3)', marginTop: 3 }}>
-                <span>100 m</span>
-                <span>1.500 m</span>
-              </div>
-              {/* Area estimate */}
-              <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div style={{ background: 'var(--sf2)', borderRadius: 6, padding: '8px 10px', fontSize: 12 }}>
-                  <div style={{ color: 'var(--tx3)', marginBottom: 2 }}>Diện tích ước tính</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: 'var(--tx)' }}>{area}</div>
-                </div>
-                <div style={{ background: 'var(--sf2)', borderRadius: 6, padding: '8px 10px', fontSize: 12 }}>
-                  <div style={{ color: 'var(--tx3)', marginBottom: 2 }}>Trạm gần nhất</div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>—</div>
-                </div>
-              </div>
-            </div>
+      <div style={card}>
+        <div style={cardHead}>Vị trí và bán kính</div>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label="Địa chỉ/khu vực" error={errors.address}>
+            <textarea value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="VD: KCN Long Hậu, Cần Giuộc, Long An" rows={4} style={{ ...inputStyle, height: 92, paddingTop: 8, resize: 'vertical' }} />
+          </Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label="Sim Y / Latitude" error={errors.latitude}>
+              <input value={form.latitude} onChange={(event) => update('latitude', event.target.value)} style={inputStyle} />
+            </Field>
+            <Field label="Sim X / Longitude" error={errors.longitude}>
+              <input value={form.longitude} onChange={(event) => update('longitude', event.target.value)} style={inputStyle} />
+            </Field>
+          </div>
+          <Field label={`Bán kính giám sát: ${form.radiusM} m`}>
+            <input type="range" min={100} max={1500} step={50} value={form.radiusM} onChange={(event) => update('radiusM', Number(event.target.value))} style={{ width: '100%' }} />
+          </Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Metric label="Diện tích ước tính" value={`${calcArea(form.radiusM)} ha`} />
+            <Metric label="Coverage" value="GeoJSON Polygon" />
           </div>
         </div>
       </div>
@@ -590,519 +1212,411 @@ function Step1Location({
   )
 }
 
-// ── Step 2: Dịch vụ và mục đích ───────────────────────────
-// Layout: Left = 3-col service cards | Right = form card 340px
-
-function Step2Services({
-  form, update, toggleService, errors,
+function StepService({
+  form,
+  services,
+  loadingMeta,
+  errors,
+  consultation,
+  chatMessages,
+  chatText,
+  chatBusy,
+  selectedService,
+  setChatText,
+  startConsultation,
+  sendChatMessage,
+  update,
 }: {
   form: FormState
-  update: <K extends keyof FormState>(k: K, v: FormState[K]) => void
-  toggleService: (id: string) => void
-  errors: Partial<Record<string, string>>
+  services: ServiceOption[]
+  loadingMeta: boolean
+  errors: Partial<Record<keyof FormState, string>>
+  consultation: CustomerConsultation | null
+  chatMessages: ConsultationMessage[]
+  chatText: string
+  chatBusy: boolean
+  selectedService?: ServiceOption
+  setChatText: (value: string) => void
+  startConsultation: () => void
+  sendChatMessage: () => void
+  update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const recommendedService = findRecommendedService(consultation, services)
+  const aiSuggestedServices = recommendedService ? [recommendedService] : []
+  const quickReplies = buildQuickReplies(chatMessages)
+  const chatScrollRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    chatScrollRef.current?.scrollTo({
+      top: chatScrollRef.current.scrollHeight,
+      behavior: 'smooth',
+    })
+  }, [chatMessages, chatBusy])
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 14 }}>
-      {/* ── Left: Service cards ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx2)', marginBottom: 2 }}>
-          Chọn dịch vụ
-          <span style={{ fontWeight: 400, color: 'var(--tx3)', marginLeft: 8 }}>
-            Chọn được nhiều dịch vụ (order_item)
-          </span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
-          {SERVICES.map((svc) => {
-            const selected = form.serviceIds.includes(svc.id)
-            return (
-              <button
-                key={svc.id}
-                type="button"
-                onClick={() => toggleService(svc.id)}
-                style={{
-                  textAlign: 'left', padding: '14px 14px 12px',
-                  background: selected ? 'var(--blue-bg)' : 'var(--sf)',
-                  border: `1.5px solid ${selected ? 'var(--blue-solid)' : 'var(--bd)'}`,
-                  borderRadius: 10, cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', gap: 8,
-                  transition: 'border-color .15s',
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: 13, color: selected ? 'var(--blue-fg)' : 'var(--tx)', lineHeight: 1.3 }}>
-                  {svc.label}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--tx3)', lineHeight: 1.5, flexGrow: 1 }}>
-                  {svc.description}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {svc.sensors.map((s) => (
-                    <span
-                      key={s}
-                      style={{
-                        fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
-                        background: 'var(--gray-bg)', color: 'var(--gray-fg)',
-                        fontFamily: 'var(--font-mono)',
-                      }}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                  {svc.durationMin} phút · {svc.heightRange}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-        {errors.serviceIds && (
-          <div style={{ fontSize: 12, color: 'var(--red-fg)', marginTop: 2 }}>{errors.serviceIds}</div>
-        )}
-      </div>
-
-      {/* ── Right: Info card ── */}
-      <div style={card}>
-        <div style={cardHead}>Thông tin yêu cầu</div>
-        <div style={{ ...cardBody, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
-              Tiêu đề (title) <span style={{ color: 'var(--red-solid)' }}>*</span>
-            </label>
-            <input
-              className="odm-input"
-              type="text"
-              placeholder="VD: Kiểm tra nhiệt mái nhà xưởng KCN Long Hậu"
-              value={form.title}
-              onChange={(e) => update('title', e.target.value)}
-              style={{ height: 34 }}
-            />
-            {errors.title && (
-              <div style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 4 }}>{errors.title}</div>
-            )}
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={card}>
+          <div style={cardHead}>
+            AI tư vấn nhu cầu
+            <button type="button" className="odm-btn odm-btn-gh" onClick={startConsultation} disabled={chatBusy}>
+              {consultation ? 'Tư vấn lại' : 'Nhờ AI tư vấn'}
+            </button>
           </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
-              Mục đích (purpose)
-            </label>
-            <input
-              className="odm-input"
-              type="text"
-              placeholder="VD: Phát hiện điểm nóng bất thường trước ngày 30/09"
-              value={form.purpose}
-              onChange={(e) => update('purpose', e.target.value)}
-              style={{ height: 34 }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
-              Ghi chú (note)
-            </label>
-            <input
-              className="odm-input"
-              type="text"
-              placeholder="Ghi chú cho nhóm vận hành"
-              style={{ height: 34 }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 4 }}>
-              Mô tả (description)
-            </label>
-            <textarea
-              className="odm-input"
-              rows={3}
-              placeholder="Mô tả khu vực, yêu cầu đặc biệt, hạng mục cần kiểm tra..."
-              value={form.description}
-              onChange={(e) => update('description', e.target.value)}
-              style={{ resize: 'none', paddingTop: 8, lineHeight: 1.5, fontSize: 13 }}
-            />
-          </div>
-
-          {/* File attachment placeholder */}
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 6 }}>
-              Tệp đính kèm order_attachment
-            </label>
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div
+              ref={chatScrollRef}
               style={{
-                border: '1.5px dashed var(--bd2)', borderRadius: 8,
-                padding: '16px 12px', textAlign: 'center',
-                fontSize: 12, color: 'var(--tx3)',
+                minHeight: 250,
+                maxHeight: 320,
+                overflow: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                paddingRight: 4,
               }}
             >
-              Kéo thả tệp vào đây
-              <div style={{ marginTop: 4, fontSize: 11 }}>PDF, XLSX, PNG, KMZ · tối đa 20 MB</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Step 3: Thời gian và media ────────────────────────────
-// Layout: Left = Calendar 330px | Right = timeslots + media table
-
-function Step3Time({
-  form, update, errors,
-  calYear, calMonth, setCalYear, setCalMonth, today,
-}: {
-  form: FormState
-  update: <K extends keyof FormState>(k: K, v: FormState[K]) => void
-  errors: Partial<Record<string, string>>
-  calYear: number
-  calMonth: number
-  setCalYear: (y: number) => void
-  setCalMonth: (m: number) => void
-  today: Date
-}) {
-  const cells = buildCalendar(calYear, calMonth)
-  const minDate = new Date(today)
-  minDate.setDate(minDate.getDate() + 1)
-
-  function isDisabled(day: number): boolean {
-    return new Date(calYear, calMonth, day) < minDate
-  }
-
-  function prevMonth() {
-    if (calMonth === 0) { setCalYear(calYear - 1); setCalMonth(11) }
-    else setCalMonth(calMonth - 1)
-  }
-
-  function nextMonth() {
-    if (calMonth === 11) { setCalYear(calYear + 1); setCalMonth(0) }
-    else setCalMonth(calMonth + 1)
-  }
-
-  function selectDay(day: number) {
-    if (isDisabled(day)) return
-    const iso = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    update('preferredDate', iso)
-  }
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 14 }}>
-      {/* ── Left: Calendar card ── */}
-      <div style={card}>
-        <div style={cardHead}>
-          <span>Ngày và khung giờ</span>
-          <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--tx3)' }}>preferred_date · preferred_time</span>
-        </div>
-        <div style={{ ...cardBody }}>
-          {/* Month navigation */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <button
-              type="button"
-              className="odm-btn odm-btn-gh"
-              style={{ height: 28, padding: '0 10px', fontSize: 14 }}
-              onClick={prevMonth}
-            >
-              ‹
-            </button>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>{MONTH_NAMES[calMonth]}, {calYear}</span>
-            <button
-              type="button"
-              className="odm-btn odm-btn-gh"
-              style={{ height: 28, padding: '0 10px', fontSize: 14 }}
-              onClick={nextMonth}
-            >
-              ›
-            </button>
-          </div>
-          {/* Day of week headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 4 }}>
-            {DAY_NAMES.map((d) => (
-              <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--tx3)', padding: '2px 0' }}>
-                {d}
-              </div>
-            ))}
-          </div>
-          {/* Day cells */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3 }}>
-            {cells.map((day, i) => {
-              if (!day) return <div key={`e-${i}`} />
-              const iso = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-              const selected = form.preferredDate === iso
-              const disabled = isDisabled(day)
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => selectDay(day)}
-                  title={disabled ? `Ngày đến ${fmtDateVi(iso)} bị khoá: cần đặt trước tối thiểu 24 giờ` : undefined}
-                  style={{
-                    height: 34, border: 'none', borderRadius: 6,
-                    fontSize: 13, fontWeight: selected ? 700 : 400,
-                    cursor: disabled ? 'not-allowed' : 'pointer',
-                    background: selected ? 'var(--blue-solid)' : 'transparent',
-                    color: selected ? '#fff' : disabled ? 'var(--tx3)' : 'var(--tx)',
-                    opacity: disabled ? 0.35 : 1,
-                  }}
-                >
-                  {day}
-                </button>
-              )
-            })}
-          </div>
-          {form.preferredDate && (
-            <div style={{ marginTop: 10, fontSize: 13, color: 'var(--green-fg)', fontWeight: 600 }}>
-              ✓ Đã chọn: {fmtDateVi(form.preferredDate)}
-            </div>
-          )}
-          {errors.preferredDate && (
-            <div style={{ fontSize: 11.5, color: 'var(--red-fg)', marginTop: 6 }}>{errors.preferredDate}</div>
-          )}
-          {/* Timeslots */}
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 8 }}>
-              Khung giờ mong muốn
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {TIME_SLOTS.map((slot) => {
-                const active = form.preferredTimeId === slot.id
+              {chatMessages.length === 0 && (
+                <div style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}>
+                  AI sẽ hỏi nhu cầu giám sát, mục tiêu, rủi ro cần phát hiện và đề xuất service phù hợp. Location đã lấy từ Step 1; AI không tự quyết lịch bay.
+                </div>
+              )}
+              {chatMessages.map((message) => {
+                const mine = message.senderType === 'CUSTOMER'
                 return (
-                  <button
-                    key={slot.id}
-                    type="button"
-                    onClick={() => update('preferredTimeId', slot.id)}
+                  <div
+                    key={message.id}
                     style={{
-                      flex: 1, padding: '10px 12px', textAlign: 'left',
-                      background: active ? 'var(--blue-bg)' : 'var(--sf)',
-                      border: `1.5px solid ${active ? 'var(--blue-solid)' : 'var(--bd)'}`,
-                      borderRadius: 8, cursor: 'pointer',
+                      alignSelf: mine ? 'flex-end' : 'flex-start',
+                      maxWidth: '86%',
+                      padding: '9px 11px',
+                      borderRadius: 8,
+                      background: mine ? 'var(--ink)' : 'var(--sf2)',
+                      color: mine ? 'var(--inkfg)' : 'var(--tx)',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                      whiteSpace: 'pre-wrap',
                     }}
                   >
-                    <div style={{ fontWeight: 700, fontSize: 13, color: active ? 'var(--blue-fg)' : 'var(--tx)' }}>
-                      {slot.label}
+                    <div style={{ fontSize: 11, fontWeight: 800, opacity: 0.7, marginBottom: 3 }}>
+                      {mine ? 'Bạn' : 'AI tư vấn'}
                     </div>
-                    <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: active ? 'var(--blue-dot)' : 'var(--tx3)', marginTop: 2 }}>
-                      {slot.detail}
+                    <div>{message.message}</div>
+                  </div>
+                )
+              })}
+              {chatBusy && (
+                <div style={{ alignSelf: 'flex-start', maxWidth: '86%', padding: '9px 11px', borderRadius: 8, background: 'var(--sf2)', color: 'var(--tx3)', fontSize: 13, lineHeight: 1.5 }}>
+                  AI đang trả lời...
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {quickReplies.map((reply) => (
+                <button
+                  key={reply}
+                  type="button"
+                  onClick={() => setChatText(reply)}
+                  disabled={chatBusy}
+                  style={{
+                    border: '1px solid var(--bd)',
+                    background: 'var(--sf2)',
+                    color: 'var(--tx2)',
+                    borderRadius: 8,
+                    padding: '7px 10px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: chatBusy ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {reply}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={chatText}
+                onChange={(event) => setChatText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                    event.preventDefault()
+                    sendChatMessage()
+                  }
+                }}
+                placeholder="VD: Tôi trồng cà phê và muốn phát hiện cây bất thường..."
+                style={inputStyle}
+              />
+              <button type="button" className="odm-btn odm-btn-p" onClick={() => sendChatMessage()} disabled={chatBusy || !chatText.trim()}>
+                Gửi
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={card}>
+          <div style={cardHead}>Đề xuất từ AI hoặc tự chọn dịch vụ</div>
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {aiSuggestedServices.length > 0 && (
+              <div style={{ border: '1.5px solid var(--green-dot)', background: 'var(--green-bg)', borderRadius: 8, padding: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, color: 'var(--green-fg)' }}>AI gợi ý service phù hợp</div>
+                    <div style={{ marginTop: 3, fontSize: 12, color: 'var(--green-fg)' }}>
+                      Dựa trên nội dung chat và thông tin request hiện tại.
                     </div>
+                  </div>
+                  {recommendedService && (
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--green-fg)' }}>Recommended</span>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8, marginTop: 12 }}>
+                  {aiSuggestedServices.map((service) => {
+                    const active = form.serviceId === service.id
+                    return (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => update('serviceId', service.id)}
+                        style={{
+                          textAlign: 'left',
+                          minHeight: 78,
+                          padding: 10,
+                          borderRadius: 8,
+                          border: `1.5px solid ${active ? 'var(--green-dot)' : 'rgba(22,163,74,.35)'}`,
+                          background: active ? 'rgba(22,163,74,.16)' : 'var(--sf)',
+                          color: 'var(--tx)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.25 }}>{service.name}</div>
+                        <div style={{ marginTop: 6, color: 'var(--tx3)', fontSize: 11, lineHeight: 1.35 }}>
+                          {service.description || 'Dịch vụ giám sát bằng drone.'}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>Tất cả service active</div>
+              <div style={{ color: 'var(--tx3)', fontSize: 12 }}>{services.length} service</div>
+            </div>
+            <div style={{ maxHeight: 360, overflow: 'auto', paddingRight: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12 }}>
+              {loadingMeta && <div style={{ color: 'var(--tx3)' }}>Đang tải dịch vụ...</div>}
+              {!loadingMeta && services.length === 0 && <div style={{ color: 'var(--red-fg)' }}>Chưa có service active trong backend.</div>}
+              {services.map((service) => {
+                const active = form.serviceId === service.id
+                const suggested = aiSuggestedServices.some((item) => item.id === service.id)
+                return (
+                  <button key={service.id} type="button" onClick={() => update('serviceId', service.id)} style={{ textAlign: 'left', padding: 14, borderRadius: 8, border: `1.5px solid ${active ? 'var(--blue-solid)' : 'var(--bd)'}`, background: active ? 'var(--blue-bg)' : 'var(--sf)', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 800, color: active ? 'var(--blue-fg)' : 'var(--tx)' }}>{service.name}</div>
+                      {suggested && <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--green-fg)' }}>AI</span>}
+                    </div>
+                    <div style={{ marginTop: 8, color: 'var(--tx3)', fontSize: 12, lineHeight: 1.5 }}>{service.description || 'Dịch vụ giám sát bằng drone.'}</div>
                   </button>
                 )
               })}
+              </div>
             </div>
-            <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--tx3)' }}>
-              Chỉ hiển thị các khung giờ còn hiệu lực (preferred_time.effective_to).
-            </div>
+            {errors.serviceId && <div style={{ color: 'var(--red-fg)', fontSize: 12 }}>{errors.serviceId}</div>}
           </div>
         </div>
       </div>
 
-      {/* ── Right: Media requirements card ── */}
       <div style={card}>
-        <div style={cardHead}>
-          Yêu cầu media
-          <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--tx3)' }}>order_media_requirement</span>
-        </div>
-        <div style={{ ...cardBody, display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {/* Table header */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 70px 1fr',
-              gap: 0, padding: '7px 0',
-              borderBottom: '1px solid var(--bd)',
-              fontSize: 11.5, fontWeight: 600, color: 'var(--tx3)',
-            }}
-          >
-            <span>Loại</span>
-            <span>Số lượng</span>
-            <span>Độ phân giải</span>
-          </div>
-          {(['VIDEO', 'PHOTO', 'LIVESTREAM'] as const).map((type) => (
-            <div
-              key={type}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '100px 70px 1fr',
-                gap: 0, padding: '8px 0',
-                borderBottom: '1px solid var(--bd)',
-                alignItems: 'center',
-                fontSize: 12,
-              }}
-            >
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 11 }}>{type}</span>
-              <select
-                className="odm-input"
-                style={{ height: 28, fontSize: 11, padding: '0 6px' }}
-                aria-label={`${type} số lượng`}
-                defaultValue=""
-              >
-                <option value="">—</option>
-                {[1, 2, 3, 5].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select
-                className="odm-input"
-                style={{ height: 28, fontSize: 11, padding: '0 6px' }}
-                aria-label={`${type} độ phân giải`}
-                defaultValue=""
-              >
-                <option value="">—</option>
-                <option value="4K">4K</option>
-                <option value="1080p">1080p</option>
-                <option value="20MP">20 MP</option>
-                <option value="640x512">640×512</option>
-              </select>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="odm-btn odm-btn-gh"
-            style={{ marginTop: 8, fontSize: 12, height: 28, alignSelf: 'flex-start' }}
-          >
-            + Thêm
-          </button>
+        <div style={cardHead}>Thông tin request</div>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label="Tiêu đề" error={errors.title}>
+            <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="VD: Giám sát tiến độ khu công trình phía Đông" style={inputStyle} />
+          </Field>
+          <Field label="Mô tả yêu cầu">
+            <textarea value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Mô tả mục tiêu, khu vực cần chú ý, ràng buộc an toàn..." rows={8} style={{ ...inputStyle, height: 180, paddingTop: 8, resize: 'vertical' }} />
+          </Field>
+          <Metric label="Service đã chọn" value={selectedService?.name || 'Chưa chọn'} />
+          {consultation?.status && <Metric label="Trạng thái tư vấn" value={consultation.status} />}
         </div>
       </div>
     </div>
   )
 }
 
-// ── Step 4: Xem lại và phân tích ──────────────────────────
-// Layout: Left = mini map + summary | Right = review card 360px
+function StepSchedule({
+  form,
+  preferredTimes,
+  deliverables,
+  errors,
+  update,
+}: {
+  form: FormState
+  preferredTimes: PreferredTimeOption[]
+  deliverables: ServiceDeliverableOption[]
+  errors: Partial<Record<keyof FormState, string>>
+  update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
+}) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
+      <div style={card}>
+        <div style={cardHead}>Thời gian bay</div>
+        <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <Field label="Ngày bắt đầu" error={errors.preferredDateFrom}>
+            <input type="date" value={form.preferredDateFrom} onChange={(event) => update('preferredDateFrom', event.target.value)} style={inputStyle} />
+          </Field>
+          <Field label="Ngày kết thúc" error={errors.preferredDateTo}>
+            <input type="date" value={form.preferredDateTo} onChange={(event) => update('preferredDateTo', event.target.value)} style={inputStyle} />
+          </Field>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Khung giờ" error={errors.preferredTimeId}>
+              <select value={form.preferredTimeId} onChange={(event) => update('preferredTimeId', event.target.value)} style={inputStyle}>
+                <option value="">Chọn khung giờ</option>
+                {preferredTimes.map((time) => <option key={time.id} value={time.id}>{formatTimeLabel(time)}</option>)}
+              </select>
+            </Field>
+          </div>
+        </div>
+      </div>
 
-function Step4Review({ form }: { form: FormState }) {
-  const slotDef = TIME_SLOTS.find((t) => t.id === form.preferredTimeId)
-  const selectedServices = SERVICES.filter((s) => form.serviceIds.includes(s.id))
-  const circleR = Math.max(16, Math.min(100, form.radiusM / 8))
+      <div style={card}>
+        <div style={cardHead}>Kết quả bàn giao</div>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label="Deliverable type" error={errors.deliverableTypeId}>
+            <select value={form.deliverableTypeId} onChange={(event) => update('deliverableTypeId', event.target.value)} style={inputStyle}>
+              <option value="">Chọn kết quả</option>
+              {deliverables.map((item) => <option key={item.id} value={item.deliverableTypeId}>{item.deliverableTypeName || item.deliverableTypeId}</option>)}
+            </select>
+          </Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label="Media">
+              <select value={form.mediaType} onChange={(event) => update('mediaType', event.target.value as FormState['mediaType'])} style={inputStyle}>
+                <option value="IMAGE">Ảnh</option>
+                <option value="VIDEO">Video</option>
+              </select>
+            </Field>
+            <Field label="Số lượng">
+              <input type="number" min={1} value={form.quantity} onChange={(event) => update('quantity', Number(event.target.value))} style={inputStyle} />
+            </Field>
+          </div>
+          <Field label="Độ phân giải">
+            <select value={form.resolution} onChange={(event) => update('resolution', event.target.value)} style={inputStyle}>
+              <option value="1080p">1080p</option>
+              <option value="4K">4K</option>
+              <option value="20MP">20MP</option>
+              <option value="640x512">640x512 Thermal</option>
+            </select>
+          </Field>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StepReview(props: {
+  form: FormState
+  score: AiScore
+  selectedService?: ServiceOption
+  selectedTime?: PreferredTimeOption
+  selectedDeliverable?: ServiceDeliverableOption
+  consultation: CustomerConsultation | null
+}) {
+  const scoreColor = props.score.level === 'good' ? 'var(--green-fg)' : props.score.level === 'warn' ? 'var(--orange-fg)' : 'var(--red-fg)'
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 14 }}>
-      {/* ── Left: mini map + flight time card ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {/* Mini map */}
-        <div
-          style={{
-            ...card,
-            position: 'relative', height: 240, overflow: 'hidden',
-          }}
-        >
-          <div style={{ position: 'absolute', inset: 0, background: 'var(--map-bg)' }} />
-          {[168, 347].map((y) => (
-            <div key={y} style={{ position: 'absolute', left: 0, right: 0, top: y * 0.43, height: 8, background: 'var(--map-road2)' }} />
-          ))}
-          {[224, 528].map((x) => (
-            <div key={x} style={{ position: 'absolute', top: 0, bottom: 0, left: x * 0.43, width: 8, background: 'var(--map-road2)' }} />
-          ))}
-          <div
-            style={{
-              position: 'absolute', left: '50%', top: '50%',
-              width: circleR * 2, height: circleR * 2,
-              transform: 'translate(-50%, -50%)',
-              borderRadius: '50%',
-              border: '2px solid var(--blue-solid)',
-              background: 'rgba(31,111,214,.12)',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute', left: '50%', top: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 10, height: 10, borderRadius: '50%',
-              background: 'var(--blue-solid)', border: '2px solid #fff',
-            }}
-          />
-          {/* Address label */}
-          {form.addressText && (
-            <div
-              style={{
-                position: 'absolute', bottom: 10, left: 10, right: 10,
-                background: 'var(--sf)', borderRadius: 6, padding: '5px 8px',
-                fontSize: 12, color: 'var(--tx2)',
-                border: '1px solid var(--bd)',
-              }}
-            >
-              {form.addressText}
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 420px', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={card}>
+          <div style={cardHead}>Xác nhận request</div>
+          <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '170px 1fr', gap: '10px 14px', fontSize: 13 }}>
+            <LabelValue label="Tiêu đề" value={props.form.title || '—'} />
+            <LabelValue label="Địa chỉ" value={props.form.address || '—'} />
+            <LabelValue label="Tọa độ" value={`${props.form.latitude}, ${props.form.longitude}`} mono />
+            <LabelValue label="Bán kính" value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
+            <LabelValue label="Dịch vụ" value={props.selectedService?.name || '—'} />
+            <LabelValue label="Ngày" value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
+            <LabelValue label="Khung giờ" value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
+            <LabelValue label="Deliverable" value={props.selectedDeliverable?.deliverableTypeName || '—'} />
+            <LabelValue label="AI consultation" value={props.consultation?.id ? 'Đã tư vấn' : 'Không dùng'} />
+          </div>
+        </div>
+
+        <div style={card}>
+          <div style={cardHead}>AI chấm điểm mô phỏng</div>
+          <div style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 42, color: scoreColor }}>{props.score.score}</div>
+              <div>
+                <div style={{ fontWeight: 800 }}>Điểm sẵn sàng gửi request</div>
+                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>Điểm này giúp user kiểm tra thiếu thông tin trước khi call API tạo order.</div>
+              </div>
+            </div>
+            <ul style={{ margin: '12px 0 0', paddingLeft: 18, color: 'var(--tx2)', lineHeight: 1.6 }}>
+              {props.score.notes.map((note) => <li key={note}>{note}</li>)}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div style={card}>
+        <div style={cardHead}>Tóm tắt tư vấn AI</div>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {props.consultation?.recommendedServiceName || props.consultation?.recommendedServiceId ? (
+            <div style={{ padding: 12, borderRadius: 8, background: 'var(--green-bg)', color: 'var(--green-fg)', lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 800 }}>Service đề xuất</div>
+              <div>{props.consultation.recommendedServiceName || props.selectedService?.name || props.consultation.recommendedServiceId}</div>
+            </div>
+          ) : (
+            <div style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}>
+              Customer tự chọn service hoặc chưa dùng AI tư vấn ở Step 2.
             </div>
           )}
-        </div>
-
-        {/* Summary rows */}
-        <div style={card}>
-          <div style={cardHead}>Tóm tắt yêu cầu</div>
-          <div style={{ ...cardBody, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { label: 'Địa chỉ', value: form.addressText || '—' },
-              { label: 'Bán kính', value: `${form.radiusM} m (${calcArea(form.radiusM)})`, mono: true },
-              { label: 'Ngày bay', value: form.preferredDate ? fmtDateVi(form.preferredDate) : '—' },
-              { label: 'Khung giờ', value: slotDef ? `${slotDef.label} ${slotDef.detail}` : '—' },
-            ].map(({ label, value, mono }) => (
-              <div key={label} style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: 8, fontSize: 13 }}>
-                <span style={{ color: 'var(--tx3)' }}>{label}</span>
-                <span style={{ fontWeight: 500, fontFamily: mono ? 'var(--font-mono)' : undefined, fontSize: mono ? 12 : undefined }}>
-                  {value}
-                </span>
-              </div>
-            ))}
+          {props.consultation?.requirementSummary && (
+            <div style={{ padding: 12, borderRadius: 8, background: 'var(--blue-bg)', color: 'var(--blue-fg)', fontSize: 13, lineHeight: 1.6 }}>
+              {props.consultation.requirementSummary}
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Metric label="Media" value={`${props.form.mediaType} · ${props.form.resolution}`} />
+            <Metric label="Số lượng" value={String(props.form.quantity)} />
           </div>
         </div>
       </div>
+    </div>
+  )
+}
 
-      {/* ── Right: review card ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {/* Services summary */}
-        <div style={card}>
-          <div style={cardHead}>
-            Dịch vụ đã chọn
-            <span style={{ fontSize: 11.5, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'var(--blue-bg)', color: 'var(--blue-fg)' }}>
-              {selectedServices.length}
-            </span>
-          </div>
-          <div style={{ ...cardBody, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {selectedServices.length === 0 ? (
-              <span style={{ color: 'var(--tx3)', fontSize: 13 }}>Chưa chọn dịch vụ</span>
-            ) : (
-              selectedServices.map((s) => (
-                <div key={s.id} style={{ fontSize: 13, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                  <span style={{ color: 'var(--green-solid)', marginTop: 2 }}>✓</span>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{s.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 2 }}>
-                      {s.sensors.join(' · ')} · ~{s.durationMin} phút
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, fontWeight: 700, color: 'var(--tx2)' }}>
+      {label}
+      {children}
+      {error && <span style={{ color: 'var(--red-fg)', fontWeight: 600 }}>{error}</span>}
+    </label>
+  )
+}
 
-        {/* Info summary */}
-        <div style={card}>
-          <div style={cardHead}>Thông tin yêu cầu</div>
-          <div style={{ ...cardBody, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { label: 'Tiêu đề', value: form.title || '—' },
-              { label: 'Mục đích', value: form.purpose || '—' },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 8, fontSize: 13 }}>
-                <span style={{ color: 'var(--tx3)' }}>{label}</span>
-                <span style={{ fontWeight: 500 }}>{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ background: 'var(--sf2)', borderRadius: 8, padding: 12 }}>
+      <div style={{ color: 'var(--tx3)', fontSize: 12 }}>{label}</div>
+      <div style={{ marginTop: 4, fontWeight: 800 }}>{value}</div>
+    </div>
+  )
+}
 
-        {/* AI note */}
-        <div
-          style={{
-            background: 'var(--blue-bg)', border: '1px solid var(--blue-dot)',
-            borderRadius: 10, padding: '14px 16px', fontSize: 13,
-          }}
-        >
-          <div style={{ fontWeight: 700, color: 'var(--blue-fg)', marginBottom: 6 }}>
-            🔍 Phân tích tính khả thi
-          </div>
-          <div style={{ color: 'var(--blue-fg)', lineHeight: 1.6 }}>
-            AI sẽ kiểm tra thời gian, vùng cấm bay, năng lực drone, nguồn lực và an toàn. Kết quả trả về ngay sau khi nhấn nút.
-          </div>
-        </div>
-      </div>
+function LabelValue({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <>
+      <span style={{ color: 'var(--tx3)' }}>{label}</span>
+      <span style={{ fontWeight: 700, fontFamily: mono ? 'var(--font-mono)' : undefined }}>{value}</span>
+    </>
+  )
+}
+
+function Notice({ tone, children }: { tone: 'error'; children: React.ReactNode }) {
+  return (
+    <div style={{ ...card, padding: 12, color: tone === 'error' ? 'var(--red-fg)' : 'var(--tx)', background: tone === 'error' ? 'var(--red-bg)' : 'var(--sf)' }}>
+      {children}
     </div>
   )
 }

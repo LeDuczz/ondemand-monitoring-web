@@ -217,6 +217,13 @@ const USER_KEY = 'fieldwise.user'
 const isSafeToken = (value: unknown): value is string =>
   typeof value === 'string' && /^[A-Za-z0-9._~-]+$/.test(value)
 
+const isJwtLikeToken = (value: string) => value.split('.').length === 3
+
+function isUsableAccessToken(value: unknown): value is string {
+  if (!isSafeToken(value)) return false
+  return env.useMockApi || isJwtLikeToken(value)
+}
+
 const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
   id: String(user.id),
   fullName: String(user.fullName),
@@ -235,23 +242,29 @@ const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
 
 export const authSession = {
   save(response: AuthResponse, rememberMe: boolean) {
-    if (!isSafeToken(response.accessToken) || !response.user) return
+    if (!isUsableAccessToken(response.accessToken) || !response.user) return
     const storage = rememberMe ? localStorage : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
     storage.setItem(USER_KEY, JSON.stringify(sanitizeUser(response.user)))
   },
   updateAccessToken(response: AuthResponse) {
-    if (!isSafeToken(response.accessToken)) return
+    if (!isUsableAccessToken(response.accessToken)) return
     const storage = localStorage.getItem(ACCESS_TOKEN_KEY)
       ? localStorage
       : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
   },
   getAccessToken() {
-    return (
+    const token =
       localStorage.getItem(ACCESS_TOKEN_KEY) ??
       sessionStorage.getItem(ACCESS_TOKEN_KEY)
-    )
+
+    if (!token) return undefined
+    if (isUsableAccessToken(token)) return token
+
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+    return undefined
   },
   getUser() {
     const raw =

@@ -10,20 +10,73 @@ import type {
 
 export type CreateOrderPayload = {
   title: string
-  purpose?: string
   description?: string
-  serviceIds: string[]
-  addressText: string
-  centerLat: number
-  centerLon: number
-  radiusM: number
-  preferredDate: string
-  preferredTimeName: string
-  mediaRequests?: Array<{
-    mediaType: 'PHOTO' | 'VIDEO' | 'LIVESTREAM'
-    quantity?: number
-    durationSec?: number
+  serviceId: string
+  address?: string
+  longitude: number
+  latitude: number
+  coverageArea: GeoJsonPolygon
+  preferredDateFrom: string
+  preferredDateTo: string
+  preferredTimeId: string
+  deliverables: Array<{
+    deliverableTypeId: string
+    requirement: Record<string, unknown>
   }>
+}
+
+export type GeoJsonPolygon = {
+  type: 'Polygon'
+  coordinates: number[][][]
+}
+
+export type ServiceOption = {
+  id: string
+  name: string
+  description?: string
+  isActive?: boolean
+}
+
+export type PreferredTimeOption = {
+  id: string
+  code?: string
+  name: string
+  startTime?: string
+  endTime?: string
+}
+
+export type ServiceDeliverableOption = {
+  id: string
+  serviceId: string
+  serviceName?: string
+  deliverableTypeId: string
+  deliverableTypeName?: string
+}
+
+export type ConsultationMessage = {
+  id: string
+  senderType: 'CUSTOMER' | 'ASSISTANT'
+  message: string
+  createdAt?: string
+}
+
+export type CustomerConsultation = {
+  id: string
+  customerId?: string
+  orderId?: string
+  recommendedServiceId?: string
+  recommendedServiceName?: string
+  status?: string
+  requirementData?: string
+  requirementSummary?: string
+  startedAt?: string
+  completedAt?: string
+  messages?: ConsultationMessage[]
+}
+
+type SendConsultationMessageOptions = {
+  signal?: AbortSignal
+  requestContext?: string
 }
 
 export const customerApi = {
@@ -47,16 +100,60 @@ export const customerApi = {
   getOrder: (orderId: string, signal?: AbortSignal) =>
     apiRequest<CustomerOrderDetail>(`/api/customer/orders/${orderId}`, { signal }),
 
-  createOrder: (payload: CreateOrderPayload) =>
-    apiRequest<CustomerOrderDetail>('/api/customer/orders', {
+  listServices: (signal?: AbortSignal) =>
+    apiRequest<ServiceOption[]>('/api/services', {
+      query: { activeOnly: true },
+      signal,
+    }),
+
+  listPreferredTimes: (signal?: AbortSignal) =>
+    apiRequest<PreferredTimeOption[]>('/api/preferred-times', { signal }),
+
+  listServiceDeliverables: (serviceId: string, signal?: AbortSignal) =>
+    apiRequest<ServiceDeliverableOption[]>('/api/service-deliverables', {
+      query: { serviceId },
+      signal,
+    }),
+
+  startConsultation: (signal?: AbortSignal) =>
+    apiRequest<CustomerConsultation>('/api/customer/consultations', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      signal,
+    }),
+
+  getConsultation: (consultationId: string, signal?: AbortSignal) =>
+    apiRequest<CustomerConsultation>(
+      `/api/customer/consultations/${encodeURIComponent(consultationId)}`,
+      { signal },
+    ),
+
+  sendConsultationMessage: (
+    consultationId: string,
+    message: string,
+    options: SendConsultationMessageOptions = {},
+  ) =>
+    apiRequest<CustomerConsultation>(
+      `/api/customer/consultations/${encodeURIComponent(consultationId)}/messages`,
+      {
+        method: 'POST',
+        body: {
+          message,
+          requestContext: options.requestContext,
+        },
+        signal: options.signal,
+      },
+    ),
+
+  createOrder: (payload: CreateOrderPayload) =>
+    apiRequest<CustomerOrderDetail>('/api/orders', {
+      method: 'POST',
+      body: payload,
     }),
 
   saveDraft: (orderId: string, payload: Partial<CreateOrderPayload>) =>
     apiRequest<CustomerOrderDetail>(`/api/customer/orders/${orderId}/draft`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   cancelOrder: (orderId: string) =>

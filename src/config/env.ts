@@ -4,14 +4,15 @@ const cognitoClientId = import.meta.env.VITE_AWS_COGNITO_CLIENT_ID
 const cognitoRedirectSignIn = import.meta.env.VITE_COGNITO_REDIRECT_SIGN_IN
 
 // VITE_USE_MOCK_API: 'true' forces the mock transport on, 'false' forces it
-// off, anything else (unset) defaults to on in dev builds only.
+// off. When an explicit API base URL is configured, default to the real API;
+// otherwise dev builds can still use mocks without extra setup.
 const useMockApiFlag = import.meta.env.VITE_USE_MOCK_API
 const useMockApi =
   useMockApiFlag === 'true'
     ? true
     : useMockApiFlag === 'false'
       ? false
-      : import.meta.env.DEV
+      : !apiBaseUrl && import.meta.env.DEV
 
 // Simulated network latency for the mock API, in milliseconds. Zero during
 // tests so vitest runs stay fast and deterministic.

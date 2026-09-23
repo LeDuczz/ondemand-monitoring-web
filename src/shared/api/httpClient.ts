@@ -134,7 +134,9 @@ export async function apiRequest<T>(
         ? (payload.errors as Record<string, string>)
         : undefined
     throw new ApiError(
-      payload?.message ?? 'Request failed. Please try again.',
+      response.status === 401
+        ? 'Phiên đăng nhập đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.'
+        : payload?.message ?? 'Request failed. Please try again.',
       {
         status: response.status,
         code: payload?.code,
@@ -145,5 +147,9 @@ export async function apiRequest<T>(
     )
   }
 
-  return payload?.data as T
+  if (payload && typeof payload === 'object' && 'success' in payload) {
+    return payload.data as T
+  }
+
+  return payload as T
 }

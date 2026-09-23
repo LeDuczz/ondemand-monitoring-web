@@ -25,6 +25,12 @@ type SimulationMapMeta = {
   maxX: number
   minY: number
   maxY: number
+  imageBounds?: {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+  }
   width?: number
   height?: number
 }
@@ -282,10 +288,16 @@ function validateRestrictedZones(
   }
 }
 
+function getMapBounds(meta: SimulationMapMeta) {
+  return meta.imageBounds ?? meta
+}
+
 function simPointToPercent(point: [number, number], meta: SimulationMapMeta) {
+  const bounds = getMapBounds(meta)
+
   return {
-    x: ((point[0] - meta.minX) / (meta.maxX - meta.minX)) * 100,
-    y: ((meta.maxY - point[1]) / (meta.maxY - meta.minY)) * 100,
+    x: ((point[0] - bounds.minX) / (bounds.maxX - bounds.minX)) * 100,
+    y: ((bounds.maxY - point[1]) / (bounds.maxY - bounds.minY)) * 100,
   }
 }
 
@@ -893,13 +905,14 @@ export function CreateOrderPage() {
 
   function handleMapClick(event: React.MouseEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
-    const rawX = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100)
-    const rawY = clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)
-    setMapPoint({ x: rawX, y: rawY })
+    const mapX = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100)
+    const mapY = clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)
+    setMapPoint({ x: mapX, y: mapY })
 
     if (mapMeta) {
-      const simX = mapMeta.minX + (rawX / 100) * (mapMeta.maxX - mapMeta.minX)
-      const simY = mapMeta.maxY - (rawY / 100) * (mapMeta.maxY - mapMeta.minY)
+      const bounds = getMapBounds(mapMeta)
+      const simX = bounds.minX + (mapX / 100) * (bounds.maxX - bounds.minX)
+      const simY = bounds.maxY - (mapY / 100) * (bounds.maxY - bounds.minY)
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
@@ -907,8 +920,8 @@ export function CreateOrderPage() {
       return
     }
 
-    update('latitude', (10.6402 + (50 - rawY) * 0.00035).toFixed(6))
-    update('longitude', (106.6912 + (rawX - 50) * 0.00042).toFixed(6))
+    update('latitude', (10.6402 + (50 - mapY) * 0.00035).toFixed(6))
+    update('longitude', (106.6912 + (mapX - 50) * 0.00042).toFixed(6))
   }
 
   function validateStep(targetStep: Step) {
@@ -1239,6 +1252,8 @@ function StepLocation({
   const restrictedZones = zones.filter((zone) => zone.restricted)
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
   const isBlocked = !restrictedValidation.valid
+  const bounds = mapMeta ? getMapBounds(mapMeta) : null
+  const mapAspectRatio = bounds ? `${bounds.maxX - bounds.minX} / ${bounds.maxY - bounds.minY}` : '1 / 1'
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
@@ -1248,7 +1263,8 @@ function StepLocation({
         onClick={onMapClick}
         style={{
           position: 'relative',
-          minHeight: 620,
+          aspectRatio: mapAspectRatio,
+          minHeight: 0,
           overflow: 'hidden',
           cursor: 'crosshair',
           background: 'transparent',
@@ -1258,49 +1274,54 @@ function StepLocation({
           outline: 'none',
         }}
       >
-        <img
-          alt="3D simulation map"
-          src={mapImageUrl}
+        <div
           style={{
             position: 'absolute',
             inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center bottom',
-            opacity: 0.96,
-            userSelect: 'none',
             pointerEvents: 'none',
-            border: 0,
-            outline: 'none',
-            transform: 'scale(1.28) translateY(-12%)',
-            transformOrigin: 'center center',
           }}
-        />
-        {mapMeta && restrictedZones.map((zone) => {
-          const points = zone.coordinates
-            .map((point) => simPointToPercent(point, mapMeta))
-            .map((point) => `${point.x}% ${point.y}%`)
-            .join(', ')
-          const blocked = blockedZoneIds.has(zone.id)
+        >
+          <img
+            alt="3D simulation map"
+            src={mapImageUrl}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'fill',
+              opacity: 0.96,
+              userSelect: 'none',
+              pointerEvents: 'none',
+              border: 0,
+              outline: 'none',
+            }}
+          />
+          {mapMeta && restrictedZones.map((zone) => {
+            const points = zone.coordinates
+              .map((point) => simPointToPercent(point, mapMeta))
+              .map((point) => `${point.x}% ${point.y}%`)
+              .join(', ')
+            const blocked = blockedZoneIds.has(zone.id)
 
-          return (
-            <div
-              key={zone.id}
-              title={zone.name}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                clipPath: `polygon(${points})`,
-                background: blocked ? 'rgba(220,38,38,.28)' : 'rgba(220,38,38,.14)',
-                border: 0,
-                pointerEvents: 'none',
-              }}
-            />
-          )
-        })}
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: isBlocked ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)' }} />
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: isBlocked ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)' }} />
+            return (
+              <div
+                key={zone.id}
+                title={zone.name}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  clipPath: `polygon(${points})`,
+                  background: blocked ? 'rgba(220,38,38,.28)' : 'rgba(220,38,38,.14)',
+                  border: 0,
+                  pointerEvents: 'none',
+                }}
+              />
+            )
+          })}
+          <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: isBlocked ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)' }} />
+          <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: isBlocked ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)' }} />
+        </div>
         <div style={{ position: 'absolute', left: 12, bottom: 12, display: 'flex', gap: 8, alignItems: 'center', background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
           <span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(220,38,38,.22)', border: '1px solid var(--red-fg)' }} />
           Vùng cấm bay

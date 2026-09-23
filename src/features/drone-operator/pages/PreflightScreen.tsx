@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { DRONE_PRIMARY, MISSION_PRIMARY } from '../omss/mockData'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
 import { FlightStepHeader } from './FlightStepper'
@@ -25,6 +26,32 @@ type RuntimePreflightStatus = {
   status: RuntimeOverallStatus
   progress: number
   checks: RuntimeCheck[]
+}
+
+type StoredPreflightStatus = {
+  savedAt: number
+  status: RuntimePreflightStatus
+}
+
+type WeatherCheckStatus = 'PASS' | 'WARN' | 'FAIL'
+
+type WeatherPreflightStatus = {
+  status: WeatherCheckStatus
+  safeToFly: boolean
+  summary: string
+  windSpeedMps: number
+  windGustMps: number
+  precipitationMmH: number
+  visibilityKm: number
+  temperatureC: number
+  humidityPercent: number
+  advisories: string[]
+  checkedAt: string
+}
+
+type StoredWeatherStatus = {
+  savedAt: number
+  status: WeatherPreflightStatus
 }
 
 type ItemState = {
@@ -78,7 +105,7 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
 }
 
 function statusText(status?: RuntimeStatus, message?: string) {
-  if (!status) return 'Đang chờ API precheck'
+  if (!status) return 'Chưa trigger precheck'
   if (status === 'PASS') return message || 'Đạt'
   if (status === 'WARN') return message || 'Cảnh báo nhưng không chặn bay'
   if (status === 'FAIL') return message || 'Không đạt'
@@ -86,12 +113,145 @@ function statusText(status?: RuntimeStatus, message?: string) {
   return message || 'Đang chờ'
 }
 
+function preflightStateStorageKey(missionId: string, droneLabel: string) {
+  return `omss.droneOperator.preflightState.${missionId}.${droneLabel}`
+}
+
+function weatherStateStorageKey(missionId: string, droneLabel: string) {
+  return `omss.droneOperator.weatherState.${missionId}.${droneLabel}`
+}
+
+function isRuntimeStatus(value: unknown): value is RuntimePreflightStatus {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as RuntimePreflightStatus
+  return (
+    typeof candidate.checkId === 'string' &&
+    ['CHECKING', 'READY', 'FAILED'].includes(candidate.status) &&
+    typeof candidate.progress === 'number' &&
+    Array.isArray(candidate.checks)
+  )
+}
+
+function readStoredPreflightState(storageKey: string) {
+  try {
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as StoredPreflightStatus
+    if (!isRuntimeStatus(parsed.status)) return null
+    return parsed.status
+  } catch {
+    return null
+  }
+}
+
+function writeStoredPreflightState(
+  storageKey: string,
+  status: RuntimePreflightStatus,
+) {
+  if (status.checkId === 'triggering') return
+  try {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ savedAt: Date.now(), status } satisfies StoredPreflightStatus),
+    )
+  } catch {
+    // Preflight still works if storage is unavailable.
+  }
+}
+
+function isWeatherStatus(value: unknown): value is WeatherPreflightStatus {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as WeatherPreflightStatus
+  return (
+    ['PASS', 'WARN', 'FAIL'].includes(candidate.status) &&
+    typeof candidate.safeToFly === 'boolean' &&
+    typeof candidate.summary === 'string' &&
+    typeof candidate.windSpeedMps === 'number' &&
+    typeof candidate.windGustMps === 'number' &&
+    typeof candidate.precipitationMmH === 'number' &&
+    typeof candidate.visibilityKm === 'number' &&
+    typeof candidate.temperatureC === 'number' &&
+    typeof candidate.humidityPercent === 'number' &&
+    Array.isArray(candidate.advisories)
+  )
+}
+
+function readStoredWeatherState(storageKey: string) {
+  try {
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as StoredWeatherStatus
+    if (!isWeatherStatus(parsed.status)) return null
+    return parsed.status
+  } catch {
+    return null
+  }
+}
+
+function writeStoredWeatherState(
+  storageKey: string,
+  status: WeatherPreflightStatus,
+) {
+  try {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ savedAt: Date.now(), status } satisfies StoredWeatherStatus),
+    )
+  } catch {
+    // Weather check still works if storage is unavailable.
+  }
+}
+
 export function PreflightScreen() {
+  function handleEnterSimulation() {
+    try {
+      window.localStorage.setItem(
+        `omss.droneOperator.preflightReady.${MISSION_PRIMARY.id}.${DRONE_PRIMARY.id}`,
+        'true',
+      )
+      window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
+    } catch {
+      // Navigation still works if browser storage is unavailable.
+    }
+    window.location.hash = operatorHref({ screen: 'flight' })
+  }
+
+  return <PreflightChecklistPanel onReady={handleEnterSimulation} />
+}
+
+export function PreflightChecklistPanel({
+  missionId = MISSION_ID,
+  droneLabel = 'DRN-02 Hải Âu',
+  onReady,
+  embedded = false,
+}: {
+  missionId?: string
+  droneLabel?: string
+  onReady?: () => void
+  embedded?: boolean
+}) {
+  const storageKey = useMemo(
+    () => preflightStateStorageKey(missionId, droneLabel),
+    [droneLabel, missionId],
+  )
+  const weatherStorageKey = useMemo(
+    () => weatherStateStorageKey(missionId, droneLabel),
+    [droneLabel, missionId],
+  )
   const [checkId, setCheckId] = useState<string | null>(null)
   const [runtimeStatus, setRuntimeStatus] =
-    useState<RuntimePreflightStatus | null>(null)
+    useState<RuntimePreflightStatus | null>(() =>
+      readStoredPreflightState(storageKey),
+    )
+  const [weatherStatus, setWeatherStatus] =
+    useState<WeatherPreflightStatus | null>(() =>
+      readStoredWeatherState(weatherStorageKey),
+    )
   const [error, setError] = useState<string | null>(null)
-  const [retrySeed, setRetrySeed] = useState(0)
+  const [triggering, setTriggering] = useState(false)
+  const [weatherChecking, setWeatherChecking] = useState(false)
+  const [weatherError, setWeatherError] = useState<string | null>(null)
+  const validatedStoredCheckRef = useRef(false)
 
   const itemStates = useMemo(
     () => mapRuntimeToItems(runtimeStatus?.checks ?? []),
@@ -106,44 +266,66 @@ export function PreflightScreen() {
   const isReady = runtimeStatus?.status === 'READY'
   const isFailed = runtimeStatus?.status === 'FAILED'
   const progress = runtimeStatus?.progress ?? 0
+  const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
 
-  useEffect(() => {
-    let alive = true
-    let retryTimer: number | undefined
+  async function handleTriggerCheck() {
+    setTriggering(true)
+    setError(null)
+    setCheckId(null)
+    try {
+      window.localStorage.removeItem(storageKey)
+    } catch {
+      // Ignore storage cleanup failures.
+    }
+    setRuntimeStatus({
+      checkId: 'triggering',
+      status: 'CHECKING',
+      progress: 0,
+      checks: [],
+    })
 
-    async function startPreflight() {
-      setError(null)
-      setRuntimeStatus({
-        checkId: 'connecting',
-        status: 'CHECKING',
-        progress: 0,
-        checks: [],
+    try {
+      const response = await fetch(`${controlBaseUrl}/api/preflight/check`, {
+        method: 'POST',
       })
-      setCheckId(null)
-
-      try {
-        const response = await fetch(`${controlBaseUrl}/api/preflight/check`, {
-          method: 'POST',
-        })
-        if (!response.ok) throw new Error(`Preflight API ${response.status}`)
-        const payload = await response.json()
-        if (!alive) return
-        setCheckId(payload.checkId)
-      } catch {
-        if (!alive) return
-        setError(
-          'Đang chờ flight controller precheck API. Hãy mở Drone Stack, màn hình sẽ tự chạy tiếp.',
-        )
-        retryTimer = window.setTimeout(startPreflight, 1500)
-      }
+      if (!response.ok) throw new Error(`Preflight API ${response.status}`)
+      const payload = await response.json()
+      setCheckId(payload.checkId)
+    } catch {
+      setRuntimeStatus(null)
+      setError('Không gọi được API trigger precheck. Hãy mở Drone Stack rồi bấm Trigger lại.')
+    } finally {
+      setTriggering(false)
     }
+  }
 
-    void startPreflight()
-    return () => {
-      alive = false
-      if (retryTimer) window.clearTimeout(retryTimer)
+  async function handleWeatherCheck() {
+    setWeatherChecking(true)
+    setWeatherError(null)
+
+    try {
+      const response = await fetch(`${controlBaseUrl}/api/weather/preflight-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          missionId,
+          droneCode: droneLabel,
+          latitude: 10.6402,
+          longitude: 106.6912,
+        }),
+      })
+      if (!response.ok) throw new Error(`Weather API ${response.status}`)
+      const payload = await response.json()
+      const nextStatus = payload.data ?? payload
+      if (!isWeatherStatus(nextStatus)) throw new Error('Invalid weather payload')
+      setWeatherStatus(nextStatus)
+      writeStoredWeatherState(weatherStorageKey, nextStatus)
+    } catch {
+      setWeatherError('Không gọi được API thời tiết. Kiểm tra backend rồi bấm lại.')
+    } finally {
+      setWeatherChecking(false)
     }
-  }, [retrySeed])
+  }
 
   useEffect(() => {
     if (!checkId) return
@@ -159,11 +341,14 @@ export function PreflightScreen() {
         const payload = await response.json()
         if (!alive) return
         setRuntimeStatus(payload)
+        writeStoredPreflightState(storageKey, payload)
+        if (payload.status === 'READY' || payload.status === 'FAILED') {
+          setCheckId(null)
+        }
       } catch {
         if (!alive) return
-        setError('Mất kết nối precheck API, đang thử lại...')
+        setError('Mất kết nối precheck API. Bấm Trigger precheck để chạy lại.')
         setCheckId(null)
-        setRetrySeed((value) => value + 1)
       }
     }
 
@@ -173,13 +358,99 @@ export function PreflightScreen() {
       alive = false
       window.clearInterval(timer)
     }
-  }, [checkId])
+  }, [checkId, storageKey])
+
+  useEffect(() => {
+    if (
+      validatedStoredCheckRef.current ||
+      checkId ||
+      triggering ||
+      !runtimeStatus ||
+      runtimeStatus.checkId === 'triggering'
+    ) {
+      return
+    }
+    validatedStoredCheckRef.current = true
+    const storedCheckId = runtimeStatus.checkId
+    let alive = true
+
+    async function validateStoredPreflight() {
+      try {
+        const response = await fetch(
+          `${controlBaseUrl}/api/preflight/${storedCheckId}`,
+          { cache: 'no-store' },
+        )
+        if (!response.ok) throw new Error(`Stored preflight ${response.status}`)
+        const payload = await response.json()
+        if (!alive) return
+        setRuntimeStatus(payload)
+        writeStoredPreflightState(storageKey, payload)
+      } catch {
+        if (!alive) return
+        try {
+          window.localStorage.removeItem(storageKey)
+        } catch {
+          // Ignore storage cleanup failures.
+        }
+        setRuntimeStatus(null)
+        setError(null)
+      }
+    }
+
+    void validateStoredPreflight()
+    return () => {
+      alive = false
+    }
+  }, [checkId, runtimeStatus, storageKey, triggering])
+
+  useEffect(() => {
+    if (!runtimeStatus && !weatherStatus) return
+    let alive = true
+
+    async function checkDroneTerminalOnline() {
+      try {
+        const response = await fetch(`${controlBaseUrl}/api/control/status`, {
+          cache: 'no-store',
+        })
+        if (!response.ok) throw new Error(`Control status ${response.status}`)
+      } catch {
+        if (!alive) return
+        try {
+          window.localStorage.removeItem(storageKey)
+          window.localStorage.removeItem(weatherStorageKey)
+        } catch {
+          // Ignore storage cleanup failures.
+        }
+        setCheckId(null)
+        setRuntimeStatus(null)
+        setWeatherStatus(null)
+        setError(null)
+        setWeatherError(null)
+      }
+    }
+
+    void checkDroneTerminalOnline()
+    const timer = window.setInterval(checkDroneTerminalOnline, 2000)
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+    }
+  }, [runtimeStatus, storageKey, weatherStatus, weatherStorageKey])
 
   return (
-    <div className="odm-card" style={{ marginBottom: 0 }}>
+    <div
+      className="odm-card"
+      style={{
+        marginBottom: 0,
+        height: embedded ? '100%' : undefined,
+        display: embedded ? 'flex' : undefined,
+        flexDirection: embedded ? 'column' : undefined,
+        overflow: embedded ? 'hidden' : undefined,
+      }}
+    >
       <FlightStepHeader
         title="Preflight checklist"
-        missionId={MISSION_ID}
+        missionId={missionId}
         active={4}
         right={
           <span
@@ -194,13 +465,17 @@ export function PreflightScreen() {
               fontWeight: 700,
               fontSize: 13,
               flex: 'none',
+              maxWidth: 150,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
-            DRN-02 Hải Âu
+            {droneLabel}
           </span>
         }
       />
-      <div style={{ padding: '18px 22px' }}>
+      <div style={{ padding: '18px 22px', overflow: embedded ? 'auto' : undefined }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <SummaryBanner
             nOk={nOk}
@@ -210,7 +485,16 @@ export function PreflightScreen() {
             isFailed={isFailed}
             failedItems={failedItems}
             error={error}
-            onRetry={() => setRetrySeed((value) => value + 1)}
+            hasTriggered={hasTriggered}
+            triggering={triggering}
+            onTrigger={handleTriggerCheck}
+            onReady={onReady}
+          />
+          <WeatherCheckPanel
+            status={weatherStatus}
+            checking={weatherChecking}
+            error={weatherError}
+            onCheck={handleWeatherCheck}
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -262,7 +546,10 @@ function SummaryBanner({
   isFailed,
   failedItems,
   error,
-  onRetry,
+  hasTriggered,
+  triggering,
+  onTrigger,
+  onReady,
 }: {
   nOk: number
   nTotal: number
@@ -271,7 +558,10 @@ function SummaryBanner({
   isFailed: boolean
   failedItems: PreflightItemDef[]
   error: string | null
-  onRetry: () => void
+  hasTriggered: boolean
+  triggering: boolean
+  onTrigger: () => void
+  onReady?: () => void
 }) {
   const bg = isFailed ? 'var(--red-bg)' : isReady ? 'var(--green-bg)' : 'var(--sf)'
   const border = isFailed
@@ -315,26 +605,51 @@ function SummaryBanner({
           </div>
         ) : (
           <div style={{ fontSize: 13.5 }}>
-            {error ?? `Đang chạy precheck tự động... ${progress}%`}
+            {error ??
+              (hasTriggered
+                ? `Đang chạy precheck... ${progress}%`
+                : 'Bấm Trigger precheck để gọi API kiểm tra drone.')}
           </div>
         )}
       </div>
       {isReady ? (
-        <a
-          className="odm-btn odm-btn-ok"
-          href={operatorHref({ screen: 'flight' })}
-          style={{ minWidth: 220 }}
-        >
-          Tiếp tục tới buồng lái
-        </a>
+        onReady ? (
+          <button
+            type="button"
+            className="odm-btn odm-btn-ok"
+            onClick={onReady}
+            style={{ minWidth: 220 }}
+          >
+            Tiếp tục tới buồng lái
+          </button>
+        ) : (
+          <a
+            className="odm-btn odm-btn-ok"
+            href={operatorHref({ screen: 'flight' })}
+            style={{ minWidth: 220 }}
+          >
+            Tiếp tục tới buồng lái
+          </a>
+        )
       ) : isFailed ? (
         <button
           type="button"
           className="odm-btn odm-btn-rd"
-          onClick={onRetry}
+          onClick={onTrigger}
+          disabled={triggering}
           style={{ minWidth: 200 }}
         >
-          Chạy lại precheck
+          {triggering ? 'Đang trigger...' : 'Trigger lại precheck'}
+        </button>
+      ) : !hasTriggered || error ? (
+        <button
+          type="button"
+          className="odm-btn odm-btn-p"
+          onClick={onTrigger}
+          disabled={triggering}
+          style={{ minWidth: 220 }}
+        >
+          {triggering ? 'Đang trigger...' : 'Trigger precheck'}
         </button>
       ) : (
         <button
@@ -346,6 +661,126 @@ function SummaryBanner({
           Tiếp tục tới buồng lái
         </button>
       )}
+    </div>
+  )
+}
+
+function WeatherCheckPanel({
+  status,
+  checking,
+  error,
+  onCheck,
+}: {
+  status: WeatherPreflightStatus | null
+  checking: boolean
+  error: string | null
+  onCheck: () => void
+}) {
+  const failed = status?.status === 'FAIL'
+  const warned = status?.status === 'WARN'
+  const passed = status?.status === 'PASS'
+  const bg = failed
+    ? 'var(--red-bg)'
+    : warned
+      ? '#fff7ed'
+      : passed
+        ? 'var(--green-bg)'
+        : 'var(--sf)'
+  const border = failed
+    ? 'var(--red-dot)'
+    : warned
+      ? '#f59e0b'
+      : passed
+        ? 'var(--green-dot)'
+        : 'var(--bd)'
+  const fg = failed
+    ? 'var(--red-fg)'
+    : warned
+      ? '#92400e'
+      : passed
+        ? 'var(--green-fg)'
+        : 'var(--tx)'
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) auto',
+        alignItems: 'center',
+        gap: 14,
+        padding: '12px 16px',
+        borderRadius: 12,
+        border: `1.5px solid ${border}`,
+        background: bg,
+        color: fg,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+          }}
+        >
+          <strong style={{ fontSize: 14.5 }}>Thời tiết bay</strong>
+          <span
+            style={{
+              height: 24,
+              padding: '0 10px',
+              borderRadius: 999,
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: passed
+                ? 'var(--green-solid)'
+                : failed
+                  ? 'var(--red-solid)'
+                  : warned
+                    ? '#f59e0b'
+                    : 'var(--sf3)',
+              color: passed || failed || warned ? '#fff' : 'var(--tx2)',
+              fontSize: 11,
+              fontWeight: 800,
+            }}
+          >
+            {status ? status.status : 'CHƯA CHECK'}
+          </span>
+          {status && (
+            <span style={{ fontSize: 12, color: 'inherit' }}>
+              Gió {status.windSpeedMps.toFixed(1)} m/s · Giật{' '}
+              {status.windGustMps.toFixed(1)} m/s · Mưa{' '}
+              {status.precipitationMmH.toFixed(1)} mm/h · Tầm nhìn{' '}
+              {status.visibilityKm.toFixed(1)} km
+            </span>
+          )}
+        </div>
+        <div
+          style={{
+            marginTop: 4,
+            fontSize: 12,
+            color: error ? 'var(--red-fg)' : 'var(--tx2)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={error ?? status?.advisories.join(' ') ?? undefined}
+        >
+          {error ??
+            status?.summary ??
+            'Bấm Check thời tiết để kiểm tra điều kiện gió, mưa và tầm nhìn trước khi bay.'}
+          {status?.advisories?.[0] ? ` ${status.advisories[0]}` : ''}
+        </div>
+      </div>
+      <button
+        type="button"
+        className={passed ? 'odm-btn odm-btn-ok' : 'odm-btn odm-btn-p'}
+        onClick={onCheck}
+        disabled={checking}
+        style={{ minWidth: 170 }}
+      >
+        {checking ? 'Đang check...' : status ? 'Check lại thời tiết' : 'Check thời tiết'}
+      </button>
     </div>
   )
 }

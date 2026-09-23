@@ -16,13 +16,14 @@ export function FlightStepper({ active }: { active: number }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
         listStyle: 'none',
         margin: 0,
         padding: 0,
         flex: 1,
         justifyContent: 'center',
         minWidth: 0,
+        overflow: 'hidden',
       }}
     >
       {STEPS.map((step, i) => {
@@ -51,31 +52,32 @@ export function FlightStepper({ active }: { active: number }) {
         return (
           <li
             key={step.key}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}
           >
             <span
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
-                height: 30,
-                padding: current ? '0 12px 0 6px' : '0 8px 0 6px',
-                borderRadius: 15,
-                fontSize: 12.5,
+                gap: 5,
+                height: 28,
+                padding: current ? '0 10px 0 5px' : '0 7px 0 5px',
+                borderRadius: 14,
+                fontSize: 12,
                 fontWeight: 700,
                 background: bg,
                 color: fg,
+                whiteSpace: 'nowrap',
               }}
             >
               <span
                 style={{
-                  width: 20,
-                  height: 20,
+                  width: 19,
+                  height: 19,
                   borderRadius: '50%',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 11,
+                  fontSize: 10.5,
                   background: dotBg,
                   color: dotFg,
                 }}
@@ -87,7 +89,7 @@ export function FlightStepper({ active }: { active: number }) {
             {i < STEPS.length - 1 ? (
               <span
                 style={{
-                  width: 10,
+                  width: 8,
                   height: 2,
                   background: done ? 'var(--green-dot)' : 'var(--bd2)',
                   borderRadius: 1,
@@ -120,18 +122,19 @@ export function FlightStepHeader({
         flex: 'none',
         display: 'flex',
         alignItems: 'center',
-        gap: 20,
-        padding: '0 20px',
+        gap: 12,
+        padding: '0 16px',
         background: 'var(--sf)',
         borderBottom: '2px solid var(--bd)',
+        overflow: 'hidden',
       }}
     >
       <div
-        style={{ minWidth: 0, flex: 'none', maxWidth: 330, lineHeight: 1.2 }}
+        style={{ minWidth: 170, flex: '0 1 260px', maxWidth: 280, lineHeight: 1.2 }}
       >
         <div
           style={{
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: 700,
             letterSpacing: '-.01em',
             overflow: 'hidden',
@@ -156,7 +159,7 @@ export function FlightStepHeader({
         </div>
       </div>
       <FlightStepper active={active} />
-      {right ?? <span style={{ width: 1 }} />}
+      <div style={{ flex: '0 0 auto', minWidth: 0 }}>{right ?? <span style={{ width: 1 }} />}</div>
     </header>
   )
 }

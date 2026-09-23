@@ -10,7 +10,8 @@ import {
 import type { CSSProperties, ReactNode } from 'react'
 import { env } from '../../../../config/env'
 import type { Drone, Mission, MissionRoutePoint } from '../types'
-import RuntimePreflightCheck from './RuntimePreflightCheck'
+import { PreflightChecklistPanel } from '../../pages/PreflightScreen'
+import { operatorHref } from '../../routes'
 
 interface Props {
   mission: Mission
@@ -48,6 +49,14 @@ type FlightCommand =
   | 'speed_down'
   | 'safety_toggle'
   | 'thermal_toggle'
+
+type WeatherPreset =
+  | 'CLEAR_DAY'
+  | 'CLOUDY'
+  | 'FOGGY'
+  | 'WINDY'
+  | 'LIGHT_RAIN'
+  | 'HEAVY_RAIN'
 
 type IconName =
   | 'drone'
@@ -247,6 +256,23 @@ const moreToolControls: {
   { command: 'telemetry_monitor_toggle', label: 'Telemetry', icon: 'activity' },
   { command: 'safety_toggle', label: 'Safety', icon: 'shield' },
 ]
+
+const weatherControls: {
+  preset: WeatherPreset
+  label: string
+  tone?: 'danger' | 'amber'
+}[] = [
+  { preset: 'CLEAR_DAY', label: 'Clear' },
+  { preset: 'CLOUDY', label: 'Cloud' },
+  { preset: 'FOGGY', label: 'Fog', tone: 'amber' },
+  { preset: 'WINDY', label: 'Wind', tone: 'amber' },
+  { preset: 'LIGHT_RAIN', label: 'Rain', tone: 'amber' },
+  { preset: 'HEAVY_RAIN', label: 'Heavy', tone: 'danger' },
+]
+
+function navigateOperator(hash: string) {
+  window.location.hash = hash
+}
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   const common = {
@@ -1292,7 +1318,7 @@ const AirPressurePanel = memo(function AirPressurePanel({
     <GlassPanel
       style={{
         width: '100%',
-        padding: 12,
+        padding: 9,
         border: '1px solid rgba(56,189,248,.28)',
         background:
           'linear-gradient(180deg, rgba(8,18,33,.88), rgba(8,13,24,.76))',
@@ -1303,8 +1329,8 @@ const AirPressurePanel = memo(function AirPressurePanel({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 10,
-          marginBottom: 10,
+          gap: 8,
+          marginBottom: 7,
         }}
       >
         <span
@@ -1313,19 +1339,19 @@ const AirPressurePanel = memo(function AirPressurePanel({
             alignItems: 'center',
             gap: 7,
             color: '#67e8f9',
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: 950,
             letterSpacing: '.08em',
             textTransform: 'uppercase',
           }}
         >
-          <Icon name="gauge" size={14} />
+          <Icon name="gauge" size={13} />
           Air Pressure
         </span>
         <strong
           style={{
             borderRadius: 999,
-            padding: '4px 9px',
+            padding: '3px 8px',
             color: status?.online === false ? '#fecaca' : '#bbf7d0',
             background:
               status?.online === false
@@ -1347,29 +1373,29 @@ const AirPressurePanel = memo(function AirPressurePanel({
         style={{
           display: 'grid',
           gridTemplateColumns: '1.25fr .75fr',
-          gap: 8,
+          gap: 7,
           alignItems: 'stretch',
         }}
       >
         <div
           style={{
-            borderRadius: 10,
-            padding: '11px 12px',
+            borderRadius: 9,
+            padding: '8px 10px',
             background: 'rgba(15,23,42,.62)',
             border: '1px solid rgba(56,189,248,.2)',
             minWidth: 0,
           }}
         >
-          <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 800 }}>
+          <div style={{ color: '#94a3b8', fontSize: 10, fontWeight: 800 }}>
             Pressure
           </div>
           <strong
             style={{
               display: 'block',
-              marginTop: 5,
+              marginTop: 4,
               color: '#e0f2fe',
               fontFamily: 'var(--font-data)',
-              fontSize: 18,
+              fontSize: 16,
               lineHeight: 1,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -1380,13 +1406,13 @@ const AirPressurePanel = memo(function AirPressurePanel({
           </strong>
           <div
             style={{
-              marginTop: 7,
+              marginTop: 5,
               display: 'flex',
               justifyContent: 'space-between',
               gap: 8,
               color: '#93c5fd',
               fontFamily: 'var(--font-data)',
-              fontSize: 11,
+              fontSize: 10,
             }}
           >
             <span>{pressureKpa}</span>
@@ -1396,23 +1422,23 @@ const AirPressurePanel = memo(function AirPressurePanel({
 
         <div
           style={{
-            borderRadius: 10,
-            padding: '11px 10px',
+            borderRadius: 9,
+            padding: '8px 9px',
             background: 'rgba(15,23,42,.5)',
             border: '1px solid rgba(148,163,184,.14)',
             minWidth: 0,
           }}
         >
-          <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 800 }}>
+          <div style={{ color: '#94a3b8', fontSize: 10, fontWeight: 800 }}>
             Altitude
           </div>
           <strong
             style={{
               display: 'block',
-              marginTop: 5,
+              marginTop: 4,
               color: '#f8fafc',
               fontFamily: 'var(--font-data)',
-              fontSize: 16,
+              fontSize: 15,
               lineHeight: 1,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -1423,10 +1449,10 @@ const AirPressurePanel = memo(function AirPressurePanel({
           </strong>
           <div
             style={{
-              marginTop: 7,
+              marginTop: 5,
               color: '#cbd5e1',
-              fontSize: 10,
-              lineHeight: 1.25,
+              fontSize: 9,
+              lineHeight: 1.15,
             }}
           >
             {trend}
@@ -1652,9 +1678,9 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
-          height: 48,
-          padding: '0 12px',
+          gap: 8,
+          height: 36,
+          padding: '0 9px',
           borderBottom: '1px solid rgba(148,163,184,.16)',
         }}
       >
@@ -1664,7 +1690,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
             alignItems: 'center',
             gap: 7,
             color: '#67e8f9',
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: 950,
             letterSpacing: '.08em',
             textTransform: 'uppercase',
@@ -1684,7 +1710,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
           <strong
             style={{
               borderRadius: 999,
-              padding: '5px 10px',
+              padding: '3px 8px',
               background: panelBorder.badgeBg,
               border: `1px solid ${panelBorder.badgeBorder}`,
               color: panelBorder.text,
@@ -1694,19 +1720,19 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
           >
             {statusLabel}
           </strong>
-          <span style={{ color: '#cbd5e1', fontSize: 11 }}>Range</span>
+          <span style={{ color: '#cbd5e1', fontSize: 9 }}>Range</span>
           <strong
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
               borderRadius: 8,
-              padding: '7px 8px',
+              padding: '5px 7px',
               color: '#e5edf8',
               background: 'rgba(15,23,42,.58)',
               border: '1px solid rgba(148,163,184,.14)',
               fontFamily: 'var(--font-data)',
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 950,
             }}
           >
@@ -1720,15 +1746,15 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
           position: 'relative',
           display: 'grid',
           placeItems: 'center',
-          padding: '8px 8px 6px',
+          padding: '4px 8px 2px',
         }}
       >
         <svg
           viewBox="-128 -118 256 236"
           width="100%"
-          height="clamp(190px, 25vh, 226px)"
+          height="clamp(124px, 17vh, 152px)"
           preserveAspectRatio="xMidYMid meet"
-          style={{ maxWidth: 292 }}
+          style={{ maxWidth: 204 }}
         >
           <circle r="89" fill="rgba(2,6,23,.36)" />
           {[29, 55, 82].map((r) => (
@@ -1769,7 +1795,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                   y={label.y}
                   textAnchor={label.anchor}
                   fill="#e5edf8"
-                  fontSize="10"
+                  fontSize="9"
                   fontWeight="950"
                 >
                   {item.direction}
@@ -1779,7 +1805,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                   y={label.y + 16}
                   textAnchor={label.anchor}
                   fill="#f8fafc"
-                  fontSize="14"
+                  fontSize="12"
                   fontWeight="950"
                   fontFamily="var(--font-data)"
                 >
@@ -1790,7 +1816,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                   y={label.y + 31}
                   textAnchor={label.anchor}
                   fill={style.text}
-                  fontSize="9"
+                  fontSize="8"
                   fontWeight="950"
                 >
                   {item.severity}
@@ -1824,8 +1850,8 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 7,
-          padding: '0 10px 9px',
+          gap: 5,
+          padding: '0 8px 6px',
         }}
       >
         {directionStates.map((item) => {
@@ -1835,7 +1861,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
               key={item.direction}
               style={{
                 borderRadius: 9,
-                padding: '8px 7px',
+                padding: '6px 6px',
                 background: 'rgba(15,23,42,.62)',
                 border: `1px solid ${style.badgeBorder}`,
               }}
@@ -1843,9 +1869,9 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
               <div
                 style={{
                   color: '#dbeafe',
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: 950,
-                  marginBottom: 4,
+                  marginBottom: 2,
                 }}
               >
                 {item.direction}
@@ -1862,7 +1888,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                   style={{
                     color: '#e5edf8',
                     fontFamily: 'var(--font-data)',
-                    fontSize: 11,
+                    fontSize: 10,
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -1870,8 +1896,8 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                 </strong>
                 <span
                   style={{
-                    width: 18,
-                    height: 18,
+                    width: 16,
+                    height: 16,
                     borderRadius: 999,
                     display: 'grid',
                     placeItems: 'center',
@@ -1882,11 +1908,11 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                   title={item.severity}
                 >
                   {item.severity === 'CLEAR' ? (
-                    <Icon name="shield" size={13} />
+                    <Icon name="shield" size={11} />
                   ) : item.severity === 'UNKNOWN' ? (
-                    <Icon name="minus" size={12} />
+                    <Icon name="minus" size={10} />
                   ) : (
-                    <Icon name="alert" size={13} />
+                    <Icon name="alert" size={11} />
                   )}
                 </span>
               </div>
@@ -1894,22 +1920,22 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
           )
         })}
       </div>
-      <div style={{ padding: '0 10px 10px' }}>
+      <div style={{ padding: '0 9px 9px' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
+            gap: 8,
             borderRadius: 10,
-            padding: '9px 10px',
+            padding: '8px 9px',
             background: alertStyle.badgeBg,
             border: `1px solid ${alertStyle.badgeBorder}`,
           }}
         >
           <span
             style={{
-              width: 26,
-              height: 26,
+              width: 23,
+              height: 23,
               borderRadius: 999,
               display: 'grid',
               placeItems: 'center',
@@ -1918,16 +1944,16 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
             }}
           >
             {!fresh || !lidar?.available ? (
-              <Icon name="minus" size={16} />
+              <Icon name="minus" size={14} />
             ) : nearestObstacle ? (
               <Icon
                 name={
                   nearestObstacle.severity === 'CLEAR' ? 'shield' : 'alert'
                 }
-                size={17}
+                size={15}
               />
             ) : (
-              <Icon name="shield" size={17} />
+              <Icon name="shield" size={15} />
             )}
           </span>
           <div
@@ -1937,7 +1963,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
               minWidth: 0,
             }}
           >
-            <strong style={{ color: '#f8fafc', fontSize: 12, lineHeight: 1.2 }}>
+            <strong style={{ color: '#f8fafc', fontSize: 10, lineHeight: 1.15 }}>
               {!fresh || !lidar?.available
                 ? fresh
                   ? 'LiDAR data unavailable'
@@ -1946,7 +1972,7 @@ const LidarRadarOverlay = memo(function LidarRadarOverlay({
                   ? `Nearest obstacle: ${nearestObstacle.display} at ${nearestObstacle.direction.toLowerCase()}`
                   : 'No obstacle within safety threshold'}
             </strong>
-            <span style={{ color: '#cbd5e1', fontSize: 10, lineHeight: 1.25 }}>
+            <span style={{ color: '#cbd5e1', fontSize: 8, lineHeight: 1.15 }}>
               {nearestObstacle?.severity === 'DANGER'
                 ? 'Hold position or avoid immediately.'
                 : nearestObstacle?.severity === 'CAUTION'
@@ -2378,6 +2404,7 @@ const FlightControls = memo(function FlightControls({
   moreOpen,
   status,
   onCommand,
+  onWeatherPreset,
   onToggleMore,
   onCompleteMission,
 }: {
@@ -2386,6 +2413,7 @@ const FlightControls = memo(function FlightControls({
   moreOpen: boolean
   status: ControlStatus | null
   onCommand: (command: FlightCommand) => void
+  onWeatherPreset: (preset: WeatherPreset) => void
   onToggleMore: () => void
   onCompleteMission?: () => void
 }) {
@@ -2599,7 +2627,7 @@ const FlightControls = memo(function FlightControls({
               right: 0,
               bottom: 46,
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 46px)',
+              gridTemplateColumns: 'repeat(3, 48px)',
               gap: 5,
               padding: 6,
               zIndex: 10,
@@ -2608,6 +2636,34 @@ const FlightControls = memo(function FlightControls({
             {moreToolControls.map(controlButton)}
           </GlassPanel>
         )}
+        <div
+          style={{
+            width: '100%',
+            marginTop: 6,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, minmax(42px, 1fr))',
+            gap: 4,
+          }}
+        >
+          {weatherControls.map((item) => (
+            <button
+              key={item.preset}
+              onClick={() => onWeatherPreset(item.preset)}
+              disabled={busyCommand !== null}
+              style={{
+                ...buttonStyle(item.tone),
+                width: 'auto',
+                height: 28,
+                minWidth: 0,
+                fontSize: 7,
+              }}
+              title={`Weather: ${item.label}`}
+            >
+              <Icon name="thermometer" size={11} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </GlassPanel>
   )
@@ -2881,6 +2937,32 @@ export default function InFlightControl({
     },
     [controlStatus?.lidar?.enabled, sendCommand],
   )
+  const handleWeatherPreset = useCallback(async (preset: WeatherPreset) => {
+    setLastCommand(`Setting weather ${preset.replaceAll('_', ' ').toLowerCase()}`)
+    try {
+      const response = await fetch(`${controlBaseUrl}/api/control/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: 'weather_set', preset }),
+      })
+      const payload = await response.json()
+      const weather = payload.weather as
+        | { status?: string; weatherLabel?: string }
+        | undefined
+      if (!response.ok || !weather) throw new Error(`HTTP ${response.status}`)
+      const label = weather?.weatherLabel ?? preset.replaceAll('_', ' ')
+      const status = weather?.status ?? 'UPDATED'
+      setLastCommand(
+        payload.ok === false
+          ? `Weather ${label}: ${status} (visual pending)`
+          : `Weather ${label}: ${status}`,
+      )
+      setIsOnline(true)
+    } catch {
+      setLastCommand('Weather controller offline')
+      setIsOnline(false)
+    }
+  }, [])
   const handlePreflightReady = useCallback(() => {
     try {
       window.localStorage.setItem(preflightStorageKey, 'true')
@@ -2894,16 +2976,17 @@ export default function InFlightControl({
 
   return (
     <div
+      className="mission-control-root"
       style={{
         flex: 1,
-        minHeight: 0,
+        minHeight: '100vh',
         height: '100vh',
-        maxHeight: '100vh',
         display: 'grid',
         gridTemplateRows: '76px 1fr 42px',
         background: '#020617',
         color: '#e5edf8',
         overflow: 'hidden',
+        colorScheme: 'dark',
       }}
     >
       <header
@@ -3015,10 +3098,10 @@ export default function InFlightControl({
           display: 'grid',
           gridTemplateColumns:
             'minmax(0, 1.45fr) minmax(360px, 0.74fr) minmax(280px, 0.62fr)',
-          gridTemplateRows: 'minmax(420px, 1fr) auto',
+          gridTemplateRows: 'minmax(350px, 1fr) auto',
           alignItems: 'stretch',
           gap: 12,
-          padding: '12px 16px',
+          padding: '10px 14px 10px',
           background:
             'radial-gradient(circle at 28% 10%, rgba(37, 99, 235, 0.12), transparent 34%), #020617',
         }}
@@ -3037,7 +3120,7 @@ export default function InFlightControl({
             style={{
               position: 'relative',
               minWidth: 0,
-              minHeight: 420,
+              minHeight: 350,
               height: '100%',
               overflow: 'hidden',
               borderRadius: 10,
@@ -3317,6 +3400,7 @@ export default function InFlightControl({
             overflowX: 'hidden',
             overflowY: 'auto',
             paddingRight: 2,
+            scrollbarGutter: 'stable',
           }}
         >
           <LidarRadarOverlay status={controlStatus} />
@@ -3337,6 +3421,7 @@ export default function InFlightControl({
             moreOpen={moreOpen}
             status={controlStatus}
             onCommand={handleCommand}
+            onWeatherPreset={handleWeatherPreset}
             onToggleMore={handleToggleMore}
             onCompleteMission={onCompleteMission}
           />
@@ -3357,6 +3442,7 @@ export default function InFlightControl({
             flexDirection: 'column',
             gap: 8,
             paddingRight: 4,
+            scrollbarGutter: 'stable',
           }}
         >
           <TelemetryPanel status={controlStatus} />
@@ -3375,11 +3461,17 @@ export default function InFlightControl({
               position: 'absolute',
               inset: 0,
               zIndex: 20,
-              background: 'rgba(2,6,23,.82)',
+              background: '#f1f5f9',
               overflow: 'auto',
+              padding: 22,
             }}
           >
-            <RuntimePreflightCheck onReady={handlePreflightReady} />
+            <PreflightChecklistPanel
+              missionId={mission.id}
+              droneLabel={`${drone.id}${drone.name ? ` ${drone.name}` : ''}`}
+              onReady={handlePreflightReady}
+              embedded
+            />
           </div>
         )}
       </main>
@@ -3394,23 +3486,67 @@ export default function InFlightControl({
           borderTop: '1px solid rgba(59,130,246,.24)',
         }}
       >
-        {['Overview', 'Missions', 'Detail', 'GCS Connect'].map((label) => (
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back()
+              return
+            }
+            navigateOperator(operatorHref({ screen: 'missions' }))
+          }}
+          style={{
+            height: 28,
+            padding: '0 12px',
+            borderRadius: 9,
+            border: '1px solid rgba(148,163,184,.2)',
+            background: 'rgba(15,23,42,.72)',
+            color: '#dbeafe',
+            fontSize: 12,
+            fontWeight: 850,
+            cursor: 'pointer',
+          }}
+          title="Quay lại màn trước"
+        >
+          ← Back
+        </button>
+        {[
+          {
+            label: 'Overview',
+            href: operatorHref({ screen: 'missions' }),
+          },
+          {
+            label: 'Missions',
+            href: operatorHref({ screen: 'missions' }),
+          },
+          {
+            label: 'Detail',
+            href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+          },
+          {
+            label: 'GCS Connect',
+            href: operatorHref({ screen: 'connect' }),
+            active: true,
+          },
+        ].map((item) => (
           <button
-            key={label}
+            key={item.label}
+            type="button"
+            onClick={() => navigateOperator(item.href)}
             style={{
               height: 28,
               padding: '0 12px',
               borderRadius: 9,
               border: '1px solid transparent',
               background:
-                label === 'GCS Connect' ? 'rgba(37,99,235,.2)' : 'transparent',
-              color: label === 'GCS Connect' ? '#bfdbfe' : '#94a3b8',
+                item.active ? 'rgba(37,99,235,.2)' : 'transparent',
+              color: item.active ? '#bfdbfe' : '#94a3b8',
               fontSize: 12,
               fontWeight: 800,
               cursor: 'pointer',
             }}
           >
-            {label}
+            {item.label}
           </button>
         ))}
         <div

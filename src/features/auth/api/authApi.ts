@@ -172,7 +172,7 @@ export const authApi = {
   resendOtp: (body: ResendOtpRequest) =>
     request<void>('/api/auth/resend-otp', { method: 'POST', body }),
   login: (body: LoginRequest) =>
-    request<AuthResponse>('/api/v1/auth/login', {
+    request<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body,
       skipRefresh: true,

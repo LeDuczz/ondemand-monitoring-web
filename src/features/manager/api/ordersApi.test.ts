@@ -18,7 +18,7 @@ describe('ordersApi (mock mode)', () => {
     setHttpTransport(mockFetch)
     const rows = await ordersApi.getQueue()
     expect(rows).toHaveLength(6)
-    expect(rows[0].code).toBe('ORD-2609-0157')
+    expect(rows[0].id).toBe('ord-2609-0157')
   })
 
   it('getOrder resolves full detail', async () => {

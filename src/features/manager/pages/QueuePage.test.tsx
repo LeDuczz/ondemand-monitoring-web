@@ -3,39 +3,59 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { ordersApi } from '../api/ordersApi'
-import type { OrderQueueItem } from '../types/orders'
+import type { OrderCreateResponse } from '../types/orders'
 import { QueuePage } from './QueuePage'
 
-const rows: OrderQueueItem[] = [
+const rows: OrderCreateResponse[] = [
   {
-    id: 'ord-1',
-    code: 'ORD-2609-0157',
-    customer: {
-      fullName: 'Lê Quốc Bảo',
-      companyName: 'Công ty CP Logistics Cát Lái',
-    },
+    id: 'ord-2609-0157',
+    customerId: 'cust-le-quoc-bao',
+    customerName: 'Lê Quốc Bảo',
+    title: 'Tuần tra bãi container ngoài giờ',
+    serviceId: 'svc-tuan-tra-an-ninh-khu-vuc',
     serviceName: 'Tuần tra an ninh khu vực',
-    preferredDate: '25/09',
+    description: 'Tuần tra an ninh khu vực cảng Cát Lái',
+    address: 'Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức',
+    longitude: 106.7952,
+    latitude: 10.7686,
+    coverageArea: null,
+    preferredDateFrom: '2026-09-25T13:00:00+07:00',
+    preferredDateTo: '2026-09-25T17:00:00+07:00',
+    preferredTimeId: 'time-afternoon',
     preferredTimeName: 'Chiều',
-    submittedAt: '2026-09-19T08:32:00+07:00',
-    aiVerdict: 'FEASIBLE',
-    blockerCount: 0,
-    warningCount: 0,
+    orderStatus: 'PENDING',
+    rejectReason: null,
+    reviewById: null,
+    reviewByName: null,
+    reviewAt: null,
+    deliverables: [],
+    createdAt: '2026-09-19T08:32:00+07:00',
+    updatedAt: '2026-09-19T08:32:00+07:00',
   },
   {
-    id: 'ord-2',
-    code: 'ORD-2609-0160',
-    customer: {
-      fullName: 'Võ Thanh Tùng',
-      companyName: 'Công ty CP Đầu tư Sóng Thần',
-    },
+    id: 'ord-2609-0160',
+    customerId: 'cust-vo-thanh-tung',
+    customerName: 'Võ Thanh Tùng',
+    title: 'Tuần tra an ninh khu vực',
+    serviceId: 'svc-tuan-tra-an-ninh-khu-vuc',
     serviceName: 'Tuần tra an ninh khu vực',
-    preferredDate: '24/09',
+    description: 'Tuần tra an ninh khu vực',
+    address: 'Sóng Thần, Dĩ An',
+    longitude: 106.75,
+    latitude: 10.9,
+    coverageArea: null,
+    preferredDateFrom: '2026-09-24T07:00:00+07:00',
+    preferredDateTo: '2026-09-24T11:00:00+07:00',
+    preferredTimeId: 'time-morning',
     preferredTimeName: 'Sáng',
-    submittedAt: '2026-09-18T19:32:00+07:00',
-    aiVerdict: 'RISKY',
-    blockerCount: 0,
-    warningCount: 2,
+    orderStatus: 'PENDING',
+    rejectReason: null,
+    reviewById: null,
+    reviewByName: null,
+    reviewAt: null,
+    deliverables: [],
+    createdAt: '2026-09-18T19:32:00+07:00',
+    updatedAt: '2026-09-18T19:32:00+07:00',
   },
 ]
 
@@ -51,21 +71,11 @@ describe('QueuePage', () => {
     render(<QueuePage now={FIXED_NOW} />)
 
     await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
-    expect(screen.getByText('ORD-2609-0157')).toBeInTheDocument()
-    expect(screen.getByText('ORD-2609-0160')).toBeInTheDocument()
+    expect(screen.getByText('ord-2609-0157')).toBeInTheDocument()
+    expect(screen.getByText('ord-2609-0160')).toBeInTheDocument()
     expect(
       screen.getByText('2 đơn đang chờ · 0 đơn quá 24 giờ'),
     ).toBeInTheDocument()
-  })
-
-  it('filters by verdict chip', async () => {
-    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
-    render(<QueuePage now={FIXED_NOW} />)
-    await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
-
-    fireEvent.click(screen.getByRole('button', { name: /RISKY/ }))
-    expect(screen.queryByText('ORD-2609-0157')).not.toBeInTheDocument()
-    expect(screen.getByText('ORD-2609-0160')).toBeInTheDocument()
   })
 
   it('changes sort mode via the select', async () => {
@@ -76,8 +86,8 @@ describe('QueuePage', () => {
     fireEvent.change(screen.getByLabelText('Sắp xếp'), {
       target: { value: 'longestWait' },
     })
-    const codes = screen.getAllByText(/ORD-2609-/).map((el) => el.textContent)
-    expect(codes[0]).toBe('ORD-2609-0160')
+    const codes = screen.getAllByText(/ord-2609-/).map((el) => el.textContent)
+    expect(codes[0]).toBe('ord-2609-0160')
   })
 
   it('shows the error state and retries', async () => {
@@ -93,7 +103,7 @@ describe('QueuePage', () => {
     expect(getQueue).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
-    await waitFor(() => screen.getByText('ORD-2609-0157'))
+    await waitFor(() => screen.getByText('ord-2609-0157'))
     expect(getQueue).toHaveBeenCalledTimes(2)
   })
 

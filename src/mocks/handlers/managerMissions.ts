@@ -52,7 +52,7 @@ type SeedOperator = {
 const suggestions = createCollection(
   resourceSuggestionsSeed,
 ) as typeof resourceSuggestionsSeed
-const drones = createCollection(dronesSeed.drones) as SeedDrone[]
+const drones = createCollection(dronesSeed.items) as SeedDrone[]
 const operators = createCollection(operatorsSeed.operators) as SeedOperator[]
 
 // Calendar-specific missions for MNG-06/07 (list + live endpoints).
@@ -118,7 +118,83 @@ function toMissionDto(m: StoredMission): Mission {
   }
 }
 
+// P6: `GET /api/missions/pending-assignment` [BE] — maps a mission (from
+// either the P4/P5 store or the calendar store) to the BE `MissionResponse`
+// DTO shape. Calendar missions have no BE-only fields seeded (orderTitle,
+// customerName, etc.) — those fall back to null/derived values below rather
+// than being invented.
+function toMissionResponse(m: StoredMission | CalendarMission) {
+  const asStored = m as Partial<StoredMission> &
+    Partial<{
+      orderTitle: string | null
+      customerName: string | null
+      droneCode: string | null
+      latitude: number | null
+      longitude: number | null
+      address: string | null
+      startedAt: string | null
+      completedAt: string | null
+      description: string | null
+      failureReason: string | null
+      rejectionReason: string | null
+      mediaType: 'IMAGE' | 'VIDEO' | 'STREAMING' | null
+      plan: unknown
+      preflightRetryCount: number
+      preflightPassed: boolean
+      preflightFaultType: string | null
+      preflightFailureReason: string | null
+      preflightCheckedAt: string | null
+    }>
+  const calendarFields = m as Partial<CalendarMission>
+  return {
+    id: m.id,
+    orderId: m.orderId,
+    orderTitle:
+      asStored.orderTitle ?? calendarFields.serviceLabel ?? m.orderCode,
+    customerName: asStored.customerName ?? null,
+    missionCode: m.missionCode,
+    status: m.status,
+    operatorId: m.operatorId,
+    droneId: m.droneId,
+    droneCode: asStored.droneCode ?? calendarFields.droneCode ?? null,
+    latitude: asStored.latitude ?? m.centerLat,
+    longitude: asStored.longitude ?? m.centerLon,
+    address: asStored.address ?? m.addressText,
+    scheduledStartAt: m.scheduledStartAt,
+    startedAt: asStored.startedAt ?? null,
+    completedAt: asStored.completedAt ?? null,
+    description: asStored.description ?? null,
+    failureReason: asStored.failureReason ?? null,
+    rejectionReason: asStored.rejectionReason ?? null,
+    mediaType: asStored.mediaType ?? null,
+    plan: asStored.plan ?? null,
+    preflightRetryCount: asStored.preflightRetryCount ?? 0,
+    preflightPassed: asStored.preflightPassed ?? false,
+    preflightFaultType: asStored.preflightFaultType ?? null,
+    preflightFailureReason: asStored.preflightFailureReason ?? null,
+    preflightCheckedAt: asStored.preflightCheckedAt ?? null,
+  }
+}
+
 registerMockRoutes([
+  // ── P6: pending resource assignment queue [BE] ──────────────────────────
+  {
+    method: 'GET',
+    path: '/api/missions/pending-assignment',
+    handler: () => {
+      const all: (StoredMission | CalendarMission)[] = [
+        ...missions,
+        ...calendarMissions,
+      ]
+      const items = all
+        .filter(
+          (m) => m.status === 'CREATED' || m.status === 'RESOURCE_ASSIGNING',
+        )
+        .map(toMissionResponse)
+      return ok({ items })
+    },
+  },
+
   // ── MNG-06/08: list missions in a date range [TK] ──────────────────────
   {
     method: 'GET',

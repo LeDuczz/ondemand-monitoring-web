@@ -28,7 +28,7 @@ describe('GET /api/drones', () => {
     const { status, payload } = await call('GET', '/api/drones')
     expect(status).toBe(200)
     expect(payload.data.items.length).toBeGreaterThan(0)
-    expect(payload.data.total).toBe(payload.data.items.length)
+    expect(payload.data.totalItems).toBe(payload.data.items.length)
   })
 
   it('filters by status', async () => {
@@ -49,14 +49,14 @@ describe('GET /api/drones', () => {
     )
     expect(status).toBe(200)
     expect(payload.data.items).toHaveLength(0)
-    expect(payload.data.total).toBe(0)
+    expect(payload.data.totalItems).toBe(0)
   })
 
   it('paginates results', async () => {
     const { payload } = await call('GET', '/api/drones?page=1&pageSize=3')
     expect(payload.data.items.length).toBeLessThanOrEqual(3)
     expect(payload.data.page).toBe(1)
-    expect(payload.data.pageSize).toBe(3)
+    expect(payload.data.size).toBe(3)
   })
 })
 
@@ -111,7 +111,7 @@ describe('PATCH /api/drones/:id/status', () => {
       reason: 'Test',
     })
     const { payload } = await call('GET', '/api/drones?status=MAINTENANCE')
-    const codes = payload.data.items.map((d: any) => d.code)
-    expect(codes).toContain('DRN-01')
+    const serials = payload.data.items.map((d: any) => d.serialNumber)
+    expect(serials).toContain('1ZNBJ4K00C3A21')
   })
 })

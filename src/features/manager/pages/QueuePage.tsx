@@ -1,13 +1,10 @@
 import { useMemo, useState } from 'react'
 
 import { StateView } from '../../../shared/components/odm/StateView'
-import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
-import { aiVerdictLabel, aiVerdictTone } from '../../../shared/lib/statusTone'
-import type { AiVerdict } from '../../../shared/types/domain'
+import type { OrderCreateResponse } from '../types/orders'
 import { ordersApi } from '../api/ordersApi'
 import {
-  countByVerdict,
   formatWaitLabel,
   isOverdue,
   sortQueue,
@@ -16,42 +13,24 @@ import {
 import { managerHref } from '../routes'
 import '../manager.css'
 
-const verdictChips: Array<'all' | AiVerdict> = [
-  'all',
-  'FEASIBLE',
-  'RISKY',
-  'INFEASIBLE',
-]
-const verdictChipLabel: Record<'all' | AiVerdict, string> = {
-  all: 'Tất cả',
-  FEASIBLE: 'FEASIBLE',
-  RISKY: 'RISKY',
-  INFEASIBLE: 'INFEASIBLE',
-}
-
 const sortOptions: Array<{ value: QueueSortMode; label: string }> = [
-  { value: 'feasibleFirst', label: 'Sắp xếp: FEASIBLE, chờ lâu nhất' },
   { value: 'longestWait', label: 'Chờ lâu nhất' },
   { value: 'preferredDateAsc', label: 'Ngày mong muốn gần nhất' },
 ]
 
 export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
   const [now] = useState(() => nowProp ?? new Date())
-  const [filter, setFilter] = useState<'all' | AiVerdict>('all')
-  const [sortMode, setSortMode] = useState<QueueSortMode>('feasibleFirst')
+  const [sortMode, setSortMode] = useState<QueueSortMode>('longestWait')
   const query = useApiQuery((signal) => ordersApi.getQueue(signal), [])
 
-  const counts = useMemo(() => countByVerdict(query.data ?? []), [query.data])
   const overdueCount = useMemo(
     () => (query.data ?? []).filter((row) => isOverdue(now, row)).length,
     [query.data, now],
   )
   const visibleRows = useMemo(() => {
     const rows = query.data ?? []
-    const filtered =
-      filter === 'all' ? rows : rows.filter((r) => r.aiVerdict === filter)
-    return sortQueue(filtered, sortMode, now)
-  }, [query.data, filter, sortMode, now])
+    return sortQueue(rows, sortMode, now)
+  }, [query.data, sortMode, now])
 
   if (query.loading) return <QueueSkeleton />
 
@@ -89,27 +68,11 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
         <StateView
           state="empty"
           title="Không còn đơn chờ duyệt"
-          description="Tuyệt vời. Khi khách gửi đơn mới, đơn sẽ xuất hiện ở đây kèm đánh giá của AI."
+          description="Tuyệt vời. Khi khách gửi đơn mới, đơn sẽ xuất hiện ở đây."
         />
       ) : (
         <>
           <div className="odm-mgr-queue-toolbar">
-            <div className="odm-mgr-queue-chips">
-              {verdictChips.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  className={`odm-mgr-queue-chip ${filter === chip ? 'is-active' : ''}`}
-                  aria-pressed={filter === chip}
-                  onClick={() => setFilter(chip)}
-                >
-                  {verdictChipLabel[chip]}
-                  <span className="odm-tn odm-mgr-queue-chip-count">
-                    {counts[chip]}
-                  </span>
-                </button>
-              ))}
-            </div>
             <label className="odm-mgr-queue-sort">
               <span className="odm-visually-hidden">Sắp xếp</span>
               <select
@@ -134,42 +97,28 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
                   <th>Khách hàng</th>
                   <th>Dịch vụ</th>
                   <th>Ngày mong muốn</th>
-                  <th>AI verdict</th>
-                  <th style={{ textAlign: 'center' }}>Blocker / Warning</th>
                   <th>Thời gian chờ</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((row) => (
+                {visibleRows.map((row: OrderCreateResponse) => (
                   <tr key={row.id}>
                     <td>
                       <span className="odm-mono" style={{ fontWeight: 600 }}>
-                        {row.code}
+                        {row.id}
                       </span>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>
-                        {row.customer.fullName}
-                      </div>
-                      <div style={{ color: 'var(--tx3)', fontSize: 11.5 }}>
-                        {row.customer.companyName}
-                      </div>
+                      <div style={{ fontWeight: 600 }}>{row.customerName}</div>
                     </td>
                     <td>{row.serviceName}</td>
                     <td>
                       <span className="odm-tn">
-                        {row.preferredDate} · {row.preferredTimeName}
-                      </span>
-                    </td>
-                    <td>
-                      <StatusBadge tone={aiVerdictTone[row.aiVerdict]}>
-                        {aiVerdictLabel[row.aiVerdict]}
-                      </StatusBadge>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="odm-tn">
-                        {row.blockerCount} / {row.warningCount}
+                        {new Date(row.preferredDateFrom).toLocaleDateString(
+                          'vi-VN',
+                        )}{' '}
+                        · {row.preferredTimeName}
                       </span>
                     </td>
                     <td>
@@ -200,10 +149,6 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="odm-mgr-queue-hint">
-            Đơn có verdict INFEASIBLE không xuất hiện ở đây vì khách không thể
-            gửi duyệt khi còn BLOCKER.
           </div>
         </>
       )}

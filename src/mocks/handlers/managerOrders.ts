@@ -11,6 +11,7 @@
 import type {
   ApprovalDecision,
   OrderAnalysis,
+  OrderCreateResponse,
   OrderDetail,
   OrderInternalNote,
   OrderQueueItem,
@@ -74,6 +75,37 @@ function toQueueItem(order: SeedOrder): OrderQueueItem {
   }
 }
 
+// P6: `GET /api/orders/pending` [BE] — maps the seeded order straight to
+// the BE `OrderCreateResponse` DTO shape rather than the TK/BRIEF-derived
+// `OrderQueueItem` used by the legacy `GET /api/orders?status=PENDING` path.
+function toOrderCreateResponse(order: SeedOrder): OrderCreateResponse {
+  return {
+    id: order.id,
+    customerId: order.customerId ?? order.id,
+    customerName: order.customerName ?? order.customer.fullName,
+    title: order.title ?? order.serviceName,
+    serviceId: order.serviceId ?? '',
+    serviceName: order.serviceName,
+    description: order.description ?? '',
+    address: order.address ?? order.addressText ?? '',
+    longitude: order.longitude ?? 0,
+    latitude: order.latitude ?? 0,
+    coverageArea: order.coverageArea ?? null,
+    preferredDateFrom: order.preferredDateFrom ?? '',
+    preferredDateTo: order.preferredDateTo ?? '',
+    preferredTimeId: order.preferredTimeId ?? '',
+    preferredTimeName: order.preferredTimeName,
+    orderStatus: order.orderStatus ?? order.status,
+    rejectReason: order.rejectReason ?? null,
+    reviewById: order.reviewById ?? null,
+    reviewByName: order.reviewByName ?? null,
+    reviewAt: order.reviewAt ?? null,
+    deliverables: order.deliverables ?? [],
+    createdAt: order.createdAt ?? order.submittedAt,
+    updatedAt: order.updatedAt ?? order.submittedAt,
+  }
+}
+
 function toDetail(order: SeedOrder): OrderDetail {
   return {
     id: order.id,
@@ -108,6 +140,19 @@ registerMockRoutes([
         .filter((o) => o.status === 'PENDING')
         .filter((o) => latestApprovalFor(o.id)?.decision !== 'NEED_INFO')
         .map(toQueueItem)
+      return ok(rows)
+    },
+  },
+  // ── P6: GET /api/orders/pending [BE] — same PENDING filter as the query
+  // form above, but returns the BE `OrderCreateResponse[]` shape. ─────────
+  {
+    method: 'GET',
+    path: '/api/orders/pending',
+    handler: () => {
+      const rows = orders
+        .filter((o) => o.status === 'PENDING')
+        .filter((o) => latestApprovalFor(o.id)?.decision !== 'NEED_INFO')
+        .map(toOrderCreateResponse)
       return ok(rows)
     },
   },

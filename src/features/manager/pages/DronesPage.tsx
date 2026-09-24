@@ -11,7 +11,7 @@ import {
 } from '../../../shared/lib/statusTone'
 import type { DroneStatus } from '../../../shared/types/domain'
 import { dronesApi } from '../api/dronesApi'
-import type { DroneItem } from '../types/drones'
+import type { DroneResponse } from '../types/drones'
 import '../manager.css'
 
 type FilterChip =
@@ -33,7 +33,7 @@ const MANUAL_TRANSITIONS: Partial<Record<DroneStatus, DroneStatus[]>> = {
   OFFLINE: ['AVAILABLE'],
 }
 
-function matchesFilter(drone: DroneItem, filter: FilterChip): boolean {
+function matchesFilter(drone: DroneResponse, filter: FilterChip): boolean {
   if (filter === 'ALL') return true
   if (filter === 'AVAILABLE') return drone.status === 'AVAILABLE'
   if (filter === 'FLYING')
@@ -48,9 +48,9 @@ function matchesFilter(drone: DroneItem, filter: FilterChip): boolean {
 }
 
 type StatusChangeModalProps = {
-  drone: DroneItem
+  drone: DroneResponse
   onClose: () => void
-  onChanged: (updated: DroneItem) => void
+  onChanged: (updated: DroneResponse) => void
 }
 
 function StatusChangeModal({
@@ -75,11 +75,12 @@ function StatusChangeModal({
     setSaving(true)
     setError(null)
     try {
-      const updated = await dronesApi.patchDroneStatus(
-        drone.id,
-        selectedStatus,
-        reason,
-      )
+      const updated = await dronesApi.updateDrone(drone.id, {
+        serialNumber: drone.serialNumber,
+        droneModelId: drone.droneModel.id,
+        dronePayloadId: drone.dronePayload.id,
+        status: selectedStatus,
+      })
       onChanged(updated)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Lỗi không xác định')
@@ -107,7 +108,8 @@ function StatusChangeModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>
-          Đổi trạng thái — {drone.code} {drone.name ?? ''}
+          Đổi trạng thái — {drone.serialNumber}{' '}
+          {drone.droneModel?.modelCode ?? ''}
         </h3>
 
         {nextStatuses.length === 0 ? (
@@ -208,8 +210,10 @@ type DronesPageProps = {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function DronesPage({ droneId: _droneId }: DronesPageProps) {
   const [filter, setFilter] = useState<FilterChip>('ALL')
-  const [changingDrone, setChangingDrone] = useState<DroneItem | null>(null)
-  const [drones, setDrones] = useState<DroneItem[] | null>(null)
+  const [changingDrone, setChangingDrone] = useState<DroneResponse | null>(
+    null,
+  )
+  const [drones, setDrones] = useState<DroneResponse[] | null>(null)
 
   const query = useApiQuery((signal) => dronesApi.listDrones({ signal }), [])
 
@@ -228,7 +232,7 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
     outOfService: allDrones.filter((d) => d.status === 'OUT_OF_SERVICE').length,
   }
 
-  function handleChanged(updated: DroneItem) {
+  function handleChanged(updated: DroneResponse) {
     const base = drones ?? query.data?.items ?? []
     setDrones(base.map((d) => (d.id === updated.id ? updated : d)))
     setChangingDrone(null)
@@ -346,8 +350,8 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                     style={{ borderBottom: '1px solid var(--border)' }}
                   >
                     <td style={{ padding: '8px 12px', fontWeight: 500 }}>
-                      {drone.code}
-                      {drone.name ? (
+                      {drone.serialNumber}
+                      {drone.droneModel?.modelCode ? (
                         <span
                           style={{
                             fontWeight: 400,
@@ -355,12 +359,12 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                             marginLeft: 4,
                           }}
                         >
-                          {drone.name}
+                          {drone.droneModel.modelCode}
                         </span>
                       ) : null}
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {drone.droneModelName ?? '—'}
+                      {drone.droneModel?.modelCode ?? '—'}
                     </td>
                     <td style={{ padding: '8px 12px' }}>
                       <StatusBadge tone={droneStatusTone[drone.status]}>
@@ -368,21 +372,19 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                       </StatusBadge>
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {drone.batteryPct != null ? `${drone.batteryPct}%` : '—'}
+                      —
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {drone.baseStation ?? '—'}
+                      —
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {drone.payload ?? '—'}
+                      {drone.dronePayload?.modelName ?? '—'}
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {drone.hoursSinceMaintenance != null
-                        ? `${drone.hoursSinceMaintenance} giờ`
-                        : '—'}
+                      —
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {drone.lastSeenAt ?? '—'}
+                      {drone.updatedAt ?? '—'}
                     </td>
                     <td style={{ padding: '8px 12px' }}>
                       {canChange && (

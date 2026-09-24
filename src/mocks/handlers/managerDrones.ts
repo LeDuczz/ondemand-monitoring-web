@@ -6,6 +6,33 @@ import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import dronesSeed from '../data/drones.json'
 
+type SeedDroneModel = {
+  id: string
+  modelCode: string
+  manufacturer: string
+  category: string
+  maxFlightTimeMinutes: number
+  maxTakeoffWeightKg: number
+  maxFlightAltitudeMeters: number
+  maxWindResistanceMetersPerSecond: number
+  ipRating: string
+  specsMetadata: string
+  createdAt: string
+  updatedAt: string
+  version: number
+}
+
+type SeedDronePayload = {
+  id: string
+  modelName: string
+  sensorType: string
+  weightKg: number
+  payloadCapabilities: string
+  createdAt: string
+  updatedAt: string
+  version: number
+}
+
 type SeedDrone = {
   id: string
   code: string
@@ -27,9 +54,32 @@ type SeedDrone = {
     end: string | null
   }[]
   openTicketSeverity?: string
+  // P6 additions — BE `DroneResponse` fields, kept alongside the
+  // pre-existing MNG-09 display fields above (see
+  // features/manager/types/drones.ts `DroneResponse`).
+  droneModel?: SeedDroneModel
+  dronePayload?: SeedDronePayload
+  createdAt?: string
+  updatedAt?: string
+  version?: number
 }
 
-const drones = createCollection(dronesSeed.drones) as SeedDrone[]
+const drones = createCollection(dronesSeed.items) as SeedDrone[]
+
+// P6: `GET /api/drones/{id}` [BE] — maps straight to the BE `DroneResponse`
+// DTO shape rather than the MNG-09 display-only `DroneItem` shape.
+function toDroneResponse(d: SeedDrone) {
+  return {
+    id: d.id,
+    serialNumber: d.serialNumber ?? '',
+    droneModel: d.droneModel ?? null,
+    dronePayload: d.dronePayload ?? null,
+    status: d.status,
+    createdAt: d.createdAt ?? '',
+    updatedAt: d.updatedAt ?? '',
+    version: d.version ?? 1,
+  }
+}
 
 // Valid status transitions [ĐỀ XUẤT per MNG-09 design context]
 const VALID_TRANSITIONS: Partial<Record<DroneStatus, DroneStatus[]>> = {
@@ -76,11 +126,57 @@ registerMockRoutes([
       const start = (page - 1) * pageSize
       const items = filtered.slice(start, start + pageSize).map(toDroneItem)
 
-      return ok({ items, total, page, pageSize })
+      const totalPages = Math.ceil(total / pageSize)
+      return ok({
+        items: items.map(toDroneResponse),
+        page,
+        size: pageSize,
+        totalItems: total,
+        totalPages,
+        first: page === 1,
+        last: page >= totalPages,
+      })
     },
   },
 
-  // ── MNG-09: patch drone status [ĐỀ XUẤT] ──────────────────────────────
+  // ── P6: GET /api/drones/{id} [BE] — single drone, BE DroneResponse shape ──
+  {
+    method: 'GET',
+    path: '/api/drones/:id',
+    handler: ({ params }) => {
+      const drone = drones.find(
+        (d) => d.id === params.id || d.code === params.id,
+      )
+      if (!drone) return fail(404, 'NOT_FOUND', 'Không tìm thấy drone')
+      return ok(toDroneResponse(drone))
+    },
+  },
+
+  // ── PUT /api/drones/{id} [BE] — full update ────────────────────────────
+  {
+    method: 'PUT',
+    path: '/api/drones/:id',
+    handler: ({ params, body }) => {
+      const drone = drones.find(
+        (d) => d.id === params.id || d.code === params.id,
+      )
+      if (!drone) return fail(404, 'NOT_FOUND', 'Không tìm thấy drone')
+
+      const req = (body ?? {}) as {
+        serialNumber?: string
+        droneModelId?: string
+        dronePayloadId?: string
+        status?: DroneStatus
+      }
+      if (req.serialNumber) drone.serialNumber = req.serialNumber
+      if (req.status) drone.status = req.status
+      drone.updatedAt = new Date().toISOString()
+
+      return ok(toDroneResponse(drone), 'Đã cập nhật drone')
+    },
+  },
+
+  // ── MNG-09: patch drone status [ĐỀ XUẤT — kept for backward compat] ──
   {
     method: 'PATCH',
     path: '/api/drones/:id/status',
@@ -107,7 +203,7 @@ registerMockRoutes([
       }
 
       drone.status = req.status
-      return ok(toDroneItem(drone), 'Đã cập nhật trạng thái drone')
+      return ok(toDroneResponse(drone), 'Đã cập nhật trạng thái drone')
     },
   },
 ])

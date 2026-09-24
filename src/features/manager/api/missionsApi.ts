@@ -4,11 +4,20 @@ import type {
   CreateIncidentRequest,
   CreateMissionRequest,
   LiveTelemetry,
+  MediaAssetResponse,
+  MediaResponse,
   Mission,
   MissionCalendarItem,
   MissionIncident,
+  MissionPlanResponse,
+  MissionResponse,
   PatchScheduleRequest,
+  PersistedPreflightCheckResponse,
+  PostFlightStatusRequest,
+  PreflightCheckResponse,
   ResourceSuggestions,
+  WeatherPreflightCheckRequest,
+  WeatherPreflightCheckResponse,
 } from '../types/missions'
 
 /** MNG-04 / MNG-05 mission-creation + dispatch APIs. See evd/00-PLAN.md §3-5. */
@@ -165,6 +174,206 @@ export const missionsApi = {
     return apiRequest<Mission>(`/api/missions/${missionId}/cancel`, {
       method: 'POST',
       body: request,
+    })
+  },
+
+  /** `GET /api/missions` [BE]. Lists missions, optionally filtered by operatorId. */
+  listAllMissions(options?: {
+    operatorId?: string
+    signal?: AbortSignal
+  }): Promise<MissionResponse[]> {
+    const query: Record<string, string> = {}
+    if (options?.operatorId) query['operatorId'] = options.operatorId
+    return apiRequest<MissionResponse[]>('/api/missions', {
+      query,
+      signal: options?.signal,
+    })
+  },
+
+  /** `GET /api/missions/pending-assignment` [BE]. */
+  getPendingAssignment(signal?: AbortSignal): Promise<MissionResponse[]> {
+    return apiRequest<MissionResponse[]>('/api/missions/pending-assignment', { signal })
+  },
+
+  /** `GET /api/missions/code/{missionCode}` [BE]. */
+  getMissionByCode(missionCode: string, signal?: AbortSignal): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/code/${missionCode}`, { signal })
+  },
+
+  /** `GET /api/missions/{id}/plan` [BE]. */
+  getMissionPlan(missionId: string, signal?: AbortSignal): Promise<MissionPlanResponse> {
+    return apiRequest<MissionPlanResponse>(`/api/missions/${missionId}/plan`, { signal })
+  },
+
+  /** `POST /api/missions/{id}/start?tokenValue=` [BE]. */
+  startMission(missionId: string, tokenValue: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/start`, {
+      method: 'POST',
+      query: { tokenValue },
+    })
+  },
+
+  /** `POST /api/missions/{id}/complete` [BE]. */
+  completeMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/complete`, {
+      method: 'POST',
+    })
+  },
+
+  /** `POST /api/missions/{id}/fail` [BE]. */
+  failMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/fail`, {
+      method: 'POST',
+    })
+  },
+
+  /** `PATCH /api/missions/{id}/accept` [BE]. Header: X-Operator-Id. */
+  acceptMission(missionId: string, operatorId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/accept`, {
+      method: 'PATCH',
+      headers: { 'X-Operator-Id': operatorId },
+    })
+  },
+
+  /** `PATCH /api/missions/{id}/reject` [BE]. */
+  rejectMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/reject`, {
+      method: 'PATCH',
+    })
+  },
+
+  /** `POST /api/missions/{id}/preflight-check?droneCode=` [BE]. */
+  preflightCheck(missionId: string, droneCode: string): Promise<PreflightCheckResponse> {
+    return apiRequest<PreflightCheckResponse>(`/api/missions/${missionId}/preflight-check`, {
+      method: 'POST',
+      query: { droneCode },
+    })
+  },
+
+  /** `GET /api/missions/{missionId}/media` [BE]. */
+  getMissionMedia(missionId: string, signal?: AbortSignal): Promise<MediaResponse[]> {
+    return apiRequest<MediaResponse[]>(`/api/missions/${missionId}/media`, { signal })
+  },
+
+  /**
+   * `POST /api/missions/{id}/media` [BE]. Upload media (multipart).
+   * TODO: `apiRequest` always sets `Content-Type: application/json` and
+   * JSON-stringifies the body, so a `FormData` body will NOT be sent as
+   * multipart through it as-is. This needs either a dedicated multipart
+   * transport path in `httpClient.ts` (skip JSON stringify + let the
+   * browser set the multipart boundary) or a separate upload helper
+   * before this method is wired up to a real upload flow.
+   */
+  uploadMissionMedia(missionId: string, file: File): Promise<MediaAssetResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiRequest<MediaAssetResponse>(`/api/missions/${missionId}/media`, {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
+  /** `GET /api/missions/{missionId}/preflight-checks` [BE]. History. */
+  getPreflightHistory(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse[]> {
+    return apiRequest<PersistedPreflightCheckResponse[]>(`/api/missions/${missionId}/preflight-checks`, { signal })
+  },
+
+  /** `POST /api/missions/{missionId}/preflight-checks` [BE]. Start a new preflight check session. */
+  startPreflightCheck(missionId: string): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/preflight-checks`, {
+      method: 'POST',
+    })
+  },
+
+  /** `GET /api/missions/{missionId}/preflight-checks/current` [BE]. */
+  getCurrentPreflight(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/preflight-checks/current`, { signal })
+  },
+
+  /** `POST /api/missions/{id}/connect` [BE]. */
+  connectMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/connect`, {
+      method: 'POST',
+    })
+  },
+
+  /** `POST /api/missions/{id}/disconnect` [BE]. */
+  disconnectMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/disconnect`, {
+      method: 'POST',
+    })
+  },
+
+  /** `POST /api/missions/{id}/return` [BE]. */
+  returnMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/return`, {
+      method: 'POST',
+    })
+  },
+
+  /** `POST /api/missions/{id}/postflight` [BE]. */
+  postflightMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/postflight`, {
+      method: 'POST',
+    })
+  },
+
+  /** `POST /api/missions/{id}/gcs-lost` [BE]. Report GCS connection lost. */
+  reportGcsLost(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/gcs-lost`, {
+      method: 'POST',
+    })
+  },
+
+  /** `POST /api/missions/{id}/handover` [BE]. Handover mission. */
+  handoverMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/handover`, {
+      method: 'POST',
+    })
+  },
+
+  /** `PATCH /api/missions/{id}/replace-drone` [BE]. Replace drone on mission. */
+  replaceDrone(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/replace-drone`, {
+      method: 'PATCH',
+    })
+  },
+
+  /** `PATCH /api/missions/{id}/postflight-status` [BE]. Update post-flight status. */
+  updatePostflightStatus(missionId: string, request: PostFlightStatusRequest): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${missionId}/postflight-status`, {
+      method: 'PATCH',
+      body: request,
+    })
+  },
+
+  /** `POST /api/missions/{missionId}/images` [BE]. Upload image for mission. */
+  uploadMissionImage(missionId: string, file: File): Promise<MediaAssetResponse> {
+    // TODO: needs multipart handling - apiRequest JSON-stringifies body
+    return apiRequest<MediaAssetResponse>(`/api/missions/${missionId}/images`, {
+      method: 'POST',
+      body: file,
+    })
+  },
+
+  /** `POST /api/weather/preflight-check` [BE]. Check weather conditions. */
+  checkWeather(request: WeatherPreflightCheckRequest): Promise<WeatherPreflightCheckResponse> {
+    return apiRequest<WeatherPreflightCheckResponse>('/api/weather/preflight-check', {
+      method: 'POST',
+      body: request,
+    })
+  },
+
+  /** `GET /api/preflight-checks/{id}` [BE]. Get preflight check by ID. */
+  getPreflightCheckById(id: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/preflight-checks/${id}`, { signal })
+  },
+
+  /** `PATCH /api/preflight-checks/{id}/items/{checkType}` [BE]. Update preflight check item. */
+  updatePreflightCheckItem(id: string, checkType: string, data: unknown): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/preflight-checks/${id}/items/${checkType}`, {
+      method: 'PATCH',
+      body: data,
     })
   },
 }

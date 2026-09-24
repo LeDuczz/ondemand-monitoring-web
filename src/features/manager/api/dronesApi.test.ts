@@ -17,7 +17,7 @@ describe('dronesApi.listDrones', () => {
   it('returns a list of drones', async () => {
     const result = await dronesApi.listDrones()
     expect(result.items.length).toBeGreaterThan(0)
-    expect(result.total).toBeGreaterThan(0)
+    expect(result.totalItems).toBeGreaterThan(0)
   })
 
   it('filters by status', async () => {
@@ -28,19 +28,25 @@ describe('dronesApi.listDrones', () => {
   })
 })
 
-describe('dronesApi.patchDroneStatus', () => {
+describe('dronesApi.updateDrone', () => {
   it('updates drone status', async () => {
-    const result = await dronesApi.patchDroneStatus(
-      'drn-01',
-      'MAINTENANCE',
-      'Bảo trì định kỳ',
-    )
+    const result = await dronesApi.updateDrone('drn-01', {
+      serialNumber: 'SN001',
+      droneModelId: 'model1',
+      dronePayloadId: 'payload1',
+      status: 'MAINTENANCE',
+    })
     expect(result.status).toBe('MAINTENANCE')
   })
 
-  it('throws on invalid transition', async () => {
+  it('throws on unknown drone', async () => {
     await expect(
-      dronesApi.patchDroneStatus('drn-02', 'AVAILABLE', 'Test'),
+      dronesApi.updateDrone('nonexistent', {
+        serialNumber: 'SN999',
+        droneModelId: 'model1',
+        dronePayloadId: 'payload1',
+        status: 'AVAILABLE',
+      }),
     ).rejects.toThrow()
   })
 })

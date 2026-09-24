@@ -163,3 +163,38 @@ export type ApprovalRequest = {
   decision: ApprovalDecision
   reason: string
 }
+
+export type OrderDeliverableResponse = {
+  id: string
+  deliverableTypeId: string
+  deliverableTypeName: string
+  defaultFormat: string
+  requirement: Record<string, unknown> | null
+}
+
+/** BE actual response for `GET /api/orders/pending` and related order-detail endpoints. */
+export type OrderCreateResponse = {
+  id: string
+  customerId: string
+  customerName: string
+  title: string
+  serviceId: string
+  serviceName: string
+  description: string
+  address: string
+  longitude: number
+  latitude: number
+  coverageArea: Record<string, unknown> | null
+  preferredDateFrom: string
+  preferredDateTo: string
+  preferredTimeId: string
+  preferredTimeName: string
+  orderStatus: OrderStatus
+  rejectReason: string | null
+  reviewById: string | null
+  reviewByName: string | null
+  reviewAt: string | null
+  deliverables: OrderDeliverableResponse[]
+  createdAt: string
+  updatedAt: string
+}

@@ -2,8 +2,12 @@
 // (resource dispatch). Field names follow [BE] `MissionResponse` / brief
 // `flight_plan` / `flight_waypoint` / `mission_drone_assignment` /
 // `mission_operator_assignment` tables [BRIEF §A6] where they overlap.
-import type { MissionStatus } from '../../../shared/types/domain'
+import type { DroneStatus, MissionStatus } from '../../../shared/types/domain'
 import type { WaypointAction } from '../lib/waypoints'
+
+// Re-exported for consumers of BE-aligned mission types that also need
+// DroneStatus (e.g. MissionResponse.droneCode pairs with a drone's status).
+export type { DroneStatus }
 
 /** `flight_plan.plan_type` [BRIEF §A6]. */
 export type PlanType = 'ORBIT' | 'GRID' | 'POINT'
@@ -255,4 +259,201 @@ export type ResourceSuggestions = {
     resources: TimelineResource[]
   }
   alternatives: AlternativeSlot[]
+}
+
+export type MissionPlanResponse = {
+  id: string
+  planningAlgorithm: 'DIRECT' | 'ASTAR_SHORTEST' | 'ASTAR_ENERGY_AWARE'
+  plannedDistanceM: number
+  plannedDurationSec: number
+  plannedCruiseSpeedMps: number
+  maxPlannedAltitudeM: number
+  estimatedEnergyMah: number
+  estimatedBatteryUsedPercent: number
+  batteryCapacityMah: number
+  availableBatteryPercentAtPlanning: number
+  estimatedRemainingBatteryPercent: number
+  safetyReservePercent: number
+  requiredBatteryPercent: number
+  feasibilityStatus:
+    | 'FEASIBLE'
+    | 'INSUFFICIENT_BATTERY'
+    | 'BATTERY_DATA_UNAVAILABLE'
+    | 'NO_SAFE_ROUTE'
+    | 'INVALID_TARGET'
+  planningTimeMs: number
+  planVersion: number
+  replanningReason: string | null
+  replanningStatus: string | null
+  replannedAt: string | null
+  waypoints: PlanWaypointResponse[]
+}
+
+export type PlanWaypointResponse = {
+  id: string
+  sequence: number
+  simX: number
+  simY: number
+  altitudeM: number
+  plannedSpeedMps: number
+  reason:
+    | 'START'
+    | 'CRUISE'
+    | 'TERRAIN_CLEARANCE'
+    | 'OBSTACLE_AVOIDANCE'
+    | 'TARGET_APPROACH'
+    | 'TARGET'
+    | 'RETURN'
+}
+
+export type MissionResponse = {
+  id: string
+  orderId: string
+  orderTitle: string
+  customerName: string
+  missionCode: string
+  status: MissionStatus
+  operatorId: string | null
+  droneId: string | null
+  droneCode: string | null
+  latitude: number | null
+  longitude: number | null
+  address: string | null
+  scheduledStartAt: string | null
+  startedAt: string | null
+  completedAt: string | null
+  description: string | null
+  failureReason: string | null
+  rejectionReason: string | null
+  mediaType: 'IMAGE' | 'VIDEO' | 'STREAMING' | null
+  plan: MissionPlanResponse | null
+  preflightRetryCount: number
+  preflightPassed: boolean
+  preflightFaultType: string | null
+  preflightFailureReason: string | null
+  preflightCheckedAt: string | null
+}
+
+export type FlightTokenResponse = {
+  id: string
+  missionId: string
+  droneCode: string
+  operatorId: string
+  tokenValue: string
+  issuedAt: string
+  expiresAt: string
+  used: boolean
+  revoked: boolean
+}
+
+export type PreflightCheckItemStatus = 'PENDING' | 'CHECKING' | 'PASSED' | 'FAILED'
+export type PreflightCheckItemLevel = 'CRITICAL' | 'WARNING' | 'INFO'
+
+export type PreflightCheckItem = {
+  checkType: string
+  checkName: string
+  status: PreflightCheckItemStatus
+  checkLevel: PreflightCheckItemLevel
+  message: string
+  checkedAt: string
+}
+
+export type PersistedPreflightCheckResponse = {
+  id: string
+  missionId: string
+  status: 'CHECKING' | 'PASSED' | 'FAILED' | 'CANCELLED'
+  totalChecks: number
+  passedChecks: number
+  failedChecks: number
+  startedAt: string
+  completedAt: string | null
+  progressPercent: number
+  items: PreflightCheckItem[]
+}
+
+export type PreflightCheckResponse = {
+  id: string
+  droneCode: string
+  missionId: string
+  overallPassed: boolean
+  failureReason: string | null
+  faultType: string | null
+  batteryPercent: number
+  gpsFixType: string
+  gpsSatelliteCount: number
+  gyrometerOk: boolean
+  accelerometerOk: boolean
+  magnetometerOk: boolean
+  localPositionOk: boolean
+  globalPositionOk: boolean
+  homePositionOk: boolean
+  armable: boolean
+  connected: boolean
+  inAir: boolean
+  flightMode: string
+  cameraOk: boolean
+  gimbalOk: boolean
+  storageAvailableMb: number
+  storageOk: boolean
+  weatherOk: boolean
+  weatherNotes: string | null
+  flightToken: FlightTokenResponse | null
+  checkedAt: string
+}
+
+export type MediaAssetResponse = {
+  id: string
+  droneCode: string
+  missionId: string
+  type: string
+  storageProvider: string
+  originalFileName: string
+  contentType: string
+  fileSize: number
+  s3Bucket: string
+  s3Key: string
+  s3Url: string
+  capturedAt: string
+  createdAt: string
+}
+
+export type MediaResponse = {
+  id: string
+  missionId: string
+  droneId: string
+  type: string
+  url: string
+  expiresIn: number
+  contentType: string
+  fileSize: number
+  capturedAt: string
+}
+
+/** Body of `PATCH /api/missions/{id}/postflight-status` [BE]. */
+export type PostFlightStatusRequest = {
+  newDroneStatus: DroneStatus
+  notes: string
+}
+
+/** Body of `POST /api/weather/preflight-check` [BE]. */
+export type WeatherPreflightCheckRequest = {
+  missionId: string
+  droneCode: string
+  latitude: number
+  longitude: number
+}
+
+/** `POST /api/weather/preflight-check` [BE] response. */
+export type WeatherPreflightCheckResponse = {
+  status: string
+  safeToFly: boolean
+  summary: string
+  windSpeedMps: number
+  windGustMps: number
+  precipitationMmH: number
+  visibilityKm: number
+  temperatureC: number
+  humidityPercent: number
+  advisories: string[]
+  checkedAt: string
 }

@@ -8,6 +8,7 @@ export type ApiRequestOptions = {
   body?: unknown
   query?: Record<string, string | number | boolean | undefined>
   signal?: AbortSignal
+  headers?: Record<string, string>
 }
 
 // Backend envelope shape, matches `ApiResponse` in
@@ -99,11 +100,16 @@ export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { method = 'GET', body, query, signal } = options
+  const { method = 'GET', body, query, signal, headers: customHeaders } = options
   const url = buildUrl(path, query)
   const headers = new Headers()
   headers.set('Accept', 'application/json')
   if (body !== undefined) headers.set('Content-Type', 'application/json')
+  if (customHeaders) {
+    for (const [key, value] of Object.entries(customHeaders)) {
+      headers.set(key, value)
+    }
+  }
 
   const transport = transportOverride ?? defaultTransport
 

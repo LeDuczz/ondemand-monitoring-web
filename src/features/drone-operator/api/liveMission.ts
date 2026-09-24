@@ -49,6 +49,12 @@ export function setActiveMissionId(id: string) {
   window.sessionStorage.setItem(ACTIVE_MISSION_KEY, id)
 }
 
+export function clearActiveMissionId(id?: string) {
+  if (!id || window.sessionStorage.getItem(ACTIVE_MISSION_KEY) === id) {
+    window.sessionStorage.removeItem(ACTIVE_MISSION_KEY)
+  }
+}
+
 export function getActiveMissionId(): string | null {
   return window.sessionStorage.getItem(ACTIVE_MISSION_KEY)
 }

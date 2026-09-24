@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
 import { missionApi } from '../../mission/api/missionApi'
+import { clearActiveMissionId } from '../api/liveMission'
 import { useActiveMission } from '../api/useActiveMission'
 import type { FlightControlStatus } from '../omss/api/flightControlApi'
 import { postflightSummary } from '../lib/postflightSummary'
@@ -106,6 +107,22 @@ function readPostflightTelemetry(missionId: string): FlightControlStatus | null 
   } catch {
     return null
   }
+}
+
+function removeStorageByPrefix(storage: Storage, prefix: string) {
+  for (let index = storage.length - 1; index >= 0; index -= 1) {
+    const key = storage.key(index)
+    if (key?.startsWith(prefix)) storage.removeItem(key)
+  }
+}
+
+function clearCompletedMissionState(missionId: string, missionLabel: string, droneCode: string) {
+  clearActiveMissionId(missionId)
+  window.sessionStorage.removeItem(postflightTelemetryKey(missionId))
+  window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionLabel}.${droneCode}`)
+  window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionId}.${droneCode}`)
+  removeStorageByPrefix(window.localStorage, `omss.droneOperator.preflightState.${missionId}.`)
+  removeStorageByPrefix(window.localStorage, `omss.droneOperator.weatherState.${missionId}.`)
 }
 
 export function PostflightScreen({ missionId }: { missionId?: string }) {
@@ -220,6 +237,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       await missionApi.completeMission(effectiveMissionId).catch(() => {
         // Ignored if BE already auto-completed on status submit
       })
+      clearCompletedMissionState(effectiveMissionId, missionLabel, droneCode)
 
       setCompleted({
         overallOk: !hasFailures,

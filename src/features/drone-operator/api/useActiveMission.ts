@@ -1,7 +1,17 @@
 import { useState } from 'react'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { missionApi } from '../../mission/api/missionApi'
-import { getActiveMissionId, setActiveMissionId, type BackendMission } from './liveMission'
+import { clearActiveMissionId, getActiveMissionId, setActiveMissionId, type BackendMission } from './liveMission'
+
+function isSelectableMission(status?: string | null) {
+  return (
+    status === 'POSTFLIGHT_CHECKING' ||
+    status === 'RETURNING' ||
+    status === 'IN_FLIGHT' ||
+    status === 'IN_PROGRESS' ||
+    status === 'ACCEPTED'
+  )
+}
 
 export function useActiveMission(paramMissionId?: string) {
   const [selectedId, setSelectedId] = useState<string | null>(() => getActiveMissionId())
@@ -21,12 +31,7 @@ export function useActiveMission(paramMissionId?: string) {
     (m) => m.status === 'POSTFLIGHT_CHECKING' || m.status === 'RETURNING',
   )
   const activeMissions = allMissions.filter(
-    (m) =>
-      m.status === 'POSTFLIGHT_CHECKING' ||
-      m.status === 'RETURNING' ||
-      m.status === 'IN_FLIGHT' ||
-      m.status === 'IN_PROGRESS' ||
-      m.status === 'ACCEPTED',
+    (m) => isSelectableMission(m.status),
   )
 
   // Resolve target mission ID:
@@ -36,17 +41,20 @@ export function useActiveMission(paramMissionId?: string) {
   // 4. First active mission
   // 5. First mission from list
   let targetId = paramMissionId || ''
-  if (!targetId && selectedId && allMissions.some((m) => m.id === selectedId)) {
+  if (
+    !targetId &&
+    selectedId &&
+    allMissions.some((m) => m.id === selectedId && isSelectableMission(m.status))
+  ) {
     targetId = selectedId
+  } else if (!paramMissionId && selectedId && allMissions.some((m) => m.id === selectedId)) {
+    clearActiveMissionId(selectedId)
   }
   if (!targetId && postflightMissions.length > 0) {
     targetId = postflightMissions[0].id
   }
   if (!targetId && activeMissions.length > 0) {
     targetId = activeMissions[0].id
-  }
-  if (!targetId && allMissions.length > 0) {
-    targetId = allMissions[0].id
   }
 
   // Fetch individual mission details if we have a targetId

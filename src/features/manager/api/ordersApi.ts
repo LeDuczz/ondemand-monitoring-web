@@ -8,6 +8,34 @@ import type {
   OrderMissionBrief,
   OrderResourcePreview,
 } from '../types/orders'
+import type { MissionResponse } from '../types/missions'
+
+function toOrderDetail(order: OrderCreateResponse): OrderDetail {
+  return {
+    id: order.id,
+    code: order.id,
+    status: order.orderStatus,
+    customer: {
+      fullName: order.customerName || order.customerId,
+      companyName: '', email: null, phone: null,
+    },
+    serviceName: order.serviceName,
+    preferredDate: order.preferredDateFrom,
+    preferredTimeName: order.preferredTimeName,
+    preferredWindow: order.preferredTimeName || null,
+    submittedAt: order.createdAt,
+    addressText: order.address || null,
+    center: order.latitude != null && order.longitude != null
+      ? { lat: order.latitude, lon: order.longitude } : null,
+    radiusM: null,
+    nearestBase: null,
+    mediaRequirements: order.deliverables?.map((item) => ({
+      label: `${item.deliverableTypeName}${item.requirement ? ` · ${JSON.stringify(item.requirement)}` : ''}`,
+    })) ?? null,
+    purpose: order.description || null,
+    attachments: null,
+  }
+}
 
 /** MNG-02 / MNG-03 order-review APIs. See evd/00-PLAN.md §3. */
 export const ordersApi = {
@@ -20,7 +48,8 @@ export const ordersApi = {
 
   /** `GET /api/orders/{id}` [TK]. */
   getOrder(id: string, signal?: AbortSignal): Promise<OrderDetail> {
-    return apiRequest<OrderDetail>(`/api/orders/${id}`, { signal })
+    return apiRequest<OrderCreateResponse | OrderDetail>(`/api/orders/${id}`, { signal })
+      .then((order) => 'customer' in order ? order : toOrderDetail(order))
   },
 
   /** `GET /api/orders/{id}/analysis/latest` [BRIEF C4]. */
@@ -53,8 +82,8 @@ export const ordersApi = {
   },
 
   /** `POST /api/orders/{id}/approve` [BE] — no body, creates a mission. */
-  approve(id: string): Promise<void> {
-    return apiRequest<void>(`/api/orders/${id}/approve`, { method: 'POST' })
+  approve(id: string): Promise<MissionResponse | void> {
+    return apiRequest<MissionResponse | void>(`/api/orders/${id}/approve`, { method: 'POST' })
   },
 
   /** `POST /api/orders/{id}/approval` [BRIEF C4] `{decision, reason}`. */

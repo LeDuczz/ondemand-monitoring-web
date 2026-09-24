@@ -8,7 +8,8 @@ import {
 import { resetMockDb } from '../../../mocks/db'
 import { mockFetch } from '../../../mocks'
 import { ordersApi } from './ordersApi'
-import { missionsApi } from './missionsApi'
+import { missionsApi, toMissionCalendarItem } from './missionsApi'
+import type { MissionResponse } from '../types/missions'
 import type { CreateMissionRequest } from '../types/missions'
 
 const validRequest: CreateMissionRequest = {
@@ -26,6 +27,24 @@ const validRequest: CreateMissionRequest = {
   },
   waypoints: [{ seq: 1, action: 'TAKEOFF', lat: 10.77, lon: 106.7, altM: 0 }],
 }
+
+describe('Staff mission response mapping', () => {
+  it('keeps unavailable schedule and assignment details unknown', () => {
+    const item = toMissionCalendarItem({
+      id: 'mission-1', orderId: 'order-1', orderTitle: 'Survey',
+      missionCode: 'MS-001', status: 'SCHEDULED',
+      scheduledStartAt: '2026-09-24T03:00:00Z',
+      droneId: 'drone-1', droneCode: 'DRN-001', operatorId: 'operator-1',
+      address: 'Site A', latitude: 10.5, longitude: 106.5,
+    } as MissionResponse)
+
+    expect(item.missionCode).toBe('MS-001')
+    expect(item.serviceLabel).toBe('Survey')
+    expect(item.scheduledEndAt).toBeNull()
+    expect(item.operatorName).toBeNull()
+    expect(item.orderCode).toBeNull()
+  })
+})
 
 describe('missionsApi (mock mode)', () => {
   afterEach(() => {

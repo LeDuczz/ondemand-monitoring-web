@@ -205,6 +205,15 @@ describe('OrderReviewPage', () => {
     )
   })
 
+  it('opens assignment for the mission returned by the backend', async () => {
+    mockHappyPath(feasibleAnalysis)
+    vi.spyOn(ordersApi, 'approve').mockResolvedValue({ id: 'mission-real' } as Awaited<ReturnType<typeof ordersApi.approve>>)
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    fireEvent.click(screen.getByRole('button', { name: 'Duyệt và tạo mission' }))
+    await waitFor(() => expect(window.location.hash).toBe('#portal/staff/missions/mission-real/dispatch'))
+  })
+
   it('shows the 409 error state', async () => {
     vi.spyOn(ordersApi, 'getOrder').mockRejectedValue(
       new ApiError('Đơn không còn ở trạng thái chờ duyệt', {

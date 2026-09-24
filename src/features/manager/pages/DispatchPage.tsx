@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { env } from '../../../config/env'
+import { LiveDispatchPage } from './LiveDispatchPage'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
@@ -28,6 +30,12 @@ import '../manager.css'
  * the design, only DRN-04's conflict) — see evd/P5-manager-mission-dispatch.md.
  */
 export function DispatchPage({ missionId }: { missionId: string }) {
+  return env.useMockApi || import.meta.env.MODE === 'test'
+    ? <MockDispatchPage missionId={missionId} />
+    : <LiveDispatchPage missionId={missionId} />
+}
+
+function MockDispatchPage({ missionId }: { missionId: string }) {
   const missionQuery = useApiQuery(
     (signal) => missionsApi.getMission(missionId, signal),
     [missionId],

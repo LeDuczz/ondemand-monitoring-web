@@ -51,10 +51,10 @@ export type MissionMediaRequirement =
 export type Mission = {
   id: string
   orderId: string
-  orderCode: string
+  orderCode: string | null
   missionCode: string
   status: MissionStatus
-  attemptNumber: number
+  attemptNumber: number | null
   droneId: string | null
   operatorId: string | null
   /** PROPOSED — id of the current `mission_drone_assignment` row, needed for release. */

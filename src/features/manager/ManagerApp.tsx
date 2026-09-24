@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { env } from '../../config/env'
 
 import { StateView } from '../../shared/components/odm/StateView'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -92,7 +93,9 @@ function renderScreen(route: ManagerRoute) {
   if (route.screen === 'orderReview')
     return <OrderReviewPage orderId={route.orderId} />
   if (route.screen === 'missionCreate')
-    return <CreateMissionPage orderId={route.orderId} />
+    return env.useMockApi || import.meta.env.MODE === 'test'
+      ? <CreateMissionPage orderId={route.orderId} />
+      : <RedirectToAssignments />
   if (route.screen === 'missionDispatch')
     return <DispatchPage missionId={route.missionId} />
   if (route.screen === 'schedule') return <SchedulePage />
@@ -120,4 +123,11 @@ function renderScreen(route: ManagerRoute) {
       }
     />
   )
+}
+
+function RedirectToAssignments() {
+  useEffect(() => {
+    window.location.hash = '#portal/staff/assignments'
+  }, [])
+  return <p>Mission đã được backend tạo khi duyệt đơn. Đang mở trang phân công…</p>
 }

@@ -1,5 +1,6 @@
 // MNG-08: Mission list + detail panel
 import { useEffect, useState } from 'react'
+import { env } from '../../../config/env'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
@@ -182,7 +183,8 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
           <button
             type="button"
             className="odm-btn odm-btn-p"
-            disabled={retrying}
+            disabled={retrying || (!env.useMockApi && import.meta.env.MODE !== 'test')}
+            title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ tạo lại mission' : undefined}
             onClick={handleRetry}
           >
             {retrying ? 'Đang tạo lại...' : 'Tạo lại mission'}

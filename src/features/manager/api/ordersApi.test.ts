@@ -28,6 +28,20 @@ describe('ordersApi (mock mode)', () => {
     expect(detail.radiusM).toBe(600)
   })
 
+  it('maps the backend order DTO to the existing review UI', async () => {
+    setHttpTransport(async () => new Response(JSON.stringify({ success: true, data: {
+      id: 'order-real', customerId: 'customer-1', customerName: 'Khách hàng A',
+      title: 'Chụp ảnh', serviceName: 'Giám sát', description: 'Kiểm tra',
+      address: 'Khu A', latitude: 10.6, longitude: 106.7,
+      preferredDateFrom: '2026-09-24', preferredTimeName: 'Buổi sáng',
+      orderStatus: 'PENDING', createdAt: '2026-09-24T08:00:00Z', deliverables: [],
+    } }), { status: 200 }))
+    const detail = await ordersApi.getOrder('order-real')
+    expect(detail.customer.fullName).toBe('Khách hàng A')
+    expect(detail.center).toEqual({ lat: 10.6, lon: 106.7 })
+    expect(detail.code).toBe('order-real')
+  })
+
   it('getLatestAnalysis resolves findings for a known order', async () => {
     setHttpTransport(mockFetch)
     const analysis = await ordersApi.getLatestAnalysis('ord-2609-0157')
@@ -62,6 +76,13 @@ describe('ordersApi (mock mode)', () => {
   it('approve resolves without throwing', async () => {
     setHttpTransport(mockFetch)
     await expect(ordersApi.approve('ord-2609-0157')).resolves.toBeUndefined()
+  })
+
+  it('returns the mission created by the real approve endpoint', async () => {
+    setHttpTransport(async () => new Response(JSON.stringify({ success: true, data: {
+      id: 'mission-real', missionCode: 'MS-REAL', status: 'RESOURCE_ASSIGNING',
+    } }), { status: 200 }))
+    await expect(ordersApi.approve('order-real')).resolves.toMatchObject({ id: 'mission-real' })
   })
 
   it('submitApproval REJECTED resolves without throwing', async () => {

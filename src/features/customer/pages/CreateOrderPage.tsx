@@ -793,6 +793,99 @@ function buildQuickReplies(messages: ConsultationMessage[]) {
   ]
 }
 
+function findQuickReplyService(reply: string, services: ServiceOption[]) {
+  const normalized = normalizeText(reply)
+  const candidates = normalized.includes('cay trong') || normalized.includes('nong nghiep') || normalized.includes('sau benh') || normalized.includes('sinh truong')
+    ? ['ndvi', 'thuc vat', 'cay trong', 'nong nghiep']
+    : normalized.includes('kho bai') || normalized.includes('logistics') || normalized.includes('container')
+      ? ['tuan tra', 'patrol', 'khu vuc', 'kiem ke']
+      : normalized.includes('su kien') || normalized.includes('dong nguoi') || normalized.includes('dam dong') || normalized.includes('bai do xe')
+        ? ['tuan tra', 'patrol', 'su kien', 'giao thong']
+        : normalized.includes('diem nong') || normalized.includes('nhiet') || normalized.includes('ro ri')
+          ? ['nhiet', 'thermal', 'hong ngoai']
+          : normalized.includes('ban do') || normalized.includes('2d') || normalized.includes('3d')
+            ? ['ban do', 'mapping', '2d', '3d']
+            : normalized.includes('cong trinh') || normalized.includes('toa nha') || normalized.includes('tien do')
+              ? ['toa nha', 'co so ha tang', 'cong trinh', 'xay dung']
+              : []
+
+  return services.find((service) => {
+    const haystack = normalizeText(`${service.id} ${service.name} ${service.description ?? ''}`)
+    return candidates.some((candidate) => haystack.includes(candidate))
+  })
+}
+
+function buildQuickReplyAnswer(reply: string, messages: ConsultationMessage[]) {
+  const normalized = normalizeText(reply)
+  const intent = collectCustomerIntent([
+    ...messages,
+    {
+      id: 'preview',
+      senderType: 'CUSTOMER',
+      message: reply,
+    },
+  ])
+
+  if (normalized.includes('cong trinh') || normalized.includes('toa nha')) {
+    return 'Mình đã ghi nhận nhu cầu giám sát tòa nhà/công trình. Mục tiêu chính là kiểm tra nứt vỡ/hư hỏng, phát hiện điểm nóng, rà soát an toàn khu vực hay theo dõi tiến độ?'
+  }
+  if (normalized.includes('cay trong') || normalized.includes('nong nghiep')) {
+    return 'Mình đã ghi nhận nhu cầu theo dõi cây trồng. Anh/chị muốn phát hiện sinh trưởng kém, thiếu nước, sâu bệnh hay so sánh thay đổi định kỳ?'
+  }
+  if (normalized.includes('kho bai') || normalized.includes('logistics') || normalized.includes('container')) {
+    return 'Mình đã ghi nhận nhu cầu kiểm tra kho bãi/logistics. Anh/chị muốn kiểm kê container/xe/vật tư, phát hiện quá tải hay theo dõi luồng ra vào?'
+  }
+  if (normalized.includes('su kien') || normalized.includes('dong nguoi') || normalized.includes('dam dong')) {
+    return 'Mình đã ghi nhận nhu cầu giám sát sự kiện đông người. Anh/chị muốn theo dõi mật độ đám đông, điểm ùn ứ, bãi đỗ xe hay cảnh báo thời gian thực?'
+  }
+
+  const goalText = intent.goals.length ? intent.goals.join(', ') : 'mục tiêu đã chọn'
+  const focusText = intent.focusAreas.length ? ` Ưu tiên ${intent.focusAreas.join(' và ')}.` : ''
+  return `Đã ghi nhận: ${goalText}.${focusText} Anh/chị kiểm tra thông tin bên phải, rồi có thể bổ sung thêm hoặc tiếp tục sang bước thời gian và kết quả.`
+}
+
+function buildQuickReplyConsultation(
+  reply: string,
+  messages: ConsultationMessage[],
+  services: ServiceOption[],
+  currentConsultation: CustomerConsultation | null,
+) {
+  const now = Date.now()
+  const nextMessages: ConsultationMessage[] = [
+    ...messages,
+    {
+      id: `local-quick-user-${now}`,
+      senderType: 'CUSTOMER',
+      message: reply,
+    },
+    {
+      id: `local-quick-ai-${now}`,
+      senderType: 'ASSISTANT',
+      message: buildQuickReplyAnswer(reply, messages),
+    },
+  ]
+  const recommendedService = findQuickReplyService(reply, services)
+  const quickSummary = buildIntentSummary(
+    {
+      id: currentConsultation?.id ?? `local-quick-${now}`,
+      requirementSummary: currentConsultation?.requirementSummary,
+      recommendedServiceId: recommendedService?.id ?? currentConsultation?.recommendedServiceId,
+      recommendedServiceName: recommendedService?.name ?? currentConsultation?.recommendedServiceName,
+    },
+    nextMessages,
+    recommendedService,
+  ).summary
+
+  return {
+    id: currentConsultation?.id ?? `local-quick-${now}`,
+    status: currentConsultation?.status ?? 'ACTIVE',
+    recommendedServiceId: recommendedService?.id ?? currentConsultation?.recommendedServiceId,
+    recommendedServiceName: recommendedService?.name ?? currentConsultation?.recommendedServiceName,
+    requirementSummary: quickSummary,
+    messages: nextMessages,
+  } satisfies CustomerConsultation
+}
+
 export function CreateOrderPage() {
   const { meta: mapMeta, error: mapError } = useSimulationMapMeta()
   const zones = useSimulationZones()
@@ -1153,6 +1246,18 @@ export function CreateOrderPage() {
     }
   }
 
+  function sendQuickReply(reply: string) {
+    if (chatBusy) return
+    const nextConsultation = buildQuickReplyConsultation(
+      reply,
+      chatMessages,
+      services,
+      consultation,
+    )
+    setChatText('')
+    receiveConsultation(nextConsultation)
+  }
+
   function buildPayload(): CreateOrderPayload {
     const latitude = toNumber(form.latitude, 10.6402)
     const longitude = toNumber(form.longitude, 106.6912)
@@ -1282,6 +1387,7 @@ export function CreateOrderPage() {
           selectedService={selectedService}
           setChatText={setChatText}
           startConsultation={startConsultation}
+          sendQuickReply={sendQuickReply}
           sendChatMessage={sendChatMessage}
           update={update}
         />
@@ -1492,6 +1598,7 @@ function StepService({
   selectedService,
   setChatText,
   startConsultation,
+  sendQuickReply,
   sendChatMessage,
   update,
 }: {
@@ -1506,6 +1613,7 @@ function StepService({
   selectedService?: ServiceOption
   setChatText: (value: string) => void
   startConsultation: () => void
+  sendQuickReply: (reply: string) => void
   sendChatMessage: () => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
@@ -1584,7 +1692,7 @@ function StepService({
                 <button
                   key={reply}
                   type="button"
-                  onClick={() => setChatText(reply)}
+                  onClick={() => sendQuickReply(reply)}
                   disabled={chatBusy}
                   style={{
                     border: '1px solid var(--bd)',

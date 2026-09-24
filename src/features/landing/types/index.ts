@@ -11,6 +11,7 @@ export type WorkflowStep = {
   title: string
   detail: string
   icon: IconName
+  emoji?: string
 }
 
 export type FeasibilityCheck = {
@@ -23,6 +24,7 @@ export type FeatureHighlight = {
   title: string
   detail: string
   icon: IconName
+  emoji?: string
 }
 
 export type ResultFile = {
@@ -35,17 +37,11 @@ export type IndustryCard = {
   detail: string
   location: string
   icon: IconName
+  emoji?: string
 }
 
 export type FaqItem = {
   question: string
-  /**
-   * The design (evd/design/Landing.dc.html) only rendered the answer body for
-   * the first FAQ question; the other four are shown collapsed with no answer
-   * markup at all. Per the "no invention" rule we do not write copy that is
-   * not in the design, so `answer` is left undefined for those and the
-   * accordion panel renders empty when expanded.
-   */
   answer?: string
 }
 

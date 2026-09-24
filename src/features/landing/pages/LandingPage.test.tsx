@@ -53,7 +53,9 @@ describe('LandingPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Giải đáp nhanh' }),
     ).toBeInTheDocument()
-    expect(screen.getAllByText('OnDemand Monitor').length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByAltText('OnDemand Monitor').length,
+    ).toBeGreaterThan(0)
   })
 
   it('sends a guest to registration from the create-request CTA', () => {
@@ -109,27 +111,20 @@ describe('LandingPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('renders FAQ questions without answer copy as static, non-expandable rows', () => {
+  it('renders all FAQ questions as expandable accordion items', () => {
     render(<LandingPage />)
     const question = 'Bao lâu thì đơn được duyệt?'
     expect(screen.getByText(question)).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: question }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('button', { name: question }),
+    ).toBeInTheDocument()
   })
 
-  it('flips document.documentElement.dataset.theme when the theme toggle is clicked', () => {
+  it('renders the chatbot FAB button', () => {
     render(<LandingPage />)
-    expect(document.documentElement.dataset.theme).toBe('light')
-    const toggle = screen.getByRole('button', {
-      name: /Đổi sang giao diện tối/,
-    })
-    fireEvent.click(toggle)
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    fireEvent.click(
-      screen.getByRole('button', { name: /Đổi sang giao diện sáng/ }),
-    )
-    expect(document.documentElement.dataset.theme).toBe('light')
+    expect(
+      screen.getByRole('button', { name: 'Trợ lý AI' }),
+    ).toBeInTheDocument()
   })
 
   it('toggles the mobile navigation menu button', () => {

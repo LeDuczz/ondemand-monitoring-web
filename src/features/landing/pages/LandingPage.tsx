@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { authSession } from '../../auth/api/authApi'
 import { Icon, type IconName } from '../../../shared/components/Icon'
@@ -6,21 +6,14 @@ import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import {
   aiVerdictTone,
   findingSeverityTone,
-  missionStatusTone,
 } from '../../../shared/lib/statusTone'
 import type { StatusTone } from '../../../shared/types/domain'
 import * as content from '../content'
+import { HeroMap, LiveMap } from '../components/LeafletMap'
 import { resolveCreateRequestTarget } from '../resolveCreateRequestTarget'
+import { ChatbotWidget } from '../components/ChatbotWidget'
 import type { FeasibilityCheck } from '../types'
 import '../landing.css'
-
-function BrandMark() {
-  return (
-    <span className="lp-brand-mark" aria-hidden="true">
-      <Icon name="cpu" />
-    </span>
-  )
-}
 
 function Logo() {
   return (
@@ -29,8 +22,11 @@ function Logo() {
       href="#top"
       aria-label={`${content.brandName} - trang chủ`}
     >
-      <BrandMark />
-      <span>{content.brandName}</span>
+      <img
+        src="/images/logo-new.png"
+        alt={content.brandName}
+        className="lp-logo-img"
+      />
     </a>
   )
 }
@@ -55,28 +51,6 @@ function SectionIntro({
   )
 }
 
-function ThemeToggle() {
-  const [dark, setDark] = useState(
-    () => document.documentElement.dataset.theme === 'dark',
-  )
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-  }, [dark])
-  return (
-    <div className="lp-theme-toggle">
-      <span>Giao diện</span>
-      <button
-        className="lp-theme-toggle-btn"
-        type="button"
-        aria-label={`Đổi sang giao diện ${dark ? 'sáng' : 'tối'}`}
-        onClick={() => setDark((value) => !value)}
-      >
-        <Icon name={dark ? 'sun' : 'moon'} />
-      </button>
-    </div>
-  )
-}
-
 function Header({ createRequestTarget }: { createRequestTarget: string }) {
   const [menuOpen, setMenuOpen] = useState(false)
   return (
@@ -97,27 +71,24 @@ function Header({ createRequestTarget }: { createRequestTarget: string }) {
             </a>
           ))}
           <div className="lp-nav-actions">
-            <a className="odm-btn odm-btn-gh odm-btn-lg" href="#auth/login">
+            <a className="lp-btn-o" href="#auth/login">
               Đăng nhập
             </a>
-            <a
-              className="odm-btn odm-btn-p odm-btn-lg"
-              href={createRequestTarget}
-            >
+            <a className="lp-btn-p" href={createRequestTarget}>
               Tạo yêu cầu
             </a>
           </div>
         </nav>
+        <span className="lp-spacer" />
         <div className="lp-header-actions">
-          <ThemeToggle />
           <a
-            className="odm-btn odm-btn-gh odm-btn-lg lp-header-actions-login"
+            className="lp-btn-o lp-header-actions-login"
             href="#auth/login"
           >
             Đăng nhập
           </a>
           <a
-            className="odm-btn odm-btn-p odm-btn-lg lp-header-actions-cta"
+            className="lp-btn-p lp-header-actions-cta"
             href={createRequestTarget}
           >
             Tạo yêu cầu
@@ -140,75 +111,37 @@ function Header({ createRequestTarget }: { createRequestTarget: string }) {
 function HeroIllustration() {
   const { heroAiCard, heroMissionCard } = content
   return (
-    <div
-      className="lp-hero-art"
-      role="img"
-      aria-label="Minh hoạ bản đồ giám sát với thẻ AI kiểm tra khả thi và thẻ mission đang bay"
-    >
-      <svg viewBox="0 0 480 400" className="lp-hero-map" aria-hidden="true">
-        <rect width="480" height="400" rx="20" fill="var(--map-bg)" />
-        <rect
-          x="36"
-          y="36"
-          width="110"
-          height="84"
-          rx="8"
-          fill="var(--map-block)"
-        />
-        <rect
-          x="190"
-          y="76"
-          width="84"
-          height="130"
-          rx="8"
-          fill="var(--map-block)"
-        />
-        <rect
-          x="310"
-          y="28"
-          width="140"
-          height="64"
-          rx="8"
-          fill="var(--map-block)"
-        />
-        <rect x="0" y="206" width="480" height="16" fill="var(--map-road)" />
-        <rect x="0" y="211" width="480" height="2" fill="var(--map-road2)" />
-        <circle cx="336" cy="284" r="66" fill="var(--map-water)" />
-        <circle cx="112" cy="300" r="46" fill="var(--map-park)" />
-        <circle cx="280" cy="168" r="6" fill="var(--blue-solid)" />
-        <circle
-          cx="280"
-          cy="168"
-          r="15"
-          fill="none"
-          stroke="var(--blue-solid)"
-          strokeWidth="2"
-          opacity="0.45"
-        />
-      </svg>
-      <div className="odm-card lp-ai-card">
-        <div className="lp-ai-card-top">
-          <span className="lp-ai-card-score">{heroAiCard.score}</span>
-          <StatusBadge tone="green">PASS</StatusBadge>
-        </div>
-        <div className="lp-ai-card-body">
-          <strong>{heroAiCard.label}</strong>
-          <span>{heroAiCard.status}</span>
+    <div className="lp-mapcard">
+      <HeroMap id="lp-hero-map" />
+      <div className="lp-float" style={{ left: 14, top: 14 }}>
+        <div className="lp-score-wrap">
+          <div
+            className="lp-score-ring"
+            style={{
+              background: `conic-gradient(var(--lp-green, #1FA971) 92%, #DDEBE4 0)`,
+            }}
+          >
+            <span className="lp-score-ring-inner">{heroAiCard.score}</span>
+          </div>
+          <div>
+            <small style={{ color: 'var(--lp-mute)' }}>{heroAiCard.label}</small>
+            <br />
+            <b>{heroAiCard.status}</b>{' '}
+            <span className="lp-pill lp-pill-g">PASS</span>
+          </div>
         </div>
       </div>
-      <div className="odm-card lp-mission-card">
-        <div className="lp-mission-card-top">
-          <span className="odm-mono">{heroMissionCard.code}</span>
-          <StatusBadge tone={missionStatusTone.IN_FLIGHT}>
-            {heroMissionCard.status}
-          </StatusBadge>
-        </div>
-        <p>{heroMissionCard.title}</p>
-        <div className="lp-mission-card-meta">
-          <span className="odm-mono">{heroMissionCard.drone}</span>
-          <span>{heroMissionCard.battery}</span>
-          <span>{heroMissionCard.altitude}</span>
-        </div>
+      <div className="lp-float" style={{ left: 14, right: 14, bottom: 14 }}>
+        <span className="lp-pill lp-pill-b">IN_FLIGHT</span>{' '}
+        <b style={{ fontFamily: 'monospace', fontSize: 12 }}>
+          {heroMissionCard.code}
+        </b>
+        <br />
+        {heroMissionCard.title}{' '}
+        <span style={{ float: 'right', color: 'var(--lp-mute)' }}>
+          {heroMissionCard.drone} · Pin {heroMissionCard.battery} ·{' '}
+          {heroMissionCard.altitude}
+        </span>
       </div>
     </div>
   )
@@ -217,14 +150,14 @@ function HeroIllustration() {
 function FeatureList({
   items,
 }: {
-  items: { title: string; detail: string; icon: IconName }[]
+  items: { title: string; detail: string; icon: IconName; emoji?: string }[]
 }) {
   return (
     <ul className="lp-feature-list">
       {items.map((item) => (
         <li key={item.title}>
           <span className="lp-feature-list-icon" aria-hidden="true">
-            <Icon name={item.icon} />
+            {item.emoji || <Icon name={item.icon} />}
           </span>
           <span>
             <strong>{item.title}</strong>
@@ -253,9 +186,25 @@ function AiResultPanel() {
         </StatusBadge>
       </div>
       <div className="odm-card-body lp-panel-body">
-        <div className="lp-panel-verdict">
-          <strong>{aiResultPanel.verdictTitle}</strong>
-          <p>{aiResultPanel.verdictDetail}</p>
+        <div
+          className="lp-score-ring-wrap"
+          style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}
+        >
+          <div
+            className="lp-score-ring"
+            style={{
+              background: `conic-gradient(var(--lp-amber) ${aiResultPanel.score}%, #F4E6C7 0)`,
+            }}
+          >
+            <span className="lp-score-ring-inner">{aiResultPanel.score}</span>
+          </div>
+          <div>
+            <strong>{aiResultPanel.verdictTitle}</strong>
+            <br />
+            <small style={{ color: 'var(--lp-mute)' }}>
+              {aiResultPanel.verdictDetail}
+            </small>
+          </div>
         </div>
         <ul className="lp-check-list">
           {aiFeasibilityChecks.map((check) => (
@@ -272,7 +221,7 @@ function AiResultPanel() {
             <span>Gợi ý ngày thay thế</span>
             <strong>{aiResultPanel.altSuggestion}</strong>
           </div>
-          <button className="odm-btn odm-btn-p odm-btn-sm" type="button">
+          <button className="lp-btn-p" type="button">
             Chọn
           </button>
         </div>
@@ -290,6 +239,7 @@ function LivePanel() {
         <StatusBadge tone="green">{livePanel.status}</StatusBadge>
       </div>
       <div className="odm-card-body lp-panel-body">
+        <LiveMap id="lp-live-map" />
         <div className="lp-live-meta">
           <span>
             <Icon name="activity" /> {livePanel.battery}
@@ -302,48 +252,32 @@ function LivePanel() {
           <strong>{livePanel.resultsTitle}</strong>
           <span className="odm-mono">{livePanel.fileCount}</span>
         </div>
-        <ul className="lp-results-list">
+        <div className="lp-file-cards">
           {liveResultFiles.map((file) => (
-            <li key={file.name}>
-              <span className="odm-mono">{file.name}</span>
-              <StatusBadge tone={file.status === 'PASS' ? 'green' : 'yellow'}>
+            <div className="lp-file-card" key={file.name}>
+              <div style={{ fontSize: 22 }}>
+                {file.name.startsWith('VID') ? '🎬' : '🖼️'}
+              </div>
+              <div>{file.name}</div>
+              <span
+                className={`lp-pill lp-pill-${file.status === 'PASS' ? 'g' : 'b'}`}
+              >
                 {file.status}
-              </StatusBadge>
-            </li>
+              </span>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   )
 }
 
 function FaqAccordion() {
-  // Only the design's first FAQ item has answer copy (see content.ts / the
-  // FaqItem.answer doc comment in ../types); the other four are shown as
-  // static rows instead of accordion buttons that would expand into an
-  // empty panel. Once the team supplies answers for them, adding `answer`
-  // in content.ts is enough to turn them into accordion items too.
-  const firstExpandableIndex = content.faqItems.findIndex((item) => item.answer)
-  const [openIndex, setOpenIndex] = useState<number | null>(
-    firstExpandableIndex,
-  )
+  const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
     <div className="lp-faq-list">
       {content.faqItems.map((item, index) => {
-        if (!item.answer) {
-          return (
-            <div
-              className="lp-faq-item lp-faq-item--static"
-              key={item.question}
-            >
-              <span className="lp-faq-question lp-faq-question--static">
-                {item.question}
-              </span>
-            </div>
-          )
-        }
-
         const open = openIndex === index
         const buttonId = `lp-faq-button-${index}`
         const panelId = `lp-faq-panel-${index}`
@@ -420,16 +354,21 @@ export function LandingPage() {
         <section className="lp-hero">
           <div className="lp-container lp-hero-grid">
             <div className="lp-hero-copy">
-              <span className="lp-chip">
-                <Icon name="sparkle" />
-                {content.heroChip}
-              </span>
+              <span className="lp-chip">{content.heroChip}</span>
               <h1>
                 {content.heroTitleLines[0]}
                 <br />
                 <span>{content.heroTitleLines[1]}</span>
               </h1>
               <p className="lp-hero-lede">{content.heroLede}</p>
+              <div className="lp-hero-actions">
+                <a className="lp-btn-p" href={createRequestTarget}>
+                  Tạo yêu cầu giám sát →
+                </a>
+                <a className="lp-btn-o" href="#auth/login">
+                  Đăng nhập
+                </a>
+              </div>
               <ul className="lp-hero-checklist">
                 {content.heroChecklist.map((item) => (
                   <li key={item}>
@@ -438,17 +377,6 @@ export function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <div className="lp-hero-actions">
-                <a
-                  className="odm-btn odm-btn-p odm-btn-xl"
-                  href={createRequestTarget}
-                >
-                  Tạo yêu cầu giám sát
-                </a>
-                <a className="odm-btn odm-btn-gh odm-btn-xl" href="#auth/login">
-                  Đăng nhập
-                </a>
-              </div>
             </div>
             <HeroIllustration />
           </div>
@@ -477,7 +405,9 @@ export function LandingPage() {
                 <div className="odm-card lp-workflow-card" key={step.no}>
                   <div className="lp-workflow-card-top">
                     <span className="odm-mono">{step.no}</span>
-                    <Icon name={step.icon} />
+                    <div className="lp-step-icon">
+                      {step.emoji || <Icon name={step.icon} />}
+                    </div>
                   </div>
                   <h3>{step.title}</h3>
                   <p>{step.detail}</p>
@@ -487,7 +417,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="lp-section">
+        <section id="features" className="lp-section lp-section-alt">
           <TwoColumnFeature
             copy={
               <>
@@ -520,7 +450,7 @@ export function LandingPage() {
           />
         </section>
 
-        <section id="industries" className="lp-section">
+        <section id="industries" className="lp-section lp-section-alt">
           <div className="lp-container">
             <SectionIntro
               eyebrow={content.industriesSection.eyebrow}
@@ -531,9 +461,9 @@ export function LandingPage() {
             <div className="lp-industries-grid">
               {content.industries.map((card) => (
                 <div className="odm-card lp-industry-card" key={card.title}>
-                  <span className="lp-industry-icon" aria-hidden="true">
-                    <Icon name={card.icon} />
-                  </span>
+                  <div className="lp-step-icon" aria-hidden="true">
+                    {card.emoji || <Icon name={card.icon} />}
+                  </div>
                   <h3>{card.title}</h3>
                   <p>{card.detail}</p>
                   <span className="lp-industry-location">
@@ -548,13 +478,16 @@ export function LandingPage() {
 
         <section id="faq" className="lp-section">
           <div className="lp-container lp-faq">
-            <SectionIntro
-              eyebrow={content.faqSection.eyebrow}
-              title={content.faqSection.title}
-              copy={content.faqSection.copy}
-              align="center"
-            />
-            <FaqAccordion />
+            <div>
+              <SectionIntro
+                eyebrow={content.faqSection.eyebrow}
+                title={content.faqSection.title}
+                copy={content.faqSection.copy}
+              />
+            </div>
+            <div>
+              <FaqAccordion />
+            </div>
           </div>
         </section>
 
@@ -564,12 +497,17 @@ export function LandingPage() {
             <h2>{content.ctaSection.title}</h2>
             <div className="lp-cta-actions">
               <a
-                className="odm-btn odm-btn-p odm-btn-xl"
+                className="lp-btn-p"
+                style={{ background: '#fff', color: 'var(--lp-blue)', borderColor: '#fff' }}
                 href={createRequestTarget}
               >
                 Tạo yêu cầu giám sát
               </a>
-              <a className="odm-btn odm-btn-gh odm-btn-xl" href="#auth/login">
+              <a
+                className="lp-btn-o"
+                style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.6)' }}
+                href="#auth/login"
+              >
                 Đăng nhập
               </a>
             </div>
@@ -579,8 +517,14 @@ export function LandingPage() {
       <footer className="lp-footer">
         <div className="lp-container lp-footer-grid">
           <div className="lp-footer-brand">
-            <Logo />
-            <p>{content.footerTagline}</p>
+            <div className="lp-footer-logo-wrap">
+              <img
+                src="/images/logo-new.png"
+                alt="OnDemand Monitor"
+                className="lp-footer-logo-img"
+              />
+            </div>
+            <p>{content.footerBrandDescription}</p>
           </div>
           {content.footerLinkGroups.map((group) => (
             <div key={group.title}>
@@ -598,6 +542,7 @@ export function LandingPage() {
           <span>{content.footerLegal}</span>
         </div>
       </footer>
+      <ChatbotWidget />
     </div>
   )
 }

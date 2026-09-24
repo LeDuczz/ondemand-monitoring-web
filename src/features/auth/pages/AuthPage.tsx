@@ -20,9 +20,7 @@ type Notice = {
 
 function BrandMark() {
   return (
-    <span className="odm-auth-aside-brand-mark" aria-hidden="true">
-      <Icon name="cpu" />
-    </span>
+    <img src="/images/logo-new.png" alt="" className="odm-auth-aside-brand-mark" />
   )
 }
 

@@ -62,7 +62,7 @@ let refreshPromise: Promise<AuthResponse | undefined> | undefined
 
 async function refreshAccessTokenOnce() {
   if (!refreshPromise) {
-    refreshPromise = request<AuthResponse>('/api/v1/auth/refresh', {
+    refreshPromise = request<AuthResponse>('/api/auth/refresh', {
       method: 'POST',
       skipRefresh: true,
     })
@@ -137,7 +137,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
   if (
     response.status === 401 &&
     !skipRefresh &&
-    path !== '/api/v1/auth/refresh'
+    path !== '/api/auth/refresh'
   ) {
     const refreshed = await refreshAccessTokenOnce()
     if (refreshed?.accessToken) {
@@ -167,48 +167,48 @@ async function request<T>(path: string, options: RequestOptions = {}) {
 
 export const authApi = {
   register: (body: RegisterRequest) =>
-    request<RegisterResponse>('/api/v1/auth/register', {
+    request<RegisterResponse>('/api/auth/register', {
       method: 'POST',
       body,
     }),
   verifyOtp: (body: VerifyOtpRequest) =>
-    request<void>('/api/v1/auth/verify-otp', { method: 'POST', body }),
+    request<void>('/api/auth/verify-otp', { method: 'POST', body }),
   resendOtp: (body: ResendOtpRequest) =>
-    request<void>('/api/v1/auth/resend-otp', { method: 'POST', body }),
+    request<void>('/api/auth/resend-otp', { method: 'POST', body }),
   login: (body: LoginRequest) =>
-    request<AuthResponse>('/api/v1/auth/login', {
+    request<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body,
       skipRefresh: true,
     }),
   completeFirstLogin: (body: FirstLoginPasswordChangeRequest) =>
-    request<AuthResponse>('/api/v1/auth/first-login/change-password', {
+    request<AuthResponse>('/api/auth/first-login/change-password', {
       method: 'POST',
       body,
       skipRefresh: true,
     }),
   socialSync: (body: SocialSyncRequest) =>
-    request<AuthResponse>('/api/v1/auth/social/sync', { method: 'POST', body }),
+    request<AuthResponse>('/api/auth/social/sync', { method: 'POST', body }),
   refresh: () =>
-    request<AuthResponse>('/api/v1/auth/refresh', {
+    request<AuthResponse>('/api/auth/refresh', {
       method: 'POST',
       skipRefresh: true,
     }),
   logout: (accessToken: string) =>
-    request<void>('/api/v1/auth/logout', { method: 'POST', accessToken }),
+    request<void>('/api/auth/logout', { method: 'POST', accessToken }),
   createManagedAccount: (
     body: CreateManagedAccountRequest,
     accessToken: string,
   ) =>
-    request<ManagedAccountResponse>('/api/v1/admin/accounts', {
+    request<ManagedAccountResponse>('/api/admin/accounts', {
       method: 'POST',
       body,
       accessToken,
     }),
   forgotPassword: (body: ForgotPasswordRequest) =>
-    request<void>('/api/v1/auth/forgot-password', { method: 'POST', body }),
+    request<void>('/api/auth/forgot-password', { method: 'POST', body }),
   resetPassword: (body: ResetPasswordRequest) =>
-    request<void>('/api/v1/auth/reset-password', { method: 'POST', body }),
+    request<void>('/api/auth/reset-password', { method: 'POST', body }),
 }
 
 const ACCESS_TOKEN_KEY = 'fieldwise.accessToken'

@@ -3,10 +3,11 @@ import type { Drone } from '../types'
 
 interface Props {
   drone: Drone
-  onComplete: () => void
-  onFault: () => void
+  onComplete: (results: Record<string, InspectionResult>, notes: string) => void
+  onFault: (results: Record<string, InspectionResult>, notes: string) => void
 }
 type R = 'pass' | 'warn' | 'fail' | null
+export type InspectionResult = 'PASS' | 'WARN' | 'FAIL'
 interface Item {
   id: string
   cat: string
@@ -110,6 +111,14 @@ export default function PostflightCheck({ drone, onComplete, onFault }: Props) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, result: r } : i)))
   }
   const cats = [...new Set(items.map((i) => i.cat))]
+
+  function submit(callback: Props['onComplete']) {
+    if (!allDone) return
+    const results = Object.fromEntries(
+      items.map((item) => [item.id, item.result!.toUpperCase() as InspectionResult]),
+    )
+    callback(results, notes.trim())
+  }
 
   return (
     <div
@@ -293,6 +302,7 @@ export default function PostflightCheck({ drone, onComplete, onFault }: Props) {
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            maxLength={500}
             rows={3}
             placeholder="Describe any damage, wear, or observations…"
             style={{ width: '100%', padding: '10px 12px', fontSize: 13 }}
@@ -326,7 +336,7 @@ export default function PostflightCheck({ drone, onComplete, onFault }: Props) {
         <div style={{ display: 'flex', gap: 12 }}>
           {hasFail && allDone ? (
             <button
-              onClick={onFault}
+              onClick={() => submit(onFault)}
               style={{
                 flex: 1,
                 padding: '11px',
@@ -343,7 +353,7 @@ export default function PostflightCheck({ drone, onComplete, onFault }: Props) {
             </button>
           ) : (
             <button
-              onClick={onComplete}
+              onClick={() => submit(onComplete)}
               disabled={!allDone}
               style={{
                 flex: 1,

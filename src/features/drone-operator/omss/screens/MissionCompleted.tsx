@@ -169,9 +169,9 @@ export default function MissionCompleted({
             ['Mission', mission.id],
             ['Customer', mission.customer],
             ['Drone', `${drone.name} (${drone.id})`],
-            ['Operator', 'J. Martinez (OPR-112)'],
-            ['Post-flight', 'All 8 items passed'],
-            ['Media', '847 files · 4.2 GB · pending upload'],
+            ['Operator', mission.operatorId || 'Current operator'],
+            ['Post-flight', 'Inspection completed'],
+            ['Media', 'Open media review for current status'],
           ].map(([l, v]) => (
             <div
               key={l}

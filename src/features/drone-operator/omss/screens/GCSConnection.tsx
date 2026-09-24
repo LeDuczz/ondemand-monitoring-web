@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import type { Mission, Drone } from '../types'
+import { flightControlApi } from '../api/flightControlApi'
 
 interface Props {
   mission: Mission
   drone: Drone
-  onConnected: () => void
+  onConnected: () => void | Promise<void>
   onBack: () => void
 }
 
@@ -51,27 +52,40 @@ export default function GCSConnection({
     setLog((prev) => [...prev, { t: ts(), msg, ok }])
   }
 
-  function start() {
+  async function start() {
     setPhase('discover')
     addLog('Initiating GCS connection…')
-    setTimeout(() => {
-      addLog(
-        `Drone ${drone.id} found at 192.168.1.${Math.floor(Math.random() * 200 + 50)}`,
-      )
+    try {
+      const status = await flightControlApi.status()
+      if (!status.online) throw new Error('Flight Controller is offline')
+      if (!status.connection?.grpcConnected || !status.connection?.px4Connected) {
+        throw new Error('MAVSDK or PX4 is not connected')
+      }
+      addLog(`Flight Controller online for drone ${drone.id}`)
       setPhase('handshake')
-    }, 1200)
-    setTimeout(() => {
-      addLog('MAVLink heartbeat established')
+      const bound = await flightControlApi.bindSession(
+        mission.backendId ?? mission.id,
+        drone.id,
+      )
+      addLog(`Control session bound to mission ${bound.missionId}`)
       setPhase('sync')
-    }, 2400)
-    setTimeout(() => {
-      addLog('Downloading 247 parameters')
-    }, 3000)
-    setTimeout(() => {
-      addLog('Parameter sync complete — 247/247')
+      const verified = await flightControlApi.status()
+      if (
+        verified.missionId !== (mission.backendId ?? mission.id) ||
+        verified.deviceCode !== drone.id
+      ) {
+        throw new Error('Flight Controller session verification failed')
+      }
+      if (!verified.connection?.grpcConnected || !verified.connection?.px4Connected) {
+        throw new Error('MAVSDK or PX4 disconnected during session binding')
+      }
+      addLog('MAVSDK/PX4 status received and session verified')
       setPhase('done')
       addLog('GCS link ready ✓')
-    }, 4200)
+    } catch (cause) {
+      setPhase('fail')
+      addLog(cause instanceof Error ? cause.message : 'GCS connection failed', false)
+    }
   }
 
   const stepsDone = {
@@ -350,7 +364,17 @@ export default function GCSConnection({
               cursor: 'pointer',
             }}
           >
-            Continue to pre-flight check
+            {mission.state === 'IN_FLIGHT'
+              ? 'Return to mission control'
+              : 'Continue to pre-flight check'}
+          </button>
+        )}
+        {phase === 'fail' && (
+          <button
+            onClick={() => void start()}
+            style={{ width: '100%', padding: 11, borderRadius: 8, border: 'none', background: 'var(--red)', color: '#fff', cursor: 'pointer' }}
+          >
+            Retry connection
           </button>
         )}
       </div>

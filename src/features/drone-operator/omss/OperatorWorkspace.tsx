@@ -1,24 +1,14 @@
-import { useEffect, useState } from 'react'
-import { env } from '../../../config/env'
-import { authenticatedFetch } from '../../auth/api/authApi'
+import { useEffect, useRef, useState } from 'react'
+import { authSession } from '../../auth/api/authApi'
 import type {
   Screen,
   Mission,
   Drone,
   FlightToken,
-  ChecklistScenario,
   NavId,
 } from './types'
-import {
-  DRONE_PRIMARY,
-  DRONE_BATTERY_LOW,
-  DRONE_HW_FAULT,
-  DRONE_STALE_TEL,
-  MISSION_PRIMARY,
-  ALL_MISSIONS,
-  CHECKLIST,
-  REPLACEMENT_DRONES,
-} from './mockData'
+import { missionApi } from '../../mission/api/missionApi'
+import { flightControlApi } from './api/flightControlApi'
 
 import Sidebar from './components/Sidebar'
 
@@ -27,46 +17,16 @@ import MissionList from './screens/MissionList'
 import MissionDetail from './screens/MissionDetail'
 import AcceptReject from './screens/AcceptReject'
 import GCSConnection from './screens/GCSConnection'
-import PreflightFailure from './screens/PreflightFailure'
-import DroneReplacement from './screens/DroneReplacement'
-import ControlHandover from './screens/ControlHandover'
 import ReadyToFly from './screens/ReadyToFly'
 import InFlightControl from './screens/InFlightControl'
 import ReturnToBase from './screens/ReturnToBase'
 import PostflightCheck from './screens/PostflightCheck'
+import type { InspectionResult } from './screens/PostflightCheck'
 import MissionCompleted from './screens/MissionCompleted'
 import MissionFailed from './screens/MissionFailed'
 import MediaUpload from './screens/MediaUpload'
 import ManualUpload from './screens/ManualUpload'
 import SimulationZones from './screens/SimulationZones'
-
-function makeToken(missionId: string, droneId: string): FlightToken {
-  const now = Date.now()
-  return {
-    token: `FT-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
-    issuedAt: now,
-    expiresAt: now + 15 * 60 * 1000,
-    missionId,
-    droneId,
-  }
-}
-
-const SCREEN_MISSION_STATE: Partial<Record<Screen, Mission['state']>> = {
-  'accept-reject': 'WAITING_OPERATOR_ACCEPTANCE',
-  'gcs-connect': 'RESOURCE_ASSIGNING',
-  preflight: 'PREFLIGHT_CHECKING',
-  'preflight-failure': 'FAILED_PREFLIGHT',
-  'drone-replacement': 'RESOURCE_ASSIGNING',
-  'control-handover': 'PREFLIGHT_CHECKING',
-  'ready-to-fly': 'READY_TO_FLY',
-  'in-flight': 'IN_FLIGHT',
-  'return-to-base': 'RETURNING',
-  postflight: 'POSTFLIGHT_CHECKING',
-  'mission-completed': 'COMPLETED',
-  'mission-failed': 'FAILED',
-  'media-upload': 'COMPLETED',
-  'manual-upload': 'COMPLETED',
-}
 
 type BackendMission = {
   id: string
@@ -109,12 +69,6 @@ type BackendMission = {
     }[]
   }
 }
-
-type ApiResponse<T> = {
-  data: T
-}
-
-const COMPLETED_MISSION_STORAGE_KEY = 'omss.droneOperator.completedMissionIds'
 
 type RoutePoint = Mission['routePoints'] extends (infer Point)[] | undefined
   ? Point
@@ -237,43 +191,38 @@ function adaptBackendMission(mission: BackendMission): Mission {
     routePoints.find((point) => point.reason?.toUpperCase() === 'TARGET') ??
     routePoints.find((point) => point.reason?.toUpperCase() === 'ORDER') ??
     routePoints[routePoints.length - 1]
-  const plannedStatus =
-    mission.status === 'WAITING_OPERATOR_ACCEPTANCE' && routePoints.length > 0
-      ? 'SCHEDULED'
-      : mission.status
-
   return {
     id: mission.missionCode ?? mission.id,
     backendId: mission.id,
-    orderRef: mission.orderId ?? MISSION_PRIMARY.orderRef,
+    orderRef: mission.orderId ?? '',
     orderTitle: mission.orderTitle,
-    title: mission.orderTitle ?? MISSION_PRIMARY.title,
-    state: plannedStatus ?? MISSION_PRIMARY.state,
-    priority: MISSION_PRIMARY.priority,
-    droneId: mission.droneCode ?? mission.droneId ?? MISSION_PRIMARY.droneId,
-    operatorId: mission.operatorId ?? MISSION_PRIMARY.operatorId,
-    customer: mission.customerName ?? MISSION_PRIMARY.customer,
-    location: mission.address ?? MISSION_PRIMARY.location,
-    lat: mission.latitude ?? MISSION_PRIMARY.lat,
-    lng: mission.longitude ?? MISSION_PRIMARY.lng,
-    scheduledAt: mission.scheduledStartAt ?? MISSION_PRIMARY.scheduledAt,
+    title: mission.orderTitle ?? mission.missionCode ?? mission.id,
+    state: mission.status ?? 'RESOURCE_ASSIGNING',
+    priority: 'NORMAL',
+    droneId: mission.droneCode ?? mission.droneId ?? '',
+    operatorId: mission.operatorId ?? '',
+    customer: mission.customerName ?? '',
+    location: mission.address ?? '',
+    lat: mission.latitude ?? 0,
+    lng: mission.longitude ?? 0,
+    scheduledAt: mission.scheduledStartAt ?? '',
     estimatedMinutes:
       typeof plan?.plannedDurationSec === 'number'
         ? Math.max(1, Math.round(plan.plannedDurationSec / 60))
-        : MISSION_PRIMARY.estimatedMinutes,
+        : 0,
     distanceKm:
       typeof plan?.plannedDistanceM === 'number'
         ? plan.plannedDistanceM / 1000
-        : MISSION_PRIMARY.distanceKm,
-    flightPlanId: plan?.id ?? MISSION_PRIMARY.flightPlanId,
+        : 0,
+    flightPlanId: plan?.id ?? '',
     maxAltitudeM:
       typeof plan?.maxPlannedAltitudeM === 'number'
         ? plan.maxPlannedAltitudeM
-        : MISSION_PRIMARY.maxAltitudeM,
-    notes: mission.description ?? MISSION_PRIMARY.notes,
-    targetSimX: routeTargetPoint?.simX ?? MISSION_PRIMARY.targetSimX,
-    targetSimY: routeTargetPoint?.simY ?? MISSION_PRIMARY.targetSimY,
-    routePoints: routePoints.length > 0 ? routePoints : MISSION_PRIMARY.routePoints,
+        : 0,
+    notes: mission.description ?? '',
+    targetSimX: routeTargetPoint?.simX,
+    targetSimY: routeTargetPoint?.simY,
+    routePoints,
     planSummary: plan
       ? {
           planningAlgorithm: plan.planningAlgorithm,
@@ -293,102 +242,68 @@ function adaptBackendMission(mission: BackendMission): Mission {
   }
 }
 
+function createAssignedDrone(mission: Mission): Drone {
+  return {
+    id: mission.droneId,
+    name: mission.droneId,
+    model: 'Assigned mission drone',
+    serialNumber: '',
+    state: mission.state === 'IN_FLIGHT' ? 'ACTIVE_MISSION' : 'PREFLIGHT',
+    battery: 0,
+    gpsCount: 0,
+    gpsHdop: 0,
+    altitude: 0,
+    groundSpeed: 0,
+    verticalSpeed: 0,
+    heading: 0,
+    lat: mission.lat,
+    lng: mission.lng,
+    storageMB: 0,
+    telemetryAge: 0,
+    cameraOk: false,
+    gimbalOk: false,
+    rssi: 0,
+    voltage: 0,
+    currentAmps: 0,
+    tempC: 0,
+  }
+}
+
 export default function OperatorWorkspace() {
-  const [completedMissionIds, setCompletedMissionIds] = useState<Set<string>>(() => {
-    try {
-      const raw = window.localStorage.getItem(COMPLETED_MISSION_STORAGE_KEY)
-      const parsed = raw ? JSON.parse(raw) : []
-      return new Set(Array.isArray(parsed) ? parsed.map(String) : [])
-    } catch {
-      return new Set()
-    }
-  })
+  const acceptInFlight = useRef(false)
+  const authenticatedUser = authSession.getUser()
   const [screen, setScreen] = useState<Screen>('mission-list')
   const [navId, setNavId] = useState<NavId>('my-missions')
-  const [scenario] = useState<ChecklistScenario>('all-pass')
-  const [mission, setMission] = useState<Mission>({ ...ALL_MISSIONS[0] })
-  const [allMissions, setAllMissions] = useState<Mission[]>([...ALL_MISSIONS])
+  const [mission, setMission] = useState<Mission | null>(null)
+  const [allMissions, setAllMissions] = useState<Mission[]>([])
   const [missionsLoading, setMissionsLoading] = useState(false)
-  const [drone, setDrone] = useState<Drone>({ ...DRONE_PRIMARY })
+  const [missionsError, setMissionsError] = useState<string | null>(null)
+  const [drone, setDrone] = useState<Drone | null>(null)
   const [token, setToken] = useState<FlightToken | null>(null)
   const [failReason, setFailReason] = useState('Pre-flight hardware failure')
   const [autoStartPlanRequested, setAutoStartPlanRequested] = useState(false)
   const [flightSessionStarted, setFlightSessionStarted] = useState(false)
+  const [mediaReturnScreen, setMediaReturnScreen] = useState<Screen>('mission-list')
 
-  function applyLocalCompletionState(missionItem: Mission) {
-    if (
-      completedMissionIds.has(missionItem.id) ||
-      (missionItem.backendId && completedMissionIds.has(missionItem.backendId))
-    ) {
-      return { ...missionItem, state: 'COMPLETED' as const }
-    }
-    return missionItem
-  }
-
-  function rememberCompletedMission(missionItem: Mission) {
-    setCompletedMissionIds((current) => {
-      const next = new Set(current)
-      next.add(missionItem.id)
-      if (missionItem.backendId) next.add(missionItem.backendId)
-      try {
-        window.localStorage.setItem(
-          COMPLETED_MISSION_STORAGE_KEY,
-          JSON.stringify([...next]),
-        )
-      } catch {
-        // Keep in-memory completion state even if localStorage is unavailable.
-      }
-      return next
-    })
-  }
-
-  // Load single mission detail (for mission-control screen)
+  // Load only missions assigned to the authenticated operator.
   useEffect(() => {
-    let cancelled = false
-
-    async function loadMissionFromBackend() {
-      try {
-        const response = await authenticatedFetch(
-          `${env.apiBaseUrl}/api/missions/code/${encodeURIComponent(
-            MISSION_PRIMARY.id,
-          )}`,
-        )
-        if (!response.ok) return
-        const payload = (await response.json()) as ApiResponse<BackendMission>
-        if (cancelled || !payload.data) return
-        setMission(applyLocalCompletionState(adaptBackendMission(payload.data)))
-      } catch {
-        // Keep the built-in demo mission when the backend is not running.
-      }
-    }
-
-    loadMissionFromBackend()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  // Load missions list for "My Missions" screen (GET /api/missions?operatorId=...)
-  useEffect(() => {
+    if (screen !== 'mission-list' && screen !== 'operator-overview') return
     let cancelled = false
 
     async function loadAllMissions() {
       setMissionsLoading(true)
+      setMissionsError(null)
       try {
-        const operatorId = MISSION_PRIMARY.operatorId ?? 'OP-001'
-        const response = await authenticatedFetch(
-          `${env.apiBaseUrl}/api/missions?operatorId=${encodeURIComponent(operatorId)}`,
-        )
-        if (!response.ok) return
-        const payload = (await response.json()) as ApiResponse<BackendMission[]>
-        if (cancelled || !payload.data || !Array.isArray(payload.data)) return
-        const adapted = payload.data
+        const data = await missionApi.getMyMissions()
+        if (cancelled) return
+        const adapted = (data as unknown as BackendMission[])
           .map(adaptBackendMission)
-          .map(applyLocalCompletionState)
-        if (adapted.length > 0) setAllMissions(adapted)
-      } catch {
-        // Keep the built-in demo missions when the backend is not running.
+        setAllMissions(adapted)
+      } catch (cause) {
+        if (!cancelled) {
+          setAllMissions([])
+          setMissionsError(cause instanceof Error ? cause.message : 'Cannot load assigned missions')
+        }
       } finally {
         if (!cancelled) setMissionsLoading(false)
       }
@@ -399,50 +314,17 @@ export default function OperatorWorkspace() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [screen])
 
-  const droneForScenario: Record<ChecklistScenario, Drone> = {
-    'all-pass': DRONE_PRIMARY,
-    'battery-fail': DRONE_BATTERY_LOW,
-    'hardware-fail': DRONE_HW_FAULT,
-    'telemetry-stale': DRONE_STALE_TEL,
-    'weather-warn': DRONE_PRIMARY,
-  }
+  const displayMission = mission
 
-  const displayMission: Mission = {
-    ...mission,
-    state: SCREEN_MISSION_STATE[screen] ?? mission.state,
-  }
-
-  const displayDrone: Drone = {
-    ...drone,
-    state: (() => {
-      if (screen === 'in-flight' || screen === 'return-to-base')
-        return 'ACTIVE_MISSION'
-      if (
-        [
-          'gcs-connect',
-          'preflight',
-          'control-handover',
-          'ready-to-fly',
-          'preflight-failure',
-          'drone-replacement',
-        ].includes(screen)
-      )
-        return 'PREFLIGHT'
-      if (screen === 'mission-failed') return drone.state
-      return 'AVAILABLE'
-    })(),
-  }
+  const displayDrone = drone
 
   function goScreen(s: Screen) {
     if (s === 'in-flight' && !flightSessionStarted) {
       setScreen('mission-detail')
       setNavId('my-missions')
       return
-    }
-    if (s === 'ready-to-fly' && !token) {
-      setToken(makeToken(mission.id, drone.id))
     }
     setScreen(s)
   }
@@ -472,139 +354,215 @@ export default function OperatorWorkspace() {
 
   async function handleSelectMission(m: Mission) {
     setMission({ ...m })
-    setDrone({ ...droneForScenario[scenario] })
+    setDrone(createAssignedDrone(m))
     setFlightSessionStarted(false)
     setAutoStartPlanRequested(false)
     setScreen('mission-detail')
     setNavId('my-missions')
 
     try {
-      const response = await authenticatedFetch(
-        `${env.apiBaseUrl}/api/missions/code/${encodeURIComponent(m.id)}`,
-      )
-      if (!response.ok) return
-      const payload = (await response.json()) as ApiResponse<BackendMission>
-      if (!payload.data) return
-      const detailedMission = adaptBackendMission(payload.data)
-      const visibleMission = applyLocalCompletionState(detailedMission)
+      const detail = await missionApi.getMissionById(m.backendId ?? m.id)
+      const detailedMission = adaptBackendMission(detail as unknown as BackendMission)
+      const visibleMission = detailedMission
       setMission(visibleMission)
+      setDrone(createAssignedDrone(visibleMission))
       setAllMissions((missions) =>
         missions.map((missionItem) =>
           missionItem.id === visibleMission.id ? visibleMission : missionItem,
         ),
       )
-    } catch {
-      // Keep the selected mission from the list when detail loading is unavailable.
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Cannot load mission details')
     }
   }
 
-  function handleAccept() {
-    setMission((m) => ({ ...m, state: 'RESOURCE_ASSIGNING' }))
-    setDrone({ ...droneForScenario[scenario] })
-    setScreen('gcs-connect')
-  }
-
-  function handleReject(reason: string) {
-    setMission((m) => ({ ...m, state: 'CANCELLED', rejectionReason: reason }))
-    setScreen('mission-list')
-  }
-
-  function handleGCSConnected() {
-    setScreen('preflight')
-  }
-  function handleHandoverComplete() {
-    const t = makeToken(mission.id, drone.id)
-    setToken(t)
-    setScreen('ready-to-fly')
-  }
-
-  function handleStartMission() {
-    setMission((m) => ({ ...m, state: 'IN_FLIGHT' }))
-    setFlightSessionStarted(true)
-    setAutoStartPlanRequested(true)
-    setScreen('in-flight')
-    setNavId('mission-control')
-  }
-
-  async function handleCompleteMission() {
-    const backendMissionId = mission.backendId ?? mission.id
+  async function handleAccept() {
+    if (!mission || acceptInFlight.current) return
+    acceptInFlight.current = true
     try {
-      const response = await authenticatedFetch(
-        `${env.apiBaseUrl}/api/missions/${encodeURIComponent(backendMissionId)}/complete`,
-        { method: 'POST' },
-      )
-      if (response.ok) {
-        const payload = (await response.json()) as ApiResponse<BackendMission>
-        if (payload.data) {
-          const completedMission = adaptBackendMission(payload.data)
-          setMission(completedMission)
-          setAllMissions((missions) =>
-            missions.map((missionItem) =>
-              missionItem.id === completedMission.id
-                ? completedMission
-                : missionItem,
-            ),
-          )
-        }
-      }
-    } catch {
-      // Keep the local completion flow available when the demo API is offline.
+      const updated = await missionApi.acceptMyMission(mission.backendId ?? mission.id)
+      const accepted = adaptBackendMission(updated as unknown as BackendMission)
+      setMission(accepted)
+      setAllMissions((items) => items.map((item) => item.backendId === accepted.backendId ? accepted : item))
+      setScreen('gcs-connect')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Mission acceptance failed')
+    } finally {
+      acceptInFlight.current = false
     }
-    rememberCompletedMission(mission)
-    setMission((m) => ({ ...m, state: 'COMPLETED' }))
-    setAllMissions((missions) =>
-      missions.map((missionItem) =>
-        missionItem.id === mission.id
-          ? { ...missionItem, state: 'COMPLETED' }
-          : missionItem,
-      ),
-    )
-    setFlightSessionStarted(false)
-    setAutoStartPlanRequested(false)
-    setScreen('mission-completed')
-    setNavId('my-missions')
   }
 
-  function handleRuntimePreflightReady() {
-    setMission((m) => ({ ...m, state: 'IN_FLIGHT' }))
-    setFlightSessionStarted(true)
-    setAutoStartPlanRequested(true)
-    setScreen('in-flight')
-    setNavId('mission-control')
+  async function handleReject(reason: string) {
+    if (!mission) return
+    try {
+      await missionApi.rejectMyMission(mission.backendId ?? mission.id, reason)
+      setMission(null)
+      setDrone(null)
+      setAllMissions((items) => items.filter((item) => item.backendId !== mission.backendId))
+      setScreen('mission-list')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Mission rejection failed')
+    }
   }
 
-  function handleRTB() {
-    setMission((m) => ({ ...m, state: 'RETURNING' }))
-    setScreen('return-to-base')
+  async function handleGCSConnected() {
+    if (!mission) return
+    try {
+      if (mission.state === 'IN_FLIGHT') {
+        setFlightSessionStarted(true)
+        setAutoStartPlanRequested(false)
+        setNavId('mission-control')
+        setScreen('in-flight')
+        return
+      }
+      if (mission.state === 'SCHEDULED') {
+        const updated = await missionApi.connectGcs(mission.backendId ?? mission.id)
+        setMission(adaptBackendMission(updated as unknown as BackendMission))
+      }
+      setScreen('preflight')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'GCS connection registration failed')
+    }
+  }
+  async function handleStartMission() {
+    if (!mission || !drone) return
+    if (!token || Date.now() >= token.expiresAt) {
+      setMissionsError('Flight token is missing or expired. Run preflight again.')
+      setScreen('preflight')
+      return
+    }
+    try {
+      await flightControlApi.bindSession(mission.backendId ?? mission.id, drone.id)
+      const updated = await missionApi.startMission(
+        mission.backendId ?? mission.id,
+        token.token,
+      )
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
+      setFlightSessionStarted(true)
+      setAutoStartPlanRequested(true)
+      setScreen('in-flight')
+      setNavId('mission-control')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Mission start failed')
+    }
   }
 
-  function handleEmergency() {
-    setMission((m) => ({ ...m, state: 'FAILED' }))
-    setFailReason('Emergency stop — operator abort')
-    setScreen('mission-failed')
+  async function handleRuntimePreflightReady() {
+    if (!mission || !drone) return
+    const missionId = mission.backendId ?? mission.id
+    try {
+      const controlStatus = await flightControlApi.status()
+      if (controlStatus.missionId !== missionId || controlStatus.deviceCode !== drone.id) {
+        await flightControlApi.bindSession(missionId, drone.id)
+      }
+
+      const deadline = Date.now() + 20_000
+      while (true) {
+        const telemetry = await missionApi.getTelemetryReadiness(missionId)
+        if (telemetry.droneCode !== drone.id) {
+          throw new Error('Mission drone assignment changed. Reconnect GCS before preflight.')
+        }
+        if (telemetry.ready) break
+        if (Date.now() >= deadline) {
+          throw new Error('Waiting for fresh drone telemetry timed out. Check Telemetry Sender and retry preflight.')
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 1000))
+      }
+
+      const check = await missionApi.runPreflightCheck(
+        missionId,
+        drone.id,
+      )
+      if (!check.overallPassed || !check.flightToken) {
+        throw new Error(check.failureReason || 'Backend preflight did not pass')
+      }
+      await missionApi.handoverMyMission(mission.backendId ?? mission.id)
+      setToken({
+        token: check.flightToken.tokenValue,
+        issuedAt: Date.parse(check.flightToken.issuedAt),
+        expiresAt: Date.parse(check.flightToken.expiresAt),
+        missionId: mission.backendId ?? mission.id,
+        droneId: drone.id,
+      })
+      setMission((current) => current ? { ...current, state: 'READY_TO_FLY' } : current)
+      setScreen('ready-to-fly')
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Preflight registration failed'
+      setMissionsError(message)
+      throw new Error(message, { cause })
+    }
   }
 
-  function handleLanded() {
-    setScreen('postflight')
+  async function handleRTB() {
+    if (!mission) return
+    try {
+      const updated = await missionApi.markReturning(mission.backendId ?? mission.id)
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
+      setScreen('return-to-base')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Return-to-base update failed')
+    }
   }
 
-  function handlePostflightComplete() {
-    setMission((m) => ({ ...m, state: 'COMPLETED' }))
-    setScreen('mission-completed')
+  async function handleEmergency() {
+    if (!mission) return
+    const reason = 'Emergency stop — operator abort'
+    try {
+      const updated = await missionApi.failMission(mission.backendId ?? mission.id, reason)
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
+      setFailReason(reason)
+      setScreen('mission-failed')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Mission failure update failed')
+    }
   }
 
-  function handlePostflightFault() {
-    setDrone((d) => ({ ...d, state: 'MAINTENANCE' }))
-    setFailReason('Post-flight hardware fault detected')
-    setScreen('mission-failed')
+  async function handleLanded() {
+    if (!mission) return
+    try {
+      const updated = await missionApi.startPostflight(mission.backendId ?? mission.id)
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
+      setScreen('postflight')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Postflight start failed')
+    }
   }
 
-  function handleReplaceDrone(replacement: Drone) {
-    setDrone({ ...replacement })
-    setScreen('preflight')
+  async function handlePostflightComplete(results: Record<string, InspectionResult>, notes: string) {
+    if (!mission || !drone) return
+    try {
+      const updated = await missionApi.postFlightStatus(
+        mission.backendId ?? mission.id,
+        drone.id,
+        'AVAILABLE',
+        notes,
+        results,
+      )
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
+      setScreen('mission-completed')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Postflight completion failed')
+    }
   }
 
-  const checklist = CHECKLIST[scenario]
+  async function handlePostflightFault(results: Record<string, InspectionResult>, notes: string) {
+    if (!mission || !drone) return
+    try {
+      const updated = await missionApi.postFlightStatus(
+        mission.backendId ?? mission.id,
+        drone.id,
+        'MAINTENANCE',
+        notes,
+        results,
+      )
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
+      setDrone((current) => current ? { ...current, state: 'MAINTENANCE' } : current)
+      setScreen('mission-completed')
+    } catch (cause) {
+      setMissionsError(cause instanceof Error ? cause.message : 'Postflight fault reporting failed')
+    }
+  }
+
   const isDark = screen === 'in-flight'
 
 
@@ -646,6 +604,8 @@ export default function OperatorWorkspace() {
           {screen === 'operator-overview' && (
             <OperatorOverview
               allMissions={allMissions}
+              operatorName={authenticatedUser?.fullName ?? 'Drone operator'}
+              operatorId={authenticatedUser?.id ?? 'Unknown'}
               onGoMissions={() => {
                 setScreen('mission-list')
                 setNavId('my-missions')
@@ -655,6 +615,11 @@ export default function OperatorWorkspace() {
           )}
 
           {/* Operator flow */}
+          {missionsError && (
+            <div role="alert" style={{ margin: '12px 36px 0', color: 'var(--red-text)' }}>
+              {missionsError}
+            </div>
+          )}
           {screen === 'mission-list' && (
             <MissionList
               missions={missionsLoading ? [] : allMissions}
@@ -662,7 +627,7 @@ export default function OperatorWorkspace() {
               onScreen={goScreen}
             />
           )}
-          {screen === 'mission-detail' && (
+          {screen === 'mission-detail' && displayMission && displayDrone && (
             <MissionDetail
               mission={displayMission}
               drone={displayDrone}
@@ -671,7 +636,7 @@ export default function OperatorWorkspace() {
               onStartFlight={handleStartMission}
             />
           )}
-          {screen === 'accept-reject' && (
+          {screen === 'accept-reject' && displayMission && displayDrone && (
             <AcceptReject
               mission={displayMission}
               drone={displayDrone}
@@ -680,7 +645,7 @@ export default function OperatorWorkspace() {
               onBack={() => setScreen('mission-detail')}
             />
           )}
-          {screen === 'gcs-connect' && (
+          {screen === 'gcs-connect' && displayMission && displayDrone && (
             <GCSConnection
               mission={displayMission}
               drone={displayDrone}
@@ -688,7 +653,7 @@ export default function OperatorWorkspace() {
               onBack={() => setScreen('mission-detail')}
             />
           )}
-          {screen === 'preflight' && (
+          {screen === 'preflight' && displayMission && displayDrone && (
             <InFlightControl
               mission={displayMission}
               drone={displayDrone}
@@ -699,41 +664,16 @@ export default function OperatorWorkspace() {
               onPreflightReady={handleRuntimePreflightReady}
             />
           )}
-          {screen === 'preflight-failure' && (
-            <PreflightFailure
-              checklist={checklist}
-              scenario={scenario}
-              onReplace={() => setScreen('drone-replacement')}
-              onEscalate={() => setScreen('mission-list')}
-              onBack={() => setScreen('preflight')}
-            />
-          )}
-          {screen === 'drone-replacement' && (
-            <DroneReplacement
-              current={displayDrone}
-              replacements={REPLACEMENT_DRONES}
-              onSelect={handleReplaceDrone}
-              onBack={() => setScreen('preflight-failure')}
-            />
-          )}
-          {screen === 'control-handover' && (
-            <ControlHandover
-              mission={displayMission}
-              drone={displayDrone}
-              onComplete={handleHandoverComplete}
-              onBack={() => setScreen('preflight')}
-            />
-          )}
-          {screen === 'ready-to-fly' && token && (
+          {screen === 'ready-to-fly' && token && displayMission && displayDrone && (
             <ReadyToFly
               mission={displayMission}
               drone={displayDrone}
               token={token}
               onStart={handleStartMission}
-              onAbort={() => setScreen('control-handover')}
+              onAbort={() => setScreen('preflight')}
             />
           )}
-          {screen === 'in-flight' && (
+          {screen === 'in-flight' && displayMission && displayDrone && (
             <InFlightControl
               mission={displayMission}
               drone={displayDrone}
@@ -741,46 +681,55 @@ export default function OperatorWorkspace() {
               onEmergency={handleEmergency}
               autoStartPlan={autoStartPlanRequested}
               onAutoStartPlanConsumed={() => setAutoStartPlanRequested(false)}
-              onCompleteMission={handleCompleteMission}
+              onReviewMedia={() => {
+                setMediaReturnScreen('in-flight')
+                setScreen('media-upload')
+              }}
             />
           )}
-          {screen === 'return-to-base' && (
-            <ReturnToBase drone={displayDrone} onLanded={handleLanded} />
+          {screen === 'return-to-base' && displayDrone && mission && (
+            <ReturnToBase
+              drone={displayDrone}
+              missionId={mission.backendId ?? mission.id}
+              onLanded={handleLanded}
+            />
           )}
-          {screen === 'postflight' && (
+          {screen === 'postflight' && displayDrone && (
             <PostflightCheck
               drone={displayDrone}
               onComplete={handlePostflightComplete}
               onFault={handlePostflightFault}
             />
           )}
-          {screen === 'mission-completed' && (
+          {screen === 'mission-completed' && displayMission && displayDrone && (
             <MissionCompleted
               mission={displayMission}
               drone={displayDrone}
-              onMedia={() => setScreen('media-upload')}
+              onMedia={() => {
+                setMediaReturnScreen('mission-completed')
+                setScreen('media-upload')
+              }}
               onMissions={() => setScreen('mission-list')}
             />
           )}
-          {screen === 'mission-failed' && (
+          {screen === 'mission-failed' && displayMission && displayDrone && (
             <MissionFailed
               mission={displayMission}
               drone={displayDrone}
               reason={failReason}
-              onSubmit={() => setScreen('mission-list')}
               onMissions={() => setScreen('mission-list')}
             />
           )}
-          {screen === 'media-upload' && (
+          {screen === 'media-upload' && displayMission && (
             <MediaUpload
               mission={displayMission}
-              onDone={() => setScreen('mission-list')}
+              onDone={() => setScreen(mediaReturnScreen)}
               onManual={() => setScreen('manual-upload')}
             />
           )}
-          {screen === 'manual-upload' && (
+          {screen === 'manual-upload' && mission && (
             <ManualUpload
-              missionId={mission.id}
+              missionId={mission.backendId ?? mission.id}
               onComplete={() => setScreen('mission-list')}
               onBack={() => setScreen('media-upload')}
             />

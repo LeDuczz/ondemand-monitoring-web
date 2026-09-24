@@ -6,6 +6,7 @@ const controllerUrl = import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://loc
 export type LocalMedia = {
   localMediaId: string
   missionId: string
+  missionCode?: string
   droneCode: string
   mediaType: 'IMAGE' | 'VIDEO'
   fileName: string
@@ -14,6 +15,7 @@ export type LocalMedia = {
   checksumSha256: string
   capturedAt: string
   status: 'REVIEW_PENDING' | 'UPLOADING' | 'UPLOAD_FAILED' | 'VALIDATING'
+  previewError?: string
   backendMediaId?: string
 }
 
@@ -29,7 +31,7 @@ type UploadPlan = {
 }
 
 async function backend<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const response = await authenticatedFetch(`${env.apiBaseUrl}/api/v1${path}`, {
+  const response = await authenticatedFetch(`${env.apiBaseUrl}/api${path}`, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),

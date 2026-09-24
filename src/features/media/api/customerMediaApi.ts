@@ -24,7 +24,7 @@ export type MediaNotification = {
 }
 
 async function request<T>(path: string): Promise<T> {
-  const response = await authenticatedFetch(`${env.apiBaseUrl}/api/v1${path}`)
+  const response = await authenticatedFetch(`${env.apiBaseUrl}/api${path}`)
   const payload = (await response.json().catch(() => undefined)) as ApiResponse<T> | undefined
   if (!response.ok || !payload?.success) {
     throw new AuthApiError(payload?.message ?? 'Unable to load media.', payload?.code)

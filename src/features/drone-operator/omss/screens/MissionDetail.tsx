@@ -356,11 +356,9 @@ export default function MissionDetail({
 }: Props) {
   const hasPlan = (mission.routePoints?.length ?? 0) > 0
   const planSummary = mission.planSummary
-  const isAcceptable =
-    mission.state === 'WAITING_OPERATOR_ACCEPTANCE' && !hasPlan
-  const canStartFlight =
-    hasPlan &&
-    !['COMPLETED', 'CANCELLED', 'FAILED'].includes(mission.state)
+  const isAcceptable = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
+  const canStartFlight = hasPlan && mission.state === 'READY_TO_FLY'
+  const canContinueSetup = ['SCHEDULED', 'CONNECTED', 'PREFLIGHT_CHECKING', 'IN_FLIGHT'].includes(mission.state)
 
   return (
     <div
@@ -439,7 +437,7 @@ export default function MissionDetail({
             <MissionBadge state={mission.state} />
           </div>
         </div>
-        {(isAcceptable || canStartFlight) && (
+        {(isAcceptable || canStartFlight || canContinueSetup) && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {canStartFlight && (
               <button
@@ -456,6 +454,23 @@ export default function MissionDetail({
                 }}
               >
                 Start flight
+              </button>
+            )}
+            {canContinueSetup && (
+              <button
+                onClick={() => onScreen('gcs-connect')}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--accent)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                {mission.state === 'SCHEDULED' ? 'Connect GCS' : 'Reconnect GCS'}
               </button>
             )}
             {isAcceptable && (

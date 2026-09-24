@@ -9,6 +9,7 @@ interface Props {
 }
 
 export default function MediaUpload({ mission, onDone, onManual }: Props) {
+  const operationalMissionId = mission.backendId ?? mission.id
   const [items, setItems] = useState<LocalMedia[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [status, setStatus] = useState<Record<string, string>>({})
@@ -17,7 +18,7 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
 
   const refresh = useCallback(async () => {
     try {
-      const local = await operatorMediaApi.list(mission.id)
+      const local = await operatorMediaApi.list(operationalMissionId)
       setItems(local)
       setError(null)
       const ids = local.filter((item) => item.backendMediaId).map((item) => item.backendMediaId!)
@@ -34,7 +35,7 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [mission.id])
+  }, [operationalMissionId])
 
   useEffect(() => {
     void refresh()
@@ -100,7 +101,8 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
                 )}
                 <div style={{ padding: 16 }}>
                   <strong style={{ overflowWrap: 'anywhere' }}>{item.fileName}</strong>
-                  <p>{item.mediaType} · {(item.fileSize / 1024 / 1024).toFixed(2)} MB · {effective}</p>
+                  <p>{item.mediaType} · {(item.fileSize / 1024 / 1024).toFixed(2)} MB · {effective} · {item.missionCode ?? item.missionId}</p>
+                  {item.previewError && <p role="alert" style={{ color: 'var(--red-text)' }}>{item.previewError}</p>}
                   {item.backendMediaId && <p style={{ overflowWrap: 'anywhere' }}>Backend media: {item.backendMediaId}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button disabled={!canApprove} onClick={() => void approve(item)}>

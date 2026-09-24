@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../../auth/api/authApi'
 import { LogoutButton } from '../../auth/components/LogoutButton'
+import { AiChatWidget } from '../../../shared/components/AiChatWidget'
 import { managerHref, type ManagerRoute, type ManagerScreen } from '../routes'
 import { ManagerIcon, type ManagerIconName } from './ManagerIcon'
 import '../manager.css'
@@ -216,6 +217,7 @@ export function ManagerLayout({
           <main className="odm-mgr-content">{children}</main>
         </div>
       </div>
+      <AiChatWidget />
     </div>
   )
 }

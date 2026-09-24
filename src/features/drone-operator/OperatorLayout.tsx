@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
+import { AiChatWidget } from '../../shared/components/AiChatWidget'
 import { OperatorSidebar, operatorActiveLabel } from './OperatorSidebar'
 import { OperatorTopbar } from './OperatorTopbar'
 import type { OperatorRoute } from './routes'
@@ -59,6 +60,7 @@ export function OperatorLayout({
           </main>
         </div>
       </div>
+      <AiChatWidget />
     </div>
   )
 }

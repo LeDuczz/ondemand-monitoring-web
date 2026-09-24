@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
-import { CustomerChatbot } from './components/CustomerChatbot'
+import { AiChatWidget } from '../../shared/components/AiChatWidget'
 import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
 import './customer.css'
 
@@ -154,7 +154,7 @@ export function CustomerLayout({
             </button>
           </header>
           <main className="odm-cus-content">{children}</main>
-          <CustomerChatbot />
+          <AiChatWidget />
         </div>
       </div>
     </div>

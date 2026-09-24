@@ -223,10 +223,6 @@ export function PreflightScreen() {
 
   async function handleEnterSimulation() {
     if (!mission.missionId || !mission.data?.droneCode) { setStartError('Mission chưa được gán drone'); return }
-    if (window.sessionStorage.getItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`) !== 'true') {
-      setStartError('Vui lòng xác nhận cam kết bàn giao trước khi bay')
-      return
-    }
     setStarting(true)
     setStartError(null)
     try {
@@ -505,7 +501,7 @@ export function PreflightChecklistPanel({
       <FlightStepHeader
         title="Preflight checklist"
         missionId={missionId}
-        active={4}
+        active={3}
         right={
           <span
             style={{
@@ -674,15 +670,15 @@ function SummaryBanner({
             onClick={onReady}
             style={{ minWidth: 220 }}
           >
-            Tiếp tục tới buồng lái
+            Tiếp tục tới Bàn giao
           </button>
         ) : (
           <a
             className="odm-btn odm-btn-ok"
-            href={operatorHref({ screen: 'flight' })}
+            href={operatorHref({ screen: 'handover' })}
             style={{ minWidth: 220 }}
           >
-            Tiếp tục tới buồng lái
+            Tiếp tục tới Bàn giao
           </a>
         )
       ) : isFailed ? (
@@ -712,7 +708,7 @@ function SummaryBanner({
           disabled
           style={{ minWidth: 220 }}
         >
-          Tiếp tục tới buồng lái
+          Tiếp tục tới Bàn giao
         </button>
       )}
     </div>

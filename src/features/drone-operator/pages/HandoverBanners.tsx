@@ -76,9 +76,9 @@ export function ConfirmedBanner({ onRevoke }: { onRevoke: () => void }) {
         </span>
         <a
           className="odm-btn odm-btn-sm"
-          href={operatorHref({ screen: 'preflight' })}
+          href={operatorHref({ screen: 'flight' })}
         >
-          Tiếp tục tới Preflight
+          Vào buồng lái
         </a>
       </div>
       {/* Demo-only affordance to exercise the REVOKED state without a real dispatcher action. */}

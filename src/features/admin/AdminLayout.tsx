@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
 import { Icon } from '../../shared/components/Icon'
+import { AiChatWidget } from '../../shared/components/AiChatWidget'
 import { adminHref, type AdminRoute, type AdminScreen } from './routes'
 import './admin.css'
 
@@ -162,6 +163,7 @@ export function AdminLayout({
           <main className="odm-adm-content">{children}</main>
         </div>
       </div>
+      <AiChatWidget />
     </div>
   )
 }

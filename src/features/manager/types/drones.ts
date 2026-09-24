@@ -96,6 +96,29 @@ export type PageResponseDronePayloadResponse = {
   last: boolean
 }
 
+export type DroneModelCreateRequest = {
+  modelCode: string
+  manufacturer: string
+  category: string
+  maxFlightTimeMinutes: number
+  maxTakeoffWeightKg: number
+  maxFlightAltitudeMeters: number
+  maxWindResistanceMetersPerSecond: number
+  ipRating: string
+  specsMetadata: string
+}
+
+export type DroneModelUpdateRequest = DroneModelCreateRequest
+
+export type DronePayloadCreateRequest = {
+  modelName: string
+  sensorType: string
+  weightKg: number
+  payloadCapabilities: string
+}
+
+export type DronePayloadUpdateRequest = DronePayloadCreateRequest
+
 export type TelemetryRequest = {
   latitude: number
   longitude: number

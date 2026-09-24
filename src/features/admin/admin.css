@@ -1,0 +1,551 @@
+/*
+ * Admin portal shell (sidebar + top bar), scoped under `.odm-adm`.
+ * Mirrors the .odm-cus / .odm-mgr layout pattern.
+ */
+
+.odm-adm {
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.odm-adm-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Sidebar ---------- */
+
+.odm-adm-side {
+  width: 220px;
+  flex: none;
+  background: var(--sf);
+  border-right: 1px solid var(--bd);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+}
+
+.odm-adm-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 6px 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.odm-adm-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex: none;
+}
+
+.odm-adm-brand-name {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.odm-adm-brand-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+.odm-adm-nav-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  overflow: auto;
+}
+
+.odm-adm-navg {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tx3);
+  padding: 12px 10px 4px;
+  letter-spacing: 0.02em;
+}
+
+.odm-adm-navi {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tx2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.odm-adm-navi:hover {
+  background: var(--sf2);
+}
+
+.odm-adm-navi.is-active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-tx);
+  font-weight: 600;
+  border-left: 3px solid var(--sidebar-active-border);
+  padding-left: 7px;
+}
+
+.odm-adm-navc {
+  margin-left: auto;
+  background: var(--yellow-solid, #eab308);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.odm-adm-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 6px;
+  border-top: 1px solid var(--bd);
+  margin-top: 4px;
+}
+
+.odm-adm-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--sf3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex: none;
+}
+
+.odm-adm-user-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.odm-adm-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-adm-user-email {
+  font-size: 11px;
+  color: var(--tx3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-adm-logout {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ---------- Main area ---------- */
+
+.odm-adm-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.odm-adm-topbar {
+  height: 48px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--bd);
+  background: var(--sf);
+}
+
+.odm-adm-breadcrumb {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx2);
+}
+
+.odm-adm-topbar-spacer {
+  flex: 1;
+}
+
+.odm-adm-search {
+  position: relative;
+  width: 320px;
+  flex: none;
+}
+
+.odm-adm-search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tx3);
+  pointer-events: none;
+}
+
+.odm-adm-search-input {
+  height: 32px;
+  padding-left: 30px;
+}
+
+.odm-adm-bell {
+  position: relative;
+}
+
+.odm-adm-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red-dot);
+  border: 2px solid var(--sf);
+}
+
+@media (max-width: 900px) {
+  .odm-adm-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 640px) {
+  .odm-adm-search {
+    display: none;
+  }
+}
+
+.odm-adm-content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 24px;
+}
+
+/* ---------- KPI row ---------- */
+
+.odm-adm-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .odm-adm-kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.odm-adm-kpi-card {
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.odm-adm-kpi-label {
+  font-size: 12px;
+  color: var(--tx3);
+  margin-bottom: 6px;
+}
+
+.odm-adm-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--font-mono);
+}
+
+.odm-adm-kpi-sub {
+  font-size: 11px;
+  color: var(--tx3);
+  margin-top: 4px;
+}
+
+/* ---------- Accounts table ---------- */
+
+.odm-adm-filter-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.odm-adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.odm-adm-table th {
+  padding: 8px 12px;
+  font-weight: 500;
+  color: var(--tx3);
+  text-align: left;
+  border-bottom: 1px solid var(--bd);
+}
+
+.odm-adm-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bd);
+  vertical-align: middle;
+}
+
+.odm-adm-table tr:hover td {
+  background: var(--sf);
+}
+
+/* ---------- Role pill ---------- */
+
+.odm-adm-role {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sf2);
+  color: var(--tx2);
+}
+
+/* ---------- Role code chip ---------- */
+
+.odm-adm-rolechip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--bd);
+  white-space: nowrap;
+}
+
+/* ---------- Accounts filters ---------- */
+
+.odm-adm-account-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.odm-adm-account-search {
+  width: 280px;
+  max-width: 100%;
+}
+
+.odm-adm-account-select {
+  width: 180px;
+  max-width: 100%;
+}
+
+/* ---------- Account row status / cert sub-notes ---------- */
+
+.odm-adm-subnote {
+  font-size: 11.5px;
+  margin-top: 3px;
+}
+
+.odm-adm-subnote-warn {
+  color: var(--yellow-fg);
+}
+
+.odm-adm-subnote-cert {
+  color: var(--orange-fg);
+  font-weight: 700;
+}
+
+/* ---------- Row actions ---------- */
+
+.odm-adm-account-actions {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+/* ---------- Toggle switch (is_active) ---------- */
+
+.odm-adm-toggle {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--bd2);
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+  transition: background 0.15s;
+}
+
+.odm-adm-toggle i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s;
+}
+
+.odm-adm-toggle.is-on {
+  background: var(--green-solid);
+}
+
+.odm-adm-toggle.is-on i {
+  left: 18px;
+}
+
+.odm-adm-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Sensor / inline chip ---------- */
+
+.odm-adm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--bd);
+  white-space: nowrap;
+}
+
+.odm-adm-chip.is-mandatory {
+  border-color: var(--ink);
+  color: var(--tx);
+  background: transparent;
+}
+
+/* ---------- Info banner ---------- */
+
+.odm-adm-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--blue-bg);
+  color: var(--blue-fg);
+  border: 1px solid var(--blue-dot);
+  font-size: 12.5px;
+  margin-top: 12px;
+}
+
+.odm-adm-banner svg {
+  flex: none;
+}
+
+/* ---------- Tabs with counts ---------- */
+
+.odm-adm-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--bd);
+  margin-bottom: 14px;
+}
+
+.odm-adm-tab {
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.odm-adm-tab.is-active {
+  color: var(--blue-solid);
+  border-bottom-color: var(--blue-solid);
+}
+
+.odm-adm-tab-count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: var(--sf3);
+  color: var(--tx2);
+}
+
+/* ---------- Mobile ---------- */
+
+@media (min-width: 768px) {
+  .odm-adm-menu-toggle { display: none; }
+  .odm-adm-scrim { display: none; }
+}
+
+@media (max-width: 767px) {
+  .odm-adm-side {
+    position: fixed;
+    top: 0;
+    left: -240px;
+    bottom: 0;
+    z-index: 200;
+    transition: left 0.2s;
+    width: 220px;
+  }
+  .odm-adm-side.is-open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+  }
+  .odm-adm-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 199;
+    border: 0;
+    cursor: default;
+  }
+  .odm-adm-menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--tx2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

@@ -186,6 +186,39 @@ input[type='checkbox'] {
   color: var(--text);
   min-height: 0;
   height: 100%;
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #020617;
+}
+
+.dark-ws * {
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #020617;
+}
+
+.dark-ws::-webkit-scrollbar,
+.dark-ws *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-ws::-webkit-scrollbar-track,
+.dark-ws *::-webkit-scrollbar-track {
+  background: #020617;
+  border-radius: 999px;
+}
+
+.dark-ws::-webkit-scrollbar-thumb,
+.dark-ws *::-webkit-scrollbar-thumb {
+  background: #475569;
+  border: 2px solid #020617;
+  border-radius: 999px;
+}
+
+.dark-ws::-webkit-scrollbar-thumb:hover,
+.dark-ws *::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* dark-ws inputs */
@@ -304,8 +337,9 @@ input[type='checkbox'] {
   padding-right: 4px;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
+  color-scheme: dark;
   scrollbar-width: thin;
-  scrollbar-color: rgba(96, 165, 250, 0.5) transparent;
+  scrollbar-color: #475569 #020617;
 }
 
 .mission-control-side > * {
@@ -313,20 +347,22 @@ input[type='checkbox'] {
 }
 
 .mission-control-side::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .mission-control-side::-webkit-scrollbar-track {
-  background: transparent;
+  background: #020617;
+  border-radius: 999px;
 }
 
 .mission-control-side::-webkit-scrollbar-thumb {
-  background: rgba(96, 165, 250, 0.45);
+  background: #475569;
+  border: 2px solid #020617;
   border-radius: 999px;
 }
 
 .mission-control-side::-webkit-scrollbar-thumb:hover {
-  background: rgba(96, 165, 250, 0.7);
+  background: #64748b;
 }
 
 .mission-control-map {

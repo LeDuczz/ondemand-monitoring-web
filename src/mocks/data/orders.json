@@ -1,0 +1,227 @@
+{
+  "_note": "Mock data for GET /api/orders?status=PENDING [TK MNG-02] and GET /api/orders/{id} [TK MNG-03]. Queue-row fields (id, code, status, customer.fullName/companyName, serviceName, preferredDate, preferredTimeName, submittedAt, aiVerdict, blockerCount, warningCount) are evidenced for all 6 orders straight from the [TK MNG-02] table. Detail-only fields (customer email/phone, preferredWindow, addressText, center, radiusM, nearestBase, mediaRequirements, purpose, attachments) are verbatim from [TK MNG-03] only for ORD-2609-0157 (FEASIBLE default state) and ORD-2609-0160 (RISKY state, reusing the same location/media block the design renders for the risky variant of the same artboard). The other 4 orders (0149/0162/0161/0163) have no detail source anywhere — those fields are `null` rather than invented; OrderReviewPage renders an explicit 'Chưa có dữ liệu' marker per block for them (see evd/P4-manager-order-review.md, 'Review fixes'). submittedAt values are chosen so that relative to now=2026-09-19T14:32:00+07:00 the wait matches [TK MNG-02] exactly: ORD-2609-0157=31h, ORD-2609-0149=26h, ORD-2609-0162=6h, ORD-2609-0160=19h, ORD-2609-0161=12h, ORD-2609-0163=3h.",
+  "orders": [
+    {
+      "id": "ord-2609-0157",
+      "code": "ORD-2609-0157",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Lê Quốc Bảo",
+        "companyName": "Công ty CP Logistics Cát Lái",
+        "email": "bao.le@logisticscatlai.vn",
+        "phone": "0918 227 640"
+      },
+      "serviceName": "Tuần tra an ninh khu vực",
+      "preferredDate": "25/09",
+      "preferredTimeName": "Chiều",
+      "preferredWindow": "25/09/2026 · Chiều 13:00–17:00",
+      "submittedAt": "2026-09-18T07:32:00+07:00",
+      "addressText": "Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức",
+      "center": {
+        "lat": 10.7686,
+        "lon": 106.7952
+      },
+      "radiusM": 600,
+      "nearestBase": "Trạm Bình Thạnh · 5,9 km",
+      "mediaRequirements": [
+        {
+          "label": "VIDEO × 2 · 300 giây · 1080p"
+        },
+        {
+          "label": "PHOTO × 60 · 20 MP"
+        },
+        {
+          "label": "LIVESTREAM · 900 giây · 1080p"
+        }
+      ],
+      "purpose": "Tuần tra bãi container ngoài giờ, phát hiện xâm nhập",
+      "attachments": [
+        {
+          "name": "mat-bang-bai-container-cat-lai.pdf",
+          "sizeLabel": "2,4 MB",
+          "mimeType": "application/pdf",
+          "url": "/mock-files/mat-bang-bai-container-cat-lai.pdf"
+        }
+      ],
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    },
+    {
+      "id": "ord-2609-0149",
+      "code": "ORD-2609-0149",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Nguyễn Minh Khoa",
+        "companyName": "Công ty CP Xây dựng Phú Thịnh",
+        "email": null,
+        "phone": null
+      },
+      "serviceName": "Tuần tra an ninh khu vực",
+      "preferredDate": "23/09",
+      "preferredTimeName": "Chiều",
+      "preferredWindow": null,
+      "submittedAt": "2026-09-18T12:32:00+07:00",
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    },
+    {
+      "id": "ord-2609-0162",
+      "code": "ORD-2609-0162",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Trần Thị Thu Hà",
+        "companyName": "Công ty TNHH Bao bì Hiệp Phước",
+        "email": null,
+        "phone": null
+      },
+      "serviceName": "Kiểm tra nhiệt mái và tấm pin",
+      "preferredDate": "24/09",
+      "preferredTimeName": "Sáng",
+      "preferredWindow": null,
+      "submittedAt": "2026-09-19T08:32:00+07:00",
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    },
+    {
+      "id": "ord-2609-0160",
+      "code": "ORD-2609-0160",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Võ Thanh Tùng",
+        "companyName": "Công ty CP Đầu tư Sóng Thần",
+        "email": "tung.vo@songthan.vn",
+        "phone": "0977 445 220"
+      },
+      "serviceName": "Tuần tra an ninh khu vực",
+      "preferredDate": "24/09",
+      "preferredTimeName": "Sáng",
+      "preferredWindow": "24/09/2026 · Sáng 07:00–11:00",
+      "submittedAt": "2026-09-18T19:32:00+07:00",
+      "addressText": "Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức",
+      "center": {
+        "lat": 10.7686,
+        "lon": 106.7952
+      },
+      "radiusM": 600,
+      "nearestBase": "Trạm Bình Thạnh · 5,9 km",
+      "mediaRequirements": [
+        {
+          "label": "VIDEO × 2 · 300 giây · 1080p"
+        },
+        {
+          "label": "PHOTO × 60 · 20 MP"
+        }
+      ],
+      "purpose": "Tuần tra khu công nghiệp ngoài giờ, phát hiện xâm nhập",
+      "attachments": [],
+      "aiVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 2
+    },
+    {
+      "id": "ord-2609-0161",
+      "code": "ORD-2609-0161",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Phạm Ngọc Anh",
+        "companyName": "HTX Nông nghiệp Phú Mỹ Hưng",
+        "email": null,
+        "phone": null
+      },
+      "serviceName": "GS cây trồng",
+      "preferredDate": "27/09",
+      "preferredTimeName": "Sáng",
+      "preferredWindow": null,
+      "submittedAt": "2026-09-19T02:32:00+07:00",
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
+      "aiVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 1
+    },
+    {
+      "id": "ord-2609-0163",
+      "code": "ORD-2609-0163",
+      "status": "PENDING",
+      "customer": {
+        "fullName": "Lê Quốc Bảo",
+        "companyName": "Công ty CP Logistics Cát Lái",
+        "email": null,
+        "phone": null
+      },
+      "serviceName": "GS giao thông và sự kiện",
+      "preferredDate": "21/09",
+      "preferredTimeName": "Chiều",
+      "preferredWindow": null,
+      "submittedAt": "2026-09-19T11:32:00+07:00",
+      "addressText": null,
+      "center": null,
+      "radiusM": null,
+      "nearestBase": null,
+      "mediaRequirements": null,
+      "purpose": null,
+      "attachments": null,
+      "aiVerdict": "RISKY",
+      "blockerCount": 0,
+      "warningCount": 2
+    },
+    {
+      "id": "ord-2609-0153",
+      "code": "ORD-2609-0153",
+      "status": "APPROVED",
+      "customer": {
+        "fullName": "Trần Thị Thu Hà",
+        "companyName": "",
+        "email": null,
+        "phone": null
+      },
+      "serviceName": "Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước",
+      "preferredDate": "24/09",
+      "preferredTimeName": "Sáng",
+      "preferredWindow": null,
+      "submittedAt": "2026-09-17T09:10:00+07:00",
+      "addressText": "KCN Hiệp Phước, Nhà Bè",
+      "center": {
+        "lat": 10.6402,
+        "lon": 106.74
+      },
+      "radiusM": 300,
+      "nearestBase": "Trạm Nhà Bè",
+      "mediaRequirements": [
+        {
+          "label": "VIDEO × 1 · 240 giây"
+        },
+        {
+          "label": "PHOTO × 30 · 640×512"
+        }
+      ],
+      "purpose": null,
+      "attachments": null,
+      "aiVerdict": "FEASIBLE",
+      "blockerCount": 0,
+      "warningCount": 0
+    }
+  ]
+}

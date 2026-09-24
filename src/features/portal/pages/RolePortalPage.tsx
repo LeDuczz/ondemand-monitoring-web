@@ -211,6 +211,16 @@ const roleContent: Record<
       'Weekly audit export is ready',
     ],
   },
+  AUDITOR: {
+    title: 'Audit workspace',
+    subtitle: 'Review system audit logs and compliance records.',
+    eyebrow: 'Audit overview',
+    primary: 'View audit log',
+    metrics: [
+      { label: 'Audit events today', value: '12', detail: 'Last 24 hours', icon: 'clock' as const },
+    ],
+    activities: ['Review recent audit entries'],
+  },
 }
 
 export function RolePortalPage({ role }: { role: UserRole }) {

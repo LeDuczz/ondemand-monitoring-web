@@ -1,6 +1,5 @@
-import '../omss/operator.css'
-import OperatorWorkspace from '../omss/OperatorWorkspace'
+import { DroneOperatorApp } from '../DroneOperatorApp'
 
 export function DroneOperatorHomePage() {
-  return <OperatorWorkspace />
+  return <DroneOperatorApp />
 }

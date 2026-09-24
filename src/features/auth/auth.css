@@ -1,0 +1,482 @@
+/*
+ * Auth (login / register / OTP / forgot / reset / first-login) screens,
+ * per evd/design/SYS-01.dc.html (Đăng nhập) and evd/design/SYS-02.dc.html
+ * (Đăng ký). Everything is scoped under `.odm-auth` so it only ever applies
+ * inside AuthPage — reuses tokens/primitives from src/styles/odm.css
+ * (`.odm-inp`, `.odm-btn`, `.odm-badge`).
+ */
+
+.odm-auth {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* ---------- Brand panel (left) ---------- */
+.odm-auth-aside {
+  position: relative;
+  flex: 0 0 clamp(320px, 34vw, 480px);
+  border-right: 1px solid var(--bd);
+  background: linear-gradient(160deg, #0B1F44 0%, #1565E8 100%);
+  color: #fff;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.odm-auth-aside-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.odm-auth-aside-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex: none;
+}
+
+.odm-auth-aside-brand-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.odm-auth-aside-copy {
+  margin-top: 32px;
+}
+
+.odm-auth-aside-copy h1 {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.odm-auth-aside-copy p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.odm-auth-points {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.odm-auth-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+}
+
+.odm-auth-point svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: #38B6FF;
+}
+
+.odm-auth-aside-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- Form side (right) ---------- */
+.odm-auth-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.odm-auth-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+}
+
+.odm-auth-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--tx);
+}
+
+.odm-auth-logo svg {
+  width: 18px;
+  height: 18px;
+}
+
+.odm-auth-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--tx3);
+}
+
+.odm-auth-theme-toggle button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--bd2);
+  background: var(--sf);
+  color: var(--tx);
+  cursor: pointer;
+}
+
+.odm-auth-theme-toggle button:hover {
+  background: var(--sf3);
+}
+
+.odm-auth-theme-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.odm-auth-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.odm-auth-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.odm-auth-heading {
+  margin-bottom: 20px;
+}
+
+.odm-auth-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tx3);
+}
+
+.odm-auth-heading h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.odm-auth-heading p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--tx2);
+  line-height: 1.5;
+}
+
+/* ---------- Notice ---------- */
+.odm-auth-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+}
+
+.odm-auth-notice svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+.odm-auth-notice p {
+  margin: 0;
+}
+
+.odm-auth-notice p + p {
+  margin-top: 2px;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.odm-auth-notice--error {
+  background: var(--red-bg);
+  color: var(--red-fg);
+  border-color: var(--red-dot);
+}
+
+.odm-auth-notice--success {
+  background: var(--green-bg);
+  color: var(--green-fg);
+  border-color: var(--green-dot);
+}
+
+.odm-auth-notice--info {
+  background: var(--blue-bg);
+  color: var(--blue-fg);
+  border-color: var(--blue-dot);
+}
+
+/* ---------- Form ---------- */
+.odm-auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.odm-auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.odm-auth-field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.odm-auth-field-label-row label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.odm-auth-field-label-row span {
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+
+.odm-auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.odm-auth-input-wrap svg {
+  position: absolute;
+  left: 10px;
+  width: 15px;
+  height: 15px;
+  color: var(--tx3);
+  pointer-events: none;
+}
+
+.odm-auth-input-wrap .odm-inp {
+  padding-left: 32px;
+}
+
+.odm-auth-input-wrap.has-action .odm-inp {
+  padding-right: 34px;
+}
+
+.odm-auth-input-action {
+  position: absolute;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--tx3);
+  cursor: pointer;
+}
+
+.odm-auth-input-action:hover {
+  background: var(--sf3);
+}
+
+.odm-auth-input-action svg {
+  position: static;
+  color: inherit;
+}
+
+.odm-auth-field-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--red-fg);
+}
+
+.odm-auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.odm-auth-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+
+.odm-auth-checkbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--focus);
+}
+
+.odm-auth-link-button {
+  border: 0;
+  background: transparent;
+  color: var(--focus);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.odm-auth-link-button:hover {
+  text-decoration: underline;
+}
+
+.odm-auth-submit {
+  width: 100%;
+  height: 40px;
+  font-size: 13.5px;
+}
+
+.odm-auth-submit[aria-busy='true'] {
+  opacity: 0.85;
+  cursor: progress;
+}
+
+.odm-auth-google {
+  width: 100%;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--bd2);
+  border-radius: 6px;
+  background: var(--sf);
+  color: var(--tx);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.odm-auth-google:hover {
+  background: var(--sf3);
+}
+
+.odm-auth-google svg {
+  width: 16px;
+  height: 16px;
+}
+
+.odm-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+
+.odm-auth-divider::before,
+.odm-auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bd);
+}
+
+.odm-auth-resend,
+.odm-auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--tx2);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 0;
+  justify-self: start;
+}
+
+.odm-auth-back svg {
+  width: 14px;
+  height: 14px;
+}
+
+.odm-auth-resend strong {
+  color: var(--focus);
+  font-weight: 600;
+}
+
+.odm-auth-switch {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  color: var(--tx2);
+  text-align: center;
+}
+
+.odm-auth-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--focus);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.odm-auth-switch button:hover {
+  text-decoration: underline;
+}
+
+.odm-auth-bottom-back {
+  margin-top: 14px;
+  justify-self: center;
+}
+
+:root[data-theme='dark'] .odm-auth-aside {
+  background: linear-gradient(160deg, #060e1f 0%, #0d3580 100%);
+}
+
+@media (max-width: 900px) {
+  .odm-auth-aside {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .odm-auth-topbar {
+    padding: 16px;
+  }
+
+  .odm-auth-content {
+    padding: 16px;
+  }
+}

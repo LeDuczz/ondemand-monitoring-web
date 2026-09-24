@@ -81,6 +81,20 @@ async function refreshAccessTokenOnce() {
   return refreshPromise
 }
 
+// Same transport choice as `src/shared/api/httpClient.ts`: mockFetch when
+// `env.useMockApi` is on, otherwise the real network. Dynamic import keeps
+// `src/mocks` out of the module graph unless mocking is actually used.
+async function transportFetch(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  if (env.useMockApi) {
+    const { mockFetch } = await import('../../../mocks')
+    return mockFetch(url, init)
+  }
+  return fetch(url, init)
+}
+
 export async function authenticatedFetch(
   url: string,
   init: RequestInit = {},
@@ -88,7 +102,7 @@ export async function authenticatedFetch(
   const request = (token?: string) => {
     const headers = new Headers(init.headers)
     if (token) headers.set('Authorization', `Bearer ${token}`)
-    return fetch(url, { ...init, credentials: 'include', headers })
+    return transportFetch(url, { ...init, credentials: 'include', headers })
   }
 
   const response = await request(authSession.getAccessToken() ?? undefined)
@@ -108,7 +122,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
 
   let response: Response
   try {
-    response = await fetch(`${env.apiBaseUrl}${path}`, {
+    response = await transportFetch(`${env.apiBaseUrl}${path}`, {
       ...requestInit,
       body: body === undefined ? undefined : JSON.stringify(body),
       credentials: 'include',
@@ -203,6 +217,13 @@ const USER_KEY = 'fieldwise.user'
 const isSafeToken = (value: unknown): value is string =>
   typeof value === 'string' && /^[A-Za-z0-9._~-]+$/.test(value)
 
+const isJwtLikeToken = (value: string) => value.split('.').length === 3
+
+function isUsableAccessToken(value: unknown): value is string {
+  if (!isSafeToken(value)) return false
+  return env.useMockApi || isJwtLikeToken(value)
+}
+
 const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
   id: String(user.id),
   fullName: String(user.fullName),
@@ -221,23 +242,29 @@ const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
 
 export const authSession = {
   save(response: AuthResponse, rememberMe: boolean) {
-    if (!isSafeToken(response.accessToken) || !response.user) return
+    if (!isUsableAccessToken(response.accessToken) || !response.user) return
     const storage = rememberMe ? localStorage : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
     storage.setItem(USER_KEY, JSON.stringify(sanitizeUser(response.user)))
   },
   updateAccessToken(response: AuthResponse) {
-    if (!isSafeToken(response.accessToken)) return
+    if (!isUsableAccessToken(response.accessToken)) return
     const storage = localStorage.getItem(ACCESS_TOKEN_KEY)
       ? localStorage
       : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
   },
   getAccessToken() {
-    return (
+    const token =
       localStorage.getItem(ACCESS_TOKEN_KEY) ??
       sessionStorage.getItem(ACCESS_TOKEN_KEY)
-    )
+
+    if (!token) return undefined
+    if (isUsableAccessToken(token)) return token
+
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+    return undefined
   },
   getUser() {
     const raw =

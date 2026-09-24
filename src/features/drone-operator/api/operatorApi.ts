@@ -1,56 +1,51 @@
 import { apiRequest } from '../../../shared/api/httpClient'
+import { authSession } from '../../auth/api/authApi'
+import { missionApi } from '../../mission/api/missionApi'
+import { toOperatorMission, type BackendMission } from './liveMission'
 import type { AvailabilityStatus } from '../lib/availabilitySlots'
 import type {
-  ControlHandover,
-  FaultType,
-  FlightConnection,
-  MaintenanceSeverity,
-  MaintenanceTicket,
-  MediaFile,
   OperatorMission,
   OperatorMissionTab,
   OperatorProfile,
-  PostflightItem,
-  PostflightRecord,
-  PreflightItem,
-  PreflightRecord,
 } from '../types/mission'
 
 export const operatorApi = {
-  getProfile: (signal?: AbortSignal) =>
-    apiRequest<OperatorProfile>('/api/operator/profile', { signal }),
-
-  listMissions: (tab?: OperatorMissionTab, signal?: AbortSignal) => {
-    const query = tab ? `?tab=${tab}` : ''
-    return apiRequest<{ items: OperatorMission[] }>(
-      `/api/operator/missions${query}`,
-      {
-        signal,
-      },
-    )
+  getProfile: async (_signal?: AbortSignal): Promise<OperatorProfile> => {
+    const user = authSession.getUser()
+    if (!user) throw new Error('Please sign in as a drone operator')
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      rank: '',
+      station: '',
+      certExpiry: '',
+    }
   },
 
-  getMission: (missionId: string, signal?: AbortSignal) =>
-    apiRequest<OperatorMission>(`/api/operator/missions/${missionId}`, {
-      signal,
-    }),
+  listMissions: async (tab?: OperatorMissionTab, _signal?: AbortSignal) => {
+    const missions = await missionApi.getMyMissions() as unknown as BackendMission[]
+    const items = missions.map(toOperatorMission)
+    if (!tab) return { items }
+    const statuses: Record<OperatorMissionTab, OperatorMission['status'][]> = {
+      pending: ['PENDING'], upcoming: ['ACCEPTED', 'IN_FLIGHT'],
+      history: ['COMPLETED', 'REJECTED', 'FAILED'],
+    }
+    return { items: items.filter((item) => statuses[tab].includes(item.status)) }
+  },
 
-  acceptMission: (missionId: string, signal?: AbortSignal) =>
-    apiRequest<OperatorMission>(`/api/operator/missions/${missionId}/accept`, {
-      method: 'POST',
-      signal,
-    }),
+  getMission: async (missionId: string, _signal?: AbortSignal) =>
+    toOperatorMission(await missionApi.getMissionById(missionId) as unknown as BackendMission),
 
-  rejectMission: (
+  acceptMission: async (missionId: string, _signal?: AbortSignal) =>
+    toOperatorMission(await missionApi.acceptMyMission(missionId) as unknown as BackendMission),
+
+  rejectMission: async (
     missionId: string,
     body: { reason: string; notes?: string },
-    signal?: AbortSignal,
+    _signal?: AbortSignal,
   ) =>
-    apiRequest<OperatorMission>(`/api/operator/missions/${missionId}/reject`, {
-      method: 'POST',
-      body,
-      signal,
-    }),
+    toOperatorMission(await missionApi.rejectMyMission(missionId, body.reason) as unknown as BackendMission),
 
   getAvailability: (week: string, signal?: AbortSignal) =>
     apiRequest<{ week: string; slots: Record<string, AvailabilityStatus> }>(
@@ -71,76 +66,4 @@ export const operatorApi = {
       },
     ),
 
-  connectGCS: (
-    missionId: string,
-    body: { token: string; gcsId: string },
-    signal?: AbortSignal,
-  ) =>
-    apiRequest<FlightConnection>(
-      `/api/operator/missions/${missionId}/connect`,
-      {
-        method: 'POST',
-        body,
-        signal,
-      },
-    ),
-
-  confirmHandover: (missionId: string, signal?: AbortSignal) =>
-    apiRequest<ControlHandover>(
-      `/api/operator/missions/${missionId}/handover`,
-      {
-        method: 'POST',
-        signal,
-      },
-    ),
-
-  savePreflight: (
-    missionId: string,
-    body: { items: PreflightItem[] },
-    signal?: AbortSignal,
-  ) =>
-    apiRequest<PreflightRecord>(
-      `/api/operator/missions/${missionId}/preflight`,
-      {
-        method: 'POST',
-        body,
-        signal,
-      },
-    ),
-
-  getMedia: (missionId: string, signal?: AbortSignal) =>
-    apiRequest<{ files: MediaFile[] }>(
-      `/api/operator/missions/${missionId}/media`,
-      { signal },
-    ),
-
-  retryUpload: (missionId: string, fileId: string, signal?: AbortSignal) =>
-    apiRequest<MediaFile>(
-      `/api/operator/missions/${missionId}/media/${fileId}/retry`,
-      { method: 'POST', signal },
-    ),
-
-  savePostflight: (
-    missionId: string,
-    body: { items: PostflightItem[]; notes?: string },
-    signal?: AbortSignal,
-  ) =>
-    apiRequest<PostflightRecord>(
-      `/api/operator/missions/${missionId}/postflight`,
-      { method: 'POST', body, signal },
-    ),
-
-  createMaintenanceTicket: (
-    missionId: string,
-    body: {
-      issueType: FaultType
-      severity: MaintenanceSeverity
-      description: string
-    },
-    signal?: AbortSignal,
-  ) =>
-    apiRequest<MaintenanceTicket>(
-      `/api/operator/missions/${missionId}/maintenance-ticket`,
-      { method: 'POST', body, signal },
-    ),
 }

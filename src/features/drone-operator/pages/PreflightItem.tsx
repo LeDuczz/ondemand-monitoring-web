@@ -15,13 +15,13 @@ export const PREFLIGHT_GROUPS: { title: string; items: PreflightItemDef[] }[] =
         {
           key: 'battery',
           label: 'Pin',
-          detail: 'DRN-02 · 100%',
+          detail: 'telemetry hiện tại',
           code: 'battery_ok',
         },
         {
           key: 'camera',
           label: 'Camera',
-          detail: 'Zenmuse P1',
+          detail: 'camera hiện tại',
           code: 'camera_ok',
         },
         {

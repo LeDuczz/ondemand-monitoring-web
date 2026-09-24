@@ -1,12 +1,10 @@
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { operatorHref } from '../routes'
 import type { ConnectState } from './ConnectDroneScreen'
-
-export const MISSION_ID = 'MSN-2609-0142-1'
-export const DRONE_LABEL = 'DRN-02 Hải Âu'
+import type { BackendMission } from '../api/liveMission'
 
 const TRACKER_STEPS = [
-  'Xác thực mã token',
+  'Xác thực operator',
   'Mở liên kết tới GCS',
   'Nhận heartbeat telemetry',
 ]
@@ -14,9 +12,11 @@ const TRACKER_STEPS = [
 export function ConnectStatusPanel({
   state,
   error,
+  mission,
 }: {
   state: ConnectState
   error: string | null
+  mission?: BackendMission
 }) {
   const doneCount =
     state === 'connected'
@@ -69,12 +69,12 @@ export function ConnectStatusPanel({
               className="odm-mono"
               style={{ fontWeight: 700, fontSize: 13 }}
             >
-              {MISSION_ID}
+              {mission?.missionCode ?? mission?.id ?? 'Chưa chọn mission'}
             </span>
             <StatusBadge tone="green">Đã nhận</StatusBadge>
           </div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>
-            Giám sát tiến độ thi công Sala Riverside
+            {mission?.orderTitle ?? 'Mission đang được gán'}
           </div>
           <div
             style={{
@@ -85,9 +85,9 @@ export function ConnectStatusPanel({
               gap: 3,
             }}
           >
-            <span>Hôm nay 13:30–15:00</span>
-            <span>{DRONE_LABEL} · Zenmuse P1 (RGB)</span>
-            <span>KĐT Sala, TP. Thủ Đức</span>
+            <span>{mission?.scheduledStartAt ? new Date(mission.scheduledStartAt).toLocaleString('vi-VN') : 'Chưa có lịch bay'}</span>
+            <span>{mission?.droneCode ?? 'Chưa gán drone'}</span>
+            <span>{mission?.address ?? 'Chưa có địa chỉ'}</span>
           </div>
         </div>
       </div>

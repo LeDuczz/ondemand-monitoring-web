@@ -4,6 +4,7 @@ import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { operatorApi } from '../api/operatorApi'
+import { setActiveMissionId } from '../api/liveMission'
 import { computeKpis } from '../lib/computeKpis'
 import { demoNow } from '../lib/demoNow'
 import { filterMissions, missionsByTab } from '../lib/filterMissions'
@@ -95,7 +96,7 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
             Mission của tôi
           </h1>
           <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-            {profile.fullName} · phi công hạng {profile.rank} · {headerDateLabel(now)}
+            {profile.fullName}{profile.rank ? ` · phi công hạng ${profile.rank}` : ''} · {headerDateLabel(now)}
           </div>
         </div>
         <a className="odm-btn" href={operatorHref({ screen: 'availability' })}>
@@ -103,7 +104,7 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
         </a>
       </div>
 
-      <div style={{ marginBottom: 14 }}>
+      {profile.certExpiry && <div style={{ marginBottom: 14 }}>
         <div
           style={{
             display: 'flex',
@@ -126,7 +127,7 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
             Xem hồ sơ
           </a>
         </div>
-      </div>
+      </div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14 }}>
         <KpiCard dotColor="var(--yellow-dot)" label="Chờ phản hồi" value={kpis.pendingCount}
@@ -134,8 +135,8 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
         <KpiCard dotColor="var(--blue-dot)" label="Hôm nay" value={kpis.todayCount}
           sub={kpis.todayFlyingCount > 0 ? `${kpis.todayFlyingCount} đang bay` : undefined} />
         <KpiCard dotColor="var(--green-dot)" label="Sắp tới trong tuần" value={kpis.upcomingWeekCount} />
-        <KpiCard dotColor="var(--orange-dot)" label="Chứng chỉ còn hiệu lực" value={`${kpis.certDaysLeft} ngày`}
-          sub={`hết hạn ${kpis.certExpiryLabel}`} />
+        <KpiCard dotColor="var(--orange-dot)" label="Chứng chỉ còn hiệu lực" value={profile.certExpiry ? `${kpis.certDaysLeft} ngày` : 'Chưa có dữ liệu'}
+          sub={profile.certExpiry ? `hết hạn ${kpis.certExpiryLabel}` : undefined} />
       </div>
 
       <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
@@ -236,7 +237,7 @@ function NextFlightCard({
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <span className="odm-mono" style={{ fontWeight: 600, fontSize: 12.5 }}>
-          {mission.id}
+          {mission.missionCode ?? mission.id}
         </span>
         <StatusBadge tone="green">Đã nhận</StatusBadge>
       </div>
@@ -249,12 +250,13 @@ function NextFlightCard({
       </div>
       <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 4 }}>{mission.location}</div>
       <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 12 }}>
-        {mission.droneCode} {mission.droneName}
+        {mission.droneName && mission.droneName !== mission.droneCode ? `${mission.droneCode} ${mission.droneName}` : mission.droneCode}
       </div>
       <a
         className="odm-btn odm-btn-ok"
         style={{ width: '100%', justifyContent: 'center' }}
         href={operatorHref({ screen: 'connect' })}
+        onClick={() => setActiveMissionId(mission.id)}
       >
         Bắt đầu chuyến bay
       </a>

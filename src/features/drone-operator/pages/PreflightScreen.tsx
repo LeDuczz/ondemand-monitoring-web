@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { DRONE_PRIMARY, MISSION_PRIMARY } from '../omss/mockData'
+import { missionApi } from '../../mission/api/missionApi'
+import { flightControlApi } from '../omss/api/flightControlApi'
+import { useActiveMission } from '../api/useActiveMission'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
 import { FlightStepHeader } from './FlightStepper'
 import { PREFLIGHT_GROUPS, type PreflightItemDef } from './PreflightItem'
 
-const MISSION_ID = 'MSN-2609-0142-1'
 const controlBaseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
 
@@ -203,30 +204,68 @@ function writeStoredWeatherState(
 }
 
 export function PreflightScreen() {
-  function handleEnterSimulation() {
+  const mission = useActiveMission()
+  const [startError, setStartError] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
+
+  async function handleEnterSimulation() {
+    if (!mission.missionId || !mission.data?.droneCode) { setStartError('Mission chưa được gán drone'); return }
+    if (window.sessionStorage.getItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`) !== 'true') {
+      setStartError('Vui lòng xác nhận cam kết bàn giao trước khi bay')
+      return
+    }
+    setStarting(true)
+    setStartError(null)
     try {
+      const droneCode = mission.data.droneCode
+      await flightControlApi.bindSession(mission.missionId, droneCode)
+      const deadline = Date.now() + 20_000
+      while (true) {
+        const telemetry = await missionApi.getTelemetryReadiness(mission.missionId)
+        if (telemetry.droneCode !== droneCode) throw new Error('Drone của mission đã thay đổi. Kết nối lại GCS.')
+        if (telemetry.ready) break
+        if (Date.now() >= deadline) throw new Error('Chưa có telemetry mới từ drone. Kiểm tra Telemetry Sender và thử lại.')
+        await new Promise((resolve) => window.setTimeout(resolve, 1000))
+      }
+      const check = await missionApi.runPreflightCheck(mission.missionId, droneCode)
+      if (!check.overallPassed || !check.flightToken) throw new Error(check.failureReason || 'Backend preflight không đạt')
+      await missionApi.handoverMyMission(mission.missionId)
+      await missionApi.startMission(mission.missionId, check.flightToken.tokenValue)
       window.localStorage.setItem(
-        `omss.droneOperator.preflightReady.${MISSION_PRIMARY.id}.${DRONE_PRIMARY.id}`,
+        `omss.droneOperator.preflightReady.${mission.data.missionCode ?? mission.missionId}.${droneCode}`,
         'true',
       )
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-    } catch {
-      // Navigation still works if browser storage is unavailable.
+      window.location.hash = operatorHref({ screen: 'flight' })
+    } catch (cause) {
+      setStartError(cause instanceof Error ? cause.message : 'Không bắt đầu được mission')
+    } finally {
+      setStarting(false)
     }
-    window.location.hash = operatorHref({ screen: 'flight' })
   }
 
-  return <PreflightChecklistPanel onReady={handleEnterSimulation} />
+  return <>
+    {(mission.error || startError) && <p role="alert" style={{ color: 'var(--red-fg)' }}>{startError ?? (mission.error instanceof Error ? mission.error.message : 'Không tải được mission')}</p>}
+    {starting && <p>Đang xác nhận telemetry, preflight và flight token…</p>}
+    <PreflightChecklistPanel missionId={mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'}
+      droneLabel={mission.data?.droneCode ?? 'Chưa gán drone'}
+      latitude={mission.data?.latitude ?? undefined} longitude={mission.data?.longitude ?? undefined}
+      onReady={() => { void handleEnterSimulation() }} />
+  </>
 }
 
 export function PreflightChecklistPanel({
-  missionId = MISSION_ID,
-  droneLabel = 'DRN-02 Hải Âu',
+  missionId,
+  droneLabel,
+  latitude,
+  longitude,
   onReady,
   embedded = false,
 }: {
-  missionId?: string
-  droneLabel?: string
+  missionId: string
+  droneLabel: string
+  latitude?: number
+  longitude?: number
   onReady?: () => void
   embedded?: boolean
 }) {
@@ -310,8 +349,8 @@ export function PreflightChecklistPanel({
         body: JSON.stringify({
           missionId,
           droneCode: droneLabel,
-          latitude: 10.6402,
-          longitude: 106.6912,
+          latitude,
+          longitude,
         }),
       })
       if (!response.ok) throw new Error(`Weather API ${response.status}`)

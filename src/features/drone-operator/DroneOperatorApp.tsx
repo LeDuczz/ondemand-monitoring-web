@@ -5,9 +5,8 @@ import { operatorApi } from './api/operatorApi'
 import { missionsByTab } from './lib/filterMissions'
 import { demoNow } from './lib/demoNow'
 import { OperatorLayout } from './OperatorLayout'
-import { DRONE_PRIMARY, MISSION_PRIMARY } from './omss/mockData'
 import SimulationZonesScreen from './omss/screens/SimulationZones'
-import InFlightControlScreen from './omss/screens/InFlightControl'
+import { ActiveFlightScreen } from './pages/ActiveFlightScreen'
 import { MissionDetailScreen } from './pages/MissionDetailScreen'
 import { MissionListPage } from './pages/MissionListPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
@@ -34,9 +33,6 @@ export function DroneOperatorApp() {
   const hash = useHash()
   const route = parseOperatorRoute(hash)
   const [searchQuery, setSearchQuery] = useState('')
-  const autoStartFlightPlan =
-    route.screen === 'flight' &&
-    window.sessionStorage.getItem('odm.operator.autoStartSimulation') === 'true'
 
   const missionsQuery = useApiQuery(
     (signal) => operatorApi.listMissions(undefined, signal),
@@ -51,20 +47,7 @@ export function DroneOperatorApp() {
 
   // Buồng lái renders full-screen without the shell, same as OMSS.
   if (route.screen === 'flight') {
-    return (
-      <InFlightControlScreen
-        mission={MISSION_PRIMARY}
-        drone={DRONE_PRIMARY}
-        autoStartPlan={autoStartFlightPlan}
-        onAutoStartPlanConsumed={() => {
-          window.sessionStorage.removeItem('odm.operator.autoStartSimulation')
-        }}
-        onRTB={() => {
-          window.location.hash = '#portal/drone-operator/postflight'
-        }}
-        onEmergency={() => {}}
-      />
-    )
+    return <ActiveFlightScreen />
   }
 
   return (

@@ -1,199 +1,175 @@
 /*
- * Auth (login / register / OTP / forgot / reset / first-login) screens,
- * per evd/design/SYS-01.dc.html (Đăng nhập) and evd/design/SYS-02.dc.html
- * (Đăng ký). Everything is scoped under `.odm-auth` so it only ever applies
- * inside AuthPage — reuses tokens/primitives from src/styles/odm.css
- * (`.odm-inp`, `.odm-btn`, `.odm-badge`).
+ * Auth screens. Scoped under `.odm-auth` so the login/register presentation
+ * does not leak into the portal UI.
  */
 
 .odm-auth {
+  position: relative;
   display: flex;
+  height: 100vh;
+  height: 100dvh;
   min-height: 100vh;
   width: 100%;
-  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  background: #f6f9ff;
 }
 
 /* ---------- Brand panel (left) ---------- */
 .odm-auth-aside {
   position: relative;
-  flex: 0 0 clamp(320px, 34vw, 480px);
-  border-right: 1px solid var(--bd);
-  background: linear-gradient(160deg, #0B1F44 0%, #1565E8 100%);
-  color: #fff;
-  padding: 40px 36px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex: 0 0 49%;
+  width: 49%;
+  min-width: 0;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-}
-
-.odm-auth-aside-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 26px;
-  line-height: 1.05;
-  color: var(--brand-primary);
-}
-
-.odm-auth-aside-brand-mark {
-  width: 72px;
-  height: 72px;
-  border-radius: 0;
-  object-fit: contain;
-  object-position: left center;
-  flex: none;
-}
-
-.odm-auth-aside-brand-mark svg {
-  width: 17px;
-  height: 17px;
-}
-
-.odm-auth-aside-copy {
-  margin-top: 32px;
-}
-
-.odm-auth-aside-copy h1 {
-  margin: 0 0 8px;
-  font-size: clamp(22px, 2.4vw, 28px);
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-
-.odm-auth-aside-copy p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.odm-auth-points {
-  display: grid;
-  gap: 14px;
-  margin-top: 28px;
-}
-
-.odm-auth-point {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
-  line-height: 1.5;
-}
-
-.odm-auth-point svg {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  color: #38B6FF;
-}
-
-.odm-auth-aside-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  background-image: url('/images/4fde33a7-aeb2-4bed-8ea5-3581a92806b3.png');
+  background-size: cover;
+  background-position: center 48%;
+  background-repeat: no-repeat;
 }
 
 /* ---------- Form side (right) ---------- */
 .odm-auth-main {
+  position: relative;
   flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
   min-width: 0;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  padding: 88px 50px 28px;
+  background: #f6f9ff;
+}
+
+.odm-auth-main::before,
+.odm-auth-main::after {
+  content: '';
+  position: absolute;
+  right: -180px;
+  bottom: -160px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  border: 42px solid rgba(68, 122, 230, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.odm-auth-main::after {
+  right: -260px;
+  bottom: -260px;
+  width: 520px;
+  height: 520px;
+  border-width: 52px;
+  opacity: 0.72;
 }
 
 .odm-auth-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-}
-
-.odm-auth-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 1.05;
-  color: var(--tx);
-}
-
-.odm-auth-brand-name {
-  display: flex;
-  flex-direction: column;
-  color: var(--brand-primary);
-  font-weight: 800;
-  line-height: 0.95;
-}
-
-.odm-auth-brand-primary {
-  color: var(--brand-primary);
-}
-
-.odm-auth-brand-accent {
-  color: var(--brand-accent);
-  -webkit-text-fill-color: var(--brand-accent);
-  font-size: 1.22em;
-}
-
-.odm-auth-logo .odm-auth-aside-brand-mark {
-  width: 52px;
-  height: 52px;
-}
-
-.odm-auth-logo svg {
-  width: 18px;
-  height: 18px;
+  position: absolute;
+  top: 36px;
+  right: 32px;
+  z-index: 10;
 }
 
 .odm-auth-theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--tx3);
+  gap: 18px;
+  color: #223454;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .odm-auth-theme-toggle button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  border: 1px solid var(--bd2);
-  background: var(--sf);
-  color: var(--tx);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #223454;
   cursor: pointer;
 }
 
 .odm-auth-theme-toggle button:hover {
-  background: var(--sf3);
+  background: rgba(31, 111, 214, 0.08);
 }
 
 .odm-auth-theme-toggle svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
 }
 
 .odm-auth-content {
-  flex: 1;
+  position: relative;
+  z-index: 1;
+  width: 100%;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 24px;
 }
 
 .odm-auth-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
+  max-height: calc(100vh - 40px);
+  box-sizing: border-box;
+  border: 1px solid rgba(213, 222, 236, 0.9);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 45px rgba(39, 72, 133, 0.08);
+  padding: 30px 28px 18px;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+.odm-auth-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  margin-bottom: 18px;
+  color: var(--tx);
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.odm-auth-aside-brand-mark {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  object-fit: contain;
+  object-position: center;
+}
+
+.odm-auth-brand-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 0.92;
+}
+
+.odm-auth-brand-primary {
+  color: #10213f;
+}
+
+.odm-auth-brand-accent {
+  color: #176fff;
+  -webkit-text-fill-color: #176fff;
+  font-size: 1.2em;
 }
 
 .odm-auth-heading {
@@ -202,23 +178,28 @@
 
 .odm-auth-eyebrow {
   margin: 0 0 6px;
-  font-size: 11.5px;
+  color: #5f708b;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--tx3);
 }
 
 .odm-auth-heading h1 {
-  margin: 0 0 6px;
-  font-size: 22px;
-  line-height: 1.3;
+  margin: 0 0 8px;
+  color: #08162f;
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 
 .odm-auth-heading p {
   margin: 0;
-  font-size: 13.5px;
-  color: var(--tx2);
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 400;
   line-height: 1.5;
 }
 
@@ -226,19 +207,19 @@
 .odm-auth-notice {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  line-height: 1.5;
-  margin-bottom: 16px;
+  gap: 10px;
+  padding: 12px 14px;
   border: 1px solid transparent;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .odm-auth-notice svg {
   flex: none;
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   margin-top: 1px;
 }
 
@@ -273,30 +254,37 @@
 /* ---------- Form ---------- */
 .odm-auth-form {
   display: grid;
-  gap: 14px;
+  gap: 0;
 }
 
 .odm-auth-field {
   display: grid;
-  gap: 6px;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.odm-auth-field:has(.has-action) {
+  margin-bottom: 12px;
 }
 
 .odm-auth-field-label-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
 }
 
 .odm-auth-field-label-row label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--tx);
+  color: #101827;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.2;
 }
 
 .odm-auth-field-label-row span {
-  font-size: 11.5px;
-  color: var(--tx3);
+  color: #8390a5;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .odm-auth-input-wrap {
@@ -307,38 +295,52 @@
 
 .odm-auth-input-wrap svg {
   position: absolute;
-  left: 10px;
-  width: 15px;
-  height: 15px;
-  color: var(--tx3);
+  left: 17px;
+  width: 17px;
+  height: 17px;
+  color: #7283a0;
   pointer-events: none;
 }
 
 .odm-auth-input-wrap .odm-inp {
-  padding-left: 32px;
+  width: 100%;
+  height: 50px;
+  border: 1px solid #c6d5ea;
+  border-radius: 9px;
+  padding: 0 48px 0 54px;
+  background: #eaf2ff;
+  color: #101827;
+  font-size: 14px;
+  font-weight: 400;
+  box-shadow: none;
+}
+
+.odm-auth-input-wrap .odm-inp:focus {
+  border-color: #2e70ef;
+  box-shadow: 0 0 0 3px rgba(46, 112, 239, 0.1);
 }
 
 .odm-auth-input-wrap.has-action .odm-inp {
-  padding-right: 34px;
+  padding-right: 48px;
 }
 
 .odm-auth-input-action {
   position: absolute;
-  right: 6px;
+  right: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--tx3);
+  color: #667b99;
   cursor: pointer;
 }
 
 .odm-auth-input-action:hover {
-  background: var(--sf3);
+  background: rgba(31, 111, 214, 0.08);
 }
 
 .odm-auth-input-action svg {
@@ -348,8 +350,8 @@
 
 .odm-auth-field-error {
   margin: 0;
-  font-size: 12px;
   color: var(--red-fg);
+  font-size: 12px;
 }
 
 .odm-auth-row {
@@ -357,29 +359,32 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: 32px;
+  margin-top: 12px;
 }
 
 .odm-auth-checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--tx2);
+  gap: 10px;
+  color: #5c6b80;
+  font-size: 13px;
+  font-weight: 450;
 }
 
 .odm-auth-checkbox input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--focus);
+  width: 18px;
+  height: 18px;
+  accent-color: #1065f5;
 }
 
 .odm-auth-link-button {
   border: 0;
   background: transparent;
-  color: var(--focus);
-  font-size: 12.5px;
-  font-weight: 600;
+  color: #0b63f6;
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
   padding: 0;
 }
 
@@ -389,8 +394,24 @@
 
 .odm-auth-submit {
   width: 100%;
-  height: 40px;
-  font-size: 13.5px;
+  height: 48px;
+  border: 0;
+  border-radius: 9px;
+  margin-top: 14px;
+  background: linear-gradient(90deg, #1767ed 0%, #1c6ff2 100%);
+  box-shadow: 0 12px 26px rgba(29, 105, 234, 0.16);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.odm-auth-submit:hover:not(:disabled) {
+  box-shadow: 0 16px 30px rgba(29, 105, 234, 0.22);
+  transform: translateY(-1px);
 }
 
 .odm-auth-submit[aria-busy='true'] {
@@ -400,35 +421,38 @@
 
 .odm-auth-google {
   width: 100%;
-  height: 40px;
+  height: 50px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--bd2);
-  border-radius: 6px;
-  background: var(--sf);
-  color: var(--tx);
-  font-size: 13px;
-  font-weight: 600;
+  gap: 14px;
+  border: 1px solid #cad6e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #10213f;
   cursor: pointer;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .odm-auth-google:hover {
-  background: var(--sf3);
+  border-color: #9fb3cf;
 }
 
 .odm-auth-google svg {
-  width: 16px;
-  height: 16px;
+  width: 21px;
+  height: 21px;
 }
 
 .odm-auth-divider {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 11.5px;
-  color: var(--tx3);
+  gap: 18px;
+  margin: 16px 0;
+  color: #7a879d;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .odm-auth-divider::before,
@@ -436,46 +460,49 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--bd);
+  background: #d3deeb;
 }
 
 .odm-auth-resend,
 .odm-auth-back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
+  justify-self: start;
   border: 0;
   background: transparent;
-  color: var(--tx2);
-  font-size: 12.5px;
+  color: #65748e;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
   padding: 0;
-  justify-self: start;
 }
 
 .odm-auth-back svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
 
 .odm-auth-resend strong {
-  color: var(--focus);
-  font-weight: 600;
+  color: #1268f3;
+  font-weight: 800;
 }
 
 .odm-auth-switch {
-  margin: 16px 0 0;
-  font-size: 12.5px;
-  color: var(--tx2);
+  margin: 14px 0 0;
+  color: #69778c;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
   text-align: center;
 }
 
 .odm-auth-switch button {
   border: 0;
   background: transparent;
-  color: var(--focus);
-  font-weight: 600;
+  color: #0b63f6;
   cursor: pointer;
+  font-weight: 650;
   padding: 0;
 }
 
@@ -488,22 +515,263 @@
   justify-self: center;
 }
 
-:root[data-theme='dark'] .odm-auth-aside {
-  background: linear-gradient(160deg, #060e1f 0%, #0d3580 100%);
+:root[data-theme='dark'] .odm-auth-main,
+:root[data-theme='dark'] .odm-auth {
+  background: #071225;
+}
+
+:root[data-theme='dark'] .odm-auth-card {
+  background: #0d1830;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .odm-auth-heading h1,
+:root[data-theme='dark'] .odm-auth-field-label-row label,
+:root[data-theme='dark'] .odm-auth-brand-primary {
+  color: #f8fbff;
+}
+
+:root[data-theme='dark'] .odm-auth-google,
+:root[data-theme='dark'] .odm-auth-input-wrap .odm-inp {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f8fbff;
+}
+
+@media (min-width: 1200px) {
+  .odm-auth-aside {
+    flex-basis: 49%;
+    width: 49%;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .odm-auth-aside {
+    flex-basis: 45%;
+    width: 45%;
+    min-width: 360px;
+  }
+
+  .odm-auth-main {
+    padding: 20px 32px;
+  }
+
+  .odm-auth-card {
+    max-width: 520px;
+    padding: 22px 28px 18px;
+  }
+}
+
+@media (min-width: 901px) and (max-height: 850px) {
+  .odm-auth-main {
+    padding-top: 64px;
+    padding-bottom: 16px;
+  }
+
+  .odm-auth-card {
+    padding: 20px 28px 18px;
+  }
+
+  .odm-auth-logo {
+    margin-bottom: 14px;
+  }
+
+  .odm-auth-aside-brand-mark {
+    width: 46px;
+    height: 46px;
+  }
+
+  .odm-auth-heading {
+    margin-bottom: 18px;
+  }
+
+  .odm-auth-eyebrow {
+    margin-bottom: 4px;
+  }
+
+  .odm-auth-heading h1 {
+    font-size: 30px;
+  }
+
+  .odm-auth-divider {
+    margin: 16px 0;
+  }
+
+  .odm-auth-input-wrap .odm-inp,
+  .odm-auth-google {
+    height: 46px;
+  }
+
+  .odm-auth-submit {
+    height: 48px;
+    margin-top: 12px;
+  }
+
+  .odm-auth-switch {
+    margin-top: 10px;
+  }
+}
+
+@media (min-width: 901px) and (max-height: 800px) {
+  .odm-auth-main {
+    padding-top: 44px;
+    padding-bottom: 14px;
+  }
+
+  .odm-auth-card {
+    padding: 14px 26px;
+  }
+
+  .odm-auth-logo {
+    margin-bottom: 10px;
+  }
+
+  .odm-auth-aside-brand-mark {
+    width: 42px;
+    height: 42px;
+  }
+
+  .odm-auth-brand-name {
+    font-size: 18px;
+  }
+
+  .odm-auth-eyebrow {
+    font-size: 12px;
+  }
+
+  .odm-auth-heading h1 {
+    font-size: 30px;
+    line-height: 1.05;
+  }
+
+  .odm-auth-heading p {
+    font-size: 14px;
+  }
+
+  .odm-auth-heading {
+    margin-bottom: 14px;
+  }
+
+  .odm-auth-divider {
+    margin: 12px 0;
+  }
+
+  .odm-auth-field {
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .odm-auth-field:has(.has-action) {
+    margin-bottom: 10px;
+  }
+
+  .odm-auth-field-label-row label,
+  .odm-auth-field-label-row span,
+  .odm-auth-checkbox,
+  .odm-auth-link-button {
+    font-size: 12.5px;
+  }
+
+  .odm-auth-checkbox input {
+    width: 16px;
+    height: 16px;
+  }
+
+  .odm-auth-input-wrap .odm-inp,
+  .odm-auth-google {
+    height: 44px;
+  }
+
+  .odm-auth-submit {
+    height: 46px;
+    margin-top: 12px;
+  }
+
+  .odm-auth-switch {
+    margin-top: 12px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 900px) {
   .odm-auth-aside {
     display: none;
   }
+
+  .odm-auth {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .odm-auth-main {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+    padding: 76px 32px 32px;
+    overflow-y: auto;
+  }
+
+  .odm-auth-card {
+    width: min(calc(100% - 32px), 520px);
+    max-width: 520px;
+  }
 }
 
-@media (max-width: 480px) {
-  .odm-auth-topbar {
+@media (max-width: 600px) {
+  .odm-auth-main {
+    align-items: flex-start;
     padding: 16px;
   }
 
-  .odm-auth-content {
-    padding: 16px;
+  .odm-auth-topbar {
+    top: 14px;
+    right: 16px;
+  }
+
+  .odm-auth-theme-toggle span {
+    display: none;
+  }
+
+  .odm-auth-card {
+    width: 100%;
+    margin-top: 70px;
+    padding: 24px 20px;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(30, 64, 175, 0.06);
+  }
+
+  .odm-auth-logo {
+    margin-bottom: 22px;
+  }
+
+  .odm-auth-aside-brand-mark {
+    width: 48px;
+    height: 48px;
+  }
+
+  .odm-auth-brand-name {
+    font-size: 19px;
+  }
+
+  .odm-auth-heading h1 {
+    font-size: 30px;
+  }
+
+  .odm-auth-heading p {
+    font-size: 14px;
+  }
+
+  .odm-auth-row {
+    align-items: flex-start;
+  }
+
+  .odm-auth-input-wrap .odm-inp,
+  .odm-auth-google {
+    height: 52px;
+  }
+
+  .odm-auth-submit {
+    height: 52px;
   }
 }

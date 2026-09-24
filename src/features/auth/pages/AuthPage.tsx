@@ -169,40 +169,10 @@ function EmailField({
 
 function AuthAside() {
   return (
-    <aside className="odm-auth-aside">
-      <a
-        className="odm-auth-aside-brand"
-        href="#"
-        aria-label="Về trang chủ OnDemand Monitor"
-      >
-        <BrandMark />
-        <span className="odm-auth-brand-name">
-          <span className="odm-auth-brand-primary">OnDemand</span>
-          <span className="odm-auth-brand-accent">Monitor</span>
-        </span>
-      </a>
-      <div className="odm-auth-aside-copy">
-        <h1>OnDemand Monitor</h1>
-        <p>Dịch vụ giám sát bằng drone theo yêu cầu</p>
-        <div className="odm-auth-points">
-          <span className="odm-auth-point">
-            <Icon name="map-pin" />
-            Chọn vị trí và bán kính giám sát ngay trên bản đồ
-          </span>
-          <span className="odm-auth-point">
-            <Icon name="sparkle" />
-            AI kiểm tra tính khả thi, gợi ý ngày thay thế trước khi gửi duyệt
-          </span>
-          <span className="odm-auth-point">
-            <Icon name="camera" />
-            Xem trực tiếp khi drone bay và nhận ảnh, video đã xác thực
-          </span>
-        </div>
-      </div>
-      <div className="odm-auth-aside-footer">
-        <span>support@odms.vn</span>
-      </div>
-    </aside>
+    <aside
+      className="odm-auth-aside"
+      aria-label="OnDemand Monitor - dịch vụ giám sát bằng drone theo yêu cầu"
+    />
   )
 }
 
@@ -459,11 +429,11 @@ export function AuthPage({
       <AuthAside />
       <main className="odm-auth-main">
         <div className="odm-auth-topbar">
-          <AuthLogo />
           <ThemeToggle />
         </div>
         <div className="odm-auth-content">
           <div className="odm-auth-card">
+            <AuthLogo />
             <div className="odm-auth-heading">
               <p className="odm-auth-eyebrow">
                 {mode === 'register'

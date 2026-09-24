@@ -92,7 +92,7 @@ const STEP_LABELS: Record<Step, string> = {
 const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
-const MAP_TOP_CROP_PERCENT = 22
+const MAP_TOP_CROP_PERCENT = 0
 const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
 
 const card: React.CSSProperties = {

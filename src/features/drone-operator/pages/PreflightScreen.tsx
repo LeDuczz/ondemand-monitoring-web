@@ -62,6 +62,8 @@ type ItemState = {
   status?: RuntimeStatus
 }
 
+const TELEMETRY_READY_TIMEOUT_MS = 45_000
+
 const ALL_ITEMS = PREFLIGHT_GROUPS.flatMap((group) => group.items)
 const RUNTIME_KEY_MAP: Record<string, PreflightItemKey> = {
   GAZEBO: 'gazebo',
@@ -203,6 +205,17 @@ function writeStoredWeatherState(
   }
 }
 
+function telemetryWaitingMessage(lastTelemetryAt?: string | null) {
+  if (!lastTelemetryAt) {
+    return 'Chưa có telemetry mới từ drone. Kiểm tra Telemetry Sender và thử lại.'
+  }
+  const ageSeconds = Math.max(
+    0,
+    Math.round((Date.now() - new Date(lastTelemetryAt).getTime()) / 1000),
+  )
+  return `Telemetry backend đang cũ ${ageSeconds}s. Kiểm tra Telemetry Sender và thử lại.`
+}
+
 export function PreflightScreen() {
   const mission = useActiveMission()
   const [startError, setStartError] = useState<string | null>(null)
@@ -219,12 +232,14 @@ export function PreflightScreen() {
     try {
       const droneCode = mission.data.droneCode
       await flightControlApi.bindSession(mission.missionId, droneCode)
-      const deadline = Date.now() + 20_000
+      const deadline = Date.now() + TELEMETRY_READY_TIMEOUT_MS
+      let lastTelemetryAt: string | null = null
       while (true) {
         const telemetry = await missionApi.getTelemetryReadiness(mission.missionId)
         if (telemetry.droneCode !== droneCode) throw new Error('Drone của mission đã thay đổi. Kết nối lại GCS.')
+        lastTelemetryAt = telemetry.lastTelemetryAt
         if (telemetry.ready) break
-        if (Date.now() >= deadline) throw new Error('Chưa có telemetry mới từ drone. Kiểm tra Telemetry Sender và thử lại.')
+        if (Date.now() >= deadline) throw new Error(telemetryWaitingMessage(lastTelemetryAt))
         await new Promise((resolve) => window.setTimeout(resolve, 1000))
       }
       const check = await missionApi.runPreflightCheck(mission.missionId, droneCode)

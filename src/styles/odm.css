@@ -60,6 +60,10 @@
   --map-park: #cfe6cf;
   --map-tx: #6b7686;
   --ink-gradient: linear-gradient(135deg, #1565E8, #38B6FF);
+  --brand-primary: #020817;
+  --brand-accent: #1565E8;
+  --brand-stroke: rgba(255, 255, 255, 0.92);
+  --brand-shadow: rgba(2, 8, 23, 0.22);
   --sidebar-active-bg: #e8f0ff;
   --sidebar-active-tx: #1565E8;
   --sidebar-active-border: #1565E8;
@@ -68,6 +72,43 @@
   font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   color: var(--tx);
   background: var(--bg);
+}
+
+.odm :where(
+  .odm-adm-brand-name,
+  .odm-cus-brand-name,
+  .odm-mgr-brand-name,
+  .odm-opr-brand-name,
+  .odm-auth-brand-name,
+  .lp-logo-text
+) {
+  font-family: 'Arial Black', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-shadow:
+    0 1px 0 var(--brand-stroke),
+    1px 0 0 var(--brand-stroke),
+    0 -1px 0 var(--brand-stroke),
+    -1px 0 0 var(--brand-stroke),
+    0 4px 10px var(--brand-shadow);
+}
+
+.odm :where(
+  .odm-adm-brand-accent,
+  .odm-cus-brand-accent,
+  .odm-mgr-brand-accent,
+  .odm-opr-brand-accent,
+  .odm-auth-brand-accent,
+  .lp-logo-accent
+) {
+  color: var(--brand-accent);
+  -webkit-text-fill-color: var(--brand-accent);
+  text-shadow:
+    0 1px 0 var(--brand-stroke),
+    1px 0 0 var(--brand-stroke),
+    0 -1px 0 var(--brand-stroke),
+    -1px 0 0 var(--brand-stroke),
+    0 4px 10px var(--brand-shadow);
 }
 
 :root[data-theme='dark'] .odm {
@@ -114,6 +155,10 @@
   --orange-on: #1f0f00;
   --red-solid: #ef5b69;
   --red-on: #1a0507;
+  --brand-primary: #ffffff;
+  --brand-accent: #38B6FF;
+  --brand-stroke: rgba(2, 8, 23, 0.72);
+  --brand-shadow: rgba(0, 0, 0, 0.42);
   --map-bg: #111a2d;
   --map-block: #1e2631;
   --map-road: #2e3847;

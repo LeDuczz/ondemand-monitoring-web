@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
+import { CustomerChatbot } from './components/CustomerChatbot'
 import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
 import './customer.css'
 
@@ -73,10 +74,14 @@ export function CustomerLayout({
           className={`odm-cus-side ${menuOpen ? 'is-open' : ''}`}
         >
           <a className="odm-cus-brand" href={customerHref({ screen: 'dashboard' })}>
-            <img src="/images/logo-new.png" alt="" className="odm-cus-brand-mark" />
-            <span>
-              <span className="odm-cus-brand-name">OnDemand Monitor</span>
-              <span className="odm-cus-brand-sub">Cổng khách hàng</span>
+            <img
+              src="/images/logo-new.png"
+              alt="OnDemand Monitor"
+              className="odm-cus-brand-mark"
+            />
+            <span className="odm-cus-brand-name">
+              <span className="odm-cus-brand-primary">OnDemand</span>
+              <span className="odm-cus-brand-accent">Monitor</span>
             </span>
           </a>
 
@@ -149,6 +154,7 @@ export function CustomerLayout({
             </button>
           </header>
           <main className="odm-cus-content">{children}</main>
+          <CustomerChatbot />
         </div>
       </div>
     </div>

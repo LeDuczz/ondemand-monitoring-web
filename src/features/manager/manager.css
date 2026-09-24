@@ -31,29 +31,39 @@
 .odm-mgr-brand {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
-  padding: 2px 6px 12px;
+  padding: 6px 6px 16px;
+  text-decoration: none;
+  color: var(--tx);
 }
 
 .odm-mgr-brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 54px;
+  height: 54px;
+  border-radius: 0;
   object-fit: contain;
+  object-position: left center;
   flex: none;
 }
 
 .odm-mgr-brand-name {
-  display: block;
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  display: flex;
+  flex-direction: column;
+  color: var(--brand-primary);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 0.95;
 }
 
-.odm-mgr-brand-sub {
-  display: block;
-  font-size: 11px;
-  color: var(--tx3);
+.odm-mgr-brand-primary {
+  color: var(--brand-primary);
+}
+
+.odm-mgr-brand-accent {
+  color: var(--brand-accent);
+  -webkit-text-fill-color: var(--brand-accent);
+  font-size: 1.22em;
 }
 
 .odm-mgr-nav-scroll {

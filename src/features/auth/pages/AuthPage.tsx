@@ -20,7 +20,11 @@ type Notice = {
 
 function BrandMark() {
   return (
-    <img src="/images/logo-new.png" alt="" className="odm-auth-aside-brand-mark" />
+    <img
+      src="/images/logo-new.png"
+      alt="OnDemand Monitor"
+      className="odm-auth-aside-brand-mark"
+    />
   )
 }
 
@@ -32,7 +36,10 @@ function AuthLogo() {
       aria-label="Về trang chủ OnDemand Monitor"
     >
       <BrandMark />
-      <span>OnDemand Monitor</span>
+      <span className="odm-auth-brand-name">
+        <span className="odm-auth-brand-primary">OnDemand</span>
+        <span className="odm-auth-brand-accent">Monitor</span>
+      </span>
     </a>
   )
 }
@@ -169,7 +176,10 @@ function AuthAside() {
         aria-label="Về trang chủ OnDemand Monitor"
       >
         <BrandMark />
-        <span>OnDemand Monitor</span>
+        <span className="odm-auth-brand-name">
+          <span className="odm-auth-brand-primary">OnDemand</span>
+          <span className="odm-auth-brand-accent">Monitor</span>
+        </span>
       </a>
       <div className="odm-auth-aside-copy">
         <h1>OnDemand Monitor</h1>
@@ -190,7 +200,6 @@ function AuthAside() {
         </div>
       </div>
       <div className="odm-auth-aside-footer">
-        <span>OnDemand Monitor</span>
         <span>support@odms.vn</span>
       </div>
     </aside>

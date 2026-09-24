@@ -16,10 +16,10 @@ export function OperatorTopbar({
   return (
     <header className="odm-opr-topbar">
       <a className="odm-opr-brand" href={operatorHref({ screen: 'missions' })}>
-        <img src="/images/logo-new.png" alt="" className="odm-opr-brand-mark" />
-        <span>
-          <span className="odm-opr-brand-name">OnDemand Monitor</span>
-          <span className="odm-opr-brand-sub">Phi công · web</span>
+        <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-opr-brand-mark" />
+        <span className="odm-opr-brand-name">
+          <span className="odm-opr-brand-primary">OnDemand</span>
+          <span className="odm-opr-brand-accent">Monitor</span>
         </span>
       </a>
 

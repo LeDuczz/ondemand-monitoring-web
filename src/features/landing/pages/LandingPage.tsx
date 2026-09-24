@@ -27,6 +27,10 @@ function Logo() {
         alt={content.brandName}
         className="lp-logo-img"
       />
+      <span className="lp-logo-text">
+        <span className="lp-logo-primary">OnDemand</span>
+        <span className="lp-logo-accent">Monitor</span>
+      </span>
     </a>
   )
 }

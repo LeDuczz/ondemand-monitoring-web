@@ -133,10 +133,10 @@ export function ManagerLayout({
             className="odm-mgr-brand"
             href={managerHref({ screen: 'dashboard' })}
           >
-            <img src="/images/logo-new.png" alt="" className="odm-mgr-brand-mark" />
-            <span>
-              <span className="odm-mgr-brand-name">OnDemand Monitor</span>
-              <span className="odm-mgr-brand-sub">Manager Staff</span>
+            <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-mgr-brand-mark" />
+            <span className="odm-mgr-brand-name">
+              <span className="odm-mgr-brand-primary">OnDemand</span>
+              <span className="odm-mgr-brand-accent">Monitor</span>
             </span>
           </a>
 

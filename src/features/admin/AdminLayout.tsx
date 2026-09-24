@@ -68,10 +68,10 @@ export function AdminLayout({
           className={`odm-adm-side ${menuOpen ? 'is-open' : ''}`}
         >
           <a className="odm-adm-brand" href={adminHref({ screen: 'accounts' })}>
-            <img src="/images/logo-new.png" alt="" className="odm-adm-brand-mark" />
-            <span>
-              <span className="odm-adm-brand-name">OnDemand Monitor</span>
-              <span className="odm-adm-brand-sub">Quản trị viên</span>
+            <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-adm-brand-mark" />
+            <span className="odm-adm-brand-name">
+              <span className="odm-adm-brand-primary">OnDemand</span>
+              <span className="odm-adm-brand-accent">Monitor</span>
             </span>
           </a>
 

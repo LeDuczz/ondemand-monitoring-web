@@ -41,6 +41,35 @@ export type SeedOrder = {
   aiVerdict: AiVerdict
   blockerCount: number
   warningCount: number
+  // P6 additions — BE `OrderCreateResponse` fields, kept alongside the
+  // pre-existing TK/BRIEF fields above rather than replacing them (see
+  // features/manager/types/orders.ts `OrderCreateResponse`).
+  customerId?: string
+  customerName?: string
+  title?: string
+  serviceId?: string
+  description?: string
+  address?: string
+  longitude?: number
+  latitude?: number
+  coverageArea?: Record<string, unknown> | null
+  preferredDateFrom?: string
+  preferredDateTo?: string
+  preferredTimeId?: string
+  orderStatus?: OrderStatus
+  rejectReason?: string | null
+  reviewById?: string | null
+  reviewByName?: string | null
+  reviewAt?: string | null
+  deliverables?: {
+    id: string
+    deliverableTypeId: string
+    deliverableTypeName: string
+    defaultFormat: string
+    requirement: Record<string, unknown> | null
+  }[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export const orders = createCollection(ordersSeed.orders) as SeedOrder[]

@@ -1,5 +1,5 @@
 {
-  "_note": "Mock data for GET /api/orders?status=PENDING [TK MNG-02] and GET /api/orders/{id} [TK MNG-03]. Queue-row fields (id, code, status, customer.fullName/companyName, serviceName, preferredDate, preferredTimeName, submittedAt, aiVerdict, blockerCount, warningCount) are evidenced for all 6 orders straight from the [TK MNG-02] table. Detail-only fields (customer email/phone, preferredWindow, addressText, center, radiusM, nearestBase, mediaRequirements, purpose, attachments) are verbatim from [TK MNG-03] only for ORD-2609-0157 (FEASIBLE default state) and ORD-2609-0160 (RISKY state, reusing the same location/media block the design renders for the risky variant of the same artboard). The other 4 orders (0149/0162/0161/0163) have no detail source anywhere — those fields are `null` rather than invented; OrderReviewPage renders an explicit 'Chưa có dữ liệu' marker per block for them (see evd/P4-manager-order-review.md, 'Review fixes'). submittedAt values are chosen so that relative to now=2026-09-19T14:32:00+07:00 the wait matches [TK MNG-02] exactly: ORD-2609-0157=31h, ORD-2609-0149=26h, ORD-2609-0162=6h, ORD-2609-0160=19h, ORD-2609-0161=12h, ORD-2609-0163=3h.",
+  "_note": "Mock data for GET /api/orders?status=PENDING [TK MNG-02] and GET /api/orders/{id} [TK MNG-03]. Queue-row fields (id, code, status, customer.fullName/companyName, serviceName, preferredDate, preferredTimeName, submittedAt, aiVerdict, blockerCount, warningCount) are evidenced for all 6 orders straight from the [TK MNG-02] table. Detail-only fields (customer email/phone, preferredWindow, addressText, center, radiusM, nearestBase, mediaRequirements, purpose, attachments) are verbatim from [TK MNG-03] only for ORD-2609-0157 (FEASIBLE default state) and ORD-2609-0160 (RISKY state, reusing the same location/media block the design renders for the risky variant of the same artboard). The other 4 orders (0149/0162/0161/0163) have no detail source anywhere — those fields are `null` rather than invented; OrderReviewPage renders an explicit 'Chưa có dữ liệu' marker per block for them (see evd/P4-manager-order-review.md, 'Review fixes'). submittedAt values are chosen so that relative to now=2026-09-19T14:32:00+07:00 the wait matches [TK MNG-02] exactly: ORD-2609-0157=31h, ORD-2609-0149=26h, ORD-2609-0162=6h, ORD-2609-0160=19h, ORD-2609-0161=12h, ORD-2609-0163=3h. P6 addition: every order now also carries the BE `OrderCreateResponse` fields (customerId, customerName, title, serviceId, description, address, longitude, latitude, coverageArea, preferredDateFrom/To, preferredTimeId, orderStatus, rejectReason, reviewById/Name/At, deliverables, createdAt, updatedAt) alongside the pre-existing TK/BRIEF fields above — reasonable values derived from the existing fields where no real source exists.",
   "orders": [
     {
       "id": "ord-2609-0157",
@@ -45,7 +45,49 @@
       ],
       "aiVerdict": "FEASIBLE",
       "blockerCount": 0,
-      "warningCount": 0
+      "warningCount": 0,
+      "customerId": "cust-le-quoc-bao",
+      "customerName": "Lê Quốc Bảo",
+      "title": "Tuần tra bãi container ngoài giờ, phát hiện xâm nhập",
+      "serviceId": "svc-tuan-tra-an-ninh-khu-vuc",
+      "description": "Tuần tra an ninh khu vực cảng Cát Lái, phát hiện xâm nhập ngoài giờ hành chính",
+      "address": "Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức",
+      "longitude": 106.7952,
+      "latitude": 10.7686,
+      "coverageArea": { "type": "circle", "radiusM": 600 },
+      "preferredDateFrom": "2026-09-25T13:00:00+07:00",
+      "preferredDateTo": "2026-09-25T17:00:00+07:00",
+      "preferredTimeId": "time-afternoon",
+      "orderStatus": "PENDING",
+      "rejectReason": null,
+      "reviewById": null,
+      "reviewByName": null,
+      "reviewAt": null,
+      "deliverables": [
+        {
+          "id": "del-0157-1",
+          "deliverableTypeId": "dt-video",
+          "deliverableTypeName": "Video giám sát",
+          "defaultFormat": "MP4 1080p",
+          "requirement": { "quantity": 2, "durationSec": 300 }
+        },
+        {
+          "id": "del-0157-2",
+          "deliverableTypeId": "dt-photo",
+          "deliverableTypeName": "Ảnh chụp hiện trường",
+          "defaultFormat": "JPEG 20MP",
+          "requirement": { "quantity": 60 }
+        },
+        {
+          "id": "del-0157-3",
+          "deliverableTypeId": "dt-livestream",
+          "deliverableTypeName": "Livestream trực tiếp",
+          "defaultFormat": "1080p WebRTC",
+          "requirement": { "durationSec": 900 }
+        }
+      ],
+      "createdAt": "2026-09-18T07:32:00+07:00",
+      "updatedAt": "2026-09-18T07:32:00+07:00"
     },
     {
       "id": "ord-2609-0149",
@@ -71,7 +113,27 @@
       "attachments": null,
       "aiVerdict": "FEASIBLE",
       "blockerCount": 0,
-      "warningCount": 0
+      "warningCount": 0,
+      "customerId": "cust-nguyen-minh-khoa",
+      "customerName": "Nguyễn Minh Khoa",
+      "title": "Tuần tra an ninh khu vực",
+      "serviceId": "svc-tuan-tra-an-ninh-khu-vuc",
+      "description": "Tuần tra an ninh khu vực",
+      "address": "Đang cập nhật",
+      "longitude": 106.7,
+      "latitude": 10.77,
+      "coverageArea": null,
+      "preferredDateFrom": "2026-09-23T13:00:00+07:00",
+      "preferredDateTo": "2026-09-23T17:00:00+07:00",
+      "preferredTimeId": "time-afternoon",
+      "orderStatus": "PENDING",
+      "rejectReason": null,
+      "reviewById": null,
+      "reviewByName": null,
+      "reviewAt": null,
+      "deliverables": [],
+      "createdAt": "2026-09-18T12:32:00+07:00",
+      "updatedAt": "2026-09-18T12:32:00+07:00"
     },
     {
       "id": "ord-2609-0162",
@@ -97,7 +159,27 @@
       "attachments": null,
       "aiVerdict": "FEASIBLE",
       "blockerCount": 0,
-      "warningCount": 0
+      "warningCount": 0,
+      "customerId": "cust-tran-thi-thu-ha",
+      "customerName": "Trần Thị Thu Hà",
+      "title": "Kiểm tra nhiệt mái và tấm pin",
+      "serviceId": "svc-kiem-tra-nhiet-mai-va-tam-pin",
+      "description": "Kiểm tra nhiệt mái và tấm pin năng lượng mặt trời",
+      "address": "Đang cập nhật",
+      "longitude": 106.7,
+      "latitude": 10.77,
+      "coverageArea": null,
+      "preferredDateFrom": "2026-09-24T07:00:00+07:00",
+      "preferredDateTo": "2026-09-24T11:00:00+07:00",
+      "preferredTimeId": "time-morning",
+      "orderStatus": "PENDING",
+      "rejectReason": null,
+      "reviewById": null,
+      "reviewByName": null,
+      "reviewAt": null,
+      "deliverables": [],
+      "createdAt": "2026-09-19T08:32:00+07:00",
+      "updatedAt": "2026-09-19T08:32:00+07:00"
     },
     {
       "id": "ord-2609-0160",
@@ -133,7 +215,42 @@
       "attachments": [],
       "aiVerdict": "RISKY",
       "blockerCount": 0,
-      "warningCount": 2
+      "warningCount": 2,
+      "customerId": "cust-vo-thanh-tung",
+      "customerName": "Võ Thanh Tùng",
+      "title": "Tuần tra khu công nghiệp ngoài giờ, phát hiện xâm nhập",
+      "serviceId": "svc-tuan-tra-an-ninh-khu-vuc",
+      "description": "Tuần tra an ninh khu công nghiệp ngoài giờ hành chính",
+      "address": "Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức",
+      "longitude": 106.7952,
+      "latitude": 10.7686,
+      "coverageArea": { "type": "circle", "radiusM": 600 },
+      "preferredDateFrom": "2026-09-24T07:00:00+07:00",
+      "preferredDateTo": "2026-09-24T11:00:00+07:00",
+      "preferredTimeId": "time-morning",
+      "orderStatus": "PENDING",
+      "rejectReason": null,
+      "reviewById": null,
+      "reviewByName": null,
+      "reviewAt": null,
+      "deliverables": [
+        {
+          "id": "del-0160-1",
+          "deliverableTypeId": "dt-video",
+          "deliverableTypeName": "Video giám sát",
+          "defaultFormat": "MP4 1080p",
+          "requirement": { "quantity": 2, "durationSec": 300 }
+        },
+        {
+          "id": "del-0160-2",
+          "deliverableTypeId": "dt-photo",
+          "deliverableTypeName": "Ảnh chụp hiện trường",
+          "defaultFormat": "JPEG 20MP",
+          "requirement": { "quantity": 60 }
+        }
+      ],
+      "createdAt": "2026-09-18T19:32:00+07:00",
+      "updatedAt": "2026-09-18T19:32:00+07:00"
     },
     {
       "id": "ord-2609-0161",
@@ -159,7 +276,27 @@
       "attachments": null,
       "aiVerdict": "RISKY",
       "blockerCount": 0,
-      "warningCount": 1
+      "warningCount": 1,
+      "customerId": "cust-pham-ngoc-anh",
+      "customerName": "Phạm Ngọc Anh",
+      "title": "GS cây trồng",
+      "serviceId": "svc-gs-cay-trong",
+      "description": "Giám sát tình trạng cây trồng bằng cảm biến đa phổ",
+      "address": "Đang cập nhật",
+      "longitude": 106.6,
+      "latitude": 10.75,
+      "coverageArea": null,
+      "preferredDateFrom": "2026-09-27T07:00:00+07:00",
+      "preferredDateTo": "2026-09-27T11:00:00+07:00",
+      "preferredTimeId": "time-morning",
+      "orderStatus": "PENDING",
+      "rejectReason": null,
+      "reviewById": null,
+      "reviewByName": null,
+      "reviewAt": null,
+      "deliverables": [],
+      "createdAt": "2026-09-19T02:32:00+07:00",
+      "updatedAt": "2026-09-19T02:32:00+07:00"
     },
     {
       "id": "ord-2609-0163",
@@ -185,7 +322,27 @@
       "attachments": null,
       "aiVerdict": "RISKY",
       "blockerCount": 0,
-      "warningCount": 2
+      "warningCount": 2,
+      "customerId": "cust-le-quoc-bao",
+      "customerName": "Lê Quốc Bảo",
+      "title": "GS giao thông và sự kiện",
+      "serviceId": "svc-gs-giao-thong-va-su-kien",
+      "description": "Giám sát giao thông và sự kiện đông người bằng flycam",
+      "address": "Đang cập nhật",
+      "longitude": 106.7,
+      "latitude": 10.77,
+      "coverageArea": null,
+      "preferredDateFrom": "2026-09-21T13:00:00+07:00",
+      "preferredDateTo": "2026-09-21T17:00:00+07:00",
+      "preferredTimeId": "time-afternoon",
+      "orderStatus": "PENDING",
+      "rejectReason": null,
+      "reviewById": null,
+      "reviewByName": null,
+      "reviewAt": null,
+      "deliverables": [],
+      "createdAt": "2026-09-19T11:32:00+07:00",
+      "updatedAt": "2026-09-19T11:32:00+07:00"
     },
     {
       "id": "ord-2609-0153",
@@ -221,7 +378,42 @@
       "attachments": null,
       "aiVerdict": "FEASIBLE",
       "blockerCount": 0,
-      "warningCount": 0
+      "warningCount": 0,
+      "customerId": "cust-tran-thi-thu-ha",
+      "customerName": "Trần Thị Thu Hà",
+      "title": "Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước",
+      "serviceId": "svc-kiem-tra-nhiet-mai-va-tam-pin",
+      "description": "Kiểm tra nhiệt mái nhà xưởng bằng camera nhiệt",
+      "address": "KCN Hiệp Phước, Nhà Bè",
+      "longitude": 106.74,
+      "latitude": 10.6402,
+      "coverageArea": { "type": "circle", "radiusM": 300 },
+      "preferredDateFrom": "2026-09-24T07:00:00+07:00",
+      "preferredDateTo": "2026-09-24T11:00:00+07:00",
+      "preferredTimeId": "time-morning",
+      "orderStatus": "APPROVED",
+      "rejectReason": null,
+      "reviewById": "staff-hang-le",
+      "reviewByName": "Lê Thị Thanh Hằng",
+      "reviewAt": "2026-09-17T10:00:00+07:00",
+      "deliverables": [
+        {
+          "id": "del-0153-1",
+          "deliverableTypeId": "dt-video",
+          "deliverableTypeName": "Video giám sát",
+          "defaultFormat": "MP4 1080p",
+          "requirement": { "quantity": 1, "durationSec": 240 }
+        },
+        {
+          "id": "del-0153-2",
+          "deliverableTypeId": "dt-photo",
+          "deliverableTypeName": "Ảnh nhiệt",
+          "defaultFormat": "640x512",
+          "requirement": { "quantity": 30 }
+        }
+      ],
+      "createdAt": "2026-09-17T09:10:00+07:00",
+      "updatedAt": "2026-09-17T10:00:00+07:00"
     }
   ]
 }

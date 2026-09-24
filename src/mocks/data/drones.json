@@ -1,6 +1,6 @@
 {
-  "_note": "Drone roster [BE DroneResponse fields + MNG-09 display fields]. Status values are the BACKEND DroneStatus enum verbatim. Data copied verbatim from evd/design/MNG-09.dc.html. DRN-04 retains existingBookings from MNG-05. DRN-05/DRN-08 retain existingBookings. DRN-07 retains openTicketSeverity.",
-  "drones": [
+  "_note": "Drone roster [BE DroneResponse fields + MNG-09 display fields]. Status values are the BACKEND DroneStatus enum verbatim. Data copied verbatim from evd/design/MNG-09.dc.html. DRN-04 retains existingBookings from MNG-05. DRN-05/DRN-08 retain existingBookings. DRN-07 retains openTicketSeverity. P6 addition: wrapped in the BE `PageResponseDroneResponse` envelope (items/page/size/totalItems/totalPages/first/last) and each item now also carries the BE `DroneResponse` fields (droneModel, dronePayload, createdAt, updatedAt, version) alongside the pre-existing MNG-09 display fields above.",
+  "items": [
     {
       "id": "drn-01",
       "code": "DRN-01",
@@ -15,7 +15,35 @@
       "payload": "Zenmuse H20T",
       "hasThermalSensor": true,
       "hoursSinceMaintenance": 38,
-      "lastSeenAt": "14:31"
+      "lastSeenAt": "14:31",
+      "droneModel": {
+        "id": "dm-m350",
+        "modelCode": "M350-RTK",
+        "manufacturer": "DJI",
+        "category": "HEAVY_LIFT",
+        "maxFlightTimeMinutes": 55,
+        "maxTakeoffWeightKg": 9.2,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP55",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-h20t",
+        "modelName": "Zenmuse H20T",
+        "sensorType": "THERMAL_ZOOM",
+        "weightKg": 0.828,
+        "payloadCapabilities": "Zoom, wide, thermal, laser rangefinder",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:31:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-02",
@@ -31,7 +59,35 @@
       "payload": "Zenmuse P1",
       "hasThermalSensor": false,
       "hoursSinceMaintenance": 61,
-      "lastSeenAt": "14:32"
+      "lastSeenAt": "14:32",
+      "droneModel": {
+        "id": "dm-m350",
+        "modelCode": "M350-RTK",
+        "manufacturer": "DJI",
+        "category": "HEAVY_LIFT",
+        "maxFlightTimeMinutes": 55,
+        "maxTakeoffWeightKg": 9.2,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP55",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-p1",
+        "modelName": "Zenmuse P1",
+        "sensorType": "RGB_MAPPING",
+        "weightKg": 0.8,
+        "payloadCapabilities": "Full-frame mapping camera",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:32:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-03",
@@ -47,7 +103,35 @@
       "payload": "M30T tích hợp",
       "hasThermalSensor": null,
       "hoursSinceMaintenance": 84,
-      "lastSeenAt": "14:20"
+      "lastSeenAt": "14:20",
+      "droneModel": {
+        "id": "dm-m30t",
+        "modelCode": "M30T",
+        "manufacturer": "DJI",
+        "category": "COMPACT_THERMAL",
+        "maxFlightTimeMinutes": 41,
+        "maxTakeoffWeightKg": 3.99,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 15,
+        "ipRating": "IP55",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-m30t-integrated",
+        "modelName": "M30T tích hợp",
+        "sensorType": "THERMAL_ZOOM",
+        "weightKg": 0,
+        "payloadCapabilities": "Camera tích hợp sẵn trên thân drone",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:20:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-04",
@@ -70,7 +154,35 @@
           "start": "2026-09-24T07:30:00+07:00",
           "end": "2026-09-24T09:00:00+07:00"
         }
-      ]
+      ],
+      "droneModel": {
+        "id": "dm-m350",
+        "modelCode": "M350-RTK",
+        "manufacturer": "DJI",
+        "category": "HEAVY_LIFT",
+        "maxFlightTimeMinutes": 55,
+        "maxTakeoffWeightKg": 9.2,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP55",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-h20t",
+        "modelName": "Zenmuse H20T",
+        "sensorType": "THERMAL_ZOOM",
+        "weightKg": 0.828,
+        "payloadCapabilities": "Zoom, wide, thermal, laser rangefinder",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:30:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-05",
@@ -93,7 +205,35 @@
           "start": null,
           "end": null
         }
-      ]
+      ],
+      "droneModel": {
+        "id": "dm-m30t",
+        "modelCode": "M30T",
+        "manufacturer": "DJI",
+        "category": "COMPACT_THERMAL",
+        "maxFlightTimeMinutes": 41,
+        "maxTakeoffWeightKg": 3.99,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 15,
+        "ipRating": "IP55",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-m30t-integrated",
+        "modelName": "M30T tích hợp",
+        "sensorType": "THERMAL_ZOOM",
+        "weightKg": 0,
+        "payloadCapabilities": "Camera tích hợp sẵn trên thân drone",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:29:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-06",
@@ -109,7 +249,35 @@
       "payload": "Camera tích hợp",
       "hasThermalSensor": false,
       "hoursSinceMaintenance": 12,
-      "lastSeenAt": "14:31"
+      "lastSeenAt": "14:31",
+      "droneModel": {
+        "id": "dm-mavic3e",
+        "modelCode": "MAVIC3E",
+        "manufacturer": "DJI",
+        "category": "PORTABLE",
+        "maxFlightTimeMinutes": 45,
+        "maxTakeoffWeightKg": 0.92,
+        "maxFlightAltitudeMeters": 6000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP54",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-camera-tichhop",
+        "modelName": "Camera tích hợp",
+        "sensorType": "RGB",
+        "weightKg": 0,
+        "payloadCapabilities": "Camera quang học tích hợp",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:31:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-07",
@@ -126,7 +294,35 @@
       "hasThermalSensor": null,
       "hoursSinceMaintenance": 112,
       "lastSeenAt": "13/09 16:05",
-      "openTicketSeverity": "CRITICAL"
+      "openTicketSeverity": "CRITICAL",
+      "droneModel": {
+        "id": "dm-m350",
+        "modelCode": "M350-RTK",
+        "manufacturer": "DJI",
+        "category": "HEAVY_LIFT",
+        "maxFlightTimeMinutes": 55,
+        "maxTakeoffWeightKg": 9.2,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP55",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-p1",
+        "modelName": "Zenmuse P1",
+        "sensorType": "RGB_MAPPING",
+        "weightKg": 0.8,
+        "payloadCapabilities": "Full-frame mapping camera",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-13T16:05:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-08",
@@ -149,7 +345,35 @@
           "start": null,
           "end": null
         }
-      ]
+      ],
+      "droneModel": {
+        "id": "dm-evomax4t",
+        "modelCode": "EVO-MAX-4T",
+        "manufacturer": "Autel Robotics",
+        "category": "COMPACT_THERMAL",
+        "maxFlightTimeMinutes": 42,
+        "maxTakeoffWeightKg": 1.6,
+        "maxFlightAltitudeMeters": 7000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP43",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-evomax-integrated",
+        "modelName": "EVO Max 4T tích hợp",
+        "sensorType": "THERMAL_ZOOM",
+        "weightKg": 0,
+        "payloadCapabilities": "Camera tích hợp",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-09-19T14:30:00+07:00",
+      "version": 1
     },
     {
       "id": "drn-09",
@@ -165,7 +389,41 @@
       "payload": null,
       "hasThermalSensor": null,
       "hoursSinceMaintenance": 240,
-      "lastSeenAt": "02/06 09:12"
+      "lastSeenAt": "02/06 09:12",
+      "droneModel": {
+        "id": "dm-mavic3e",
+        "modelCode": "MAVIC3E",
+        "manufacturer": "DJI",
+        "category": "PORTABLE",
+        "maxFlightTimeMinutes": 45,
+        "maxTakeoffWeightKg": 0.92,
+        "maxFlightAltitudeMeters": 6000,
+        "maxWindResistanceMetersPerSecond": 12,
+        "ipRating": "IP54",
+        "specsMetadata": "{}",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "dronePayload": {
+        "id": "dp-camera-tichhop",
+        "modelName": "Camera tích hợp",
+        "sensorType": "RGB",
+        "weightKg": 0,
+        "payloadCapabilities": "Camera quang học tích hợp",
+        "createdAt": "2025-01-10T00:00:00+07:00",
+        "updatedAt": "2025-01-10T00:00:00+07:00",
+        "version": 1
+      },
+      "createdAt": "2025-01-10T00:00:00+07:00",
+      "updatedAt": "2026-06-02T09:12:00+07:00",
+      "version": 1
     }
-  ]
+  ],
+  "page": 1,
+  "size": 9,
+  "totalItems": 9,
+  "totalPages": 1,
+  "first": true,
+  "last": true
 }

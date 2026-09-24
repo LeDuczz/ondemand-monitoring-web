@@ -172,7 +172,7 @@ export const authApi = {
   resendOtp: (body: ResendOtpRequest) =>
     request<void>('/api/auth/resend-otp', { method: 'POST', body }),
   login: (body: LoginRequest) =>
-    request<AuthResponse>('/api/v1/auth/login', {
+    request<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body,
       skipRefresh: true,
@@ -205,6 +205,9 @@ export const authApi = {
     request<void>('/api/auth/forgot-password', { method: 'POST', body }),
   resetPassword: (body: ResetPasswordRequest) =>
     request<void>('/api/auth/reset-password', { method: 'POST', body }),
+  /** `GET /api/v1/auth/csrf` [BE]. */
+  getCsrf: (signal?: AbortSignal) =>
+    request<unknown>('/api/v1/auth/csrf', { signal }),
 }
 
 const ACCESS_TOKEN_KEY = 'fieldwise.accessToken'

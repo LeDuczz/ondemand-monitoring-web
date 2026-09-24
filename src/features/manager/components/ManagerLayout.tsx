@@ -133,9 +133,7 @@ export function ManagerLayout({
             className="odm-mgr-brand"
             href={managerHref({ screen: 'dashboard' })}
           >
-            <span className="odm-mgr-brand-mark" aria-hidden="true">
-              <ManagerIcon name="brand" size={19} />
-            </span>
+            <img src="/images/logo-new.png" alt="" className="odm-mgr-brand-mark" />
             <span>
               <span className="odm-mgr-brand-name">OnDemand Monitor</span>
               <span className="odm-mgr-brand-sub">Manager Staff</span>

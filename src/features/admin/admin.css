@@ -40,13 +40,8 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: var(--ink);
-  color: var(--inkfg);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: contain;
   flex: none;
-  font-size: 16px;
 }
 
 .odm-adm-brand-name {
@@ -97,9 +92,11 @@
 }
 
 .odm-adm-navi.is-active {
-  background: var(--sf2);
-  color: var(--tx);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-tx);
   font-weight: 600;
+  border-left: 3px solid var(--sidebar-active-border);
+  padding-left: 7px;
 }
 
 .odm-adm-navc {

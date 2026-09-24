@@ -73,9 +73,7 @@ export function CustomerLayout({
           className={`odm-cus-side ${menuOpen ? 'is-open' : ''}`}
         >
           <a className="odm-cus-brand" href={customerHref({ screen: 'dashboard' })}>
-            <span className="odm-cus-brand-mark" aria-hidden="true">
-              ✦
-            </span>
+            <img src="/images/logo-new.png" alt="" className="odm-cus-brand-mark" />
             <span>
               <span className="odm-cus-brand-name">OnDemand Monitor</span>
               <span className="odm-cus-brand-sub">Cổng khách hàng</span>

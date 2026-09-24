@@ -15,7 +15,7 @@ import type {
 
 export const brandName = 'OnDemand Monitor'
 
-export const heroChip = 'Dịch vụ giám sát bằng drone theo yêu cầu'
+export const heroChip = '🚁 Dịch vụ giám sát bằng drone theo yêu cầu'
 
 export const heroTitleLines = [
   'Giám sát hiện trường bằng drone,',
@@ -65,6 +65,7 @@ export const workflowSteps: WorkflowStep[] = [
     detail:
       'Đánh dấu khu vực trên bản đồ, chọn bán kính, dịch vụ và khung giờ mong muốn.',
     icon: 'map-pin',
+    emoji: '📍',
   },
   {
     no: '02',
@@ -72,6 +73,7 @@ export const workflowSteps: WorkflowStep[] = [
     detail:
       'Hệ thống rà vùng cấm bay, thời tiết, giấy phép và gợi ý ngày thay thế nếu cần.',
     icon: 'cpu',
+    emoji: '✨',
   },
   {
     no: '03',
@@ -79,6 +81,7 @@ export const workflowSteps: WorkflowStep[] = [
     detail:
       'Nhân viên điều phối duyệt đơn, chọn drone, phi công và trạm phù hợp nhất.',
     icon: 'users',
+    emoji: '🛡️',
   },
   {
     no: '04',
@@ -86,6 +89,7 @@ export const workflowSteps: WorkflowStep[] = [
     detail:
       'Xem livestream khi drone bay, sau đó tải ảnh và video đã qua kiểm tra.',
     icon: 'radio',
+    emoji: '🎥',
   },
 ]
 
@@ -100,17 +104,20 @@ export const aiFeatureHighlights: FeatureHighlight[] = [
     title: 'Kiểm tra vùng cấm bay và bán kính',
     detail: 'Đối chiếu vị trí với danh sách vùng cấm bay đang hiệu lực.',
     icon: 'map-pin',
+    emoji: '🗺️',
   },
   {
     title: 'Điểm khả thi rõ ràng',
     detail:
       'Mỗi tiêu chí có kết quả PASS, WARNING hoặc BLOCKER để bạn xử lý ngay.',
     icon: 'clipboard',
+    emoji: '📊',
   },
   {
     title: 'Gợi ý ngày và giờ thay thế',
     detail: 'Đề xuất khung giờ phù hợp khi ngày bạn chọn có rủi ro.',
     icon: 'clock',
+    emoji: '📅',
   },
 ]
 
@@ -141,17 +148,20 @@ export const liveFeatureHighlights: FeatureHighlight[] = [
     title: 'Livestream và bản đồ realtime',
     detail: 'Xem hình ảnh trực tiếp cùng lộ trình và các điểm bay của mission.',
     icon: 'radio',
+    emoji: '📡',
   },
   {
     title: 'Kiểm tra media trước khi giao',
     detail:
       'Tệp lỗi được xử lý lại, chỉ tệp đạt mới xuất hiện trong thư viện của bạn.',
     icon: 'camera',
+    emoji: '✅',
   },
   {
     title: 'Thư viện kết quả luôn sẵn sàng',
     detail: 'Tải từng tệp hoặc cả mission, xem lại lịch sử đơn bất cứ lúc nào.',
     icon: 'file-text',
+    emoji: '⬇️',
   },
 ]
 
@@ -183,58 +193,76 @@ export const industries: IndustryCard[] = [
       'Theo dõi tiến độ, đo đạc khối lượng và chụp toàn cảnh công trường.',
     location: 'Thủ Thiêm, TP.HCM',
     icon: 'building',
+    emoji: '🏗️',
   },
   {
     title: 'Nông nghiệp',
     detail: 'Đánh giá cây trồng và tình trạng đất trên diện tích lớn.',
     location: 'Đắk Lắk',
     icon: 'leaf',
+    emoji: '🌾',
   },
   {
     title: 'Điện và viễn thông',
     detail: 'Kiểm tra trụ, đường dây và trạm ở nơi khó tiếp cận.',
     location: 'Bình Dương',
     icon: 'zap',
+    emoji: '📶',
   },
   {
     title: 'Giao thông và đô thị',
     detail: 'Quan sát lưu lượng, nút giao và hiện trạng hạ tầng.',
     location: 'Đà Nẵng',
     icon: 'route',
+    emoji: '🚦',
   },
   {
     title: 'Bất động sản',
     detail: 'Ghi hình dự án, mặt bằng và quy hoạch khu đất.',
     location: 'Nhà Bè, TP.HCM',
     icon: 'home',
+    emoji: '🏘️',
   },
   {
     title: 'Sự kiện và an ninh',
     detail: 'Giám sát khu vực đông người trong thời gian diễn ra sự kiện.',
     location: 'Hà Nội',
     icon: 'shield',
+    emoji: '🎪',
   },
 ]
 
 export const faqSection = {
   eyebrow: 'Câu hỏi thường gặp',
   title: 'Giải đáp nhanh',
-  copy: 'Cần hỗ trợ thêm? Liên hệ support@odms.vn.',
+  copy: 'Cần hỗ trợ thêm? Liên hệ support@odms.vn hoặc hỏi trợ lý AI ở góc phải màn hình.',
 }
 
-// Only the first question has answer copy in the design markup; the design
-// renders the other four collapsed with no answer text at all (see
-// FaqItem['answer'] doc comment in ../types/index.ts).
 export const faqItems: FaqItem[] = [
   {
     question: 'Tôi cần chuẩn bị gì để tạo một yêu cầu giám sát?',
     answer:
       'Bạn chỉ cần tài khoản khách hàng, vị trí và bán kính trên bản đồ, loại dịch vụ và khung giờ mong muốn. Hệ thống sẽ kiểm tra khả thi ngay khi bạn hoàn tất bước cuối.',
   },
-  { question: 'Bao lâu thì đơn được duyệt?' },
-  { question: 'Nếu thời tiết xấu thì sao?' },
-  { question: 'Tôi có xem được drone bay trực tiếp không?' },
-  { question: 'Ảnh và video được giao ở đâu?' },
+  {
+    question: 'Bao lâu thì đơn được duyệt?',
+    answer:
+      'Thông thường trong vòng 2 giờ làm việc. Đơn có điểm khả thi cao thường được duyệt nhanh hơn.',
+  },
+  {
+    question: 'Nếu thời tiết xấu thì sao?',
+    answer:
+      'Hệ thống sẽ thông báo và gợi ý khung giờ thay thế. Bạn không bị tính phí khi mission bị hoãn vì thời tiết.',
+  },
+  {
+    question: 'Tôi có xem được drone bay trực tiếp không?',
+    answer:
+      'Có. Khi mission ở trạng thái IN_FLIGHT, bạn xem được livestream, vị trí, pin và độ cao theo thời gian thực.',
+  },
+  {
+    question: 'Ảnh và video được giao ở đâu?',
+    answer: 'Trong thư viện kết quả của tài khoản, sau khi tệp đã được kiểm tra chất lượng.',
+  },
 ]
 
 export const ctaSection = {
@@ -262,6 +290,9 @@ export const footerLinkGroups: FooterLinkGroup[] = [
 
 export const footerCopyright = '© 2026 OnDemand Monitor. Đồ án FA26SE039.'
 export const footerLegal = 'Điều khoản sử dụng · Quyền riêng tư'
+
+export const footerBrandDescription =
+  'Dịch vụ giám sát bằng drone theo yêu cầu.\nThành phố Hồ Chí Minh, Việt Nam.'
 
 export const navLinks = [
   { label: 'Cách hoạt động', href: '#how-it-works' },

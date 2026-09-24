@@ -16,25 +16,7 @@ export function OperatorTopbar({
   return (
     <header className="odm-opr-topbar">
       <a className="odm-opr-brand" href={operatorHref({ screen: 'missions' })}>
-        <span className="odm-opr-brand-mark" aria-hidden="true">
-          <svg
-            width="19"
-            height="19"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="9" y="9" width="6" height="6" rx="1.5" />
-            <path d="M9.5 9.5L6.5 6.5M14.5 9.5l3-3M9.5 14.5l-3 3M14.5 14.5l3 3" />
-            <circle cx="5" cy="5" r="2.3" />
-            <circle cx="19" cy="5" r="2.3" />
-            <circle cx="5" cy="19" r="2.3" />
-            <circle cx="19" cy="19" r="2.3" />
-          </svg>
-        </span>
+        <img src="/images/logo-new.png" alt="" className="odm-opr-brand-mark" />
         <span>
           <span className="odm-opr-brand-name">OnDemand Monitor</span>
           <span className="odm-opr-brand-sub">Phi công · web</span>

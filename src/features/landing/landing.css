@@ -4,9 +4,24 @@
  * with `lp-` prefixed classes so it never collides with the rest of the app.
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+
 .odm-landing {
   min-height: 100vh;
   overflow-x: hidden;
+  font-family: "Be Vietnam Pro", Inter, system-ui, sans-serif;
+
+  --lp-blue: #1565E8;
+  --lp-blue-d: #0B3FA8;
+  --lp-blue-l: #E8F1FF;
+  --lp-sky: #38B6FF;
+  --lp-navy: #0B1F44;
+  --lp-ink: #1E2B4A;
+  --lp-mute: #5B6B8C;
+  --lp-line: #D6E4FA;
+  --lp-bg: #F3F8FF;
+  --lp-green: #1FA971;
+  --lp-amber: #F59E0B;
 }
 
 .odm-landing .lp-container {
@@ -58,15 +73,9 @@
   flex: none;
 }
 
-.odm-landing .lp-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--inkfg);
+.odm-landing .lp-logo-img {
+  height: 44px;
+  width: auto;
   flex: none;
 }
 
@@ -100,38 +109,8 @@
   flex: none;
 }
 
-.odm-landing .lp-theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 4px 3px 9px;
-  border: 1px dashed var(--bd2);
-  border-radius: 8px;
-  background: var(--sf2);
-}
-
-.odm-landing .lp-theme-toggle span {
-  font-size: 11px;
-  color: var(--tx3);
-  font-weight: 600;
-  margin-right: 2px;
-}
-
-.odm-landing .lp-theme-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 26px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--tx2);
-  cursor: pointer;
-}
-
-.odm-landing .lp-theme-toggle-btn:hover {
-  background: var(--sf3);
+.odm-landing .lp-spacer {
+  flex: 1;
 }
 
 .odm-landing .lp-menu-btn {
@@ -150,7 +129,7 @@
 /* ---------- Hero ---------- */
 .odm-landing .lp-hero {
   padding: 56px 0 64px;
-  background: linear-gradient(180deg, var(--bg), var(--sf2));
+  background: linear-gradient(180deg, #EAF3FF 0%, #fff 100%);
 }
 
 .odm-landing .lp-hero-grid {
@@ -171,12 +150,12 @@
   height: 28px;
   padding: 0 12px;
   margin-bottom: 22px;
-  border: 1px solid var(--bd);
+  border: none;
   border-radius: 999px;
-  background: var(--sf);
+  background: var(--lp-blue-l);
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--tx2);
+  color: var(--lp-blue);
 }
 
 .odm-landing .lp-hero h1 {
@@ -187,7 +166,10 @@
 }
 
 .odm-landing .lp-hero h1 span {
-  color: var(--blue-fg);
+  background: linear-gradient(90deg, var(--lp-blue), var(--lp-sky));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .odm-landing .lp-hero-lede {
@@ -228,8 +210,6 @@
 
 .odm-landing .lp-hero-art {
   position: relative;
-  flex: none;
-  width: 480px;
   max-width: 100%;
 }
 
@@ -318,9 +298,10 @@
 
 /* ---------- Stats strip ---------- */
 .odm-landing .lp-stats {
-  border-top: 1px solid var(--bd);
-  border-bottom: 1px solid var(--bd);
-  background: var(--sf);
+  border-top: none;
+  border-bottom: none;
+  background: var(--lp-navy);
+  color: #fff;
 }
 
 .odm-landing .lp-stats-grid {
@@ -337,14 +318,51 @@
 }
 
 .odm-landing .lp-stat strong {
-  font-size: 28px;
+  color: var(--lp-sky);
+  font-size: 34px;
   font-weight: 700;
 }
 
 .odm-landing .lp-stat span {
-  color: var(--tx3);
-  font-size: 12.5px;
+  color: #B7C7E6;
+  font-size: 13px;
 }
+
+/* ---------- Buttons ---------- */
+.odm-landing .lp-btn-p {
+  background: linear-gradient(135deg, var(--lp-blue), var(--lp-sky));
+  color: #fff;
+  border: none;
+  box-shadow: 0 8px 20px rgba(21,101,232,.28);
+  border-radius: 12px;
+  padding: 11px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.odm-landing .lp-btn-p:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(21,101,232,.36);
+}
+.odm-landing .lp-btn-o {
+  background: #fff;
+  color: var(--lp-blue);
+  border: 1.5px solid var(--lp-blue);
+  border-radius: 12px;
+  padding: 11px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.odm-landing .lp-btn-o:hover { background: var(--lp-blue-l); }
 
 /* ---------- Sections ---------- */
 .odm-landing .lp-section {
@@ -353,19 +371,18 @@
 
 .odm-landing .lp-eyebrow {
   margin: 0 0 12px;
-  color: var(--blue-fg);
-  font:
-    600 11.5px/1 'IBM Plex Mono',
-    ui-monospace,
-    monospace;
-  letter-spacing: 0.08em;
+  color: var(--lp-blue);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
   text-transform: uppercase;
 }
 
 .odm-landing .lp-section-intro h2 {
   margin: 0 0 12px;
+  color: var(--lp-navy);
   font-size: clamp(1.5rem, 3vw, 2.1rem);
-  letter-spacing: -0.01em;
+  letter-spacing: -.3px;
 }
 
 .odm-landing .lp-section-copy {
@@ -395,6 +412,16 @@
 
 .odm-landing .lp-workflow-card {
   padding: 20px;
+  position: relative;
+  border-radius: 18px;
+  border-color: var(--lp-line);
+  transition: transform .15s, box-shadow .15s;
+}
+
+.odm-landing .lp-workflow-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(21,101,232,.14);
+  border-color: var(--lp-sky);
 }
 
 .odm-landing .lp-workflow-card-top {
@@ -403,6 +430,39 @@
   justify-content: space-between;
   margin-bottom: 14px;
   color: var(--tx3);
+}
+
+.odm-landing .lp-workflow-card-top span {
+  position: absolute;
+  right: 20px;
+  top: 14px;
+  font-size: 30px;
+  font-weight: 800;
+  color: #DCE9FF;
+  font-style: normal;
+}
+
+.odm-landing .lp-step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--lp-blue), var(--lp-sky));
+  color: #fff;
+  font-size: 22px;
+  flex: none;
+}
+
+.odm-landing .lp-step-icon svg {
+  width: 24px;
+  height: 24px;
+  color: inherit;
+}
+
+.odm-landing .lp-industry-card .lp-step-icon {
+  margin-bottom: 14px;
 }
 
 .odm-landing .lp-workflow-card h3 {
@@ -425,7 +485,7 @@
 }
 
 .odm-landing .lp-feature-grid--reverse {
-  flex-direction: row-reverse;
+  /* order handled in JSX */
 }
 
 .odm-landing .lp-feature-copy {
@@ -457,13 +517,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: var(--sf2);
-  border: 1px solid var(--bd);
-  color: var(--blue-fg);
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--lp-blue), var(--lp-sky));
+  color: #fff;
+  font-size: 18px;
   flex: none;
+}
+
+.odm-landing .lp-feature-list-icon svg {
+  width: 22px;
+  height: 22px;
+  color: inherit;
 }
 
 .odm-landing .lp-feature-list strong {
@@ -481,6 +547,93 @@
 
 .odm-landing .lp-panel {
   overflow: hidden;
+  border: 1px solid var(--lp-line);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 20px 50px rgba(21,101,232,.12);
+  background: #fff;
+}
+
+/* ---------- AI score ring ---------- */
+.odm-landing .lp-score-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.odm-landing .lp-score-ring-inner {
+  width: 50px;
+  height: 50px;
+  background: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--lp-navy);
+  font-size: 18px;
+}
+
+/* ---------- File cards ---------- */
+.odm-landing .lp-file-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.odm-landing .lp-file-card {
+  background: var(--lp-bg);
+  border-radius: 12px;
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--lp-mute);
+}
+
+/* ---------- Pills ---------- */
+.odm-landing .lp-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 99px;
+}
+.odm-landing .lp-pill-g { background: #DDF6EA; color: #0E7A4F; }
+.odm-landing .lp-pill-a { background: #FFF0D1; color: #A3610A; }
+.odm-landing .lp-pill-b { background: var(--lp-blue-l); color: var(--lp-blue); }
+
+/* ---------- Hero map card ---------- */
+.odm-landing .lp-mapcard {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--lp-line, #D6E4FA);
+  box-shadow: 0 24px 60px rgba(21,101,232,.18);
+  background: #fff;
+  flex: 1.05;
+  min-width: 0;
+}
+
+.odm-landing .lp-float {
+  position: absolute;
+  z-index: 500;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(11,31,68,.18);
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+.odm-landing .lp-score-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---------- Alternating section background ---------- */
+.odm-landing .lp-section-alt {
+  background: var(--lp-bg, #F3F8FF);
 }
 
 .odm-landing .lp-panel-body {
@@ -587,6 +740,14 @@
 
 .odm-landing .lp-industry-card {
   padding: 20px;
+  border-radius: 18px;
+  border-color: var(--lp-line);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.odm-landing .lp-industry-card:hover {
+  border-color: var(--lp-blue);
+  box-shadow: 0 12px 28px rgba(21,101,232,.12);
 }
 
 .odm-landing .lp-industry-icon {
@@ -629,7 +790,10 @@
 
 /* ---------- FAQ ---------- */
 .odm-landing .lp-faq {
-  max-width: 760px;
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 56px;
+  max-width: none;
 }
 
 .odm-landing .lp-faq-list {
@@ -690,13 +854,13 @@
 /* ---------- CTA ---------- */
 .odm-landing .lp-cta {
   padding: 72px 0;
-  background: var(--ink);
-  color: var(--inkfg);
+  background: linear-gradient(135deg, var(--lp-blue-d), var(--lp-blue) 55%, var(--lp-sky));
+  color: #fff;
   text-align: center;
 }
 
 .odm-landing .lp-cta .lp-eyebrow {
-  color: var(--blue-dot);
+  color: #DCEBFF;
 }
 
 .odm-landing .lp-cta-inner {
@@ -707,6 +871,7 @@
 
 .odm-landing .lp-cta h2 {
   margin: 0 0 28px;
+  color: #fff;
   font-size: clamp(1.5rem, 3vw, 2.1rem);
 }
 
@@ -715,43 +880,70 @@
   gap: 12px;
 }
 
-.odm-landing .lp-cta .odm-btn.odm-btn-gh {
-  color: var(--inkfg);
-  border-color: var(--bd2);
+.odm-landing .lp-cta .lp-section-copy,
+.odm-landing .lp-cta p {
+  color: #DCEBFF;
+}
+
+.odm-landing .lp-cta .odm-btn.odm-btn-gh,
+.odm-landing .lp-cta .lp-btn-ghost {
+  color: #fff;
+  border-color: rgba(255,255,255,.5);
+  background: transparent;
 }
 
 /* .odm-btn-p is `background: var(--ink)`, which is invisible against this
-   section's own --ink background — invert it here so the primary CTA stays
-   readable on both themes. */
-.odm-landing .lp-cta .odm-btn.odm-btn-p {
-  background: var(--inkfg);
-  color: var(--ink);
-  border-color: var(--inkfg);
+   section's own gradient background — invert it here so the primary CTA
+   stays readable. */
+.odm-landing .lp-cta .odm-btn.odm-btn-p,
+.odm-landing .lp-cta .lp-btn-white {
+  background: #fff;
+  color: var(--lp-blue-d);
+  border-color: #fff;
 }
 
 /* ---------- Footer ---------- */
 .odm-landing .lp-footer {
-  border-top: 1px solid var(--bd);
-  background: var(--sf2);
+  border-top: none;
+  background: var(--lp-navy);
+  color: #B7C7E6;
   padding: 56px 0 24px;
 }
 
 .odm-landing .lp-footer-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr;
-  gap: 40px;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 32px;
+}
+
+.odm-landing .lp-footer-logo-wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: inline-block;
+}
+
+.odm-landing .lp-footer-logo-img {
+  height: 40px;
+  display: block;
+}
+
+.odm-landing .lp-footer-brand {
+  display: block;
 }
 
 .odm-landing .lp-footer-brand p {
   max-width: 300px;
   margin-top: 14px;
-  color: var(--tx2);
+  color: #B7C7E6;
   font-size: 14px;
   line-height: 1.6;
+  white-space: pre-line;
 }
 
 .odm-landing .lp-footer-grid h4 {
   margin: 0 0 14px;
+  color: #fff;
   font-size: 13.5px;
 }
 
@@ -762,7 +954,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--tx2);
+  color: #B7C7E6;
   font-size: 14px;
 }
 
@@ -771,8 +963,8 @@
   justify-content: space-between;
   margin-top: 44px;
   padding-top: 20px;
-  border-top: 1px solid var(--bd);
-  color: var(--tx3);
+  border-top: 1px solid #1E3560;
+  color: #B7C7E6;
   font-size: 12.5px;
 }
 
@@ -832,7 +1024,8 @@
     align-items: stretch;
   }
 
-  .odm-landing .lp-hero-art {
+  .odm-landing .lp-hero-art,
+  .odm-landing .lp-mapcard {
     width: 100%;
     margin-top: 32px;
   }
@@ -896,4 +1089,208 @@
     flex-direction: column;
     gap: 8px;
   }
+}
+
+/* ---------- Chatbot Widget ---------- */
+.odm-landing .lp-bot {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 1000;
+  font-family: inherit;
+}
+
+.odm-landing .lp-bot-fab {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #fff, #DCEBFF);
+  box-shadow: 0 12px 32px rgba(21,101,232,.4);
+  padding: 6px;
+  position: relative;
+  animation: lp-bob 3s ease-in-out infinite;
+}
+
+.odm-landing .lp-bot-fab img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.odm-landing .lp-bot-dot {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--lp-green, #1FA971);
+  border: 3px solid #fff;
+  border-radius: 50%;
+}
+
+@keyframes lp-bob {
+  50% { transform: translateY(-6px); }
+}
+
+.odm-landing .lp-bot-hint {
+  position: absolute;
+  right: 88px;
+  bottom: 22px;
+  background: #fff;
+  border: 1px solid var(--lp-line, #D6E4FA);
+  border-radius: 14px 14px 4px 14px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(11,31,68,.14);
+}
+
+.odm-landing .lp-bot-win {
+  width: 360px;
+  height: 500px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(11,31,68,.34);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--lp-line, #D6E4FA);
+}
+
+.odm-landing .lp-bot-header {
+  background: linear-gradient(135deg, var(--lp-blue-d, #0B3FA8), var(--lp-blue, #1565E8));
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.odm-landing .lp-bot-header-avatar {
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  border-radius: 50%;
+  padding: 3px;
+  flex: none;
+}
+
+.odm-landing .lp-bot-header b {
+  display: block;
+  font-size: 15px;
+}
+
+.odm-landing .lp-bot-header small {
+  opacity: .85;
+  font-size: 12px;
+}
+
+.odm-landing .lp-bot-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+}
+
+.odm-landing .lp-bot-close:hover {
+  background: none;
+  opacity: 0.8;
+}
+
+.odm-landing .lp-bot-msgs {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background: var(--lp-bg, #F3F8FF);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.odm-landing .lp-bot-msg {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.odm-landing .lp-bot-msg--bot {
+  background: #fff;
+  border: 1px solid var(--lp-line, #D6E4FA);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.odm-landing .lp-bot-msg--user {
+  background: var(--lp-blue, #1565E8);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.odm-landing .lp-bot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 10px;
+  background: var(--lp-bg, #F3F8FF);
+}
+
+.odm-landing .lp-bot-chips button {
+  background: #fff;
+  border: 1px solid var(--lp-blue, #1565E8);
+  color: var(--lp-blue, #1565E8);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.odm-landing .lp-bot-chips button:hover {
+  background: var(--lp-blue-l, #E8F1FF);
+}
+
+.odm-landing .lp-bot-form {
+  display: flex;
+  padding: 10px;
+  gap: 8px;
+  border-top: 1px solid var(--lp-line, #D6E4FA);
+}
+
+.odm-landing .lp-bot-form input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--lp-line, #D6E4FA);
+  border-radius: 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.odm-landing .lp-bot-form input:focus {
+  border-color: var(--lp-blue, #1565E8);
+}
+
+.odm-landing .lp-bot-form button {
+  padding: 10px 16px;
+  background: var(--lp-blue, #1565E8);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
 }

@@ -70,6 +70,18 @@ type FormState = {
   resolution: string
 }
 
+type StoredCreateOrderDraft = {
+  step?: Step
+  form?: FormState
+  mapPoint?: MapPoint
+  consultation?: CustomerConsultation | null
+  chatMessages?: ConsultationMessage[]
+  autoDraft?: {
+    title: string
+    description: string
+  }
+}
+
 const STEP_LABELS: Record<Step, string> = {
   1: 'Vị trí giám sát',
   2: 'AI tư vấn & mục tiêu',
@@ -81,6 +93,7 @@ const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
 const MAP_TOP_CROP_PERCENT = 22
+const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
 
 const card: React.CSSProperties = {
   background: 'var(--sf)',
@@ -112,6 +125,41 @@ function todayPlus(days: number) {
   const d = new Date()
   d.setDate(d.getDate() + days)
   return d.toISOString().slice(0, 10)
+}
+
+function createDefaultForm(): FormState {
+  return {
+    title: '',
+    description: '',
+    address: '',
+    latitude: '10.6402',
+    longitude: '106.6912',
+    radiusM: 300,
+    serviceId: '',
+    preferredDateFrom: todayPlus(1),
+    preferredDateTo: todayPlus(1),
+    preferredTimeId: '',
+    deliverableTypeId: '',
+    mediaType: 'IMAGE',
+    quantity: 10,
+    resolution: '4K',
+  }
+}
+
+function isStep(value: unknown): value is Step {
+  return value === 1 || value === 2 || value === 3 || value === 4
+}
+
+function readStoredCreateOrderDraft(): StoredCreateOrderDraft | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.localStorage.getItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as StoredCreateOrderDraft
+  } catch {
+    return null
+  }
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -407,13 +455,6 @@ function findRecommendedService(
   return undefined
 }
 
-function firstSentence(value: string) {
-  return value
-    .split(/[.!?\n]/)
-    .map((item) => item.trim())
-    .find(Boolean) ?? ''
-}
-
 function cleanRequirementText(value: string) {
   return value
     .replace(/^tôi muốn tạo yêu cầu giám sát:\s*/i, '')
@@ -484,7 +525,68 @@ function buildConsultationTitle(
   return truncateText(title, 96)
 }
 
-function buildDraftFromConsultation(
+function collectCustomerIntent(messages: ConsultationMessage[]) {
+  const customerTexts = messages
+    .filter((message) => message.senderType === 'CUSTOMER')
+    .map((message) => ({
+      raw: message.message.trim(),
+      clean: cleanRequirementText(message.message),
+    }))
+    .filter((message) => message.clean)
+  const directAnswers = customerTexts
+    .filter((message) => !normalizeText(message.raw).startsWith('toi muon tao yeu cau giam sat:'))
+    .map((message) => message.clean)
+  const normalized = normalizeText(
+    (directAnswers.length ? directAnswers : customerTexts.map((message) => message.clean)).join('\n'),
+  )
+  const goals: string[] = []
+  const focusAreas: string[] = []
+
+  if (normalized.includes('nut vo') || normalized.includes('hu hong')) goals.push('kiểm tra nứt vỡ/hư hỏng')
+  if (normalized.includes('diem nong') || normalized.includes('nhiet')) goals.push('phát hiện điểm nóng')
+  if (normalized.includes('an toan')) goals.push('rà soát an toàn khu vực')
+  if (normalized.includes('tien do')) goals.push('theo dõi tiến độ')
+
+  if (normalized.includes('mat dung')) focusAreas.push('mặt đứng')
+  if (normalized.includes('mat tien')) focusAreas.push('mặt tiền')
+  if (normalized.includes('mai')) focusAreas.push('mái')
+  if (normalized.includes('khu ky thuat')) focusAreas.push('khu kỹ thuật')
+  if (normalized.includes('toan bo')) focusAreas.push('toàn bộ công trình')
+  if (normalized.includes('dau hieu bat thuong')) focusAreas.push('khu vực có dấu hiệu bất thường')
+
+  return {
+    goals: [...new Set(goals)],
+    focusAreas: [...new Set(focusAreas)],
+  }
+}
+
+function buildIntentSummary(
+  consultation: CustomerConsultation,
+  messages: ConsultationMessage[],
+  service?: ServiceOption,
+) {
+  const customerIntent = collectCustomerIntent(messages)
+  const fallbackSummary = consultation.requirementSummary || ''
+  const normalizedFallback = normalizeText(fallbackSummary)
+  const object =
+    normalizedFallback.includes('toa nha') || normalizedFallback.includes('cong trinh')
+      ? 'tòa nhà/công trình'
+      : service?.name?.toLowerCase() || 'khu vực giám sát'
+  const goalText = customerIntent.goals.length
+    ? customerIntent.goals.join(', ')
+    : fallbackSummary || 'làm rõ mục tiêu giám sát'
+  const focusText = customerIntent.focusAreas.length
+    ? ` Ưu tiên ${customerIntent.focusAreas.join(' và ')}.`
+    : ''
+
+  return {
+    goalText,
+    focusText,
+    summary: `Khách hàng muốn giám sát ${object} để ${goalText}.${focusText}`,
+  }
+}
+
+export function buildDraftFromConsultation(
   consultation: CustomerConsultation,
   messages: ConsultationMessage[],
   service?: ServiceOption,
@@ -494,22 +596,13 @@ function buildDraftFromConsultation(
     .map((message) => cleanRequirementText(message.message))
     .filter(Boolean)
 
-  const assistantMessages = messages
-    .filter((message) => message.senderType === 'ASSISTANT')
-    .map((message) => message.message.trim())
-    .filter(Boolean)
-
-  const summarySource =
-    consultation.requirementSummary ||
-    firstSentence(assistantMessages.at(-1) ?? '') ||
-    customerMessages.at(-1) ||
-    ''
+  const intent = buildIntentSummary(consultation, messages, service)
+  const summarySource = intent.summary || customerMessages.at(-1) || ''
 
   const title = buildConsultationTitle(
     [
       summarySource,
       ...customerMessages,
-      ...assistantMessages,
       service?.name ?? '',
     ].join('\n'),
     service,
@@ -703,38 +796,27 @@ function buildQuickReplies(messages: ConsultationMessage[]) {
 export function CreateOrderPage() {
   const { meta: mapMeta, error: mapError } = useSimulationMapMeta()
   const zones = useSimulationZones()
-  const [step, setStep] = useState<Step>(1)
-  const [form, setForm] = useState<FormState>({
-    title: '',
-    description: '',
-    address: '',
-    latitude: '10.6402',
-    longitude: '106.6912',
-    radiusM: 300,
-    serviceId: '',
-    preferredDateFrom: todayPlus(1),
-    preferredDateTo: todayPlus(1),
-    preferredTimeId: '',
-    deliverableTypeId: '',
-    mediaType: 'IMAGE',
-    quantity: 10,
-    resolution: '4K',
-  })
+  const storedDraft = useMemo(() => readStoredCreateOrderDraft(), [])
+  const [step, setStep] = useState<Step>(isStep(storedDraft?.step) ? storedDraft.step : 1)
+  const [form, setForm] = useState<FormState>(() => ({
+    ...createDefaultForm(),
+    ...(storedDraft?.form ?? {}),
+  }))
   const [services, setServices] = useState<ServiceOption[]>([])
   const [preferredTimes, setPreferredTimes] = useState<PreferredTimeOption[]>([])
   const [deliverables, setDeliverables] = useState<ServiceDeliverableOption[]>([])
   const [loadingMeta, setLoadingMeta] = useState(true)
   const [metaError, setMetaError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
-  const [mapPoint, setMapPoint] = useState<MapPoint>({ x: 50, y: 50 })
-  const [consultation, setConsultation] = useState<CustomerConsultation | null>(null)
-  const [chatMessages, setChatMessages] = useState<ConsultationMessage[]>([])
+  const [mapPoint, setMapPoint] = useState<MapPoint>(storedDraft?.mapPoint ?? { x: 50, y: 50 })
+  const [consultation, setConsultation] = useState<CustomerConsultation | null>(storedDraft?.consultation ?? null)
+  const [chatMessages, setChatMessages] = useState<ConsultationMessage[]>(storedDraft?.chatMessages ?? [])
   const [chatText, setChatText] = useState('')
   const [chatBusy, setChatBusy] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
-  const [autoDraft, setAutoDraft] = useState({ title: '', description: '' })
+  const [autoDraft, setAutoDraft] = useState(storedDraft?.autoDraft ?? { title: '', description: '' })
 
   const selectedService = services.find((service) => service.id === form.serviceId)
   const selectedTime = preferredTimes.find((time) => time.id === form.preferredTimeId)
@@ -751,6 +833,18 @@ export function CreateOrderPage() {
     () => validateRestrictedZones(selectedSimPoint, form.radiusM, zones),
     [selectedSimPoint, form.radiusM, zones],
   )
+
+  useEffect(() => {
+    const draft: StoredCreateOrderDraft = {
+      step,
+      form,
+      mapPoint,
+      consultation,
+      chatMessages,
+      autoDraft,
+    }
+    window.localStorage.setItem(CREATE_ORDER_DRAFT_STORAGE_KEY, JSON.stringify(draft))
+  }, [autoDraft, chatMessages, consultation, form, mapPoint, step])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -1096,6 +1190,7 @@ export function CreateOrderPage() {
     setSubmitError(null)
     try {
       const result = await customerApi.createOrder(buildPayload())
+      window.localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
       setCreatedId(result.id)
     } catch (error: unknown) {
       setSubmitError(error instanceof Error ? error.message : 'Không tạo được request.')

@@ -22,6 +22,8 @@ export type FlightControlStatus = {
   altitudeM?: number
   speedMps?: number
   batteryPercent?: number
+  batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
+  headingDeg?: number
   connection?: { grpcConnected?: boolean; px4Connected?: boolean }
 }
 

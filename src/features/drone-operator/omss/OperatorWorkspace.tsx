@@ -9,6 +9,7 @@ import type {
 } from './types'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from './api/flightControlApi'
+import type { FlightControlStatus } from './api/flightControlApi'
 
 import Sidebar from './components/Sidebar'
 
@@ -284,6 +285,7 @@ export default function OperatorWorkspace() {
   const [autoStartPlanRequested, setAutoStartPlanRequested] = useState(false)
   const [flightSessionStarted, setFlightSessionStarted] = useState(false)
   const [mediaReturnScreen, setMediaReturnScreen] = useState<Screen>('mission-list')
+  const [postflightTelemetry, setPostflightTelemetry] = useState<FlightControlStatus | null>(null)
 
   // Load only missions assigned to the authenticated operator.
   useEffect(() => {
@@ -469,21 +471,26 @@ export default function OperatorWorkspace() {
         await new Promise((resolve) => window.setTimeout(resolve, 1000))
       }
 
-      const check = await missionApi.runPreflightCheck(
-        missionId,
-        drone.id,
-      )
-      if (!check.overallPassed || !check.flightToken) {
-        throw new Error(check.failureReason || 'Backend preflight did not pass')
+      const storedToken = window.sessionStorage.getItem(`omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`)
+      const check = storedToken
+        ? null
+        : await missionApi.runPreflightCheck(
+            missionId,
+            drone.id,
+          )
+      const tokenValue = storedToken ?? check?.flightToken?.tokenValue
+      if (!tokenValue) {
+        throw new Error(check?.failureReason || 'Backend preflight did not pass')
       }
       await missionApi.handoverMyMission(mission.backendId ?? mission.id)
       setToken({
-        token: check.flightToken.tokenValue,
-        issuedAt: Date.parse(check.flightToken.issuedAt),
-        expiresAt: Date.parse(check.flightToken.expiresAt),
+        token: tokenValue,
+        issuedAt: check?.flightToken ? Date.parse(check.flightToken.issuedAt) : Date.now(),
+        expiresAt: check?.flightToken ? Date.parse(check.flightToken.expiresAt) : Date.now() + 15 * 60_000,
         missionId: mission.backendId ?? mission.id,
         droneId: drone.id,
       })
+      window.sessionStorage.removeItem(`omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`)
       setMission((current) => current ? { ...current, state: 'READY_TO_FLY' } : current)
       setScreen('ready-to-fly')
     } catch (cause) {
@@ -520,6 +527,8 @@ export default function OperatorWorkspace() {
   async function handleLanded() {
     if (!mission) return
     try {
+      const telemetrySnapshot = await flightControlApi.status().catch(() => null)
+      setPostflightTelemetry(telemetrySnapshot)
       const updated = await missionApi.startPostflight(mission.backendId ?? mission.id)
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setScreen('postflight')
@@ -537,6 +546,7 @@ export default function OperatorWorkspace() {
         'AVAILABLE',
         notes,
         results,
+        postflightTelemetry,
       )
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setScreen('mission-completed')
@@ -554,6 +564,7 @@ export default function OperatorWorkspace() {
         'MAINTENANCE',
         notes,
         results,
+        postflightTelemetry,
       )
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setDrone((current) => current ? { ...current, state: 'MAINTENANCE' } : current)
@@ -681,6 +692,7 @@ export default function OperatorWorkspace() {
               onEmergency={handleEmergency}
               autoStartPlan={autoStartPlanRequested}
               onAutoStartPlanConsumed={() => setAutoStartPlanRequested(false)}
+              onCompleteMission={handleLanded}
               onReviewMedia={() => {
                 setMediaReturnScreen('in-flight')
                 setScreen('media-upload')
@@ -697,6 +709,7 @@ export default function OperatorWorkspace() {
           {screen === 'postflight' && displayDrone && (
             <PostflightCheck
               drone={displayDrone}
+              telemetrySnapshot={postflightTelemetry}
               onComplete={handlePostflightComplete}
               onFault={handlePostflightFault}
             />

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import type { Drone } from '../types'
+import type { FlightControlStatus } from '../api/flightControlApi'
 
 interface Props {
   drone: Drone
+  telemetrySnapshot?: FlightControlStatus | null
   onComplete: (results: Record<string, InspectionResult>, notes: string) => void
   onFault: (results: Record<string, InspectionResult>, notes: string) => void
 }
@@ -53,6 +55,13 @@ const ITEMS: Item[] = [
     result: null,
   },
   {
+    id: 'e4',
+    cat: 'Electronics',
+    label: 'Remaining battery',
+    desc: 'Confirm post-flight battery telemetry is saved and still safe for handling',
+    result: null,
+  },
+  {
     id: 'e2',
     cat: 'Electronics',
     label: 'Camera and gimbal',
@@ -98,7 +107,7 @@ const BTN: Record<string, { bg: string; border: string; color: string }> = {
   },
 }
 
-export default function PostflightCheck({ drone, onComplete, onFault }: Props) {
+export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, onFault }: Props) {
   const [items, setItems] = useState<Item[]>(ITEMS)
   const [notes, setNotes] = useState('')
 
@@ -148,6 +157,22 @@ export default function PostflightCheck({ drone, onComplete, onFault }: Props) {
             <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
               Physical inspection of <strong>{drone.id}</strong> — {drone.name}
             </p>
+            {telemetrySnapshot && (
+              <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '6px 0 0' }}>
+                Saved landing telemetry · Battery{' '}
+                {typeof telemetrySnapshot.batteryPercent === 'number'
+                  ? `${telemetrySnapshot.batteryPercent.toFixed(1)}%`
+                  : '--'}
+                {' · '}Altitude{' '}
+                {typeof telemetrySnapshot.altitudeM === 'number'
+                  ? `${telemetrySnapshot.altitudeM.toFixed(1)} m`
+                  : '--'}
+                {' · '}Speed{' '}
+                {typeof telemetrySnapshot.speedMps === 'number'
+                  ? `${telemetrySnapshot.speedMps.toFixed(1)} m/s`
+                  : '--'}
+              </p>
+            )}
           </div>
           <div style={{ textAlign: 'right' }}>
             <div

@@ -41,6 +41,7 @@ type FlightCommand =
   | 'emergency_stop'
   | 'auto_plan_start'
   | 'camera_switch'
+  | 'camera_front'
   | 'camera_monitor_toggle'
   | 'lidar_monitor_toggle'
   | 'telemetry_monitor_toggle'
@@ -252,7 +253,7 @@ const moreToolControls: {
   label: string
   icon: IconName
 }[] = [
-  { command: 'camera_switch', label: 'Camera', icon: 'camera' },
+  { command: 'camera_front', label: 'Camera', icon: 'camera' },
   { command: 'photo', label: 'Photo', icon: 'photo' },
   { command: 'video_toggle', label: 'Video', icon: 'video' },
   { command: 'lidar_monitor_toggle', label: 'LiDAR', icon: 'radar' },
@@ -2506,12 +2507,13 @@ const FlightControls = memo(function FlightControls({
                 ...buttonStyle(),
                 background: 'rgba(22,101,52,.88)',
                 color: '#bbf7d0',
-                width: 70,
+                border: '1px solid rgba(74,222,128,.55)',
+                width: 82,
               }}
-              title="Complete mission"
+              title="Complete mission and go to postflight"
             >
               <Icon name="check" size={14} />
-              <span>Complete</span>
+              <span>Postflight</span>
             </button>
           )}
         </div>
@@ -2707,6 +2709,7 @@ export default function InFlightControl({
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
   const [lidarDetailsOpen, setLidarDetailsOpen] = useState(false)
+  const cameraDefaultAppliedRef = useRef(false)
   const [preflightReady, setPreflightReady] = useState(() => {
     if (requiresBackendPreflight) return false
     try {
@@ -2772,15 +2775,6 @@ export default function InFlightControl({
     }
   }, [preflightStorageKey, requiresBackendPreflight])
 
-  const clearPreflightReady = useCallback(() => {
-    try {
-      window.localStorage.removeItem(preflightStorageKey)
-    } catch {
-      // Ignore storage failures; the in-memory state still resets for this page.
-    }
-    setPreflightReady(false)
-  }, [preflightStorageKey])
-
   useEffect(() => {
     const timer = window.setInterval(() => {
       setElapsed((value) => value + 1)
@@ -2816,7 +2810,6 @@ export default function InFlightControl({
         if (alive) {
           setControlStatus(null)
           setIsOnline(false)
-          clearPreflightReady()
         }
       }
     }
@@ -2827,7 +2820,7 @@ export default function InFlightControl({
       alive = false
       window.clearInterval(timer)
     }
-  }, [clearPreflightReady])
+  }, [])
 
   const sendCommand = useCallback(
     async (command: FlightCommand) => {
@@ -2877,6 +2870,8 @@ export default function InFlightControl({
         setLastCommand(
           command === 'auto_plan_start'
             ? `Auto plan started (${routePoints.length} points)`
+            : command === 'camera_front'
+              ? 'Camera reset to 0° FPV'
             : `${command.replaceAll('_', ' ')} sent`,
         )
         setIsOnline(true)
@@ -2892,6 +2887,12 @@ export default function InFlightControl({
     },
     [controlStatus?.deviceCode, controlStatus?.missionId, drone.id, mission.backendId, mission.id, mission.routePoints, onEmergency, onRTB, preflightReady],
   )
+
+  useEffect(() => {
+    if (!preflightReady || cameraDefaultAppliedRef.current) return
+    cameraDefaultAppliedRef.current = true
+    void sendCommand('camera_front')
+  }, [preflightReady, sendCommand])
 
   useEffect(() => {
     if (!autoStartPlan) return
@@ -3502,8 +3503,10 @@ export default function InFlightControl({
             }}
           >
             <PreflightChecklistPanel
-              missionId={mission.id}
-              droneLabel={`${drone.id}${drone.name ? ` ${drone.name}` : ''}`}
+              missionId={mission.backendId ?? mission.id}
+              missionLabel={mission.id}
+              droneLabel={drone.id}
+              missionStatus={mission.state}
               onReady={handlePreflightReady}
               embedded
             />

@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 
 import { missionApi } from '../../mission/api/missionApi'
-import { getActiveMissionId, toFlightDrone, toFlightMission, type BackendMission } from '../api/liveMission'
+import { flightControlApi } from '../omss/api/flightControlApi'
+import { getActiveMissionId, setActiveMissionId, toFlightDrone, toFlightMission, type BackendMission } from '../api/liveMission'
 import InFlightControlScreen from '../omss/screens/InFlightControl'
 import { operatorHref } from '../routes'
+
+const postflightTelemetryKey = (missionId: string) =>
+  `fieldwise.operator.postflightTelemetry.${missionId}`
 
 export function ActiveFlightScreen() {
   const missionId = getActiveMissionId()
@@ -34,8 +38,28 @@ export function ActiveFlightScreen() {
       autoStartPlan={autoStart}
       onAutoStartPlanConsumed={() => window.sessionStorage.removeItem('odm.operator.autoStartSimulation')}
       onReviewMedia={() => { window.location.hash = operatorHref({ screen: 'upload' }) }}
+      onCompleteMission={() => {
+        void (async () => {
+          const telemetrySnapshot = await flightControlApi.status().catch(() => null)
+          if (telemetrySnapshot) {
+            window.sessionStorage.setItem(
+              postflightTelemetryKey(mission.id),
+              JSON.stringify(telemetrySnapshot),
+            )
+          }
+          if (mission.status === 'IN_FLIGHT' || mission.status === 'IN_PROGRESS') {
+            await missionApi.markReturning(mission.id)
+          }
+          await missionApi.startPostflight(mission.id)
+          setActiveMissionId(mission.id)
+          window.location.hash = operatorHref({ screen: 'postflight' })
+        })().catch((cause) => setError(cause instanceof Error ? cause.message : 'Không chuyển được mission sang Postflight'))
+      }}
       onRTB={() => {
-        void missionApi.markReturning(mission.id).then(() => {
+        void missionApi.markReturning(mission.id).then(() =>
+          missionApi.startPostflight(mission.id),
+        ).then(() => {
+          setActiveMissionId(mission.id)
           window.location.hash = operatorHref({ screen: 'postflight' })
         }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Không chuyển được mission sang RETURNING'))
       }}

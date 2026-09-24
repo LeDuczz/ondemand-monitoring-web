@@ -4,6 +4,7 @@ import type {
   DeviceImage,
   DeviceStatus,
 } from '../types/mission'
+import type { FlightControlStatus } from '../../drone-operator/omss/api/flightControlApi'
 
 import { env } from '../../../config/env'
 
@@ -236,6 +237,7 @@ export const missionApi = {
     newDroneStatus: DeviceStatus,
     notes: string,
     inspectionResults?: Record<string, 'PASS' | 'WARN' | 'FAIL'>,
+    telemetrySnapshot?: FlightControlStatus | null,
   ): Promise<Mission> => {
     return request<Mission>(
       `${API_BASE}/missions/${missionId}/postflight-status?droneCode=${encodeURIComponent(
@@ -243,7 +245,7 @@ export const missionApi = {
       )}`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ newDroneStatus, notes, inspectionResults }),
+        body: JSON.stringify({ newDroneStatus, notes, inspectionResults, telemetrySnapshot }),
       },
     )
   },

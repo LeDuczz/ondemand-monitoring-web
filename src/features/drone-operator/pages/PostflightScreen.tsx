@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
 import { missionApi } from '../../mission/api/missionApi'
 import { useActiveMission } from '../api/useActiveMission'
+import type { FlightControlStatus } from '../omss/api/flightControlApi'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -93,6 +94,20 @@ const ALL_KEYS = CATEGORIES.flatMap((cat) => cat.items.map((i) => i.key))
 
 type ResultsState = Partial<Record<PostflightItemKey, PreflightItemResult>>
 
+const postflightTelemetryKey = (missionId: string) =>
+  `fieldwise.operator.postflightTelemetry.${missionId}`
+
+function readPostflightTelemetry(missionId: string): FlightControlStatus | null {
+  if (!missionId) return null
+  try {
+    const raw = window.sessionStorage.getItem(postflightTelemetryKey(missionId))
+    if (!raw) return null
+    return JSON.parse(raw) as FlightControlStatus
+  } catch {
+    return null
+  }
+}
+
 export function PostflightScreen({ missionId }: { missionId?: string }) {
   const {
     data: activeData,
@@ -130,6 +145,10 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   )
 
   const summary = postflightSummary(items, ALL_KEYS.length)
+  const telemetrySnapshot = useMemo(
+    () => readPostflightTelemetry(effectiveMissionId),
+    [effectiveMissionId],
+  )
   const failItems = useMemo(
     () => ALL_KEYS.filter((k) => results[k] === 'fail'),
     [results],
@@ -177,6 +196,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         p1: getResult('motor_ok'),
         p2: getResult('motor_ok'),
         e1: getResult('battery_ok'),
+        e4: getResult('battery_ok'),
         e2: getResult('camera_ok'),
         e3: getResult('gps_ok'),
         d1: getResult('communication_ok'),
@@ -193,6 +213,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         targetDroneStatus,
         notes,
         inspectionResults,
+        telemetrySnapshot,
       )
 
       // Try marking mission completed if not automatically completed by BE
@@ -420,6 +441,25 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
               }}
             >
               ⚠️ {error}
+            </div>
+          )}
+
+          {telemetrySnapshot && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                gap: 10,
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: 'rgba(37, 99, 235, 0.06)',
+                border: '1px solid rgba(37, 99, 235, 0.18)',
+              }}
+            >
+              <TelemetryMetric label="Pin hạ cánh" value={`${telemetrySnapshot.batteryPercent ?? '--'}%`} />
+              <TelemetryMetric label="Độ cao" value={`${telemetrySnapshot.altitudeM ?? '--'} m`} />
+              <TelemetryMetric label="Tốc độ" value={`${telemetrySnapshot.speedMps ?? '--'} m/s`} />
+              <TelemetryMetric label="Heading" value={`${telemetrySnapshot.headingDeg ?? '--'}°`} />
             </div>
           )}
 
@@ -719,6 +759,19 @@ function Row({ label, value }: { label: string; value: string }) {
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5 }}>
       <span style={{ color: 'var(--tx3, #64748b)', fontWeight: 500 }}>{label}:</span>
       <span style={{ fontWeight: 700, color: 'var(--tx, #0f172a)' }}>{value}</span>
+    </div>
+  )
+}
+
+function TelemetryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: 'var(--tx3, #64748b)', fontWeight: 800 }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 3, fontSize: 17, color: 'var(--tx, #0f172a)', fontWeight: 900 }}>
+        {value}
+      </div>
     </div>
   )
 }

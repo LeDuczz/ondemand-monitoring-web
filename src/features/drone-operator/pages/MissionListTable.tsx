@@ -1,4 +1,5 @@
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
+import { setActiveMissionId } from '../api/liveMission'
 import { formatDeadline } from '../lib/formatDeadline'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
@@ -9,6 +10,7 @@ const STATUS_TONE = {
   IN_FLIGHT: 'blue',
   COMPLETED: 'green',
   REJECTED: 'red',
+  FAILED: 'red',
 } as const
 
 const STATUS_LABEL: Record<OperatorMission['status'], string> = {
@@ -17,6 +19,7 @@ const STATUS_LABEL: Record<OperatorMission['status'], string> = {
   IN_FLIGHT: 'Đang bay',
   COMPLETED: 'Hoàn thành',
   REJECTED: 'Bị từ chối',
+  FAILED: 'Không hoàn thành',
 }
 
 function actionFor(mission: OperatorMission) {
@@ -26,6 +29,7 @@ function actionFor(mission: OperatorMission) {
     case 'IN_FLIGHT':
       return { label: 'Mở buồng lái', cls: 'odm-btn-bl', href: operatorHref({ screen: 'flight' }) }
     case 'ACCEPTED': {
+      if (!mission.date || !mission.startTime) return { label: 'Bắt đầu', cls: 'odm-btn-ok', href: operatorHref({ screen: 'connect' }) }
       const start = new Date(`${mission.date}T${mission.startTime}:00+07:00`)
       const soon = start.getTime() - Date.now() < 4 * 60 * 60 * 1000
       return soon
@@ -33,6 +37,7 @@ function actionFor(mission: OperatorMission) {
         : { label: 'Chi tiết', cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
     }
     case 'COMPLETED':
+    case 'FAILED':
       return { label: 'Chi tiết', cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
     default:
       return null
@@ -40,6 +45,7 @@ function actionFor(mission: OperatorMission) {
 }
 
 function weekdayDdMm(dateStr: string, today: string): string {
+  if (!dateStr) return 'Chưa lên lịch'
   const d = new Date(`${dateStr}T00:00:00+07:00`)
   if (dateStr === today) return `Hôm nay ${d.toLocaleDateString('vi-VN')}`
   const weekdays = ['CN', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
@@ -88,7 +94,7 @@ export function MissionListTable({
               <tr key={mission.id}>
                 <td>
                   <span className="odm-mono" style={{ fontWeight: 600 }}>
-                    {mission.id}
+                    {mission.missionCode ?? mission.id}
                   </span>
                 </td>
                 <td>
@@ -100,7 +106,7 @@ export function MissionListTable({
                 <td>
                   <div className="odm-tn">{weekdayDdMm(mission.date, today)}</div>
                   <div className="odm-tn" style={{ color: 'var(--tx3)', fontSize: 11.5 }}>
-                    {mission.startTime}–{mission.endTime}
+                    {mission.startTime && mission.endTime ? `${mission.startTime}–${mission.endTime}` : '—'}
                   </div>
                 </td>
                 <td>
@@ -109,7 +115,7 @@ export function MissionListTable({
                 <td>
                   {mission.droneCode ? (
                     <>
-                      {mission.droneCode} {mission.droneName}
+                      {mission.droneName && mission.droneName !== mission.droneCode ? `${mission.droneCode} ${mission.droneName}` : mission.droneCode}
                     </>
                   ) : (
                     <span style={{ color: 'var(--tx3)' }}>Không phân công</span>
@@ -130,6 +136,7 @@ export function MissionListTable({
                     <a
                       className={`odm-btn odm-btn-sm ${action.cls}`}
                       href={action.href}
+                      onClick={() => setActiveMissionId(mission.id)}
                     >
                       {action.label}
                     </a>

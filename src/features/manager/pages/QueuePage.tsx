@@ -59,9 +59,12 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
             {data.length} đơn đang chờ · {overdueCount} đơn quá 24 giờ
           </div>
         </div>
-        <button type="button" className="odm-btn" onClick={query.reload}>
-          Làm mới
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <a className="odm-btn" href="#portal/staff/assignments">Mission chờ phân công</a>
+          <button type="button" className="odm-btn" onClick={query.reload}>
+            Làm mới
+          </button>
+        </div>
       </div>
 
       {data.length === 0 ? (

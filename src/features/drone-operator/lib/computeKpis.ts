@@ -34,11 +34,11 @@ export function computeKpis(
 
   const earliestPending = [...pending].sort((a, b) => a.date.localeCompare(b.date))[0]
 
-  const certExpiry = new Date(`${profile.certExpiry}T00:00:00+07:00`)
+  const certExpiry = profile.certExpiry ? new Date(`${profile.certExpiry}T00:00:00+07:00`) : null
   const msPerDay = 24 * 60 * 60 * 1000
   const certDaysLeft = Math.max(
     0,
-    Math.ceil((certExpiry.getTime() - now.getTime()) / msPerDay),
+    certExpiry ? Math.ceil((certExpiry.getTime() - now.getTime()) / msPerDay) : 0,
   )
 
   return {
@@ -48,6 +48,6 @@ export function computeKpis(
     todayFlyingCount: todayFlying.length,
     upcomingWeekCount: upcoming.length,
     certDaysLeft,
-    certExpiryLabel: toDdMm(profile.certExpiry),
+    certExpiryLabel: profile.certExpiry ? toDdMm(profile.certExpiry) : '—',
   }
 }

@@ -1,11 +1,10 @@
 import { useState } from 'react'
 
-import { operatorApi } from '../api/operatorApi'
+import { useActiveMission } from '../api/useActiveMission'
 import { operatorHref } from '../routes'
 import { FlightStepHeader } from './FlightStepper'
 import { ConfirmedBanner, RevokedBanner } from './HandoverBanners'
 
-const MISSION_ID = 'MSN-2609-0142-1'
 
 const COMMITMENTS = [
   'Tôi đã kiểm tra khu vực bay, không có người và phương tiện trong vùng an toàn, và tuân thủ mọi vùng cấm bay được cảnh báo trong mission.',
@@ -16,6 +15,8 @@ const COMMITMENTS = [
 
 /** OPR-05W — Bàn giao quyền điều khiển: 4 cam kết + tick tổng + xác nhận. */
 export function HandoverScreen() {
+  const mission = useActiveMission()
+  const missionLabel = mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'
   const [revoked, setRevoked] = useState(false)
   const [checked, setChecked] = useState<boolean[]>([
     false,
@@ -26,21 +27,28 @@ export function HandoverScreen() {
   const [ack, setAck] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const allChecked = checked.every(Boolean)
   const canConfirm = allChecked && ack && !submitting
 
   async function handleConfirm() {
     setSubmitting(true)
+    setError(null)
     try {
-      await operatorApi.confirmHandover(MISSION_ID)
+      if (!mission.missionId || !mission.data?.droneCode) throw new Error('Chọn mission đã gán drone trước khi tiếp tục')
+      // Backend records the handover only after its preflight reaches READY_TO_FLY.
+      window.sessionStorage.setItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`, 'true')
       setConfirmed(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không xác nhận được cam kết')
     } finally {
       setSubmitting(false)
     }
   }
 
   function handleRevoke() {
+    if (mission.missionId) window.sessionStorage.removeItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`)
     setRevoked(true)
     setConfirmed(false)
     setAck(false)
@@ -51,12 +59,13 @@ export function HandoverScreen() {
     <div className="odm-card" style={{ marginBottom: 0 }}>
       <FlightStepHeader
         title="Bàn giao quyền điều khiển"
-        missionId={MISSION_ID}
+        missionId={missionLabel}
         active={3}
       />
       <div style={{ padding: '18px 22px', maxWidth: 800, margin: '0 auto' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <DroneStrip />
+          {error && <p role="alert" style={{ color: 'var(--red-fg)' }}>{error}</p>}
+          <DroneStrip missionLabel={missionLabel} droneLabel={mission.data?.droneCode ?? 'Chưa gán drone'} />
 
           {revoked ? (
             <RevokedBanner onReconfirm={() => setRevoked(false)} />
@@ -202,7 +211,7 @@ export function HandoverScreen() {
   )
 }
 
-function DroneStrip() {
+function DroneStrip({ missionLabel, droneLabel }: { missionLabel: string; droneLabel: string }) {
   return (
     <div
       style={{
@@ -231,7 +240,7 @@ function DroneStrip() {
       </span>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 15 }}>
-          DRN-02 Hải Âu · {MISSION_ID}
+          {droneLabel} · {missionLabel}
         </div>
         <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
           Đã kết nối GCS DJI-RC-PLUS-7A31 lúc 13:26:41 · telemetry hoạt động

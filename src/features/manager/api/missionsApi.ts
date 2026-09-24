@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/httpClient'
+import { env } from '../../../config/env'
 import type {
   CancelMissionRequest,
   CreateIncidentRequest,
@@ -19,6 +20,38 @@ import type {
   WeatherPreflightCheckRequest,
   WeatherPreflightCheckResponse,
 } from '../types/missions'
+
+type StaffMissionPage = { items: MissionResponse[]; page: number; totalPages: number }
+
+export function toMissionCalendarItem(source: MissionResponse): MissionCalendarItem {
+  return {
+    id: source.id,
+    orderId: source.orderId,
+    orderCode: null,
+    missionCode: source.missionCode,
+    status: source.status,
+    attemptNumber: null,
+    droneId: source.droneId,
+    operatorId: source.operatorId,
+    droneAssignmentId: null,
+    operatorAssignmentId: null,
+    scheduledStartAt: source.scheduledStartAt,
+    scheduledEndAt: null,
+    addressText: source.address,
+    centerLat: source.latitude,
+    centerLon: source.longitude,
+    radiusM: null,
+    requiredSensor: null,
+    nearestBase: null,
+    mediaRequirements: [],
+    flightPlan: null,
+    waypoints: [],
+    serviceLabel: source.orderTitle || null,
+    droneCode: source.droneCode,
+    droneName: null,
+    operatorName: null,
+  }
+}
 
 /** MNG-04 / MNG-05 mission-creation + dispatch APIs. See evd/00-PLAN.md §3-5. */
 export const missionsApi = {
@@ -95,7 +128,7 @@ export const missionsApi = {
    * `GET /api/missions?from=&to=&status=` [TK]. Lists missions within an
    * optional date range and optional status filter for MNG-06 calendar view.
    */
-  listMissions(
+  async listMissions(
     options: {
       from?: string
       to?: string
@@ -107,10 +140,21 @@ export const missionsApi = {
     if (options.from) query['from'] = options.from
     if (options.to) query['to'] = options.to
     if (options.status) query['status'] = options.status
-    return apiRequest<{ items: MissionCalendarItem[] }>('/api/missions', {
-      query,
-      signal: options.signal,
-    })
+    if (env.useMockApi || import.meta.env.MODE === 'test') {
+      return apiRequest<{ items: MissionCalendarItem[] }>('/api/missions', { query, signal: options.signal })
+    }
+    const items: MissionCalendarItem[] = []
+    let page = 0
+    let totalPages: number
+    do {
+      const result = await apiRequest<StaffMissionPage>('/api/missions/staff', {
+        query: { ...query, page: String(page), size: '100' }, signal: options.signal,
+      })
+      items.push(...result.items.map(toMissionCalendarItem))
+      totalPages = result.totalPages
+      page += 1
+    } while (page < totalPages)
+    return { items }
   },
 
   /**

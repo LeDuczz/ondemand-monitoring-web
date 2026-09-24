@@ -18,6 +18,9 @@ function countdownLabel(ms: number): string {
 /** Human label for the "Thời hạn" column, matching OPR-01W's wording per status. */
 export function formatDeadline(mission: OperatorMission, now: Date): string {
   const start = new Date(`${mission.date}T${mission.startTime}:00+07:00`)
+  if (!mission.date || !mission.startTime || Number.isNaN(start.getTime())) {
+    return mission.status === 'COMPLETED' ? 'Hoàn thành' : 'Chưa đặt lịch'
+  }
 
   switch (mission.status) {
     case 'PENDING':
@@ -39,6 +42,8 @@ export function formatDeadline(mission: OperatorMission, now: Date): string {
     }
     case 'REJECTED':
       return mission.rejectReason ?? 'Bị từ chối'
+    case 'FAILED':
+      return mission.backendStatus === 'CANCELLED' ? 'Đã huỷ' : 'Không hoàn thành'
     default:
       return ''
   }

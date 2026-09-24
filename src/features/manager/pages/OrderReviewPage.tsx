@@ -9,6 +9,7 @@ import {
   findingSeverityTone,
 } from '../../../shared/lib/statusTone'
 import { ordersApi } from '../api/ordersApi'
+import { env } from '../../../config/env'
 import { managerHref } from '../routes'
 import type {
   ApprovalDecision,
@@ -158,6 +159,8 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
         <button
           type="button"
           className="odm-btn odm-btn-yl odm-btn-lg"
+          disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
+          title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ yêu cầu bổ sung thông tin' : undefined}
           onClick={() => setModal('info')}
         >
           Yêu cầu bổ sung
@@ -238,7 +241,7 @@ function CustomerCard({ order }: { order: OrderDetail }) {
 }
 
 function LocationCard({ order }: { order: OrderDetail }) {
-  if (!order.center || order.radiusM == null) {
+  if (!order.center && !order.addressText) {
     return (
       <div className="odm-card">
         <div className="odm-card-header">Vị trí và vùng giám sát</div>
@@ -258,7 +261,7 @@ function LocationCard({ order }: { order: OrderDetail }) {
           aria-label="Bản đồ khu vực giám sát"
         >
           <rect width="520" height="220" className="odm-mgr-map-bg" />
-          <circle cx="260" cy="110" r="80" className="odm-mgr-map-radius" />
+          {order.radiusM != null && <circle cx="260" cy="110" r="80" className="odm-mgr-map-radius" />}
           <g transform="translate(260,110)">
             <path
               d="M0 0 C-10 -12 -13 -18 -13 -23 a13 13 0 0126 0 C13 -18 10 -12 0 0z"
@@ -266,14 +269,14 @@ function LocationCard({ order }: { order: OrderDetail }) {
             />
             <circle cy="-23" r="4.5" className="odm-mgr-map-pin-dot" />
           </g>
-          <text
+          {order.radiusM != null && <text
             x="260"
             y="200"
             textAnchor="middle"
             className="odm-mgr-map-label"
           >
             Bán kính giám sát: {order.radiusM} m
-          </text>
+          </text>}
         </svg>
       </div>
       <div className="odm-card-body odm-mgr-review-location-grid">
@@ -284,13 +287,13 @@ function LocationCard({ order }: { order: OrderDetail }) {
         <div>
           <div className="odm-mgr-review-hint">center</div>
           <div className="odm-mono" style={{ fontWeight: 600 }}>
-            {order.center.lat}, {order.center.lon}
+            {order.center ? `${order.center.lat}, ${order.center.lon}` : '—'}
           </div>
         </div>
         <div>
           <div className="odm-mgr-review-hint">radius_m</div>
           <div className="odm-tn" style={{ fontWeight: 600 }}>
-            {order.radiusM} m
+            {order.radiusM != null ? `${order.radiusM} m` : '—'}
           </div>
         </div>
         <div>
@@ -396,7 +399,7 @@ function AnalysisCard({
   if (query.error || !query.data) {
     return (
       <div className="odm-card">
-        <div className="odm-card-body">Không tải được phân tích AI.</div>
+        <div className="odm-card-body">{query.error ? 'Không tải được phân tích AI.' : 'Chưa có phân tích AI cho đơn này.'}</div>
       </div>
     )
   }
@@ -620,7 +623,8 @@ function InternalNoteCard({ orderId }: { orderId: string }) {
           <button
             type="button"
             className="odm-btn odm-btn-sm"
-            disabled={draft.trim().length === 0 || status === 'saving'}
+            disabled={(!env.useMockApi && import.meta.env.MODE !== 'test') || draft.trim().length === 0 || status === 'saving'}
+            title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ ghi chú nội bộ' : undefined}
             onClick={handleSave}
           >
             Lưu ghi chú
@@ -650,8 +654,10 @@ function ApproveButton({ orderId }: { orderId: string }) {
     setBusy(true)
     setError(null)
     try {
-      await ordersApi.approve(orderId)
-      window.location.hash = managerHref({ screen: 'missionCreate', orderId })
+      const mission = await ordersApi.approve(orderId)
+      window.location.hash = mission?.id
+        ? managerHref({ screen: 'missionDispatch', missionId: mission.id })
+        : managerHref({ screen: 'missionCreate', orderId })
     } catch {
       setError('Duyệt đơn thất bại, thử lại.')
       setBusy(false)

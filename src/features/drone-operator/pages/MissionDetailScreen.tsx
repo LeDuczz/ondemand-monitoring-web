@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { operatorApi } from '../api/operatorApi'
+import { setActiveMissionId } from '../api/liveMission'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
 import { RejectDialog } from './RejectDialog'
@@ -14,6 +15,7 @@ const STATUS_TONE = {
   IN_FLIGHT: 'blue',
   COMPLETED: 'green',
   REJECTED: 'red',
+  FAILED: 'red',
 } as const
 
 const STATUS_LABEL: Record<OperatorMission['status'], string> = {
@@ -22,15 +24,18 @@ const STATUS_LABEL: Record<OperatorMission['status'], string> = {
   IN_FLIGHT: 'Đang bay',
   COMPLETED: 'Hoàn thành',
   REJECTED: 'Bị từ chối',
+  FAILED: 'Không hoàn thành',
 }
 
 function formatVnDate(isoDate: string): string {
+  if (!isoDate) return 'Chưa lên lịch'
   const d = new Date(`${isoDate}T00:00:00+07:00`)
   const weekdays = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
   return `${weekdays[d.getDay()]}, ${d.toLocaleDateString('vi-VN')}`
 }
 
 function durationMinutes(start: string, end: string): number {
+  if (!start || !end) return 0
   const [sh, sm] = start.split(':').map(Number)
   const [eh, em] = end.split(':').map(Number)
   return eh * 60 + em - (sh * 60 + sm)
@@ -46,6 +51,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   const [showReject, setShowReject] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  useEffect(() => { setActiveMissionId(missionId) }, [missionId])
 
   if (query.loading) return <LoadingState />
   if (query.error || !query.data) {
@@ -95,7 +102,7 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <span className="odm-mono" style={{ fontWeight: 600, fontSize: 14 }}>
-          {mission.id}
+          {mission.missionCode ?? mission.id}
         </span>
         <StatusBadge tone={STATUS_TONE[mission.status]}>{STATUS_LABEL[mission.status]}</StatusBadge>
       </div>
@@ -229,24 +236,22 @@ function InfoPanel({ mission }: { mission: OperatorMission }) {
         <div className="odm-card-body" style={{ padding: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>{mission.title}</div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 12 }}>
-            {mission.serviceLabel} · ORD-2609-0152
+            {mission.serviceLabel}
           </div>
 
           <Row label="Ngày bay" value={formatVnDate(mission.date)} />
           <Row
             label="Khung giờ"
-            value={`${mission.startTime}–${mission.endTime} · ${minutes} phút`}
+            value={mission.startTime && mission.endTime ? `${mission.startTime}–${mission.endTime} · ${minutes} phút` : 'Chưa lên lịch'}
           />
           <Row label="Địa điểm" value={mission.location} />
           <Row
             label="Vùng giám sát"
-            value={`Bán kính ${mission.radiusMeters ?? 300} m · trần bay ${mission.ceilingMeters ?? 60} m`}
+            value={`Bán kính ${mission.radiusMeters == null ? '—' : `${mission.radiusMeters} m`} · trần bay ${mission.ceilingMeters == null ? '—' : `${mission.ceilingMeters} m`}`}
           />
           <Row
             label="Yêu cầu media"
-            value={`PHOTO × ${mission.photoCount ?? 40} · ${mission.photoNote ?? 'nhiệt'} | VIDEO × ${
-              mission.videoCount ?? 1
-            } · ${mission.videoSeconds ?? 180} giây · ${mission.videoResolution ?? '1080p'}`}
+            value={mission.serviceLabel}
           />
         </div>
       </div>
@@ -254,21 +259,21 @@ function InfoPanel({ mission }: { mission: OperatorMission }) {
       <div className="odm-card">
         <div className="odm-card-body" style={{ padding: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-            {mission.droneCode} {mission.droneName}
+            {mission.droneName && mission.droneName !== mission.droneCode ? `${mission.droneCode} ${mission.droneName}` : mission.droneCode ?? 'Chưa gán drone'}
           </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 2 }}>
-            {mission.droneModel ?? 'DJI Matrice 350 RTK'}
+            {mission.droneModel ?? '—'}
           </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 2 }}>
-            Payload {mission.dronePayload ?? 'Zenmuse H20T (THERMAL)'}
+            Payload {mission.dronePayload ?? '—'}
           </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 8 }}>
-            Lấy tại {mission.droneStation ?? 'Trạm Nhà Bè'} · cách {mission.droneStationDistanceKm ?? 2.2} km
+            Lấy tại {mission.droneStation ?? '—'} · cách {mission.droneStationDistanceKm == null ? '—' : `${mission.droneStationDistanceKm} km`}
           </div>
           <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-            <StatusBadge tone="green">{mission.droneReadinessPct ?? 96}% Sẵn sàng</StatusBadge>
+            <StatusBadge tone="gray">{mission.droneReadinessPct == null ? 'Chưa có telemetry' : `${mission.droneReadinessPct}% Sẵn sàng`}</StatusBadge>
             <span style={{ color: 'var(--tx3)' }}>
-              {mission.droneHoursSinceMaintenance ?? 38} giờ bay từ lần bảo trì
+              {mission.droneHoursSinceMaintenance == null ? 'Chưa có dữ liệu bảo trì' : `${mission.droneHoursSinceMaintenance} giờ bay từ lần bảo trì`}
             </span>
           </div>
         </div>
@@ -331,7 +336,7 @@ function Footer({
     )
   }
 
-  if (mission.status === 'ACCEPTED' && mission.acceptedAt) {
+  if (mission.status === 'ACCEPTED') {
     return (
       <div
         style={{
@@ -349,11 +354,20 @@ function Footer({
         }}
       >
         <span>
-          Bạn đã chấp nhận mission này lúc {formatHm(mission.acceptedAt)} · quản lý đã được thông báo
+          Mission đã được nhận · {mission.backendStatus ?? 'SCHEDULED'}
         </span>
-        <a className="odm-btn odm-btn-sm" href={operatorHref({ screen: 'missions' })}>
-          Về danh sách
+        <a className="odm-btn odm-btn-sm" href={operatorHref({ screen: 'connect' })}>
+          Kết nối GCS
         </a>
+      </div>
+    )
+  }
+
+  if (mission.status === 'IN_FLIGHT') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+        <a className="odm-btn" href={operatorHref({ screen: 'upload' })}>Review media</a>
+        <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'flight' })}>Mở buồng lái</a>
       </div>
     )
   }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
-import { operatorApi } from '../api/operatorApi'
+import { missionApi } from '../../mission/api/missionApi'
+import { useActiveMission } from '../api/useActiveMission'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -13,11 +14,9 @@ import type {
 import { FlightStepHeader } from './FlightStepper'
 import { MaintenanceTicketDialog } from './MaintenanceTicketDialog'
 
-const MISSION_ID = 'MSN-2609-0142-1'
-const DRONE_CODE = 'DRN-02'
 
 const ITEMS: { key: PostflightItemKey; label: string; detail: string }[] = [
-  { key: 'battery_ok', label: 'Pin', detail: 'còn 34%' },
+  { key: 'battery_ok', label: 'Pin', detail: '' },
   { key: 'motor_ok', label: 'Động cơ', detail: '' },
   { key: 'camera_ok', label: 'Camera', detail: '' },
   { key: 'gps_ok', label: 'GPS', detail: '' },
@@ -33,6 +32,10 @@ type ResultsState = Partial<Record<PostflightItemKey, PreflightItemResult>>
 
 /** OPR-09W — Postflight check: 6 mục Đạt/Không đạt + ticket bảo trì + hoàn tất mission. */
 export function PostflightScreen() {
+  const mission = useActiveMission()
+  const missionLabel = mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'
+  const droneCode = mission.data?.droneCode ?? ''
+  const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<ResultsState>({})
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -53,12 +56,23 @@ export function PostflightScreen() {
 
   async function handleComplete() {
     setSaving(true)
+    setError(null)
     try {
-      const record = await operatorApi.savePostflight(MISSION_ID, {
-        items,
-        notes,
-      })
-      setCompleted({ overallOk: record.overallOk })
+      if (!mission.missionId || !droneCode) throw new Error('Mission chưa được gán drone')
+      if (items.length !== ITEMS.length) throw new Error('Hãy đánh giá đủ 6 mục trước khi hoàn tất')
+      if (mission.data?.status === 'RETURNING') await missionApi.startPostflight(mission.missionId)
+      const result = (key: PostflightItemKey) => results[key] === 'ok' ? 'PASS' : 'FAIL'
+      const inspectionResults: Record<string, 'PASS' | 'FAIL'> = {
+        a1: result('physical_condition_ok'), a2: result('physical_condition_ok'),
+        p1: result('motor_ok'), p2: result('motor_ok'),
+        e1: result('battery_ok'), e2: result('camera_ok'),
+        e3: result('gps_ok'), d1: result('communication_ok'),
+      }
+      await missionApi.postFlightStatus(mission.missionId, droneCode, failItems.length ? 'MAINTENANCE' : 'AVAILABLE', notes, inspectionResults)
+      await missionApi.completeMission(mission.missionId)
+      setCompleted({ overallOk: failItems.length === 0 })
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không hoàn tất được mission')
     } finally {
       setSaving(false)
     }
@@ -71,13 +85,12 @@ export function PostflightScreen() {
   ) {
     setTicketSubmitting(true)
     try {
-      await operatorApi.createMaintenanceTicket(MISSION_ID, {
-        issueType,
-        severity,
-        description,
-      })
-      setTicketCreated(true)
+      void issueType; void severity
+      setNotes((current) => [current, description].filter(Boolean).join('\n'))
       setShowTicketDialog(false)
+      setTicketCreated(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không ghi được thông tin bảo trì')
     } finally {
       setTicketSubmitting(false)
     }
@@ -86,7 +99,7 @@ export function PostflightScreen() {
   if (completed) {
     return (
       <div className="odm-card" style={{ marginBottom: 0 }}>
-        <FlightStepHeader title="Postflight check" missionId={MISSION_ID} active={7} />
+        <FlightStepHeader title="Postflight check" missionId={missionLabel} active={7} />
         <div style={{ padding: '18px 22px', maxWidth: 640, margin: '0 auto' }}>
           <div
             style={{
@@ -99,7 +112,7 @@ export function PostflightScreen() {
           >
             <div style={{ fontSize: 18, fontWeight: 700 }}>Mission đã hoàn tất</div>
             <div className="odm-mono" style={{ fontSize: 12, marginTop: 4 }}>
-              {MISSION_ID}
+              {missionLabel}
             </div>
             <dl style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Row label="mission.status" value="Hoàn thành" />
@@ -107,8 +120,7 @@ export function PostflightScreen() {
                 label="postflight_check"
                 value={`Đã lưu · overall_ok = ${completed.overallOk}`}
               />
-              <Row label={`drone.status (${DRONE_CODE})`} value="Sẵn sàng" />
-              <Row label="Media" value="20 tệp đang chờ xác thực" />
+              <Row label={`drone.status (${droneCode})`} value={completed.overallOk ? 'Sẵn sàng' : 'Bảo trì'} />
             </dl>
             <a
               className="odm-btn odm-btn-ok"
@@ -127,7 +139,7 @@ export function PostflightScreen() {
     <div className="odm-card" style={{ marginBottom: 0 }}>
       <FlightStepHeader
         title="Postflight check"
-        missionId={MISSION_ID}
+        missionId={missionLabel}
         active={7}
         right={
           <span
@@ -143,12 +155,13 @@ export function PostflightScreen() {
               flex: 'none',
             }}
           >
-            {DRONE_CODE} Hải Âu
+            {droneCode || 'Chưa gán drone'}
           </span>
         }
       />
       <div style={{ padding: '18px 22px', maxWidth: 760, margin: '0 auto' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {error && <p role="alert" style={{ color: 'var(--red-fg)' }}>{error}</p>}
           <div
             className="odm-mono"
             style={{ fontSize: 13, fontWeight: 700, color: 'var(--tx2)' }}
@@ -239,8 +252,8 @@ export function PostflightScreen() {
                 Có mục không đạt: {failItems.map((f) => f.label).join(', ')}
               </div>
               <div style={{ fontSize: 12.5, marginTop: 4 }}>
-                Nên tạo ticket bảo trì để quản lý xử lý trước khi drone nhận mission
-                mới. Thông tin được điền sẵn.
+                Backend sẽ tự tạo ticket bảo trì khi hoàn tất kiểm tra với mục không đạt.
+                Bạn có thể bổ sung mô tả vào ghi chú.
               </div>
               <button
                 type="button"
@@ -249,7 +262,7 @@ export function PostflightScreen() {
                 onClick={() => setShowTicketDialog(true)}
                 disabled={ticketCreated}
               >
-                {ticketCreated ? 'Đã tạo ticket' : 'Tạo ticket bảo trì'}
+                {ticketCreated ? 'Đã thêm ghi chú' : 'Thêm mô tả bảo trì'}
               </button>
             </div>
           ) : null}
@@ -270,8 +283,8 @@ export function PostflightScreen() {
 
       {showTicketDialog ? (
         <MaintenanceTicketDialog
-          droneCode={DRONE_CODE}
-          missionId={MISSION_ID}
+          droneCode={droneCode}
+          missionId={missionLabel}
           defaultIssueType="OTHER"
           defaultDescription={`Không đạt: ${failItems.map((f) => f.label).join(', ')}`}
           submitting={ticketSubmitting}

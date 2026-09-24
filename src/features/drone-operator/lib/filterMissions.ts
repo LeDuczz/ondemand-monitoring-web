@@ -2,7 +2,7 @@ import type { OperatorMission, OperatorMissionTab } from '../types/mission'
 
 export function tabOfMission(mission: OperatorMission, _now: Date): OperatorMissionTab {
   if (mission.status === 'PENDING') return 'pending'
-  if (mission.status === 'COMPLETED' || mission.status === 'REJECTED') return 'history'
+  if (mission.status === 'COMPLETED' || mission.status === 'REJECTED' || mission.status === 'FAILED') return 'history'
   return 'upcoming'
 }
 
@@ -23,7 +23,7 @@ export function filterMissions(
   if (!q) return missions
   return missions.filter((m) => {
     const haystack = normalize(
-      [m.id, m.title, m.location, m.droneCode ?? '', m.droneName ?? ''].join(' '),
+      [m.id, m.missionCode ?? '', m.title, m.location, m.droneCode ?? '', m.droneName ?? ''].join(' '),
     )
     return haystack.includes(q)
   })

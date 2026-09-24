@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { env } from '../../../config/env'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
@@ -194,7 +195,7 @@ function ReschedulePanel({
         <dt>Lịch bay</dt>
         <dd>
           {mission.scheduledStartAt
-            ? `${new Date(mission.scheduledStartAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} → ${new Date(mission.scheduledEndAt!).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+            ? `${new Date(mission.scheduledStartAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}${mission.scheduledEndAt ? ` → ${new Date(mission.scheduledEndAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ' · chưa có giờ kết thúc'}`
             : '—'}
         </dd>
         {mission.addressText && (
@@ -211,6 +212,8 @@ function ReschedulePanel({
           <button
             type="button"
             className="odm-btn"
+            disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
+            title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ đổi lịch mission' : undefined}
             onClick={() => setReschedule(true)}
           >
             Đổi lịch
@@ -301,7 +304,7 @@ function MissionBlock({ mission, selected, onSelect }: MissionBlockProps) {
     : HOUR_START
   const endH = mission.scheduledEndAt
     ? toLocalHours(mission.scheduledEndAt)
-    : startH + 1
+    : startH
 
   const top = Math.max(0, (startH - HOUR_START) * PX_PER_HOUR)
   const height = Math.max(18, (endH - startH) * PX_PER_HOUR - 2)
@@ -604,7 +607,7 @@ export function SchedulePage() {
                 >
                   <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
                   <div style={{ fontWeight: 600 }}>
-                    Không có mission nào trong khoảng này
+                    Chưa có mission được lên lịch trong tuần này
                   </div>
                   <div style={{ fontSize: 13, marginTop: 4 }}>
                     Mission xuất hiện sau khi đơn được duyệt và tạo mission.

@@ -76,13 +76,27 @@ function statusMark(status: PreflightItemStatus) {
 export default function RuntimePreflightCheck({
   onReady,
 }: {
-  onReady: () => void
+  onReady: () => void | Promise<void>
 }) {
   const [checkId, setCheckId] = useState<string | null>(null)
   const [status, setStatus] = useState<PreflightStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [retrySeed, setRetrySeed] = useState(0)
   const [displayProgress, setDisplayProgress] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function continuePreflight() {
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      await onReady()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Backend preflight failed. Please retry.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const checks = status?.checks?.length ? status.checks : pendingChecks
   const progress = status?.progress ?? 0
@@ -423,8 +437,8 @@ export default function RuntimePreflightCheck({
             </button>
           )}
           <button
-            disabled={!okEnabled}
-            onClick={onReady}
+            disabled={!okEnabled || submitting}
+            onClick={() => void continuePreflight()}
             style={{
               height: 42,
               padding: '0 18px',

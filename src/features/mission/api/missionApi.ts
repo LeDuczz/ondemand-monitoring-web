@@ -5,7 +5,9 @@ import type {
   DeviceStatus,
 } from '../types/mission'
 
-const API_BASE = 'http://localhost:8080/api'
+import { env } from '../../../config/env'
+
+const API_BASE = `${env.apiBaseUrl}/api`
 
 interface ApiResponse<T> {
   success: boolean
@@ -18,7 +20,6 @@ import { authenticatedFetch } from '../../auth/api/authApi'
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers)
   headers.set('Content-Type', 'application/json')
-  headers.set('X-Operator-Id', 'OP-001')
 
   const res = await authenticatedFetch(url, {
     ...options,
@@ -53,6 +54,45 @@ export const missionApi = {
     return request<Mission[]>(`${API_BASE}/missions/pending-assignment`)
   },
 
+  getMyMissions: async (): Promise<Mission[]> => {
+    return request<Mission[]>(`${API_BASE}/missions/mine`)
+  },
+
+  assignResources: async (
+    missionId: string,
+    droneId: string,
+    operatorId: string,
+  ): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-resources`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ droneId, operatorId }),
+      },
+    )
+  },
+
+  acceptMyMission: async (missionId: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/accept-current`,
+      { method: 'PATCH' },
+    )
+  },
+
+  rejectMyMission: async (missionId: string, reason: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/reject-current`,
+      { method: 'PATCH', body: JSON.stringify({ reason }) },
+    )
+  },
+
+  handoverMyMission: async (missionId: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/handover-current`,
+      { method: 'POST' },
+    )
+  },
+
   assignDrone: async (missionId: string, droneId: string): Promise<Mission> => {
     return request<Mission>(
       `${API_BASE}/missions/${missionId}/assign-drone?droneId=${encodeURIComponent(droneId)}`,
@@ -70,11 +110,10 @@ export const missionApi = {
   // F3.1 Accept mission (PATCH /api/missions/{id}/accept)
   acceptMission: async (
     missionId: string,
-    operatorId = 'OP-001',
+    _operatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/accept`, {
+    return request<Mission>(`${API_BASE}/missions/${missionId}/accept-current`, {
       method: 'PATCH',
-      headers: { 'X-Operator-Id': operatorId },
     })
   },
 
@@ -82,11 +121,10 @@ export const missionApi = {
   rejectMission: async (
     missionId: string,
     reason: string,
-    operatorId = 'OP-001',
+    _operatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/reject`, {
+    return request<Mission>(`${API_BASE}/missions/${missionId}/reject-current`, {
       method: 'PATCH',
-      headers: { 'X-Operator-Id': operatorId },
       body: JSON.stringify({ reason }),
     })
   },
@@ -98,13 +136,21 @@ export const missionApi = {
     })
   },
 
+  getTelemetryReadiness: async (missionId: string): Promise<{
+    droneCode: string
+    ready: boolean
+    lastTelemetryAt: string | null
+  }> => {
+    return request(`${API_BASE}/missions/${encodeURIComponent(missionId)}/telemetry-readiness`)
+  },
+
   // F3.2 Run Pre-flight check (POST /api/missions/{id}/preflight-check?deviceCode=DRONE-01)
   runPreflightCheck: async (
     missionId: string,
     deviceCode: string,
   ): Promise<PreflightCheck> => {
     return request<PreflightCheck>(
-      `${API_BASE}/missions/${missionId}/preflight-check?deviceCode=${encodeURIComponent(
+      `${API_BASE}/missions/${missionId}/preflight-check?droneCode=${encodeURIComponent(
         deviceCode,
       )}`,
       { method: 'POST' },
@@ -125,11 +171,10 @@ export const missionApi = {
   // F3.2 Handover Control (POST /api/missions/{id}/handover)
   handoverControl: async (
     missionId: string,
-    newOperatorId = 'OP-001',
+    _newOperatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/handover`, {
+    return request<Mission>(`${API_BASE}/missions/${missionId}/handover-current`, {
       method: 'POST',
-      headers: { 'X-Operator-Id': newOperatorId },
     })
   },
 
@@ -156,7 +201,7 @@ export const missionApi = {
     formData.append('deviceCode', deviceCode)
     formData.append('file', file)
 
-    const res = await fetch(`${API_BASE}/missions/${missionId}/media`, {
+    const res = await authenticatedFetch(`${API_BASE}/missions/${missionId}/media`, {
       method: 'POST',
       body: formData,
     })
@@ -190,14 +235,15 @@ export const missionApi = {
     deviceCode: string,
     newDeviceStatus: DeviceStatus,
     notes: string,
+    inspectionResults?: Record<string, 'PASS' | 'WARN' | 'FAIL'>,
   ): Promise<Mission> => {
     return request<Mission>(
-      `${API_BASE}/missions/${missionId}/postflight-status?deviceCode=${encodeURIComponent(
+      `${API_BASE}/missions/${missionId}/postflight-status?droneCode=${encodeURIComponent(
         deviceCode,
       )}`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ newDeviceStatus, notes }),
+        body: JSON.stringify({ newDeviceStatus, notes, inspectionResults }),
       },
     )
   },
@@ -206,6 +252,13 @@ export const missionApi = {
   completeMission: async (missionId: string): Promise<Mission> => {
     return request<Mission>(`${API_BASE}/missions/${missionId}/complete`, {
       method: 'POST',
+    })
+  },
+
+  failMission: async (missionId: string, reason: string): Promise<Mission> => {
+    return request<Mission>(`${API_BASE}/missions/${missionId}/fail`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     })
   },
 }

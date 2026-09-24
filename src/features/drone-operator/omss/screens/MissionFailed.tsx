@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import type { Mission, Drone } from '../types'
 
 interface Props {
   mission: Mission
   drone: Drone
   reason: string
-  onSubmit: () => void
   onMissions: () => void
 }
 
@@ -13,17 +11,8 @@ export default function MissionFailed({
   mission,
   drone,
   reason,
-  onSubmit,
   onMissions,
 }: Props) {
-  const [narrative, setNarrative] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-
-  function submit() {
-    setSubmitted(true)
-    setTimeout(onSubmit, 1000)
-  }
-
   return (
     <div
       className="fade-in"
@@ -125,7 +114,7 @@ export default function MissionFailed({
             ['Failure reason', reason],
             ['Drone', `${drone.name} (${drone.id})`],
             ['Drone status', drone.state],
-            ['Operator', 'J. Martinez (OPR-112)'],
+            ['Operator', mission.operatorId || 'Current operator'],
             [
               'Timestamp',
               new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
@@ -176,7 +165,7 @@ export default function MissionFailed({
             Required actions
           </div>
           {[
-            'Submit incident report to supervising manager',
+            'Failure reason has been recorded in the mission',
             'Confirm drone physical condition and safety',
             'Upload any available mission media',
             'Await manager review and re-assignment decision',
@@ -207,7 +196,6 @@ export default function MissionFailed({
           ))}
         </div>
 
-        {/* Narrative */}
         <div
           style={{
             background: 'var(--surface)',
@@ -218,21 +206,14 @@ export default function MissionFailed({
             boxShadow: 'var(--shadow)',
           }}
         >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 500,
-              color: 'var(--text)',
-              marginBottom: 8,
-            }}
-          >
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>
             Incident narrative
           </div>
           <textarea
-            value={narrative}
-            onChange={(e) => setNarrative(e.target.value)}
+            value={reason}
+            readOnly
             rows={4}
-            placeholder="Describe the sequence of events, any safety actions taken, and current drone status…"
+            aria-label="Recorded incident narrative"
             style={{ width: '100%', padding: '10px 12px', fontSize: 13 }}
           />
         </div>
@@ -254,21 +235,10 @@ export default function MissionFailed({
             Back to missions
           </button>
           <button
-            onClick={submit}
-            disabled={submitted}
-            style={{
-              flex: 1,
-              padding: '11px',
-              borderRadius: 8,
-              border: 'none',
-              background: submitted ? 'var(--surface-2)' : 'var(--red)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: submitted ? 'var(--text-3)' : '#fff',
-              cursor: submitted ? 'not-allowed' : 'pointer',
-            }}
+            disabled
+            style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: 'var(--surface-2)', fontSize: 14, fontWeight: 600, color: 'var(--text-3)' }}
           >
-            {submitted ? 'Submitting…' : 'Submit incident report'}
+            Incident recorded
           </button>
         </div>
       </div>

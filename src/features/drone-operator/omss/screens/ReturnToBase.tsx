@@ -1,50 +1,59 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { flightControlApi, type FlightControlStatus } from '../api/flightControlApi'
 import type { Drone } from '../types'
 
 interface Props {
   drone: Drone
+  missionId: string
   onLanded: () => void
 }
 
-export default function ReturnToBase({ drone: init, onLanded }: Props) {
-  const [drone, setDrone] = useState({
-    ...init,
-    altitude: 45.2,
-    groundSpeed: 8.7,
-  })
-  const [distM, setDistM] = useState(2200)
-  const [phase, setPhase] = useState<'rth' | 'descend' | 'land' | 'landed'>(
-    'rth',
-  )
+export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
+  const [telemetry, setTelemetry] = useState<FlightControlStatus | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [phase, setPhase] = useState<'rth' | 'descend' | 'land' | 'landed'>('rth')
+  const stableLandingSamples = useRef(0)
+  const completed = useRef(false)
+  const onLandedRef = useRef(onLanded)
+  onLandedRef.current = onLanded
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setDistM((d) => {
-        const next = Math.max(0, d - 18)
-        if (next < 1000 && d >= 1000) setPhase('descend')
-        if (next < 200 && d >= 200) setPhase('land')
-        if (next === 0) {
+    let mounted = true
+    stableLandingSamples.current = 0
+    completed.current = false
+    async function poll() {
+      try {
+        const status = await flightControlApi.status()
+        if (!mounted) return
+        setTelemetry(status)
+        setError(null)
+        const sessionMatches = status.missionId === missionId && status.deviceCode === drone.id
+        const landed = sessionMatches && status.connection?.px4Connected === true &&
+          status.positionReady === true && status.inAir === false &&
+          typeof status.altitudeM === 'number' && status.altitudeM <= 1.2 &&
+          typeof status.speedMps === 'number' && status.speedMps <= 0.5
+        stableLandingSamples.current = landed ? stableLandingSamples.current + 1 : 0
+        if (stableLandingSamples.current >= 2 && !completed.current) {
+          completed.current = true
           setPhase('landed')
-          setTimeout(onLanded, 1600)
+          onLandedRef.current()
+        } else if (sessionMatches && status.inAir && typeof status.altitudeM === 'number') {
+          setPhase(status.altitudeM <= 1.2 ? 'land' : status.altitudeM <= 5 ? 'descend' : 'rth')
         }
-        return next
-      })
-      setDrone((d) => ({
-        ...d,
-        altitude: phase === 'rth' ? d.altitude : Math.max(0, d.altitude - 0.6),
-        groundSpeed:
-          phase === 'land'
-            ? Math.max(0.3, d.groundSpeed - 0.2)
-            : phase === 'descend'
-              ? 4.2
-              : 8.5,
-        battery: Math.max(0, d.battery - 0.003),
-      }))
-    }, 1000)
-    return () => clearInterval(id)
-  }, [phase])
+      } catch (cause) {
+        if (mounted) {
+          stableLandingSamples.current = 0
+          setError(cause instanceof Error ? cause.message : 'Telemetry unavailable')
+        }
+      }
+    }
+    void poll()
+    const timer = window.setInterval(() => void poll(), 2000)
+    return () => { mounted = false; window.clearInterval(timer) }
+  }, [drone.id, missionId])
 
-  const pct = Math.round(((2200 - distM) / 2200) * 100)
+  const distM: number | null = null // Flight Controller does not expose distance-to-home.
+  const pct = 0
   const phaseLabel = {
     rth: 'Returning to home',
     descend: 'Descending',
@@ -101,6 +110,7 @@ export default function ReturnToBase({ drone: init, onLanded }: Props) {
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
           Drone is executing autonomous return-to-home sequence.
         </p>
+        {error && <p role="alert" style={{ color: 'var(--red)' }}>{error}</p>}
 
         {/* Phase steps */}
         <div
@@ -203,7 +213,7 @@ export default function ReturnToBase({ drone: init, onLanded }: Props) {
                   color: 'var(--text)',
                 }}
               >
-                {distM} m
+                {distM === null ? 'Unavailable' : `${distM} m`}
               </span>
             </div>
             <div
@@ -239,24 +249,24 @@ export default function ReturnToBase({ drone: init, onLanded }: Props) {
           {[
             {
               l: 'Altitude AGL',
-              v: `${drone.altitude.toFixed(1)} m`,
+              v: typeof telemetry?.altitudeM === 'number' ? `${telemetry.altitudeM.toFixed(1)} m` : '—',
               warn: false,
             },
             {
               l: 'Ground speed',
-              v: `${drone.groundSpeed.toFixed(1)} m/s`,
+              v: typeof telemetry?.speedMps === 'number' ? `${telemetry.speedMps.toFixed(1)} m/s` : '—',
               warn: false,
             },
             {
               l: 'Battery',
-              v: `${drone.battery.toFixed(0)}%`,
-              warn: drone.battery < 25,
+              v: typeof telemetry?.batteryPercent === 'number' ? `${telemetry.batteryPercent.toFixed(0)}%` : '—',
+              warn: typeof telemetry?.batteryPercent === 'number' && telemetry.batteryPercent < 25,
             },
-            { l: 'GPS satellites', v: `${drone.gpsCount}`, warn: false },
-            { l: 'Signal (RSSI)', v: `${drone.rssi}%`, warn: drone.rssi < 40 },
+            { l: 'GPS satellites', v: '—', warn: false },
+            { l: 'Signal (RSSI)', v: '—', warn: false },
             {
               l: 'ETA home',
-              v: distM > 0 ? `~${Math.ceil(distM / 18)}s` : 'Landed',
+              v: phase === 'landed' ? 'Landed' : '—',
               warn: false,
             },
           ].map((t) => (

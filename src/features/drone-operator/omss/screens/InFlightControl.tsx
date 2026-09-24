@@ -20,8 +20,9 @@ interface Props {
   onEmergency: () => void
   autoStartPlan: boolean
   onAutoStartPlanConsumed: () => void
-  onPreflightReady?: () => void
+  onPreflightReady?: () => Promise<void>
   onCompleteMission?: () => void
+  onReviewMedia?: () => void
 }
 
 type FlightCommand =
@@ -95,6 +96,8 @@ type IconName =
 
 type ControlStatus = {
   online?: boolean
+  missionId?: string | null
+  deviceCode?: string | null
   positionReady?: boolean
   positionGazebo?: { x: number; y: number }
   positionNed?: { northM: number; eastM: number; downM: number }
@@ -2407,6 +2410,7 @@ const FlightControls = memo(function FlightControls({
   onWeatherPreset,
   onToggleMore,
   onCompleteMission,
+  onReviewMedia,
 }: {
   busyCommand: FlightCommand | null
   lidarDetailsOpen: boolean
@@ -2416,6 +2420,7 @@ const FlightControls = memo(function FlightControls({
   onWeatherPreset: (preset: WeatherPreset) => void
   onToggleMore: () => void
   onCompleteMission?: () => void
+  onReviewMedia?: () => void
 }) {
   useRenderDiagnostics('FlightControls')
   const thermalEnabled = status?.thermalEnabled === true
@@ -2597,6 +2602,17 @@ const FlightControls = memo(function FlightControls({
         >
           Camera & Tools
         </div>
+        {onReviewMedia && (
+          <button
+            onClick={onReviewMedia}
+            disabled={busyCommand !== null}
+            style={{ ...buttonStyle(), width: 62 }}
+            title="Review captured media"
+          >
+            <Icon name="photo" size={14} />
+            <span>Review</span>
+          </button>
+        )}
         <button
           onClick={() => onCommand('thermal_toggle')}
           disabled={busyCommand !== null}
@@ -2678,8 +2694,10 @@ export default function InFlightControl({
   onAutoStartPlanConsumed,
   onPreflightReady,
   onCompleteMission,
+  onReviewMedia,
 }: Props) {
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
+  const requiresBackendPreflight = Boolean(onPreflightReady)
   const [elapsed, setElapsed] = useState(5)
   const [progress, setProgress] = useState(18.2)
   const [isOnline, setIsOnline] = useState(false)
@@ -2690,6 +2708,7 @@ export default function InFlightControl({
   const [moreOpen, setMoreOpen] = useState(false)
   const [lidarDetailsOpen, setLidarDetailsOpen] = useState(false)
   const [preflightReady, setPreflightReady] = useState(() => {
+    if (requiresBackendPreflight) return false
     try {
       return window.localStorage.getItem(preflightStorageKey) === 'true'
     } catch {
@@ -2740,6 +2759,10 @@ export default function InFlightControl({
     : '#22c55e'
 
   useEffect(() => {
+    if (requiresBackendPreflight) {
+      setPreflightReady(false)
+      return
+    }
     try {
       setPreflightReady(
         window.localStorage.getItem(preflightStorageKey) === 'true',
@@ -2747,7 +2770,7 @@ export default function InFlightControl({
     } catch {
       setPreflightReady(false)
     }
-  }, [preflightStorageKey])
+  }, [preflightStorageKey, requiresBackendPreflight])
 
   const clearPreflightReady = useCallback(() => {
     try {
@@ -2774,7 +2797,10 @@ export default function InFlightControl({
         const response = await fetch(`${controlBaseUrl}/api/control/status`, {
           cache: 'no-store',
         })
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        if (!response.ok) {
+          const failure = await response.json().catch(() => null)
+          throw new Error(failure?.error ?? `HTTP ${response.status}`)
+        }
         const status = await response
           .json()
           .catch(() => ({ online: response.ok }))
@@ -2809,6 +2835,14 @@ export default function InFlightControl({
         setLastCommand('Preflight required')
         return
       }
+      if (
+        (command === 'photo' || command === 'video_toggle') &&
+        (controlStatus?.missionId !== (mission.backendId ?? mission.id) ||
+          controlStatus?.deviceCode !== drone.id)
+      ) {
+        setLastCommand('Flight Controller is not bound to this mission. Reconnect GCS before capturing media.')
+        return
+      }
       const routePoints = (mission.routePoints ?? [])
         .slice()
         .sort((a, b) => a.sequence - b.sequence)
@@ -2825,7 +2859,7 @@ export default function InFlightControl({
             command,
             ...(command === 'auto_plan_start'
               ? {
-                  missionId: mission.id,
+                  missionId: mission.backendId ?? mission.id,
                   waypoints: routePoints.map((point) => ({
                     sequence: point.sequence,
                     simX: point.simX,
@@ -2849,14 +2883,14 @@ export default function InFlightControl({
 
         if (command === 'return_to_base') onRTB()
         if (command === 'emergency_stop') onEmergency()
-      } catch {
-        setLastCommand('Controller offline or command rejected')
-        setIsOnline(false)
+      } catch (cause) {
+        setLastCommand(cause instanceof Error ? cause.message : 'Controller offline or command rejected')
+        if (cause instanceof TypeError) setIsOnline(false)
       } finally {
         setBusyCommand(null)
       }
     },
-    [mission.id, mission.routePoints, onEmergency, onRTB, preflightReady],
+    [controlStatus?.deviceCode, controlStatus?.missionId, drone.id, mission.backendId, mission.id, mission.routePoints, onEmergency, onRTB, preflightReady],
   )
 
   useEffect(() => {
@@ -2963,7 +2997,8 @@ export default function InFlightControl({
       setIsOnline(false)
     }
   }, [])
-  const handlePreflightReady = useCallback(() => {
+  const handlePreflightReady = useCallback(async () => {
+    await onPreflightReady?.()
     try {
       window.localStorage.setItem(preflightStorageKey, 'true')
     } catch {
@@ -2971,7 +3006,6 @@ export default function InFlightControl({
     }
     setPreflightReady(true)
     setLastCommand('Preflight completed')
-    onPreflightReady?.()
   }, [onPreflightReady, preflightStorageKey])
 
   return (
@@ -3424,6 +3458,7 @@ export default function InFlightControl({
             onWeatherPreset={handleWeatherPreset}
             onToggleMore={handleToggleMore}
             onCompleteMission={onCompleteMission}
+            onReviewMedia={onReviewMedia}
           />
         </section>
 

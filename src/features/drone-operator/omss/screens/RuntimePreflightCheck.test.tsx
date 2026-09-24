@@ -156,6 +156,30 @@ describe('RuntimePreflightCheck', () => {
     expect(onReady).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps the preflight screen open when backend telemetry is not ready', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input) =>
+      String(input).endsWith('/api/preflight/check')
+        ? mockJson({ checkId: 'PF-READY', status: 'CHECKING' })
+        : mockJson(readyPayload),
+    )
+    const onReady = vi.fn().mockRejectedValueOnce(new Error('Waiting for fresh drone telemetry'))
+    render(<RuntimePreflightCheck onReady={onReady} />)
+
+    const continueButton = await screen.findByRole('button', {
+      name: /ok - go to drone operator/i,
+    })
+    await waitFor(() => expect((continueButton as HTMLButtonElement).disabled).toBe(false), {
+      timeout: 5000,
+    })
+    fireEvent.click(continueButton)
+
+    await waitFor(() =>
+      expect(screen.getByText('Waiting for fresh drone telemetry')).toBeTruthy(),
+    )
+    expect(onReady).toHaveBeenCalledTimes(1)
+    expect((continueButton as HTMLButtonElement).disabled).toBe(false)
+  }, 6500)
+
   it('keeps OK disabled on critical failure and retries with a new check', async () => {
     let attempt = 0
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {

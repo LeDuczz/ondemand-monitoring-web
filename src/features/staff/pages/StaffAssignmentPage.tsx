@@ -3,40 +3,41 @@ import { PortalLayout } from '../../../shared/components/portal/PortalLayout'
 import { Button } from '../../../shared/components/Button'
 import { missionApi } from '../../mission/api/missionApi'
 import type { Mission } from '../../mission/types/mission'
+import { droneApi, type AvailableDrone } from '../api/droneApi'
+import { operatorApi, type AvailableOperator } from '../api/operatorApi'
 
 export function StaffAssignmentPage() {
   const [missions, setMissions] = useState<Mission[]>([])
+  const [drones, setDrones] = useState<AvailableDrone[]>([])
+  const [operators, setOperators] = useState<AvailableOperator[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Demo hardcoded operators and drones for assignment dropdown
-  const operators = [
-    { id: 'OPR-112', name: 'Seed Operator (OPR-112)' },
-    { id: 'OPR-105', name: 'Backup Operator (OPR-105)' },
-  ]
-  const drones = [
-    { id: '30000000-0000-0000-0000-000000000006', name: 'Eagle-48 X500 (SIM)' },
-    { id: '30000000-0000-0000-0000-000000000005', name: 'Eagle-47 X500 (active demo)' },
-  ]
+  const [assigningMissionId, setAssigningMissionId] = useState<string | null>(null)
 
   const [selectedDrone, setSelectedDrone] = useState<Record<string, string>>({})
   const [selectedOperator, setSelectedOperator] = useState<Record<string, string>>({})
 
-  const fetchMissions = async () => {
+  const fetchAssignments = async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await missionApi.getPendingAssignmentMissions()
-      setMissions(data || [])
-    } catch (e: any) {
-      setError(e.message || 'Failed to fetch pending missions')
+      const [missionData, availableDrones, availableOperators] = await Promise.all([
+        missionApi.getPendingAssignmentMissions(),
+        droneApi.getAvailable(),
+        operatorApi.getAvailable(),
+      ])
+      setMissions(missionData || [])
+      setDrones(availableDrones)
+      setOperators(availableOperators)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to load assignments')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchMissions()
+    fetchAssignments()
   }, [])
 
   const handleAssign = async (missionId: string) => {
@@ -44,18 +45,18 @@ export function StaffAssignmentPage() {
     const operatorId = selectedOperator[missionId]
     
     if (!droneId || !operatorId) {
-      alert('Please choose both a drone and an operator before assigning.')
+      setError('Please choose both a drone and an operator before assigning.')
       return
     }
-    
+    setAssigningMissionId(missionId)
+    setError(null)
     try {
-      // Must assign drone first as per backend validation
-      await missionApi.assignDrone(missionId, droneId)
-      await missionApi.assignOperator(missionId, operatorId)
-      alert('Assigned successfully. The mission is now visible to the operator.')
-      fetchMissions()
-    } catch (e: any) {
-      alert(e.message || 'Assignment failed')
+      await missionApi.assignResources(missionId, droneId, operatorId)
+      await fetchAssignments()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Assignment failed')
+    } finally {
+      setAssigningMissionId(null)
     }
   }
 
@@ -68,13 +69,12 @@ export function StaffAssignmentPage() {
       <section className="portal-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2>Pending Assignments</h2>
-          <Button onClick={fetchMissions}>Refresh</Button>
+          <Button onClick={fetchAssignments}>Refresh</Button>
         </div>
 
+        {error && <p role="alert" style={{ color: 'var(--red-text)' }}>{error}</p>}
         {loading ? (
           <p>Loading missions...</p>
-        ) : error ? (
-          <p style={{ color: 'var(--red-text)' }}>{error}</p>
         ) : missions.length === 0 ? (
           <p>No missions waiting for assignment.</p>
         ) : (
@@ -104,7 +104,7 @@ export function StaffAssignmentPage() {
                       style={{ padding: 6, borderRadius: 4, width: '100%' }}
                     >
                       <option value="">-- Choose Drone --</option>
-                      {drones.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      {drones.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
                     </select>
                   </td>
                   <td style={{ padding: '12px 8px' }}>
@@ -114,11 +114,17 @@ export function StaffAssignmentPage() {
                       style={{ padding: 6, borderRadius: 4, width: '100%' }}
                     >
                       <option value="">-- Choose Operator --</option>
-                      {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                      {operators.map(o => (
+                        <option key={o.id} value={o.id}>
+                          {o.fullName} ({o.email})
+                        </option>
+                      ))}
                     </select>
                   </td>
                   <td style={{ padding: '12px 8px' }}>
-                    <Button onClick={() => handleAssign(m.id)}>Assign</Button>
+                    <Button disabled={assigningMissionId !== null} onClick={() => void handleAssign(m.id)}>
+                      {assigningMissionId === m.id ? 'Assigning…' : 'Assign'}
+                    </Button>
                   </td>
                 </tr>
               ))}

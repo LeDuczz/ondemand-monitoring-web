@@ -233,7 +233,7 @@ export const missionApi = {
   postFlightStatus: async (
     missionId: string,
     deviceCode: string,
-    newDeviceStatus: DeviceStatus,
+    newDroneStatus: DeviceStatus,
     notes: string,
     inspectionResults?: Record<string, 'PASS' | 'WARN' | 'FAIL'>,
   ): Promise<Mission> => {
@@ -243,7 +243,7 @@ export const missionApi = {
       )}`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ newDeviceStatus, notes, inspectionResults }),
+        body: JSON.stringify({ newDroneStatus, notes, inspectionResults }),
       },
     )
   },

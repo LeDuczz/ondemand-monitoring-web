@@ -29,7 +29,7 @@ function actionFor(mission: OperatorMission) {
     case 'IN_FLIGHT':
       return { label: 'Mở buồng lái', cls: 'odm-btn-bl', href: operatorHref({ screen: 'flight' }) }
     case 'ACCEPTED': {
-      if (!mission.date || !mission.startTime) return { label: 'Bắt đầu', cls: 'odm-btn-ok', href: operatorHref({ screen: 'connect' }) }
+      if (!mission.date || !mission.startTime) return { label: 'Chi tiết', cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
       const start = new Date(`${mission.date}T${mission.startTime}:00+07:00`)
       const soon = start.getTime() - Date.now() < 4 * 60 * 60 * 1000
       return soon
@@ -93,9 +93,14 @@ export function MissionListTable({
             return (
               <tr key={mission.id}>
                 <td>
-                  <span className="odm-mono" style={{ fontWeight: 600 }}>
+                  <a
+                    className="odm-mono"
+                    href={operatorHref({ screen: 'missionDetail', missionId: mission.id })}
+                    onClick={() => setActiveMissionId(mission.id)}
+                    style={{ fontWeight: 600, color: 'var(--blue)', textDecoration: 'none' }}
+                  >
                     {mission.missionCode ?? mission.id}
-                  </span>
+                  </a>
                 </td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{mission.title}</div>

@@ -22,9 +22,15 @@ export type BackendMission = {
   mediaType?: string | null
   plan?: {
     id?: string | null
+    planningAlgorithm?: string
+    feasibilityStatus?: string | null
     plannedDistanceM?: number | null
     plannedDurationSec?: number | null
     maxPlannedAltitudeM?: number | null
+    estimatedEnergyMah?: number | null
+    estimatedBatteryUsedPercent?: number | null
+    availableBatteryPercentAtPlanning?: number | null
+    estimatedRemainingBatteryPercent?: number | null
     waypoints?: Array<{
       id?: string
       sequence?: number
@@ -97,6 +103,37 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
     rejectReason: source.rejectionReason ?? undefined,
     radiusMeters: undefined,
     ceilingMeters: source.plan?.maxPlannedAltitudeM ?? undefined,
+    targetX: source.longitude,
+    targetY: source.latitude,
+    planSummary: source.plan
+      ? {
+          planningAlgorithm: source.plan.planningAlgorithm,
+          feasibilityStatus: source.plan.feasibilityStatus,
+          plannedDistanceM: source.plan.plannedDistanceM,
+          plannedDurationSec: source.plan.plannedDurationSec,
+          maxPlannedAltitudeM: source.plan.maxPlannedAltitudeM,
+          estimatedEnergyMah: source.plan.estimatedEnergyMah,
+          estimatedBatteryUsedPercent: source.plan.estimatedBatteryUsedPercent,
+          availableBatteryPercentAtPlanning: source.plan.availableBatteryPercentAtPlanning,
+          estimatedRemainingBatteryPercent: source.plan.estimatedRemainingBatteryPercent,
+          waypointCount: source.plan.waypoints?.length ?? 0,
+          waypoints: (source.plan.waypoints ?? [])
+            .filter((point) =>
+              typeof point.sequence === 'number' &&
+              typeof point.simX === 'number' &&
+              typeof point.simY === 'number')
+            .sort((a, b) => Number(a.sequence) - Number(b.sequence))
+            .map((point) => ({
+              id: point.id ?? `wp-${point.sequence}`,
+              sequence: Number(point.sequence),
+              simX: Number(point.simX),
+              simY: Number(point.simY),
+              altitudeM: point.altitudeM,
+              plannedSpeedMps: point.plannedSpeedMps,
+              reason: point.reason,
+            })),
+        }
+      : undefined,
   }
 }
 

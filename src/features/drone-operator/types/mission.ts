@@ -23,6 +23,8 @@ export type OperatorMission = {
   respondBy?: string
   radiusMeters?: number
   ceilingMeters?: number
+  targetX?: number | null
+  targetY?: number | null
   photoCount?: number
   photoNote?: string
   videoCount?: number
@@ -34,6 +36,31 @@ export type OperatorMission = {
   droneStationDistanceKm?: number
   droneReadinessPct?: number
   droneHoursSinceMaintenance?: number
+  planSummary?: OperatorMissionPlanSummary
+}
+
+export type OperatorMissionPlanSummary = {
+  planningAlgorithm?: string
+  feasibilityStatus?: string | null
+  plannedDistanceM?: number | null
+  plannedDurationSec?: number | null
+  maxPlannedAltitudeM?: number | null
+  estimatedEnergyMah?: number | null
+  estimatedBatteryUsedPercent?: number | null
+  availableBatteryPercentAtPlanning?: number | null
+  estimatedRemainingBatteryPercent?: number | null
+  waypointCount: number
+  waypoints: OperatorMissionPlanWaypoint[]
+}
+
+export type OperatorMissionPlanWaypoint = {
+  id: string
+  sequence: number
+  simX: number
+  simY: number
+  altitudeM?: number | null
+  plannedSpeedMps?: number | null
+  reason?: string | null
 }
 
 export type OperatorProfile = {

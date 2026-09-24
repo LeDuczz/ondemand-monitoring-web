@@ -180,6 +180,23 @@ function waypointLabel(point: MissionRoutePoint) {
   return `${point.sequence}. ${reason} | x ${formatPointValue(point.simX)}, y ${formatPointValue(point.simY)}, z ${formatPointValue(point.altitudeM)}m`
 }
 
+function normalizedWaypointReason(
+  point: MissionRoutePoint,
+  index: number,
+  total: number,
+) {
+  const reason = point.reason?.toUpperCase()
+  if (reason === 'START' || index === 0) return 'START'
+  if (reason === 'TARGET' || index === total - 1) return 'TARGET'
+  return reason || 'CRUISE'
+}
+
+function waypointVisualLabel(reason: string, point: MissionRoutePoint) {
+  if (reason === 'START') return 'START'
+  if (reason === 'TARGET') return 'TARGET'
+  return String(point.sequence)
+}
+
 function MissionPlanMap({ mission }: { mission: Mission }) {
   const meta = useSimulationMapMeta()
   const routePoints = (mission.routePoints ?? [])
@@ -197,8 +214,13 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
             : mapPlanPoint(point, bounds as ReturnType<typeof planBounds>),
         }))
   const targetPoint =
-    screenPoints.find(({ point }) => point.reason.toUpperCase() === 'TARGET') ??
+    screenPoints.find(
+      ({ point }, index) =>
+        normalizedWaypointReason(point, index, screenPoints.length) ===
+        'TARGET',
+    ) ??
     screenPoints[screenPoints.length - 1]
+  const startPoint = screenPoints[0]
   const routePolyline = screenPoints
     .map(({ screen }) => `${screen.x.toFixed(2)},${screen.y.toFixed(2)}`)
     .join(' ')
@@ -242,7 +264,11 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
             strokeLinejoin="round"
           />
           {screenPoints.map(({ point, screen }) => {
-            const reason = point.reason.toUpperCase()
+            const reason = normalizedWaypointReason(
+              point,
+              screenPoints.findIndex((entry) => entry.point.id === point.id),
+              screenPoints.length,
+            )
             const isStart = reason === 'START'
             const isTarget = reason === 'TARGET'
             return (
@@ -257,20 +283,47 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
                   strokeWidth="2"
                 />
                 <text
-                  x={screen.x + 8}
-                  y={screen.y - 8}
+                  x={screen.x}
+                  y={screen.y + (isStart || isTarget ? 2.5 : -8)}
+                  textAnchor={isStart || isTarget ? 'middle' : undefined}
                   fill="#ffffff"
-                  fontSize="9"
-                  fontWeight="700"
+                  fontSize={isStart || isTarget ? '10' : '9'}
+                  fontWeight="800"
                   paintOrder="stroke"
                   stroke="rgba(15,23,42,.85)"
                   strokeWidth="2"
                 >
-                  {point.sequence}
+                  {waypointVisualLabel(reason, point)}
                 </text>
               </g>
             )
           })}
+          {startPoint && (
+            <>
+              <circle
+                cx={startPoint.screen.x}
+                cy={startPoint.screen.y}
+                r="14"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="2"
+                opacity=".58"
+              />
+              <text
+                x={startPoint.screen.x}
+                y={Math.min(MAP_HEIGHT - 12, startPoint.screen.y + 24)}
+                textAnchor="middle"
+                fill="#dcfce7"
+                fontSize="10"
+                fontWeight="800"
+                paintOrder="stroke"
+                stroke="rgba(15,23,42,.9)"
+                strokeWidth="2"
+              >
+                START POINT
+              </text>
+            </>
+          )}
           {targetPoint && (
             <>
               <circle
@@ -293,7 +346,7 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
                 stroke="rgba(15,23,42,.9)"
                 strokeWidth="2"
               >
-                ORDER
+                TARGET WAYPOINT
               </text>
             </>
           )}

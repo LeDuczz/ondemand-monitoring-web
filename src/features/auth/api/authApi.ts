@@ -134,11 +134,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
     )
   }
 
-  if (
-    response.status === 401 &&
-    !skipRefresh &&
-    path !== '/api/auth/refresh'
-  ) {
+  if (response.status === 401 && !skipRefresh && path !== '/api/auth/refresh') {
     const refreshed = await refreshAccessTokenOnce()
     if (refreshed?.accessToken) {
       return request<T>(path, {
@@ -176,7 +172,7 @@ export const authApi = {
   resendOtp: (body: ResendOtpRequest) =>
     request<void>('/api/auth/resend-otp', { method: 'POST', body }),
   login: (body: LoginRequest) =>
-    request<AuthResponse>('/api/auth/login', {
+    request<AuthResponse>('/api/v1/auth/login', {
       method: 'POST',
       body,
       skipRefresh: true,

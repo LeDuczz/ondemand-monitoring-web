@@ -17,6 +17,7 @@ import { customerHref } from '../routes'
 type Step = 1 | 2 | 3 | 4
 type MapPoint = { x: number; y: number }
 type AiScore = { score: number; level: 'good' | 'warn' | 'bad'; notes: string[] }
+const SIMULATION_MAP_TOP_IMAGE = '/simulation-viewer/simulation_map_top.png'
 
 type SimulationMapMeta = {
   image?: string
@@ -93,6 +94,12 @@ const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
 const MAP_TOP_CROP_PERCENT = 0
+const MAP_IMAGE_CROP = {
+  left: 13.53,
+  top: 23,
+  right: 13.67,
+  bottom: 1.9,
+}
 const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
 
 const card: React.CSSProperties = {
@@ -915,7 +922,7 @@ export function CreateOrderPage() {
   const selectedTime = preferredTimes.find((time) => time.id === form.preferredTimeId)
   const selectedDeliverable = deliverables.find((item) => item.deliverableTypeId === form.deliverableTypeId)
   const score = useMemo(() => scoreRequest(form), [form])
-  const mapImageUrl = `${env.apiBaseUrl}${mapMeta?.image ?? '/simulation-viewer/simulation_map_top.png'}${
+  const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}${
     mapMeta?.imageVersion ? `?v=${encodeURIComponent(mapMeta.imageVersion)}` : ''
   }`
   const selectedSimPoint = useMemo<[number, number]>(
@@ -1098,9 +1105,10 @@ export function CreateOrderPage() {
     setMapPoint({ x: mapX, y: mapY })
 
     if (mapMeta) {
+      const bounds = getMapBounds(mapMeta)
       const visibleMapY = MAP_TOP_CROP_PERCENT + mapY * ((100 - MAP_TOP_CROP_PERCENT) / 100)
-      const simX = mapMeta.minX + (mapX / 100) * (mapMeta.maxX - mapMeta.minX)
-      const simY = mapMeta.maxY - (visibleMapY / 100) * (mapMeta.maxY - mapMeta.minY)
+      const simX = bounds.minX + (mapX / 100) * (bounds.maxX - bounds.minX)
+      const simY = bounds.maxY - (visibleMapY / 100) * (bounds.maxY - bounds.minY)
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
@@ -1454,36 +1462,26 @@ function StepLocation({
   const restrictedZones = zones.filter((zone) => zone.restricted)
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
   const isBlocked = !restrictedValidation.valid
-  const bounds = mapMeta ? getMapBounds(mapMeta) : null
-  const rawActiveLeft = mapMeta && bounds ? ((mapMeta.minX - bounds.minX) / (bounds.maxX - bounds.minX)) * 100 : 0
-  const rawActiveTop = mapMeta && bounds ? ((bounds.maxY - mapMeta.maxY) / (bounds.maxY - bounds.minY)) * 100 : 0
-  const activeWidth = mapMeta && bounds ? ((mapMeta.maxX - mapMeta.minX) / (bounds.maxX - bounds.minX)) * 100 : 100
-  const rawActiveHeight = mapMeta && bounds ? ((mapMeta.maxY - mapMeta.minY) / (bounds.maxY - bounds.minY)) * 100 : 100
-  const activeLeft = rawActiveLeft
-  const activeTop = rawActiveTop + rawActiveHeight * (MAP_TOP_CROP_PERCENT / 100)
-  const activeHeight = rawActiveHeight * ((100 - MAP_TOP_CROP_PERCENT) / 100)
-  const mapAspectRatio = mapMeta
-    ? `${mapMeta.maxX - mapMeta.minX} / ${(mapMeta.maxY - mapMeta.minY) * ((100 - MAP_TOP_CROP_PERCENT) / 100)}`
-    : '1 / 1'
+  const cropWidth = 100 - MAP_IMAGE_CROP.left - MAP_IMAGE_CROP.right
+  const cropHeight = 100 - MAP_IMAGE_CROP.top - MAP_IMAGE_CROP.bottom
   const layerStyle: React.CSSProperties = {
     position: 'absolute',
-    left: `${-(activeLeft / activeWidth) * 100}%`,
-    top: `${-(activeTop / activeHeight) * 100}%`,
-    width: `${(100 / activeWidth) * 100}%`,
-    height: `${(100 / activeHeight) * 100}%`,
+    inset: 0,
     pointerEvents: 'none',
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16, alignItems: 'start' }}>
       <div
         role="button"
         tabIndex={0}
         onClick={onMapClick}
         style={{
           position: 'relative',
-          aspectRatio: mapAspectRatio,
-          minHeight: 0,
+          width: '100%',
+          aspectRatio: `${100 - MAP_IMAGE_CROP.left - MAP_IMAGE_CROP.right} / ${100 - MAP_IMAGE_CROP.top - MAP_IMAGE_CROP.bottom}`,
+          alignSelf: 'start',
+          justifySelf: 'stretch',
           overflow: 'hidden',
           cursor: 'crosshair',
           background: 'transparent',
@@ -1501,9 +1499,10 @@ function StepLocation({
             src={mapImageUrl}
             style={{
               position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
+              left: `${-(MAP_IMAGE_CROP.left / cropWidth) * 100}%`,
+              top: `${-(MAP_IMAGE_CROP.top / cropHeight) * 100}%`,
+              width: `${(100 / cropWidth) * 100}%`,
+              height: `${(100 / cropHeight) * 100}%`,
               objectFit: 'fill',
               opacity: 0.96,
               userSelect: 'none',

@@ -13,6 +13,8 @@ import {
   type PreferredTime,
 } from '../api/orderApi'
 
+const SIMULATION_MAP_TOP_IMAGE = '/simulation-viewer/simulation_map_top.png'
+
 type MapMeta = {
   image?: string
   imageVersion?: string
@@ -222,7 +224,7 @@ export function CustomerCreateRequestPage() {
   const user = authSession.getUser()
   const { meta, error: mapError } = useSimulationMapMeta()
   const mapImageUrl = meta
-    ? `${env.apiBaseUrl}${meta.image ?? '/simulation-viewer/simulation_map_top.png'}${meta.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : ''}`
+    ? `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}${meta.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : ''}`
     : ''
   const zones = useSimulationZones()
   const [form, setForm] = useState<FormState>(initialForm)

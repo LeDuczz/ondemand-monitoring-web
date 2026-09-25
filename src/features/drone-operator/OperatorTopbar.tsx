@@ -30,6 +30,20 @@ export function OperatorTopbar({
       </div>
 
       <div className="odm-opr-topbar-actions">
+        <a
+          href={operatorHref({ screen: 'maintenance' })}
+          className="odm-btn"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '6px 14px',
+            borderRadius: 8,
+            textDecoration: 'none',
+          }}
+        >
+          Bảo trì & Sự cố
+        </a>
+
         <div className="odm-opr-search">
           <span className="odm-opr-search-icon" aria-hidden="true">
             <svg

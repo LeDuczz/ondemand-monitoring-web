@@ -119,6 +119,9 @@ function removeStorageByPrefix(storage: Storage, prefix: string) {
 function clearCompletedMissionState(missionId: string, missionLabel: string, droneCode: string) {
   clearActiveMissionId(missionId)
   window.sessionStorage.removeItem(postflightTelemetryKey(missionId))
+  window.sessionStorage.removeItem(`fieldwise.operator.handoverAcknowledged.${missionId}`)
+  window.sessionStorage.removeItem('odm.operator.autoStartSimulation')
+  removeStorageByPrefix(window.sessionStorage, `omss.droneOperator.backendPreflightToken.${missionId}.`)
   window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionLabel}.${droneCode}`)
   window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionId}.${droneCode}`)
   removeStorageByPrefix(window.localStorage, `omss.droneOperator.preflightState.${missionId}.`)
@@ -236,6 +239,9 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       // Try marking mission completed if not automatically completed by BE
       await missionApi.completeMission(effectiveMissionId).catch(() => {
         // Ignored if BE already auto-completed on status submit
+      })
+      await missionApi.disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED').catch(() => {
+        // The mission is complete; local cleanup must still happen even if the session was already closed.
       })
       clearCompletedMissionState(effectiveMissionId, missionLabel, droneCode)
 

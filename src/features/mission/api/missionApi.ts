@@ -137,6 +137,13 @@ export const missionApi = {
     })
   },
 
+  disconnectGcs: async (missionId: string, reason = 'MISSION_COMPLETED'): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/disconnect?reason=${encodeURIComponent(reason)}`,
+      { method: 'POST' },
+    )
+  },
+
   getTelemetryReadiness: async (missionId: string): Promise<{
     droneCode: string
     ready: boolean

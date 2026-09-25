@@ -97,6 +97,7 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
               <div style={{ fontSize: 15, fontWeight: 700 }}>{uploaded}/{files.length} file đã lên{uploading ? ` · ${uploading} đang lên` : ''}{manual ? ` · ${manual} cần xử lý thủ công` : ''}</div>
               <div style={{ fontSize: 12.5, color: 'var(--tx3)', marginTop: 2 }}>Ảnh/video vẫn ở Flight Controller cho đến khi duyệt hoặc xóa bản local.</div>
             </div>
+            <a className="odm-btn" href={operatorHref({ screen: 'flight', missionId: missionId ?? undefined })}>Quay lại buồng lái</a>
             <button type="button" className="odm-btn" onClick={() => void refresh()}>Làm mới</button>
             {files.length > 0 && approvable.length === 0 ? <a className="odm-btn odm-btn-ok" href={operatorHref({ screen: 'postflight', missionId: missionId ?? undefined })}>Tiếp tục: Postflight</a>
               : <button type="button" className="odm-btn odm-btn-p" disabled={!missionId || !!busyId || approvable.length === 0}

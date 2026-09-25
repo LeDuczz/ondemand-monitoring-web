@@ -241,7 +241,7 @@ export function ConnectStatusPanel({
       {state === 'connected' ? (
         <a
           className="odm-btn odm-btn-p"
-          href={operatorHref({ screen: 'handover' })}
+          href={operatorHref({ screen: 'handover', missionId: mission?.id })}
           style={{ width: '100%' }}
         >
           Tiếp tục: bàn giao quyền điều khiển

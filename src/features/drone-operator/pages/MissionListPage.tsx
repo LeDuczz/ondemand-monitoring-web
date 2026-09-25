@@ -255,7 +255,7 @@ function NextFlightCard({
       <a
         className="odm-btn odm-btn-ok"
         style={{ width: '100%', justifyContent: 'center' }}
-        href={operatorHref({ screen: 'connect' })}
+        href={operatorHref({ screen: 'connect', missionId: mission.id })}
         onClick={() => setActiveMissionId(mission.id)}
       >
         Bắt đầu chuyến bay

@@ -4,6 +4,11 @@ import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import {
+  SIMULATION_MAP_DEFAULT_CROP,
+  simulationMapImageStyle,
+  worldToViewportPercent,
+} from '../../../shared/lib/simulationMapProjection'
+import {
   aiVerdictLabel,
   aiVerdictTone,
   findingSeverityTone,
@@ -43,6 +48,16 @@ const infoReasonChips = [
 ]
 
 type ModalKind = 'reject' | 'info' | null
+
+const SIMULATION_MAP_TOP_IMAGE = '/simulation-viewer/simulation_map_top.png'
+const SIMULATION_MAP_VERSION = '20260925113000'
+const SIMULATION_MAP_BOUNDS = {
+  minX: -417.15933531249993,
+  maxX: 415.15933531249993,
+  minY: -414.65578218749977,
+  maxY: 417.66288843749993,
+}
+const SIMULATION_MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 
 export function OrderReviewPage({ orderId }: { orderId: string }) {
   const orderQuery = useApiQuery(
@@ -145,7 +160,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
           <AttachmentsCard order={order} />
         </div>
         <div className="odm-mgr-review-col">
-          <AnalysisCard query={analysisQuery} />
+          <AnalysisCard query={analysisQuery} order={order} />
           <ResourcePreviewCard query={previewQuery} />
           <InternalNoteCard orderId={order.id} />
         </div>
@@ -197,6 +212,93 @@ function formatVn(iso: string): string {
   )}:${pad(d.getMinutes())}`
 }
 
+function humanizeMediaRequirement(label: string) {
+  const jsonStart = label.indexOf('{')
+  if (jsonStart === -1) return label
+
+  const title = label.slice(0, jsonStart).replace(/[·\s]+$/, '')
+  try {
+    const data = JSON.parse(label.slice(jsonStart)) as Record<string, unknown>
+    const parts = [
+      typeof data.mediaType === 'string' ? data.mediaType : null,
+      typeof data.quantity === 'number' ? `${data.quantity} mục` : null,
+      typeof data.resolution === 'string' ? data.resolution : null,
+      typeof data.radiusM === 'number' ? `${data.radiusM} m` : null,
+      typeof data.estimatedAreaHa === 'number' ? `${data.estimatedAreaHa} ha` : null,
+    ].filter(Boolean)
+    return parts.length > 0 ? `${title} · ${parts.join(' · ')}` : title
+  } catch {
+    return title || label
+  }
+}
+
+function buildOrderFallbackAnalysis(order: OrderDetail): OrderAnalysis {
+  const findings: OrderAnalysis['findings'] = []
+
+  if (order.center) {
+    findings.push({
+      severity: 'INFO',
+      message: `Đã xác định tọa độ mục tiêu X ${order.center.lon.toFixed(1)} · Y ${order.center.lat.toFixed(1)}.`,
+      evidence: {
+        center: `${order.center.lat}, ${order.center.lon}`,
+        address: order.addressText ?? '—',
+      },
+      customerAction: null,
+    })
+  } else {
+    findings.push({
+      severity: 'WARNING',
+      message: 'Đơn chưa có tọa độ mục tiêu rõ ràng, cần bổ sung trước khi tạo mission.',
+      evidence: {
+        address: order.addressText ?? '—',
+      },
+      customerAction: null,
+    })
+  }
+
+  findings.push({
+    severity: order.radiusM == null ? 'WARNING' : 'INFO',
+    message: order.radiusM == null
+      ? 'Chưa có bán kính giám sát, cần xác nhận phạm vi bay.'
+      : `Bán kính giám sát khoảng ${order.radiusM} m.`,
+    evidence: {
+      radius_m: order.radiusM != null ? `${order.radiusM}` : '—',
+      service: order.serviceName,
+    },
+    customerAction: null,
+  })
+
+  if (order.purpose) {
+    findings.push({
+      severity: 'INFO',
+      message: 'Mục tiêu giám sát đã có mô tả để đội vận hành lập kế hoạch.',
+      evidence: {
+        purpose: order.purpose.slice(0, 140),
+      },
+      customerAction: null,
+    })
+  }
+
+  const warningCount = findings.filter((finding) => finding.severity === 'WARNING').length
+  const blockerCount = findings.filter((finding) => finding.severity === 'BLOCKER').length
+
+  return {
+    overallVerdict: blockerCount > 0 ? 'INFEASIBLE' : warningCount > 0 ? 'RISKY' : 'FEASIBLE',
+    blockerCount,
+    warningCount,
+    ruleEngineMs: null,
+    createdAt: null,
+    llmSummary: `Phân tích nhanh từ thông tin đơn: ${order.serviceName}. ${
+      blockerCount > 0
+        ? 'Cần xử lý lỗi chặn trước khi duyệt.'
+        : warningCount > 0
+          ? 'Có một số thông tin cần kiểm tra thêm trước khi tạo mission.'
+          : 'Đủ thông tin cơ bản để chuyển sang bước duyệt và tạo mission.'
+    }`,
+    findings,
+  }
+}
+
 function ReviewBreadcrumbHeader({ orderId }: { orderId: string }) {
   return (
     <div className="odm-mgr-review-breadcrumb">
@@ -241,6 +343,15 @@ function CustomerCard({ order }: { order: OrderDetail }) {
 }
 
 function LocationCard({ order }: { order: OrderDetail }) {
+  const target = order.center
+    ? worldToViewportPercent({ simX: order.center.lon, simY: order.center.lat }, SIMULATION_MAP_BOUNDS, SIMULATION_MAP_IMAGE_CROP)
+    : { x: 50, y: 50 }
+  const radiusPx = order.radiusM == null
+    ? null
+    : Math.min(24, Math.max(4, (order.radiusM / (SIMULATION_MAP_BOUNDS.maxX - SIMULATION_MAP_BOUNDS.minX)) * 100))
+  const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}?v=${SIMULATION_MAP_VERSION}`
+  const imageStyle = simulationMapImageStyle(SIMULATION_MAP_IMAGE_CROP)
+
   if (!order.center && !order.addressText) {
     return (
       <div className="odm-card">
@@ -255,28 +366,30 @@ function LocationCard({ order }: { order: OrderDetail }) {
     <div className="odm-card">
       <div className="odm-card-header">Vị trí và vùng giám sát</div>
       <div className="odm-mgr-review-map">
-        <svg
-          viewBox="0 0 520 220"
-          role="img"
-          aria-label="Bản đồ khu vực giám sát"
-        >
-          <rect width="520" height="220" className="odm-mgr-map-bg" />
-          {order.radiusM != null && <circle cx="260" cy="110" r="80" className="odm-mgr-map-radius" />}
-          <g transform="translate(260,110)">
+        <img
+          className="odm-mgr-review-map-image"
+          src={mapImageUrl}
+          alt=""
+          style={imageStyle}
+        />
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Bản đồ khu vực giám sát">
+          {radiusPx != null && <circle cx={target.x} cy={target.y} r={radiusPx} className="odm-mgr-map-radius" vectorEffect="non-scaling-stroke" />}
+          <g transform={`translate(${target.x},${target.y})`}>
             <path
-              d="M0 0 C-10 -12 -13 -18 -13 -23 a13 13 0 0126 0 C13 -18 10 -12 0 0z"
+              d="M0 0 C-2.6 -3.1 -3.5 -4.7 -3.5 -6 a3.5 3.5 0 017 0 C3.5 -4.7 2.6 -3.1 0 0z"
               className="odm-mgr-map-pin"
+              vectorEffect="non-scaling-stroke"
             />
-            <circle cy="-23" r="4.5" className="odm-mgr-map-pin-dot" />
+            <circle cy="-6" r="1.2" className="odm-mgr-map-pin-dot" vectorEffect="non-scaling-stroke" />
           </g>
-          {order.radiusM != null && <text
-            x="260"
-            y="200"
+          <text
+            x={target.x}
+            y={Math.min(97, target.y + 9)}
             textAnchor="middle"
             className="odm-mgr-map-label"
           >
-            Bán kính giám sát: {order.radiusM} m
-          </text>}
+            TARGET · X {order.center?.lon.toFixed(1) ?? '—'} · Y {order.center?.lat.toFixed(1) ?? '—'}
+          </text>
         </svg>
       </div>
       <div className="odm-card-body odm-mgr-review-location-grid">
@@ -328,7 +441,7 @@ function ServiceCard({ order }: { order: OrderDetail }) {
             order.mediaRequirements.map((req, i) => (
               <div key={i}>
                 <dt>Media {i + 1}</dt>
-                <dd>{req.label}</dd>
+                <dd>{humanizeMediaRequirement(req.label)}</dd>
               </div>
             ))
           )}
@@ -381,8 +494,10 @@ function AttachmentsCard({ order }: { order: OrderDetail }) {
 
 function AnalysisCard({
   query,
+  order,
 }: {
   query: ReturnType<typeof useApiQuery<OrderAnalysis>>
+  order: OrderDetail
 }) {
   if (query.loading) {
     return (
@@ -396,14 +511,8 @@ function AnalysisCard({
       </div>
     )
   }
-  if (query.error || !query.data) {
-    return (
-      <div className="odm-card">
-        <div className="odm-card-body">{query.error ? 'Không tải được phân tích AI.' : 'Chưa có phân tích AI cho đơn này.'}</div>
-      </div>
-    )
-  }
-  const analysis = query.data
+  const analysis = query.data ?? buildOrderFallbackAnalysis(order)
+  const isFallback = !query.data
   const tone = aiVerdictTone[analysis.overallVerdict]
   return (
     <div className="odm-card">
@@ -415,9 +524,18 @@ function AnalysisCard({
           >
             rule {analysis.ruleEngineMs} ms
           </span>
-        ) : null}
+        ) : (
+          <span style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}>
+            {isFallback ? 'phân tích nhanh' : null}
+          </span>
+        )}
       </div>
       <div className="odm-card-body">
+        {Boolean(query.error) && (
+          <div className="odm-mgr-review-hint" style={{ marginBottom: 10 }}>
+            Chưa tải được bản phân tích lưu từ backend, đang hiển thị phân tích nhanh từ dữ liệu đơn.
+          </div>
+        )}
         <div className={`odm-mgr-verdict-banner odm-mgr-verdict-${tone}`}>
           <span className="odm-mgr-verdict-icon" aria-hidden="true">
             {analysis.overallVerdict === 'FEASIBLE' ? '✓' : '!'}

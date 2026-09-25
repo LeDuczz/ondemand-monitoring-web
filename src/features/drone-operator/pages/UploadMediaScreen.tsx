@@ -8,8 +8,8 @@ import { FlightStepHeader } from './FlightStepper'
 import { MediaTable } from './MediaTable'
 
 /** Existing upload layout backed by the selected mission's local media. */
-export function UploadMediaScreen() {
-  const missionId = getActiveMissionId()
+export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: string }) {
+  const missionId = routeMissionId ?? getActiveMissionId()
   const [items, setItems] = useState<LocalMedia[]>([])
   const [statuses, setStatuses] = useState<Record<string, string>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -98,7 +98,7 @@ export function UploadMediaScreen() {
               <div style={{ fontSize: 12.5, color: 'var(--tx3)', marginTop: 2 }}>Ảnh/video vẫn ở Flight Controller cho đến khi duyệt hoặc xóa bản local.</div>
             </div>
             <button type="button" className="odm-btn" onClick={() => void refresh()}>Làm mới</button>
-            {files.length > 0 && approvable.length === 0 ? <a className="odm-btn odm-btn-ok" href={operatorHref({ screen: 'postflight' })}>Tiếp tục: Postflight</a>
+            {files.length > 0 && approvable.length === 0 ? <a className="odm-btn odm-btn-ok" href={operatorHref({ screen: 'postflight', missionId: missionId ?? undefined })}>Tiếp tục: Postflight</a>
               : <button type="button" className="odm-btn odm-btn-p" disabled={!missionId || !!busyId || approvable.length === 0}
                   onClick={() => { void (async () => { for (const item of approvable) await approve(item) })() }}>Upload tất cả</button>}
           </div>

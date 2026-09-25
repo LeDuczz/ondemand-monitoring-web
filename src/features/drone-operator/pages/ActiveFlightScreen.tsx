@@ -9,8 +9,8 @@ import { operatorHref } from '../routes'
 const postflightTelemetryKey = (missionId: string) =>
   `fieldwise.operator.postflightTelemetry.${missionId}`
 
-export function ActiveFlightScreen() {
-  const missionId = getActiveMissionId()
+export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: string }) {
+  const missionId = routeMissionId ?? getActiveMissionId()
   const [mission, setMission] = useState<BackendMission | null>(null)
   const [error, setError] = useState<string | null>(null)
   const autoStart = window.sessionStorage.getItem('odm.operator.autoStartSimulation') === 'true'
@@ -37,7 +37,7 @@ export function ActiveFlightScreen() {
       drone={toFlightDrone(mission)}
       autoStartPlan={autoStart}
       onAutoStartPlanConsumed={() => window.sessionStorage.removeItem('odm.operator.autoStartSimulation')}
-      onReviewMedia={() => { window.location.hash = operatorHref({ screen: 'upload' }) }}
+      onReviewMedia={() => { window.location.hash = operatorHref({ screen: 'upload', missionId }) }}
       onCompleteMission={() => {
         void (async () => {
           const telemetrySnapshot = await flightControlApi.status().catch(() => null)
@@ -52,7 +52,7 @@ export function ActiveFlightScreen() {
           }
           await missionApi.startPostflight(mission.id)
           setActiveMissionId(mission.id)
-          window.location.hash = operatorHref({ screen: 'postflight' })
+          window.location.hash = operatorHref({ screen: 'postflight', missionId: mission.id })
         })().catch((cause) => setError(cause instanceof Error ? cause.message : 'Không chuyển được mission sang Postflight'))
       }}
       onRTB={() => {
@@ -60,7 +60,7 @@ export function ActiveFlightScreen() {
           missionApi.startPostflight(mission.id),
         ).then(() => {
           setActiveMissionId(mission.id)
-          window.location.hash = operatorHref({ screen: 'postflight' })
+          window.location.hash = operatorHref({ screen: 'postflight', missionId: mission.id })
         }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Không chuyển được mission sang RETURNING'))
       }}
       onEmergency={() => {

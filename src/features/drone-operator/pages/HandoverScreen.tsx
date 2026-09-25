@@ -14,8 +14,8 @@ const COMMITMENTS = [
 ]
 
 /** OPR-05W — Bàn giao quyền điều khiển: 4 cam kết + tick tổng + xác nhận. */
-export function HandoverScreen() {
-  const mission = useActiveMission()
+export function HandoverScreen({ missionId }: { missionId?: string }) {
+  const mission = useActiveMission(missionId)
   const missionLabel = mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'
   const [revoked, setRevoked] = useState(false)
   const [checked, setChecked] = useState<boolean[]>([
@@ -70,7 +70,7 @@ export function HandoverScreen() {
           {revoked ? (
             <RevokedBanner onReconfirm={() => setRevoked(false)} />
           ) : confirmed ? (
-            <ConfirmedBanner onRevoke={handleRevoke} />
+            <ConfirmedBanner missionId={mission.missionId} onRevoke={handleRevoke} />
           ) : (
             <>
               <div className="odm-card">
@@ -178,7 +178,7 @@ export function HandoverScreen() {
               <div style={{ display: 'flex', gap: 12 }}>
                 <a
                   className="odm-btn"
-                  href={operatorHref({ screen: 'connect' })}
+                  href={operatorHref({ screen: 'connect', missionId: mission.missionId })}
                   style={{ minWidth: 150 }}
                 >
                   Quay lại

@@ -2,6 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { env } from '../../../config/env'
 import { ApiError } from '../../../shared/api/httpClient'
+import {
+  SIMULATION_MAP_DEFAULT_CROP,
+  simulationMapAspectRatio,
+  simulationMapImageStyle,
+  viewportPercentToWorld,
+  worldToViewportPercent,
+} from '../../../shared/lib/simulationMapProjection'
 import { authSession } from '../../auth/api/authApi'
 import {
   customerApi,
@@ -93,13 +100,7 @@ const STEP_LABELS: Record<Step, string> = {
 const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
-const MAP_TOP_CROP_PERCENT = 0
-const MAP_IMAGE_CROP = {
-  left: 13.53,
-  top: 23,
-  right: 13.67,
-  bottom: 1.9,
-}
+const MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
 
 const card: React.CSSProperties = {
@@ -344,17 +345,8 @@ function validateRestrictedZones(
   }
 }
 
-function getMapBounds(meta: SimulationMapMeta) {
-  return meta.imageBounds ?? meta
-}
-
 function simPointToPercent(point: [number, number], meta: SimulationMapMeta) {
-  const bounds = getMapBounds(meta)
-
-  return {
-    x: ((point[0] - bounds.minX) / (bounds.maxX - bounds.minX)) * 100,
-    y: ((bounds.maxY - point[1]) / (bounds.maxY - bounds.minY)) * 100,
-  }
+  return worldToViewportPercent({ simX: point[0], simY: point[1] }, meta, MAP_IMAGE_CROP)
 }
 
 function useSimulationZones() {
@@ -1105,10 +1097,7 @@ export function CreateOrderPage() {
     setMapPoint({ x: mapX, y: mapY })
 
     if (mapMeta) {
-      const bounds = getMapBounds(mapMeta)
-      const visibleMapY = MAP_TOP_CROP_PERCENT + mapY * ((100 - MAP_TOP_CROP_PERCENT) / 100)
-      const simX = bounds.minX + (mapX / 100) * (bounds.maxX - bounds.minX)
-      const simY = bounds.maxY - (visibleMapY / 100) * (bounds.maxY - bounds.minY)
+      const { simX, simY } = viewportPercentToWorld({ x: mapX, y: mapY }, mapMeta, MAP_IMAGE_CROP)
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
@@ -1462,8 +1451,7 @@ function StepLocation({
   const restrictedZones = zones.filter((zone) => zone.restricted)
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
   const isBlocked = !restrictedValidation.valid
-  const cropWidth = 100 - MAP_IMAGE_CROP.left - MAP_IMAGE_CROP.right
-  const cropHeight = 100 - MAP_IMAGE_CROP.top - MAP_IMAGE_CROP.bottom
+  const imageStyle = simulationMapImageStyle(MAP_IMAGE_CROP)
   const layerStyle: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
@@ -1479,7 +1467,7 @@ function StepLocation({
         style={{
           position: 'relative',
           width: '100%',
-          aspectRatio: `${100 - MAP_IMAGE_CROP.left - MAP_IMAGE_CROP.right} / ${100 - MAP_IMAGE_CROP.top - MAP_IMAGE_CROP.bottom}`,
+          aspectRatio: simulationMapAspectRatio(MAP_IMAGE_CROP),
           alignSelf: 'start',
           justifySelf: 'stretch',
           overflow: 'hidden',
@@ -1499,10 +1487,7 @@ function StepLocation({
             src={mapImageUrl}
             style={{
               position: 'absolute',
-              left: `${-(MAP_IMAGE_CROP.left / cropWidth) * 100}%`,
-              top: `${-(MAP_IMAGE_CROP.top / cropHeight) * 100}%`,
-              width: `${(100 / cropWidth) * 100}%`,
-              height: `${(100 / cropHeight) * 100}%`,
+              ...imageStyle,
               objectFit: 'fill',
               opacity: 0.96,
               userSelect: 'none',

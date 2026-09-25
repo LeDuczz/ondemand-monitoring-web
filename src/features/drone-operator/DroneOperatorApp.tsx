@@ -47,7 +47,7 @@ export function DroneOperatorApp() {
 
   // Buồng lái renders full-screen without the shell, same as OMSS.
   if (route.screen === 'flight') {
-    return <ActiveFlightScreen />
+    return <ActiveFlightScreen missionId={route.missionId} />
   }
 
   return (
@@ -70,11 +70,11 @@ function renderScreen(route: OperatorRoute, searchQuery: string) {
   if (route.screen === 'missionDetail')
     return <MissionDetailScreen missionId={route.missionId} />
   if (route.screen === 'availability') return <AvailabilityScreen />
-  if (route.screen === 'connect') return <ConnectDroneScreen />
-  if (route.screen === 'handover') return <HandoverScreen />
-  if (route.screen === 'preflight') return <PreflightScreen />
-  if (route.screen === 'upload') return <UploadMediaScreen />
-  if (route.screen === 'postflight') return <PostflightScreen />
+  if (route.screen === 'connect') return <ConnectDroneScreen missionId={route.missionId} />
+  if (route.screen === 'handover') return <HandoverScreen missionId={route.missionId} />
+  if (route.screen === 'preflight') return <PreflightScreen missionId={route.missionId} />
+  if (route.screen === 'upload') return <UploadMediaScreen missionId={route.missionId} />
+  if (route.screen === 'postflight') return <PostflightScreen missionId={route.missionId} />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return (
     <PlaceholderPage

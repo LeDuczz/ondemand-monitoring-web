@@ -27,13 +27,13 @@ function actionFor(mission: OperatorMission) {
     case 'PENDING':
       return { label: 'Phản hồi', cls: 'odm-btn-p', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
     case 'IN_FLIGHT':
-      return { label: 'Mở buồng lái', cls: 'odm-btn-bl', href: operatorHref({ screen: 'flight' }) }
+      return { label: 'Mở buồng lái', cls: 'odm-btn-bl', href: operatorHref({ screen: 'flight', missionId: mission.id }) }
     case 'ACCEPTED': {
       if (!mission.date || !mission.startTime) return { label: 'Chi tiết', cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
       const start = new Date(`${mission.date}T${mission.startTime}:00+07:00`)
       const soon = start.getTime() - Date.now() < 4 * 60 * 60 * 1000
       return soon
-        ? { label: 'Bắt đầu', cls: 'odm-btn-ok', href: operatorHref({ screen: 'connect' }) }
+        ? { label: 'Bắt đầu', cls: 'odm-btn-ok', href: operatorHref({ screen: 'connect', missionId: mission.id }) }
         : { label: 'Chi tiết', cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
     }
     case 'COMPLETED':

@@ -3,6 +3,11 @@ import { useEffect, useState } from 'react'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import {
+  SIMULATION_MAP_DEFAULT_CROP,
+  simulationMapImageStyle,
+  worldToViewportPercent,
+} from '../../../shared/lib/simulationMapProjection'
 import { env } from '../../../config/env'
 import { operatorApi } from '../api/operatorApi'
 import { setActiveMissionId } from '../api/liveMission'
@@ -230,9 +235,10 @@ function MapPlaceholder({ mission }: { mission: OperatorMission }) {
     : null
   const project = (point: { simX: number; simY: number }) => {
     if (!bounds) return { x: 50, y: 50 }
+    if (meta) return worldToViewportPercent(point, meta, SIMULATION_MAP_DEFAULT_CROP)
     const width = Math.max(1, bounds.maxX - bounds.minX)
     const height = Math.max(1, bounds.maxY - bounds.minY)
-    const pad = meta ? 0 : 10
+    const pad = 10
     return {
       x: pad + ((point.simX - bounds.minX) / width) * (100 - pad * 2),
       y: pad + ((bounds.maxY - point.simY) / height) * (100 - pad * 2),
@@ -256,6 +262,7 @@ function MapPlaceholder({ mission }: { mission: OperatorMission }) {
   const mapImagePath = meta?.image ?? '/simulation-viewer/simulation_map_top.png'
   const mapImageVersion = meta?.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : ''
   const mapImageUrl = `${env.apiBaseUrl}${mapImagePath}${mapImageVersion}`
+  const imageStyle = simulationMapImageStyle(SIMULATION_MAP_DEFAULT_CROP)
 
   return (
     <div className="odm-card" style={{ overflow: 'hidden' }}>
@@ -266,11 +273,23 @@ function MapPlaceholder({ mission }: { mission: OperatorMission }) {
           aspectRatio: '1 / 1',
           maxHeight: 'min(68vh, 720px)',
           minHeight: 520,
-          backgroundImage: `linear-gradient(rgba(255,255,255,.08), rgba(255,255,255,.08)), url("${mapImageUrl}")`,
-          backgroundSize: '100% 100%',
-          backgroundPosition: 'center',
+          overflow: 'hidden',
+          background: '#d7ded7',
         }}
       >
+        <img
+          alt=""
+          src={mapImageUrl}
+          style={{
+            position: 'absolute',
+            ...imageStyle,
+            objectFit: 'fill',
+            opacity: 0.96,
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,.08)', pointerEvents: 'none' }} />
         <div
           style={{
             position: 'absolute',
@@ -666,7 +685,7 @@ function Footer({
         <span>
           Mission đã được nhận · {mission.backendStatus ?? 'SCHEDULED'}
         </span>
-        <a className="odm-btn odm-btn-sm" href={operatorHref({ screen: 'connect' })}>
+        <a className="odm-btn odm-btn-sm" href={operatorHref({ screen: 'connect', missionId: mission.id })}>
           Kết nối GCS
         </a>
       </div>
@@ -676,8 +695,8 @@ function Footer({
   if (mission.status === 'IN_FLIGHT') {
     return (
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-        <a className="odm-btn" href={operatorHref({ screen: 'upload' })}>Review media</a>
-        <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'flight' })}>Mở buồng lái</a>
+        <a className="odm-btn" href={operatorHref({ screen: 'upload', missionId: mission.id })}>Review media</a>
+        <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'flight', missionId: mission.id })}>Mở buồng lái</a>
       </div>
     )
   }

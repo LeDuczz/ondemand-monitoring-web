@@ -4,12 +4,12 @@ export type OperatorRoute =
   | { screen: 'missions' }
   | { screen: 'missionDetail'; missionId: string }
   | { screen: 'availability' }
-  | { screen: 'connect' }
-  | { screen: 'handover' }
-  | { screen: 'preflight' }
-  | { screen: 'flight' }
-  | { screen: 'upload' }
-  | { screen: 'postflight' }
+  | { screen: 'connect'; missionId?: string }
+  | { screen: 'handover'; missionId?: string }
+  | { screen: 'preflight'; missionId?: string }
+  | { screen: 'flight'; missionId?: string }
+  | { screen: 'upload'; missionId?: string }
+  | { screen: 'postflight'; missionId?: string }
   | { screen: 'zoneMap' }
   | { screen: 'notifications' }
   | { screen: 'profile' }
@@ -37,17 +37,17 @@ export function parseOperatorRoute(hash: string): OperatorRoute {
     case 'availability':
       return { screen: 'availability' }
     case 'connect':
-      return { screen: 'connect' }
+      return { screen: 'connect', missionId: tail[0] }
     case 'handover':
-      return { screen: 'handover' }
+      return { screen: 'handover', missionId: tail[0] }
     case 'preflight':
-      return { screen: 'preflight' }
+      return { screen: 'preflight', missionId: tail[0] }
     case 'flight':
-      return { screen: 'flight' }
+      return { screen: 'flight', missionId: tail[0] }
     case 'upload':
-      return { screen: 'upload' }
+      return { screen: 'upload', missionId: tail[0] }
     case 'postflight':
-      return { screen: 'postflight' }
+      return { screen: 'postflight', missionId: tail[0] }
     case 'zone-map':
       return { screen: 'zoneMap' }
     case 'notifications':
@@ -68,17 +68,17 @@ export function operatorHref(route: OperatorRoute): string {
     case 'availability':
       return `${OPERATOR_ROOT}/availability`
     case 'connect':
-      return `${OPERATOR_ROOT}/connect`
+      return route.missionId ? `${OPERATOR_ROOT}/connect/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/connect`
     case 'handover':
-      return `${OPERATOR_ROOT}/handover`
+      return route.missionId ? `${OPERATOR_ROOT}/handover/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/handover`
     case 'preflight':
-      return `${OPERATOR_ROOT}/preflight`
+      return route.missionId ? `${OPERATOR_ROOT}/preflight/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/preflight`
     case 'flight':
-      return `${OPERATOR_ROOT}/flight`
+      return route.missionId ? `${OPERATOR_ROOT}/flight/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/flight`
     case 'upload':
-      return `${OPERATOR_ROOT}/upload`
+      return route.missionId ? `${OPERATOR_ROOT}/upload/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/upload`
     case 'postflight':
-      return `${OPERATOR_ROOT}/postflight`
+      return route.missionId ? `${OPERATOR_ROOT}/postflight/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/postflight`
     case 'zoneMap':
       return `${OPERATOR_ROOT}/zone-map`
     case 'notifications':

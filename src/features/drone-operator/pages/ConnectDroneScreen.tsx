@@ -16,8 +16,8 @@ const GCS_OPTIONS = [
 ]
 
 /** OPR-04W — Kết nối drone: token/gcs form + trạng thái kết nối. */
-export function ConnectDroneScreen() {
-  const mission = useActiveMission()
+export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
+  const mission = useActiveMission(missionId)
   const [state, setState] = useState<ConnectState>('default')
   const [token, setToken] = useState('Flight token cấp sau preflight')
   const [gcsId, setGcsId] = useState(GCS_OPTIONS[0])

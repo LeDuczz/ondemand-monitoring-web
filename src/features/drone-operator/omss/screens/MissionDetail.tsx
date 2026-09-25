@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 import { env } from '../../../../config/env'
+import {
+  SIMULATION_MAP_DEFAULT_CROP,
+  simulationMapImageStyle,
+  worldToViewportPercent,
+} from '../../../../shared/lib/simulationMapProjection'
 import type { Mission, Drone, Screen, MissionRoutePoint } from '../types'
 import {
   MissionBadge,
@@ -165,13 +170,15 @@ function mapPlanPoint(point: MissionRoutePoint, bounds: ReturnType<typeof planBo
 }
 
 function mapSimulationPoint(point: MissionRoutePoint, meta: SimulationMapMeta) {
-  const bounds = meta.imageBounds ?? meta
-  const spanX = Math.max(1, bounds.maxX - bounds.minX)
-  const spanY = Math.max(1, bounds.maxY - bounds.minY)
+  const projected = worldToViewportPercent(
+    { simX: point.simX, simY: point.simY },
+    meta,
+    SIMULATION_MAP_DEFAULT_CROP,
+  )
 
   return {
-    x: ((point.simX - bounds.minX) / spanX) * MAP_WIDTH,
-    y: MAP_HEIGHT - ((point.simY - bounds.minY) / spanY) * MAP_HEIGHT,
+    x: (projected.x / 100) * MAP_WIDTH,
+    y: (projected.y / 100) * MAP_HEIGHT,
   }
 }
 
@@ -229,6 +236,7 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
     ? `?v=${encodeURIComponent(meta.imageVersion)}`
     : ''
   const mapImageUrl = `${env.apiBaseUrl}${mapImagePath}${mapImageVersion}`
+  const imageStyle = simulationMapImageStyle(SIMULATION_MAP_DEFAULT_CROP)
 
   return (
     <svg
@@ -240,10 +248,10 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
       <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="#d7ded7" />
       <image
         href={mapImageUrl}
-        x="0"
-        y="0"
-        width={MAP_WIDTH}
-        height={MAP_HEIGHT}
+        x={(parseFloat(imageStyle.left) / 100) * MAP_WIDTH}
+        y={(parseFloat(imageStyle.top) / 100) * MAP_HEIGHT}
+        width={(parseFloat(imageStyle.width) / 100) * MAP_WIDTH}
+        height={(parseFloat(imageStyle.height) / 100) * MAP_HEIGHT}
         preserveAspectRatio="none"
       />
       <rect

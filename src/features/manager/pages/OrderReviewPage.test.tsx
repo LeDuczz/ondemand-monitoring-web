@@ -146,6 +146,24 @@ describe('OrderReviewPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('cleans legacy raw JSON media labels before rendering', async () => {
+    vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
+      ...order,
+      mediaRequirements: [{
+        label: 'Báo cáo Phân tích Nhiệt · {"radiusM":100,"quantity":10,"mediaType":"IMAGE","resolution":"4K","estimatedAreaHa":3.1}',
+      }],
+    })
+    vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(feasibleAnalysis)
+    vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+
+    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    expect(
+      screen.getByText('Báo cáo Phân tích Nhiệt · IMAGE · 10 mục · 4K · 100 m · 3.1 ha'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
+  })
+
   it('renders RISKY analysis for a different order', async () => {
     mockHappyPath(riskyAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0160" />)

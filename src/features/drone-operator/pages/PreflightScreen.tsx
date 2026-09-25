@@ -306,8 +306,8 @@ function isMissionInFlight(status?: string | null) {
   return status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING'
 }
 
-export function PreflightScreen() {
-  const mission = useActiveMission()
+export function PreflightScreen({ missionId }: { missionId?: string }) {
+  const mission = useActiveMission(missionId)
   const [startError, setStartError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
@@ -315,7 +315,7 @@ export function PreflightScreen() {
     if (!mission.missionId || !mission.data?.droneCode) { setStartError('Mission chưa được gán drone'); return }
     if (isMissionInFlight(mission.data.status)) {
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-      window.location.hash = operatorHref({ screen: 'flight' })
+      window.location.hash = operatorHref({ screen: 'flight', missionId: mission.missionId })
       return
     }
     if (window.sessionStorage.getItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`) !== 'true') {
@@ -341,7 +341,7 @@ export function PreflightScreen() {
         'true',
       )
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-      window.location.hash = operatorHref({ screen: 'flight' })
+      window.location.hash = operatorHref({ screen: 'flight', missionId: mission.missionId })
     } catch (cause) {
       setStartError(cause instanceof Error ? cause.message : 'Không bắt đầu được mission')
     } finally {

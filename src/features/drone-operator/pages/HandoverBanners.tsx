@@ -54,7 +54,7 @@ export function RevokedBanner({ onReconfirm }: { onReconfirm: () => void }) {
   )
 }
 
-export function ConfirmedBanner({ onRevoke }: { onRevoke: () => void }) {
+export function ConfirmedBanner({ missionId, onRevoke }: { missionId?: string; onRevoke: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div
@@ -76,7 +76,7 @@ export function ConfirmedBanner({ onRevoke }: { onRevoke: () => void }) {
         </span>
         <a
           className="odm-btn odm-btn-sm"
-          href={operatorHref({ screen: 'preflight' })}
+          href={operatorHref({ screen: 'preflight', missionId })}
         >
           Tiếp tục tới Preflight
         </a>

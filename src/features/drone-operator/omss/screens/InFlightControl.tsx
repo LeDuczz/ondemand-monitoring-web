@@ -3563,7 +3563,7 @@ export default function InFlightControl({
           },
           {
             label: 'GCS Connect',
-            href: operatorHref({ screen: 'connect' }),
+            href: operatorHref({ screen: 'connect', missionId: mission.backendId ?? mission.id }),
             active: true,
           },
         ].map((item) => (

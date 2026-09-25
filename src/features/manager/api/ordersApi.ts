@@ -10,6 +10,42 @@ import type {
 } from '../types/orders'
 import type { MissionResponse } from '../types/missions'
 
+function formatRequirementValue(value: unknown, suffix = '') {
+  if (typeof value !== 'number' && typeof value !== 'string') return null
+  if (value === '') return null
+  return `${value}${suffix}`
+}
+
+function formatRequirement(requirement: Record<string, unknown> | null) {
+  if (!requirement) return ''
+  const parts = [
+    formatRequirementValue(requirement.mediaType),
+    formatRequirementValue(requirement.quantity, ' mục'),
+    formatRequirementValue(requirement.resolution),
+    formatRequirementValue(requirement.radiusM, ' m'),
+    formatRequirementValue(requirement.estimatedAreaHa, ' ha'),
+  ].filter(Boolean)
+  return parts.length > 0 ? ` · ${parts.join(' · ')}` : ''
+}
+
+function numberValue(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+function radiusFromDeliverables(order: OrderCreateResponse) {
+  for (const deliverable of order.deliverables ?? []) {
+    const radius = numberValue(deliverable.requirement?.radiusM)
+      ?? numberValue(deliverable.requirement?.radius_m)
+    if (radius != null) return radius
+  }
+  return null
+}
+
 function toOrderDetail(order: OrderCreateResponse): OrderDetail {
   return {
     id: order.id,
@@ -27,10 +63,10 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     addressText: order.address || null,
     center: order.latitude != null && order.longitude != null
       ? { lat: order.latitude, lon: order.longitude } : null,
-    radiusM: null,
+    radiusM: order.radiusM ?? radiusFromDeliverables(order),
     nearestBase: null,
     mediaRequirements: order.deliverables?.map((item) => ({
-      label: `${item.deliverableTypeName}${item.requirement ? ` · ${JSON.stringify(item.requirement)}` : ''}`,
+      label: `${item.deliverableTypeName}${formatRequirement(item.requirement)}`,
     })) ?? null,
     purpose: order.description || null,
     attachments: null,

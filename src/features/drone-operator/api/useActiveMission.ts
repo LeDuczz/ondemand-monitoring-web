@@ -3,12 +3,13 @@ import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { missionApi } from '../../mission/api/missionApi'
 import { clearActiveMissionId, getActiveMissionId, setActiveMissionId, type BackendMission } from './liveMission'
 
-function isSelectableMission(status?: string | null) {
+export function isSelectableMission(status?: string | null) {
   return (
     status === 'POSTFLIGHT_CHECKING' ||
     status === 'RETURNING' ||
     status === 'IN_FLIGHT' ||
     status === 'IN_PROGRESS' ||
+    status === 'SCHEDULED' ||
     status === 'ACCEPTED'
   )
 }

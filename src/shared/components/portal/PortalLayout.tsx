@@ -46,6 +46,11 @@ const navItems: Record<UserRole, PortalNavItem[]> = {
       href: '#portal/system-operator',
     },
     {
+      label: 'Bảo trì & Sự cố',
+      icon: 'ticket',
+      href: '#portal/system-operator/maintenance',
+    },
+    {
       label: 'Devices',
       icon: 'radio',
       href: '#portal/system-operator/devices',

@@ -81,7 +81,7 @@ export function Router() {
         <DroneOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/system-operator')
+  if (hash === '#portal/system-operator' || hash.startsWith('#portal/system-operator/'))
     return (
       <RoleRoute role="SYSTEM_OPERATOR">
         <SystemOperatorHomePage />

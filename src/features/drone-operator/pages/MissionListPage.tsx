@@ -99,9 +99,17 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
             {profile.fullName}{profile.rank ? ` · phi công hạng ${profile.rank}` : ''} · {headerDateLabel(now)}
           </div>
         </div>
-        <a className="odm-btn" href={operatorHref({ screen: 'availability' })}>
-          Khai báo lịch rảnh
-        </a>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <a className="odm-btn" href={operatorHref({ screen: 'availability' })}>
+            Khai báo lịch rảnh
+          </a>
+          <a
+            className="odm-btn"
+            href={operatorHref({ screen: 'maintenance' })}
+          >
+            Quản lý Bảo trì & Sự cố
+          </a>
+        </div>
       </div>
 
       {profile.certExpiry && <div style={{ marginBottom: 14 }}>

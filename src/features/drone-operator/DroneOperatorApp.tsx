@@ -16,6 +16,7 @@ import { HandoverScreen } from './pages/HandoverScreen'
 import { PostflightScreen } from './pages/PostflightScreen'
 import { PreflightScreen } from './pages/PreflightScreen'
 import { UploadMediaScreen } from './pages/UploadMediaScreen'
+import { OperatorMaintenanceScreen } from './pages/OperatorMaintenanceScreen'
 import { operatorActiveLabel } from './OperatorSidebar'
 import { parseOperatorRoute, type OperatorRoute } from './routes'
 
@@ -75,6 +76,7 @@ function renderScreen(route: OperatorRoute, searchQuery: string) {
   if (route.screen === 'preflight') return <PreflightScreen missionId={route.missionId} />
   if (route.screen === 'upload') return <UploadMediaScreen missionId={route.missionId} />
   if (route.screen === 'postflight') return <PostflightScreen missionId={route.missionId} />
+  if (route.screen === 'maintenance') return <OperatorMaintenanceScreen />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return (
     <PlaceholderPage

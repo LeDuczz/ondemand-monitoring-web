@@ -18,12 +18,6 @@ function buildGroups(pendingCount: number, notificationCount: number): NavGroup[
     {
       label: 'Chuyến bay',
       items: [
-        { label: 'Kết nối drone', icon: '🔗', route: { screen: 'connect' } },
-        { label: 'Bàn giao quyền', icon: '⇄', route: { screen: 'handover' } },
-        { label: 'Preflight', icon: '✓', route: { screen: 'preflight' } },
-        { label: 'Buồng lái', icon: '◎', route: { screen: 'flight' } },
-        { label: 'Upload media', icon: '⬆', route: { screen: 'upload' } },
-        { label: 'Postflight', icon: '⚑', route: { screen: 'postflight' } },
         { label: 'Zone map', icon: '⛶', route: { screen: 'zoneMap' } },
       ],
     },

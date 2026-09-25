@@ -12,6 +12,7 @@ import { env } from '../../../../config/env'
 import type { Drone, Mission, MissionRoutePoint } from '../types'
 import { PreflightChecklistPanel } from '../../pages/PreflightScreen'
 import { operatorHref } from '../../routes'
+import { markActiveMissionFlowStep } from '../../api/liveMission'
 
 interface Props {
   mission: Mission
@@ -21,7 +22,6 @@ interface Props {
   autoStartPlan: boolean
   onAutoStartPlanConsumed: () => void
   onPreflightReady?: () => Promise<void>
-  onCompleteMission?: () => void
   onReviewMedia?: () => void
 }
 
@@ -2410,7 +2410,6 @@ const FlightControls = memo(function FlightControls({
   onCommand,
   onWeatherPreset,
   onToggleMore,
-  onCompleteMission,
   onReviewMedia,
 }: {
   busyCommand: FlightCommand | null
@@ -2420,7 +2419,6 @@ const FlightControls = memo(function FlightControls({
   onCommand: (command: FlightCommand) => void
   onWeatherPreset: (preset: WeatherPreset) => void
   onToggleMore: () => void
-  onCompleteMission?: () => void
   onReviewMedia?: () => void
 }) {
   useRenderDiagnostics('FlightControls')
@@ -2499,23 +2497,6 @@ const FlightControls = memo(function FlightControls({
             <Icon name="joystick" size={14} />
             <span>Hover</span>
           </button>
-          {onCompleteMission && (
-            <button
-              onClick={onCompleteMission}
-              disabled={busyCommand !== null}
-              style={{
-                ...buttonStyle(),
-                background: 'rgba(22,101,52,.88)',
-                color: '#bbf7d0',
-                border: '1px solid rgba(74,222,128,.55)',
-                width: 82,
-              }}
-              title="Complete mission and go to postflight"
-            >
-              <Icon name="check" size={14} />
-              <span>Postflight</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -2695,7 +2676,6 @@ export default function InFlightControl({
   autoStartPlan,
   onAutoStartPlanConsumed,
   onPreflightReady,
-  onCompleteMission,
   onReviewMedia,
 }: Props) {
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
@@ -2959,6 +2939,10 @@ export default function InFlightControl({
   const handleOnline = useCallback(() => setIsOnline(true), [])
   const handleOffline = useCallback(() => setIsOnline(false), [])
   const handleToggleMore = useCallback(() => setMoreOpen((value) => !value), [])
+  const handleReviewMedia = useCallback(() => {
+    markActiveMissionFlowStep(mission.backendId ?? mission.id, 5)
+    onReviewMedia?.()
+  }, [mission.backendId, mission.id, onReviewMedia])
   const handleCommand = useCallback(
     (command: FlightCommand) => {
       if (command === 'lidar_monitor_toggle') {
@@ -3458,8 +3442,7 @@ export default function InFlightControl({
             onCommand={handleCommand}
             onWeatherPreset={handleWeatherPreset}
             onToggleMore={handleToggleMore}
-            onCompleteMission={onCompleteMission}
-            onReviewMedia={onReviewMedia}
+            onReviewMedia={onReviewMedia ? handleReviewMedia : undefined}
           />
         </section>
 
@@ -3629,26 +3612,6 @@ export default function InFlightControl({
           >
             In Flight
           </span>
-          {onCompleteMission && (
-            <button
-              onClick={onCompleteMission}
-              disabled={busyCommand !== null}
-              style={{
-                height: 30,
-                padding: '0 14px',
-                borderRadius: 999,
-                border: '1px solid rgba(74,222,128,.36)',
-                background: 'rgba(22,101,52,.92)',
-                color: '#bbf7d0',
-                fontSize: 11,
-                fontWeight: 950,
-                cursor: busyCommand === null ? 'pointer' : 'not-allowed',
-              }}
-              title="Complete mission and release drone"
-            >
-              Complete mission
-            </button>
-          )}
         </div>
       </footer>
     </div>

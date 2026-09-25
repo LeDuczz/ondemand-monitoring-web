@@ -63,15 +63,24 @@ export default function GCSConnection({
       }
       addLog(`Flight Controller online for drone ${drone.id}`)
       setPhase('handshake')
-      const bound = await flightControlApi.bindSession(
-        mission.backendId ?? mission.id,
-        drone.id,
-      )
+      const missionId = mission.backendId ?? mission.id
+      let bound: Awaited<ReturnType<typeof flightControlApi.bindSession>>
+      try {
+        bound = await flightControlApi.bindSession(missionId, drone.id)
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : ''
+        if (!message.includes('Cannot switch control session while recording or in flight')) {
+          throw cause
+        }
+        addLog('Phiên điều khiển cũ chưa được xoá, đang reset controller…', false)
+        await flightControlApi.releaseSession()
+        bound = await flightControlApi.bindSession(missionId, drone.id)
+      }
       addLog(`Control session bound to mission ${bound.missionId}`)
       setPhase('sync')
       const verified = await flightControlApi.status()
       if (
-        verified.missionId !== (mission.backendId ?? mission.id) ||
+        verified.missionId !== missionId ||
         verified.deviceCode !== drone.id
       ) {
         throw new Error('Flight Controller session verification failed')

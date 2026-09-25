@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/httpClient'
+import type { OrderStatus } from '../../../shared/types/domain'
 import type {
   AiAnalysisResult,
   CustomerDashboard,
@@ -79,6 +80,100 @@ type SendConsultationMessageOptions = {
   requestContext?: string
 }
 
+type BackendOrderResponse = {
+  id: string
+  title?: string | null
+  serviceName?: string | null
+  description?: string | null
+  address?: string | null
+  longitude?: number | null
+  latitude?: number | null
+  radiusM?: number | null
+  preferredDateFrom?: string | null
+  preferredDateTo?: string | null
+  preferredTimeName?: string | null
+  orderStatus?: OrderStatus | null
+  rejectReason?: string | null
+  reviewByName?: string | null
+  reviewAt?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+const BACKEND_ORDER_STATUSES = new Set<OrderStatus>([
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+])
+
+function getPreferredDate(order: BackendOrderResponse) {
+  return (
+    order.preferredDateFrom ??
+    order.preferredDateTo ??
+    order.createdAt ??
+    new Date().toISOString()
+  )
+}
+
+function toCustomerOrderItem(order: BackendOrderResponse): CustomerOrderItem {
+  const status = order.orderStatus ?? 'PENDING'
+  return {
+    id: order.id,
+    orderCode: order.id,
+    title: order.title ?? 'Đơn giám sát',
+    addressText: order.address ?? null,
+    preferredDate: getPreferredDate(order),
+    preferredTimeLabel: order.preferredTimeName ?? null,
+    radiusM: order.radiusM ?? null,
+    status,
+    serviceNames: order.serviceName ? [order.serviceName] : [],
+    missionCount: status === 'APPROVED' || status === 'IN_PROGRESS' || status === 'COMPLETED' ? 1 : 0,
+    hasNewMedia: false,
+    submittedAt: order.createdAt ?? null,
+    canCancel: status === 'PENDING',
+  }
+}
+
+function toCustomerOrderDetail(order: BackendOrderResponse): CustomerOrderDetail {
+  const status = order.orderStatus ?? 'PENDING'
+  const statusAt = order.updatedAt ?? order.createdAt ?? new Date().toISOString()
+  return {
+    id: order.id,
+    orderCode: order.id,
+    title: order.title ?? 'Đơn giám sát',
+    purpose: null,
+    description: order.description ?? null,
+    addressText: order.address ?? null,
+    centerLat: order.latitude ?? null,
+    centerLon: order.longitude ?? null,
+    radiusM: order.radiusM ?? null,
+    preferredDate: getPreferredDate(order),
+    preferredTimeName: order.preferredTimeName ?? null,
+    status,
+    serviceNames: order.serviceName ? [order.serviceName] : [],
+    submittedAt: order.createdAt ?? null,
+    approvalDecision:
+      status === 'APPROVED' ? 'APPROVED' : status === 'REJECTED' ? 'REJECTED' : null,
+    approvalReason: order.rejectReason ?? null,
+    approvalAt: order.reviewAt ?? null,
+    approvalActorName: order.reviewByName ?? null,
+    statusHistory: [
+      {
+        status,
+        at: statusAt,
+        actorName: order.reviewByName ?? null,
+        note: order.rejectReason ?? null,
+      },
+    ],
+    missions: [],
+    aiSummary: null,
+    canCancel: status === 'PENDING',
+  }
+}
+
 export const customerApi = {
   getDashboard: (signal?: AbortSignal) =>
     apiRequest<CustomerDashboard>('/api/customer/dashboard', { signal }),
@@ -88,17 +183,23 @@ export const customerApi = {
     serviceId?: string
     signal?: AbortSignal
   }) => {
-    const qs = new URLSearchParams()
-    if (params.status) qs.set('status', params.status)
-    if (params.serviceId) qs.set('serviceId', params.serviceId)
-    const q = qs.toString() ? `?${qs}` : ''
-    return apiRequest<{ items: CustomerOrderItem[] }>(`/api/customer/orders${q}`, {
+    const status = params.status as OrderStatus | undefined
+    if (status && !BACKEND_ORDER_STATUSES.has(status)) {
+      return Promise.resolve({ items: [] })
+    }
+
+    return apiRequest<BackendOrderResponse[]>('/api/orders/mine', {
+      query: { status },
       signal: params.signal,
-    })
+    }).then((orders) => ({
+      items: orders.map(toCustomerOrderItem),
+    }))
   },
 
   getOrder: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<CustomerOrderDetail>(`/api/customer/orders/${orderId}`, { signal }),
+    apiRequest<BackendOrderResponse>(`/api/orders/${orderId}`, { signal }).then(
+      toCustomerOrderDetail,
+    ),
 
   listServices: (signal?: AbortSignal) =>
     apiRequest<ServiceOption[]>('/api/services', {

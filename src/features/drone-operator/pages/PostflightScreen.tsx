@@ -4,7 +4,7 @@ import { EmptyState, LoadingState } from '../../../shared/components/odm/StateVi
 import { missionApi } from '../../mission/api/missionApi'
 import { clearActiveMissionId } from '../api/liveMission'
 import { useActiveMission } from '../api/useActiveMission'
-import type { FlightControlStatus } from '../omss/api/flightControlApi'
+import { flightControlApi, type FlightControlStatus } from '../omss/api/flightControlApi'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -242,6 +242,9 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       })
       await missionApi.disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED').catch(() => {
         // The mission is complete; local cleanup must still happen even if the session was already closed.
+      })
+      await flightControlApi.releaseSession(effectiveMissionId).catch(() => {
+        // Controller may be offline after landing; local cleanup still allows the operator flow to reset.
       })
       clearCompletedMissionState(effectiveMissionId, missionLabel, droneCode)
 

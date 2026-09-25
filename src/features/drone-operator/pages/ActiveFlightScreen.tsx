@@ -1,13 +1,39 @@
 import { useEffect, useState } from 'react'
 
 import { missionApi } from '../../mission/api/missionApi'
-import { flightControlApi } from '../omss/api/flightControlApi'
-import { getActiveMissionId, setActiveMissionId, toFlightDrone, toFlightMission, type BackendMission } from '../api/liveMission'
+import {
+  getActiveMissionId,
+  markActiveMissionFlowStep,
+  setActiveMissionId,
+  toFlightDrone,
+  toFlightMission,
+  type BackendMission,
+} from '../api/liveMission'
 import InFlightControlScreen from '../omss/screens/InFlightControl'
 import { operatorHref } from '../routes'
 
-const postflightTelemetryKey = (missionId: string) =>
-  `fieldwise.operator.postflightTelemetry.${missionId}`
+function missionIdFromCurrentFlightHash() {
+  const match = window.location.hash.match(/^#portal\/drone-operator\/flight\/([^/?#]+)/)
+  return match?.[1] ? decodeURIComponent(match[1]) : null
+}
+
+function FlightOpeningShell() {
+  return (
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        background: '#020617',
+        color: '#dbeafe',
+      }}
+    >
+      <div style={{ textAlign: 'center', fontWeight: 800 }}>
+        Đang mở buồng lái...
+      </div>
+    </main>
+  )
+}
 
 function FlightEmptyState({
   tone = 'info',
@@ -112,7 +138,7 @@ function FlightEmptyState({
 }
 
 export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: string }) {
-  const missionId = routeMissionId ?? getActiveMissionId()
+  const missionId = routeMissionId ?? missionIdFromCurrentFlightHash() ?? getActiveMissionId()
   const [mission, setMission] = useState<BackendMission | null>(null)
   const [error, setError] = useState<string | null>(null)
   const autoStart = window.sessionStorage.getItem('odm.operator.autoStartSimulation') === 'true'
@@ -129,12 +155,7 @@ export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: 
   }, [missionId])
 
   if (!missionId) {
-    return (
-      <FlightEmptyState
-        title="Chưa chọn mission"
-        message="Chọn một mission trong Mission của tôi trước khi mở buồng lái. Buồng lái cần mission đã được gán drone để kết nối GCS và hiển thị telemetry."
-      />
-    )
+    return <FlightOpeningShell />
   }
   if (error) {
     return (
@@ -147,14 +168,7 @@ export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: 
     )
   }
   if (!mission) {
-    return (
-      <FlightEmptyState
-        tone="loading"
-        title="Đang tải mission"
-        message="Đang lấy thông tin mission, drone và kế hoạch bay trước khi mở buồng lái."
-        primaryLabel="Mission của tôi"
-      />
-    )
+    return <FlightOpeningShell />
   }
   if (!mission.droneCode) {
     return (
@@ -172,23 +186,10 @@ export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: 
       drone={toFlightDrone(mission)}
       autoStartPlan={autoStart}
       onAutoStartPlanConsumed={() => window.sessionStorage.removeItem('odm.operator.autoStartSimulation')}
-      onReviewMedia={() => { window.location.hash = operatorHref({ screen: 'upload', missionId }) }}
-      onCompleteMission={() => {
-        void (async () => {
-          const telemetrySnapshot = await flightControlApi.status().catch(() => null)
-          if (telemetrySnapshot) {
-            window.sessionStorage.setItem(
-              postflightTelemetryKey(mission.id),
-              JSON.stringify(telemetrySnapshot),
-            )
-          }
-          if (mission.status === 'IN_FLIGHT' || mission.status === 'IN_PROGRESS') {
-            await missionApi.markReturning(mission.id)
-          }
-          await missionApi.startPostflight(mission.id)
-          setActiveMissionId(mission.id)
-          window.location.hash = operatorHref({ screen: 'postflight', missionId: mission.id })
-        })().catch((cause) => setError(cause instanceof Error ? cause.message : 'Không chuyển được mission sang Postflight'))
+      onReviewMedia={() => {
+        setActiveMissionId(mission.id)
+        markActiveMissionFlowStep(mission.id, 5)
+        window.location.hash = operatorHref({ screen: 'upload', missionId: mission.id })
       }}
       onRTB={() => {
         void missionApi.markReturning(mission.id).then(() =>

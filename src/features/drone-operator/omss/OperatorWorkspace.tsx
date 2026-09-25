@@ -692,7 +692,6 @@ export default function OperatorWorkspace() {
               onEmergency={handleEmergency}
               autoStartPlan={autoStartPlanRequested}
               onAutoStartPlanConsumed={() => setAutoStartPlanRequested(false)}
-              onCompleteMission={handleLanded}
               onReviewMedia={() => {
                 setMediaReturnScreen('in-flight')
                 setScreen('media-upload')

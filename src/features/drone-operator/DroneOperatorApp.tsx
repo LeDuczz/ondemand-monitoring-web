@@ -18,7 +18,19 @@ import { PreflightScreen } from './pages/PreflightScreen'
 import { UploadMediaScreen } from './pages/UploadMediaScreen'
 import { OperatorMaintenanceScreen } from './pages/OperatorMaintenanceScreen'
 import { operatorActiveLabel } from './OperatorSidebar'
-import { parseOperatorRoute, type OperatorRoute } from './routes'
+import {
+  guardOperatorFlowRoute,
+  operatorFlowStep,
+  operatorHref,
+  parseOperatorRoute,
+  type OperatorRoute,
+} from './routes'
+import {
+  getActiveMissionFlowStep,
+  getActiveMissionId,
+  markActiveMissionFlowStep,
+  setActiveMissionId,
+} from './api/liveMission'
 
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash)
@@ -34,6 +46,22 @@ export function DroneOperatorApp() {
   const hash = useHash()
   const route = parseOperatorRoute(hash)
   const [searchQuery, setSearchQuery] = useState('')
+  const guardedRoute = guardOperatorFlowRoute(
+    route,
+    getActiveMissionId(),
+    getActiveMissionFlowStep(),
+  )
+
+  useEffect(() => {
+    if (guardedRoute) {
+      window.location.hash = operatorHref(guardedRoute)
+      return
+    }
+    const step = operatorFlowStep(route.screen)
+    if (step === null || !('missionId' in route) || !route.missionId) return
+    setActiveMissionId(route.missionId)
+    markActiveMissionFlowStep(route.missionId, step)
+  }, [guardedRoute, route])
 
   const missionsQuery = useApiQuery(
     (signal) => operatorApi.listMissions(undefined, signal),
@@ -45,6 +73,8 @@ export function DroneOperatorApp() {
     'pending',
     now,
   ).length
+
+  if (guardedRoute) return null
 
   // Buồng lái renders full-screen without the shell, same as OMSS.
   if (route.screen === 'flight') {

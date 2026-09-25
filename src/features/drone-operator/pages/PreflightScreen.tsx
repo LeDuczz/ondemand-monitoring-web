@@ -320,6 +320,10 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
     try {
       const droneCode = mission.data.droneCode
       await flightControlApi.bindSession(mission.missionId, droneCode)
+      if (mission.data.status === 'READY_TO_FLY') {
+        window.location.hash = operatorHref({ screen: 'handover', missionId: mission.missionId })
+        return
+      }
       const storedToken = window.sessionStorage.getItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
       const check = storedToken
         ? null

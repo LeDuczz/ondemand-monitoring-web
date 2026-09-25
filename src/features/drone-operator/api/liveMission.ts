@@ -44,19 +44,41 @@ export type BackendMission = {
 }
 
 const ACTIVE_MISSION_KEY = 'fieldwise.operator.activeMissionId'
+const ACTIVE_FLOW_STEP_KEY = 'fieldwise.operator.activeMissionFlowStep'
 
 export function setActiveMissionId(id: string) {
+  const current = window.sessionStorage.getItem(ACTIVE_MISSION_KEY)
   window.sessionStorage.setItem(ACTIVE_MISSION_KEY, id)
+  window.localStorage.setItem(ACTIVE_MISSION_KEY, id)
+  if (current !== id) window.sessionStorage.setItem(ACTIVE_FLOW_STEP_KEY, '0')
 }
 
 export function clearActiveMissionId(id?: string) {
-  if (!id || window.sessionStorage.getItem(ACTIVE_MISSION_KEY) === id) {
+  const current = getActiveMissionId()
+  if (!id || current === id) {
     window.sessionStorage.removeItem(ACTIVE_MISSION_KEY)
+    window.sessionStorage.removeItem(ACTIVE_FLOW_STEP_KEY)
+    window.localStorage.removeItem(ACTIVE_MISSION_KEY)
   }
 }
 
 export function getActiveMissionId(): string | null {
-  return window.sessionStorage.getItem(ACTIVE_MISSION_KEY)
+  const sessionId = window.sessionStorage.getItem(ACTIVE_MISSION_KEY)
+  if (sessionId) return sessionId
+  const storedId = window.localStorage.getItem(ACTIVE_MISSION_KEY)
+  if (storedId) window.sessionStorage.setItem(ACTIVE_MISSION_KEY, storedId)
+  return storedId
+}
+
+export function getActiveMissionFlowStep(): number {
+  const value = Number(window.sessionStorage.getItem(ACTIVE_FLOW_STEP_KEY))
+  return Number.isFinite(value) ? Math.max(0, value) : 0
+}
+
+export function markActiveMissionFlowStep(missionId: string, step: number) {
+  if (window.sessionStorage.getItem(ACTIVE_MISSION_KEY) !== missionId) return
+  const current = getActiveMissionFlowStep()
+  window.sessionStorage.setItem(ACTIVE_FLOW_STEP_KEY, String(Math.max(current, step)))
 }
 
 function localDateAndTime(iso?: string | null) {

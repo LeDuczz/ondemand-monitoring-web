@@ -18,6 +18,58 @@ export type OperatorRoute =
 
 export type OperatorScreen = OperatorRoute['screen']
 
+export const OPERATOR_FLOW_SCREENS = [
+  'missionDetail',
+  'connect',
+  'preflight',
+  'handover',
+  'flight',
+  'upload',
+  'postflight',
+] as const
+
+type OperatorFlowScreen = typeof OPERATOR_FLOW_SCREENS[number]
+
+export function isOperatorFlowScreen(screen: OperatorScreen): screen is OperatorFlowScreen {
+  return (OPERATOR_FLOW_SCREENS as readonly string[]).includes(screen)
+}
+
+export function operatorFlowStep(screen: OperatorScreen): number | null {
+  const index = (OPERATOR_FLOW_SCREENS as readonly string[]).indexOf(screen)
+  return index >= 0 ? index : null
+}
+
+export function operatorFlowRoute(screen: OperatorFlowScreen, missionId: string): OperatorRoute {
+  if (screen === 'missionDetail') return { screen: 'missionDetail', missionId }
+  return { screen, missionId } as OperatorRoute
+}
+
+export function guardOperatorFlowRoute(
+  route: OperatorRoute,
+  activeMissionId: string | null,
+  maxStep: number,
+): OperatorRoute | null {
+  const step = operatorFlowStep(route.screen)
+  if (step === null) return null
+
+  if (route.screen === 'missionDetail') return null
+
+  if (!('missionId' in route) || !route.missionId) {
+    return activeMissionId ? operatorFlowRoute(route.screen as OperatorFlowScreen, activeMissionId) : { screen: 'missions' }
+  }
+
+  if (activeMissionId !== route.missionId) {
+    return null
+  }
+
+  const allowedStep = Math.min(OPERATOR_FLOW_SCREENS.length - 1, maxStep + 1)
+  if (step > allowedStep) {
+    return operatorFlowRoute(OPERATOR_FLOW_SCREENS[allowedStep], route.missionId)
+  }
+
+  return null
+}
+
 export function parseOperatorRoute(hash: string): OperatorRoute {
   if (hash !== OPERATOR_ROOT && !hash.startsWith(`${OPERATOR_ROOT}/`)) {
     return { screen: 'missions' }

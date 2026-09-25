@@ -50,4 +50,13 @@ export const flightControlApi = {
       },
     )
   },
+  releaseSession: (missionId?: string) =>
+    request<{ ok: boolean; released: boolean; retainedVideo?: boolean; message?: string }>(
+      '/api/control/session/release',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ missionId }),
+      },
+    ),
 }

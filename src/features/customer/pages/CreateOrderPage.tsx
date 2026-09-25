@@ -100,8 +100,10 @@ const STEP_LABELS: Record<Step, string> = {
 const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
+const RESTRICTED_ZONE_CONTACT_TOLERANCE_PX = 8
 const MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
+const OUTSIDE_MONITORING_ZONE_LABEL = 'Outside configured monitoring zones'
 
 const card: React.CSSProperties = {
   background: 'var(--sf)',
@@ -316,11 +318,12 @@ function circleIntersectsPolygon(
   radius: number,
   ring: [number, number][],
 ) {
+  const effectiveRadius = Math.max(0, radius - RESTRICTED_ZONE_CONTACT_TOLERANCE_PX)
   if (polygonContainsPoint(ring, center)) return true
-  if (ring.some((point) => distanceBetweenPoints(center, point) <= radius)) return true
+  if (ring.some((point) => distanceBetweenPoints(center, point) <= effectiveRadius)) return true
 
   for (let index = 0; index < ring.length - 1; index += 1) {
-    if (distancePointToSegment(center, ring[index], ring[index + 1]) <= radius) {
+    if (distancePointToSegment(center, ring[index], ring[index + 1]) <= effectiveRadius) {
       return true
     }
   }
@@ -342,6 +345,27 @@ function validateRestrictedZones(
   return {
     valid: blockedZones.length === 0,
     blockedZones,
+  }
+}
+
+function validateMonitoringZone(
+  center: [number, number],
+  zones: SimulationZone[],
+) {
+  const monitoringZones = zones.filter((zone) => !zone.restricted)
+  if (monitoringZones.length === 0) {
+    return {
+      valid: true,
+      zone: undefined as SimulationZone | undefined,
+      checked: false,
+    }
+  }
+
+  const zone = monitoringZones.find((item) => polygonContainsPoint(item.coordinates, center))
+  return {
+    valid: Boolean(zone),
+    zone,
+    checked: true,
   }
 }
 
@@ -540,6 +564,7 @@ function collectCustomerIntent(messages: ConsultationMessage[]) {
   )
   const goals: string[] = []
   const focusAreas: string[] = []
+  const deliverables: string[] = []
 
   if (normalized.includes('nut vo') || normalized.includes('hu hong')) goals.push('kiểm tra nứt vỡ/hư hỏng')
   if (normalized.includes('diem nong') || normalized.includes('nhiet')) goals.push('phát hiện điểm nóng')
@@ -553,9 +578,21 @@ function collectCustomerIntent(messages: ConsultationMessage[]) {
   if (normalized.includes('toan bo')) focusAreas.push('toàn bộ công trình')
   if (normalized.includes('dau hieu bat thuong')) focusAreas.push('khu vực có dấu hiệu bất thường')
 
+  if (normalized.includes('anh') || normalized.includes('video') || normalized.includes('minh chung')) {
+    deliverables.push('ảnh/video minh chứng')
+  }
+  if (normalized.includes('bao cao')) deliverables.push('báo cáo tổng hợp')
+  if (normalized.includes('danh dau vi tri') || normalized.includes('vi tri bat thuong')) {
+    deliverables.push('đánh dấu vị trí bất thường')
+  }
+  if (normalized.includes('ban do') || normalized.includes('khu vuc co van de')) {
+    deliverables.push('bản đồ khu vực có vấn đề')
+  }
+
   return {
     goals: [...new Set(goals)],
     focusAreas: [...new Set(focusAreas)],
+    deliverables: [...new Set(deliverables)],
   }
 }
 
@@ -577,11 +614,15 @@ function buildIntentSummary(
   const focusText = customerIntent.focusAreas.length
     ? ` Ưu tiên ${customerIntent.focusAreas.join(' và ')}.`
     : ''
+  const deliverableText = customerIntent.deliverables.length
+    ? ` Kết quả mong muốn: ${customerIntent.deliverables.join(', ')}.`
+    : ''
 
   return {
     goalText,
     focusText,
-    summary: `Khách hàng muốn giám sát ${object} để ${goalText}.${focusText}`,
+    deliverableText,
+    summary: `Khách hàng muốn giám sát ${object} để ${goalText}.${focusText}${deliverableText}`,
   }
 }
 
@@ -840,7 +881,10 @@ function buildQuickReplyAnswer(reply: string, messages: ConsultationMessage[]) {
 
   const goalText = intent.goals.length ? intent.goals.join(', ') : 'mục tiêu đã chọn'
   const focusText = intent.focusAreas.length ? ` Ưu tiên ${intent.focusAreas.join(' và ')}.` : ''
-  return `Đã ghi nhận: ${goalText}.${focusText} Anh/chị kiểm tra thông tin bên phải, rồi có thể bổ sung thêm hoặc tiếp tục sang bước thời gian và kết quả.`
+  const deliverableText = intent.deliverables.length
+    ? ` Kết quả mong muốn: ${intent.deliverables.join(', ')}.`
+    : ''
+  return `Đã ghi nhận: ${goalText}.${focusText}${deliverableText} Anh/chị kiểm tra thông tin bên phải, rồi có thể bổ sung thêm hoặc tiếp tục sang bước thời gian và kết quả.`
 }
 
 function buildQuickReplyConsultation(
@@ -924,6 +968,10 @@ export function CreateOrderPage() {
   const restrictedValidation = useMemo(
     () => validateRestrictedZones(selectedSimPoint, form.radiusM, zones),
     [selectedSimPoint, form.radiusM, zones],
+  )
+  const monitoringValidation = useMemo(
+    () => validateMonitoringZone(selectedSimPoint, zones),
+    [selectedSimPoint, zones],
   )
 
   useEffect(() => {
@@ -1101,7 +1149,7 @@ export function CreateOrderPage() {
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
-      update('address', zone?.name ?? 'Outside configured monitoring zones')
+      update('address', zone?.name ?? OUTSIDE_MONITORING_ZONE_LABEL)
       return
     }
 
@@ -1116,6 +1164,9 @@ export function CreateOrderPage() {
       if (!form.address.trim()) nextErrors.address = 'Nhập địa chỉ/khu vực cần giám sát.'
       if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = 'Latitude không hợp lệ.'
       if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = 'Longitude không hợp lệ.'
+      if (!monitoringValidation.valid) {
+        nextErrors.address = 'Vị trí này nằm ngoài các vùng giám sát đã cấu hình. Vui lòng chọn lại điểm trong vùng phục vụ.'
+      }
       if (!restrictedValidation.valid) {
         nextErrors.address = `Vùng giám sát chạm vùng cấm: ${restrictedValidation.blockedZones
           .map((zone) => zone.name)
@@ -1365,6 +1416,7 @@ export function CreateOrderPage() {
           mapMeta={mapMeta}
           mapPoint={mapPoint}
           zones={zones}
+          monitoringValidation={monitoringValidation}
           restrictedValidation={restrictedValidation}
           errors={errors}
           onMapClick={handleMapClick}
@@ -1432,6 +1484,7 @@ function StepLocation({
   mapMeta,
   mapPoint,
   zones,
+  monitoringValidation,
   restrictedValidation,
   errors,
   onMapClick,
@@ -1442,6 +1495,7 @@ function StepLocation({
   mapMeta: SimulationMapMeta | null
   mapPoint: MapPoint
   zones: SimulationZone[]
+  monitoringValidation: ReturnType<typeof validateMonitoringZone>
   restrictedValidation: ReturnType<typeof validateRestrictedZones>
   errors: Partial<Record<keyof FormState, string>>
   onMapClick: (event: React.MouseEvent<HTMLDivElement>) => void
@@ -1451,6 +1505,31 @@ function StepLocation({
   const restrictedZones = zones.filter((zone) => zone.restricted)
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
   const isBlocked = !restrictedValidation.valid
+  const isOutsideMonitoringZone = monitoringValidation.checked && !monitoringValidation.valid
+  const hasLocationError = isBlocked || isOutsideMonitoringZone
+  const statusTone = isOutsideMonitoringZone
+    ? {
+        border: '#f59e0b',
+        background: '#fff7ed',
+        color: '#9a3412',
+        title: 'Ngoài vùng phục vụ',
+        message: 'Điểm này chưa thuộc zone giám sát nào. Hãy bấm vào phần bản đồ nằm trong khu vực xanh để tạo request.',
+      }
+    : isBlocked
+      ? {
+          border: 'var(--red-fg)',
+          background: 'var(--red-bg)',
+          color: 'var(--red-fg)',
+          title: 'Chạm vùng cấm bay',
+          message: `Bán kính giám sát đang lấn vào vùng cấm ${restrictedValidation.blockedZones.map((zone) => zone.name).join(', ')}. Vui lòng chọn điểm khác hoặc giảm bán kính.`,
+        }
+      : {
+          border: 'var(--green-dot)',
+          background: 'var(--green-bg)',
+          color: 'var(--green-fg)',
+          title: 'Hợp lệ',
+          message: `Nằm trong vùng giám sát${monitoringValidation.zone?.name ? ` ${monitoringValidation.zone.name}` : ''} và không chạm vùng cấm bay.`,
+        }
   const imageStyle = simulationMapImageStyle(MAP_IMAGE_CROP)
   const layerStyle: React.CSSProperties = {
     position: 'absolute',
@@ -1519,8 +1598,8 @@ function StepLocation({
             )
           })}
         </div>
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: isBlocked ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: isBlocked ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: isBlocked ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${hasLocationError ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: hasLocationError ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: hasLocationError ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: hasLocationError ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', left: 12, bottom: 12, display: 'flex', gap: 8, alignItems: 'center', background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
           <span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(220,38,38,.22)', border: '1px solid var(--red-fg)' }} />
           Vùng cấm bay
@@ -1546,23 +1625,34 @@ function StepLocation({
           </Field>
           <div
             style={{
-              padding: 12,
+              padding: 14,
               borderRadius: 8,
-              border: `1px solid ${isBlocked ? 'var(--red-fg)' : 'var(--green-dot)'}`,
-              background: isBlocked ? 'var(--red-bg)' : 'var(--green-bg)',
-              color: isBlocked ? 'var(--red-fg)' : 'var(--green-fg)',
-              fontSize: 12,
+              border: `1px solid ${statusTone.border}`,
+              background: statusTone.background,
+              color: statusTone.color,
+              fontSize: 13,
               lineHeight: 1.5,
               fontWeight: 700,
             }}
           >
-            {isBlocked
-              ? `Không hợp lệ: vùng giám sát chạm vùng cấm ${restrictedValidation.blockedZones.map((zone) => zone.name).join(', ')}.`
-              : 'Hợp lệ: không chạm vùng cấm bay.'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: statusTone.border,
+                  boxShadow: `0 0 0 4px ${isOutsideMonitoringZone ? 'rgba(245,158,11,.16)' : hasLocationError ? 'rgba(220,38,38,.14)' : 'rgba(22,163,74,.14)'}`,
+                }}
+              />
+              <strong style={{ fontSize: 14 }}>{statusTone.title}</strong>
+            </div>
+            <div style={{ fontWeight: 600 }}>{statusTone.message}</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Metric label="Diện tích ước tính" value={`${calcArea(form.radiusM)} ha`} />
-            <Metric label="Vùng cấm" value={isBlocked ? 'Không hợp lệ' : 'Đã kiểm tra'} />
+            <Metric label="Vùng giám sát" value={isOutsideMonitoringZone ? 'Ngoài vùng' : monitoringValidation.zone?.name ?? 'Đã kiểm tra'} />
           </div>
         </div>
       </div>

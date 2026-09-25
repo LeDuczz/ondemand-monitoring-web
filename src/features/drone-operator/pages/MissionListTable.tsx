@@ -23,6 +23,20 @@ const STATUS_LABEL: Record<OperatorMission['status'], string> = {
 }
 
 function actionFor(mission: OperatorMission) {
+  const backendStatus = mission.backendStatus
+  if (backendStatus === 'IN_FLIGHT' || backendStatus === 'IN_PROGRESS' || backendStatus === 'RETURNING') {
+    return { label: 'Mở buồng lái', cls: 'odm-btn-bl', href: operatorHref({ screen: 'flight', missionId: mission.id }) }
+  }
+  if (backendStatus === 'READY_TO_FLY') {
+    return { label: 'Bàn giao', cls: 'odm-btn-ok', href: operatorHref({ screen: 'handover', missionId: mission.id }) }
+  }
+  if (backendStatus === 'PREFLIGHT_CHECKING' || backendStatus === 'FAILED_PREFLIGHT') {
+    return { label: 'Preflight', cls: 'odm-btn-ok', href: operatorHref({ screen: 'preflight', missionId: mission.id }) }
+  }
+  if (backendStatus === 'CONNECTED') {
+    return { label: 'Preflight', cls: 'odm-btn-ok', href: operatorHref({ screen: 'preflight', missionId: mission.id }) }
+  }
+
   switch (mission.status) {
     case 'PENDING':
       return { label: 'Phản hồi', cls: 'odm-btn-p', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }

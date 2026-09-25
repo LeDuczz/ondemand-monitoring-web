@@ -42,13 +42,13 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
       if (!mission.missionId || !mission.data?.droneCode) throw new Error('Chọn mission đã gán drone trước khi tiếp tục')
       const droneCode = mission.data.droneCode
       const storedToken = window.sessionStorage.getItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
-      if (!storedToken) {
+      if (!storedToken && mission.data.status !== 'READY_TO_FLY') {
         throw new Error('Vui lòng chạy precheck thành công trước khi bàn giao')
       }
       window.sessionStorage.setItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`, 'true')
       await flightControlApi.bindSession(mission.missionId, droneCode)
       await missionApi.handoverMyMission(mission.missionId)
-      await missionApi.startMission(mission.missionId, storedToken)
+      await missionApi.startMission(mission.missionId, storedToken ?? undefined)
       window.sessionStorage.removeItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
       window.localStorage.setItem(preflightReadyStorageKey(mission.data.missionCode ?? mission.missionId, droneCode), 'true')
       window.localStorage.setItem(preflightReadyStorageKey(mission.missionId, droneCode), 'true')

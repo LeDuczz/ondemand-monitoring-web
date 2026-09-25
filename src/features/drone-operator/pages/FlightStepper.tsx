@@ -5,8 +5,8 @@ const STEPS: { key: string; label: string }[] = [
   { key: 'preflight', label: 'Preflight' },
   { key: 'handover', label: 'Bàn giao' },
   { key: 'flight', label: 'Bay' },
-  { key: 'upload', label: 'Upload' },
-  { key: 'postflight', label: 'Postflight' },
+  { key: 'upload', label: 'Review' },
+  { key: 'postflight', label: 'Postflight check' },
 ]
 
 /** Stepper header shared by the flight-prep screens (OPR-04/05/06). `active` is the current step index (0-based). */

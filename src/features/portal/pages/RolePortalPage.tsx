@@ -236,7 +236,16 @@ export function RolePortalPage({ role }: { role: UserRole }) {
             so every team can act from the same operational picture.
           </p>
         </div>
-        <Button icon="arrow-up-right">{content.primary}</Button>
+        <Button
+          icon="arrow-up-right"
+          onClick={() => {
+            if (role === 'SYSTEM_OPERATOR') {
+              window.location.hash = '#portal/system-operator/maintenance'
+            }
+          }}
+        >
+          {content.primary}
+        </Button>
       </section>
       <section className="portal-metric-grid" aria-label="Key metrics">
         {content.metrics.map((metric) => (

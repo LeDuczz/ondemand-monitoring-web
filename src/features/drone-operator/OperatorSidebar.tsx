@@ -11,6 +11,7 @@ function buildGroups(pendingCount: number, notificationCount: number): NavGroup[
       label: 'Công việc',
       items: [
         { label: 'Mission của tôi', icon: '✈', route: { screen: 'missions' }, badge: pendingCount },
+        { label: 'Bảo trì & Sự cố', icon: '🛠', route: { screen: 'maintenance' } },
         { label: 'Lịch rảnh', icon: '🗓', route: { screen: 'availability' } },
       ],
     },
@@ -46,6 +47,7 @@ const activeScreen: Record<OperatorScreen, string> = {
   flight: 'Buồng lái',
   upload: 'Upload media',
   postflight: 'Postflight',
+  maintenance: 'Bảo trì & Sự cố',
   zoneMap: 'Zone map',
   notifications: 'Thông báo',
   profile: 'Hồ sơ và chứng chỉ',

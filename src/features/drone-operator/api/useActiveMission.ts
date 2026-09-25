@@ -18,6 +18,26 @@ export function isSelectableMission(status?: string | null) {
   )
 }
 
+function hasAssignedDrone(mission?: BackendMission) {
+  return Boolean(mission?.droneCode || mission?.droneId)
+}
+
+export function mergeMissionSnapshot(
+  detail?: BackendMission,
+  listItem?: BackendMission,
+): BackendMission | undefined {
+  if (!detail) return listItem
+  if (!listItem) return detail
+
+  return {
+    ...listItem,
+    ...detail,
+    droneId: detail.droneId ?? listItem.droneId ?? null,
+    droneCode: detail.droneCode ?? listItem.droneCode ?? null,
+    plan: detail.plan ?? listItem.plan ?? null,
+  }
+}
+
 export function useActiveMission(paramMissionId?: string) {
   const [selectedId, setSelectedId] = useState<string | null>(() => getActiveMissionId())
 
@@ -35,9 +55,8 @@ export function useActiveMission(paramMissionId?: string) {
   const postflightMissions = allMissions.filter(
     (m) => m.status === 'POSTFLIGHT_CHECKING' || m.status === 'RETURNING',
   )
-  const activeMissions = allMissions.filter(
-    (m) => isSelectableMission(m.status),
-  )
+  const activeMissions = allMissions.filter((m) => isSelectableMission(m.status))
+  const activeMissionsWithDrone = activeMissions.filter(hasAssignedDrone)
 
   // Resolve target mission ID:
   // 1. Explicit parameter
@@ -57,6 +76,9 @@ export function useActiveMission(paramMissionId?: string) {
   }
   if (!targetId && postflightMissions.length > 0) {
     targetId = postflightMissions[0].id
+  }
+  if (!targetId && activeMissionsWithDrone.length > 0) {
+    targetId = activeMissionsWithDrone[0].id
   }
   if (!targetId && activeMissions.length > 0) {
     targetId = activeMissions[0].id
@@ -82,8 +104,8 @@ export function useActiveMission(paramMissionId?: string) {
   }
 
   // Active data can come from detailQuery or matched item in allMissions
-  const activeData =
-    detailQuery.data || allMissions.find((m) => m.id === targetId) || undefined
+  const listMatch = allMissions.find((m) => m.id === targetId)
+  const activeData = mergeMissionSnapshot(detailQuery.data, listMatch)
 
   return {
     data: activeData,

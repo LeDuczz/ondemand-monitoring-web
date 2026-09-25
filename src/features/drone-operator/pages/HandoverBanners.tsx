@@ -76,9 +76,9 @@ export function ConfirmedBanner({ missionId, onRevoke }: { missionId?: string; o
         </span>
         <a
           className="odm-btn odm-btn-sm"
-          href={operatorHref({ screen: 'preflight', missionId })}
+          href={operatorHref({ screen: 'flight', missionId })}
         >
-          Tiếp tục tới Preflight
+          Tiếp tục tới buồng lái
         </a>
       </div>
       {/* Demo-only affordance to exercise the REVOKED state without a real dispatcher action. */}

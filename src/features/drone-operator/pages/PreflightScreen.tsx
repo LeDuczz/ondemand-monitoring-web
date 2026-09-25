@@ -5,6 +5,7 @@ import { authenticatedFetch } from '../../auth/api/authApi'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { useActiveMission } from '../api/useActiveMission'
+import { backendPreflightTokenStorageKey } from '../lib/flightWorkflowStorage'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
 import { FlightStepHeader } from './FlightStepper'
@@ -139,10 +140,6 @@ function preflightStateStorageKey(missionId: string, droneLabel: string) {
 
 function weatherStateStorageKey(missionId: string, droneLabel: string) {
   return `omss.droneOperator.weatherState.${missionId}.${droneLabel}`
-}
-
-function backendPreflightTokenStorageKey(missionId: string, droneLabel: string) {
-  return `omss.droneOperator.backendPreflightToken.${missionId}.${droneLabel}`
 }
 
 function isRuntimeStatus(value: unknown): value is RuntimePreflightStatus {
@@ -311,15 +308,11 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
   const [startError, setStartError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
-  async function handleEnterSimulation() {
+  async function handleContinueToHandover() {
     if (!mission.missionId || !mission.data?.droneCode) { setStartError('Mission chưa được gán drone'); return }
     if (isMissionInFlight(mission.data.status)) {
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
       window.location.hash = operatorHref({ screen: 'flight', missionId: mission.missionId })
-      return
-    }
-    if (window.sessionStorage.getItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`) !== 'true') {
-      setStartError('Vui lòng xác nhận cam kết bàn giao trước khi bay')
       return
     }
     setStarting(true)
@@ -333,17 +326,10 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         : await missionApi.runPreflightCheck(mission.missionId, droneCode)
       const tokenValue = storedToken ?? check?.flightToken?.tokenValue
       if (!tokenValue) throw new Error(check?.failureReason || 'Backend preflight không đạt')
-      await missionApi.handoverMyMission(mission.missionId)
-      await missionApi.startMission(mission.missionId, tokenValue)
-      window.sessionStorage.removeItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
-      window.localStorage.setItem(
-        `omss.droneOperator.preflightReady.${mission.data.missionCode ?? mission.missionId}.${droneCode}`,
-        'true',
-      )
-      window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-      window.location.hash = operatorHref({ screen: 'flight', missionId: mission.missionId })
+      window.sessionStorage.setItem(backendPreflightTokenStorageKey(mission.missionId, droneCode), tokenValue)
+      window.location.hash = operatorHref({ screen: 'handover', missionId: mission.missionId })
     } catch (cause) {
-      setStartError(cause instanceof Error ? cause.message : 'Không bắt đầu được mission')
+      setStartError(cause instanceof Error ? cause.message : 'Không xác nhận được precheck')
     } finally {
       setStarting(false)
     }
@@ -351,13 +337,13 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
 
   return <>
     {(mission.error || startError) && <p role="alert" style={{ color: 'var(--red-fg)' }}>{startError ?? (mission.error instanceof Error ? mission.error.message : 'Không tải được mission')}</p>}
-    {starting && <p>Đang xác nhận telemetry, preflight và flight token…</p>}
+    {starting && <p>Đang xác nhận telemetry, precheck và flight token…</p>}
     <PreflightChecklistPanel missionId={mission.missionId ?? 'Chưa chọn mission'}
       missionLabel={mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'}
       droneLabel={mission.data?.droneCode ?? 'Chưa gán drone'}
       missionStatus={mission.data?.status}
       latitude={mission.data?.latitude ?? undefined} longitude={mission.data?.longitude ?? undefined}
-      onReady={() => { void handleEnterSimulation() }} />
+      onReady={() => { void handleContinueToHandover() }} />
   </>
 }
 
@@ -715,7 +701,7 @@ export function PreflightChecklistPanel({
       <FlightStepHeader
         title="Preflight checklist"
         missionId={missionLabel ?? missionId}
-        active={isAlreadyInFlight ? 5 : 4}
+        active={isAlreadyInFlight ? 5 : 3}
         right={
           <span
             style={{
@@ -753,6 +739,7 @@ export function PreflightChecklistPanel({
             triggering={triggering}
             onTrigger={handleTriggerCheck}
             onReady={onReady}
+            missionId={missionId}
             backendPreflightMessage={backendPreflightMessage}
             backendPreflightRegistering={backendPreflightRegistering}
           />
@@ -816,6 +803,7 @@ function SummaryBanner({
   triggering,
   onTrigger,
   onReady,
+  missionId,
   backendPreflightMessage,
   backendPreflightRegistering,
 }: {
@@ -830,6 +818,7 @@ function SummaryBanner({
   triggering: boolean
   onTrigger: () => void
   onReady?: () => void
+  missionId: string
   backendPreflightMessage?: string | null
   backendPreflightRegistering?: boolean
 }) {
@@ -898,15 +887,15 @@ function SummaryBanner({
             disabled={backendPreflightRegistering}
             style={{ minWidth: 220 }}
           >
-            {backendPreflightRegistering ? 'Đang đổi READY_TO_FLY...' : 'Tiếp tục tới buồng lái'}
+            {backendPreflightRegistering ? 'Đang đổi READY_TO_FLY...' : 'Tiếp tục tới bàn giao'}
           </button>
         ) : (
           <a
             className="odm-btn odm-btn-ok"
-            href={operatorHref({ screen: 'flight' })}
+            href={operatorHref({ screen: 'handover', missionId })}
             style={{ minWidth: 220 }}
           >
-            Tiếp tục tới buồng lái
+            Tiếp tục tới bàn giao
           </a>
         )
       ) : isFailed ? (
@@ -936,7 +925,7 @@ function SummaryBanner({
           disabled
           style={{ minWidth: 220 }}
         >
-          Tiếp tục tới buồng lái
+          Tiếp tục tới bàn giao
         </button>
       )}
     </div>

@@ -241,10 +241,10 @@ export function ConnectStatusPanel({
       {state === 'connected' ? (
         <a
           className="odm-btn odm-btn-p"
-          href={operatorHref({ screen: 'handover', missionId: mission?.id })}
+          href={operatorHref({ screen: 'preflight', missionId: mission?.id })}
           style={{ width: '100%' }}
         >
-          Tiếp tục: bàn giao quyền điều khiển
+          Tiếp tục: precheck
         </a>
       ) : (
         <a

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 
+import { missionApi } from '../../mission/api/missionApi'
 import { useActiveMission } from '../api/useActiveMission'
+import { backendPreflightTokenStorageKey, preflightReadyStorageKey } from '../lib/flightWorkflowStorage'
+import { flightControlApi } from '../omss/api/flightControlApi'
 import { operatorHref } from '../routes'
 import { FlightStepHeader } from './FlightStepper'
 import { ConfirmedBanner, RevokedBanner } from './HandoverBanners'
@@ -37,9 +40,21 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
     setError(null)
     try {
       if (!mission.missionId || !mission.data?.droneCode) throw new Error('Chọn mission đã gán drone trước khi tiếp tục')
-      // Backend records the handover only after its preflight reaches READY_TO_FLY.
+      const droneCode = mission.data.droneCode
+      const storedToken = window.sessionStorage.getItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
+      if (!storedToken) {
+        throw new Error('Vui lòng chạy precheck thành công trước khi bàn giao')
+      }
       window.sessionStorage.setItem(`fieldwise.operator.handoverAcknowledged.${mission.missionId}`, 'true')
+      await flightControlApi.bindSession(mission.missionId, droneCode)
+      await missionApi.handoverMyMission(mission.missionId)
+      await missionApi.startMission(mission.missionId, storedToken)
+      window.sessionStorage.removeItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
+      window.localStorage.setItem(preflightReadyStorageKey(mission.data.missionCode ?? mission.missionId, droneCode), 'true')
+      window.localStorage.setItem(preflightReadyStorageKey(mission.missionId, droneCode), 'true')
+      window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
       setConfirmed(true)
+      window.location.hash = operatorHref({ screen: 'flight', missionId: mission.missionId })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không xác nhận được cam kết')
     } finally {
@@ -60,7 +75,7 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
       <FlightStepHeader
         title="Bàn giao quyền điều khiển"
         missionId={missionLabel}
-        active={3}
+        active={4}
       />
       <div style={{ padding: '18px 22px', maxWidth: 800, margin: '0 auto' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -178,7 +193,7 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
               <div style={{ display: 'flex', gap: 12 }}>
                 <a
                   className="odm-btn"
-                  href={operatorHref({ screen: 'connect', missionId: mission.missionId })}
+                  href={operatorHref({ screen: 'preflight', missionId: mission.missionId })}
                   style={{ minWidth: 150 }}
                 >
                   Quay lại

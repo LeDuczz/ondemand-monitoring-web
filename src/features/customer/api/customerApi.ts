@@ -54,6 +54,16 @@ export type ServiceDeliverableOption = {
   deliverableTypeName?: string
 }
 
+export type ServiceRequirementSuggestion = {
+  id: string
+  serviceId?: string
+  category: string
+  label: string
+  message: string
+  sortOrder?: number
+  source?: string
+}
+
 export type ConsultationMessage = {
   id: string
   senderType: 'CUSTOMER' | 'ASSISTANT'
@@ -213,6 +223,12 @@ export const customerApi = {
   listServiceDeliverables: (serviceId: string, signal?: AbortSignal) =>
     apiRequest<ServiceDeliverableOption[]>('/api/service-deliverables', {
       query: { serviceId },
+      signal,
+    }),
+
+  listRequirementSuggestions: (serviceId?: string, signal?: AbortSignal) =>
+    apiRequest<ServiceRequirementSuggestion[]>('/api/services/requirement-suggestions', {
+      query: serviceId ? { serviceId } : undefined,
       signal,
     }),
 

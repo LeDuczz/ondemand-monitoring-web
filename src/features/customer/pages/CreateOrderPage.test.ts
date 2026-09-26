@@ -20,7 +20,7 @@ const consultation: CustomerConsultation = {
 }
 
 describe('buildDraftFromConsultation', () => {
-  it('keeps the customer-selected building safety goal instead of copying every assistant option', () => {
+  it('does not turn consultation messages into request title or description', () => {
     const messages: ConsultationMessage[] = [
       {
         id: 'assistant-1',
@@ -42,14 +42,11 @@ describe('buildDraftFromConsultation', () => {
 
     const draft = buildDraftFromConsultation(consultation, messages, service)
 
-    expect(draft.title).toBe('Giám sát công trình phát hiện an toàn')
-    expect(draft.description).toContain('rà soát an toàn khu vực')
-    expect(draft.description).toContain('Ưu tiên mặt đứng và mặt tiền.')
-    expect(draft.description).not.toContain('phát hiện điểm nóng')
-    expect(draft.description).not.toContain('theo dõi tiến độ')
+    expect(draft.title).toBe('')
+    expect(draft.description).toBe('')
   })
 
-  it('ignores a polluted start-consultation seed once the customer gives direct answers', () => {
+  it('does not concatenate customer input, requirement summary, and recommendation', () => {
     const messages: ConsultationMessage[] = [
       {
         id: 'customer-seed',
@@ -66,8 +63,8 @@ describe('buildDraftFromConsultation', () => {
 
     const draft = buildDraftFromConsultation(consultation, messages, service)
 
-    expect(draft.description).toContain('rà soát an toàn khu vực')
-    expect(draft.description).not.toContain('nứt vỡ/hư hỏng')
-    expect(draft.description).not.toContain('điểm nóng')
+    expect(draft.description).not.toContain('Nội dung khách nhập:')
+    expect(draft.description).not.toContain('Tóm tắt:')
+    expect(draft.description).not.toContain('Dịch vụ đề xuất:')
   })
 })

@@ -16,7 +16,6 @@ import {
   type CustomerConsultation,
   type ConsultationMessage,
   type PreferredTimeOption,
-  type ServiceRequirementSuggestion,
   type ServiceDeliverableOption,
   type ServiceOption,
 } from '../api/customerApi'
@@ -486,282 +485,44 @@ function findRecommendedService(
   return undefined
 }
 
-function findServiceByKeywords(services: ServiceOption[], keywords: string[]) {
-  if (keywords.length === 0) return undefined
-  return services.find((service) => {
-    const haystack = normalizeText(`${service.id} ${service.name} ${service.description ?? ''}`)
-    return keywords.some((keyword) => haystack.includes(keyword))
-  })
-}
-
-function latestCustomerIntentText(messages: ConsultationMessage[]) {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
-    if (message.senderType === 'CUSTOMER') return cleanRequirementText(message.message)
-  }
-  return ''
-}
-
-function cleanRequirementText(value: string) {
-  return value
-    .replace(/^tôi muốn tạo yêu cầu giám sát:\s*/i, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
 function truncateText(value: string, maxLength: number) {
   const trimmed = value.trim()
   if (trimmed.length <= maxLength) return trimmed
   return `${trimmed.slice(0, Math.max(0, maxLength - 3)).trim()}...`
 }
 
-function buildConsultationTitle(
-  sourceText: string,
-) {
-  const normalized = normalizeText(sourceText)
-  const object =
-    normalized.includes('thanh long') || normalized.includes('cay trong') || normalized.includes('nong nghiep') || normalized.includes('ca phe') || normalized.includes('vuon')
-      ? 'cây trồng'
-      : normalized.includes('toa nha') || normalized.includes('cong trinh')
-      ? 'công trình'
-      : normalized.includes('kho bai') || normalized.includes('logistics') || normalized.includes('container')
-        ? 'kho bãi/logistics'
-        : normalized.includes('su kien') || normalized.includes('dong nguoi') || normalized.includes('dam dong')
-          ? 'sự kiện/khu đông người'
-          : normalized.includes('nha may') || normalized.includes('khu cong nghiep')
-            ? 'nhà máy/khu công nghiệp'
-      : normalized.includes('moi truong') || normalized.includes('ngap') || normalized.includes('sat lo')
-          ? 'môi trường'
-          : normalized.includes('chay rung') || normalized.includes('diem nhiet')
-            ? 'cháy rừng/điểm nhiệt'
-            : normalized.includes('giao thong')
-              ? 'giao thông'
-                    : normalized.includes('duong ong') || normalized.includes('ro ri')
-                      ? 'đường ống/hành lang tuyến'
-                      : normalized.includes('cau') || normalized.includes('mat duong') || normalized.includes('sut lun')
-                        ? 'cầu/đường'
-                : normalized.includes('tam pin') || normalized.includes('solar')
-                ? 'tấm pin năng lượng mặt trời'
-                : normalized.includes('duong day dien') || normalized.includes('tram bien ap')
-                  ? 'đường dây điện/trạm biến áp'
-                  : 'khu vực'
-
-  const title = `Giám sát ${object}`
-  return truncateText(title, 96)
-}
-
-function looksLikeGeneratedDetailTitle(title: string) {
-  const normalized = normalizeText(title)
-  return (
-    normalized.includes('phat hien')
-    || normalized.includes('nut vo')
-    || normalized.includes('hu hong')
-    || normalized.includes('diem nong')
-    || normalized.includes('kiem tra')
-  )
-}
-
-function collectCustomerIntent(messages: ConsultationMessage[]) {
-  const customerTexts = messages
-    .filter((message) => message.senderType === 'CUSTOMER')
-    .map((message) => ({
-      raw: message.message.trim(),
-      clean: cleanRequirementText(message.message),
-    }))
-    .filter((message) => message.clean)
-  const directAnswers = customerTexts
-    .filter((message) => !normalizeText(message.raw).startsWith('toi muon tao yeu cau giam sat:'))
-    .map((message) => message.clean)
-  const normalized = normalizeText(
-    (directAnswers.length ? directAnswers : customerTexts.map((message) => message.clean)).join('\n'),
-  )
-  const goals: string[] = []
-  const focusAreas: string[] = []
-  const deliverables: string[] = []
-
-  if (normalized.includes('nut vo') || normalized.includes('hu hong') || normalized.includes('vet nut')) goals.push('AI check nứt vỡ/hư hỏng')
-  if (normalized.includes('diem nong') || normalized.includes('nhiet')) goals.push('phát hiện điểm nóng')
-  if (normalized.includes('an toan')) goals.push('rà soát an toàn khu vực')
-  if (normalized.includes('tien do')) goals.push('theo dõi tiến độ')
-  if (normalized.includes('xuong cap')) goals.push('phát hiện dấu hiệu xuống cấp')
-  if (normalized.includes('tham nuoc') || normalized.includes('tham dot')) goals.push('kiểm tra thấm nước/thấm dột')
-
-  if (normalized.includes('mat dung')) focusAreas.push('mặt đứng')
-  if (normalized.includes('mat tien')) focusAreas.push('mặt tiền')
-  if (normalized.includes('mai')) focusAreas.push('mái')
-  if (normalized.includes('khu ky thuat')) focusAreas.push('khu kỹ thuật')
-  if (normalized.includes('toan bo')) focusAreas.push('toàn bộ công trình')
-  if (normalized.includes('dau hieu bat thuong')) focusAreas.push('khu vực có dấu hiệu bất thường')
-
-  if (normalized.includes('anh') || normalized.includes('video') || normalized.includes('minh chung')) {
-    deliverables.push('ảnh/video minh chứng')
-  }
-  if (normalized.includes('bao cao')) deliverables.push('báo cáo tổng hợp')
-  if (normalized.includes('danh dau vi tri') || normalized.includes('vi tri bat thuong')) {
-    deliverables.push('đánh dấu vị trí bất thường')
-  }
-  if (normalized.includes('ban do') || normalized.includes('khu vuc co van de')) {
-    deliverables.push('bản đồ khu vực có vấn đề')
-  }
-  if (normalized.includes('toa do') || normalized.includes('vi tri tren ban do')) {
-    deliverables.push('tọa độ/vị trí đánh dấu trên bản đồ')
-  }
-  if (normalized.includes('bao khan') || normalized.includes('canh bao') || normalized.includes('email') || normalized.includes('sms') || normalized.includes('dien thoai')) {
-    deliverables.push('cảnh báo khi phát hiện bất thường')
-  }
-  if (normalized.includes('dinh ky') || normalized.includes('hang tuan') || normalized.includes('hang thang') || normalized.includes('so sanh thay doi')) {
-    deliverables.push('theo dõi định kỳ/so sánh thay đổi')
-  }
-
-  return {
-    goals: [...new Set(goals)],
-    focusAreas: [...new Set(focusAreas)],
-    deliverables: [...new Set(deliverables)],
-  }
-}
-
-function buildIntentSummary(
-  consultation: CustomerConsultation,
-  messages: ConsultationMessage[],
-  service?: ServiceOption,
-) {
-  const customerIntent = collectCustomerIntent(messages)
-  const fallbackSummary = consultation.requirementSummary || ''
-  const normalizedFallback = normalizeText(fallbackSummary)
-  const normalizedConversation = normalizeText(messages.map((message) => message.message).join('\n'))
-  const agricultureIntent = normalizedConversation.includes('thanh long') || normalizedConversation.includes('cay trong') || normalizedConversation.includes('nong nghiep') || normalizedConversation.includes('vuon')
-  const object =
-    service?.name
-      ? service.name.replace(/^giám sát\s+/i, '').toLowerCase()
-      : agricultureIntent
-        ? 'cây trồng/vườn'
-        : normalizedFallback.includes('toa nha') || normalizedFallback.includes('cong trinh')
-      ? 'tòa nhà/công trình'
-      : 'khu vực giám sát'
-  const goalText = customerIntent.goals.length
-    ? customerIntent.goals.join(', ')
-    : agricultureIntent
-      ? 'làm rõ tình trạng cây trồng/vườn'
-      : fallbackSummary || 'làm rõ mục tiêu giám sát'
-  const focusText = customerIntent.focusAreas.length
-    ? ` Ưu tiên ${customerIntent.focusAreas.join(' và ')}.`
-    : ''
-  const deliverableText = customerIntent.deliverables.length
-    ? ` Kết quả mong muốn: ${customerIntent.deliverables.join(', ')}.`
-    : ''
-
-  return {
-    goalText,
-    focusText,
-    deliverableText,
-    summary: `Khách hàng muốn giám sát ${object} để ${goalText}.${focusText}${deliverableText}`,
-  }
-}
-
 export function buildDraftFromConsultation(
-  consultation: CustomerConsultation,
-  messages: ConsultationMessage[],
-  service?: ServiceOption,
+  _consultation: CustomerConsultation,
+  _messages: ConsultationMessage[],
+  _service?: ServiceOption,
 ) {
-  const customerMessages = messages
-    .filter((message) => message.senderType === 'CUSTOMER')
-    .map((message) => cleanRequirementText(message.message))
-    .filter(Boolean)
-
-  const intent = buildIntentSummary(consultation, messages, service)
-  const summarySource = intent.summary || customerMessages.at(-1) || ''
-
-  const title = buildConsultationTitle(
-    [
-      summarySource,
-      ...customerMessages,
-      service?.name ?? '',
-    ].join('\n'),
-  )
-
-  const descriptionParts = [
-    summarySource,
-    service?.name ? `Dịch vụ AI đề xuất: ${service.name}.` : '',
-  ].filter(Boolean)
-
   return {
-    title,
-    description: descriptionParts.join('\n\n'),
+    title: '',
+    description: '',
   }
 }
 
-function isChatAnswerTitle(
-  title: string,
-  messages: ConsultationMessage[],
-) {
-  const normalizedTitle = normalizeText(title.trim())
-  if (!normalizedTitle) return true
-
-  return messages
-    .filter((message) => message.senderType === 'CUSTOMER')
-    .map((message) => normalizeText(cleanRequirementText(message.message)))
-    .some((message) => message === normalizedTitle)
+function consultationStatusLabel(status?: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return 'Đang tư vấn'
+    case 'READY_FOR_CONFIRMATION':
+      return 'Sẵn sàng xác nhận'
+    case 'COMPLETED':
+      return 'Đã hoàn tất'
+    case 'CONFIRMED':
+      return 'Đã xác nhận'
+    case 'CANCELLED':
+      return 'Đã huỷ'
+    default:
+      return status ? 'Đang cập nhật' : 'Chưa bắt đầu'
+  }
 }
 
 function wait(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
   })
-}
-
-type RequirementQuickGroup = {
-  label: string
-  replies: string[]
-}
-
-function mergeRequirementGroups(
-  groups: RequirementQuickGroup[],
-) {
-  const byLabel = new Map<string, RequirementQuickGroup>()
-  groups.forEach((group) => {
-    const existing = byLabel.get(group.label)
-    if (!existing) {
-      byLabel.set(group.label, { label: group.label, replies: [...group.replies] })
-      return
-    }
-    existing.replies = [...new Set([...existing.replies, ...group.replies])].slice(0, 6)
-  })
-  return [...byLabel.values()].slice(0, 4)
-}
-
-function buildRequirementQuickGroups(suggestions: ServiceRequirementSuggestion[]) {
-  const groups = new Map<string, RequirementQuickGroup>()
-  suggestions.forEach((suggestion) => {
-    const group = groups.get(suggestion.category) ?? { label: suggestion.category, replies: [] }
-    group.replies.push(suggestion.message || suggestion.label)
-    groups.set(suggestion.category, group)
-  })
-  return mergeRequirementGroups([...groups.values()])
-}
-
-function inferServiceKeywordsFromText(text: string) {
-  const normalized = normalizeText(text)
-  if (['thanh long', 'vuon', 'cay trong', 'nong nghiep', 'ca phe', 'lua', 'sau benh', 'thieu nuoc'].some((keyword) => normalized.includes(keyword))) {
-    return ['nong nghiep', 'cay trong', 'ndvi', 'thuc vat']
-  }
-  if (['cong trinh', 'toa nha', 'co so ha tang', 'xay dung'].some((keyword) => normalized.includes(keyword))) {
-    return ['toa nha', 'co so ha tang', 'cong trinh']
-  }
-  if (['kho bai', 'logistics', 'container'].some((keyword) => normalized.includes(keyword))) {
-    return ['kho bai', 'logistics', 'container']
-  }
-  if (['su kien', 'dam dong', 'dong nguoi', 'bai do xe'].some((keyword) => normalized.includes(keyword))) {
-    return ['su kien', 'dong nguoi', 'dam dong']
-  }
-  return []
-}
-
-function textMatchesService(text: string, service?: ServiceOption) {
-  if (!service) return false
-  const keywords = inferServiceKeywordsFromText(text)
-  if (keywords.length === 0) return true
-  const haystack = normalizeText(`${service.id} ${service.name} ${service.description ?? ''}`)
-  return keywords.some((keyword) => haystack.includes(keyword))
 }
 
 export function CreateOrderPage() {
@@ -884,36 +645,25 @@ export function CreateOrderPage() {
 
   function applyConsultationToRequest(nextConsultation: CustomerConsultation) {
     const nextMessages = nextConsultation.messages?.length ? nextConsultation.messages : chatMessages
-    const latestIntent = latestCustomerIntentText(nextMessages)
-    const inferredService = findServiceByKeywords(services, inferServiceKeywordsFromText(latestIntent))
     const recommendedService = findRecommendedService(nextConsultation, services)
-    const nextService = inferredService ?? (
-      textMatchesService(latestIntent, recommendedService) ? recommendedService : undefined
-    )
-    const draft = buildDraftFromConsultation(nextConsultation, nextMessages, nextService)
+    const draft = buildDraftFromConsultation(nextConsultation, nextMessages, recommendedService)
 
     setForm((current) => ({
       ...current,
-      serviceId: nextService?.id ?? (!textMatchesService(latestIntent, selectedService) ? '' : current.serviceId),
       title:
         !current.title.trim()
         || current.title === autoDraft.title
-        || !textMatchesService(latestIntent, selectedService)
-        || looksLikeGeneratedDetailTitle(current.title)
-        || isChatAnswerTitle(current.title, nextMessages)
           ? draft.title || current.title
           : current.title,
       description:
         !current.description.trim()
         || current.description === autoDraft.description
-        || !textMatchesService(latestIntent, selectedService)
           ? draft.description || current.description
           : current.description,
     }))
     setAutoDraft(draft)
     setErrors((current) => ({
       ...current,
-      serviceId: nextService ? undefined : current.serviceId,
       title: draft.title ? undefined : current.title,
     }))
   }
@@ -978,7 +728,6 @@ export function CreateOrderPage() {
   }
 
   function buildConsultationRequestContext(latestMessage = '') {
-    const keepCurrentRequest = textMatchesService(latestMessage, selectedService)
     return [
       'Thông tin vị trí/phạm vi từ Step 1:',
       `- Địa chỉ/khu vực: ${form.address || 'chưa nhập'}.`,
@@ -990,13 +739,11 @@ export function CreateOrderPage() {
       `- Vùng map nhận diện: ${form.address || 'chưa xác định zone'}.`,
       '',
       'Thông tin request hiện tại:',
-      `- Tiêu đề: ${keepCurrentRequest ? form.title || 'chưa nhập' : 'bỏ qua vì khách vừa nhập nhu cầu mới khác service cũ'}.`,
-      `- Mô tả đang có: ${keepCurrentRequest ? form.description || 'chưa nhập' : 'bỏ qua vì khách vừa nhập nhu cầu mới khác service cũ'}.`,
-      `- Service đang chọn: ${keepCurrentRequest ? selectedService?.name || 'chưa chọn' : 'chưa chọn lại theo nhu cầu mới'}.`,
-      `- Deliverable đang chọn: ${selectedDeliverable?.deliverableTypeName || 'chưa chọn'}.`,
-      `- Thời gian dự kiến: ${form.preferredDateFrom || 'chưa chọn'} đến ${form.preferredDateTo || 'chưa chọn'}.`,
-      `- Khung giờ: ${selectedTime ? formatTimeLabel(selectedTime) : 'chưa chọn'}.`,
-      `- Media: ${form.mediaType}, số lượng ${form.quantity}, độ phân giải ${form.resolution}.`,
+      `- Tin nhắn mới nhất của khách: ${latestMessage || 'chưa nhập'}.`,
+      `- Tiêu đề: ${form.title || 'chưa nhập'}.`,
+      `- Mô tả đang có: ${form.description || 'chưa nhập'}.`,
+      `- Service customer đang chọn: ${selectedService?.name || 'chưa chọn'}.`,
+      '- Khung giờ, loại kết quả và media do biểu mẫu bên ngoài quản lý; AI không hỏi lại các thông tin này.',
     ].join('\n')
   }
 
@@ -1064,49 +811,27 @@ export function CreateOrderPage() {
       return
     }
     setChatBusy(true)
-    let startedConsultationId = ''
-    const localMessage: ConsultationMessage = {
-      id: `local-${Date.now()}`,
-      senderType: 'CUSTOMER',
-      message: '',
-    }
-    const seedMessage = [
-      `Tôi muốn tạo yêu cầu giám sát: ${form.title || selectedService?.name || 'chưa đặt tiêu đề'}.`,
-      `Địa điểm: ${form.address || 'chưa nhập'}.`,
-      `Bán kính: ${form.radiusM}m.`,
-      `Dịch vụ: ${selectedService?.name || 'chưa chọn'}.`,
-      `Kết quả mong muốn: ${selectedDeliverable?.deliverableTypeName || form.mediaType}.`,
-      'Bạn tư vấn giúp tôi cần bổ sung gì trước khi gửi request.',
-    ].join(' ')
-    localMessage.message = seedMessage
-    const requestContext = buildConsultationRequestContext(seedMessage)
-    setChatMessages([localMessage])
     try {
       const session = await withConsultationTimeout((signal) =>
         customerApi.startConsultation(signal),
       )
-      startedConsultationId = session.id
-      const nextConsultation = await withConsultationTimeout((signal) =>
-        customerApi.sendConsultationMessage(session.id, seedMessage, {
-          signal,
-          requestContext,
-        }),
-      )
-      receiveConsultation(nextConsultation)
+      setConsultation(session)
+      setChatMessages(session.messages ?? [])
+      setSubmitError(null)
     } catch (error) {
       console.error('Start AI consultation failed', error)
-      const recovered = startedConsultationId
-        ? await recoverConsultationAfterSendFailure(startedConsultationId).catch(() => false)
-        : false
-      if (!recovered) {
-        const message = `Không lấy được phản hồi AI. ${describeChatError(error)}`
-        appendChatNotice(message)
-        setSubmitError(message)
-      }
+      const message = `Không tạo được phiên tư vấn. ${describeChatError(error)}`
+      appendChatNotice(message)
+      setSubmitError(message)
     } finally {
       setChatBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (step !== 2 || isReusableConsultation(consultation) || chatBusy) return
+    void startConsultation()
+  }, [step])
 
   async function sendChatMessage(messageOverride?: string) {
     const text = (messageOverride ?? chatText).trim()
@@ -1120,16 +845,6 @@ export function CreateOrderPage() {
       id: `local-${Date.now()}`,
       senderType: 'CUSTOMER',
       message: text,
-    }
-    if (!textMatchesService(text, selectedService)) {
-      setConsultation(null)
-      setAutoDraft({ title: '', description: '' })
-      setForm((current) => ({
-        ...current,
-        title: '',
-        description: '',
-        serviceId: '',
-      }))
     }
     setChatBusy(true)
     setChatText('')
@@ -1165,11 +880,6 @@ export function CreateOrderPage() {
     } finally {
       setChatBusy(false)
     }
-  }
-
-  function sendQuickReply(reply: string) {
-    if (chatBusy) return
-    void sendChatMessage(reply)
   }
 
   function clearRequestConsultation() {
@@ -1319,7 +1029,6 @@ export function CreateOrderPage() {
           selectedService={selectedService}
           setChatText={setChatText}
           startConsultation={startConsultation}
-          sendQuickReply={sendQuickReply}
           sendChatMessage={sendChatMessage}
           clearRequestConsultation={clearRequestConsultation}
           update={update}
@@ -1556,7 +1265,6 @@ function StepService({
   selectedService,
   setChatText,
   startConsultation,
-  sendQuickReply,
   sendChatMessage,
   clearRequestConsultation,
   update,
@@ -1572,32 +1280,13 @@ function StepService({
   selectedService?: ServiceOption
   setChatText: (value: string) => void
   startConsultation: () => void
-  sendQuickReply: (reply: string) => void
   sendChatMessage: (messageOverride?: string) => void
   clearRequestConsultation: () => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
   const recommendedService = findRecommendedService(consultation, services)
   const aiSuggestedServices = recommendedService ? [recommendedService] : []
-  const suggestionServiceId = selectedService?.id ?? recommendedService?.id
-  const [requirementSuggestions, setRequirementSuggestions] = useState<ServiceRequirementSuggestion[]>([])
-  const requirementGroups = buildRequirementQuickGroups(requirementSuggestions)
-  const [showRequirementShortcuts, setShowRequirementShortcuts] = useState(false)
   const chatScrollRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    customerApi
-      .listRequirementSuggestions(suggestionServiceId, controller.signal)
-      .then(setRequirementSuggestions)
-      .catch((error) => {
-        if (!controller.signal.aborted) {
-          console.error('Load requirement suggestions failed', error)
-          setRequirementSuggestions([])
-        }
-      })
-    return () => controller.abort()
-  }, [suggestionServiceId])
 
   useEffect(() => {
     chatScrollRef.current?.scrollTo({
@@ -1665,89 +1354,23 @@ function StepService({
               })}
               {chatBusy && (
                 <div style={{ alignSelf: 'flex-start', maxWidth: '86%', padding: '9px 11px', borderRadius: 8, background: 'var(--sf2)', color: 'var(--tx3)', fontSize: 13, lineHeight: 1.5 }}>
-                  AI đang trả lời...
+                  AI đang phân tích nhu cầu...
                 </div>
-              )}
-            </div>
-            <div
-              style={{
-                border: '1px solid var(--bd)',
-                borderRadius: 8,
-                background: 'var(--sf2)',
-                padding: '8px 10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: showRequirementShortcuts ? 10 : 0,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 12.5 }}>Bổ sung nhanh yêu cầu</div>
-                  {!showRequirementShortcuts && (
-                    <div style={{ color: 'var(--tx3)', fontSize: 11.5, marginTop: 2 }}>
-                      Mở khi cần thêm mục tiêu, khu vực, kết quả hoặc thông báo.
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="odm-btn odm-btn-sm"
-                  onClick={() => setShowRequirementShortcuts((current) => !current)}
-                >
-                  {showRequirementShortcuts ? 'Ẩn' : 'Mở'}
-                </button>
-              </div>
-              {showRequirementShortcuts && (
-                <>
-                  {requirementGroups.length === 0 && (
-                    <div style={{ color: 'var(--tx3)', fontSize: 12, lineHeight: 1.5 }}>
-                      Chưa có gợi ý trong database cho dịch vụ này.
-                    </div>
-                  )}
-                  {requirementGroups.map((group) => (
-                    <div key={group.label}>
-                      <div style={{ color: 'var(--tx3)', fontSize: 11.5, fontWeight: 800, marginBottom: 6 }}>
-                        {group.label}
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {group.replies.map((reply) => (
-                          <button
-                            key={reply}
-                            type="button"
-                            onClick={() => sendQuickReply(reply)}
-                            disabled={chatBusy}
-                            style={{
-                              border: '1px solid var(--bd)',
-                              background: 'var(--sf)',
-                              color: 'var(--tx2)',
-                              borderRadius: 8,
-                              padding: '6px 9px',
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              cursor: chatBusy ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            {reply}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <input
+              <textarea
                 value={chatText}
                 onChange={(event) => setChatText(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
                     event.preventDefault()
                     sendChatMessage()
                   }
                 }}
-                placeholder="VD: Tôi trồng cà phê và muốn phát hiện cây bất thường..."
-                style={inputStyle}
+                placeholder="VD: Tôi có một khu đất trồng cà phê, cây phát triển không đồng đều..."
+                rows={2}
+                style={{ ...inputStyle, minHeight: 44, maxHeight: 96, paddingTop: 8, resize: 'vertical' }}
               />
               <button type="button" className="odm-btn odm-btn-p" onClick={() => sendChatMessage()} disabled={chatBusy || !chatText.trim()}>
                 Gửi
@@ -1763,23 +1386,18 @@ function StepService({
               <div style={{ border: '1.5px solid var(--green-dot)', background: 'var(--green-bg)', borderRadius: 8, padding: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                   <div>
-                    <div style={{ fontWeight: 800, color: 'var(--green-fg)' }}>AI gợi ý service phù hợp</div>
+                    <div style={{ fontWeight: 800, color: 'var(--green-fg)' }}>AI đề xuất</div>
                     <div style={{ marginTop: 3, fontSize: 12, color: 'var(--green-fg)' }}>
                       Dựa trên nội dung chat và thông tin request hiện tại.
                     </div>
                   </div>
-                  {recommendedService && (
-                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--green-fg)' }}>Recommended</span>
-                  )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8, marginTop: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8, marginTop: 12 }}>
                   {aiSuggestedServices.map((service) => {
                     const active = form.serviceId === service.id
                     return (
-                      <button
+                      <div
                         key={service.id}
-                        type="button"
-                        onClick={() => update('serviceId', service.id)}
                         style={{
                           textAlign: 'left',
                           minHeight: 78,
@@ -1788,14 +1406,19 @@ function StepService({
                           border: `1.5px solid ${active ? 'var(--green-dot)' : 'rgba(22,163,74,.35)'}`,
                           background: active ? 'rgba(22,163,74,.16)' : 'var(--sf)',
                           color: 'var(--tx)',
-                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
                         }}
                       >
                         <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.25 }}>{service.name}</div>
                         <div style={{ marginTop: 6, color: 'var(--tx3)', fontSize: 11, lineHeight: 1.35 }}>
                           {service.description || 'Dịch vụ giám sát bằng drone.'}
                         </div>
-                      </button>
+                        <button type="button" className="odm-btn odm-btn-sm" onClick={() => update('serviceId', service.id)}>
+                          {active ? 'Đã chọn' : 'Chọn dịch vụ này'}
+                        </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -1835,11 +1458,18 @@ function StepService({
           <Field label="Tiêu đề" error={errors.title}>
             <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="VD: Giám sát tiến độ khu công trình phía Đông" style={inputStyle} />
           </Field>
-          <Field label="Mô tả yêu cầu">
-            <textarea value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Mô tả mục tiêu, khu vực cần chú ý, ràng buộc an toàn..." rows={8} style={{ ...inputStyle, height: 180, paddingTop: 8, resize: 'vertical' }} />
-          </Field>
+          <div>
+            <div style={{ color: 'var(--tx3)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>AI đã hiểu nhu cầu</div>
+            <div style={{ border: '1px solid var(--bd)', borderRadius: 8, background: 'var(--sf2)', padding: 12, minHeight: 72, whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>
+              {consultation?.requirementSummary || 'AI chưa có đủ thông tin để tóm tắt nhu cầu.'}
+            </div>
+          </div>
+          <Metric label="AI đề xuất" value={recommendedService?.name || consultation?.recommendedServiceName || 'Chưa có đề xuất'} />
           <Metric label="Service đã chọn" value={selectedService?.name || 'Chưa chọn'} />
-          {consultation?.status && <Metric label="Trạng thái tư vấn" value={consultation.status} />}
+          <Metric label="Trạng thái tư vấn" value={consultationStatusLabel(consultation?.status)} />
+          <Field label="Mô tả request">
+            <textarea value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Mô tả bổ sung cho request nếu cần..." rows={5} style={{ ...inputStyle, height: 130, paddingTop: 8, resize: 'vertical' }} />
+          </Field>
         </div>
       </div>
     </div>

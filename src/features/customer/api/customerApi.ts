@@ -80,6 +80,8 @@ export type CustomerConsultation = {
   status?: string
   requirementData?: string
   requirementSummary?: string
+  requestTitle?: string
+  requestSummary?: string
   startedAt?: string
   completedAt?: string
   messages?: ConsultationMessage[]

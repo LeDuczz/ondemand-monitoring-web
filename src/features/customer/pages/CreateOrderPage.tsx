@@ -455,15 +455,7 @@ function scoreRequest(form: FormState): AiScore {
   }
 }
 
-function normalizeText(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-}
-
-function findRecommendedService(
+export function findRecommendedService(
   consultation: CustomerConsultation | null,
   services: ServiceOption[],
 ) {
@@ -472,14 +464,6 @@ function findRecommendedService(
   if (consultation.recommendedServiceId) {
     const byId = services.find((service) => service.id === consultation.recommendedServiceId)
     if (byId) return byId
-  }
-
-  if (consultation.recommendedServiceName) {
-    const recommendedName = normalizeText(consultation.recommendedServiceName)
-    return services.find((service) => {
-      const serviceName = normalizeText(service.name)
-      return serviceName === recommendedName || serviceName.includes(recommendedName) || recommendedName.includes(serviceName)
-    })
   }
 
   return undefined
@@ -492,13 +476,20 @@ function truncateText(value: string, maxLength: number) {
 }
 
 export function buildDraftFromConsultation(
-  _consultation: CustomerConsultation,
+  consultation: CustomerConsultation,
   _messages: ConsultationMessage[],
   _service?: ServiceOption,
 ) {
+  if (consultation.status !== 'READY_FOR_CONFIRMATION') {
+    return {
+      title: '',
+      description: '',
+    }
+  }
+
   return {
-    title: '',
-    description: '',
+    title: consultation.requestTitle?.trim() || '',
+    description: consultation.requestSummary?.trim() || '',
   }
 }
 
@@ -506,6 +497,8 @@ function consultationStatusLabel(status?: string) {
   switch (status) {
     case 'ACTIVE':
       return 'Đang tư vấn'
+    case 'RECOMMENDED':
+      return 'Đã đề xuất service'
     case 'READY_FOR_CONFIRMATION':
       return 'Sẵn sàng xác nhận'
     case 'COMPLETED':
@@ -650,6 +643,7 @@ export function CreateOrderPage() {
 
     setForm((current) => ({
       ...current,
+      serviceId: recommendedService?.id || current.serviceId,
       title:
         !current.title.trim()
         || current.title === autoDraft.title
@@ -1416,7 +1410,7 @@ function StepService({
                           {service.description || 'Dịch vụ giám sát bằng drone.'}
                         </div>
                         <button type="button" className="odm-btn odm-btn-sm" onClick={() => update('serviceId', service.id)}>
-                          {active ? 'Đã chọn' : 'Chọn dịch vụ này'}
+                          {active ? 'Đang chọn dịch vụ này' : 'Chọn gợi ý này'}
                         </button>
                       </div>
                     )
@@ -1436,10 +1430,37 @@ function StepService({
                 const active = form.serviceId === service.id
                 const suggested = aiSuggestedServices.some((item) => item.id === service.id)
                 return (
-                  <button key={service.id} type="button" onClick={() => update('serviceId', service.id)} style={{ textAlign: 'left', padding: 14, borderRadius: 8, border: `1.5px solid ${active ? 'var(--blue-solid)' : 'var(--bd)'}`, background: active ? 'var(--blue-bg)' : 'var(--sf)', cursor: 'pointer' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    key={service.id}
+                    type="button"
+                    onClick={() => update('serviceId', service.id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: 14,
+                      borderRadius: 8,
+                      border: `1.5px solid ${suggested ? 'var(--green-dot)' : active ? 'var(--blue-solid)' : 'var(--bd)'}`,
+                      background: suggested ? 'var(--green-bg)' : active ? 'var(--blue-bg)' : 'var(--sf)',
+                      cursor: 'pointer',
+                      boxShadow: suggested ? '0 0 0 1px rgba(22,163,74,.14)' : undefined,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      {suggested && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            color: 'var(--green-fg)',
+                            background: 'rgba(22,163,74,.12)',
+                            border: '1px solid rgba(22,163,74,.25)',
+                            borderRadius: 999,
+                            padding: '2px 7px',
+                          }}
+                        >
+                          AI đề xuất
+                        </span>
+                      )}
                       <div style={{ fontWeight: 800, color: active ? 'var(--blue-fg)' : 'var(--tx)' }}>{service.name}</div>
-                      {suggested && <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--green-fg)' }}>AI</span>}
                     </div>
                     <div style={{ marginTop: 8, color: 'var(--tx3)', fontSize: 12, lineHeight: 1.5 }}>{service.description || 'Dịch vụ giám sát bằng drone.'}</div>
                   </button>
@@ -1466,7 +1487,14 @@ function StepService({
           </div>
           <Metric label="AI đề xuất" value={recommendedService?.name || consultation?.recommendedServiceName || 'Chưa có đề xuất'} />
           <Metric label="Service đã chọn" value={selectedService?.name || 'Chưa chọn'} />
-          <Metric label="Trạng thái tư vấn" value={consultationStatusLabel(consultation?.status)} />
+          <Metric
+            label="Trạng thái tư vấn"
+            value={
+              consultation?.status === 'READY_FOR_CONFIRMATION' && !selectedService
+                ? 'Chờ chọn service'
+                : consultationStatusLabel(consultation?.status)
+            }
+          />
           <Field label="Mô tả request">
             <textarea value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Mô tả bổ sung cho request nếu cần..." rows={5} style={{ ...inputStyle, height: 130, paddingTop: 8, resize: 'vertical' }} />
           </Field>

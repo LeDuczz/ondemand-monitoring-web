@@ -101,7 +101,7 @@ export function MediaTable({
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <StatusBadge tone={STATUS_TONE[file.status]}>
-                    {STATUS_LABEL[file.status]}
+                    {file.validationPending ? 'Đang xác thực' : STATUS_LABEL[file.status]}
                   </StatusBadge>
                   {file.manualTaskCreated ? (
                     <span style={{ fontSize: 11, color: 'var(--tx3)' }}>

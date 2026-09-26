@@ -105,6 +105,13 @@ const MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
 const OUTSIDE_MONITORING_ZONE_LABEL = 'Outside configured monitoring zones'
 
+function isReusableConsultation(consultation?: CustomerConsultation | null) {
+  if (!consultation?.id) return false
+  if (consultation.id.startsWith('local-')) return false
+  if (consultation.orderId) return false
+  return consultation.status !== 'CONFIRMED' && consultation.status !== 'CANCELLED'
+}
+
 const card: React.CSSProperties = {
   background: 'var(--sf)',
   border: '1px solid var(--bd)',
@@ -945,8 +952,13 @@ export function CreateOrderPage() {
   const [metaError, setMetaError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [mapPoint, setMapPoint] = useState<MapPoint>(storedDraft?.mapPoint ?? { x: 50, y: 50 })
-  const [consultation, setConsultation] = useState<CustomerConsultation | null>(storedDraft?.consultation ?? null)
-  const [chatMessages, setChatMessages] = useState<ConsultationMessage[]>(storedDraft?.chatMessages ?? [])
+  const initialConsultation = isReusableConsultation(storedDraft?.consultation)
+    ? storedDraft?.consultation ?? null
+    : null
+  const [consultation, setConsultation] = useState<CustomerConsultation | null>(initialConsultation)
+  const [chatMessages, setChatMessages] = useState<ConsultationMessage[]>(
+    initialConsultation ? storedDraft?.chatMessages ?? [] : [],
+  )
   const [chatText, setChatText] = useState('')
   const [chatBusy, setChatBusy] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -1102,16 +1114,28 @@ export function CreateOrderPage() {
   }
 
   async function recoverConsultationAfterSendFailure(consultationId: string) {
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      if (attempt > 0) await wait(1200)
-      const latest = await customerApi.getConsultation(consultationId)
-      const hasAssistantReply = latest.messages?.some(
-        (message) => message.senderType === 'ASSISTANT',
-      )
-      if (hasAssistantReply) {
-        receiveConsultation(latest)
-        return true
+    try {
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        if (attempt > 0) await wait(1200)
+        const latest = await customerApi.getConsultation(consultationId)
+        const hasAssistantReply = latest.messages?.some(
+          (message) => message.senderType === 'ASSISTANT',
+        )
+        if (hasAssistantReply) {
+          receiveConsultation(latest)
+          return true
+        }
       }
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        (error.status === 404 || error.message.toLowerCase().includes('consultation not found'))
+      ) {
+        setConsultation(null)
+        setChatMessages([])
+        window.localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
+      }
+      throw error
     }
     return false
   }
@@ -1253,7 +1277,7 @@ export function CreateOrderPage() {
       appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
       return
     }
-    let activeConsultationId = consultation?.id
+    let activeConsultationId = isReusableConsultation(consultation) ? consultation?.id : undefined
     const localMessage: ConsultationMessage = {
       id: `local-${Date.now()}`,
       senderType: 'CUSTOMER',
@@ -1267,10 +1291,11 @@ export function CreateOrderPage() {
     ])
     const requestContext = buildConsultationRequestContext()
     try {
-      const session = consultation ?? (await withConsultationTimeout((signal) =>
+      const currentConsultation = isReusableConsultation(consultation) ? consultation : null
+      const session = currentConsultation ?? (await withConsultationTimeout((signal) =>
         customerApi.startConsultation(signal),
       ))
-      if (!consultation) setConsultation(session)
+      if (!currentConsultation) setConsultation(session)
       activeConsultationId = session.id
       const nextConsultation = await withConsultationTimeout((signal) =>
         customerApi.sendConsultationMessage(session.id, text, {
@@ -1329,7 +1354,7 @@ export function CreateOrderPage() {
             resolution: form.resolution,
             radiusM: form.radiusM,
             estimatedAreaHa: Number(calcArea(form.radiusM)),
-            consultationId: consultation?.id,
+            consultationId: isReusableConsultation(consultation) ? consultation?.id : undefined,
             readinessScore: score.score,
           },
         },

@@ -16,6 +16,7 @@ import {
   type CustomerConsultation,
   type ConsultationMessage,
   type PreferredTimeOption,
+  type ServicePricingEstimate,
   type ServiceDeliverableOption,
   type ServiceOption,
 } from '../api/customerApi'
@@ -88,6 +89,7 @@ type StoredCreateOrderDraft = {
     title: string
     description: string
   }
+  aiAnalysisRequested?: boolean
 }
 
 const STEP_LABELS: Record<Step, string> = {
@@ -104,6 +106,8 @@ const RESTRICTED_ZONE_CONTACT_TOLERANCE_PX = 8
 const MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
 const OUTSIDE_MONITORING_ZONE_LABEL = 'Outside configured monitoring zones'
+const AI_IMAGE_ANALYSIS_DESCRIPTION =
+  'Yêu cầu bổ sung: sử dụng AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.'
 
 function isReusableConsultation(consultation?: CustomerConsultation | null) {
   if (!consultation?.id) return false
@@ -480,7 +484,7 @@ export function buildDraftFromConsultation(
   _messages: ConsultationMessage[],
   _service?: ServiceOption,
 ) {
-  if (consultation.status !== 'READY_FOR_CONFIRMATION') {
+  if (consultation.status !== 'READY_FOR_CONFIRMATION' && consultation.status !== 'RECOMMENDED') {
     return {
       title: '',
       description: '',
@@ -497,6 +501,8 @@ function consultationStatusLabel(status?: string) {
   switch (status) {
     case 'ACTIVE':
       return 'Đang tư vấn'
+    case 'NEED_MORE_INFO':
+      return 'Cần thêm thông tin'
     case 'RECOMMENDED':
       return 'Đã đề xuất service'
     case 'READY_FOR_CONFIRMATION':
@@ -516,6 +522,31 @@ function wait(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
   })
+}
+
+function parseAiAnalysisAnswer(text: string) {
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (/^(co|ok|okay|duoc|can|yes|y)\b/.test(normalized)) return true
+  if (/^(khong|ko|k|no|n|thoi)\b/.test(normalized)) return false
+  return undefined
+}
+
+function formatMoney(value?: number | null) {
+  const amount = Number(value ?? 0)
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(amount)
 }
 
 export function CreateOrderPage() {
@@ -542,6 +573,8 @@ export function CreateOrderPage() {
     initialConsultation ? storedDraft?.chatMessages ?? [] : [],
   )
   const [chatText, setChatText] = useState('')
+  const [aiAnalysisRequested, setAiAnalysisRequested] = useState(Boolean(storedDraft?.aiAnalysisRequested))
+  const [pricingEstimate, setPricingEstimate] = useState<ServicePricingEstimate | null>(null)
   const [chatBusy, setChatBusy] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -576,9 +609,28 @@ export function CreateOrderPage() {
       consultation,
       chatMessages,
       autoDraft,
+      aiAnalysisRequested,
     }
     window.localStorage.setItem(CREATE_ORDER_DRAFT_STORAGE_KEY, JSON.stringify(draft))
-  }, [autoDraft, chatMessages, consultation, form, mapPoint, step])
+  }, [aiAnalysisRequested, autoDraft, chatMessages, consultation, form, mapPoint, step])
+
+  useEffect(() => {
+    if (!consultation?.recommendedServiceId || services.length === 0) return
+    const recommendedService = findRecommendedService(consultation, services)
+    if (!recommendedService) return
+
+    setForm((current) => {
+      if (current.serviceId === recommendedService.id) return current
+      return {
+        ...current,
+        serviceId: recommendedService.id,
+      }
+    })
+    setErrors((current) => ({
+      ...current,
+      serviceId: undefined,
+    }))
+  }, [consultation?.recommendedServiceId, services])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -629,6 +681,51 @@ export function CreateOrderPage() {
 
     return () => controller.abort()
   }, [form.serviceId])
+
+  useEffect(() => {
+    if (!form.serviceId) {
+      setPricingEstimate(null)
+      return
+    }
+
+    const controller = new AbortController()
+    customerApi
+      .getPricingEstimate(form.serviceId, {
+        aiImageAnalysis: aiAnalysisRequested,
+        signal: controller.signal,
+      })
+      .then(setPricingEstimate)
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setPricingEstimate(null)
+      })
+
+    return () => controller.abort()
+  }, [aiAnalysisRequested, form.serviceId])
+
+  useEffect(() => {
+    setForm((current) => {
+      const hasAddon = current.description.includes(AI_IMAGE_ANALYSIS_DESCRIPTION)
+      if (aiAnalysisRequested && !hasAddon) {
+        return {
+          ...current,
+          description: [current.description.trim(), AI_IMAGE_ANALYSIS_DESCRIPTION]
+            .filter(Boolean)
+            .join('\n'),
+        }
+      }
+      if (!aiAnalysisRequested && hasAddon) {
+        return {
+          ...current,
+          description: current.description
+            .replace(AI_IMAGE_ANALYSIS_DESCRIPTION, '')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim(),
+        }
+      }
+      return current
+    })
+  }, [aiAnalysisRequested])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -846,6 +943,12 @@ export function CreateOrderPage() {
       ...current,
       localMessage,
     ])
+    const aiAnalysisAnswer = consultation?.recommendedServiceId
+      ? parseAiAnalysisAnswer(text)
+      : undefined
+    if (aiAnalysisAnswer !== undefined) {
+      setAiAnalysisRequested(aiAnalysisAnswer)
+    }
     const requestContext = buildConsultationRequestContext(text)
     try {
       const currentConsultation = isReusableConsultation(consultation) ? consultation : null
@@ -880,6 +983,7 @@ export function CreateOrderPage() {
     setConsultation(null)
     setChatMessages([])
     setChatText('')
+    setAiAnalysisRequested(false)
     setAutoDraft({ title: '', description: '' })
     setForm((current) => ({
       ...current,
@@ -918,6 +1022,18 @@ export function CreateOrderPage() {
             estimatedAreaHa: Number(calcArea(form.radiusM)),
             consultationId: isReusableConsultation(consultation) ? consultation?.id : undefined,
             readinessScore: score.score,
+            aiAnalysisRequested,
+            additionalRequirements: aiAnalysisRequested
+              ? [
+                  {
+                    type: 'AI_IMAGE_ANALYSIS',
+                    description: 'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
+                    additionalPrice:
+                      pricingEstimate?.additionalRequirements.find((item) => item.type === 'AI_IMAGE_ANALYSIS')
+                        ?.additionalPrice ?? 0,
+                  },
+                ]
+              : [],
           },
         },
       ],
@@ -1021,6 +1137,9 @@ export function CreateOrderPage() {
           chatText={chatText}
           chatBusy={chatBusy}
           selectedService={selectedService}
+          aiAnalysisRequested={aiAnalysisRequested}
+          setAiAnalysisRequested={setAiAnalysisRequested}
+          pricingEstimate={pricingEstimate}
           setChatText={setChatText}
           startConsultation={startConsultation}
           sendChatMessage={sendChatMessage}
@@ -1039,6 +1158,8 @@ export function CreateOrderPage() {
           selectedTime={selectedTime}
           selectedDeliverable={selectedDeliverable}
           consultation={consultation}
+          aiAnalysisRequested={aiAnalysisRequested}
+          pricingEstimate={pricingEstimate}
         />
       )}
 
@@ -1257,6 +1378,9 @@ function StepService({
   chatText,
   chatBusy,
   selectedService,
+  aiAnalysisRequested,
+  setAiAnalysisRequested,
+  pricingEstimate,
   setChatText,
   startConsultation,
   sendChatMessage,
@@ -1272,6 +1396,9 @@ function StepService({
   chatText: string
   chatBusy: boolean
   selectedService?: ServiceOption
+  aiAnalysisRequested: boolean
+  setAiAnalysisRequested: (value: boolean) => void
+  pricingEstimate: ServicePricingEstimate | null
   setChatText: (value: string) => void
   startConsultation: () => void
   sendChatMessage: (messageOverride?: string) => void
@@ -1487,6 +1614,48 @@ function StepService({
           </div>
           <Metric label="AI đề xuất" value={recommendedService?.name || consultation?.recommendedServiceName || 'Chưa có đề xuất'} />
           <Metric label="Service đã chọn" value={selectedService?.name || 'Chưa chọn'} />
+          {selectedService && (
+            <div style={{ border: '1px solid var(--bd)', borderRadius: 8, background: 'var(--sf2)', padding: 12 }}>
+              <div style={{ color: 'var(--tx3)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>Yêu cầu bổ sung</div>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', fontWeight: 700 }}>
+                <input
+                  type="checkbox"
+                  checked={aiAnalysisRequested}
+                  onChange={(event) => setAiAnalysisRequested(event.target.checked)}
+                  style={{ marginTop: 3 }}
+                />
+                <span>
+                  AI phân tích hình ảnh
+                  <span style={{ display: 'block', color: 'var(--tx3)', fontSize: 12, fontWeight: 500, lineHeight: 1.45 }}>
+                    Hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường. Đây là yêu cầu bổ sung và có thể phát sinh thêm chi phí.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
+          {selectedService && (
+            <div style={{ border: '1px solid var(--bd)', borderRadius: 8, background: 'var(--sf2)', padding: 12 }}>
+              <div style={{ color: 'var(--tx3)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>Chi phí dự kiến</div>
+              <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                  <span>Giá service</span>
+                  <strong>{formatMoney(pricingEstimate?.servicePrice)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                  <span>AI Analysis</span>
+                  <strong>
+                    {aiAnalysisRequested
+                      ? `+${formatMoney(pricingEstimate?.additionalRequirements.find((item) => item.type === 'AI_IMAGE_ANALYSIS')?.additionalPrice)}`
+                      : formatMoney(0)}
+                  </strong>
+                </div>
+                <div style={{ borderTop: '1px solid var(--bd)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', gap: 10, fontWeight: 900 }}>
+                  <span>Tổng dự kiến</span>
+                  <span>{formatMoney(pricingEstimate?.totalPrice)}</span>
+                </div>
+              </div>
+            </div>
+          )}
           <Metric
             label="Trạng thái tư vấn"
             value={
@@ -1580,6 +1749,8 @@ function StepReview(props: {
   selectedTime?: PreferredTimeOption
   selectedDeliverable?: ServiceDeliverableOption
   consultation: CustomerConsultation | null
+  aiAnalysisRequested: boolean
+  pricingEstimate: ServicePricingEstimate | null
 }) {
   const scoreColor = props.score.level === 'good' ? 'var(--green-fg)' : props.score.level === 'warn' ? 'var(--orange-fg)' : 'var(--red-fg)'
 
@@ -1594,10 +1765,36 @@ function StepReview(props: {
             <LabelValue label="Tọa độ" value={`${props.form.latitude}, ${props.form.longitude}`} mono />
             <LabelValue label="Bán kính" value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
             <LabelValue label="Dịch vụ" value={props.selectedService?.name || '—'} />
+            <LabelValue
+              label="Yêu cầu bổ sung"
+              value={props.aiAnalysisRequested ? 'AI phân tích hình ảnh' : 'Không có'}
+            />
             <LabelValue label="Ngày" value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
             <LabelValue label="Khung giờ" value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
             <LabelValue label="Deliverable" value={props.selectedDeliverable?.deliverableTypeName || '—'} />
             <LabelValue label="AI consultation" value={props.consultation?.id ? 'Đã tư vấn' : 'Không dùng'} />
+          </div>
+        </div>
+
+        <div style={card}>
+          <div style={cardHead}>Chi phí dự kiến</div>
+          <div style={{ padding: 16, display: 'grid', gap: 10, fontSize: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <span>Giá service</span>
+              <strong>{formatMoney(props.pricingEstimate?.servicePrice)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <span>AI Analysis</span>
+              <strong>
+                {props.aiAnalysisRequested
+                  ? `+${formatMoney(props.pricingEstimate?.additionalRequirements.find((item) => item.type === 'AI_IMAGE_ANALYSIS')?.additionalPrice)}`
+                  : formatMoney(0)}
+              </strong>
+            </div>
+            <div style={{ borderTop: '1px solid var(--bd)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', gap: 12, fontWeight: 900 }}>
+              <span>Tổng dự kiến</span>
+              <span>{formatMoney(props.pricingEstimate?.totalPrice)}</span>
+            </div>
           </div>
         </div>
 

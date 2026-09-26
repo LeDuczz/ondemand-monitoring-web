@@ -57,6 +57,9 @@ type StoredPreflightStatus = {
 type WeatherCheckStatus = 'PASS' | 'WARN' | 'FAIL'
 
 type WeatherPreflightStatus = {
+  id?: string
+  missionId?: string
+  droneCode?: string
   status: WeatherCheckStatus
   safeToFly: boolean
   summary: string
@@ -460,7 +463,7 @@ export function PreflightChecklistPanel({
     setWeatherError(null)
 
     try {
-      const response = await fetch(`${controlBaseUrl}/api/weather/preflight-check`, {
+      const response = await authenticatedFetch(`${env.apiBaseUrl}/api/weather/preflight-check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

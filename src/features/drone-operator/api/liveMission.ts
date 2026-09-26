@@ -13,6 +13,8 @@ export type BackendMission = {
   droneCode?: string | null
   latitude?: number | null
   longitude?: number | null
+  radiusM?: number | null
+  radiusMeters?: number | null
   address?: string | null
   scheduledStartAt?: string | null
   startedAt?: string | null
@@ -129,7 +131,7 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
     flightStartedAt: source.startedAt ?? undefined,
     completedAt: source.completedAt ?? undefined,
     rejectReason: source.rejectionReason ?? undefined,
-    radiusMeters: undefined,
+    radiusMeters: source.radiusM ?? source.radiusMeters ?? undefined,
     ceilingMeters: source.plan?.maxPlannedAltitudeM ?? undefined,
     targetX: source.longitude,
     targetY: source.latitude,

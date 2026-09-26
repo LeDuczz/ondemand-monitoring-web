@@ -124,8 +124,6 @@ function clearCompletedMissionState(missionId: string, missionLabel: string, dro
   removeStorageByPrefix(window.sessionStorage, `omss.droneOperator.backendPreflightToken.${missionId}.`)
   window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionLabel}.${droneCode}`)
   window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionId}.${droneCode}`)
-  removeStorageByPrefix(window.localStorage, `omss.droneOperator.preflightState.${missionId}.`)
-  removeStorageByPrefix(window.localStorage, `omss.droneOperator.weatherState.${missionId}.`)
 }
 
 export function PostflightScreen({ missionId }: { missionId?: string }) {

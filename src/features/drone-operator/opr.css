@@ -293,3 +293,113 @@
     display: none;
   }
 }
+
+/* ────────────────────────────────────────────────────────────
+   Mission Detail Dashboard  (mds-*)
+   Independent columns: Map | Flight summary + Weather | Details
+──────────────────────────────────────────────────────────── */
+
+.mds-header {
+  margin-bottom: 14px;
+}
+
+.mds-main-grid {
+  display: grid;
+  grid-template-columns: minmax(520px, 1.7fr) minmax(340px, 1fr) minmax(340px, 0.95fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.mds-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.mds-map-viewport {
+  height: clamp(520px, 34vw, 580px);
+}
+
+.mds-waypoint-scroll {
+  scrollbar-width: thin;
+}
+
+.mds-waypoint-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--sf2);
+}
+
+.mds-weather-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mds-weather-tile {
+  min-width: 0;
+}
+
+.mds-weather-value {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+@media (min-width: 1600px) {
+  .mds-weather-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mds-weather-value {
+    font-size: 12.5px;
+  }
+}
+
+/* ── Tablet  1000–1399 px ── */
+@media (min-width: 1000px) and (max-width: 1399px) {
+  .mds-main-grid {
+    grid-template-columns: minmax(520px, 1.25fr) minmax(340px, 0.85fr);
+  }
+
+  .mds-left-col {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .mds-center-col {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .mds-right-col {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .mds-map-viewport {
+    height: clamp(500px, 48vw, 560px);
+  }
+}
+
+/* ── Mobile / small tablet  < 1000 px ── */
+@media (max-width: 999px) {
+  .mds-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mds-left-col,
+  .mds-center-col,
+  .mds-right-col {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .mds-map-viewport {
+    height: clamp(360px, 70vw, 520px);
+  }
+}

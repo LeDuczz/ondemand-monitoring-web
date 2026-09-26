@@ -7,6 +7,7 @@ export type OperatorMission = {
   backendStatus?: string
   status: OperatorMissionStatus
   title: string
+  description?: string
   location: string
   date: string
   startTime: string

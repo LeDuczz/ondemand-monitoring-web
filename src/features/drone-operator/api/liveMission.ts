@@ -6,6 +6,7 @@ export type BackendMission = {
   missionCode?: string | null
   orderId?: string | null
   orderTitle?: string | null
+  serviceName?: string | null
   customerName?: string | null
   status: string
   operatorId?: string | null
@@ -121,11 +122,12 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
     backendStatus: source.status,
     status: operatorStatus(source.status),
     title: source.orderTitle ?? source.missionCode ?? source.id,
+    description: source.description ?? '',
     location: source.address ?? '',
     date: scheduled.date,
     startTime: scheduled.time,
     endTime: end.time,
-    serviceLabel: source.mediaType ?? 'Monitoring',
+    serviceLabel: source.serviceName ?? source.mediaType ?? '—',
     droneCode: source.droneCode ?? null,
     droneName: source.droneCode ?? null,
     flightStartedAt: source.startedAt ?? undefined,

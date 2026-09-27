@@ -237,6 +237,7 @@ function formatTimeLabel(time: PreferredTimeOption) {
 }
 
 function useSimulationMapMeta() {
+  const { t } = useI18n(createOrderPageMessages)
   const [meta, setMeta] = useState<SimulationMapMeta | null>(null)
   const [error, setError] = useState('')
 
@@ -428,31 +429,35 @@ function useSimulationZones() {
   return zones
 }
 
-function scoreRequest(form: FormState): AiScore {
+function scoreRequest(
+  form: FormState,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  scoreNotesT: any
+): AiScore {
   const notes: string[] = []
   let score = 92
 
   if (!form.address.trim()) {
     score -= 18
-    notes.push(t.scoreNotes.missingAddress)
+    notes.push(scoreNotesT.missingAddress)
   }
   if (!form.serviceId) {
     score -= 20
-    notes.push(t.scoreNotes.missingService)
+    notes.push(scoreNotesT.missingService)
   }
   if (!form.deliverableTypeId) {
     score -= 14
-    notes.push(t.scoreNotes.missingDeliverable)
+    notes.push(scoreNotesT.missingDeliverable)
   }
   if (!form.preferredDateFrom || !form.preferredDateTo || !form.preferredTimeId) {
     score -= 18
-    notes.push(t.scoreNotes.missingSchedule)
+    notes.push(scoreNotesT.missingSchedule)
   }
   if (form.radiusM > 900) {
     score -= 12
-    notes.push(t.scoreNotes.largeRadius)
+    notes.push(scoreNotesT.largeRadius)
   }
-  if (notes.length === 0) notes.push(t.scoreNotes.allGood)
+  if (notes.length === 0) notes.push(scoreNotesT.allGood)
 
   return {
     score: clamp(score, 0, 100),
@@ -587,7 +592,7 @@ export function CreateOrderPage() {
   const selectedService = services.find((service) => service.id === form.serviceId)
   const selectedTime = preferredTimes.find((time) => time.id === form.preferredTimeId)
   const selectedDeliverable = deliverables.find((item) => item.deliverableTypeId === form.deliverableTypeId)
-  const score = useMemo(() => scoreRequest(form), [form])
+  const score = useMemo(() => scoreRequest(form, t.scoreNotes), [form, t.scoreNotes])
   const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}${
     mapMeta?.imageVersion ? `?v=${encodeURIComponent(mapMeta.imageVersion)}` : ''
   }`
@@ -1212,6 +1217,7 @@ function StepLocation({
   onMapClick: (event: React.MouseEvent<HTMLDivElement>) => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   const radiusPx = clamp(form.radiusM / SIM_RADIUS_SCALE, 34, 145)
   const restrictedZones = zones.filter((zone) => zone.restricted)
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
@@ -1223,8 +1229,8 @@ function StepLocation({
         border: '#f59e0b',
         background: '#fff7ed',
         color: '#9a3412',
-        title: 'Ngoài vùng phục vụ',
-        message: {t.stepLocation.outsideZoneMessage},
+        title: t.stepLocation.outsideZoneTitle,
+        message: t.stepLocation.outsideZoneMessage,
       }
     : isBlocked
       ? {
@@ -1408,6 +1414,7 @@ function StepService({
   clearRequestConsultation: () => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   const recommendedService = findRecommendedService(consultation, services)
   const aiSuggestedServices = recommendedService ? [recommendedService] : []
   const chatScrollRef = useRef<HTMLDivElement | null>(null)

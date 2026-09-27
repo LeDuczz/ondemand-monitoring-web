@@ -5,7 +5,10 @@ export const customerLayoutMessages = defineMessages({
     nav: 'Điều hướng khách hàng',
     menu: 'Menu',
     navItems: {
+      missionHistory: 'Lịch sử mission',
       dashboard: 'Tổng quan',
+      help: 'Trợ giúp & FAQ',
+      support: 'Yêu cầu hỗ trợ',
       orders: 'Đơn của tôi',
       createOrder: 'Tạo yêu cầu',
       mediaLibrary: 'Thư viện kết quả',
@@ -20,7 +23,10 @@ export const customerLayoutMessages = defineMessages({
     nav: 'Customer navigation',
     menu: 'Menu',
     navItems: {
+      missionHistory: 'Mission history',
       dashboard: 'Overview',
+      help: 'Help & FAQ',
+      support: 'Support tickets',
       orders: 'My orders',
       createOrder: 'Create request',
       mediaLibrary: 'Media library',

@@ -576,6 +576,7 @@ function MissionDashboard({
         {/* CENTER: flight summary + weather */}
         <div className="mds-col mds-center-col">
           <FlightSummaryCard mission={mission} />
+          <MissionPlanningCard mission={mission} />
           <WeatherCard weather={weatherStatus} />
         </div>
 
@@ -1332,6 +1333,103 @@ function FlightMetric({ icon, label, value }: { icon: string; label: string; val
       <div>
         <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 3 }}>{label}</div>
         <div style={{ fontWeight: 800, fontSize: 15 }}>{value}</div>
+      </div>
+    </div>
+  )
+}
+
+function planStatusLabel(status?: string | null) {
+  if (!status) return 'Chưa có'
+  if (status === 'FEASIBLE') return 'Khả thi'
+  if (status === 'INFEASIBLE') return 'Không khả thi'
+  if (status === 'WARNING') return 'Cần lưu ý'
+  return status.replaceAll('_', ' ')
+}
+
+function planStatusTone(status?: string | null) {
+  if (status === 'FEASIBLE') return 'green'
+  if (status === 'INFEASIBLE') return 'red'
+  if (status === 'WARNING') return 'yellow'
+  return 'gray'
+}
+
+function formatPercent(value?: number | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—'
+  return `${value.toFixed(1)}%`
+}
+
+function formatEnergy(value?: number | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—'
+  return `${Math.round(value).toLocaleString('vi-VN')} mAh`
+}
+
+function MissionPlanningCard({ mission }: { mission: OperatorMission }) {
+  const plan = mission.planSummary
+
+  return (
+    <div className="odm-card">
+      <div className="odm-card-header">
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>Mission planning</div>
+          <div style={{ fontWeight: 400, fontSize: 11.5, color: 'var(--tx3)', marginTop: 1 }}>
+            Thuật toán, trạng thái khả thi và pin dự kiến
+          </div>
+        </div>
+        <StatusBadge tone={planStatusTone(plan?.feasibilityStatus)}>
+          {planStatusLabel(plan?.feasibilityStatus)}
+        </StatusBadge>
+      </div>
+      <div className="odm-card-body" style={{ padding: '12px 14px' }}>
+        {plan ? (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+              <PlanMetric label="Thuật toán" value={plan.planningAlgorithm || '—'} />
+              <PlanMetric label="Waypoint" value={`${plan.waypointCount || plan.waypoints.length}`} />
+              <PlanMetric label="Quãng đường" value={formatMeters(plan.plannedDistanceM)} />
+              <PlanMetric label="Thời lượng" value={formatSeconds(plan.plannedDurationSec)} />
+              <PlanMetric label="Trần bay" value={formatMeters(plan.maxPlannedAltitudeM)} />
+              <PlanMetric label="Năng lượng" value={formatEnergy(plan.estimatedEnergyMah)} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7 }}>
+              <PlanMetric label="Pin trước bay" value={formatPercent(plan.availableBatteryPercentAtPlanning)} compact />
+              <PlanMetric label="Pin dùng dự kiến" value={formatPercent(plan.estimatedBatteryUsedPercent)} compact />
+              <PlanMetric label="Pin còn lại" value={formatPercent(plan.estimatedRemainingBatteryPercent)} compact />
+            </div>
+          </>
+        ) : (
+          <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
+            Chưa có mission plan từ backend.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PlanMetric({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
+  return (
+    <div
+      style={{
+        padding: compact ? '8px 9px' : '9px 11px',
+        borderRadius: 8,
+        border: '1px solid var(--bd)',
+        background: 'var(--sf2)',
+        minWidth: 0,
+      }}
+    >
+      <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 3 }}>{label}</div>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: compact ? 12 : 13,
+          color: 'var(--tx)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        title={value}
+      >
+        {value}
       </div>
     </div>
   )

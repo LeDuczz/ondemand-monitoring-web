@@ -9,6 +9,7 @@
 //
 // Backend enum values not named in the brief table are mapped "by meaning"
 // (see inline comments) and called out in evd/P0-mock-api-foundation.md.
+import type { Language } from '../i18n/languageStore'
 import type {
   AiVerdict,
   DroneStatus,
@@ -210,4 +211,157 @@ export const mediaStatusLabel: Record<MediaStatus, string> = {
   VALIDATION_FAILED: 'Xác thực thất bại',
   AVAILABLE: 'Sẵn sàng',
   MANUAL_REQUIRED: 'Cần xử lý thủ công',
+}
+
+// ---------------------------------------------------------------------------
+// Bilingual accessors (i18n Phase 1)
+//
+// The `*Label` records above stay exactly as they were (Vietnamese, used
+// as-is by every existing call site — backwards compatible, existing tests
+// keep passing). The `*_LABEL_EN` records below add the English side, and
+// `getXLabel(status, lang)` picks whichever the caller's current language
+// is. Phase 2 call sites can switch to `getOrderStatusLabel(status, lang)`
+// (with `lang` from `useLanguage()`) without touching this file again.
+// ---------------------------------------------------------------------------
+
+export const orderStatusLabelEn: Record<OrderStatus, string> = {
+  DRAFT: 'Draft',
+  AI_ANALYZED: 'AI analyzed',
+  SUBMITTED: 'Submitted',
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  SCHEDULED: 'Scheduled',
+  REJECTED: 'Rejected',
+  IN_PROGRESS: 'In progress',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+}
+
+export const missionStatusLabelEn: Record<MissionStatus, string> = {
+  CREATED: 'Created',
+  RESOURCE_ASSIGNING: 'Assigning resources',
+  WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',
+  SCHEDULED: 'Scheduled',
+  CONNECTED: 'Connected',
+  PREFLIGHT_CHECKING: 'Preflight check running',
+  READY_TO_FLY: 'Ready to fly',
+  FAILED_PREFLIGHT: 'Preflight check failed',
+  PENDING_APPROVAL: 'Pending manager review',
+  IN_FLIGHT: 'In flight',
+  IN_PROGRESS: 'In flight',
+  RETURNING: 'Returning',
+  POSTFLIGHT_CHECKING: 'Postflight check running',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed',
+  CANCELLED: 'Cancelled',
+}
+
+export const droneStatusLabelEn: Record<DroneStatus, string> = {
+  AVAILABLE: 'Available',
+  RESERVED: 'Reserved',
+  PREFLIGHT: 'Preflight check',
+  IN_MISSION: 'In flight',
+  ACTIVE_MISSION: 'In flight',
+  RETURNING: 'Returning',
+  CHARGING: 'Charging',
+  IDLE_CHARGING: 'Charging',
+  MAINTENANCE: 'Maintenance',
+  OUT_OF_SERVICE: 'Out of service',
+  OFFLINE: 'Offline',
+}
+
+export const aiVerdictLabelEn: Record<AiVerdict, string> = {
+  FEASIBLE: 'Feasible',
+  RISKY: 'Risky',
+  INFEASIBLE: 'Infeasible',
+}
+
+export const findingSeverityLabelEn: Record<FindingSeverity, string> = {
+  INFO: 'Info',
+  WARNING: 'Warning',
+  BLOCKER: 'Blocker',
+}
+
+export const ticketSeverityLabelEn: Record<TicketSeverity, string> = {
+  LOW: 'Low',
+  MEDIUM: 'Medium',
+  HIGH: 'High',
+  CRITICAL: 'Critical',
+}
+
+export const ticketStatusLabelEn: Record<TicketStatus, string> = {
+  OPEN: 'Open',
+  IN_PROGRESS: 'In progress',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
+}
+
+export const mediaStatusLabelEn: Record<MediaStatus, string> = {
+  PENDING_UPLOAD: 'Pending upload',
+  UPLOADING: 'Uploading',
+  UPLOADED: 'Uploaded',
+  VALIDATING: 'Validating',
+  VALIDATED: 'Validated',
+  VALIDATION_FAILED: 'Validation failed',
+  AVAILABLE: 'Available',
+  MANUAL_REQUIRED: 'Manual review required',
+}
+
+export function getOrderStatusLabel(
+  status: OrderStatus,
+  lang: Language,
+): string {
+  return lang === 'en' ? orderStatusLabelEn[status] : orderStatusLabel[status]
+}
+
+export function getMissionStatusLabel(
+  status: MissionStatus,
+  lang: Language,
+): string {
+  return lang === 'en'
+    ? missionStatusLabelEn[status]
+    : missionStatusLabel[status]
+}
+
+export function getDroneStatusLabel(
+  status: DroneStatus,
+  lang: Language,
+): string {
+  return lang === 'en' ? droneStatusLabelEn[status] : droneStatusLabel[status]
+}
+
+export function getAiVerdictLabel(status: AiVerdict, lang: Language): string {
+  return lang === 'en' ? aiVerdictLabelEn[status] : aiVerdictLabel[status]
+}
+
+export function getFindingSeverityLabel(
+  status: FindingSeverity,
+  lang: Language,
+): string {
+  return lang === 'en'
+    ? findingSeverityLabelEn[status]
+    : findingSeverityLabel[status]
+}
+
+export function getTicketSeverityLabel(
+  status: TicketSeverity,
+  lang: Language,
+): string {
+  return lang === 'en'
+    ? ticketSeverityLabelEn[status]
+    : ticketSeverityLabel[status]
+}
+
+export function getTicketStatusLabel(
+  status: TicketStatus,
+  lang: Language,
+): string {
+  return lang === 'en' ? ticketStatusLabelEn[status] : ticketStatusLabel[status]
+}
+
+export function getMediaStatusLabel(
+  status: MediaStatus,
+  lang: Language,
+): string {
+  return lang === 'en' ? mediaStatusLabelEn[status] : mediaStatusLabel[status]
 }

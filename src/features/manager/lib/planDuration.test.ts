@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { generateWaypoints } from './waypoints'
-import { ceilingWarnings, estimatePlanDuration } from './planDuration'
+import {
+  ceilingWarnings,
+  estimatePlanDuration,
+  getCeilingWarnings,
+} from './planDuration'
 
 describe('estimatePlanDuration', () => {
   const center = { lat: 10.6402, lon: 106.74 }
@@ -71,5 +75,22 @@ describe('ceilingWarnings', () => {
 
   it('treats the exact ceiling value as not exceeding it', () => {
     expect(ceilingWarnings(100, 100, 150)).toEqual([])
+  })
+})
+
+describe('getCeilingWarnings (bilingual)', () => {
+  it('renders the same vi text as ceilingWarnings', () => {
+    expect(getCeilingWarnings(120, 100, 150, 'vi')).toEqual(
+      ceilingWarnings(120, 100, 150),
+    )
+  })
+
+  it('renders English messages', () => {
+    const warnings = getCeilingWarnings(120, 100, 150, 'en')
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0].code).toBe('ABOVE_SERVICE_CEILING')
+    expect(warnings[0].message).toBe(
+      'Altitude 120 m exceeds the normal operating ceiling 100 m.',
+    )
   })
 })

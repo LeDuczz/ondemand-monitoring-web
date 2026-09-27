@@ -8,7 +8,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl}${path}`, options)
   const payload = await response.json().catch(() => undefined)
   if (!response.ok) {
-    throw new Error(payload?.error ?? `Flight Controller HTTP ${response.status}`)
+    throw new Error(
+      payload?.error ?? `Flight Controller HTTP ${response.status}`,
+    )
   }
   return payload as T
 }
@@ -35,7 +37,9 @@ export const flightControlApi = {
       `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}`,
     )
     if (!authorization.ok) {
-      throw new Error(`Mission access check failed (HTTP ${authorization.status}); refresh the mission or sign in again`)
+      throw new Error(
+        `Mission access check failed (HTTP ${authorization.status}); refresh the mission or sign in again`,
+      )
     }
     const accessToken = authSession.getAccessToken()
     if (!accessToken) {
@@ -51,12 +55,14 @@ export const flightControlApi = {
     )
   },
   releaseSession: (missionId?: string) =>
-    request<{ ok: boolean; released: boolean; retainedVideo?: boolean; message?: string }>(
-      '/api/control/session/release',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ missionId }),
-      },
-    ),
+    request<{
+      ok: boolean
+      released: boolean
+      retainedVideo?: boolean
+      message?: string
+    }>('/api/control/session/release', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ missionId }),
+    }),
 }

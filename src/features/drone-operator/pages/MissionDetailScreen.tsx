@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
-import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  EmptyState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
+import type { Language } from '../../../shared/i18n/languageStore'
 import {
   SIMULATION_MAP_DEFAULT_CROP,
   simulationMapImageStyle,
@@ -13,8 +18,14 @@ import { authenticatedFetch } from '../../auth/api/authApi'
 import { operatorApi } from '../api/operatorApi'
 import { setActiveMissionId } from '../api/liveMission'
 import { operatorHref } from '../routes'
-import type { OperatorMission, OperatorMissionPlanWaypoint } from '../types/mission'
+import type {
+  OperatorMission,
+  OperatorMissionPlanWaypoint,
+} from '../types/mission'
+import { missionDetailScreenMessages } from '../i18n/missionDetailScreen.messages'
 import { RejectDialog } from './RejectDialog'
+
+type Messages = (typeof missionDetailScreenMessages)['vi']
 
 const STATUS_TONE = {
   PENDING: 'gray',
@@ -24,15 +35,6 @@ const STATUS_TONE = {
   REJECTED: 'red',
   FAILED: 'red',
 } as const
-
-const STATUS_LABEL: Record<OperatorMission['status'], string> = {
-  PENDING: 'Chờ phản hồi',
-  ACCEPTED: 'Đã nhận',
-  IN_FLIGHT: 'Đang bay',
-  COMPLETED: 'Hoàn thành',
-  REJECTED: 'Bị từ chối',
-  FAILED: 'Không hoàn thành',
-}
 
 const SIM_RADIUS_SCALE = 6
 
@@ -130,9 +132,12 @@ function useSimulationMapMeta() {
 
     async function loadMeta() {
       try {
-        const response = await fetch(`${env.apiBaseUrl}/simulation-viewer/simulation-map.json`, {
-          cache: 'no-store',
-        })
+        const response = await fetch(
+          `${env.apiBaseUrl}/simulation-viewer/simulation-map.json`,
+          {
+            cache: 'no-store',
+          },
+        )
         if (!response.ok) return
         const payload = (await response.json()) as SimulationMapMeta
         if (alive) setMeta(payload)
@@ -197,10 +202,15 @@ function isPostflightStatus(value: unknown): value is PostflightCheckStatus {
   )
 }
 
-function readStoredPreflightState(missionId: string, droneLabel?: string | null) {
+function readStoredPreflightState(
+  missionId: string,
+  droneLabel?: string | null,
+) {
   if (!droneLabel) return null
   try {
-    const raw = window.localStorage.getItem(preflightStateStorageKey(missionId, droneLabel))
+    const raw = window.localStorage.getItem(
+      preflightStateStorageKey(missionId, droneLabel),
+    )
     if (!raw) return null
     const parsed = JSON.parse(raw) as StoredPreflightStatus
     return isRuntimeStatus(parsed.status) ? parsed.status : null
@@ -212,7 +222,9 @@ function readStoredPreflightState(missionId: string, droneLabel?: string | null)
 function readStoredWeatherState(missionId: string, droneLabel?: string | null) {
   if (!droneLabel) return null
   try {
-    const raw = window.localStorage.getItem(weatherStateStorageKey(missionId, droneLabel))
+    const raw = window.localStorage.getItem(
+      weatherStateStorageKey(missionId, droneLabel),
+    )
     if (!raw) return null
     const parsed = JSON.parse(raw) as StoredWeatherStatus
     return isWeatherStatus(parsed.status) ? parsed.status : null
@@ -257,7 +269,10 @@ function runtimeStatusFromPersisted(persisted: {
   }
 }
 
-async function fetchPersistedPreflight(missionId: string, signal?: AbortSignal) {
+async function fetchPersistedPreflight(
+  missionId: string,
+  signal?: AbortSignal,
+) {
   const response = await authenticatedFetch(
     `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/preflight-checks/current`,
     { cache: 'no-store', signal },
@@ -269,7 +284,10 @@ async function fetchPersistedPreflight(missionId: string, signal?: AbortSignal) 
   return runtimeStatusFromPersisted(persisted)
 }
 
-async function fetchLatestWeatherCheck(missionId: string, signal?: AbortSignal) {
+async function fetchLatestWeatherCheck(
+  missionId: string,
+  signal?: AbortSignal,
+) {
   const response = await authenticatedFetch(
     `${env.apiBaseUrl}/api/weather/preflight-checks/latest?missionId=${encodeURIComponent(missionId)}`,
     { cache: 'no-store', signal },
@@ -280,7 +298,10 @@ async function fetchLatestWeatherCheck(missionId: string, signal?: AbortSignal) 
   return isWeatherStatus(weather) ? weather : null
 }
 
-async function fetchLatestPostflightCheck(missionId: string, signal?: AbortSignal) {
+async function fetchLatestPostflightCheck(
+  missionId: string,
+  signal?: AbortSignal,
+) {
   const response = await authenticatedFetch(
     `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/postflight-checks/latest`,
     { cache: 'no-store', signal },
@@ -291,11 +312,10 @@ async function fetchLatestPostflightCheck(missionId: string, signal?: AbortSigna
   return isPostflightStatus(postflight) ? postflight : null
 }
 
-function formatVnDate(isoDate: string): string {
-  if (!isoDate) return 'Chưa lên lịch'
+function formatVnDate(isoDate: string, t: Messages, locale: string): string {
+  if (!isoDate) return t.notScheduled
   const d = new Date(`${isoDate}T00:00:00+07:00`)
-  const weekdays = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
-  return `${weekdays[d.getDay()]}, ${d.toLocaleDateString('vi-VN')}`
+  return `${t.weekdays[d.getDay()]}, ${d.toLocaleDateString(locale)}`
 }
 
 function durationMinutes(start: string, end: string): number {
@@ -312,13 +332,15 @@ function formatHm(iso: string): string {
 
 function formatMeters(value?: number | null): string {
   if (value == null) return '—'
-  return value >= 1000 ? `${(value / 1000).toFixed(2)} km` : `${Math.round(value)} m`
+  return value >= 1000
+    ? `${(value / 1000).toFixed(2)} km`
+    : `${Math.round(value)} m`
 }
 
-function formatSeconds(value?: number | null): string {
+function formatSeconds(value: number | null | undefined, t: Messages): string {
   if (value == null) return '—'
   const minutes = Math.max(1, Math.round(value / 60))
-  return `${minutes} phút`
+  return `${minutes} ${t.minutesSuffix}`
 }
 
 function formatPercent(value?: number | null): string {
@@ -326,22 +348,31 @@ function formatPercent(value?: number | null): string {
 }
 
 export function MissionDetailScreen({ missionId }: { missionId: string }) {
-  const query = useApiQuery((signal) => operatorApi.getMission(missionId, signal), [missionId])
+  const { t } = useI18n(missionDetailScreenMessages)
+  const query = useApiQuery(
+    (signal) => operatorApi.getMission(missionId, signal),
+    [missionId],
+  )
   const [showReject, setShowReject] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  useEffect(() => { setActiveMissionId(missionId) }, [missionId])
+  useEffect(() => {
+    setActiveMissionId(missionId)
+  }, [missionId])
 
   if (query.loading) return <LoadingState />
   if (query.error || !query.data) {
     return (
       <EmptyState
-        title="Không tải được mission"
-        description="Mission có thể không tồn tại hoặc đã bị xoá."
+        title={t.loadMissionFailedTitle}
+        description={t.loadMissionFailedDesc}
         action={
-          <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'missions' })}>
-            Về danh sách
+          <a
+            className="odm-btn odm-btn-p"
+            href={operatorHref({ screen: 'missions' })}
+          >
+            {t.backToList}
           </a>
         }
       />
@@ -357,7 +388,7 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
       await operatorApi.acceptMission(mission.id)
       query.reload()
     } catch {
-      setActionError('Không thể chấp nhận mission. Vui lòng thử lại.')
+      setActionError(t.acceptFailed)
     } finally {
       setSubmitting(false)
     }
@@ -371,7 +402,7 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
       setShowReject(false)
       query.reload()
     } catch {
-      setActionError('Không thể từ chối mission. Vui lòng thử lại.')
+      setActionError(t.rejectFailed)
     } finally {
       setSubmitting(false)
     }
@@ -379,11 +410,20 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 14,
+        }}
+      >
         <span className="odm-mono" style={{ fontWeight: 600, fontSize: 14 }}>
           {mission.missionCode ?? mission.id}
         </span>
-        <StatusBadge tone={STATUS_TONE[mission.status]}>{STATUS_LABEL[mission.status]}</StatusBadge>
+        <StatusBadge tone={STATUS_TONE[mission.status]}>
+          {t.statusLabel[mission.status]}
+        </StatusBadge>
       </div>
 
       {actionError ? (
@@ -402,7 +442,14 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
         </div>
       ) : null}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 380px', gap: 16, alignItems: 'start' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1fr) 380px',
+          gap: 16,
+          alignItems: 'start',
+        }}
+      >
         <MapPlaceholder mission={mission} />
         <InfoPanel mission={mission} />
       </div>
@@ -427,29 +474,40 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
 }
 
 function MapPlaceholder({ mission }: { mission: OperatorMission }) {
+  const { t } = useI18n(missionDetailScreenMessages)
   const meta = useSimulationMapMeta()
   const route = mission.planSummary?.waypoints ?? []
-  const target = typeof mission.targetX === 'number' && typeof mission.targetY === 'number'
-    ? { simX: mission.targetX, simY: mission.targetY }
-    : route.at(-1)
+  const target =
+    typeof mission.targetX === 'number' && typeof mission.targetY === 'number'
+      ? { simX: mission.targetX, simY: mission.targetY }
+      : route.at(-1)
   const mapPoints = [
     ...route.map((point) => ({ x: point.simX, y: point.simY })),
     ...(target ? [{ x: target.simX, y: target.simY }] : []),
   ]
-  const bounds = mapPoints.length > 0
-    ? (meta?.imageBounds ?? meta ?? mapPoints.reduce(
-      (acc, point) => ({
-        minX: Math.min(acc.minX, point.x),
-        maxX: Math.max(acc.maxX, point.x),
-        minY: Math.min(acc.minY, point.y),
-        maxY: Math.max(acc.maxY, point.y),
-      }),
-      { minX: mapPoints[0].x, maxX: mapPoints[0].x, minY: mapPoints[0].y, maxY: mapPoints[0].y },
-    ))
-    : null
+  const bounds =
+    mapPoints.length > 0
+      ? (meta?.imageBounds ??
+        meta ??
+        mapPoints.reduce(
+          (acc, point) => ({
+            minX: Math.min(acc.minX, point.x),
+            maxX: Math.max(acc.maxX, point.x),
+            minY: Math.min(acc.minY, point.y),
+            maxY: Math.max(acc.maxY, point.y),
+          }),
+          {
+            minX: mapPoints[0].x,
+            maxX: mapPoints[0].x,
+            minY: mapPoints[0].y,
+            maxY: mapPoints[0].y,
+          },
+        ))
+      : null
   const project = (point: { simX: number; simY: number }) => {
     if (!bounds) return { x: 50, y: 50 }
-    if (meta) return worldToViewportPercent(point, meta, SIMULATION_MAP_DEFAULT_CROP)
+    if (meta)
+      return worldToViewportPercent(point, meta, SIMULATION_MAP_DEFAULT_CROP)
     const width = Math.max(1, bounds.maxX - bounds.minX)
     const height = Math.max(1, bounds.maxY - bounds.minY)
     const pad = 10
@@ -461,260 +519,389 @@ function MapPlaceholder({ mission }: { mission: OperatorMission }) {
   const svgRoute = route.map(project)
   const polyline = svgRoute.map((point) => `${point.x},${point.y}`).join(' ')
   const targetPoint = target ? project(target) : null
-  const monitoringRadius = target && typeof mission.radiusMeters === 'number' && mission.radiusMeters > 0
-    ? (() => {
-        const simulationRadius = mission.radiusMeters / SIM_RADIUS_SCALE
-        const center = project(target)
-        const xEdge = project({ simX: target.simX + simulationRadius, simY: target.simY })
-        const yEdge = project({ simX: target.simX, simY: target.simY + simulationRadius })
-        return {
-          cx: center.x,
-          cy: center.y,
-          rx: Math.max(1.8, Math.abs(xEdge.x - center.x)),
-          ry: Math.max(1.8, Math.abs(yEdge.y - center.y)),
-          label: `${Math.round(mission.radiusMeters)} m`,
-        }
-      })()
-    : null
-  const visibleRouteMarkers = route.filter((point, index) =>
-    index === 0 ||
-    index === route.length - 1 ||
-    point.reason?.toUpperCase() === 'TARGET' ||
-    index % 5 === 0)
+  const monitoringRadius =
+    target &&
+    typeof mission.radiusMeters === 'number' &&
+    mission.radiusMeters > 0
+      ? (() => {
+          const simulationRadius = mission.radiusMeters / SIM_RADIUS_SCALE
+          const center = project(target)
+          const xEdge = project({
+            simX: target.simX + simulationRadius,
+            simY: target.simY,
+          })
+          const yEdge = project({
+            simX: target.simX,
+            simY: target.simY + simulationRadius,
+          })
+          return {
+            cx: center.x,
+            cy: center.y,
+            rx: Math.max(1.8, Math.abs(xEdge.x - center.x)),
+            ry: Math.max(1.8, Math.abs(yEdge.y - center.y)),
+            label: `${Math.round(mission.radiusMeters)} m`,
+          }
+        })()
+      : null
+  const visibleRouteMarkers = route.filter(
+    (point, index) =>
+      index === 0 ||
+      index === route.length - 1 ||
+      point.reason?.toUpperCase() === 'TARGET' ||
+      index % 5 === 0,
+  )
   const startPoint = route[0]
   const endPoint = route.at(-1)
-  const routeHighlights = route.filter((point, index) =>
-    index === 0 ||
-    index === route.length - 1 ||
-    point.reason?.toUpperCase() === 'TARGET' ||
-    index % 6 === 0)
-  const mapImagePath = meta?.image ?? '/simulation-viewer/simulation_map_top.png'
-  const mapImageVersion = meta?.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : ''
+  const routeHighlights = route.filter(
+    (point, index) =>
+      index === 0 ||
+      index === route.length - 1 ||
+      point.reason?.toUpperCase() === 'TARGET' ||
+      index % 6 === 0,
+  )
+  const mapImagePath =
+    meta?.image ?? '/simulation-viewer/simulation_map_top.png'
+  const mapImageVersion = meta?.imageVersion
+    ? `?v=${encodeURIComponent(meta.imageVersion)}`
+    : ''
   const mapImageUrl = `${env.apiBaseUrl}${mapImagePath}${mapImageVersion}`
   const imageStyle = simulationMapImageStyle(SIMULATION_MAP_DEFAULT_CROP)
 
   return (
     <div className="odm-card" style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 620px) minmax(260px, 1fr)', gap: 0, alignItems: 'stretch' }}>
       <div
         style={{
-          position: 'relative',
-          aspectRatio: '1 / 1',
-          maxHeight: 'min(68vh, 720px)',
-          minHeight: 520,
-          overflow: 'hidden',
-          background: '#d7ded7',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(520px, 620px) minmax(260px, 1fr)',
+          gap: 0,
+          alignItems: 'stretch',
         }}
       >
-        <img
-          alt=""
-          src={mapImageUrl}
-          style={{
-            position: 'absolute',
-            ...imageStyle,
-            objectFit: 'fill',
-            opacity: 0.96,
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,.08)', pointerEvents: 'none' }} />
         <div
           style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            padding: '8px 10px',
-            borderRadius: 8,
-            background: 'rgba(255,255,255,.88)',
-            boxShadow: '0 8px 22px rgba(15,23,42,.12)',
-            maxWidth: 360,
+            position: 'relative',
+            aspectRatio: '1 / 1',
+            maxHeight: 'min(68vh, 720px)',
+            minHeight: 520,
+            overflow: 'hidden',
+            background: '#d7ded7',
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 700 }}>{mission.location}</div>
-          <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 2 }}>
-            {mission.planSummary?.planningAlgorithm ?? 'A*'} · {route.length} waypoint · {formatMeters(mission.planSummary?.plannedDistanceM)}
-          </div>
-        </div>
-        {target ? (
+          <img
+            alt=""
+            src={mapImageUrl}
+            style={{
+              position: 'absolute',
+              ...imageStyle,
+              objectFit: 'fill',
+              opacity: 0.96,
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
           <div
             style={{
               position: 'absolute',
-              right: 12,
+              inset: 0,
+              background: 'rgba(255,255,255,.08)',
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
               top: 12,
+              left: 12,
               padding: '8px 10px',
               borderRadius: 8,
-              background: 'rgba(254,242,242,.92)',
-              color: '#991b1b',
-              border: '1px solid rgba(239,68,68,.35)',
-              fontSize: 11.5,
-              fontWeight: 700,
-              boxShadow: '0 8px 22px rgba(15,23,42,.10)',
+              background: 'rgba(255,255,255,.88)',
+              boxShadow: '0 8px 22px rgba(15,23,42,.12)',
+              maxWidth: 360,
             }}
           >
-            TARGET · X {target.simX.toFixed(1)} · Y {target.simY.toFixed(1)}
+            <div style={{ fontSize: 13, fontWeight: 700 }}>
+              {mission.location}
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 2 }}>
+              {mission.planSummary?.planningAlgorithm ?? 'A*'} · {route.length}{' '}
+              waypoint · {formatMeters(mission.planSummary?.plannedDistanceM)}
+            </div>
           </div>
-        ) : null}
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          style={{ position: 'absolute', inset: 0, overflow: 'visible' }}
-        >
-          {monitoringRadius ? (
-            <g>
-              <ellipse
-                cx={monitoringRadius.cx}
-                cy={monitoringRadius.cy}
-                rx={monitoringRadius.rx}
-                ry={monitoringRadius.ry}
-                fill="#22c55e"
-                fillOpacity="0.16"
-                stroke="#16a34a"
-                strokeWidth="1.6"
-                strokeDasharray="5 4"
-                strokeOpacity="0.92"
-                vectorEffect="non-scaling-stroke"
-              />
-              <text
-                x={monitoringRadius.cx}
-                y={Math.max(4, monitoringRadius.cy - monitoringRadius.ry - 2.5)}
-                textAnchor="middle"
-                fontSize="2.7"
-                fontWeight="800"
-                fill="#15803d"
-              >
-                VUNG GIAM SAT · R {monitoringRadius.label}
-              </text>
-            </g>
+          {target ? (
+            <div
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: 12,
+                padding: '8px 10px',
+                borderRadius: 8,
+                background: 'rgba(254,242,242,.92)',
+                color: '#991b1b',
+                border: '1px solid rgba(239,68,68,.35)',
+                fontSize: 11.5,
+                fontWeight: 700,
+                boxShadow: '0 8px 22px rgba(15,23,42,.10)',
+              }}
+            >
+              TARGET · X {target.simX.toFixed(1)} · Y {target.simY.toFixed(1)}
+            </div>
           ) : null}
-          {polyline ? (
-            <polyline
-              points={polyline}
-              fill="none"
-              stroke="#1d4ed8"
-              strokeWidth="2.1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeOpacity="0.96"
-              vectorEffect="non-scaling-stroke"
-            />
-          ) : null}
-          {targetPoint ? (
-            <g>
-              <circle cx={targetPoint.x} cy={targetPoint.y} r="5.4" fill="#ef4444" opacity="0.22" />
-              <circle cx={targetPoint.x} cy={targetPoint.y} r="2.4" fill="#ef4444" stroke="#fff" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
-              <text x={targetPoint.x} y={targetPoint.y - 4.8} textAnchor="middle" fontSize="2.8" fontWeight="800" fill="#b91c1c">TARGET</text>
-            </g>
-          ) : null}
-          {visibleRouteMarkers.map((point, markerIndex) => {
-            const index = route.findIndex((item) => item.id === point.id)
-            const projected = project(point)
-            const isHome = index === 0
-            const isTarget = index === route.length - 1 || point.reason?.toUpperCase() === 'TARGET'
-            const label = isHome ? 'H' : isTarget ? 'T' : `${point.sequence}`
-            return (
-              <g key={`${point.id}-${markerIndex}`}>
-                <circle
-                  cx={projected.x}
-                  cy={projected.y}
-                  r={isHome || isTarget ? '3.2' : '2.5'}
-                  fill={isHome ? '#0f172a' : isTarget ? '#ef4444' : '#2563eb'}
-                  stroke="#fff"
-                  strokeWidth="0.9"
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            style={{ position: 'absolute', inset: 0, overflow: 'visible' }}
+          >
+            {monitoringRadius ? (
+              <g>
+                <ellipse
+                  cx={monitoringRadius.cx}
+                  cy={monitoringRadius.cy}
+                  rx={monitoringRadius.rx}
+                  ry={monitoringRadius.ry}
+                  fill="#22c55e"
+                  fillOpacity="0.16"
+                  stroke="#16a34a"
+                  strokeWidth="1.6"
+                  strokeDasharray="5 4"
+                  strokeOpacity="0.92"
                   vectorEffect="non-scaling-stroke"
                 />
                 <text
-                  x={projected.x}
-                  y={projected.y + 0.75}
+                  x={monitoringRadius.cx}
+                  y={Math.max(
+                    4,
+                    monitoringRadius.cy - monitoringRadius.ry - 2.5,
+                  )}
                   textAnchor="middle"
-                  fontSize={isHome || isTarget ? '2.8' : '2.3'}
+                  fontSize="2.7"
                   fontWeight="800"
-                  fill="#fff"
+                  fill="#15803d"
                 >
-                  {label}
+                  {t.monitoringZoneLabel} · R {monitoringRadius.label}
                 </text>
               </g>
-            )
-          })}
-        </svg>
-        {route.length === 0 ? (
-          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--tx3)', fontSize: 13, fontWeight: 600 }}>
-            Chưa có waypoint A*
+            ) : null}
+            {polyline ? (
+              <polyline
+                points={polyline}
+                fill="none"
+                stroke="#1d4ed8"
+                strokeWidth="2.1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeOpacity="0.96"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null}
+            {targetPoint ? (
+              <g>
+                <circle
+                  cx={targetPoint.x}
+                  cy={targetPoint.y}
+                  r="5.4"
+                  fill="#ef4444"
+                  opacity="0.22"
+                />
+                <circle
+                  cx={targetPoint.x}
+                  cy={targetPoint.y}
+                  r="2.4"
+                  fill="#ef4444"
+                  stroke="#fff"
+                  strokeWidth="0.8"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <text
+                  x={targetPoint.x}
+                  y={targetPoint.y - 4.8}
+                  textAnchor="middle"
+                  fontSize="2.8"
+                  fontWeight="800"
+                  fill="#b91c1c"
+                >
+                  TARGET
+                </text>
+              </g>
+            ) : null}
+            {visibleRouteMarkers.map((point, markerIndex) => {
+              const index = route.findIndex((item) => item.id === point.id)
+              const projected = project(point)
+              const isHome = index === 0
+              const isTarget =
+                index === route.length - 1 ||
+                point.reason?.toUpperCase() === 'TARGET'
+              const label = isHome ? 'H' : isTarget ? 'T' : `${point.sequence}`
+              return (
+                <g key={`${point.id}-${markerIndex}`}>
+                  <circle
+                    cx={projected.x}
+                    cy={projected.y}
+                    r={isHome || isTarget ? '3.2' : '2.5'}
+                    fill={isHome ? '#0f172a' : isTarget ? '#ef4444' : '#2563eb'}
+                    stroke="#fff"
+                    strokeWidth="0.9"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <text
+                    x={projected.x}
+                    y={projected.y + 0.75}
+                    textAnchor="middle"
+                    fontSize={isHome || isTarget ? '2.8' : '2.3'}
+                    fontWeight="800"
+                    fill="#fff"
+                  >
+                    {label}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+          {route.length === 0 ? (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'grid',
+                placeItems: 'center',
+                color: 'var(--tx3)',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              {t.noWaypoints}
+            </div>
+          ) : null}
+        </div>
+        <div
+          style={{
+            borderLeft: '1px solid var(--bd)',
+            background: '#fff',
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            minHeight: 520,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+              {t.routeOverviewTitle}
+            </div>
+            <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
+              {t.routeOverviewSubtitle}
+            </div>
           </div>
-        ) : null}
+
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
+          >
+            <MiniMetric label={t.waypointLabel} value={`${route.length}`} />
+            <MiniMetric
+              label={t.distance}
+              value={formatMeters(mission.planSummary?.plannedDistanceM)}
+            />
+            <MiniMetric
+              label={t.expectedDuration}
+              value={formatSeconds(mission.planSummary?.plannedDurationSec, t)}
+            />
+            <MiniMetric
+              label={t.ceiling}
+              value={formatMeters(mission.planSummary?.maxPlannedAltitudeM)}
+            />
+          </div>
+
+          <div
+            style={{
+              border: '1px solid var(--bd)',
+              borderRadius: 8,
+              overflow: 'hidden',
+            }}
+          >
+            <RoutePointRow tone="dark" label={t.home} point={startPoint} />
+            <RoutePointRow
+              tone="red"
+              label={t.target}
+              point={
+                target
+                  ? {
+                      id: 'target',
+                      sequence: endPoint?.sequence ?? 0,
+                      simX: target.simX,
+                      simY: target.simY,
+                      altitudeM: endPoint?.altitudeM,
+                      reason: 'TARGET',
+                    }
+                  : endPoint
+              }
+            />
+          </div>
+
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>
+              {t.mainRoutePointsTitle}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                maxHeight: 250,
+                overflow: 'auto',
+                paddingRight: 4,
+              }}
+            >
+              {routeHighlights.length > 0 ? (
+                routeHighlights.map((point) => (
+                  <div
+                    key={`highlight-${point.id}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '42px 1fr',
+                      gap: 8,
+                      alignItems: 'center',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background:
+                        point.reason?.toUpperCase() === 'TARGET'
+                          ? '#fef2f2'
+                          : 'var(--sf2)',
+                      border: '1px solid var(--bd)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontWeight: 800,
+                        color:
+                          point.reason?.toUpperCase() === 'TARGET'
+                            ? '#b91c1c'
+                            : 'var(--blue-dot)',
+                      }}
+                    >
+                      WP {point.sequence}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--tx2)' }}>
+                      X {point.simX.toFixed(1)} · Y {point.simY.toFixed(1)} ·{' '}
+                      {point.reason ?? 'CRUISE'}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
+                  {t.noWaypointsPeriod}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
       <div
         style={{
-          borderLeft: '1px solid var(--bd)',
+          maxHeight: 180,
+          overflow: 'auto',
+          borderTop: '1px solid var(--bd)',
           background: '#fff',
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          minHeight: 520,
         }}
       >
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Route overview</div>
-          <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
-            A* route trên map mô phỏng
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <MiniMetric label="Waypoint" value={`${route.length}`} />
-          <MiniMetric label="Distance" value={formatMeters(mission.planSummary?.plannedDistanceM)} />
-          <MiniMetric label="Duration" value={formatSeconds(mission.planSummary?.plannedDurationSec)} />
-          <MiniMetric label="Altitude" value={formatMeters(mission.planSummary?.maxPlannedAltitudeM)} />
-        </div>
-
-        <div style={{ border: '1px solid var(--bd)', borderRadius: 8, overflow: 'hidden' }}>
-          <RoutePointRow
-            tone="dark"
-            label="HOME"
-            point={startPoint}
-          />
-          <RoutePointRow
-            tone="red"
-            label="TARGET"
-            point={target ? { id: 'target', sequence: endPoint?.sequence ?? 0, simX: target.simX, simY: target.simY, altitudeM: endPoint?.altitudeM, reason: 'TARGET' } : endPoint}
-          />
-        </div>
-
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>
-            Điểm chính trên đường bay
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 250, overflow: 'auto', paddingRight: 4 }}>
-            {routeHighlights.length > 0 ? routeHighlights.map((point) => (
-              <div
-                key={`highlight-${point.id}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '42px 1fr',
-                  gap: 8,
-                  alignItems: 'center',
-                  padding: '8px 10px',
-                  borderRadius: 8,
-                  background: point.reason?.toUpperCase() === 'TARGET' ? '#fef2f2' : 'var(--sf2)',
-                  border: '1px solid var(--bd)',
-                }}
-              >
-                <span style={{ fontWeight: 800, color: point.reason?.toUpperCase() === 'TARGET' ? '#b91c1c' : 'var(--blue-dot)' }}>
-                  WP {point.sequence}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--tx2)' }}>
-                  X {point.simX.toFixed(1)} · Y {point.simY.toFixed(1)} · {point.reason ?? 'CRUISE'}
-                </span>
-              </div>
-            )) : (
-              <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>Chưa có waypoint.</div>
-            )}
-          </div>
-        </div>
-      </div>
-      </div>
-      <div style={{ maxHeight: 180, overflow: 'auto', borderTop: '1px solid var(--bd)', background: '#fff' }}>
         <table className="odm-table" style={{ fontSize: 11.5 }}>
           <thead>
             <tr>
@@ -727,18 +914,30 @@ function MapPlaceholder({ mission }: { mission: OperatorMission }) {
             </tr>
           </thead>
           <tbody>
-            {route.length > 0 ? route.map((point) => (
-              <tr key={point.id}>
-                <td>{point.sequence}</td>
-                <td>{point.simX.toFixed(2)}</td>
-                <td>{point.simY.toFixed(2)}</td>
-                <td>{point.altitudeM == null ? '—' : `${point.altitudeM.toFixed(1)} m`}</td>
-                <td>{point.plannedSpeedMps == null ? '—' : `${point.plannedSpeedMps.toFixed(1)} m/s`}</td>
-                <td>{point.reason ?? '—'}</td>
-              </tr>
-            )) : (
+            {route.length > 0 ? (
+              route.map((point) => (
+                <tr key={point.id}>
+                  <td>{point.sequence}</td>
+                  <td>{point.simX.toFixed(2)}</td>
+                  <td>{point.simY.toFixed(2)}</td>
+                  <td>
+                    {point.altitudeM == null
+                      ? '—'
+                      : `${point.altitudeM.toFixed(1)} m`}
+                  </td>
+                  <td>
+                    {point.plannedSpeedMps == null
+                      ? '—'
+                      : `${point.plannedSpeedMps.toFixed(1)} m/s`}
+                  </td>
+                  <td>{point.reason ?? '—'}</td>
+                </tr>
+              ))
+            ) : (
               <tr>
-                <td colSpan={6} style={{ color: 'var(--tx3)' }}>Chưa có dữ liệu mission plan.</td>
+                <td colSpan={6} style={{ color: 'var(--tx3)' }}>
+                  {t.noMissionPlanData}
+                </td>
               </tr>
             )}
           </tbody>
@@ -750,8 +949,17 @@ function MapPlaceholder({ mission }: { mission: OperatorMission }) {
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ border: '1px solid var(--bd)', borderRadius: 8, padding: '10px 12px', background: 'var(--sf2)' }}>
-      <div style={{ color: 'var(--tx3)', fontSize: 11.5, marginBottom: 4 }}>{label}</div>
+    <div
+      style={{
+        border: '1px solid var(--bd)',
+        borderRadius: 8,
+        padding: '10px 12px',
+        background: 'var(--sf2)',
+      }}
+    >
+      <div style={{ color: 'var(--tx3)', fontSize: 11.5, marginBottom: 4 }}>
+        {label}
+      </div>
       <div style={{ fontWeight: 800, fontSize: 15 }}>{value}</div>
     </div>
   )
@@ -766,14 +974,24 @@ function RoutePointRow({
   point?: OperatorMissionPlanWaypoint
   tone: 'dark' | 'red'
 }) {
+  const { t } = useI18n(missionDetailScreenMessages)
   const color = tone === 'red' ? '#b91c1c' : '#0f172a'
   const background = tone === 'red' ? '#fef2f2' : '#f8fafc'
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '10px 12px', background, borderBottom: '1px solid var(--bd)' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '10px 12px',
+        background,
+        borderBottom: '1px solid var(--bd)',
+      }}
+    >
       <div>
         <div style={{ fontSize: 12, fontWeight: 800, color }}>{label}</div>
         <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 2 }}>
-          {point ? `WP ${point.sequence} · ${point.reason ?? '—'}` : 'Chưa có điểm'}
+          {point ? `WP ${point.sequence} · ${point.reason ?? '—'}` : t.noPoint}
         </div>
       </div>
       <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>
@@ -782,21 +1000,27 @@ function RoutePointRow({
             <div>X {point.simX.toFixed(1)}</div>
             <div>Y {point.simY.toFixed(1)}</div>
           </>
-        ) : '—'}
+        ) : (
+          '—'
+        )}
       </div>
     </div>
   )
 }
 
 function InfoPanel({ mission }: { mission: OperatorMission }) {
+  const { t, locale } = useI18n(missionDetailScreenMessages)
   const minutes = durationMinutes(mission.startTime, mission.endTime)
-  const [preflightStatus, setPreflightStatus] = useState<RuntimePreflightStatus | null>(() =>
-    readStoredPreflightState(mission.id, mission.droneCode),
-  )
-  const [weatherStatus, setWeatherStatus] = useState<WeatherPreflightStatus | null>(() =>
-    readStoredWeatherState(mission.id, mission.droneCode),
-  )
-  const [postflightStatus, setPostflightStatus] = useState<PostflightCheckStatus | null>(null)
+  const [preflightStatus, setPreflightStatus] =
+    useState<RuntimePreflightStatus | null>(() =>
+      readStoredPreflightState(mission.id, mission.droneCode),
+    )
+  const [weatherStatus, setWeatherStatus] =
+    useState<WeatherPreflightStatus | null>(() =>
+      readStoredWeatherState(mission.id, mission.droneCode),
+    )
+  const [postflightStatus, setPostflightStatus] =
+    useState<PostflightCheckStatus | null>(null)
 
   useEffect(() => {
     setPreflightStatus(readStoredPreflightState(mission.id, mission.droneCode))
@@ -831,48 +1055,94 @@ function InfoPanel({ mission }: { mission: OperatorMission }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="odm-card">
         <div className="odm-card-body" style={{ padding: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>{mission.title}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>
+            {mission.title}
+          </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 12 }}>
             {mission.serviceLabel}
           </div>
 
-          <Row label="Ngày bay" value={formatVnDate(mission.date)} />
           <Row
-            label="Khung giờ"
-            value={mission.startTime && mission.endTime ? `${mission.startTime}–${mission.endTime} · ${minutes} phút` : 'Chưa lên lịch'}
-          />
-          <Row label="Địa điểm" value={mission.location} />
-          <Row
-            label="Vùng giám sát"
-            value={`Bán kính ${mission.radiusMeters == null ? '—' : `${mission.radiusMeters} m`} · trần bay ${mission.ceilingMeters == null ? '—' : `${mission.ceilingMeters} m`}`}
+            label={t.flightDate}
+            value={formatVnDate(mission.date, t, locale)}
           />
           <Row
-            label="Yêu cầu media"
-            value={mission.serviceLabel}
+            label={t.timeSlot}
+            value={
+              mission.startTime && mission.endTime
+                ? `${mission.startTime}–${mission.endTime} · ${minutes} ${t.minutesSuffix}`
+                : t.notScheduled
+            }
           />
+          <Row label={t.location} value={mission.location} />
+          <Row
+            label={t.monitoringZone}
+            value={t.monitoringZoneValue(
+              mission.radiusMeters == null ? '—' : `${mission.radiusMeters} m`,
+              mission.ceilingMeters == null
+                ? '—'
+                : `${mission.ceilingMeters} m`,
+            )}
+          />
+          <Row label={t.mediaRequest} value={mission.serviceLabel} />
         </div>
       </div>
 
       <div className="odm-card">
         <div className="odm-card-body" style={{ padding: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>
-            Mission planning A*
+            {t.planningTitle}
           </div>
           {mission.planSummary ? (
             <>
-              <Row label="Thuật toán" value={mission.planSummary.planningAlgorithm ?? 'A*'} />
-              <Row label="Trạng thái" value={mission.planSummary.feasibilityStatus ?? 'Đã tạo'} />
-              <Row label="Waypoint" value={`${mission.planSummary.waypointCount}`} />
-              <Row label="Quãng đường" value={formatMeters(mission.planSummary.plannedDistanceM)} />
-              <Row label="Thời lượng dự kiến" value={formatSeconds(mission.planSummary.plannedDurationSec)} />
-              <Row label="Trần bay" value={formatMeters(mission.planSummary.maxPlannedAltitudeM)} />
-              <Row label="Pin trước bay" value={formatPercent(mission.planSummary.availableBatteryPercentAtPlanning)} />
-              <Row label="Pin dùng dự kiến" value={formatPercent(mission.planSummary.estimatedBatteryUsedPercent)} />
-              <Row label="Pin còn lại" value={formatPercent(mission.planSummary.estimatedRemainingBatteryPercent)} />
+              <Row
+                label={t.algorithm}
+                value={mission.planSummary.planningAlgorithm ?? 'A*'}
+              />
+              <Row
+                label={t.planStatus}
+                value={
+                  mission.planSummary.feasibilityStatus ?? t.planStatusCreated
+                }
+              />
+              <Row
+                label={t.waypointLabel}
+                value={`${mission.planSummary.waypointCount}`}
+              />
+              <Row
+                label={t.distance}
+                value={formatMeters(mission.planSummary.plannedDistanceM)}
+              />
+              <Row
+                label={t.expectedDuration}
+                value={formatSeconds(mission.planSummary.plannedDurationSec, t)}
+              />
+              <Row
+                label={t.ceiling}
+                value={formatMeters(mission.planSummary.maxPlannedAltitudeM)}
+              />
+              <Row
+                label={t.batteryBeforeFlight}
+                value={formatPercent(
+                  mission.planSummary.availableBatteryPercentAtPlanning,
+                )}
+              />
+              <Row
+                label={t.expectedBatteryUse}
+                value={formatPercent(
+                  mission.planSummary.estimatedBatteryUsedPercent,
+                )}
+              />
+              <Row
+                label={t.remainingBattery}
+                value={formatPercent(
+                  mission.planSummary.estimatedRemainingBatteryPercent,
+                )}
+              />
             </>
           ) : (
             <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-              Chưa có plan A*. Operator nhận mission xong hệ thống sẽ tạo tự động.
+              {t.noPlanYet}
             </div>
           )}
         </div>
@@ -881,45 +1151,84 @@ function InfoPanel({ mission }: { mission: OperatorMission }) {
       <div className="odm-card">
         <div className="odm-card-body" style={{ padding: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-            {mission.droneName && mission.droneName !== mission.droneCode ? `${mission.droneCode} ${mission.droneName}` : mission.droneCode ?? 'Chưa gán drone'}
+            {mission.droneName && mission.droneName !== mission.droneCode
+              ? `${mission.droneCode} ${mission.droneName}`
+              : (mission.droneCode ?? t.noDroneAssigned)}
           </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 2 }}>
             {mission.droneModel ?? '—'}
           </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 2 }}>
-            Payload {mission.dronePayload ?? '—'}
+            {t.payloadPrefix} {mission.dronePayload ?? '—'}
           </div>
           <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 8 }}>
-            Lấy tại {mission.droneStation ?? '—'} · cách {mission.droneStationDistanceKm == null ? '—' : `${mission.droneStationDistanceKm} km`}
+            {t.pickupPrefix} {mission.droneStation ?? '—'} · {t.distancePrefix}{' '}
+            {mission.droneStationDistanceKm == null
+              ? '—'
+              : `${mission.droneStationDistanceKm} km`}
           </div>
           <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-            <StatusBadge tone="gray">{mission.droneReadinessPct == null ? 'Chưa có telemetry' : `${mission.droneReadinessPct}% Sẵn sàng`}</StatusBadge>
+            <StatusBadge tone="gray">
+              {mission.droneReadinessPct == null
+                ? t.noTelemetry
+                : t.readyPercent(mission.droneReadinessPct)}
+            </StatusBadge>
             <span style={{ color: 'var(--tx3)' }}>
-              {mission.droneHoursSinceMaintenance == null ? 'Chưa có dữ liệu bảo trì' : `${mission.droneHoursSinceMaintenance} giờ bay từ lần bảo trì`}
+              {mission.droneHoursSinceMaintenance == null
+                ? t.noMaintenanceData
+                : t.hoursSinceMaintenance(mission.droneHoursSinceMaintenance)}
             </span>
           </div>
         </div>
       </div>
 
-      <PreflightResultCard preflight={preflightStatus} weather={weatherStatus} />
+      <PreflightResultCard
+        preflight={preflightStatus}
+        weather={weatherStatus}
+      />
 
       <PostflightResultCard postflight={postflightStatus} />
 
       {mission.managerNote ? (
         <div
           className="odm-card"
-          style={{ background: 'var(--yellow-bg)', borderColor: 'var(--yellow-dot)' }}
+          style={{
+            background: 'var(--yellow-bg)',
+            borderColor: 'var(--yellow-dot)',
+          }}
         >
           <div className="odm-card-body" style={{ padding: 16 }}>
-            <div style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 6, color: 'var(--yellow-fg)' }}>
-              Ghi chú của quản lý · {mission.managerName ?? ''}
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 12.5,
+                marginBottom: 6,
+                color: 'var(--yellow-fg)',
+              }}
+            >
+              {t.managerNotePrefix} · {mission.managerName ?? ''}
             </div>
-            <div style={{ fontSize: 12.5, color: 'var(--yellow-fg)', marginBottom: 8 }}>
+            <div
+              style={{
+                fontSize: 12.5,
+                color: 'var(--yellow-fg)',
+                marginBottom: 8,
+              }}
+            >
               {mission.managerNote}
             </div>
             {mission.respondBy && mission.status === 'PENDING' ? (
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--yellow-fg)' }}>
-                Hãy phản hồi trước {formatVnDate(mission.respondBy.slice(0, 10))} {formatHm(mission.respondBy)}
+              <div
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--yellow-fg)',
+                }}
+              >
+                {t.respondBefore(
+                  formatVnDate(mission.respondBy.slice(0, 10), t, locale),
+                  formatHm(mission.respondBy),
+                )}
               </div>
             ) : null}
           </div>
@@ -931,7 +1240,16 @@ function InfoPanel({ mission }: { mission: OperatorMission }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '6px 0', fontSize: 12.5, borderTop: '1px solid var(--bd)' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '6px 0',
+        fontSize: 12.5,
+        borderTop: '1px solid var(--bd)',
+      }}
+    >
       <span style={{ color: 'var(--tx3)' }}>{label}</span>
       <span style={{ fontWeight: 500, textAlign: 'right' }}>{value}</span>
     </div>
@@ -945,25 +1263,25 @@ function statusTone(status?: RuntimeOverallStatus | WeatherCheckStatus) {
   return 'gray'
 }
 
-function preflightLabel(status?: RuntimeOverallStatus) {
+function preflightLabel(status: RuntimeOverallStatus | undefined, t: Messages) {
   if (status === 'READY') return 'PASSED'
   if (status === 'FAILED') return 'FAILED'
   if (status === 'CHECKING') return 'CHECKING'
-  return 'Chưa trigger'
+  return t.notTriggered
 }
 
-function checkLabel(status: RuntimeStatus) {
-  if (status === 'PASS') return 'Đạt'
-  if (status === 'WARN') return 'Cảnh báo'
-  if (status === 'FAIL') return 'Không đạt'
-  if (status === 'CHECKING') return 'Đang kiểm'
-  return 'Chờ kiểm'
+function checkLabel(status: RuntimeStatus, t: Messages) {
+  if (status === 'PASS') return t.checkPass
+  if (status === 'WARN') return t.checkWarn
+  if (status === 'FAIL') return t.checkFail
+  if (status === 'CHECKING') return t.checkChecking
+  return t.checkPending
 }
 
-function okLabel(value?: boolean | null) {
-  if (value === true) return 'Đạt'
-  if (value === false) return 'Không đạt'
-  return '—'
+function okLabel(value: boolean | null | undefined, t: Messages) {
+  if (value === true) return t.okYes
+  if (value === false) return t.okNo
+  return t.okUnknown
 }
 
 function formatNumber(value?: number | null, suffix = '', decimals = 1) {
@@ -971,27 +1289,28 @@ function formatNumber(value?: number | null, suffix = '', decimals = 1) {
   return `${value.toFixed(decimals)}${suffix}`
 }
 
-function postflightFaultLabel(faultType?: string | null) {
+function postflightFaultLabel(
+  faultType: string | null | undefined,
+  t: Messages,
+) {
   if (!faultType) return null
-  if (faultType === 'PHYSICAL_DAMAGE') return 'Thân vỏ cần kiểm tra'
-  if (faultType === 'BATTERY') return 'Pin cần kiểm tra'
-  if (faultType === 'HARDWARE') return 'Phần cứng cần kiểm tra'
+  if (faultType === 'PHYSICAL_DAMAGE') return t.faultPhysical
+  if (faultType === 'BATTERY') return t.faultBattery
+  if (faultType === 'HARDWARE') return t.faultHardware
   return faultType.replaceAll('_', ' ')
 }
 
 function postflightNoteLabel(notes?: string | null) {
   if (!notes) return ''
-  const cleaned = notes
-    .replace(/^Inspection:\s*[^.]*\.\s*/i, '')
-    .trim()
+  const cleaned = notes.replace(/^Inspection:\s*[^.]*\.\s*/i, '').trim()
   return cleaned
 }
 
-function formatCheckedAt(value?: string) {
+function formatCheckedAt(value: string | undefined, locale: string) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('vi-VN', {
+  return date.toLocaleString(locale, {
     hour: '2-digit',
     minute: '2-digit',
     day: '2-digit',
@@ -1006,25 +1325,54 @@ function PreflightResultCard({
   preflight: RuntimePreflightStatus | null
   weather: WeatherPreflightStatus | null
 }) {
-  const passCount = preflight?.checks.filter((item) => item.status === 'PASS' || item.status === 'WARN').length ?? 0
-  const failCount = preflight?.checks.filter((item) => item.status === 'FAIL').length ?? 0
+  const passCount =
+    preflight?.checks.filter(
+      (item) => item.status === 'PASS' || item.status === 'WARN',
+    ).length ?? 0
+  const failCount =
+    preflight?.checks.filter((item) => item.status === 'FAIL').length ?? 0
   const visibleChecks = preflight?.checks.slice(0, 6) ?? []
+  const { t, locale } = useI18n(missionDetailScreenMessages)
 
   return (
     <div className="odm-card">
       <div className="odm-card-body" style={{ padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>Kết quả precheck & thời tiết</div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 12,
+            alignItems: 'center',
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 13 }}>
+            {t.precheckWeatherTitle}
+          </div>
           <StatusBadge tone={statusTone(preflight?.status)}>
-            {preflightLabel(preflight?.status)}
+            {preflightLabel(preflight?.status, t)}
           </StatusBadge>
         </div>
 
         {preflight ? (
           <>
-            <Row label="Mã check" value={preflight.checkId} />
-            <Row label="Tiến độ" value={`${Math.round(preflight.progress)}% · ${passCount} đạt${failCount ? ` · ${failCount} lỗi` : ''}`} />
-            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Row label={t.checkCode} value={preflight.checkId} />
+            <Row
+              label={t.progress}
+              value={t.progressValue(
+                Math.round(preflight.progress),
+                passCount,
+                failCount,
+              )}
+            />
+            <div
+              style={{
+                marginTop: 10,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
               {visibleChecks.map((item) => (
                 <div
                   key={`${item.key}-${item.name}`}
@@ -1035,18 +1383,35 @@ function PreflightResultCard({
                     padding: '8px 10px',
                     border: '1px solid var(--bd)',
                     borderRadius: 8,
-                    background: item.status === 'FAIL' ? 'var(--red-bg)' : 'var(--sf2)',
+                    background:
+                      item.status === 'FAIL' ? 'var(--red-bg)' : 'var(--sf2)',
                     fontSize: 12,
                   }}
                 >
                   <div>
                     <div style={{ fontWeight: 700 }}>{item.name}</div>
-                    <div style={{ color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--tx3)', marginTop: 2 }}>
-                      {item.message || 'Đã kiểm tra'}
+                    <div
+                      style={{
+                        color:
+                          item.status === 'FAIL'
+                            ? 'var(--red-fg)'
+                            : 'var(--tx3)',
+                        marginTop: 2,
+                      }}
+                    >
+                      {item.message || t.checked}
                     </div>
                   </div>
-                  <span style={{ fontWeight: 800, color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--green-fg)' }}>
-                    {checkLabel(item.status)}
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      color:
+                        item.status === 'FAIL'
+                          ? 'var(--red-fg)'
+                          : 'var(--green-fg)',
+                    }}
+                  >
+                    {checkLabel(item.status, t)}
                   </span>
                 </div>
               ))}
@@ -1054,36 +1419,80 @@ function PreflightResultCard({
           </>
         ) : (
           <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-            Chưa có dữ liệu precheck cho mission này.
+            {t.noPrecheckData}
           </div>
         )}
 
-        <div style={{ borderTop: '1px solid var(--bd)', marginTop: 12, paddingTop: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 8 }}>
-            <div style={{ fontWeight: 700, fontSize: 12.5 }}>Thời tiết bay</div>
+        <div
+          style={{
+            borderTop: '1px solid var(--bd)',
+            marginTop: 12,
+            paddingTop: 12,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 12,
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 12.5 }}>
+              {t.flightWeather}
+            </div>
             <StatusBadge tone={statusTone(weather?.status)}>
-              {weather ? (weather.safeToFly ? 'SAFE' : weather.status) : 'Chưa check'}
+              {weather
+                ? weather.safeToFly
+                  ? t.safe
+                  : weather.status
+                : t.notChecked}
             </StatusBadge>
           </div>
           {weather ? (
             <>
-              <div style={{ fontSize: 12.5, color: 'var(--tx2)', lineHeight: 1.45, marginBottom: 8 }}>
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: 'var(--tx2)',
+                  lineHeight: 1.45,
+                  marginBottom: 8,
+                }}
+              >
                 {weather.summary}
               </div>
-              <Row label="Gió / giật" value={`${weather.windSpeedMps.toFixed(1)} / ${weather.windGustMps.toFixed(1)} m/s`} />
-              <Row label="Mưa" value={`${weather.precipitationMmH.toFixed(1)} mm/h`} />
-              <Row label="Tầm nhìn" value={`${weather.visibilityKm.toFixed(1)} km`} />
-              <Row label="Nhiệt / ẩm" value={`${weather.temperatureC.toFixed(1)}°C · ${weather.humidityPercent.toFixed(0)}%`} />
-              <Row label="Thời điểm check" value={formatCheckedAt(weather.checkedAt)} />
+              <Row
+                label={t.windGust}
+                value={`${weather.windSpeedMps.toFixed(1)} / ${weather.windGustMps.toFixed(1)} m/s`}
+              />
+              <Row
+                label={t.rain}
+                value={`${weather.precipitationMmH.toFixed(1)} mm/h`}
+              />
+              <Row
+                label={t.visibility}
+                value={`${weather.visibilityKm.toFixed(1)} km`}
+              />
+              <Row
+                label={t.tempHumidity}
+                value={`${weather.temperatureC.toFixed(1)}°C · ${weather.humidityPercent.toFixed(0)}%`}
+              />
+              <Row
+                label={t.checkedAtLabel}
+                value={formatCheckedAt(weather.checkedAt, locale)}
+              />
               {weather.advisories.length > 0 ? (
-                <div style={{ marginTop: 8, color: 'var(--tx3)', fontSize: 12 }}>
+                <div
+                  style={{ marginTop: 8, color: 'var(--tx3)', fontSize: 12 }}
+                >
                   {weather.advisories.join(' · ')}
                 </div>
               ) : null}
             </>
           ) : (
             <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-              Chưa có kết quả check thời tiết.
+              {t.noWeatherCheck}
             </div>
           )}
         </div>
@@ -1092,42 +1501,108 @@ function PreflightResultCard({
   )
 }
 
-function PostflightResultCard({ postflight }: { postflight: PostflightCheckStatus | null }) {
-  const issueText = postflightFaultLabel(postflight?.faultType)
+function PostflightResultCard({
+  postflight,
+}: {
+  postflight: PostflightCheckStatus | null
+}) {
+  const { t, locale } = useI18n(missionDetailScreenMessages)
+  const issueText = postflightFaultLabel(postflight?.faultType, t)
   const noteText = postflightNoteLabel(postflight?.notes)
   const checks: Array<[string, boolean | null | undefined]> = [
-    ['Thân vỏ', postflight?.physicalConditionOk],
-    ['Motor', postflight?.motorOk],
-    ['Pin', postflight?.batteryOk],
-    ['Camera', postflight?.cameraOk],
-    ['GPS', postflight?.gpsOk],
-    ['Kết nối', postflight?.communicationOk],
+    [t.checkAirframe, postflight?.physicalConditionOk],
+    [t.checkMotor, postflight?.motorOk],
+    [t.checkBattery, postflight?.batteryOk],
+    [t.checkCamera, postflight?.cameraOk],
+    [t.checkGps, postflight?.gpsOk],
+    [t.checkConnection, postflight?.communicationOk],
   ]
 
   return (
     <div className="odm-card">
       <div className="odm-card-body" style={{ padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>Kết quả postcheck</div>
-          <StatusBadge tone={postflight ? (postflight.overallOk ? 'green' : 'red') : 'gray'}>
-            {postflight ? (postflight.overallOk ? 'OK' : 'Cần bảo trì') : 'Chưa postcheck'}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 12,
+            alignItems: 'center',
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 13 }}>
+            {t.postcheckTitle}
+          </div>
+          <StatusBadge
+            tone={
+              postflight ? (postflight.overallOk ? 'green' : 'red') : 'gray'
+            }
+          >
+            {postflight
+              ? postflight.overallOk
+                ? t.postcheckOk
+                : t.postcheckNeedsMaintenance
+              : t.postcheckNone}
           </StatusBadge>
         </div>
 
         {postflight ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-              <PostflightMetric label="Drone" value={postflight.droneCode ?? '—'} />
-              <PostflightMetric label="Check lúc" value={formatCheckedAt(postflight.checkedAt)} />
-              <PostflightMetric label="Pin hạ cánh" value={formatNumber(postflight.landingBatteryPercent, '%')} />
-              <PostflightMetric label="Trạng thái pin" value={postflight.landingBatteryState ?? '—'} />
-              <PostflightMetric label="Độ cao" value={formatNumber(postflight.landingAltitudeM, ' m')} />
-              <PostflightMetric label="Tốc độ" value={formatNumber(postflight.landingSpeedMps, ' m/s')} />
-              <PostflightMetric label="Heading" value={formatNumber(postflight.landingHeadingDeg, '°', 0)} />
-              <PostflightMetric label="Telemetry" value={postflight.landingTelemetryOnline == null ? '—' : postflight.landingTelemetryOnline ? 'Online' : 'Offline'} />
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <PostflightMetric
+                label={t.postDrone}
+                value={postflight.droneCode ?? '—'}
+              />
+              <PostflightMetric
+                label={t.postCheckedAt}
+                value={formatCheckedAt(postflight.checkedAt, locale)}
+              />
+              <PostflightMetric
+                label={t.postLandingBattery}
+                value={formatNumber(postflight.landingBatteryPercent, '%')}
+              />
+              <PostflightMetric
+                label={t.postBatteryState}
+                value={postflight.landingBatteryState ?? '—'}
+              />
+              <PostflightMetric
+                label={t.postAltitude}
+                value={formatNumber(postflight.landingAltitudeM, ' m')}
+              />
+              <PostflightMetric
+                label={t.postSpeed}
+                value={formatNumber(postflight.landingSpeedMps, ' m/s')}
+              />
+              <PostflightMetric
+                label={t.postHeading}
+                value={formatNumber(postflight.landingHeadingDeg, '°', 0)}
+              />
+              <PostflightMetric
+                label={t.postTelemetry}
+                value={
+                  postflight.landingTelemetryOnline == null
+                    ? '—'
+                    : postflight.landingTelemetryOnline
+                      ? t.telemetryOnline
+                      : t.telemetryOffline
+                }
+              />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8,
+              }}
+            >
               {checks.map(([label, value]) => (
                 <div
                   key={String(label)}
@@ -1138,15 +1613,22 @@ function PostflightResultCard({ postflight }: { postflight: PostflightCheckStatu
                     padding: '8px 10px',
                     borderRadius: 8,
                     border: '1px solid var(--bd)',
-                    background: value === false ? 'var(--red-bg)' : 'var(--sf2)',
+                    background:
+                      value === false ? 'var(--red-bg)' : 'var(--sf2)',
                     fontSize: 12,
                     minHeight: 34,
                     alignItems: 'center',
                   }}
                 >
                   <span style={{ color: 'var(--tx3)' }}>{label}</span>
-                  <span style={{ fontWeight: 800, color: value === false ? 'var(--red-fg)' : 'var(--green-fg)' }}>
-                    {okLabel(value as boolean | null | undefined)}
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      color:
+                        value === false ? 'var(--red-fg)' : 'var(--green-fg)',
+                    }}
+                  >
+                    {okLabel(value as boolean | null | undefined, t)}
                   </span>
                 </div>
               ))}
@@ -1159,20 +1641,26 @@ function PostflightResultCard({ postflight }: { postflight: PostflightCheckStatu
                   padding: '10px 12px',
                   borderRadius: 8,
                   border: `1px solid ${postflight.overallOk ? 'var(--bd)' : 'var(--red-dot)'}`,
-                  background: postflight.overallOk ? 'var(--sf2)' : 'var(--red-bg)',
+                  background: postflight.overallOk
+                    ? 'var(--sf2)'
+                    : 'var(--red-bg)',
                   color: postflight.overallOk ? 'var(--tx2)' : 'var(--red-fg)',
                   fontSize: 12.5,
                   lineHeight: 1.45,
                 }}
               >
-                {issueText ? <div style={{ fontWeight: 800 }}>{issueText}</div> : null}
-                {noteText ? <div style={{ marginTop: issueText ? 4 : 0 }}>{noteText}</div> : null}
+                {issueText ? (
+                  <div style={{ fontWeight: 800 }}>{issueText}</div>
+                ) : null}
+                {noteText ? (
+                  <div style={{ marginTop: issueText ? 4 : 0 }}>{noteText}</div>
+                ) : null}
               </div>
             ) : null}
           </>
         ) : (
           <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-            Chưa có kết quả postcheck cho mission này.
+            {t.noPostcheckData}
           </div>
         )}
       </div>
@@ -1191,8 +1679,18 @@ function PostflightMetric({ label, value }: { label: string; value: string }) {
         minWidth: 0,
       }}
     >
-      <div style={{ color: 'var(--tx3)', fontSize: 11.5, marginBottom: 3 }}>{label}</div>
-      <div style={{ fontWeight: 800, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ color: 'var(--tx3)', fontSize: 11.5, marginBottom: 3 }}>
+        {label}
+      </div>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: 12.5,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {value}
       </div>
     </div>
@@ -1210,14 +1708,32 @@ function Footer({
   onAccept: () => void
   onOpenReject: () => void
 }) {
+  const { t } = useI18n(missionDetailScreenMessages)
   if (mission.status === 'PENDING') {
     return (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-        <button type="button" className="odm-btn odm-btn-rd" onClick={onOpenReject} disabled={submitting}>
-          Từ chối
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 10,
+          marginTop: 16,
+        }}
+      >
+        <button
+          type="button"
+          className="odm-btn odm-btn-rd"
+          onClick={onOpenReject}
+          disabled={submitting}
+        >
+          {t.reject}
         </button>
-        <button type="button" className="odm-btn odm-btn-p" onClick={onAccept} disabled={submitting}>
-          {submitting ? 'Đang xử lý...' : 'Chấp nhận'}
+        <button
+          type="button"
+          className="odm-btn odm-btn-p"
+          onClick={onAccept}
+          disabled={submitting}
+        >
+          {submitting ? t.processing : t.accept}
         </button>
       </div>
     )
@@ -1240,11 +1756,12 @@ function Footer({
           fontSize: 13,
         }}
       >
-        <span>
-          Mission đã được nhận · {mission.backendStatus ?? 'SCHEDULED'}
-        </span>
-        <a className="odm-btn odm-btn-sm" href={operatorHref({ screen: 'connect', missionId: mission.id })}>
-          Kết nối GCS
+        <span>{t.missionAccepted(mission.backendStatus ?? 'SCHEDULED')}</span>
+        <a
+          className="odm-btn odm-btn-sm"
+          href={operatorHref({ screen: 'connect', missionId: mission.id })}
+        >
+          {t.connectGcs}
         </a>
       </div>
     )
@@ -1252,9 +1769,26 @@ function Footer({
 
   if (mission.status === 'IN_FLIGHT') {
     return (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-        <a className="odm-btn" href={operatorHref({ screen: 'upload', missionId: mission.id })}>Review media</a>
-        <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'flight', missionId: mission.id })}>Mở buồng lái</a>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 10,
+          marginTop: 16,
+        }}
+      >
+        <a
+          className="odm-btn"
+          href={operatorHref({ screen: 'upload', missionId: mission.id })}
+        >
+          {t.reviewMedia}
+        </a>
+        <a
+          className="odm-btn odm-btn-p"
+          href={operatorHref({ screen: 'flight', missionId: mission.id })}
+        >
+          {t.openCockpit}
+        </a>
       </div>
     )
   }

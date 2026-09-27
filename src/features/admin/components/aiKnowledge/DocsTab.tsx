@@ -6,22 +6,20 @@ import {
   LoadingState,
 } from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { DocStatus } from '../../types/aiKnowledge'
 import type { StatusTone } from '../../../../shared/types/domain'
+import { docsTabMessages } from './DocsTab.messages'
 
 const DOC_STATUS_TONE: Record<DocStatus, StatusTone> = {
   INDEXED: 'green',
   PENDING: 'yellow',
   FAILED: 'red',
 }
-const DOC_STATUS_LABEL: Record<DocStatus, string> = {
-  INDEXED: 'Đã index',
-  PENDING: 'Chờ xử lý',
-  FAILED: 'Thất bại',
-}
 
 export function DocsTab() {
+  const { t } = useI18n(docsTabMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.listDocs(signal),
     [],
@@ -51,8 +49,7 @@ export function DocsTab() {
           fontSize: 13,
         }}
       >
-        Kéo thư mục hoặc nhấp để tải lên tài liệu (PDF, DOCX) — Tính năng sẽ sẵn
-        sàng sau
+        {t.uploadHint}
       </div>
       {loading && <LoadingState />}
       {!loading && (error || !data) && (
@@ -70,13 +67,13 @@ export function DocsTab() {
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Tiêu đề</th>
-                <th>Loại</th>
-                <th>Phiên bản</th>
-                <th>Hiệu lực từ</th>
-                <th>Trạng thái</th>
-                <th>Số chunk</th>
-                <th>Thao tác</th>
+                <th>{t.title}</th>
+                <th>{t.type}</th>
+                <th>{t.version}</th>
+                <th>{t.effectiveFrom}</th>
+                <th>{t.status}</th>
+                <th>{t.chunkCount}</th>
+                <th>{t.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -98,7 +95,7 @@ export function DocsTab() {
                   <td style={{ fontSize: 12 }}>{doc.effectiveFrom}</td>
                   <td>
                     <StatusBadge tone={DOC_STATUS_TONE[doc.status]}>
-                      {DOC_STATUS_LABEL[doc.status]}
+                      {t.docStatus[doc.status]}
                     </StatusBadge>
                   </td>
                   <td style={{ fontSize: 12, textAlign: 'center' }}>
@@ -112,7 +109,7 @@ export function DocsTab() {
                       disabled={submitting === doc.id}
                       onClick={() => handleReindex(doc.id)}
                     >
-                      {submitting === doc.id ? '...' : 'Index lại'}
+                      {submitting === doc.id ? '...' : t.reindex}
                     </button>
                   </td>
                 </tr>

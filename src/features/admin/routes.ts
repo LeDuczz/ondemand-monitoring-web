@@ -33,7 +33,8 @@ export function parseAdminRoute(hash: string): AdminRoute {
     case 'accounts': {
       if (tail.length === 0) return { screen: 'accounts' }
       if (tail[0] === 'new') return { screen: 'createAccount' }
-      if (tail.length === 1) return { screen: 'accountDetail', accountId: tail[0] }
+      if (tail.length === 1)
+        return { screen: 'accountDetail', accountId: tail[0] }
       return { screen: 'notFound' }
     }
     case 'roles':

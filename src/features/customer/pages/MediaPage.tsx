@@ -1,7 +1,12 @@
 import { EmptyState } from '../../../shared/components/odm/StateView'
+import { useI18n } from '../../../shared/i18n'
+import { backToOrderMessages } from '../i18n/backToOrder'
 import { customerHref } from '../routes'
+import { mediaPageMessages } from './MediaPage.messages'
 
 export function MediaPage({ orderId }: { orderId: string }) {
+  const { t: tBack } = useI18n(backToOrderMessages)
+  const { t } = useI18n(mediaPageMessages)
   return (
     <div>
       <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--tx3)' }}>
@@ -9,13 +14,10 @@ export function MediaPage({ orderId }: { orderId: string }) {
           href={customerHref({ screen: 'orderDetail', orderId })}
           style={{ color: 'var(--tx3)', textDecoration: 'none' }}
         >
-          ← Quay lại đơn hàng
+          {tBack.backToOrder}
         </a>
       </div>
-      <EmptyState
-        title="Thư viện media (CUS-07)"
-        description="Tính năng xem ảnh/video kết quả đang được phát triển."
-      />
+      <EmptyState title={t.title} description={t.description} />
     </div>
   )
 }

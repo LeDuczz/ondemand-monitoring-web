@@ -1,38 +1,40 @@
 import { useState } from 'react'
 
+import { useI18n } from '../../../shared/i18n'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { useActiveMission } from '../api/useActiveMission'
-import {
-  ConnectStatusPanel,
-} from './ConnectStatusPanel'
+import { ConnectStatusPanel } from './ConnectStatusPanel'
 import { FlightStepHeader } from './FlightStepper'
+import { connectDroneScreenMessages } from './ConnectDroneScreen.messages'
 
 export type ConnectState =
   'default' | 'connecting' | 'connected' | 'failed' | 'expired'
 
-const GCS_OPTIONS = [
-  'Flight Controller hiện tại',
-]
-
 /** OPR-04W — Kết nối drone: token/gcs form + trạng thái kết nối. */
 export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
   const mission = useActiveMission(missionId)
+  const { t } = useI18n(connectDroneScreenMessages)
   const [state, setState] = useState<ConnectState>('default')
-  const [token, setToken] = useState('Flight token cấp sau preflight')
-  const [gcsId, setGcsId] = useState(GCS_OPTIONS[0])
+  const [token, setToken] = useState(t.tokenPlaceholder)
+  const [gcsId, setGcsId] = useState(t.gcsOptions[0])
   const [error, setError] = useState<string | null>(null)
 
   async function handleConnect() {
     setState('connecting')
     setError(null)
     try {
-      if (!mission.missionId || !mission.data?.droneCode) throw new Error('Mission chưa được gán drone')
-      await flightControlApi.bindSession(mission.missionId, mission.data.droneCode)
-      if (mission.data.status === 'SCHEDULED') await missionApi.connectGcs(mission.missionId)
+      if (!mission.missionId || !mission.data?.droneCode)
+        throw new Error(t.noMissionAssigned)
+      await flightControlApi.bindSession(
+        mission.missionId,
+        mission.data.droneCode,
+      )
+      if (mission.data.status === 'SCHEDULED')
+        await missionApi.connectGcs(mission.missionId)
       setState('connected')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Không kết nối được Flight Controller')
+      setError(cause instanceof Error ? cause.message : t.connectFailed)
       setState('failed')
     }
   }
@@ -40,10 +42,14 @@ export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
   return (
     <div className="odm-card" style={{ marginBottom: 0 }}>
       <FlightStepHeader
-        title="Kết nối drone"
-        missionId={mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'}
+        title={t.stepTitle}
+        missionId={
+          mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
+        }
         active={2}
-        right={<DroneChip label={mission.data?.droneCode ?? 'Chưa gán drone'} />}
+        right={
+          <DroneChip label={mission.data?.droneCode ?? t.noDroneAssigned} />
+        }
       />
       <div style={{ padding: '18px 22px' }}>
         <div
@@ -63,7 +69,11 @@ export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
             onConnect={handleConnect}
             onRetryExpired={() => setState('default')}
           />
-          <ConnectStatusPanel state={state} error={error} mission={mission.data} />
+          <ConnectStatusPanel
+            state={state}
+            error={error}
+            mission={mission.data}
+          />
         </div>
       </div>
     </div>
@@ -87,6 +97,7 @@ function ConnectForm({
   onConnect: () => void
   onRetryExpired: () => void
 }) {
+  const { t } = useI18n(connectDroneScreenMessages)
   const isConnecting = state === 'connecting'
   const isConnected = state === 'connected'
   const isExpired = state === 'expired'
@@ -95,14 +106,14 @@ function ConnectForm({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div className="odm-card">
         <div className="odm-card-body" style={{ padding: '16px 18px' }}>
-          <StepTitle n={1} text="Xác thực phiên operator" />
+          <StepTitle n={1} text={t.step1Title} />
           <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
             <input
               className="odm-input odm-mono"
               value={token}
               disabled
               onChange={(e) => onTokenChange(e.target.value)}
-              aria-label="Mã flight token"
+              aria-label={t.tokenAriaLabel}
               style={{
                 height: 48,
                 fontSize: 20,
@@ -112,8 +123,13 @@ function ConnectForm({
                 flex: 1,
               }}
             />
-            <button type="button" className="odm-btn" disabled style={{ height: 48 }}>
-              Quét QR
+            <button
+              type="button"
+              className="odm-btn"
+              disabled
+              style={{ height: 48 }}
+            >
+              {t.scanQr}
             </button>
           </div>
           <div
@@ -125,15 +141,15 @@ function ConnectForm({
               fontSize: 13,
             }}
           >
-            <span style={{ color: 'var(--tx3)' }}>
-              drone_code được lấy từ mission đã gán
-            </span>
+            <span style={{ color: 'var(--tx3)' }}>{t.droneCodeHint}</span>
             {isExpired ? (
               <span style={{ color: 'var(--red-fg)', fontWeight: 700 }}>
-                Hết hạn lúc 13:24:12
+                {t.expiredAt}
               </span>
             ) : (
-              <span style={{ color: 'var(--orange-fg)', fontWeight: 700 }}>Token cấp sau backend preflight</span>
+              <span style={{ color: 'var(--orange-fg)', fontWeight: 700 }}>
+                {t.tokenAfterPreflight}
+              </span>
             )}
           </div>
         </div>
@@ -141,17 +157,17 @@ function ConnectForm({
 
       <div className="odm-card" style={{ opacity: isExpired ? 0.55 : 1 }}>
         <div className="odm-card-body" style={{ padding: '16px 18px' }}>
-          <StepTitle n={2} text="Kết nối Flight Controller" />
+          <StepTitle n={2} text={t.step2Title} />
           <div style={{ display: 'flex', gap: 10 }}>
             <select
               className="odm-input"
-              aria-label="GCS"
+              aria-label={t.gcsAriaLabel}
               value={gcsId}
               disabled={isExpired}
               onChange={(e) => onGcsChange(e.target.value)}
               style={{ flex: 1, height: 44 }}
             >
-              {GCS_OPTIONS.map((opt) => (
+              {t.gcsOptions.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
                 </option>
@@ -164,7 +180,7 @@ function ConnectForm({
                 onClick={onRetryExpired}
                 style={{ height: 44 }}
               >
-                Yêu cầu mã mới
+                {t.requestNewCode}
               </button>
             ) : isConnected ? (
               <button
@@ -173,7 +189,7 @@ function ConnectForm({
                 disabled
                 style={{ height: 44, minWidth: 150 }}
               >
-                Đã kết nối
+                {t.connected}
               </button>
             ) : (
               <button
@@ -184,18 +200,16 @@ function ConnectForm({
                 style={{ height: 44, minWidth: 150 }}
               >
                 {isConnecting
-                  ? 'Đang kết nối...'
+                  ? t.connecting
                   : state === 'failed'
-                    ? 'Thử lại'
-                    : 'Kết nối'}
+                    ? t.retry
+                    : t.connect}
               </button>
             )}
           </div>
         </div>
       </div>
-      <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
-        Phiên điều khiển được xác thực bằng tài khoản operator và drone đã gán cho mission.
-      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>{t.sessionNote}</div>
     </div>
   )
 }

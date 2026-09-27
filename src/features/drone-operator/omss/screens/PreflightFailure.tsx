@@ -1,3 +1,5 @@
+import { useI18n } from '../../../../shared/i18n'
+import { preflightFailureMessages } from '../i18n/preflightFailure'
 import type { CheckItem, ChecklistScenario } from '../types'
 
 interface Props {
@@ -8,40 +10,19 @@ interface Props {
   onEscalate: () => void
 }
 
-const SCENARIO_CFG: Record<
-  ChecklistScenario,
-  { title: string; desc: string; canReplace: boolean; canAcknowledge: boolean }
-> = {
-  'all-pass': {
-    title: 'No failures detected',
-    desc: 'All checks passed.',
-    canReplace: false,
-    canAcknowledge: false,
-  },
-  'battery-fail': {
-    title: 'Battery charge insufficient',
-    desc: 'Battery level is below the minimum 80% threshold. The drone must be charged before deployment.',
-    canReplace: true,
-    canAcknowledge: false,
-  },
-  'hardware-fail': {
-    title: 'Hardware fault detected',
-    desc: 'Camera or gimbal is reporting a fault. The drone requires maintenance before it can be deployed.',
-    canReplace: true,
-    canAcknowledge: false,
-  },
-  'telemetry-stale': {
-    title: 'Telemetry link degraded',
-    desc: 'Telemetry signal is older than 5 seconds. This indicates a communication issue, not a physical fault — verify the ground station antenna and signal path.',
-    canReplace: false,
-    canAcknowledge: true,
-  },
-  'weather-warn': {
-    title: 'Weather advisory',
-    desc: 'Conditions are marginal but within acceptable limits. Review the advisory and proceed with caution or postpone.',
-    canReplace: false,
-    canAcknowledge: true,
-  },
+const CAN_REPLACE: Record<ChecklistScenario, boolean> = {
+  'all-pass': false,
+  'battery-fail': true,
+  'hardware-fail': true,
+  'telemetry-stale': false,
+  'weather-warn': false,
+}
+const CAN_ACKNOWLEDGE: Record<ChecklistScenario, boolean> = {
+  'all-pass': false,
+  'battery-fail': false,
+  'hardware-fail': false,
+  'telemetry-stale': true,
+  'weather-warn': true,
 }
 
 export default function PreflightFailure({
@@ -51,7 +32,12 @@ export default function PreflightFailure({
   onBack,
   onEscalate,
 }: Props) {
-  const cfg = SCENARIO_CFG[scenario]
+  const { t } = useI18n(preflightFailureMessages)
+  const cfg = {
+    ...t.scenarios[scenario],
+    canReplace: CAN_REPLACE[scenario],
+    canAcknowledge: CAN_ACKNOWLEDGE[scenario],
+  }
   const failed = checklist.filter((c) => c.status === 'FAIL')
   const warned = checklist.filter((c) => c.status === 'WARNING')
 
@@ -87,7 +73,7 @@ export default function PreflightFailure({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Pre-flight check
+        {t.preflightCheck}
       </button>
 
       <div style={{ maxWidth: 580 }}>
@@ -179,7 +165,7 @@ export default function PreflightFailure({
                 marginBottom: 4,
               }}
             >
-              Communication issue — not a hardware fault
+              {t.communicationIssue}
             </div>
             <div
               style={{
@@ -189,9 +175,7 @@ export default function PreflightFailure({
                 lineHeight: 1.6,
               }}
             >
-              Stale telemetry means the ground station is not receiving fresh
-              data from the drone. The drone itself may be operational. Check
-              antenna connections and signal path before replacing the drone.
+              {t.staleTelemetryBody}
             </div>
           </div>
         )}
@@ -217,7 +201,7 @@ export default function PreflightFailure({
                 color: 'var(--text)',
               }}
             >
-              Check results
+              {t.checkResults}
             </div>
             {[...failed, ...warned].map((item, i) => (
               <div
@@ -282,7 +266,7 @@ export default function PreflightFailure({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {item.status === 'FAIL' ? '✕ Failed' : '⚠ Warning'}
+                    {item.status === 'FAIL' ? t.failed : t.warning}
                   </span>
                 </div>
                 {item.action && (
@@ -296,7 +280,7 @@ export default function PreflightFailure({
                       color: 'var(--text-2)',
                     }}
                   >
-                    <strong>Action:</strong> {item.action}
+                    <strong>{t.action}</strong> {item.action}
                   </div>
                 )}
               </div>
@@ -321,7 +305,7 @@ export default function PreflightFailure({
                 cursor: 'pointer',
               }}
             >
-              Select replacement drone
+              {t.selectReplacement}
             </button>
           )}
           {cfg.canAcknowledge && (
@@ -339,7 +323,7 @@ export default function PreflightFailure({
                 cursor: 'pointer',
               }}
             >
-              Acknowledge and continue
+              {t.acknowledgeAndContinue}
             </button>
           )}
           <button
@@ -356,7 +340,7 @@ export default function PreflightFailure({
               cursor: 'pointer',
             }}
           >
-            Escalate to manager
+            {t.escalateToManager}
           </button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { useI18n } from '../../../../shared/i18n'
+import { missionListMessages } from '../i18n/missionList'
 import type { Mission, Screen } from '../types'
 import { MissionBadge, PriorityBadge } from '../components/StatusBadge'
 
@@ -7,12 +9,12 @@ interface Props {
   onScreen: (s: Screen) => void
 }
 
-function fmtDate(iso: string) {
+function fmtDate(iso: string, locale: string) {
   const d = new Date(iso)
   return (
-    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+    d.toLocaleDateString(locale, { month: 'short', day: 'numeric' }) +
     ', ' +
-    d.toLocaleTimeString('en-US', {
+    d.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
@@ -32,6 +34,7 @@ const PENDING_STATES = new Set([
 ])
 
 export default function MissionList({ missions, onSelect, onScreen }: Props) {
+  const { t, locale } = useI18n(missionListMessages)
   const awaiting = missions.filter(
     (m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE',
   ).length
@@ -67,10 +70,10 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
               margin: '0 0 4px',
             }}
           >
-            My missions
+            {t.title}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            Track, review and manage your assigned monitoring missions.
+            {t.description}
           </p>
         </div>
         <div style={{ position: 'relative' }}>
@@ -92,7 +95,7 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
             <line x1="11" y1="11" x2="14" y2="14" />
           </svg>
           <input
-            placeholder="Search missions"
+            placeholder={t.searchPlaceholder}
             style={{ padding: '8px 12px 8px 32px', width: 220, fontSize: 14 }}
           />
         </div>
@@ -138,11 +141,7 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
             <circle cx="8" cy="12" r=".7" fill="var(--amber)" />
           </svg>
           <span style={{ fontSize: 14, color: 'var(--amber-text)' }}>
-            <strong>
-              {awaiting} mission{awaiting > 1 ? 's' : ''}
-            </strong>{' '}
-            require{awaiting === 1 ? 's' : ''} your response. Review and accept
-            before the scheduled launch.
+            <strong>{t.alertPrefix(awaiting)}</strong> {t.alertSuffix(awaiting)}
           </span>
         </div>
       )}
@@ -158,25 +157,25 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
       >
         {[
           {
-            label: 'Awaiting acceptance',
+            label: t.summary.awaitingAcceptance,
             value: awaiting,
             color: 'var(--amber)',
             dotColor: 'var(--amber-bg)',
           },
           {
-            label: 'Scheduled today',
+            label: t.summary.scheduledToday,
             value: scheduledToday,
             color: 'var(--blue)',
             dotColor: 'var(--blue-bg)',
           },
           {
-            label: 'In flight',
+            label: t.summary.inFlight,
             value: inFlight,
             color: 'var(--green)',
             dotColor: 'var(--green-bg)',
           },
           {
-            label: 'Completed today',
+            label: t.summary.completedToday,
             value: completed,
             color: 'var(--text-2)',
             dotColor: 'var(--surface-2)',
@@ -260,13 +259,13 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
           }}
         >
           {[
-            'Mission',
-            'Customer',
-            'Drone',
-            'Scheduled',
-            'Status',
-            'Priority',
-            'Action',
+            t.tableHeaders.mission,
+            t.tableHeaders.customer,
+            t.tableHeaders.drone,
+            t.tableHeaders.scheduled,
+            t.tableHeaders.status,
+            t.tableHeaders.priority,
+            t.tableHeaders.action,
           ].map((h) => (
             <div
               key={h}
@@ -354,7 +353,7 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
                 alignItems: 'center',
               }}
             >
-              {fmtDate(m.scheduledAt)}
+              {fmtDate(m.scheduledAt, locale)}
             </div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <MissionBadge state={m.state} />
@@ -380,7 +379,7 @@ export default function MissionList({ missions, onSelect, onScreen }: Props) {
                   cursor: 'pointer',
                 }}
               >
-                Review
+                {t.review}
               </button>
             </div>
           </div>

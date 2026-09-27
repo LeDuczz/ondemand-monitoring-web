@@ -1,6 +1,8 @@
+import { act } from 'react'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { setLanguage } from '../../../shared/i18n'
 import { LandingPage } from './LandingPage'
 
 function saveSession(role: 'CUSTOMER' | 'STAFF') {
@@ -53,9 +55,7 @@ describe('LandingPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Giải đáp nhanh' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getAllByAltText('OnDemand Monitor').length,
-    ).toBeGreaterThan(0)
+    expect(screen.getAllByAltText('OnDemand Monitor').length).toBeGreaterThan(0)
   })
 
   it('sends a guest to registration from the create-request CTA', () => {
@@ -115,9 +115,7 @@ describe('LandingPage', () => {
     render(<LandingPage />)
     const question = 'Bao lâu thì đơn được duyệt?'
     expect(screen.getByText(question)).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: question }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: question })).toBeInTheDocument()
   })
 
   it('renders the chatbot FAB button', () => {
@@ -145,5 +143,42 @@ describe('LandingPage', () => {
       .closest('footer') as HTMLElement
     expect(footer).not.toBeNull()
     expect(within(footer).getByText('support@odms.vn')).toBeInTheDocument()
+  })
+
+  it('renders the English hero heading and key sections when language is switched', () => {
+    render(<LandingPage />)
+    act(() => setLanguage('en'))
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: /Monitor your site with drones/,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        name: 'From request to results in four steps',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'For every aerial monitoring need' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Quick answers' }),
+    ).toBeInTheDocument()
+
+    const links = screen.getAllByRole('link', {
+      name: 'Create monitoring request',
+    })
+    expect(links.length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByRole('link', { name: 'Log in' }).length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.getByRole('button', { name: 'AI Assistant' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Open menu' }),
+    ).toBeInTheDocument()
   })
 })

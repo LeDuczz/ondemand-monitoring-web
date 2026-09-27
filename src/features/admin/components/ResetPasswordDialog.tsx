@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
 import { adminApi } from '../api/adminApi'
+import { useI18n } from '../../../shared/i18n'
 import type { AdminAccountItem } from '../types/accounts'
+import { resetPasswordDialogMessages } from './ResetPasswordDialog.messages'
 
 type Props = {
   account: AdminAccountItem
@@ -10,6 +12,7 @@ type Props = {
 }
 
 export function ResetPasswordDialog({ account, onClose, onSuccess }: Props) {
+  const { t } = useI18n(resetPasswordDialogMessages)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,7 +23,7 @@ export function ResetPasswordDialog({ account, onClose, onSuccess }: Props) {
       await adminApi.resetPassword(account.id)
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi gửi email reset.')
+      setError(err instanceof Error ? err.message : t.genericError)
     } finally {
       setLoading(false)
     }
@@ -34,15 +37,15 @@ export function ResetPasswordDialog({ account, onClose, onSuccess }: Props) {
         style={{ maxWidth: 400 }}
         role="dialog"
         aria-modal="true"
-        aria-label="Reset mật khẩu"
+        aria-label={t.title}
       >
         <div className="odm-dialog-header">
-          <h2 className="odm-dialog-title">Reset mật khẩu</h2>
+          <h2 className="odm-dialog-title">{t.title}</h2>
           <button
             type="button"
             className="odm-dialog-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.close}
           >
             x
           </button>
@@ -52,10 +55,11 @@ export function ResetPasswordDialog({ account, onClose, onSuccess }: Props) {
           style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
         >
           <p style={{ margin: 0, color: 'var(--tx)' }}>
-            Gửi email reset mật khẩu đến <strong>{account.email}</strong>?
+            {t.confirmPrefix} <strong>{account.email}</strong>
+            {t.confirmSuffix}
           </p>
           <p style={{ margin: 0, fontSize: 12, color: 'var(--tx2)' }}>
-            Người dùng sẽ nhận được link đặt lại mật khẩu qua email.
+            {t.hint}
           </p>
           {error && (
             <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>
@@ -69,7 +73,7 @@ export function ResetPasswordDialog({ account, onClose, onSuccess }: Props) {
             className="odm-btn odm-btn-gh"
             onClick={onClose}
           >
-            Huỷ
+            {t.cancel}
           </button>
           <button
             type="button"
@@ -77,7 +81,7 @@ export function ResetPasswordDialog({ account, onClose, onSuccess }: Props) {
             onClick={handleConfirm}
             disabled={loading}
           >
-            {loading ? 'Đang gửi...' : 'Gửi email reset'}
+            {loading ? t.sending : t.send}
           </button>
         </div>
       </div>

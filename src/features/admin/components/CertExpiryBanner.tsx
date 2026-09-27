@@ -1,9 +1,12 @@
 import { daysDiff, fmtDate } from '../lib/accountStatus'
+import { useI18n } from '../../../shared/i18n'
 import type { AdminAccountItem } from '../types/accounts'
+import { certExpiryBannerMessages } from './CertExpiryBanner.messages'
 
 type Props = { accounts: AdminAccountItem[] }
 
 export function CertExpiryBanner({ accounts }: Props) {
+  const { t, lang } = useI18n(certExpiryBannerMessages)
   const WARNING_DAYS = 30
   const expiring = accounts.filter((a) => {
     if (!a.certExpiry) return false
@@ -15,7 +18,7 @@ export function CertExpiryBanner({ accounts }: Props) {
   const names = expiring
     .map((a) => {
       const d = daysDiff(a.certExpiry!)
-      return `${a.fullName} (còn ${d} ngày — hết hạn ${fmtDate(a.certExpiry!)})`
+      return `${a.fullName} (${t.daysLeft(d, fmtDate(a.certExpiry!, lang))})`
     })
     .join(', ')
 
@@ -35,9 +38,9 @@ export function CertExpiryBanner({ accounts }: Props) {
         alignItems: 'flex-start',
       }}
     >
-      <span style={{ fontWeight: 700, flexShrink: 0 }}>Cảnh báo:</span>
+      <span style={{ fontWeight: 700, flexShrink: 0 }}>{t.warning}</span>
       <span>
-        {expiring.length} phi công có chứng chỉ sắp hết hạn: {names}
+        {t.summary(expiring.length)} {names}
       </span>
     </div>
   )

@@ -1,0 +1,31 @@
+import { useI18n } from '../../../shared/i18n'
+import type { AuthMode } from '../types/authMode'
+import { modeSwitchMessages } from './ModeSwitch.messages'
+
+export function ModeSwitch({
+  mode,
+  onChange,
+}: {
+  mode: AuthMode
+  onChange: (mode: 'login' | 'register') => void
+}) {
+  const { t } = useI18n(modeSwitchMessages)
+  if (
+    mode === 'verify' ||
+    mode === 'forgot' ||
+    mode === 'reset' ||
+    mode === 'first-login'
+  )
+    return null
+  return (
+    <p className="odm-auth-switch">
+      {mode === 'login' ? t.noAccount : t.hasAccount}{' '}
+      <button
+        type="button"
+        onClick={() => onChange(mode === 'login' ? 'register' : 'login')}
+      >
+        {mode === 'login' ? t.register : t.login}
+      </button>
+    </p>
+  )
+}

@@ -1,3 +1,5 @@
+import { useI18n } from '../../../shared/i18n'
+import { missionStatusChartMessages } from './MissionStatusChart.messages'
 import type { MissionStatusDayPoint } from '../types/dashboard'
 
 type SeriesKey = 'completed' | 'inFlight' | 'failed' | 'cancelled'
@@ -31,14 +33,11 @@ export function MissionStatusChart({
 }: {
   days: MissionStatusDayPoint[]
 }) {
+  const { t } = useI18n(missionStatusChartMessages)
   const hasData = days.length > 0 && days.some((day) => dayTotal(day) > 0)
 
   if (!hasData) {
-    return (
-      <div className="odm-mgr-chart-empty">
-        Chưa có mission trong 7 ngày qua
-      </div>
-    )
+    return <div className="odm-mgr-chart-empty">{t.empty}</div>
   }
 
   const width = 700
@@ -75,7 +74,7 @@ export function MissionStatusChart({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`Mission theo trạng thái 7 ngày gần nhất. ${summary}.`}
+        aria-label={t.ariaLabel(summary)}
         style={{ width: '100%', height: 'auto', display: 'block' }}
       >
         {bars.map(({ day, x, segments }) => (
@@ -115,10 +114,10 @@ export function MissionStatusChart({
         ))}
       </div>
       <table className="odm-visually-hidden">
-        <caption>Mission theo trạng thái, 7 ngày gần nhất</caption>
+        <caption>{t.caption}</caption>
         <thead>
           <tr>
-            <th scope="col">Ngày</th>
+            <th scope="col">{t.day}</th>
             {SERIES.map((series) => (
               <th scope="col" key={series.key}>
                 {series.label}

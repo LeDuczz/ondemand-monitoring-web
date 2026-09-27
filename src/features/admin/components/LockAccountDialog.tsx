@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
 import { adminApi } from '../api/adminApi'
+import { useI18n } from '../../../shared/i18n'
 import type { AdminAccountItem } from '../types/accounts'
+import { lockAccountDialogMessages } from './LockAccountDialog.messages'
 
 type Props = {
   account: AdminAccountItem
@@ -10,6 +12,7 @@ type Props = {
 }
 
 export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
+  const { t } = useI18n(lockAccountDialogMessages)
   const isLocked = account.status === 'INACTIVE'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,9 +28,7 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
       }
       onSuccess()
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Lỗi khi thay đổi trạng thái.',
-      )
+      setError(err instanceof Error ? err.message : t.genericError)
     } finally {
       setLoading(false)
     }
@@ -41,17 +42,17 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
         style={{ maxWidth: 400 }}
         role="dialog"
         aria-modal="true"
-        aria-label={isLocked ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
+        aria-label={isLocked ? t.unlockTitle : t.lockTitle}
       >
         <div className="odm-dialog-header">
           <h2 className="odm-dialog-title">
-            {isLocked ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
+            {isLocked ? t.unlockTitle : t.lockTitle}
           </h2>
           <button
             type="button"
             className="odm-dialog-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.close}
           >
             x
           </button>
@@ -63,13 +64,13 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
           <p style={{ margin: 0, color: 'var(--tx)' }}>
             {isLocked ? (
               <>
-                Mở khoá tài khoản <strong>{account.fullName}</strong>? Tài khoản
-                sẽ được đăng nhập lại.
+                {t.unlockConfirmPrefix} <strong>{account.fullName}</strong>
+                {t.unlockConfirmSuffix}
               </>
             ) : (
               <>
-                Khoá tài khoản <strong>{account.fullName}</strong>? Người dùng
-                sẽ không thể đăng nhập.
+                {t.lockConfirmPrefix} <strong>{account.fullName}</strong>
+                {t.lockConfirmSuffix}
               </>
             )}
           </p>
@@ -83,8 +84,7 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
                 fontSize: 12,
               }}
             >
-              Cảnh báo: Nếu người dùng còn nhiệm vụ đang thực hiện, hãy kết thúc
-              trước khi khoá.
+              {t.lockWarning}
             </div>
           )}
           {error && (
@@ -99,7 +99,7 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
             className="odm-btn odm-btn-gh"
             onClick={onClose}
           >
-            Huỷ
+            {t.cancel}
           </button>
           <button
             type="button"
@@ -108,7 +108,7 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
             onClick={handleConfirm}
             disabled={loading}
           >
-            {loading ? 'Đang xử lý...' : isLocked ? 'Mở khoá' : 'Khoá'}
+            {loading ? t.processing : isLocked ? t.unlockAction : t.lockAction}
           </button>
         </div>
       </div>

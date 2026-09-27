@@ -80,7 +80,10 @@ export function getActiveMissionFlowStep(): number {
 export function markActiveMissionFlowStep(missionId: string, step: number) {
   if (window.sessionStorage.getItem(ACTIVE_MISSION_KEY) !== missionId) return
   const current = getActiveMissionFlowStep()
-  window.sessionStorage.setItem(ACTIVE_FLOW_STEP_KEY, String(Math.max(current, step)))
+  window.sessionStorage.setItem(
+    ACTIVE_FLOW_STEP_KEY,
+    String(Math.max(current, step)),
+  )
 }
 
 function localDateAndTime(iso?: string | null) {
@@ -89,10 +92,15 @@ function localDateAndTime(iso?: string | null) {
   if (Number.isNaN(value.getTime())) return { date: '', time: '' }
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
   }).formatToParts(value)
-  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ''
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? ''
   return {
     date: `${part('year')}-${part('month')}-${part('day')}`,
     time: `${part('hour')}:${part('minute')}`,
@@ -101,7 +109,12 @@ function localDateAndTime(iso?: string | null) {
 
 function operatorStatus(status: string): OperatorMissionStatus {
   if (status === 'WAITING_OPERATOR_ACCEPTANCE') return 'PENDING'
-  if (status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING') return 'IN_FLIGHT'
+  if (
+    status === 'IN_FLIGHT' ||
+    status === 'IN_PROGRESS' ||
+    status === 'RETURNING'
+  )
+    return 'IN_FLIGHT'
   if (status === 'COMPLETED') return 'COMPLETED'
   if (status === 'FAILED' || status === 'CANCELLED') return 'FAILED'
   if (status === 'RESOURCE_ASSIGNING') return 'REJECTED'
@@ -109,12 +122,18 @@ function operatorStatus(status: string): OperatorMissionStatus {
 }
 
 export function toOperatorMission(source: BackendMission): OperatorMission {
-  const start = source.scheduledStartAt ?? source.startedAt ?? source.completedAt
+  const start =
+    source.scheduledStartAt ?? source.startedAt ?? source.completedAt
   const scheduled = localDateAndTime(start)
   const durationSeconds = source.plan?.plannedDurationSec
-  const end = start && typeof durationSeconds === 'number'
-    ? localDateAndTime(new Date(new Date(start).getTime() + durationSeconds * 1000).toISOString())
-    : { time: '' }
+  const end =
+    start && typeof durationSeconds === 'number'
+      ? localDateAndTime(
+          new Date(
+            new Date(start).getTime() + durationSeconds * 1000,
+          ).toISOString(),
+        )
+      : { time: '' }
   return {
     id: source.id,
     missionCode: source.missionCode ?? source.id,
@@ -144,14 +163,18 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
           maxPlannedAltitudeM: source.plan.maxPlannedAltitudeM,
           estimatedEnergyMah: source.plan.estimatedEnergyMah,
           estimatedBatteryUsedPercent: source.plan.estimatedBatteryUsedPercent,
-          availableBatteryPercentAtPlanning: source.plan.availableBatteryPercentAtPlanning,
-          estimatedRemainingBatteryPercent: source.plan.estimatedRemainingBatteryPercent,
+          availableBatteryPercentAtPlanning:
+            source.plan.availableBatteryPercentAtPlanning,
+          estimatedRemainingBatteryPercent:
+            source.plan.estimatedRemainingBatteryPercent,
           waypointCount: source.plan.waypoints?.length ?? 0,
           waypoints: (source.plan.waypoints ?? [])
-            .filter((point) =>
-              typeof point.sequence === 'number' &&
-              typeof point.simX === 'number' &&
-              typeof point.simY === 'number')
+            .filter(
+              (point) =>
+                typeof point.sequence === 'number' &&
+                typeof point.simX === 'number' &&
+                typeof point.simY === 'number',
+            )
             .sort((a, b) => Number(a.sequence) - Number(b.sequence))
             .map((point) => ({
               id: point.id ?? `wp-${point.sequence}`,
@@ -169,11 +192,13 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
 
 export function toFlightMission(source: BackendMission): Mission {
   const points = (source.plan?.waypoints ?? [])
-    .filter((point) =>
-      typeof point.sequence === 'number' &&
-      typeof point.simX === 'number' &&
-      typeof point.simY === 'number' &&
-      typeof point.altitudeM === 'number')
+    .filter(
+      (point) =>
+        typeof point.sequence === 'number' &&
+        typeof point.simX === 'number' &&
+        typeof point.simY === 'number' &&
+        typeof point.altitudeM === 'number',
+    )
     .sort((a, b) => Number(a.sequence) - Number(b.sequence))
     .map((point) => ({
       id: point.id ?? `wp-${point.sequence}`,

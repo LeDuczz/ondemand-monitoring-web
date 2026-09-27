@@ -1,7 +1,9 @@
+import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
+import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
 import type { Mission } from '../types/missions'
@@ -191,5 +193,20 @@ describe('CreateMissionPage', () => {
     expect(
       screen.getByRole('button', { name: 'Thêm waypoint' }),
     ).toBeInTheDocument()
+  })
+
+  it('renders English title and labels when language is switched', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    render(
+      <CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />,
+    )
+    act(() => setLanguage('en'))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Create mission' }),
+      ).toBeInTheDocument(),
+    )
+    expect(screen.getByText('Flight schedule')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Create mission' })).toBeTruthy()
   })
 })

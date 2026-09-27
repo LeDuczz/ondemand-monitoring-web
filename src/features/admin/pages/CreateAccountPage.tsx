@@ -1,21 +1,29 @@
 import { useState } from 'react'
 
 import { adminApi } from '../api/adminApi'
-import { ROLE_LABEL } from '../lib/accountStatus'
+import { getRoleLabel } from '../lib/accountStatus'
+import { useI18n } from '../../../shared/i18n'
 import { adminHref } from '../routes'
 import type { UserRole } from '../../auth/types'
+import { createAccountPageMessages } from './CreateAccountPage.messages'
 
 type EmployeeRole = Exclude<UserRole, 'CUSTOMER' | 'ADMIN'>
 
-const EMPLOYEE_ROLES: Array<{ value: EmployeeRole; description: string }> = [
-  { value: 'STAFF', description: 'Duyệt đơn, điều phối mission, giao kết quả.' },
-  { value: 'DRONE_OPERATOR', description: 'Thực hiện bay, ghi nhận dữ liệu mission.' },
-  { value: 'SYSTEM_OPERATOR', description: 'Giám sát thiết bị, telemetry, cảnh báo hệ thống.' },
-]
+const EMPLOYEE_ROLE_VALUES = [
+  'STAFF',
+  'DRONE_OPERATOR',
+  'SYSTEM_OPERATOR',
+] as const satisfies readonly EmployeeRole[]
 
 type FormErrors = Partial<Record<'fullName' | 'email' | 'role', string>>
 
 export function CreateAccountPage() {
+  const { t, lang } = useI18n(createAccountPageMessages)
+  const EMPLOYEE_ROLES: Array<{ value: EmployeeRole; description: string }> =
+    EMPLOYEE_ROLE_VALUES.map((value) => ({
+      value,
+      description: t.roleDescriptions[value],
+    }))
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<EmployeeRole>('STAFF')
@@ -26,11 +34,11 @@ export function CreateAccountPage() {
 
   function validate(): boolean {
     const errs: FormErrors = {}
-    if (!fullName.trim()) errs.fullName = 'Bắt buộc'
+    if (!fullName.trim()) errs.fullName = t.required
     if (!email.trim()) {
-      errs.email = 'Bắt buộc'
+      errs.email = t.required
     } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      errs.email = 'Email không hợp lệ'
+      errs.email = t.invalidEmail
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -42,10 +50,14 @@ export function CreateAccountPage() {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await adminApi.createAccount({ fullName: fullName.trim(), email: email.trim().toLowerCase(), role })
+      await adminApi.createAccount({
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        role,
+      })
       setCreatedEmail(email.trim().toLowerCase())
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Có lỗi xảy ra.'
+      const msg = err instanceof Error ? err.message : t.genericError
       setSubmitError(msg)
     } finally {
       setSubmitting(false)
@@ -56,13 +68,17 @@ export function CreateAccountPage() {
     return (
       <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-        <h2 style={{ margin: '0 0 8px' }}>Tài khoản đã được tạo!</h2>
+        <h2 style={{ margin: '0 0 8px' }}>{t.createdTitle}</h2>
         <p style={{ color: 'var(--tx3)', marginBottom: 24 }}>
-          Lời mời đã gửi đến <strong>{createdEmail}</strong>. Nhân viên cần đổi mật khẩu khi đăng nhập lần đầu.
+          {t.createdDescriptionPrefix} <strong>{createdEmail}</strong>
+          {t.createdDescriptionSuffix}
         </p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-          <a href={adminHref({ screen: 'accounts' })} className="odm-btn odm-btn-p">
-            Xem danh sách
+          <a
+            href={adminHref({ screen: 'accounts' })}
+            className="odm-btn odm-btn-p"
+          >
+            {t.viewList}
           </a>
           <button
             type="button"
@@ -75,7 +91,7 @@ export function CreateAccountPage() {
               setErrors({})
             }}
           >
-            Tạo tài khoản khác
+            {t.createAnother}
           </button>
         </div>
       </div>
@@ -85,14 +101,19 @@ export function CreateAccountPage() {
   return (
     <div style={{ maxWidth: 640 }}>
       <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--tx3)' }}>
-        <a href={adminHref({ screen: 'accounts' })} style={{ color: 'var(--tx3)', textDecoration: 'none' }}>
-          ← Tài khoản
+        <a
+          href={adminHref({ screen: 'accounts' })}
+          style={{ color: 'var(--tx3)', textDecoration: 'none' }}
+        >
+          {t.backToAccounts}
         </a>
       </div>
 
-      <h1 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>Tạo tài khoản nhân viên</h1>
+      <h1 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>
+        {t.pageTitle}
+      </h1>
       <p style={{ margin: '0 0 24px', color: 'var(--tx3)', fontSize: 13 }}>
-        Hệ thống sẽ gửi lời mời qua email. Admin không cần nhập mật khẩu.
+        {t.pageSubtitle}
       </p>
 
       <form onSubmit={handleSubmit} noValidate>
@@ -105,20 +126,27 @@ export function CreateAccountPage() {
             marginBottom: 16,
           }}
         >
-          <h2 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600 }}>Thông tin cá nhân</h2>
+          <h2 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600 }}>
+            {t.personalInfo}
+          </h2>
 
           <div style={{ marginBottom: 14 }}>
             <label
               htmlFor="adm-fullname"
-              style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 4,
+              }}
             >
-              Họ và tên <span style={{ color: 'var(--red-solid)' }}>*</span>
+              {t.fullName} <span style={{ color: 'var(--red-solid)' }}>*</span>
             </label>
             <input
               id="adm-fullname"
               className="odm-input"
               type="text"
-              placeholder="VD: Nguyễn Văn A"
+              placeholder={t.fullNamePlaceholder}
               value={fullName}
               onChange={(e) => {
                 setFullName(e.target.value)
@@ -127,7 +155,13 @@ export function CreateAccountPage() {
               aria-invalid={!!errors.fullName}
             />
             {errors.fullName && (
-              <div style={{ fontSize: 12, color: 'var(--red-solid)', marginTop: 4 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--red-solid)',
+                  marginTop: 4,
+                }}
+              >
                 {errors.fullName}
               </div>
             )}
@@ -136,9 +170,14 @@ export function CreateAccountPage() {
           <div>
             <label
               htmlFor="adm-email"
-              style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 4,
+              }}
             >
-              Email công việc <span style={{ color: 'var(--red-solid)' }}>*</span>
+              {t.workEmail} <span style={{ color: 'var(--red-solid)' }}>*</span>
             </label>
             <input
               id="adm-email"
@@ -153,7 +192,13 @@ export function CreateAccountPage() {
               aria-invalid={!!errors.email}
             />
             {errors.email && (
-              <div style={{ fontSize: 12, color: 'var(--red-solid)', marginTop: 4 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--red-solid)',
+                  marginTop: 4,
+                }}
+              >
                 {errors.email}
               </div>
             )}
@@ -170,9 +215,11 @@ export function CreateAccountPage() {
             marginBottom: 16,
           }}
         >
-          <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Vai trò</h2>
+          <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>
+            {t.role}
+          </h2>
           <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--tx3)' }}>
-            Vai trò quyết định không gian làm việc và quyền hạn sau khi đăng nhập.
+            {t.roleHint}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {EMPLOYEE_ROLES.map((r) => (
@@ -220,9 +267,11 @@ export function CreateAccountPage() {
                 </span>
                 <span>
                   <strong style={{ display: 'block', fontSize: 13 }}>
-                    {ROLE_LABEL[r.value]}
+                    {getRoleLabel(r.value, lang)}
                   </strong>
-                  <small style={{ fontSize: 12, color: 'var(--tx3)' }}>{r.description}</small>
+                  <small style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                    {r.description}
+                  </small>
                 </span>
               </button>
             ))}
@@ -247,11 +296,18 @@ export function CreateAccountPage() {
         )}
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="submit" className="odm-btn odm-btn-p" disabled={submitting}>
-            {submitting ? 'Đang gửi...' : 'Gửi lời mời →'}
+          <button
+            type="submit"
+            className="odm-btn odm-btn-p"
+            disabled={submitting}
+          >
+            {submitting ? t.sending : t.sendInvite}
           </button>
-          <a href={adminHref({ screen: 'accounts' })} className="odm-btn odm-btn-gh">
-            Huỷ
+          <a
+            href={adminHref({ screen: 'accounts' })}
+            className="odm-btn odm-btn-gh"
+          >
+            {t.cancel}
           </a>
         </div>
       </form>

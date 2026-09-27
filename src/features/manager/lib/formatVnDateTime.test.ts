@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatVnDateTime } from './formatVnDateTime'
+import { formatDateTime, formatVnDateTime } from './formatVnDateTime'
 
 describe('formatVnDateTime', () => {
   it('matches the design sample: Thứ Bảy, 19/09/2026 · 14:32', () => {
@@ -25,5 +25,18 @@ describe('formatVnDateTime', () => {
     [new Date(2026, 8, 19), 'Thứ Bảy'],
   ])('labels weekday for %s as %s', (date, expected) => {
     expect(formatVnDateTime(date).startsWith(expected)).toBe(true)
+  })
+})
+
+describe('formatDateTime (bilingual)', () => {
+  it('renders the vi variant identically to formatVnDateTime', () => {
+    const d = new Date(2026, 8, 19, 14, 32)
+    expect(formatDateTime(d, 'vi')).toBe(formatVnDateTime(d))
+  })
+
+  it('renders the en variant with English weekday and mm/dd/yyyy order', () => {
+    expect(formatDateTime(new Date(2026, 8, 19, 14, 32), 'en')).toBe(
+      'Saturday, 09/19/2026 · 14:32',
+    )
   })
 })

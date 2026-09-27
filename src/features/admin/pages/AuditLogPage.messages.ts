@@ -1,0 +1,58 @@
+import { defineMessages } from '../../../shared/i18n'
+
+export const auditLogPageMessages = defineMessages({
+  vi: {
+    action: {
+      CREATE: 'Tạo mới',
+      UPDATE: 'Cập nhật',
+      DELETE: 'Xóa',
+      APPROVE: 'Phê duyệt',
+      STATUS_CHANGE: 'Đổi trạng thái',
+    },
+    none: '(không có)',
+    diffDetails: 'Chi tiết thay đổi',
+    close: 'Đóng',
+    time: 'Thời gian:',
+    actor: 'Người thực hiện:',
+    before: 'Trước',
+    after: 'Sau',
+    title: 'Nhật ký hệ thống',
+    subtitle: 'audit_log — chỉ đọc',
+    exportCsv: 'Xuất CSV',
+    exportSuccess:
+      'Đã xuất CSV thành công. (Placeholder — sẽ kết nối API xuất file)',
+    allActions: 'Tất cả hành động',
+    entityTypePlaceholder: 'Loại thực thể...',
+    columnActions: 'Thao tác',
+    viewDiff: 'Xem diff',
+    prevPage: 'Trang trước',
+    nextPage: 'Trang sau',
+  },
+  en: {
+    action: {
+      CREATE: 'Create',
+      UPDATE: 'Update',
+      DELETE: 'Delete',
+      APPROVE: 'Approve',
+      STATUS_CHANGE: 'Status change',
+    },
+    none: '(none)',
+    diffDetails: 'Change details',
+    close: 'Close',
+    time: 'Time:',
+    actor: 'Actor:',
+    before: 'Before',
+    after: 'After',
+    title: 'Audit log',
+    subtitle: 'audit_log — read-only',
+    exportCsv: 'Export CSV',
+    exportSuccess:
+      'CSV exported successfully. (Placeholder — will connect to export API)',
+    allActions: 'All actions',
+    entityTypePlaceholder: 'Entity type...',
+    columnActions: 'Actions',
+    viewDiff: 'View diff',
+    prevPage: 'Previous page',
+    nextPage: 'Next page',
+  },
+})

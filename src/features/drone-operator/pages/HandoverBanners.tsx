@@ -1,6 +1,9 @@
+import { useI18n } from '../../../shared/i18n'
 import { operatorHref } from '../routes'
+import { handoverBannersMessages } from './HandoverBanners.messages'
 
 export function RevokedBanner({ onReconfirm }: { onReconfirm: () => void }) {
+  const { t } = useI18n(handoverBannersMessages)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div
@@ -16,11 +19,8 @@ export function RevokedBanner({ onReconfirm }: { onReconfirm: () => void }) {
         }}
       >
         <div>
-          <span style={{ fontWeight: 700 }}>
-            Quyền điều khiển đã bị thu hồi.
-          </span>{' '}
-          Quản lý đã thu hồi bàn giao lúc 13:29 (control_handover.status =
-          REVOKED). Bạn phải xác nhận lại trước khi tiếp tục.
+          <span style={{ fontWeight: 700 }}>{t.revokedTitle}</span>{' '}
+          {t.revokedBody}
         </div>
       </div>
       <div className="odm-card">
@@ -34,27 +34,32 @@ export function RevokedBanner({ onReconfirm }: { onReconfirm: () => void }) {
           }}
         >
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>
-              Trạng thái bàn giao
-            </div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{t.statusTitle}</div>
             <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-              Không được phép cất cánh khi chưa xác nhận lại.
+              {t.revokedNote}
             </div>
           </div>
           <span className="odm-badge odm-badge-red odm-badge-lg">
             <span className="odm-badge-dot" aria-hidden="true" />
-            Đã thu hồi
+            {t.revokedBadge}
           </span>
         </div>
       </div>
       <button type="button" className="odm-btn odm-btn-p" onClick={onReconfirm}>
-        Xác nhận lại
+        {t.reconfirm}
       </button>
     </div>
   )
 }
 
-export function ConfirmedBanner({ missionId, onRevoke }: { missionId?: string; onRevoke: () => void }) {
+export function ConfirmedBanner({
+  missionId,
+  onRevoke,
+}: {
+  missionId?: string
+  onRevoke: () => void
+}) {
+  const { t } = useI18n(handoverBannersMessages)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div
@@ -70,15 +75,12 @@ export function ConfirmedBanner({ missionId, onRevoke }: { missionId?: string; o
           border: '1px solid var(--green-dot)',
         }}
       >
-        <span>
-          Bạn đã xác nhận bàn giao quyền điều khiển · control_handover.status =
-          CONFIRMED
-        </span>
+        <span>{t.confirmedText}</span>
         <a
           className="odm-btn odm-btn-sm"
           href={operatorHref({ screen: 'flight', missionId })}
         >
-          Tiếp tục tới buồng lái
+          {t.continueToCockpit}
         </a>
       </div>
       {/* Demo-only affordance to exercise the REVOKED state without a real dispatcher action. */}
@@ -88,7 +90,7 @@ export function ConfirmedBanner({ missionId, onRevoke }: { missionId?: string; o
         style={{ alignSelf: 'flex-start', fontSize: 11.5, color: 'var(--tx3)' }}
         onClick={onRevoke}
       >
-        (Demo) Giả lập quản lý thu hồi quyền
+        {t.demoRevoke}
       </button>
     </div>
   )

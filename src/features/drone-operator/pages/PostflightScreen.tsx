@@ -1,10 +1,18 @@
 import { useMemo, useState } from 'react'
 
-import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  EmptyState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
+import { useI18n } from '../../../shared/i18n'
+import type { Language } from '../../../shared/i18n/languageStore'
 import { missionApi } from '../../mission/api/missionApi'
 import { clearActiveMissionId } from '../api/liveMission'
 import { useActiveMission } from '../api/useActiveMission'
-import { flightControlApi, type FlightControlStatus } from '../omss/api/flightControlApi'
+import {
+  flightControlApi,
+  type FlightControlStatus,
+} from '../omss/api/flightControlApi'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -14,8 +22,11 @@ import type {
   PostflightItemKey,
   PreflightItemResult,
 } from '../types/mission'
+import { postflightScreenMessages } from '../i18n/postflightScreen.messages'
 import { FlightStepHeader } from './FlightStepper'
 import { MaintenanceTicketDialog } from './MaintenanceTicketDialog'
+
+type PostflightMessages = (typeof postflightScreenMessages)['vi']
 
 type PostflightCategoryDef = {
   title: string
@@ -28,77 +39,72 @@ type PostflightCategoryDef = {
   }[]
 }
 
-const CATEGORIES: PostflightCategoryDef[] = [
-  {
-    title: 'Cấu trúc & Khung vỏ',
-    icon: '🛡️',
-    items: [
-      {
-        key: 'physical_condition_ok',
-        label: 'Tình trạng vật lý & Khung vỏ',
-        detail: 'Cánh quạt, chân đáp, khung thân, gimbal camera không nứt gãy',
-        backendKeys: ['a1', 'a2'],
-      },
-    ],
-  },
-  {
-    title: 'Hệ thống động lực & Nguồn',
-    icon: '⚡',
-    items: [
-      {
-        key: 'motor_ok',
-        label: 'Động cơ & Esc',
-        detail: 'Âm thanh quay đều, không quá nhiệt, không kẹt vật thể',
-        backendKeys: ['p1', 'p2'],
-      },
-      {
-        key: 'battery_ok',
-        label: 'Pin & Tiếp điểm điện',
-        detail: 'Không phồng rộp, nhiệt độ an toàn, tiếp điểm sạch',
-        backendKeys: ['e1'],
-      },
-    ],
-  },
-  {
-    title: 'Cảm biến & Payload',
-    icon: '📷',
-    items: [
-      {
-        key: 'camera_ok',
-        label: 'Camera & Cảm biến giám sát',
-        detail: 'Ống kính sạch, ghi hình truyền tải ổn định suốt chuyến bay',
-        backendKeys: ['e2'],
-      },
-    ],
-  },
-  {
-    title: 'Định vị & Liên lạc GCS',
-    icon: '📡',
-    items: [
-      {
-        key: 'gps_ok',
-        label: 'Hệ thống định vị GPS / RTK',
-        detail: 'Khóa vệ tinh chính xác, không mất tọa độ trong chuyến bay',
-        backendKeys: ['e3'],
-      },
-      {
-        key: 'communication_ok',
-        label: 'Liên lạc Telemetry & Video Link',
-        detail: 'Đường truyền GCS ổn định, không mất kết nối bất thường',
-        backendKeys: ['d1'],
-      },
-    ],
-  },
-]
+/** Bilingual postflight categories. `key`/`backendKeys`/`icon` stay stable across languages. */
+function postflightCategories(lang: Language): PostflightCategoryDef[] {
+  const t = postflightScreenMessages[lang].categories
+  return [
+    {
+      title: t.structure.title,
+      icon: '🛡️',
+      items: [
+        {
+          key: 'physical_condition_ok',
+          ...t.structure.items.physical_condition_ok,
+          backendKeys: ['a1', 'a2'],
+        },
+      ],
+    },
+    {
+      title: t.power.title,
+      icon: '⚡',
+      items: [
+        {
+          key: 'motor_ok',
+          ...t.power.items.motor_ok,
+          backendKeys: ['p1', 'p2'],
+        },
+        { key: 'battery_ok', ...t.power.items.battery_ok, backendKeys: ['e1'] },
+      ],
+    },
+    {
+      title: t.sensors.title,
+      icon: '📷',
+      items: [
+        { key: 'camera_ok', ...t.sensors.items.camera_ok, backendKeys: ['e2'] },
+      ],
+    },
+    {
+      title: t.gcs.title,
+      icon: '📡',
+      items: [
+        { key: 'gps_ok', ...t.gcs.items.gps_ok, backendKeys: ['e3'] },
+        {
+          key: 'communication_ok',
+          ...t.gcs.items.communication_ok,
+          backendKeys: ['d1'],
+        },
+      ],
+    },
+  ]
+}
 
-const ALL_KEYS = CATEGORIES.flatMap((cat) => cat.items.map((i) => i.key))
+const ALL_KEYS: PostflightItemKey[] = [
+  'physical_condition_ok',
+  'motor_ok',
+  'battery_ok',
+  'camera_ok',
+  'gps_ok',
+  'communication_ok',
+]
 
 type ResultsState = Partial<Record<PostflightItemKey, PreflightItemResult>>
 
 const postflightTelemetryKey = (missionId: string) =>
   `fieldwise.operator.postflightTelemetry.${missionId}`
 
-function readPostflightTelemetry(missionId: string): FlightControlStatus | null {
+function readPostflightTelemetry(
+  missionId: string,
+): FlightControlStatus | null {
   if (!missionId) return null
   try {
     const raw = window.sessionStorage.getItem(postflightTelemetryKey(missionId))
@@ -116,17 +122,31 @@ function removeStorageByPrefix(storage: Storage, prefix: string) {
   }
 }
 
-function clearCompletedMissionState(missionId: string, missionLabel: string, droneCode: string) {
+function clearCompletedMissionState(
+  missionId: string,
+  missionLabel: string,
+  droneCode: string,
+) {
   clearActiveMissionId(missionId)
   window.sessionStorage.removeItem(postflightTelemetryKey(missionId))
-  window.sessionStorage.removeItem(`fieldwise.operator.handoverAcknowledged.${missionId}`)
+  window.sessionStorage.removeItem(
+    `fieldwise.operator.handoverAcknowledged.${missionId}`,
+  )
   window.sessionStorage.removeItem('odm.operator.autoStartSimulation')
-  removeStorageByPrefix(window.sessionStorage, `omss.droneOperator.backendPreflightToken.${missionId}.`)
-  window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionLabel}.${droneCode}`)
-  window.localStorage.removeItem(`omss.droneOperator.preflightReady.${missionId}.${droneCode}`)
+  removeStorageByPrefix(
+    window.sessionStorage,
+    `omss.droneOperator.backendPreflightToken.${missionId}.`,
+  )
+  window.localStorage.removeItem(
+    `omss.droneOperator.preflightReady.${missionLabel}.${droneCode}`,
+  )
+  window.localStorage.removeItem(
+    `omss.droneOperator.preflightReady.${missionId}.${droneCode}`,
+  )
 }
 
 export function PostflightScreen({ missionId }: { missionId?: string }) {
+  const { t, lang } = useI18n(postflightScreenMessages)
   const {
     data: activeData,
     missionId: activeId,
@@ -137,8 +157,10 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   } = useActiveMission(missionId)
 
   const effectiveMissionId = activeData?.id || activeId || ''
-  const missionLabel = activeData?.missionCode || effectiveMissionId || 'Nhiệm vụ'
+  const missionLabel =
+    activeData?.missionCode || effectiveMissionId || t.defaultMissionLabel
   const droneCode = activeData?.droneCode ?? 'DRONE'
+  const categories = useMemo(() => postflightCategories(lang), [lang])
 
   const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<ResultsState>({})
@@ -173,7 +195,10 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   )
   const allAssessed = items.length === ALL_KEYS.length
 
-  function handleSetResult(key: PostflightItemKey, result: PreflightItemResult) {
+  function handleSetResult(
+    key: PostflightItemKey,
+    result: PreflightItemResult,
+  ) {
     setResults((prev) => ({ ...prev, [key]: result }))
   }
 
@@ -187,11 +212,11 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
 
   async function handleComplete() {
     if (!effectiveMissionId) {
-      setError('Không xác định được ID nhiệm vụ')
+      setError(t.noMissionId)
       return
     }
     if (!allAssessed) {
-      setError(`Vui lòng kiểm tra và chọn ĐẠT/KHÔNG ĐẠT đủ cả ${ALL_KEYS.length} mục.`)
+      setError(t.assessAllRequired(ALL_KEYS.length))
       return
     }
 
@@ -238,9 +263,11 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       await missionApi.completeMission(effectiveMissionId).catch(() => {
         // Ignored if BE already auto-completed on status submit
       })
-      await missionApi.disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED').catch(() => {
-        // The mission is complete; local cleanup must still happen even if the session was already closed.
-      })
+      await missionApi
+        .disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED')
+        .catch(() => {
+          // The mission is complete; local cleanup must still happen even if the session was already closed.
+        })
       await flightControlApi.releaseSession(effectiveMissionId).catch(() => {
         // Controller may be offline after landing; local cleanup still allows the operator flow to reset.
       })
@@ -252,11 +279,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         droneStatus: targetDroneStatus,
       })
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Không thể lưu báo cáo Postflight. Vui lòng kiểm tra kết nối Server.',
-      )
+      setError(cause instanceof Error ? cause.message : t.saveFailed)
     } finally {
       setSaving(false)
     }
@@ -270,12 +293,14 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
     setTicketSubmitting(true)
     try {
       setNotes((current) =>
-        [current, `[Chi tiết sự cố]: ${description}`].filter(Boolean).join('\n'),
+        [current, `${t.incidentDetailsPrefix} ${description}`]
+          .filter(Boolean)
+          .join('\n'),
       )
       setShowTicketDialog(false)
       setTicketCreated(true)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Không ghi được ghi chú bảo trì')
+      setError(cause instanceof Error ? cause.message : t.noteWriteFailed)
     } finally {
       setTicketSubmitting(false)
     }
@@ -286,8 +311,8 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   if (queryError || !effectiveMissionId) {
     return (
       <EmptyState
-        title="Không tìm thấy thông tin nhiệm vụ"
-        description={String(queryError || 'Vui lòng chọn nhiệm vụ cần thực hiện Postcheck.')}
+        title={t.missionNotFoundTitle}
+        description={String(queryError || t.missionNotFoundDesc)}
       />
     )
   }
@@ -295,7 +320,11 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   if (completed) {
     return (
       <div className="odm-card" style={{ marginBottom: 0 }}>
-        <FlightStepHeader title="Hoàn tất kiểm tra sau bay" missionId={missionLabel} active={7} />
+        <FlightStepHeader
+          title={t.completedStepTitle}
+          missionId={missionLabel}
+          active={7}
+        />
         <div style={{ padding: '32px 24px', maxWidth: 680, margin: '0 auto' }}>
           <div
             style={{
@@ -328,12 +357,14 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>
-                  {completed.overallOk
-                    ? 'Nhiệm vụ đã hoàn thành xuất sắc!'
-                    : 'Đã hoàn tất Postcheck & Khởi tạo Yêu cầu Bảo trì'}
+                  {completed.overallOk ? t.successTitle : t.ticketCreatedTitle}
                 </h3>
-                <div className="odm-mono" style={{ fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
-                  Mã nhiệm vụ: <b>{missionLabel}</b> · Thiết bị: <b>{droneCode}</b>
+                <div
+                  className="odm-mono"
+                  style={{ fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}
+                >
+                  {t.missionCodeLabel} <b>{missionLabel}</b> · {t.deviceLabel}{' '}
+                  <b>{droneCode}</b>
                 </div>
               </div>
             </div>
@@ -350,28 +381,39 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 gap: 10,
               }}
             >
-              <Row label="Trạng thái nhiệm vụ" value="COMPLETED (Hoàn thành)" />
+              <Row label={t.missionStatusLabel} value={t.missionStatusValue} />
               <Row
-                label="Kiểm tra vật lý sau bay"
-                value={completed.overallOk ? '100% ĐẠT' : `PHÁT HIỆN BẤT THƯỜNG (${failItems.length} mục)`}
-              />
-              <Row
-                label={`Trạng thái Drone (${droneCode})`}
+                label={t.physicalCheckLabel}
                 value={
                   completed.overallOk
-                    ? '🟢 AVAILABLE (Sẵn sàng bay)'
-                    : '🟡 MAINTENANCE (Tự động mở Ticket Bảo trì)'
+                    ? t.physicalCheckAllPass
+                    : t.physicalCheckSomeFail(failItems.length)
+                }
+              />
+              <Row
+                label={t.droneStatusLabel(droneCode)}
+                value={
+                  completed.overallOk
+                    ? t.droneStatusAvailable
+                    : t.droneStatusMaintenance
                 }
               />
               {completed.ticketCreated && (
                 <Row
-                  label="Ticket Bảo trì Backend"
-                  value="TKT-POSTFLIGHT-XXXX (Đã tạo thành công)"
+                  label={t.maintenanceTicketLabel}
+                  value={t.maintenanceTicketValue}
                 />
               )}
             </div>
 
-            <div style={{ marginTop: 24, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <div
+              style={{
+                marginTop: 24,
+                display: 'flex',
+                gap: 12,
+                justifyContent: 'flex-end',
+              }}
+            >
               <a
                 className="odm-btn odm-btn-ok"
                 href={operatorHref({ screen: 'missions' })}
@@ -385,7 +427,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   borderRadius: 10,
                 }}
               >
-                Về danh sách nhiệm vụ
+                {t.backToMissionList}
               </a>
             </div>
           </div>
@@ -397,14 +439,22 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   return (
     <div className="odm-card" style={{ marginBottom: 0 }}>
       <FlightStepHeader
-        title="Postflight Check — Kiểm tra sau chuyến bay"
+        title={t.stepTitle}
         missionId={missionLabel}
         active={7}
         right={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {postflightMissions.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--tx3, #64748b)' }}>Chọn nhiệm vụ:</span>
+                <span
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: 'var(--tx3, #64748b)',
+                  }}
+                >
+                  {t.selectMission}
+                </span>
                 <select
                   value={effectiveMissionId}
                   onChange={(e) => selectMission(e.target.value)}
@@ -424,7 +474,8 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 >
                   {postflightMissions.map((m) => (
                     <option key={m.id} value={m.id}>
-                      🎯 {m.missionCode || m.id} ({m.droneCode || 'DRONE'}) — {m.status}
+                      🎯 {m.missionCode || m.id} ({m.droneCode || 'DRONE'}) —{' '}
+                      {m.status}
                     </option>
                   ))}
                 </select>
@@ -481,10 +532,22 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 border: '1px solid rgba(37, 99, 235, 0.18)',
               }}
             >
-              <TelemetryMetric label="Pin hạ cánh" value={`${telemetrySnapshot.batteryPercent ?? '--'}%`} />
-              <TelemetryMetric label="Độ cao" value={`${telemetrySnapshot.altitudeM ?? '--'} m`} />
-              <TelemetryMetric label="Tốc độ" value={`${telemetrySnapshot.speedMps ?? '--'} m/s`} />
-              <TelemetryMetric label="Heading" value={`${telemetrySnapshot.headingDeg ?? '--'}°`} />
+              <TelemetryMetric
+                label={t.landingBattery}
+                value={`${telemetrySnapshot.batteryPercent ?? '--'}%`}
+              />
+              <TelemetryMetric
+                label={t.altitude}
+                value={`${telemetrySnapshot.altitudeM ?? '--'} m`}
+              />
+              <TelemetryMetric
+                label={t.speed}
+                value={`${telemetrySnapshot.speedMps ?? '--'} m/s`}
+              />
+              <TelemetryMetric
+                label={t.heading}
+                value={`${telemetrySnapshot.headingDeg ?? '--'}°`}
+              />
             </div>
           )}
 
@@ -496,16 +559,41 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
               justifyContent: 'space-between',
               padding: '16px 20px',
               borderRadius: 14,
-              background: failItems.length > 0 ? 'rgba(239, 68, 68, 0.06)' : 'var(--sf, #f8fafc)',
+              background:
+                failItems.length > 0
+                  ? 'rgba(239, 68, 68, 0.06)'
+                  : 'var(--sf, #f8fafc)',
               border: `1.5px solid ${failItems.length > 0 ? '#fca5a5' : 'var(--bd, #e2e8f0)'}`,
             }}
           >
             <div>
-              <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--tx3)', fontWeight: 700 }}>
-                Tiến độ đánh giá
+              <div
+                style={{
+                  fontSize: 13,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.05em',
+                  color: 'var(--tx3)',
+                  fontWeight: 700,
+                }}
+              >
+                {t.assessmentProgress}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, marginTop: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span>{summary.nOk + failItems.length} / {ALL_KEYS.length} mục đã kiểm tra</span>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  marginTop: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <span>
+                  {t.itemsAssessed(
+                    summary.nOk + failItems.length,
+                    ALL_KEYS.length,
+                  )}
+                </span>
                 {allAssessed && (
                   <span
                     style={{
@@ -517,7 +605,9 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                       fontWeight: 700,
                     }}
                   >
-                    {failItems.length > 0 ? `${failItems.length} KHÔNG ĐẠT` : '100% ĐẠT'}
+                    {failItems.length > 0
+                      ? t.someFailed(failItems.length)
+                      : t.allPassed}
                   </span>
                 )}
               </div>
@@ -538,13 +628,13 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 cursor: 'pointer',
               }}
             >
-              ✓ Đánh giá tất cả ĐẠT
+              {t.passAll}
             </button>
           </div>
 
           {/* Inspection Item Categories */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <div
                 key={cat.title}
                 style={{
@@ -572,7 +662,14 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   <span>{cat.title}</span>
                 </div>
 
-                <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div
+                  style={{
+                    padding: 12,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
                   {cat.items.map((item) => {
                     const status = results[item.key] ?? null
                     const isOk = status === 'ok'
@@ -592,16 +689,33 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                             : isOk
                               ? 'rgba(16, 185, 129, 0.05)'
                               : 'var(--sf3, #f8fafc)',
-                          border: `1.5px solid ${isFail ? '#fca5a5' : isOk ? '#a7f3d0' : 'var(--bd, #e2e8f0)'
-                            }`,
+                          border: `1.5px solid ${
+                            isFail
+                              ? '#fca5a5'
+                              : isOk
+                                ? '#a7f3d0'
+                                : 'var(--bd, #e2e8f0)'
+                          }`,
                           transition: 'all 0.2s ease',
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
-                          <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--tx, #0f172a)' }}>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: 14.5,
+                              color: 'var(--tx, #0f172a)',
+                            }}
+                          >
                             {item.label}
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--tx3, #64748b)', marginTop: 2 }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: 'var(--tx3, #64748b)',
+                              marginTop: 2,
+                            }}
+                          >
                             {item.detail}
                           </div>
                         </div>
@@ -620,11 +734,13 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                               background: isOk ? '#10b981' : '#fff',
                               color: isOk ? '#fff' : '#475569',
                               cursor: 'pointer',
-                              boxShadow: isOk ? '0 2px 6px rgba(16, 185, 129, 0.3)' : 'none',
+                              boxShadow: isOk
+                                ? '0 2px 6px rgba(16, 185, 129, 0.3)'
+                                : 'none',
                               transition: 'all 0.15s ease',
                             }}
                           >
-                            ✓ ĐẠT
+                            {t.pass}
                           </button>
                           <button
                             type="button"
@@ -639,11 +755,13 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                               background: isFail ? '#ef4444' : '#fff',
                               color: isFail ? '#fff' : '#475569',
                               cursor: 'pointer',
-                              boxShadow: isFail ? '0 2px 6px rgba(239, 68, 68, 0.3)' : 'none',
+                              boxShadow: isFail
+                                ? '0 2px 6px rgba(239, 68, 68, 0.3)'
+                                : 'none',
                               transition: 'all 0.15s ease',
                             }}
                           >
-                            ✕ KHÔNG ĐẠT
+                            {t.fail}
                           </button>
                         </div>
                       </div>
@@ -663,16 +781,28 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
               padding: 16,
             }}
           >
-            <label style={{ fontWeight: 700, fontSize: 14, display: 'block', marginBottom: 8 }}>
-              📝 Ghi chú kiểm tra sau bay (Notes)
+            <label
+              style={{
+                fontWeight: 700,
+                fontSize: 14,
+                display: 'block',
+                marginBottom: 8,
+              }}
+            >
+              {t.notesLabel}
             </label>
             <textarea
               className="odm-input"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ghi chú thêm về hiện trạng drone, điều kiện môi trường hoặc phát sinh trong chuyến bay..."
-              style={{ width: '100%', resize: 'vertical', borderRadius: 8, padding: 10 }}
+              placeholder={t.notesPlaceholder}
+              style={{
+                width: '100%',
+                resize: 'vertical',
+                borderRadius: 8,
+                padding: 10,
+              }}
             />
           </div>
 
@@ -682,7 +812,8 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
               style={{
                 padding: '16px 20px',
                 borderRadius: 14,
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.15) 100%)',
+                background:
+                  'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.15) 100%)',
                 border: '1.5px solid #f59e0b',
                 display: 'flex',
                 alignItems: 'center',
@@ -691,11 +822,15 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
               }}
             >
               <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#92400e' }}>
-                  🚨 Phát hiện {failItems.length} mục KHÔNG ĐẠT
+                <div
+                  style={{ fontSize: 15, fontWeight: 800, color: '#92400e' }}
+                >
+                  {t.foundFailures(failItems.length)}
                 </div>
                 <div style={{ fontSize: 13, color: '#78350f', marginTop: 4 }}>
-                  Hệ thống Backend sẽ <b>tự động khởi tạo Ticket Bảo trì (Ticket Status: OPEN)</b> cho drone <b>{droneCode}</b> ngay khi bạn gửi báo cáo.
+                  {t.autoTicketNotePrefix} <b>{t.autoTicketNoteBold}</b>{' '}
+                  {t.autoTicketNoteMid} <b>{droneCode}</b>{' '}
+                  {t.autoTicketNoteSuffix}
                 </div>
               </div>
 
@@ -715,7 +850,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   cursor: 'pointer',
                 }}
               >
-                {ticketCreated ? '✓ Đã bổ sung chi tiết' : '✏️ Bổ sung mô tả bảo trì'}
+                {ticketCreated ? t.detailsAdded : t.addMaintenanceDetails}
               </button>
             </div>
           ) : (
@@ -730,12 +865,19 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 fontWeight: 600,
               }}
             >
-              🟢 Tất cả các hạng mục đạt tiêu chuẩn. Thiết bị sẽ được chuyển trạng thái <b>SẴN SÀNG (AVAILABLE)</b> cho chuyến bay tiếp theo.
+              {t.allPassNotePrefix} <b>{t.allPassNoteBold}</b>{' '}
+              {t.allPassNoteSuffix}
             </div>
           )}
 
           {/* Action Footer */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginTop: 8,
+            }}
+          >
             <button
               type="button"
               className="odm-btn odm-btn-ok"
@@ -754,11 +896,17 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                     : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 color: '#fff',
                 cursor: !allAssessed || saving ? 'not-allowed' : 'pointer',
-                boxShadow: allAssessed ? '0 4px 14px rgba(16, 185, 129, 0.35)' : 'none',
+                boxShadow: allAssessed
+                  ? '0 4px 14px rgba(16, 185, 129, 0.35)'
+                  : 'none',
                 border: 'none',
               }}
             >
-              {saving ? 'Đang gửi báo cáo...' : failItems.length > 0 ? 'Gửi báo cáo & Tạo Ticket Bảo trì' : 'Hoàn tất chuyến bay'}
+              {saving
+                ? t.submitting
+                : failItems.length > 0
+                  ? t.submitAndCreateTicket
+                  : t.completeFlight}
             </button>
           </div>
         </div>
@@ -769,7 +917,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
           droneCode={droneCode}
           missionId={missionLabel}
           defaultIssueType="PHYSICAL_DAMAGE"
-          defaultDescription={`Mục không đạt kiểm tra sau bay: ${failItems.join(', ')}`}
+          defaultDescription={t.failedItemsDescription(failItems.join(', '))}
           submitting={ticketSubmitting}
           onCancel={() => setShowTicketDialog(false)}
           onConfirm={handleCreateTicket}
@@ -781,9 +929,19 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5 }}>
-      <span style={{ color: 'var(--tx3, #64748b)', fontWeight: 500 }}>{label}:</span>
-      <span style={{ fontWeight: 700, color: 'var(--tx, #0f172a)' }}>{value}</span>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: 13.5,
+      }}
+    >
+      <span style={{ color: 'var(--tx3, #64748b)', fontWeight: 500 }}>
+        {label}:
+      </span>
+      <span style={{ fontWeight: 700, color: 'var(--tx, #0f172a)' }}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -791,10 +949,19 @@ function Row({ label, value }: { label: string; value: string }) {
 function TelemetryMetric({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ fontSize: 11, color: 'var(--tx3, #64748b)', fontWeight: 800 }}>
+      <div
+        style={{ fontSize: 11, color: 'var(--tx3, #64748b)', fontWeight: 800 }}
+      >
         {label}
       </div>
-      <div style={{ marginTop: 3, fontSize: 17, color: 'var(--tx, #0f172a)', fontWeight: 900 }}>
+      <div
+        style={{
+          marginTop: 3,
+          fontSize: 17,
+          color: 'var(--tx, #0f172a)',
+          fontWeight: 900,
+        }}
+      >
         {value}
       </div>
     </div>

@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react'
 
+import { useI18n } from '../../../shared/i18n'
+import { leafletMapMessages } from './LeafletMap.messages'
+
 declare const L: typeof import('leaflet')
 
 const CENTER: [number, number] = [10.787, 106.7225]
@@ -22,6 +25,7 @@ function droneIcon() {
 export function HeroMap({ id, className }: { id: string; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
+  const { t, lang } = useI18n(leafletMapMessages)
 
   useEffect(() => {
     if (!ref.current || mapRef.current) return
@@ -44,7 +48,7 @@ export function HeroMap({ id, className }: { id: string; className?: string }) {
       fillOpacity: 0.14,
     })
       .addTo(map)
-      .bindTooltip('Bán kính 500 m', { permanent: true, direction: 'top' })
+      .bindTooltip(t.radiusTooltip, { permanent: true, direction: 'top' })
 
     L.circle(NO_FLY, {
       radius: 260,
@@ -55,10 +59,15 @@ export function HeroMap({ id, className }: { id: string; className?: string }) {
       dashArray: '6',
     })
       .addTo(map)
-      .bindTooltip('Vùng cấm bay', { permanent: true, direction: 'center' })
+      .bindTooltip(t.noFlyZoneTooltip, {
+        permanent: true,
+        direction: 'center',
+      })
 
-    L.polyline(ROUTE, { color: '#1565E8', weight: 3, dashArray: '8 8' }).addTo(map)
-    L.marker(ROUTE[0]).addTo(map).bindTooltip('Trạm H')
+    L.polyline(ROUTE, { color: '#1565E8', weight: 3, dashArray: '8 8' }).addTo(
+      map,
+    )
+    L.marker(ROUTE[0]).addTo(map).bindTooltip(t.stationTooltip)
     L.marker(CENTER, { icon: droneIcon() }).addTo(map)
 
     mapRef.current = map
@@ -66,7 +75,8 @@ export function HeroMap({ id, className }: { id: string; className?: string }) {
       map.remove()
       mapRef.current = null
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
 
   return <div id={id} ref={ref} className={className} style={{ height: 420 }} />
 }

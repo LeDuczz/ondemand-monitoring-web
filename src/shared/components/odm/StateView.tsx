@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react'
 
 import { ApiError } from '../../api/httpClient'
+import { useI18n } from '../../i18n'
+import { stateViewMessages } from './StateView.messages'
 
 type LoadingStateProps = {
   label?: string
 }
 
 /** Loading state: skeleton lines + `aria-busy`, per [TK MNG-01]. */
-export function LoadingState({ label = 'Đang tải…' }: LoadingStateProps) {
+export function LoadingState({ label }: LoadingStateProps) {
+  const { t } = useI18n(stateViewMessages)
+  const resolvedLabel = label ?? t.loading
   return (
     <div className="odm-card" aria-busy="true" aria-live="polite">
       <div
@@ -26,7 +30,7 @@ export function LoadingState({ label = 'Đang tải…' }: LoadingStateProps) {
           className="odm-sk"
           style={{ width: '80%', height: 12, display: 'block' }}
         />
-        <span className="odm-visually-hidden">{label}</span>
+        <span className="odm-visually-hidden">{resolvedLabel}</span>
       </div>
     </div>
   )
@@ -97,12 +101,10 @@ type ErrorStateProps = {
   onRetry?: () => void
 }
 
-function describeError(error: unknown) {
+function describeError(error: unknown, genericError: string) {
   if (error instanceof ApiError) {
     return {
-      description:
-        error.message ||
-        'Đã có lỗi khi kết nối tới máy chủ. Kiểm tra mạng rồi thử lại.',
+      description: error.message || genericError,
       debugLine: `${error.method} ${error.path}${
         error.status ? ` · ${error.status}` : ''
       }`,
@@ -112,8 +114,7 @@ function describeError(error: unknown) {
     return { description: error.message, debugLine: undefined }
   }
   return {
-    description:
-      'Đã có lỗi khi kết nối tới máy chủ. Kiểm tra mạng rồi thử lại.',
+    description: genericError,
     debugLine: undefined,
   }
 }
@@ -123,12 +124,10 @@ function describeError(error: unknown) {
  * when the error is an `ApiError`, and a "Thử lại" retry button — matches
  * the error card in [TK MNG-01].
  */
-export function ErrorState({
-  title = 'Không tải được dữ liệu',
-  error,
-  onRetry,
-}: ErrorStateProps) {
-  const { description, debugLine } = describeError(error)
+export function ErrorState({ title, error, onRetry }: ErrorStateProps) {
+  const { t } = useI18n(stateViewMessages)
+  const resolvedTitle = title ?? t.errorTitle
+  const { description, debugLine } = describeError(error, t.genericError)
   return (
     <div className="odm-card">
       <div
@@ -169,7 +168,7 @@ export function ErrorState({
             <path d="M12 10v5M12 18v.4" />
           </svg>
         </div>
-        <div style={{ fontSize: 15, fontWeight: 600 }}>{title}</div>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>{resolvedTitle}</div>
         <div style={{ color: 'var(--tx3)', maxWidth: 420, lineHeight: 1.5 }}>
           {description}
         </div>
@@ -194,7 +193,7 @@ export function ErrorState({
               className="odm-btn odm-btn-p"
               onClick={onRetry}
             >
-              Thử lại
+              {t.retry}
             </button>
           </div>
         ) : null}

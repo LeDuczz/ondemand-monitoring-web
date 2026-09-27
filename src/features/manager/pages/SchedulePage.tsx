@@ -4,8 +4,9 @@ import { env } from '../../../config/env'
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import {
-  missionStatusLabel,
+  getMissionStatusLabel,
   missionStatusTone,
 } from '../../../shared/lib/statusTone'
 import { missionsApi } from '../api/missionsApi'
@@ -16,8 +17,11 @@ import {
   toISODate,
 } from '../lib/calendarWeek'
 import { managerHref } from '../routes'
+import { schedulePageMessages } from './SchedulePage.messages'
 import type { MissionCalendarItem } from '../types/missions'
 import '../manager.css'
+
+type PageMessages = (typeof schedulePageMessages)['vi']
 
 // ── constants ──────────────────────────────────────────────────────────────
 
@@ -27,8 +31,6 @@ const HOUR_END = 22
 const TOTAL_HOURS = HOUR_END - HOUR_START
 /** Height per hour in px for the time grid. */
 const PX_PER_HOUR = 60
-
-const SHORT_DAYS_VI = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 
 function formatDateShort(d: Date): string {
   return String(d.getDate())
@@ -78,12 +80,16 @@ type ReschedulePanelProps = {
   mission: MissionCalendarItem
   onClose: () => void
   onRescheduled: (updated: MissionCalendarItem) => void
+  t: PageMessages
+  locale: 'vi-VN' | 'en-US'
 }
 
 function ReschedulePanel({
   mission,
   onClose,
   onRescheduled,
+  t,
+  locale,
 }: ReschedulePanelProps) {
   const tone = missionStatusTone[mission.status] ?? 'gray'
 
@@ -99,11 +105,11 @@ function ReschedulePanel({
 
   const handleSave = async () => {
     if (!newStart || !newEnd) {
-      setSaveError('Cần nhập đủ giờ bắt đầu và kết thúc.')
+      setSaveError(t.validationRequired)
       return
     }
     if (newStart >= newEnd) {
-      setSaveError('Giờ kết thúc phải sau giờ bắt đầu.')
+      setSaveError(t.validationOrder)
       return
     }
     setSaving(true)
@@ -116,9 +122,9 @@ function ReschedulePanel({
       onRescheduled({ ...mission, ...updated })
     } catch (err) {
       if (err instanceof ApiError) {
-        setSaveError(err.message ?? 'Đổi lịch thất bại.')
+        setSaveError(err.message ?? t.rescheduleFailed)
       } else {
-        setSaveError('Lỗi không xác định.')
+        setSaveError(t.unknownError)
       }
     } finally {
       setSaving(false)
@@ -129,7 +135,7 @@ function ReschedulePanel({
     <div
       className="odm-sched-panel"
       role="complementary"
-      aria-label="Chi tiết mission"
+      aria-label={t.missionDetail}
     >
       {/* Header */}
       <div className="odm-sched-panel-head">
@@ -161,46 +167,56 @@ function ReschedulePanel({
           className="odm-btn"
           style={{ flex: 'none' }}
           onClick={onClose}
-          aria-label="Đóng chi tiết"
+          aria-label={t.closeDetail}
         >
           ✕
         </button>
       </div>
 
       {/* Status badge + dispatch shortcut */}
-      <div style={{ padding: '8px 16px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <StatusBadge tone={tone}>
-          {missionStatusLabel[mission.status] ?? mission.status}
-        </StatusBadge>
-        {(mission.status === 'CREATED' || mission.status === 'RESOURCE_ASSIGNING') && (
+      <div
+        style={{
+          padding: '8px 16px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
+        <StatusBadge kind="mission" status={mission.status} tone={tone} />
+        {(mission.status === 'CREATED' ||
+          mission.status === 'RESOURCE_ASSIGNING') && (
           <a
-            href={managerHref({ screen: 'missionDispatch', missionId: mission.id })}
+            href={managerHref({
+              screen: 'missionDispatch',
+              missionId: mission.id,
+            })}
             className="odm-btn odm-btn-p odm-btn-sm"
           >
-            Phân công nguồn lực →
+            {t.assignResources}
           </a>
         )}
       </div>
 
       {/* Mission info */}
       <dl className="odm-sched-panel-dl">
-        <dt>Drone</dt>
+        <dt>{t.drone}</dt>
         <dd>
           {mission.droneCode
             ? `${mission.droneCode}${mission.droneName ? ` · ${mission.droneName}` : ''}`
-            : 'Chưa phân công'}
+            : t.notAssigned}
         </dd>
-        <dt>Phi công</dt>
-        <dd>{mission.operatorName ?? 'Chưa phân công'}</dd>
-        <dt>Lịch bay</dt>
+        <dt>{t.pilot}</dt>
+        <dd>{mission.operatorName ?? t.notAssigned}</dd>
+        <dt>{t.schedule}</dt>
         <dd>
           {mission.scheduledStartAt
-            ? `${new Date(mission.scheduledStartAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}${mission.scheduledEndAt ? ` → ${new Date(mission.scheduledEndAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ' · chưa có giờ kết thúc'}`
+            ? `${new Date(mission.scheduledStartAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}${mission.scheduledEndAt ? ` → ${new Date(mission.scheduledEndAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}` : t.noEndTime}`
             : '—'}
         </dd>
         {mission.addressText && (
           <>
-            <dt>Địa điểm</dt>
+            <dt>{t.location}</dt>
             <dd>{mission.addressText}</dd>
           </>
         )}
@@ -213,10 +229,14 @@ function ReschedulePanel({
             type="button"
             className="odm-btn"
             disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
-            title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ đổi lịch mission' : undefined}
+            title={
+              !env.useMockApi && import.meta.env.MODE !== 'test'
+                ? t.backendNotSupported
+                : undefined
+            }
             onClick={() => setReschedule(true)}
           >
-            Đổi lịch
+            {t.reschedule}
           </button>
         </div>
       ) : (
@@ -228,9 +248,11 @@ function ReschedulePanel({
             gap: 8,
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 600 }}>Đổi lịch bay</div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>
+            {t.rescheduleTitle}
+          </div>
           <label style={{ fontSize: 12, color: 'var(--tx2)' }}>
-            Bắt đầu
+            {t.start}
             <input
               type="datetime-local"
               className="odm-inp"
@@ -240,7 +262,7 @@ function ReschedulePanel({
             />
           </label>
           <label style={{ fontSize: 12, color: 'var(--tx2)' }}>
-            Kết thúc
+            {t.end}
             <input
               type="datetime-local"
               className="odm-inp"
@@ -270,7 +292,7 @@ function ReschedulePanel({
               disabled={saving}
               onClick={handleSave}
             >
-              {saving ? 'Đang lưu…' : 'Lưu lịch'}
+              {saving ? t.saving : t.save}
             </button>
             <button
               type="button"
@@ -280,7 +302,7 @@ function ReschedulePanel({
                 setSaveError(null)
               }}
             >
-              Huỷ
+              {t.cancel}
             </button>
           </div>
         </div>
@@ -296,9 +318,15 @@ type MissionBlockProps = {
   dayIndex: number
   selected: boolean
   onSelect: (m: MissionCalendarItem) => void
+  missionStatusLabel: string
 }
 
-function MissionBlock({ mission, selected, onSelect }: MissionBlockProps) {
+function MissionBlock({
+  mission,
+  selected,
+  onSelect,
+  missionStatusLabel,
+}: MissionBlockProps) {
   const startH = mission.scheduledStartAt
     ? toLocalHours(mission.scheduledStartAt)
     : HOUR_START
@@ -335,7 +363,7 @@ function MissionBlock({ mission, selected, onSelect }: MissionBlockProps) {
       }}
       onClick={() => onSelect(mission)}
       aria-pressed={selected}
-      aria-label={`${mission.missionCode} ${missionStatusLabel[mission.status] ?? ''}`}
+      aria-label={`${mission.missionCode} ${missionStatusLabel}`}
     >
       <div
         style={{
@@ -374,16 +402,25 @@ type WeekGridProps = {
   missions: MissionCalendarItem[]
   selectedId: string | null
   onSelect: (m: MissionCalendarItem) => void
+  t: PageMessages
+  getMissionStatusLabel: (status: MissionCalendarItem['status']) => string
 }
 
-function WeekGrid({ days, missions, selectedId, onSelect }: WeekGridProps) {
+function WeekGrid({
+  days,
+  missions,
+  selectedId,
+  onSelect,
+  t,
+  getMissionStatusLabel,
+}: WeekGridProps) {
   const hours = useMemo(
     () => Array.from({ length: TOTAL_HOURS }, (_, i) => HOUR_START + i),
     [],
   )
 
   return (
-    <div className="odm-sched-grid" aria-label="Lịch mission theo tuần">
+    <div className="odm-sched-grid" aria-label={t.weekGridAriaLabel}>
       {/* Header row */}
       <div className="odm-sched-grid-head">
         {/* Time gutter label */}
@@ -391,7 +428,7 @@ function WeekGrid({ days, missions, selectedId, onSelect }: WeekGridProps) {
         {days.map((day, i) => (
           <div key={i} className="odm-sched-day-head">
             <span style={{ color: 'var(--tx3)', fontSize: 11 }}>
-              {SHORT_DAYS_VI[i]}
+              {t.shortDays[i]}
             </span>{' '}
             <span style={{ fontWeight: 600 }}>{formatDateShort(day)}</span>
           </div>
@@ -450,6 +487,7 @@ function WeekGrid({ days, missions, selectedId, onSelect }: WeekGridProps) {
                   dayIndex={di}
                   selected={selectedId === m.id}
                   onSelect={onSelect}
+                  missionStatusLabel={getMissionStatusLabel(m.status)}
                 />
               ))}
             </div>
@@ -463,6 +501,7 @@ function WeekGrid({ days, missions, selectedId, onSelect }: WeekGridProps) {
 // ── SchedulePage ───────────────────────────────────────────────────────────
 
 export function SchedulePage() {
+  const { t, lang, locale } = useI18n(schedulePageMessages)
   const [anchorDate, setAnchorDate] = useState(() => new Date())
   const { weekStart, weekEnd, days } = useMemo(
     () => formatCalendarWeek(anchorDate),
@@ -492,12 +531,10 @@ export function SchedulePage() {
   )
 
   return (
-    <div className="odm-sched" aria-label="Lịch mission">
+    <div className="odm-sched" aria-label={t.pageAriaLabel}>
       {/* Top bar */}
       <div className="odm-sched-topbar">
-        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-          Lịch mission
-        </h2>
+        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{t.title}</h2>
         <div
           style={{
             display: 'flex',
@@ -510,7 +547,7 @@ export function SchedulePage() {
             type="button"
             className="odm-btn"
             onClick={() => setAnchorDate(prevWeek(anchorDate))}
-            aria-label="Tuần trước"
+            aria-label={t.prevWeek}
           >
             ‹
           </button>
@@ -521,7 +558,7 @@ export function SchedulePage() {
             type="button"
             className="odm-btn"
             onClick={() => setAnchorDate(nextWeek(anchorDate))}
-            aria-label="Tuần sau"
+            aria-label={t.nextWeek}
           >
             ›
           </button>
@@ -530,7 +567,7 @@ export function SchedulePage() {
             className="odm-btn"
             onClick={() => setAnchorDate(new Date())}
           >
-            Hôm nay
+            {t.today}
           </button>
         </div>
       </div>
@@ -566,10 +603,10 @@ export function SchedulePage() {
                 role="alert"
               >
                 <div style={{ fontWeight: 600, color: 'var(--red-fg)' }}>
-                  Không tải được lịch
+                  {t.loadError}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                  Đã có lỗi khi kết nối tới máy chủ. Kiểm tra mạng rồi thử lại.
+                  {t.genericError}
                 </div>
                 {query.error instanceof ApiError && (
                   <code
@@ -589,7 +626,7 @@ export function SchedulePage() {
                   style={{ alignSelf: 'flex-start' }}
                   onClick={query.reload}
                 >
-                  Thử lại
+                  {t.retry}
                 </button>
               </div>
             </div>
@@ -606,18 +643,16 @@ export function SchedulePage() {
                   }}
                 >
                   <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
-                  <div style={{ fontWeight: 600 }}>
-                    Chưa có mission được lên lịch trong tuần này
-                  </div>
+                  <div style={{ fontWeight: 600 }}>{t.emptyTitle}</div>
                   <div style={{ fontSize: 13, marginTop: 4 }}>
-                    Mission xuất hiện sau khi đơn được duyệt và tạo mission.
+                    {t.emptyDescription}
                   </div>
                   <a
                     href="#portal/staff/orders"
                     className="odm-btn"
                     style={{ marginTop: 12, display: 'inline-flex' }}
                   >
-                    Về hàng đợi duyệt
+                    {t.backToQueue}
                   </a>
                 </div>
               ) : (
@@ -626,6 +661,10 @@ export function SchedulePage() {
                   missions={query.data.items}
                   selectedId={selectedMission?.id ?? null}
                   onSelect={setSelectedMission}
+                  t={t}
+                  getMissionStatusLabel={(status) =>
+                    getMissionStatusLabel(status, lang)
+                  }
                 />
               )}
             </>
@@ -639,6 +678,8 @@ export function SchedulePage() {
             mission={selectedMission}
             onClose={() => setSelectedMission(null)}
             onRescheduled={handleRescheduled}
+            t={t}
+            locale={locale}
           />
         )}
       </div>

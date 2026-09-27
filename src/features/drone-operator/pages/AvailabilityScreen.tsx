@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react'
 
-import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  EmptyState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { operatorApi } from '../api/operatorApi'
-import { mergeSlots, slotKey, type AvailabilityStatus } from '../lib/availabilitySlots'
+import {
+  mergeSlots,
+  slotKey,
+  type AvailabilityStatus,
+} from '../lib/availabilitySlots'
 import { AvailabilityGrid, type MissionOverlay } from './AvailabilityGrid'
-
-const MODE_LABEL: Record<AvailabilityStatus, string> = {
-  AVAILABLE: 'Rảnh',
-  BUSY: 'Bận',
-  OFF: 'Nghỉ',
-}
+import { availabilityScreenMessages } from './AvailabilityScreen.messages'
 
 const MODE_CLASS: Record<AvailabilityStatus, string> = {
   AVAILABLE: 'odm-btn-ok',
@@ -32,32 +35,49 @@ const WEEK_DAYS = [
   '2026-09-27',
 ]
 
-const MISSION_OVERLAYS: MissionOverlay[] = [
-  { day: '2026-09-21', time: '16:00', label: '0139-1 Đã nhận', tone: 'green' },
-  { day: '2026-09-24', time: '13:00', label: '0152-1 Chờ phản hồi', tone: 'gray' },
-  { day: '2026-09-25', time: '08:00', label: '0154-1 Chờ phản hồi', tone: 'gray' },
+// Structural (day/time/tone) part of the demo mission overlays; the label
+// text comes from `availabilityScreenMessages` so it can be bilingual.
+const OVERLAY_SHAPE: { day: string; time: string; tone: 'green' | 'gray' }[] = [
+  { day: '2026-09-21', time: '16:00', tone: 'green' },
+  { day: '2026-09-24', time: '13:00', tone: 'gray' },
+  { day: '2026-09-25', time: '08:00', tone: 'gray' },
 ]
 
 export function AvailabilityScreen() {
-  const query = useApiQuery((signal) => operatorApi.getAvailability(WEEK_KEY, signal), [])
-  const [localSlots, setLocalSlots] = useState<Record<string, AvailabilityStatus> | null>(null)
+  const query = useApiQuery(
+    (signal) => operatorApi.getAvailability(WEEK_KEY, signal),
+    [],
+  )
+  const [localSlots, setLocalSlots] = useState<Record<
+    string,
+    AvailabilityStatus
+  > | null>(null)
   const [selection, setSelection] = useState<string[]>([])
   const [mode, setMode] = useState<AvailabilityStatus>('AVAILABLE')
   const [saving, setSaving] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saved' | 'error'>('idle')
+  const { t } = useI18n(availabilityScreenMessages)
 
   const slots = localSlots ?? query.data?.slots ?? {}
   const selectedSet = useMemo(() => new Set(selection), [selection])
+  const missionOverlays: MissionOverlay[] = OVERLAY_SHAPE.map((o, i) => ({
+    ...o,
+    label: t.overlayLabels[i],
+  }))
 
   if (query.loading) return <LoadingState />
   if (query.error) {
     return (
       <EmptyState
-        title="Không tải được lịch rảnh"
-        description="Mất kết nối hoặc máy chủ đang bận."
+        title={t.loadFailedTitle}
+        description={t.loadFailedDesc}
         action={
-          <button type="button" className="odm-btn odm-btn-p" onClick={() => query.reload()}>
-            Thử lại
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={() => query.reload()}
+          >
+            {t.retry}
           </button>
         }
       />
@@ -87,13 +107,29 @@ export function AvailabilityScreen() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginBottom: 14,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button type="button" className="odm-btn odm-btn-sm" aria-label="Tuần trước">
+          <button
+            type="button"
+            className="odm-btn odm-btn-sm"
+            aria-label={t.prevWeek}
+          >
             ‹
           </button>
-          <span style={{ fontWeight: 600, fontSize: 13.5 }}>21/09 – 27/09/2026 · Tuần 39</span>
-          <button type="button" className="odm-btn odm-btn-sm" aria-label="Tuần sau">
+          <span style={{ fontWeight: 600, fontSize: 13.5 }}>{t.weekLabel}</span>
+          <button
+            type="button"
+            className="odm-btn odm-btn-sm"
+            aria-label={t.nextWeek}
+          >
             ›
           </button>
         </div>
@@ -103,20 +139,29 @@ export function AvailabilityScreen() {
           onClick={handleSave}
           disabled={saving || !dirty}
         >
-          {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+          {saving ? t.saving : t.saveChanges}
         </button>
       </div>
 
       {saveState === 'saved' ? (
-        <Banner tone="green">Đã lưu lịch rảnh tuần 39</Banner>
+        <Banner tone="green">{t.savedBanner}</Banner>
       ) : saveState === 'error' ? (
-        <Banner tone="red">Lưu thất bại. Vui lòng thử lại.</Banner>
+        <Banner tone="red">{t.saveErrorBanner}</Banner>
       ) : !dirty && Object.keys(slots).length === 0 ? (
-        <Banner tone="yellow">Chưa khai báo lịch rảnh cho tuần này.</Banner>
+        <Banner tone="yellow">{t.emptyWeekBanner}</Banner>
       ) : null}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-        <span style={{ fontSize: 12.5, color: 'var(--tx3)' }}>Khai báo:</span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 10,
+        }}
+      >
+        <span style={{ fontSize: 12.5, color: 'var(--tx3)' }}>
+          {t.declarePrefix}
+        </span>
         {(['AVAILABLE', 'BUSY', 'OFF'] as AvailabilityStatus[]).map((m) => (
           <button
             key={m}
@@ -131,23 +176,27 @@ export function AvailabilityScreen() {
               }
             }}
           >
-            {MODE_LABEL[m]}
+            {t.modeLabel[m]}
           </button>
         ))}
         {selection.length > 0 ? (
           <>
             <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
-              Kéo trên lưới... đang chọn {selection.length} ô
+              {t.selectionCount(selection.length)}
             </span>
             <button
               type="button"
               className="odm-btn odm-btn-sm"
               onClick={() => setSelection([])}
             >
-              Bỏ chọn
+              {t.deselect}
             </button>
-            <button type="button" className="odm-btn odm-btn-sm odm-btn-p" onClick={applyMode}>
-              Áp dụng
+            <button
+              type="button"
+              className="odm-btn odm-btn-sm odm-btn-p"
+              onClick={applyMode}
+            >
+              {t.apply}
             </button>
           </>
         ) : null}
@@ -156,7 +205,7 @@ export function AvailabilityScreen() {
       <AvailabilityGrid
         days={WEEK_DAYS}
         slots={applySelectionPreview(slots, selectedSet, mode)}
-        overlays={MISSION_OVERLAYS}
+        overlays={missionOverlays}
         onSelectionChange={setSelection}
       />
     </div>
@@ -174,7 +223,13 @@ function applySelectionPreview(
   return next
 }
 
-function Banner({ tone, children }: { tone: 'green' | 'red' | 'yellow'; children: React.ReactNode }) {
+function Banner({
+  tone,
+  children,
+}: {
+  tone: 'green' | 'red' | 'yellow'
+  children: React.ReactNode
+}) {
   return (
     <div
       style={{

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { DeviceStatus } from '../types/mission'
 import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
+import { postflightModalMessages } from './PostflightModal.messages'
 
 interface PostflightModalProps {
   isOpen: boolean
@@ -16,10 +18,9 @@ export function PostflightModal({
   onSubmit,
   isSubmitting,
 }: PostflightModalProps) {
+  const { t } = useI18n(postflightModalMessages)
   const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>('AVAILABLE')
-  const [notes, setNotes] = useState(
-    'Drone hoàn thành chuyến bay an toàn, không tổn hại cấu trúc.',
-  )
+  const [notes, setNotes] = useState(t.defaultNotes)
 
   if (!isOpen) return null
 
@@ -75,7 +76,7 @@ export function PostflightModal({
                 color: 'var(--color-foreground)',
               }}
             >
-              Kiểm tra Sau Chuyến bay (Post-flight)
+              {t.title}
             </h3>
           </div>
           <button
@@ -99,7 +100,7 @@ export function PostflightModal({
                 marginBottom: '8px',
               }}
             >
-              Trạng thái Thiết bị sau Chuyến bay
+              {t.deviceStatusLabel}
             </label>
             <select
               id="postflight-device-status"
@@ -117,15 +118,9 @@ export function PostflightModal({
                 background: 'var(--color-background)',
               }}
             >
-              <option value="AVAILABLE">
-                ✅ AVAILABLE (Sẵn sàng cho nhiệm vụ tiếp theo)
-              </option>
-              <option value="IDLE_CHARGING">
-                🔋 IDLE_CHARGING (Đưa vào trạm sạc pin)
-              </option>
-              <option value="MAINTENANCE">
-                🔧 MAINTENANCE (Gặp sự cố - Cần bảo trì)
-              </option>
+              <option value="AVAILABLE">{t.available}</option>
+              <option value="IDLE_CHARGING">{t.idleCharging}</option>
+              <option value="MAINTENANCE">{t.maintenance}</option>
             </select>
           </div>
 
@@ -140,14 +135,14 @@ export function PostflightModal({
                 marginBottom: '8px',
               }}
             >
-              Ghi chú Kiểm tra Kỹ thuật (Inspection Log Notes)
+              {t.notesLabel}
             </label>
             <textarea
               id="postflight-notes"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Nhập chi tiết ghi chú..."
+              placeholder={t.notesPlaceholder}
               style={{
                 width: '100%',
                 padding: '12px 14px',
@@ -170,7 +165,7 @@ export function PostflightModal({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Hủy
+              {t.cancel}
             </Button>
             <Button
               variant="primary"
@@ -179,7 +174,7 @@ export function PostflightModal({
               disabled={isSubmitting}
               style={{ backgroundColor: '#15803d' }}
             >
-              {isSubmitting ? 'Submitting...' : 'Xác nhận & Hoàn thành Mission'}
+              {isSubmitting ? t.submitting : t.confirmComplete}
             </Button>
           </div>
         </form>

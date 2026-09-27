@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { acceptRejectMessages } from '../i18n/acceptReject'
 import type { Mission, Drone } from '../types'
 
 interface Props {
@@ -9,16 +11,6 @@ interface Props {
   onBack: () => void
 }
 
-const REJECTION_REASONS = [
-  'Equipment not suitable for this mission type',
-  'Weather conditions are unsafe',
-  'Scheduling conflict with active mission',
-  'Mission parameters require specialist certification',
-  'Drone requires maintenance before next deployment',
-  'Insufficient flight time for mission scope',
-  'Other reason',
-]
-
 export default function AcceptReject({
   mission,
   drone,
@@ -26,6 +18,8 @@ export default function AcceptReject({
   onReject,
   onBack,
 }: Props) {
+  const { t, locale } = useI18n(acceptRejectMessages)
+  const REJECTION_REASONS = t.rejectionReasons
   const [mode, setMode] = useState<'review' | 'reject'>('review')
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
@@ -60,7 +54,7 @@ export default function AcceptReject({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Mission detail
+        {t.missionDetail}
       </button>
 
       <div style={{ maxWidth: 580 }}>
@@ -72,11 +66,10 @@ export default function AcceptReject({
             margin: '0 0 6px',
           }}
         >
-          Mission assignment
+          {t.missionAssignment}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          Review the mission requirements and confirm your acceptance or
-          rejection.
+          {t.description}
         </p>
 
         {/* Mission summary card */}
@@ -111,17 +104,20 @@ export default function AcceptReject({
             {mission.id}
           </div>
           {[
-            { label: 'Customer', value: mission.customer },
-            { label: 'Location', value: mission.location },
+            { label: t.fields.customer, value: mission.customer },
+            { label: t.fields.location, value: mission.location },
             {
-              label: 'Scheduled',
-              value: new Date(mission.scheduledAt).toLocaleString('en-US', {
+              label: t.fields.scheduled,
+              value: new Date(mission.scheduledAt).toLocaleString(locale, {
                 dateStyle: 'medium',
                 timeStyle: 'short',
               }),
             },
-            { label: 'Duration', value: `~${mission.estimatedMinutes} min` },
-            { label: 'Drone', value: `${drone.name} (${drone.id})` },
+            {
+              label: t.fields.duration,
+              value: t.durationValue(mission.estimatedMinutes),
+            },
+            { label: t.fields.drone, value: `${drone.name} (${drone.id})` },
           ].map((r) => (
             <div
               key={r.label}
@@ -167,8 +163,7 @@ export default function AcceptReject({
               <span
                 style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}
               >
-                I have reviewed the mission requirements and confirm I am ready
-                to operate this mission as the assigned drone operator.
+                {t.confirmLabel}
               </span>
             </label>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -185,7 +180,7 @@ export default function AcceptReject({
                   cursor: 'pointer',
                 }}
               >
-                Reject mission
+                {t.rejectMission}
               </button>
               <button
                 onClick={onAccept}
@@ -202,7 +197,7 @@ export default function AcceptReject({
                   cursor: confirmed ? 'pointer' : 'not-allowed',
                 }}
               >
-                Accept mission
+                {t.acceptMission}
               </button>
             </div>
           </>
@@ -228,7 +223,7 @@ export default function AcceptReject({
                   marginBottom: 14,
                 }}
               >
-                Reason for rejection
+                {t.reasonForRejection}
               </div>
               {REJECTION_REASONS.map((r) => (
                 <label
@@ -269,7 +264,7 @@ export default function AcceptReject({
                   cursor: 'pointer',
                 }}
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 onClick={() => onReject(reason)}
@@ -286,7 +281,7 @@ export default function AcceptReject({
                   cursor: reason ? 'pointer' : 'not-allowed',
                 }}
               >
-                Confirm rejection
+                {t.confirmRejection}
               </button>
             </div>
           </>

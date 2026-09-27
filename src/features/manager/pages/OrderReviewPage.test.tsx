@@ -1,7 +1,9 @@
+import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
+import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import type {
   OrderAnalysis,
@@ -149,9 +151,12 @@ describe('OrderReviewPage', () => {
   it('cleans legacy raw JSON media labels before rendering', async () => {
     vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
       ...order,
-      mediaRequirements: [{
-        label: 'Báo cáo Phân tích Nhiệt · {"radiusM":100,"quantity":10,"mediaType":"IMAGE","resolution":"4K","estimatedAreaHa":3.1}',
-      }],
+      mediaRequirements: [
+        {
+          label:
+            'Báo cáo Phân tích Nhiệt · {"radiusM":100,"quantity":10,"mediaType":"IMAGE","resolution":"4K","estimatedAreaHa":3.1}',
+        },
+      ],
     })
     vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(feasibleAnalysis)
     vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
@@ -159,7 +164,9 @@ describe('OrderReviewPage', () => {
 
     await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
     expect(
-      screen.getByText('Báo cáo Phân tích Nhiệt · IMAGE · 10 mục · 4K · 100 m · 3.1 ha'),
+      screen.getByText(
+        'Báo cáo Phân tích Nhiệt · IMAGE · 10 mục · 4K · 100 m · 3.1 ha',
+      ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
   })
@@ -225,11 +232,19 @@ describe('OrderReviewPage', () => {
 
   it('opens assignment for the mission returned by the backend', async () => {
     mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'approve').mockResolvedValue({ id: 'mission-real' } as Awaited<ReturnType<typeof ordersApi.approve>>)
+    vi.spyOn(ordersApi, 'approve').mockResolvedValue({
+      id: 'mission-real',
+    } as Awaited<ReturnType<typeof ordersApi.approve>>)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt và tạo mission' }))
-    await waitFor(() => expect(window.location.hash).toBe('#portal/staff/missions/mission-real/dispatch'))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Duyệt và tạo mission' }),
+    )
+    await waitFor(() =>
+      expect(window.location.hash).toBe(
+        '#portal/staff/missions/mission-real/dispatch',
+      ),
+    )
   })
 
   it('shows the 409 error state', async () => {
@@ -302,5 +317,20 @@ describe('OrderReviewPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lưu ghi chú' }))
 
     await waitFor(() => screen.getByText('Đã lưu'))
+  })
+
+  it('renders English labels and the uppercase English verdict after switching language', async () => {
+    mockHappyPath(feasibleAnalysis)
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+
+    act(() => setLanguage('en'))
+
+    expect(screen.getByText('Review order ORD-2609-0157')).toBeInTheDocument()
+    expect(screen.getAllByText('FEASIBLE').length).toBeGreaterThan(0)
+    expect(screen.getByText('Customer')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Approve & create mission' }),
+    ).toBeInTheDocument()
   })
 })

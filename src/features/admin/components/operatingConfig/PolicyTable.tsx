@@ -1,11 +1,17 @@
 import { useState } from 'react'
 
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { OperatingPolicy } from '../../types/operatingConfig'
+import { policyTableMessages } from './PolicyTable.messages'
 
 export function PolicyTable() {
+  const { t } = useI18n(policyTableMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.listPolicies(signal),
     [],
@@ -34,38 +40,66 @@ export function PolicyTable() {
   }
 
   if (loading) return <LoadingState />
-  if (!loading && (error || !data)) return <ErrorState error={error} onRetry={reload} />
+  if (!loading && (error || !data))
+    return <ErrorState error={error} onRetry={reload} />
   if (!data) return null
 
   return (
-    <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, overflow: 'hidden' }}>
+    <div
+      style={{
+        background: 'var(--sf)',
+        border: '1px solid var(--bd)',
+        borderRadius: 10,
+        overflow: 'hidden',
+      }}
+    >
       <table className="odm-adm-table">
         <thead>
           <tr>
-            <th>Tham số</th>
-            <th>Mô tả</th>
-            <th>Giá trị</th>
-            <th>Đơn vị</th>
-            <th>Thao tác</th>
+            <th style={{ fontFamily: 'var(--font-mono)' }}>key</th>
+            <th style={{ fontFamily: 'var(--font-mono)' }}>value</th>
+            <th style={{ fontFamily: 'var(--font-mono)' }}>unit</th>
+            <th style={{ fontFamily: 'var(--font-mono)' }}>description</th>
+            <th style={{ fontFamily: 'var(--font-mono)' }}>effective_from</th>
+            <th style={{ fontFamily: 'var(--font-mono)' }}>effective_to</th>
+            <th>{t.actions}</th>
           </tr>
         </thead>
         <tbody>
           {data.items.map((policy) => {
-            const isDirty = editing[policy.id] !== undefined && editing[policy.id] !== policy.value
+            const isDirty =
+              editing[policy.id] !== undefined &&
+              editing[policy.id] !== policy.value
             const val = editing[policy.id] ?? policy.value
             return (
               <tr key={policy.id}>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{policy.key}</td>
-                <td style={{ fontSize: 12, color: 'var(--tx2)', maxWidth: 240 }}>{policy.description}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                  {policy.key}
+                </td>
                 <td>
                   <input
                     className="odm-input"
                     value={val}
-                    onChange={(e) => setEditing({ ...editing, [policy.id]: e.target.value })}
+                    onChange={(e) =>
+                      setEditing({ ...editing, [policy.id]: e.target.value })
+                    }
                     style={{ width: 80, padding: '3px 8px', fontSize: 13 }}
                   />
                 </td>
-                <td style={{ fontSize: 12, color: 'var(--tx3)' }}>{policy.unit}</td>
+                <td style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                  {policy.unit}
+                </td>
+                <td
+                  style={{ fontSize: 12, color: 'var(--tx2)', maxWidth: 240 }}
+                >
+                  {policy.description}
+                </td>
+                <td style={{ fontSize: 12 }}>
+                  {formatDateVi(policy.effectiveFrom)}
+                </td>
+                <td style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                  {formatDateVi(policy.effectiveTo)}
+                </td>
                 <td>
                   {isDirty && (
                     <button
@@ -75,7 +109,7 @@ export function PolicyTable() {
                       disabled={saving === policy.id}
                       onClick={() => handleSave(policy)}
                     >
-                      {saving === policy.id ? '...' : 'Lưu'}
+                      {saving === policy.id ? '...' : t.save}
                     </button>
                   )}
                 </td>

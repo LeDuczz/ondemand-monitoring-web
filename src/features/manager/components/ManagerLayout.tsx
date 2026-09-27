@@ -2,19 +2,25 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../../auth/api/authApi'
 import { LogoutButton } from '../../auth/components/LogoutButton'
+import { LanguageToggle } from '../../../shared/components/LanguageToggle'
+import { useI18n } from '../../../shared/i18n'
 import { managerHref, type ManagerRoute, type ManagerScreen } from '../routes'
 import { ManagerIcon, type ManagerIconName } from './ManagerIcon'
+import { managerLayoutMessages } from './ManagerLayout.messages'
 import '../manager.css'
 
+type NavItemKey = keyof typeof managerLayoutMessages.vi.navItems
+type GroupKey = keyof typeof managerLayoutMessages.vi.groups
+
 type NavItem = {
-  label: string
+  key: NavItemKey
   icon: ManagerIconName
   route: ManagerRoute
   /** Key into `counts` for the numeric badge, when this item has one. */
   countKey?: 'pendingOrders' | 'openMaintenance' | 'mediaNeedsAction'
 }
 
-type NavGroup = { label: string; items: NavItem[] }
+type NavGroup = { key: GroupKey; items: NavItem[] }
 
 // Groups + items copied from the sidebar markup shared by every MNG-*.dc.html
 // screen (checked against MNG-01/02/06). The design's sidebar also lists a
@@ -23,36 +29,36 @@ type NavGroup = { label: string; items: NavItem[] }
 // and rendering a nav link with no destination screen would be a dead link.
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Điều hành',
+    key: 'operations',
     items: [
-      { label: 'Dashboard', icon: 'dashboard', route: { screen: 'dashboard' } },
+      { key: 'dashboard', icon: 'dashboard', route: { screen: 'dashboard' } },
       {
-        label: 'Duyệt đơn',
+        key: 'orderQueue',
         icon: 'order-queue',
         route: { screen: 'orderQueue' },
         countKey: 'pendingOrders',
       },
-      { label: 'Mission', icon: 'mission', route: { screen: 'missions' } },
+      { key: 'missions', icon: 'mission', route: { screen: 'missions' } },
       {
-        label: 'Lịch mission',
+        key: 'schedule',
         icon: 'schedule',
         route: { screen: 'schedule' },
       },
-      { label: 'Giám sát realtime', icon: 'live', route: { screen: 'live' } },
+      { key: 'live', icon: 'live', route: { screen: 'live' } },
     ],
   },
   {
-    label: 'Nguồn lực',
+    key: 'resources',
     items: [
-      { label: 'Đội drone', icon: 'drones', route: { screen: 'drones' } },
+      { key: 'drones', icon: 'drones', route: { screen: 'drones' } },
       {
-        label: 'Bảo trì',
+        key: 'maintenance',
         icon: 'maintenance',
         route: { screen: 'maintenance' },
         countKey: 'openMaintenance',
       },
       {
-        label: 'Media và giao kết quả',
+        key: 'media',
         icon: 'media',
         route: { screen: 'media' },
         countKey: 'mediaNeedsAction',
@@ -60,30 +66,28 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Phân tích',
-    items: [
-      { label: 'Báo cáo', icon: 'reports', route: { screen: 'reports' } },
-    ],
+    key: 'analysis',
+    items: [{ key: 'reports', icon: 'reports', route: { screen: 'reports' } }],
   },
 ]
 
 // Which nav item highlights as active for each parsed screen — screens that
 // aren't reachable directly from the sidebar (order review, mission
 // create/dispatch) highlight the item their flow started from.
-const activeNavLabel: Record<ManagerScreen, string> = {
-  dashboard: 'Dashboard',
-  orderQueue: 'Duyệt đơn',
-  orderReview: 'Duyệt đơn',
-  missionCreate: 'Duyệt đơn',
-  missionDispatch: 'Mission',
-  schedule: 'Lịch mission',
-  live: 'Giám sát realtime',
-  missions: 'Mission',
-  drones: 'Đội drone',
-  maintenance: 'Bảo trì',
-  media: 'Media và giao kết quả',
-  reports: 'Báo cáo',
-  notFound: '',
+const activeNavKey: Record<ManagerScreen, NavItemKey | null> = {
+  dashboard: 'dashboard',
+  orderQueue: 'orderQueue',
+  orderReview: 'orderQueue',
+  missionCreate: 'orderQueue',
+  missionDispatch: 'missions',
+  schedule: 'schedule',
+  live: 'live',
+  missions: 'missions',
+  drones: 'drones',
+  maintenance: 'maintenance',
+  media: 'media',
+  reports: 'reports',
+  notFound: null,
 }
 
 function initialsOf(fullName: string | undefined): string {
@@ -115,25 +119,30 @@ export function ManagerLayout({
   )
   const [menuOpen, setMenuOpen] = useState(false)
   const user = authSession.getUser()
+  const { t } = useI18n(managerLayoutMessages)
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
 
-  const activeLabel = activeNavLabel[route.screen]
+  const activeKey = activeNavKey[route.screen]
 
   return (
     <div className="odm odm-mgr">
       <div className="odm-mgr-shell">
         <nav
-          aria-label="Điều hướng chính"
+          aria-label={t.nav}
           className={`odm-mgr-side ${menuOpen ? 'is-open' : ''}`}
         >
           <a
             className="odm-mgr-brand"
             href={managerHref({ screen: 'dashboard' })}
           >
-            <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-mgr-brand-mark" />
+            <img
+              src="/images/logo-new.png"
+              alt="OnDemand Monitor"
+              className="odm-mgr-brand-mark"
+            />
             <span className="odm-mgr-brand-name">
               <span className="odm-mgr-brand-primary">OnDemand</span>
               <span className="odm-mgr-brand-accent">Monitor</span>
@@ -142,23 +151,23 @@ export function ManagerLayout({
 
           <div className="odm-mgr-nav-scroll">
             {NAV_GROUPS.map((group) => (
-              <div key={group.label}>
-                <div className="odm-mgr-navg">{group.label}</div>
+              <div key={group.key}>
+                <div className="odm-mgr-navg">{t.groups[group.key]}</div>
                 {group.items.map((item) => {
-                  const active = item.label === activeLabel
+                  const active = item.key === activeKey
                   const count = item.countKey
                     ? counts?.[item.countKey]
                     : undefined
                   return (
                     <a
-                      key={item.label}
+                      key={item.key}
                       href={managerHref(item.route)}
                       className={`odm-mgr-navi ${active ? 'is-active' : ''}`}
                       aria-current={active ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
                     >
                       <ManagerIcon name={item.icon} />
-                      <span>{item.label}</span>
+                      <span>{t.navItems[item.key]}</span>
                       {typeof count === 'number' && count > 0 ? (
                         <span className="odm-mgr-navc">{count}</span>
                       ) : null}
@@ -175,7 +184,7 @@ export function ManagerLayout({
             </span>
             <span className="odm-mgr-user-text">
               <span className="odm-mgr-user-name">
-                {user?.fullName ?? 'Manager'}
+                {user?.fullName ?? t.manager}
               </span>
               <span className="odm-mgr-user-email">{user?.email ?? ''}</span>
             </span>
@@ -187,7 +196,7 @@ export function ManagerLayout({
           <button
             type="button"
             className="odm-mgr-scrim"
-            aria-label="Đóng điều hướng"
+            aria-label={t.closeNav}
             onClick={() => setMenuOpen(false)}
           />
         ) : null}
@@ -197,17 +206,18 @@ export function ManagerLayout({
             <button
               type="button"
               className="odm-mgr-menu-toggle"
-              aria-label="Mở điều hướng"
+              aria-label={t.openNav}
               onClick={() => setMenuOpen(true)}
             >
               <ManagerIcon name="menu" />
             </button>
             <div className="odm-mgr-breadcrumb">{breadcrumb}</div>
             <div className="odm-mgr-topbar-spacer" />
+            <LanguageToggle />
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1"
-              aria-label="Đổi giao diện sáng / tối"
+              aria-label={t.toggleTheme}
               onClick={() => setDark((value) => !value)}
             >
               <ManagerIcon name={dark ? 'sun' : 'moon'} />

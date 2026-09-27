@@ -1,5 +1,7 @@
 import { env } from '../../../config/env'
+import { getLanguage } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
+import { droneApiMessages } from './droneApi.messages'
 
 interface DroneResponse {
   id: string
@@ -27,15 +29,16 @@ export const droneApi = {
       `${env.apiBaseUrl}/api/drones?status=AVAILABLE&size=100`,
     )
 
+    const t = droneApiMessages[getLanguage()]
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
-      throw new Error(error.message || `Failed to load available drones (HTTP ${response.status})`)
+      throw new Error(error.message || t.loadFailed(response.status))
     }
 
     const payload: ApiResponse<DronePage> = await response.json()
     return payload.data.items.map((drone) => ({
       id: drone.id,
-      label: `${drone.serialNumber} (${drone.droneModel?.modelCode ?? 'Unknown model'})`,
+      label: `${drone.serialNumber} (${drone.droneModel?.modelCode ?? t.unknownModel})`,
     }))
   },
 }

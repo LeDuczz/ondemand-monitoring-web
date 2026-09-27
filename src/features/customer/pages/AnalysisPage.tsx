@@ -7,20 +7,16 @@ import {
 } from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import type { AiVerdict, FindingSeverity } from '../../../shared/types/domain'
 import { customerApi } from '../api/customerApi'
 import { customerHref } from '../routes'
+import { analysisPageMessages } from './AnalysisPage.messages'
 
 const SEVERITY_TONE: Record<FindingSeverity, 'red' | 'yellow' | 'blue'> = {
   BLOCKER: 'red',
   WARNING: 'yellow',
   INFO: 'blue',
-}
-
-const SEVERITY_LABEL: Record<FindingSeverity, string> = {
-  BLOCKER: 'Chặn',
-  WARNING: 'Cảnh báo',
-  INFO: 'Thông tin',
 }
 
 const VERDICT_TONE: Record<AiVerdict, 'green' | 'yellow' | 'red'> = {
@@ -29,15 +25,10 @@ const VERDICT_TONE: Record<AiVerdict, 'green' | 'yellow' | 'red'> = {
   INFEASIBLE: 'red',
 }
 
-const VERDICT_LABEL: Record<AiVerdict, string> = {
-  FEASIBLE: 'Khả thi',
-  RISKY: 'Có rủi ro',
-  INFEASIBLE: 'Không khả thi',
-}
-
 export function AnalysisPage({ orderId }: { orderId: string }) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const { t } = useI18n(analysisPageMessages)
 
   const { data, loading, error, reload } = useApiQuery(
     (signal) => customerApi.getAnalysis(orderId, signal),
@@ -53,7 +44,7 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
             href={customerHref({ screen: 'orderDetail', orderId })}
             style={{ color: 'var(--tx3)', textDecoration: 'none' }}
           >
-            ← Quay lại đơn hàng
+            {t.backToOrder}
           </a>
         </div>
         <ErrorState error={error} onRetry={reload} />
@@ -79,14 +70,14 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
   }
 
   async function handleSubmit() {
-    if (!confirm('Gửi đơn để quản lý duyệt?')) return
+    if (!confirm(t.confirmSubmit)) return
     setSubmitting(true)
     setSubmitError(null)
     try {
       await customerApi.submitOrder(orderId)
       window.location.hash = customerHref({ screen: 'orderDetail', orderId })
     } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : 'Có lỗi xảy ra.')
+      setSubmitError(e instanceof Error ? e.message : t.genericError)
       setSubmitting(false)
     }
   }
@@ -103,7 +94,7 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
           href={customerHref({ screen: 'orderDetail', orderId })}
           style={{ color: 'var(--tx3)', textDecoration: 'none' }}
         >
-          ← Quay lại đơn hàng
+          {t.backToOrder}
         </a>
       </div>
 
@@ -117,10 +108,10 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
         }}
       >
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, flex: 1 }}>
-          Phân tích AI
+          {t.title}
         </h1>
         <StatusBadge tone={VERDICT_TONE[data.verdict]} size="lg">
-          {VERDICT_LABEL[data.verdict]}
+          {t.verdict[data.verdict]}
         </StatusBadge>
       </div>
 
@@ -145,7 +136,7 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
               color: 'var(--red-solid)',
             }}
           >
-            🚫 {data.blockerCount} BLOCKER — không thể gửi duyệt
+            {t.blockerSummary(data.blockerCount)}
           </div>
         )}
         {data.warningCount > 0 && (
@@ -160,7 +151,7 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
               color: 'var(--yellow-solid)',
             }}
           >
-            ⚠ {data.warningCount} Cảnh báo
+            {t.warningSummary(data.warningCount)}
           </div>
         )}
         {data.infoCount > 0 && (
@@ -175,16 +166,23 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
               color: 'var(--blue-solid)',
             }}
           >
-            ℹ {data.infoCount} Thông tin
+            {t.infoSummary(data.infoCount)}
           </div>
         )}
       </div>
 
       {/* Findings list */}
       {data.findings.length === 0 ? (
-        <EmptyState title="Không có điểm cần lưu ý" description="AI đánh giá yêu cầu hoàn toàn khả thi." />
+        <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            marginBottom: 24,
+          }}
+        >
           {[...blockers, ...warnings, ...infos].map((f) => (
             <div
               key={f.id}
@@ -205,7 +203,7 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
                 }}
               >
                 <StatusBadge tone={SEVERITY_TONE[f.severity]}>
-                  {SEVERITY_LABEL[f.severity]}
+                  {t.severity[f.severity]}
                 </StatusBadge>
                 <span
                   style={{
@@ -231,7 +229,9 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
                 )}
               </div>
 
-              <p style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.5 }}>{f.message}</p>
+              <p style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.5 }}>
+                {f.message}
+              </p>
 
               {/* Evidence */}
               {Object.keys(f.evidence).length > 0 && (
@@ -249,7 +249,14 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
                   {Object.entries(f.evidence).map(([k, v]) => (
                     <span key={k} style={{ fontSize: 12 }}>
                       <span style={{ color: 'var(--tx3)' }}>{k}:</span>{' '}
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{v}</span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {v}
+                      </span>
                     </span>
                   ))}
                 </div>
@@ -257,15 +264,24 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
 
               {/* Suggestion actions */}
               {f.suggestionLabel && f.suggestionState === 'PENDING' && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, color: 'var(--tx3)' }}>Gợi ý: {f.suggestionLabel}</span>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                    {t.suggestion(f.suggestionLabel)}
+                  </span>
                   <button
                     type="button"
                     className="odm-btn odm-btn-p"
                     style={{ fontSize: 12, padding: '3px 10px' }}
                     onClick={() => handleApply(f.id)}
                   >
-                    Áp dụng
+                    {t.apply}
                   </button>
                   <button
                     type="button"
@@ -273,7 +289,7 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
                     style={{ fontSize: 12, padding: '3px 10px' }}
                     onClick={() => handleIgnore(f.id)}
                   >
-                    Bỏ qua
+                    {t.ignore}
                   </button>
                 </div>
               )}
@@ -285,11 +301,13 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
                     fontWeight: 600,
                   }}
                 >
-                  ✓ Đã áp dụng gợi ý
+                  {t.applied}
                 </span>
               )}
               {f.suggestionState === 'IGNORED' && (
-                <span style={{ fontSize: 12, color: 'var(--tx3)' }}>— Bỏ qua</span>
+                <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                  {t.ignored}
+                </span>
               )}
             </div>
           ))}
@@ -297,7 +315,14 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
       )}
 
       {/* Submit action */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
         {canSubmit ? (
           <button
             type="button"
@@ -305,23 +330,26 @@ export function AnalysisPage({ orderId }: { orderId: string }) {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? 'Đang gửi...' : 'Gửi duyệt'}
+            {submitting ? t.submitting : t.submit}
           </button>
         ) : (
           <button type="button" className="odm-btn odm-btn-p" disabled>
-            Gửi duyệt (cần giải quyết {data.blockerCount} BLOCKER)
+            {t.submitBlocked(data.blockerCount)}
           </button>
         )}
         <a
           href={customerHref({ screen: 'orderDetail', orderId })}
           className="odm-btn odm-btn-gh"
         >
-          ← Quay lại
+          {t.back}
         </a>
       </div>
 
       {submitError && (
-        <div role="alert" style={{ marginTop: 10, fontSize: 13, color: 'var(--red-solid)' }}>
+        <div
+          role="alert"
+          style={{ marginTop: 10, fontSize: 13, color: 'var(--red-solid)' }}
+        >
           {submitError}
         </div>
       )}

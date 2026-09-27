@@ -2,38 +2,48 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
+import { LanguageToggle } from '../../shared/components/LanguageToggle'
+import { useI18n } from '../../shared/i18n'
 import { CustomerChatbot } from './components/CustomerChatbot'
 import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
+import { customerLayoutMessages } from './CustomerLayout.messages'
 import './customer.css'
 
+type NavItemKey = keyof typeof customerLayoutMessages.vi.navItems
+
 type NavItem = {
-  label: string
+  key: NavItemKey
   icon: string
   route: CustomerRoute
   newMediaBadge?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Tổng quan', icon: '⊞', route: { screen: 'dashboard' } },
-  { label: 'Đơn của tôi', icon: '≡', route: { screen: 'orders' } },
-  { label: 'Tạo yêu cầu', icon: '+', route: { screen: 'createOrder' } },
-  { label: 'Thư viện kết quả', icon: '⊟', route: { screen: 'mediaLibrary' }, newMediaBadge: true },
-  { label: 'Thông báo', icon: '🔔', route: { screen: 'notifications' } },
+  { key: 'dashboard', icon: '⊞', route: { screen: 'dashboard' } },
+  { key: 'orders', icon: '≡', route: { screen: 'orders' } },
+  { key: 'createOrder', icon: '+', route: { screen: 'createOrder' } },
+  {
+    key: 'mediaLibrary',
+    icon: '⊟',
+    route: { screen: 'mediaLibrary' },
+    newMediaBadge: true,
+  },
+  { key: 'notifications', icon: '🔔', route: { screen: 'notifications' } },
 ]
 
-const activeScreen: Record<CustomerScreen, string> = {
-  dashboard: 'Tổng quan',
-  orders: 'Đơn của tôi',
-  createOrder: 'Tạo yêu cầu',
-  orderDetail: 'Đơn của tôi',
-  analysis: 'Đơn của tôi',
-  live: 'Xem trực tiếp',
-  liveHub: 'Xem trực tiếp',
-  media: 'Thư viện kết quả',
-  mediaLibrary: 'Thư viện kết quả',
-  mediaDetail: 'Thư viện kết quả',
-  notifications: 'Thông báo',
-  notFound: '',
+const activeNavKey: Record<CustomerScreen, NavItemKey | null> = {
+  dashboard: 'dashboard',
+  orders: 'orders',
+  createOrder: 'createOrder',
+  orderDetail: 'orders',
+  analysis: 'orders',
+  live: null,
+  liveHub: null,
+  media: 'mediaLibrary',
+  mediaLibrary: 'mediaLibrary',
+  mediaDetail: 'mediaLibrary',
+  notifications: 'notifications',
+  notFound: null,
 }
 
 function initialsOf(fullName: string | undefined): string {
@@ -59,21 +69,25 @@ export function CustomerLayout({
   )
   const [menuOpen, setMenuOpen] = useState(false)
   const user = authSession.getUser()
+  const { t } = useI18n(customerLayoutMessages)
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
 
-  const active = activeScreen[route.screen]
+  const activeKey = activeNavKey[route.screen]
 
   return (
     <div className="odm odm-cus">
       <div className="odm-cus-shell">
         <nav
-          aria-label="Điều hướng khách hàng"
+          aria-label={t.nav}
           className={`odm-cus-side ${menuOpen ? 'is-open' : ''}`}
         >
-          <a className="odm-cus-brand" href={customerHref({ screen: 'dashboard' })}>
+          <a
+            className="odm-cus-brand"
+            href={customerHref({ screen: 'dashboard' })}
+          >
             <img
               src="/images/logo-new.png"
               alt="OnDemand Monitor"
@@ -86,25 +100,32 @@ export function CustomerLayout({
           </a>
 
           <div className="odm-cus-nav-scroll">
-            <div className="odm-cus-navg">Menu</div>
+            <div className="odm-cus-navg">{t.menu}</div>
             {NAV_ITEMS.map((item) => {
-              const isActive = item.label === active
+              const isActive = item.key === activeKey
               const badge =
                 item.newMediaBadge && (newMediaCount ?? 0) > 0
                   ? newMediaCount
                   : undefined
               return (
                 <a
-                  key={item.label}
+                  key={item.key}
                   href={customerHref(item.route)}
                   className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
                 >
-                  <span aria-hidden="true" style={{ fontStyle: 'normal', minWidth: 16, textAlign: 'center' }}>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      fontStyle: 'normal',
+                      minWidth: 16,
+                      textAlign: 'center',
+                    }}
+                  >
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  <span>{t.navItems[item.key]}</span>
                   {badge ? <span className="odm-cus-navc">{badge}</span> : null}
                 </a>
               )
@@ -116,7 +137,9 @@ export function CustomerLayout({
               {initialsOf(user?.fullName)}
             </span>
             <span className="odm-cus-user-text">
-              <span className="odm-cus-user-name">{user?.fullName ?? 'Khách hàng'}</span>
+              <span className="odm-cus-user-name">
+                {user?.fullName ?? t.customer}
+              </span>
               <span className="odm-cus-user-email">{user?.email ?? ''}</span>
             </span>
           </div>
@@ -127,7 +150,7 @@ export function CustomerLayout({
           <button
             type="button"
             className="odm-cus-scrim"
-            aria-label="Đóng điều hướng"
+            aria-label={t.closeNav}
             onClick={() => setMenuOpen(false)}
           />
         ) : null}
@@ -137,17 +160,18 @@ export function CustomerLayout({
             <button
               type="button"
               className="odm-cus-menu-toggle"
-              aria-label="Mở điều hướng"
+              aria-label={t.openNav}
               onClick={() => setMenuOpen(true)}
             >
               ☰
             </button>
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
+            <LanguageToggle />
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1"
-              aria-label="Đổi giao diện sáng / tối"
+              aria-label={t.toggleTheme}
               onClick={() => setDark((v) => !v)}
             >
               {dark ? '☀' : '☾'}

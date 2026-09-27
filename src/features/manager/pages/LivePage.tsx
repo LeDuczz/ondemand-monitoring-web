@@ -3,13 +3,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import {
-  missionStatusLabel,
+  getMissionStatusLabel,
   missionStatusTone,
 } from '../../../shared/lib/statusTone'
 import { missionsApi } from '../api/missionsApi'
 import type { LiveTelemetry, MissionCalendarItem } from '../types/missions'
 import { managerHref } from '../routes'
+import { livePageMessages } from './LivePage.messages'
 import '../manager.css'
 
 const POLL_INTERVAL_MS = 5000
@@ -35,8 +37,9 @@ function ActiveMissionItem({
   selected: boolean
   onSelect: () => void
 }) {
+  const { lang } = useI18n(livePageMessages)
   const tone = missionStatusTone[mission.status] ?? 'gray'
-  const label = missionStatusLabel[mission.status] ?? mission.status
+  const label = getMissionStatusLabel(mission.status, lang) ?? mission.status
 
   return (
     <button
@@ -118,12 +121,13 @@ function MapPlaceholder({
   lon: number | null
   missionCode: string
 }) {
+  const { t } = useI18n(livePageMessages)
   return (
     <div
       className="odm-live-map"
       style={{ height: 280 }}
       role="img"
-      aria-label={`Bản đồ vị trí ${missionCode}`}
+      aria-label={t.mapAriaLabel(missionCode)}
     >
       {/* Static SVG map placeholder — no real map library in scope [evd/00-PLAN.md §8] */}
       <svg
@@ -221,14 +225,14 @@ function MapPlaceholder({
 
 // ── IncidentModal ──────────────────────────────────────────────────────────
 
-const INCIDENT_TYPES = [
-  { value: 'WIND', label: 'Gió mạnh / thời tiết' },
-  { value: 'OBSTACLE', label: 'Chướng ngại vật' },
-  { value: 'SIGNAL_LOSS', label: 'Mất tín hiệu' },
-  { value: 'BATTERY_LOW', label: 'Pin yếu bất thường' },
-  { value: 'MECHANICAL', label: 'Sự cố cơ học' },
-  { value: 'OTHER', label: 'Khác' },
-]
+const INCIDENT_TYPE_VALUES = [
+  'WIND',
+  'OBSTACLE',
+  'SIGNAL_LOSS',
+  'BATTERY_LOW',
+  'MECHANICAL',
+  'OTHER',
+] as const
 
 function IncidentModal({
   missionId,
@@ -239,6 +243,7 @@ function IncidentModal({
   onClose: () => void
   onCreated: () => void
 }) {
+  const { t } = useI18n(livePageMessages)
   const [type, setType] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -247,11 +252,11 @@ function IncidentModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!type) {
-      setError('Chọn loại sự cố.')
+      setError(t.incidentModal.chooseType)
       return
     }
     if (!description.trim()) {
-      setError('Mô tả là bắt buộc.')
+      setError(t.incidentModal.descriptionRequired)
       return
     }
     setSaving(true)
@@ -260,7 +265,9 @@ function IncidentModal({
       await missionsApi.createIncident(missionId, { type, description })
       onCreated()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Lỗi không xác định.')
+      setError(
+        err instanceof ApiError ? err.message : t.incidentModal.unknownError,
+      )
     } finally {
       setSaving(false)
     }
@@ -270,7 +277,7 @@ function IncidentModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Ghi nhận sự cố"
+      aria-label={t.incidentModal.ariaLabel}
       style={{
         position: 'fixed',
         inset: 0,
@@ -294,26 +301,26 @@ function IncidentModal({
         }}
       >
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-          Ghi nhận sự cố
+          {t.incidentModal.title}
         </h3>
         <label style={{ fontSize: 13 }}>
-          Loại sự cố
+          {t.incidentModal.typeLabel}
           <select
             className="odm-inp"
             value={type}
             onChange={(e) => setType(e.target.value)}
             style={{ display: 'block', marginTop: 4, width: '100%' }}
           >
-            <option value="">-- Chọn loại --</option>
-            {INCIDENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            <option value="">{t.incidentModal.typePlaceholder}</option>
+            {INCIDENT_TYPE_VALUES.map((value) => (
+              <option key={value} value={value}>
+                {t.incidentTypes[value]}
               </option>
             ))}
           </select>
         </label>
         <label style={{ fontSize: 13 }}>
-          Mô tả chi tiết
+          {t.incidentModal.descriptionLabel}
           <textarea
             className="odm-inp"
             value={description}
@@ -325,7 +332,7 @@ function IncidentModal({
               width: '100%',
               resize: 'vertical',
             }}
-            placeholder="Mô tả sự cố…"
+            placeholder={t.incidentModal.descriptionPlaceholder}
           />
         </label>
         {error && (
@@ -344,14 +351,14 @@ function IncidentModal({
         )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" className="odm-btn" onClick={onClose}>
-            Huỷ
+            {t.incidentModal.cancel}
           </button>
           <button
             type="submit"
             className="odm-btn odm-btn-rd"
             disabled={saving}
           >
-            {saving ? 'Đang ghi…' : 'Ghi nhận'}
+            {saving ? t.incidentModal.saving : t.incidentModal.submit}
           </button>
         </div>
       </form>
@@ -370,6 +377,7 @@ function CancelModal({
   onClose: () => void
   onCancelled: () => void
 }) {
+  const { t } = useI18n(livePageMessages)
   const [step, setStep] = useState<1 | 2>(1)
   const [reason, setReason] = useState('')
   const [confirmCode, setConfirmCode] = useState('')
@@ -379,11 +387,11 @@ function CancelModal({
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!reason.trim()) {
-      setError('Cần nhập lý do huỷ.')
+      setError(t.cancelModal.reasonRequired)
       return
     }
     if (confirmCode !== mission.missionCode) {
-      setError(`Mã mission không khớp. Gõ đúng "${mission.missionCode}".`)
+      setError(t.cancelModal.codeMismatch(mission.missionCode))
       return
     }
     setSaving(true)
@@ -392,7 +400,9 @@ function CancelModal({
       await missionsApi.cancelMission(mission.id, { reason })
       onCancelled()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Lỗi không xác định.')
+      setError(
+        err instanceof ApiError ? err.message : t.cancelModal.unknownError,
+      )
     } finally {
       setSaving(false)
     }
@@ -402,7 +412,7 @@ function CancelModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Huỷ mission"
+      aria-label={t.cancelModal.ariaLabel}
       style={{
         position: 'fixed',
         inset: 0,
@@ -435,25 +445,24 @@ function CancelModal({
                 color: 'var(--red-fg)',
               }}
             >
-              ⚠ Huỷ mission khẩn
+              {t.cancelModal.step1Title}
             </h3>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--tx2)' }}>
               Mission{' '}
               <strong style={{ fontFamily: 'var(--font-mono)' }}>
                 {mission.missionCode}
               </strong>{' '}
-              đang hoạt động. Huỷ sẽ gửi lệnh RTL tới drone. Hành động không thể
-              hoàn tác.
+              {t.cancelModal.step1Body}
             </p>
             <label style={{ fontSize: 13 }}>
-              Lý do huỷ
+              {t.cancelModal.reasonLabel}
               <textarea
                 className="odm-inp"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 style={{ display: 'block', marginTop: 4, width: '100%' }}
-                placeholder="Lý do huỷ mission…"
+                placeholder={t.cancelModal.reasonPlaceholder}
                 autoFocus
               />
             </label>
@@ -461,7 +470,7 @@ function CancelModal({
               style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}
             >
               <button type="button" className="odm-btn" onClick={onClose}>
-                Đóng
+                {t.cancelModal.close}
               </button>
               <button
                 type="button"
@@ -472,7 +481,7 @@ function CancelModal({
                   setStep(2)
                 }}
               >
-                Tiếp tục →
+                {t.cancelModal.continue}
               </button>
             </div>
           </>
@@ -486,10 +495,10 @@ function CancelModal({
                 color: 'var(--red-fg)',
               }}
             >
-              Xác nhận huỷ mission
+              {t.cancelModal.step2Title}
             </h3>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--tx2)' }}>
-              Gõ mã mission để xác nhận huỷ:
+              {t.cancelModal.step2Body}
             </p>
             <code
               style={{
@@ -505,7 +514,7 @@ function CancelModal({
               {mission.missionCode}
             </code>
             <label style={{ fontSize: 13 }}>
-              Mã xác nhận
+              {t.cancelModal.confirmCodeLabel}
               <input
                 type="text"
                 className="odm-inp"
@@ -538,14 +547,16 @@ function CancelModal({
                 className="odm-btn"
                 onClick={() => setStep(1)}
               >
-                ← Quay lại
+                {t.cancelModal.back}
               </button>
               <button
                 type="submit"
                 className="odm-btn odm-btn-rd"
                 disabled={saving}
               >
-                {saving ? 'Đang huỷ…' : 'Huỷ mission'}
+                {saving
+                  ? t.cancelModal.cancelling
+                  : t.cancelModal.confirmCancel}
               </button>
             </div>
           </>
@@ -569,6 +580,7 @@ function LiveMainPanel({
   const [showIncidentModal, setShowIncidentModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
 
+  const { t, lang, locale } = useI18n(livePageMessages)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchLive = useCallback(async () => {
@@ -618,13 +630,22 @@ function LiveMainPanel({
           </div>
         </div>
         <StatusBadge tone={tone}>
-          {missionStatusLabel[mission.status] ?? mission.status}
+          {getMissionStatusLabel(mission.status, lang) ?? mission.status}
         </StatusBadge>
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
           {mission.droneCode}
           {mission.operatorName ? ` · ${mission.operatorName}` : ''}
           {mission.scheduledStartAt
-            ? ` · ${new Date(mission.scheduledStartAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} → dự kiến ${new Date(mission.scheduledEndAt!).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+            ? t.scheduledPrefix(
+                new Date(mission.scheduledStartAt).toLocaleTimeString(locale, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+                new Date(mission.scheduledEndAt!).toLocaleTimeString(locale, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+              )
             : ''}
         </div>
         <button
@@ -632,14 +653,14 @@ function LiveMainPanel({
           className="odm-btn"
           onClick={() => setShowIncidentModal(true)}
         >
-          Ghi nhận sự cố
+          {t.recordIncident}
         </button>
         <button
           type="button"
           className="odm-btn odm-btn-rd"
           onClick={() => setShowCancelModal(true)}
         >
-          Huỷ mission khẩn
+          {t.urgentCancel}
         </button>
       </div>
 
@@ -658,7 +679,7 @@ function LiveMainPanel({
           }}
         >
           <span>
-            Mất kết nối telemetry ·{' '}
+            {t.telemetryLost} ·{' '}
             <code style={{ fontFamily: 'var(--font-mono)' }}>
               GET /missions/{mission.id}/live · {telemetryError.status ?? '—'}
             </code>
@@ -669,7 +690,7 @@ function LiveMainPanel({
             style={{ marginLeft: 'auto' }}
             onClick={fetchLive}
           >
-            Thử lại
+            {t.retry}
           </button>
         </div>
       )}
@@ -686,14 +707,14 @@ function LiveMainPanel({
         <div style={{ padding: 16 }}>
           <div className="odm-live-telemetry">
             <TelemetryCell
-              label="Pin"
+              label={t.telemetry.battery}
               value={
                 telemetry.batteryPct !== null ? `${telemetry.batteryPct}%` : '—'
               }
-              sub="↓ 1%/phút"
+              sub={t.telemetry.batteryLossHint}
             />
             <TelemetryCell
-              label="Thời gian bay"
+              label={t.telemetry.flightTime}
               value={
                 telemetry.flightTimeSec !== null
                   ? formatFlightTime(telemetry.flightTimeSec)
@@ -701,7 +722,7 @@ function LiveMainPanel({
               }
             />
             <TelemetryCell
-              label="Độ cao"
+              label={t.telemetry.altitude}
               value={
                 telemetry.altitudeM !== null
                   ? `${telemetry.altitudeM} m`
@@ -709,7 +730,7 @@ function LiveMainPanel({
               }
             />
             <TelemetryCell
-              label="Tốc độ"
+              label={t.telemetry.speed}
               value={
                 telemetry.speedMs !== null
                   ? `${telemetry.speedMs} m/s`
@@ -718,9 +739,9 @@ function LiveMainPanel({
             />
             {telemetry.satelliteCount !== null && (
               <TelemetryCell
-                label="Vệ tinh"
+                label={t.telemetry.satellites}
                 value={String(telemetry.satelliteCount)}
-                sub="GPS"
+                sub={t.telemetry.gps}
               />
             )}
           </div>
@@ -779,7 +800,7 @@ function LiveMainPanel({
                 fontSize: 13,
               }}
             >
-              Livestream
+              {t.livestream.title}
               {telemetry.livestream?.isLive && (
                 <span
                   style={{
@@ -807,7 +828,7 @@ function LiveMainPanel({
                     display: 'block',
                   }}
                   poster=""
-                  aria-label="Livestream video placeholder"
+                  aria-label={t.livestream.videoPlaceholder}
                 />
                 <div
                   style={{
@@ -821,7 +842,7 @@ function LiveMainPanel({
                     background: 'rgba(0,0,0,.5)',
                   }}
                 >
-                  Chưa có kết nối livestream
+                  {t.livestream.noConnection}
                 </div>
               </div>
             ) : (
@@ -833,7 +854,7 @@ function LiveMainPanel({
                   fontSize: 13,
                 }}
               >
-                Chưa có phiên livestream
+                {t.livestream.noSession}
               </div>
             )}
           </div>
@@ -844,7 +865,7 @@ function LiveMainPanel({
       {telemetry && telemetry.activeIncidents.length > 0 && (
         <div style={{ padding: '0 16px 16px' }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
-            Nhật ký sự cố ({telemetry.activeIncidents.length})
+            {t.incidentLog(telemetry.activeIncidents.length)}
           </div>
           <div
             style={{
@@ -886,7 +907,7 @@ function LiveMainPanel({
                     {inc.type}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                    {new Date(inc.reportedAt).toLocaleTimeString('vi-VN', {
+                    {new Date(inc.reportedAt).toLocaleTimeString(locale, {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
@@ -927,6 +948,7 @@ function LiveMainPanel({
 // ── LivePage ───────────────────────────────────────────────────────────────
 
 export function LivePage({ missionId }: { missionId?: string }) {
+  const { t } = useI18n(livePageMessages)
   // Load all active missions for the sidebar
   const listQuery = useApiQuery((signal) => {
     // We want missions that are active — no status filter since the API
@@ -955,11 +977,11 @@ export function LivePage({ missionId }: { missionId?: string }) {
   }, [listQuery])
 
   return (
-    <div className="odm-live" aria-label="Giám sát realtime">
+    <div className="odm-live" aria-label={t.sidebar.ariaLabel}>
       {/* Left sidebar */}
       <div className="odm-live-sidebar">
         <div className="odm-live-sidebar-head">
-          Mission đang hoạt động
+          {t.sidebar.activeMissions}
           {activeMissions.length > 0 && (
             <span
               style={{
@@ -1002,14 +1024,14 @@ export function LivePage({ missionId }: { missionId?: string }) {
             style={{ padding: 16, fontSize: 12, color: 'var(--red-fg)' }}
             role="alert"
           >
-            Không tải được danh sách.
+            {t.sidebar.loadError}
             <button
               type="button"
               className="odm-btn"
               style={{ display: 'block', marginTop: 8 }}
               onClick={listQuery.reload}
             >
-              Thử lại
+              {t.sidebar.retry}
             </button>
           </div>
         )}
@@ -1025,7 +1047,7 @@ export function LivePage({ missionId }: { missionId?: string }) {
                 textAlign: 'center',
               }}
             >
-              Không có mission đang hoạt động.
+              {t.sidebar.noActiveMissions}
             </div>
           )}
 
@@ -1061,14 +1083,16 @@ export function LivePage({ missionId }: { missionId?: string }) {
               }}
             >
               <div style={{ fontSize: 40 }}>📡</div>
-              <div style={{ fontWeight: 600 }}>Chọn một mission từ sidebar</div>
+              <div style={{ fontWeight: 600 }}>
+                {t.emptyState.selectMission}
+              </div>
               <div style={{ fontSize: 13 }}>
-                Chưa có mission nào đang bay.{' '}
+                {t.emptyState.noFlying}{' '}
                 <a
                   href={managerHref({ screen: 'schedule' })}
                   style={{ color: 'var(--focus)' }}
                 >
-                  Xem lịch mission
+                  {t.emptyState.viewSchedule}
                 </a>
               </div>
             </div>

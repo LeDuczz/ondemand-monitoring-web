@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { resetMockDb } from '../../../mocks/db'
+import { setLanguage } from '../../../shared/i18n'
 import { authSession } from '../api/authApi'
 import { AuthPage } from './AuthPage'
 
@@ -138,5 +139,21 @@ describe('AuthPage - register', () => {
       'Tôi đồng ý với Điều khoản sử dụng và chính sách bay an toàn.',
     )
     expect(checkbox).toBeRequired()
+  })
+})
+
+describe('AuthPage - language', () => {
+  it('renders English titles and labels when language is switched', () => {
+    render(<AuthPage initialMode="login" />)
+    act(() => setLanguage('en'))
+
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Welcome back. Log in to manage your monitoring requests.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
   })
 })

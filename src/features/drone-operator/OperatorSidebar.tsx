@@ -1,55 +1,107 @@
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
+import { useI18n } from '../../shared/i18n'
+import type { Language } from '../../shared/i18n/languageStore'
 import { operatorHref, type OperatorRoute, type OperatorScreen } from './routes'
+import { operatorSidebarMessages } from './OperatorSidebar.messages'
 
-type NavItem = { label: string; icon: string; route: OperatorRoute; badge?: number }
-type NavGroup = { label: string; items: NavItem[] }
+type Messages = (typeof operatorSidebarMessages)['vi']
 
-function buildGroups(pendingCount: number, notificationCount: number): NavGroup[] {
+type NavItem = {
+  screen: OperatorScreen
+  labelKey: keyof Messages['nav']
+  icon: string
+  route: OperatorRoute
+  badge?: number
+}
+type NavGroup = { labelKey: keyof Messages['groups']; items: NavItem[] }
+
+function buildGroups(
+  pendingCount: number,
+  notificationCount: number,
+): NavGroup[] {
   return [
     {
-      label: 'Công việc',
+      labelKey: 'work',
       items: [
-        { label: 'Mission của tôi', icon: '✈', route: { screen: 'missions' }, badge: pendingCount },
-        { label: 'Bảo trì & Sự cố', icon: '🛠', route: { screen: 'maintenance' } },
-        { label: 'Lịch rảnh', icon: '🗓', route: { screen: 'availability' } },
+        {
+          screen: 'missions',
+          labelKey: 'missions',
+          icon: '✈',
+          route: { screen: 'missions' },
+          badge: pendingCount,
+        },
+        {
+          screen: 'maintenance',
+          labelKey: 'maintenance',
+          icon: '🛠',
+          route: { screen: 'maintenance' },
+        },
+        {
+          screen: 'availability',
+          labelKey: 'availability',
+          icon: '🗓',
+          route: { screen: 'availability' },
+        },
       ],
     },
     {
-      label: 'Chuyến bay',
+      labelKey: 'flight',
       items: [
-        { label: 'Zone map', icon: '⛶', route: { screen: 'zoneMap' } },
+        {
+          screen: 'zoneMap',
+          labelKey: 'zoneMap',
+          icon: '⛶',
+          route: { screen: 'zoneMap' },
+        },
       ],
     },
     {
-      label: 'Tài khoản',
+      labelKey: 'account',
       items: [
-        { label: 'Thông báo', icon: '🔔', route: { screen: 'notifications' }, badge: notificationCount },
-        { label: 'Hồ sơ và chứng chỉ', icon: '◉', route: { screen: 'profile' } },
+        {
+          screen: 'notifications',
+          labelKey: 'notifications',
+          icon: '🔔',
+          route: { screen: 'notifications' },
+          badge: notificationCount,
+        },
+        {
+          screen: 'profile',
+          labelKey: 'profile',
+          icon: '◉',
+          route: { screen: 'profile' },
+        },
       ],
     },
   ]
 }
 
-const activeScreen: Record<OperatorScreen, string> = {
-  missions: 'Mission của tôi',
-  missionDetail: 'Mission của tôi',
-  availability: 'Lịch rảnh',
-  connect: 'Kết nối drone',
-  handover: 'Bàn giao quyền',
-  preflight: 'Preflight',
-  flight: 'Buồng lái',
-  upload: 'Upload media',
-  postflight: 'Postflight',
-  maintenance: 'Bảo trì & Sự cố',
-  zoneMap: 'Zone map',
-  notifications: 'Thông báo',
-  profile: 'Hồ sơ và chứng chỉ',
-  notFound: '',
+// Which nav item highlights as active for each parsed screen (missionDetail
+// falls back to the "missions" item, same as the old label-based match).
+const activeNavScreen: Record<OperatorScreen, OperatorScreen | null> = {
+  missions: 'missions',
+  missionDetail: 'missions',
+  availability: 'availability',
+  connect: null,
+  handover: null,
+  preflight: null,
+  flight: null,
+  upload: null,
+  postflight: null,
+  maintenance: 'maintenance',
+  zoneMap: 'zoneMap',
+  notifications: 'notifications',
+  profile: 'profile',
+  notFound: null,
 }
 
-export function operatorActiveLabel(screen: OperatorScreen): string {
-  return activeScreen[screen]
+/** Bilingual label for the current screen (used as breadcrumb / page title). */
+export function operatorActiveLabel(
+  screen: OperatorScreen,
+  lang: Language,
+): string {
+  return operatorSidebarMessages[lang].activeScreen[screen]
 }
 
 function initialsOf(fullName: string | undefined): string {
@@ -69,29 +121,35 @@ export function OperatorSidebar({
   notificationCount?: number
 }) {
   const user = authSession.getUser()
-  const active = activeScreen[route.screen]
+  const { t } = useI18n(operatorSidebarMessages)
+  const activeScreen = activeNavScreen[route.screen]
   const groups = buildGroups(pendingCount, notificationCount)
 
   return (
-    <nav aria-label="Điều hướng phi công" className="odm-opr-side">
+    <nav aria-label={t.ariaNav} className="odm-opr-side">
       <div className="odm-opr-nav-scroll">
         {groups.map((group) => (
-          <div key={group.label}>
-            <div className="odm-opr-navg">{group.label}</div>
+          <div key={group.labelKey}>
+            <div className="odm-opr-navg">{t.groups[group.labelKey]}</div>
             {group.items.map((item) => {
-              const isActive = item.label === active
+              const isActive = item.screen === activeScreen
               return (
                 <a
-                  key={item.label}
+                  key={item.screen}
                   href={operatorHref(item.route)}
                   className={`odm-opr-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <span aria-hidden="true" style={{ minWidth: 16, textAlign: 'center' }}>
+                  <span
+                    aria-hidden="true"
+                    style={{ minWidth: 16, textAlign: 'center' }}
+                  >
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
-                  {item.badge ? <span className="odm-opr-navc">{item.badge}</span> : null}
+                  <span>{t.nav[item.labelKey]}</span>
+                  {item.badge ? (
+                    <span className="odm-opr-navc">{item.badge}</span>
+                  ) : null}
                 </a>
               )
             })}
@@ -104,7 +162,9 @@ export function OperatorSidebar({
           {initialsOf(user?.fullName)}
         </span>
         <span className="odm-opr-user-text">
-          <span className="odm-opr-user-name">{user?.fullName ?? 'Phi công'}</span>
+          <span className="odm-opr-user-name">
+            {user?.fullName ?? t.pilotFallback}
+          </span>
           <span className="odm-opr-user-email">{user?.email ?? ''}</span>
         </span>
       </div>

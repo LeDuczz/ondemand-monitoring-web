@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { env } from '../../../config/env'
 import { ApiError } from '../../../shared/api/httpClient'
+import { useI18n } from '../../../shared/i18n'
 import {
   SIMULATION_MAP_DEFAULT_CROP,
   simulationMapAspectRatio,
@@ -21,10 +22,17 @@ import {
   type ServiceOption,
 } from '../api/customerApi'
 import { customerHref } from '../routes'
+import { createOrderPageMessages } from './CreateOrderPage.messages'
+
+type CreateOrderPageT = (typeof createOrderPageMessages)['vi']
 
 type Step = 1 | 2 | 3 | 4
 type MapPoint = { x: number; y: number }
-type AiScore = { score: number; level: 'good' | 'warn' | 'bad'; notes: string[] }
+type AiScore = {
+  score: number
+  level: 'good' | 'warn' | 'bad'
+  notes: string[]
+}
 const SIMULATION_MAP_TOP_IMAGE = '/simulation-viewer/simulation_map_top.png'
 
 type SimulationMapMeta = {
@@ -91,13 +99,6 @@ type StoredCreateOrderDraft = {
   }
 }
 
-const STEP_LABELS: Record<Step, string> = {
-  1: 'Vị trí giám sát',
-  2: 'AI tư vấn & mục tiêu',
-  3: 'Thời gian và kết quả',
-  4: 'Xác nhận & gửi yêu cầu',
-}
-
 const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
 const ORDER_TITLE_MAX_LENGTH = 255
 const SIM_RADIUS_SCALE = 6
@@ -110,7 +111,9 @@ function isReusableConsultation(consultation?: CustomerConsultation | null) {
   if (!consultation?.id) return false
   if (consultation.id.startsWith('local-')) return false
   if (consultation.orderId) return false
-  return consultation.status !== 'CONFIRMED' && consultation.status !== 'CANCELLED'
+  return (
+    consultation.status !== 'CONFIRMED' && consultation.status !== 'CANCELLED'
+  )
 }
 
 const card: React.CSSProperties = {
@@ -208,7 +211,11 @@ async function withConsultationTimeout<T>(
   }
 }
 
-function buildCoverageArea(longitude: number, latitude: number, radiusM: number) {
+function buildCoverageArea(
+  longitude: number,
+  latitude: number,
+  radiusM: number,
+) {
   const points = 24
   const latDelta = radiusM / 111_320
   const lonDelta = radiusM / (111_320 * Math.cos((latitude * Math.PI) / 180))
@@ -231,7 +238,7 @@ function formatTimeLabel(time: PreferredTimeOption) {
   return range ? `${time.name} (${range})` : time.name
 }
 
-function useSimulationMapMeta() {
+function useSimulationMapMeta(unavailableMessage: string) {
   const [meta, setMeta] = useState<SimulationMapMeta | null>(null)
   const [error, setError] = useState('')
 
@@ -247,7 +254,7 @@ function useSimulationMapMeta() {
         const payload = (await response.json()) as SimulationMapMeta
         if (alive) setMeta(payload)
       } catch {
-        if (alive) setError('Không tải được map mô phỏng 3D.')
+        if (alive) setError(unavailableMessage)
       }
     }
 
@@ -255,12 +262,14 @@ function useSimulationMapMeta() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [unavailableMessage])
 
   return { meta, error }
 }
 
-function normalizeRing(coordinates: number[][] | undefined): [number, number][] {
+function normalizeRing(
+  coordinates: number[][] | undefined,
+): [number, number][] {
   if (!coordinates) return []
   const ring = coordinates
     .map((point) => [Number(point[0]), Number(point[1])] as [number, number])
@@ -273,13 +282,23 @@ function normalizeRing(coordinates: number[][] | undefined): [number, number][] 
   return ring
 }
 
-function pointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+function pointOnSegment(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+) {
   const cross = (px - ax) * (by - ay) - (py - ay) * (bx - ax)
   if (Math.abs(cross) > 1e-9) return false
   return (px - ax) * (px - bx) + (py - ay) * (py - by) <= 1e-9
 }
 
-function polygonContainsPoint(ring: [number, number][], point: [number, number]) {
+function polygonContainsPoint(
+  ring: [number, number][],
+  point: [number, number],
+) {
   const [px, py] = point
   let inside = false
 
@@ -314,7 +333,8 @@ function distancePointToSegment(
   if (dx === 0 && dy === 0) return distanceBetweenPoints(point, start)
 
   const t = clamp(
-    ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / (dx * dx + dy * dy),
+    ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) /
+      (dx * dx + dy * dy),
     0,
     1,
   )
@@ -326,12 +346,23 @@ function circleIntersectsPolygon(
   radius: number,
   ring: [number, number][],
 ) {
-  const effectiveRadius = Math.max(0, radius - RESTRICTED_ZONE_CONTACT_TOLERANCE_PX)
+  const effectiveRadius = Math.max(
+    0,
+    radius - RESTRICTED_ZONE_CONTACT_TOLERANCE_PX,
+  )
   if (polygonContainsPoint(ring, center)) return true
-  if (ring.some((point) => distanceBetweenPoints(center, point) <= effectiveRadius)) return true
+  if (
+    ring.some(
+      (point) => distanceBetweenPoints(center, point) <= effectiveRadius,
+    )
+  )
+    return true
 
   for (let index = 0; index < ring.length - 1; index += 1) {
-    if (distancePointToSegment(center, ring[index], ring[index + 1]) <= effectiveRadius) {
+    if (
+      distancePointToSegment(center, ring[index], ring[index + 1]) <=
+      effectiveRadius
+    ) {
       return true
     }
   }
@@ -369,7 +400,9 @@ function validateMonitoringZone(
     }
   }
 
-  const zone = monitoringZones.find((item) => polygonContainsPoint(item.coordinates, center))
+  const zone = monitoringZones.find((item) =>
+    polygonContainsPoint(item.coordinates, center),
+  )
   return {
     valid: Boolean(zone),
     zone,
@@ -378,7 +411,11 @@ function validateMonitoringZone(
 }
 
 function simPointToPercent(point: [number, number], meta: SimulationMapMeta) {
-  return worldToViewportPercent({ simX: point[0], simY: point[1] }, meta, MAP_IMAGE_CROP)
+  return worldToViewportPercent(
+    { simX: point[0], simY: point[1] },
+    meta,
+    MAP_IMAGE_CROP,
+  )
 }
 
 function useSimulationZones() {
@@ -423,31 +460,38 @@ function useSimulationZones() {
   return zones
 }
 
-function scoreRequest(form: FormState): AiScore {
+function scoreRequest(
+  form: FormState,
+  scoreNotesT: CreateOrderPageT['scoreNotes'],
+): AiScore {
   const notes: string[] = []
   let score = 92
 
   if (!form.address.trim()) {
     score -= 18
-    notes.push('Thiếu địa chỉ mô tả khu vực giám sát.')
+    notes.push(scoreNotesT.missingAddress)
   }
   if (!form.serviceId) {
     score -= 20
-    notes.push('Chưa chọn dịch vụ giám sát.')
+    notes.push(scoreNotesT.missingService)
   }
   if (!form.deliverableTypeId) {
     score -= 14
-    notes.push('Chưa chọn kết quả bàn giao.')
+    notes.push(scoreNotesT.missingDeliverable)
   }
-  if (!form.preferredDateFrom || !form.preferredDateTo || !form.preferredTimeId) {
+  if (
+    !form.preferredDateFrom ||
+    !form.preferredDateTo ||
+    !form.preferredTimeId
+  ) {
     score -= 18
-    notes.push('Thiếu ngày hoặc khung giờ bay.')
+    notes.push(scoreNotesT.missingSchedule)
   }
   if (form.radiusM > 900) {
     score -= 12
-    notes.push('Bán kính lớn, nên chia khu vực thành nhiều lượt bay.')
+    notes.push(scoreNotesT.largeRadius)
   }
-  if (notes.length === 0) notes.push('Thông tin đủ để gửi yêu cầu cho bộ phận vận hành kiểm tra.')
+  if (notes.length === 0) notes.push(scoreNotesT.allGood)
 
   return {
     score: clamp(score, 0, 100),
@@ -471,7 +515,9 @@ function findRecommendedService(
   if (!consultation) return undefined
 
   if (consultation.recommendedServiceId) {
-    const byId = services.find((service) => service.id === consultation.recommendedServiceId)
+    const byId = services.find(
+      (service) => service.id === consultation.recommendedServiceId,
+    )
     if (byId) return byId
   }
 
@@ -479,7 +525,11 @@ function findRecommendedService(
     const recommendedName = normalizeText(consultation.recommendedServiceName)
     return services.find((service) => {
       const serviceName = normalizeText(service.name)
-      return serviceName === recommendedName || serviceName.includes(recommendedName) || recommendedName.includes(serviceName)
+      return (
+        serviceName === recommendedName ||
+        serviceName.includes(recommendedName) ||
+        recommendedName.includes(serviceName)
+      )
     })
   }
 
@@ -489,7 +539,9 @@ function findRecommendedService(
 function findServiceByKeywords(services: ServiceOption[], keywords: string[]) {
   if (keywords.length === 0) return undefined
   return services.find((service) => {
-    const haystack = normalizeText(`${service.id} ${service.name} ${service.description ?? ''}`)
+    const haystack = normalizeText(
+      `${service.id} ${service.name} ${service.description ?? ''}`,
+    )
     return keywords.some((keyword) => haystack.includes(keyword))
   })
 }
@@ -497,7 +549,8 @@ function findServiceByKeywords(services: ServiceOption[], keywords: string[]) {
 function latestCustomerIntentText(messages: ConsultationMessage[]) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index]
-    if (message.senderType === 'CUSTOMER') return cleanRequirementText(message.message)
+    if (message.senderType === 'CUSTOMER')
+      return cleanRequirementText(message.message)
   }
   return ''
 }
@@ -515,36 +568,51 @@ function truncateText(value: string, maxLength: number) {
   return `${trimmed.slice(0, Math.max(0, maxLength - 3)).trim()}...`
 }
 
-function buildConsultationTitle(
-  sourceText: string,
-) {
+function buildConsultationTitle(sourceText: string) {
   const normalized = normalizeText(sourceText)
   const object =
-    normalized.includes('thanh long') || normalized.includes('cay trong') || normalized.includes('nong nghiep') || normalized.includes('ca phe') || normalized.includes('vuon')
+    normalized.includes('thanh long') ||
+    normalized.includes('cay trong') ||
+    normalized.includes('nong nghiep') ||
+    normalized.includes('ca phe') ||
+    normalized.includes('vuon')
       ? 'cây trồng'
       : normalized.includes('toa nha') || normalized.includes('cong trinh')
-      ? 'công trình'
-      : normalized.includes('kho bai') || normalized.includes('logistics') || normalized.includes('container')
-        ? 'kho bãi/logistics'
-        : normalized.includes('su kien') || normalized.includes('dong nguoi') || normalized.includes('dam dong')
-          ? 'sự kiện/khu đông người'
-          : normalized.includes('nha may') || normalized.includes('khu cong nghiep')
-            ? 'nhà máy/khu công nghiệp'
-      : normalized.includes('moi truong') || normalized.includes('ngap') || normalized.includes('sat lo')
-          ? 'môi trường'
-          : normalized.includes('chay rung') || normalized.includes('diem nhiet')
-            ? 'cháy rừng/điểm nhiệt'
-            : normalized.includes('giao thong')
-              ? 'giao thông'
-                    : normalized.includes('duong ong') || normalized.includes('ro ri')
+        ? 'công trình'
+        : normalized.includes('kho bai') ||
+            normalized.includes('logistics') ||
+            normalized.includes('container')
+          ? 'kho bãi/logistics'
+          : normalized.includes('su kien') ||
+              normalized.includes('dong nguoi') ||
+              normalized.includes('dam dong')
+            ? 'sự kiện/khu đông người'
+            : normalized.includes('nha may') ||
+                normalized.includes('khu cong nghiep')
+              ? 'nhà máy/khu công nghiệp'
+              : normalized.includes('moi truong') ||
+                  normalized.includes('ngap') ||
+                  normalized.includes('sat lo')
+                ? 'môi trường'
+                : normalized.includes('chay rung') ||
+                    normalized.includes('diem nhiet')
+                  ? 'cháy rừng/điểm nhiệt'
+                  : normalized.includes('giao thong')
+                    ? 'giao thông'
+                    : normalized.includes('duong ong') ||
+                        normalized.includes('ro ri')
                       ? 'đường ống/hành lang tuyến'
-                      : normalized.includes('cau') || normalized.includes('mat duong') || normalized.includes('sut lun')
+                      : normalized.includes('cau') ||
+                          normalized.includes('mat duong') ||
+                          normalized.includes('sut lun')
                         ? 'cầu/đường'
-                : normalized.includes('tam pin') || normalized.includes('solar')
-                ? 'tấm pin năng lượng mặt trời'
-                : normalized.includes('duong day dien') || normalized.includes('tram bien ap')
-                  ? 'đường dây điện/trạm biến áp'
-                  : 'khu vực'
+                        : normalized.includes('tam pin') ||
+                            normalized.includes('solar')
+                          ? 'tấm pin năng lượng mặt trời'
+                          : normalized.includes('duong day dien') ||
+                              normalized.includes('tram bien ap')
+                            ? 'đường dây điện/trạm biến áp'
+                            : 'khu vực'
 
   const title = `Giám sát ${object}`
   return truncateText(title, 96)
@@ -553,11 +621,11 @@ function buildConsultationTitle(
 function looksLikeGeneratedDetailTitle(title: string) {
   const normalized = normalizeText(title)
   return (
-    normalized.includes('phat hien')
-    || normalized.includes('nut vo')
-    || normalized.includes('hu hong')
-    || normalized.includes('diem nong')
-    || normalized.includes('kiem tra')
+    normalized.includes('phat hien') ||
+    normalized.includes('nut vo') ||
+    normalized.includes('hu hong') ||
+    normalized.includes('diem nong') ||
+    normalized.includes('kiem tra')
   )
 }
 
@@ -570,46 +638,87 @@ function collectCustomerIntent(messages: ConsultationMessage[]) {
     }))
     .filter((message) => message.clean)
   const directAnswers = customerTexts
-    .filter((message) => !normalizeText(message.raw).startsWith('toi muon tao yeu cau giam sat:'))
+    .filter(
+      (message) =>
+        !normalizeText(message.raw).startsWith(
+          'toi muon tao yeu cau giam sat:',
+        ),
+    )
     .map((message) => message.clean)
   const normalized = normalizeText(
-    (directAnswers.length ? directAnswers : customerTexts.map((message) => message.clean)).join('\n'),
+    (directAnswers.length
+      ? directAnswers
+      : customerTexts.map((message) => message.clean)
+    ).join('\n'),
   )
   const goals: string[] = []
   const focusAreas: string[] = []
   const deliverables: string[] = []
 
-  if (normalized.includes('nut vo') || normalized.includes('hu hong') || normalized.includes('vet nut')) goals.push('AI check nứt vỡ/hư hỏng')
-  if (normalized.includes('diem nong') || normalized.includes('nhiet')) goals.push('phát hiện điểm nóng')
+  if (
+    normalized.includes('nut vo') ||
+    normalized.includes('hu hong') ||
+    normalized.includes('vet nut')
+  )
+    goals.push('AI check nứt vỡ/hư hỏng')
+  if (normalized.includes('diem nong') || normalized.includes('nhiet'))
+    goals.push('phát hiện điểm nóng')
   if (normalized.includes('an toan')) goals.push('rà soát an toàn khu vực')
   if (normalized.includes('tien do')) goals.push('theo dõi tiến độ')
-  if (normalized.includes('xuong cap')) goals.push('phát hiện dấu hiệu xuống cấp')
-  if (normalized.includes('tham nuoc') || normalized.includes('tham dot')) goals.push('kiểm tra thấm nước/thấm dột')
+  if (normalized.includes('xuong cap'))
+    goals.push('phát hiện dấu hiệu xuống cấp')
+  if (normalized.includes('tham nuoc') || normalized.includes('tham dot'))
+    goals.push('kiểm tra thấm nước/thấm dột')
 
   if (normalized.includes('mat dung')) focusAreas.push('mặt đứng')
   if (normalized.includes('mat tien')) focusAreas.push('mặt tiền')
   if (normalized.includes('mai')) focusAreas.push('mái')
   if (normalized.includes('khu ky thuat')) focusAreas.push('khu kỹ thuật')
   if (normalized.includes('toan bo')) focusAreas.push('toàn bộ công trình')
-  if (normalized.includes('dau hieu bat thuong')) focusAreas.push('khu vực có dấu hiệu bất thường')
+  if (normalized.includes('dau hieu bat thuong'))
+    focusAreas.push('khu vực có dấu hiệu bất thường')
 
-  if (normalized.includes('anh') || normalized.includes('video') || normalized.includes('minh chung')) {
+  if (
+    normalized.includes('anh') ||
+    normalized.includes('video') ||
+    normalized.includes('minh chung')
+  ) {
     deliverables.push('ảnh/video minh chứng')
   }
   if (normalized.includes('bao cao')) deliverables.push('báo cáo tổng hợp')
-  if (normalized.includes('danh dau vi tri') || normalized.includes('vi tri bat thuong')) {
+  if (
+    normalized.includes('danh dau vi tri') ||
+    normalized.includes('vi tri bat thuong')
+  ) {
     deliverables.push('đánh dấu vị trí bất thường')
   }
-  if (normalized.includes('ban do') || normalized.includes('khu vuc co van de')) {
+  if (
+    normalized.includes('ban do') ||
+    normalized.includes('khu vuc co van de')
+  ) {
     deliverables.push('bản đồ khu vực có vấn đề')
   }
-  if (normalized.includes('toa do') || normalized.includes('vi tri tren ban do')) {
+  if (
+    normalized.includes('toa do') ||
+    normalized.includes('vi tri tren ban do')
+  ) {
     deliverables.push('tọa độ/vị trí đánh dấu trên bản đồ')
   }
-  if (normalized.includes('bao khan') || normalized.includes('canh bao') || normalized.includes('email') || normalized.includes('sms') || normalized.includes('dien thoai')) {
+  if (
+    normalized.includes('bao khan') ||
+    normalized.includes('canh bao') ||
+    normalized.includes('email') ||
+    normalized.includes('sms') ||
+    normalized.includes('dien thoai')
+  ) {
     deliverables.push('cảnh báo khi phát hiện bất thường')
   }
-  if (normalized.includes('dinh ky') || normalized.includes('hang tuan') || normalized.includes('hang thang') || normalized.includes('so sanh thay doi')) {
+  if (
+    normalized.includes('dinh ky') ||
+    normalized.includes('hang tuan') ||
+    normalized.includes('hang thang') ||
+    normalized.includes('so sanh thay doi')
+  ) {
     deliverables.push('theo dõi định kỳ/so sánh thay đổi')
   }
 
@@ -628,16 +737,22 @@ function buildIntentSummary(
   const customerIntent = collectCustomerIntent(messages)
   const fallbackSummary = consultation.requirementSummary || ''
   const normalizedFallback = normalizeText(fallbackSummary)
-  const normalizedConversation = normalizeText(messages.map((message) => message.message).join('\n'))
-  const agricultureIntent = normalizedConversation.includes('thanh long') || normalizedConversation.includes('cay trong') || normalizedConversation.includes('nong nghiep') || normalizedConversation.includes('vuon')
-  const object =
-    service?.name
-      ? service.name.replace(/^giám sát\s+/i, '').toLowerCase()
-      : agricultureIntent
-        ? 'cây trồng/vườn'
-        : normalizedFallback.includes('toa nha') || normalizedFallback.includes('cong trinh')
-      ? 'tòa nhà/công trình'
-      : 'khu vực giám sát'
+  const normalizedConversation = normalizeText(
+    messages.map((message) => message.message).join('\n'),
+  )
+  const agricultureIntent =
+    normalizedConversation.includes('thanh long') ||
+    normalizedConversation.includes('cay trong') ||
+    normalizedConversation.includes('nong nghiep') ||
+    normalizedConversation.includes('vuon')
+  const object = service?.name
+    ? service.name.replace(/^giám sát\s+/i, '').toLowerCase()
+    : agricultureIntent
+      ? 'cây trồng/vườn'
+      : normalizedFallback.includes('toa nha') ||
+          normalizedFallback.includes('cong trinh')
+        ? 'tòa nhà/công trình'
+        : 'khu vực giám sát'
   const goalText = customerIntent.goals.length
     ? customerIntent.goals.join(', ')
     : agricultureIntent
@@ -672,11 +787,7 @@ export function buildDraftFromConsultation(
   const summarySource = intent.summary || customerMessages.at(-1) || ''
 
   const title = buildConsultationTitle(
-    [
-      summarySource,
-      ...customerMessages,
-      service?.name ?? '',
-    ].join('\n'),
+    [summarySource, ...customerMessages, service?.name ?? ''].join('\n'),
   )
 
   const descriptionParts = [
@@ -690,10 +801,7 @@ export function buildDraftFromConsultation(
   }
 }
 
-function isChatAnswerTitle(
-  title: string,
-  messages: ConsultationMessage[],
-) {
+function isChatAnswerTitle(title: string, messages: ConsultationMessage[]) {
   const normalizedTitle = normalizeText(title.trim())
   if (!normalizedTitle) return true
 
@@ -714,25 +822,33 @@ type RequirementQuickGroup = {
   replies: string[]
 }
 
-function mergeRequirementGroups(
-  groups: RequirementQuickGroup[],
-) {
+function mergeRequirementGroups(groups: RequirementQuickGroup[]) {
   const byLabel = new Map<string, RequirementQuickGroup>()
   groups.forEach((group) => {
     const existing = byLabel.get(group.label)
     if (!existing) {
-      byLabel.set(group.label, { label: group.label, replies: [...group.replies] })
+      byLabel.set(group.label, {
+        label: group.label,
+        replies: [...group.replies],
+      })
       return
     }
-    existing.replies = [...new Set([...existing.replies, ...group.replies])].slice(0, 6)
+    existing.replies = [
+      ...new Set([...existing.replies, ...group.replies]),
+    ].slice(0, 6)
   })
   return [...byLabel.values()].slice(0, 4)
 }
 
-function buildRequirementQuickGroups(suggestions: ServiceRequirementSuggestion[]) {
+function buildRequirementQuickGroups(
+  suggestions: ServiceRequirementSuggestion[],
+) {
   const groups = new Map<string, RequirementQuickGroup>()
   suggestions.forEach((suggestion) => {
-    const group = groups.get(suggestion.category) ?? { label: suggestion.category, replies: [] }
+    const group = groups.get(suggestion.category) ?? {
+      label: suggestion.category,
+      replies: [],
+    }
     group.replies.push(suggestion.message || suggestion.label)
     groups.set(suggestion.category, group)
   })
@@ -741,16 +857,39 @@ function buildRequirementQuickGroups(suggestions: ServiceRequirementSuggestion[]
 
 function inferServiceKeywordsFromText(text: string) {
   const normalized = normalizeText(text)
-  if (['thanh long', 'vuon', 'cay trong', 'nong nghiep', 'ca phe', 'lua', 'sau benh', 'thieu nuoc'].some((keyword) => normalized.includes(keyword))) {
+  if (
+    [
+      'thanh long',
+      'vuon',
+      'cay trong',
+      'nong nghiep',
+      'ca phe',
+      'lua',
+      'sau benh',
+      'thieu nuoc',
+    ].some((keyword) => normalized.includes(keyword))
+  ) {
     return ['nong nghiep', 'cay trong', 'ndvi', 'thuc vat']
   }
-  if (['cong trinh', 'toa nha', 'co so ha tang', 'xay dung'].some((keyword) => normalized.includes(keyword))) {
+  if (
+    ['cong trinh', 'toa nha', 'co so ha tang', 'xay dung'].some((keyword) =>
+      normalized.includes(keyword),
+    )
+  ) {
     return ['toa nha', 'co so ha tang', 'cong trinh']
   }
-  if (['kho bai', 'logistics', 'container'].some((keyword) => normalized.includes(keyword))) {
+  if (
+    ['kho bai', 'logistics', 'container'].some((keyword) =>
+      normalized.includes(keyword),
+    )
+  ) {
     return ['kho bai', 'logistics', 'container']
   }
-  if (['su kien', 'dam dong', 'dong nguoi', 'bai do xe'].some((keyword) => normalized.includes(keyword))) {
+  if (
+    ['su kien', 'dam dong', 'dong nguoi', 'bai do xe'].some((keyword) =>
+      normalized.includes(keyword),
+    )
+  ) {
     return ['su kien', 'dong nguoi', 'dam dong']
   }
   return []
@@ -760,46 +899,76 @@ function textMatchesService(text: string, service?: ServiceOption) {
   if (!service) return false
   const keywords = inferServiceKeywordsFromText(text)
   if (keywords.length === 0) return true
-  const haystack = normalizeText(`${service.id} ${service.name} ${service.description ?? ''}`)
+  const haystack = normalizeText(
+    `${service.id} ${service.name} ${service.description ?? ''}`,
+  )
   return keywords.some((keyword) => haystack.includes(keyword))
 }
 
 export function CreateOrderPage() {
-  const { meta: mapMeta, error: mapError } = useSimulationMapMeta()
+  const { t } = useI18n(createOrderPageMessages)
+  const { meta: mapMeta, error: mapError } = useSimulationMapMeta(
+    t.mapMetaUnavailable,
+  )
   const zones = useSimulationZones()
   const storedDraft = useMemo(() => readStoredCreateOrderDraft(), [])
-  const [step, setStep] = useState<Step>(isStep(storedDraft?.step) ? storedDraft.step : 1)
+  const [step, setStep] = useState<Step>(
+    isStep(storedDraft?.step) ? storedDraft.step : 1,
+  )
   const [form, setForm] = useState<FormState>(() => ({
     ...createDefaultForm(),
     ...(storedDraft?.form ?? {}),
   }))
   const [services, setServices] = useState<ServiceOption[]>([])
-  const [preferredTimes, setPreferredTimes] = useState<PreferredTimeOption[]>([])
-  const [deliverables, setDeliverables] = useState<ServiceDeliverableOption[]>([])
+  const [preferredTimes, setPreferredTimes] = useState<PreferredTimeOption[]>(
+    [],
+  )
+  const [deliverables, setDeliverables] = useState<ServiceDeliverableOption[]>(
+    [],
+  )
   const [loadingMeta, setLoadingMeta] = useState(true)
   const [metaError, setMetaError] = useState<string | null>(null)
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
-  const [mapPoint, setMapPoint] = useState<MapPoint>(storedDraft?.mapPoint ?? { x: 50, y: 50 })
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({})
+  const [mapPoint, setMapPoint] = useState<MapPoint>(
+    storedDraft?.mapPoint ?? { x: 50, y: 50 },
+  )
   const initialConsultation = isReusableConsultation(storedDraft?.consultation)
-    ? storedDraft?.consultation ?? null
+    ? (storedDraft?.consultation ?? null)
     : null
-  const [consultation, setConsultation] = useState<CustomerConsultation | null>(initialConsultation)
+  const [consultation, setConsultation] = useState<CustomerConsultation | null>(
+    initialConsultation,
+  )
   const [chatMessages, setChatMessages] = useState<ConsultationMessage[]>(
-    initialConsultation ? storedDraft?.chatMessages ?? [] : [],
+    initialConsultation ? (storedDraft?.chatMessages ?? []) : [],
   )
   const [chatText, setChatText] = useState('')
   const [chatBusy, setChatBusy] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
-  const [autoDraft, setAutoDraft] = useState(storedDraft?.autoDraft ?? { title: '', description: '' })
+  const [autoDraft, setAutoDraft] = useState(
+    storedDraft?.autoDraft ?? { title: '', description: '' },
+  )
 
-  const selectedService = services.find((service) => service.id === form.serviceId)
-  const selectedTime = preferredTimes.find((time) => time.id === form.preferredTimeId)
-  const selectedDeliverable = deliverables.find((item) => item.deliverableTypeId === form.deliverableTypeId)
-  const score = useMemo(() => scoreRequest(form), [form])
+  const selectedService = services.find(
+    (service) => service.id === form.serviceId,
+  )
+  const selectedTime = preferredTimes.find(
+    (time) => time.id === form.preferredTimeId,
+  )
+  const selectedDeliverable = deliverables.find(
+    (item) => item.deliverableTypeId === form.deliverableTypeId,
+  )
+  const score = useMemo(
+    () => scoreRequest(form, t.scoreNotes),
+    [form, t.scoreNotes],
+  )
   const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}${
-    mapMeta?.imageVersion ? `?v=${encodeURIComponent(mapMeta.imageVersion)}` : ''
+    mapMeta?.imageVersion
+      ? `?v=${encodeURIComponent(mapMeta.imageVersion)}`
+      : ''
   }`
   const selectedSimPoint = useMemo<[number, number]>(
     () => [toNumber(form.longitude, 0), toNumber(form.latitude, 0)],
@@ -823,7 +992,10 @@ export function CreateOrderPage() {
       chatMessages,
       autoDraft,
     }
-    window.localStorage.setItem(CREATE_ORDER_DRAFT_STORAGE_KEY, JSON.stringify(draft))
+    window.localStorage.setItem(
+      CREATE_ORDER_DRAFT_STORAGE_KEY,
+      JSON.stringify(draft),
+    )
   }, [autoDraft, chatMessages, consultation, form, mapPoint, step])
 
   useEffect(() => {
@@ -845,7 +1017,7 @@ export function CreateOrderPage() {
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        setMetaError(error instanceof Error ? error.message : 'Không tải được dữ liệu tạo yêu cầu.')
+        setMetaError(error instanceof Error ? error.message : t.metaError)
       })
       .finally(() => setLoadingMeta(false))
 
@@ -864,10 +1036,14 @@ export function CreateOrderPage() {
       .then((items) => {
         setDeliverables(items)
         setForm((current) => {
-          const valid = items.some((item) => item.deliverableTypeId === current.deliverableTypeId)
+          const valid = items.some(
+            (item) => item.deliverableTypeId === current.deliverableTypeId,
+          )
           return {
             ...current,
-            deliverableTypeId: valid ? current.deliverableTypeId : items[0]?.deliverableTypeId || '',
+            deliverableTypeId: valid
+              ? current.deliverableTypeId
+              : items[0]?.deliverableTypeId || '',
           }
         })
       })
@@ -883,30 +1059,48 @@ export function CreateOrderPage() {
   }
 
   function applyConsultationToRequest(nextConsultation: CustomerConsultation) {
-    const nextMessages = nextConsultation.messages?.length ? nextConsultation.messages : chatMessages
+    const nextMessages = nextConsultation.messages?.length
+      ? nextConsultation.messages
+      : chatMessages
     const latestIntent = latestCustomerIntentText(nextMessages)
-    const inferredService = findServiceByKeywords(services, inferServiceKeywordsFromText(latestIntent))
-    const recommendedService = findRecommendedService(nextConsultation, services)
-    const nextService = inferredService ?? (
-      textMatchesService(latestIntent, recommendedService) ? recommendedService : undefined
+    const inferredService = findServiceByKeywords(
+      services,
+      inferServiceKeywordsFromText(latestIntent),
     )
-    const draft = buildDraftFromConsultation(nextConsultation, nextMessages, nextService)
+    const recommendedService = findRecommendedService(
+      nextConsultation,
+      services,
+    )
+    const nextService =
+      inferredService ??
+      (textMatchesService(latestIntent, recommendedService)
+        ? recommendedService
+        : undefined)
+    const draft = buildDraftFromConsultation(
+      nextConsultation,
+      nextMessages,
+      nextService,
+    )
 
     setForm((current) => ({
       ...current,
-      serviceId: nextService?.id ?? (!textMatchesService(latestIntent, selectedService) ? '' : current.serviceId),
+      serviceId:
+        nextService?.id ??
+        (!textMatchesService(latestIntent, selectedService)
+          ? ''
+          : current.serviceId),
       title:
-        !current.title.trim()
-        || current.title === autoDraft.title
-        || !textMatchesService(latestIntent, selectedService)
-        || looksLikeGeneratedDetailTitle(current.title)
-        || isChatAnswerTitle(current.title, nextMessages)
+        !current.title.trim() ||
+        current.title === autoDraft.title ||
+        !textMatchesService(latestIntent, selectedService) ||
+        looksLikeGeneratedDetailTitle(current.title) ||
+        isChatAnswerTitle(current.title, nextMessages)
           ? draft.title || current.title
           : current.title,
       description:
-        !current.description.trim()
-        || current.description === autoDraft.description
-        || !textMatchesService(latestIntent, selectedService)
+        !current.description.trim() ||
+        current.description === autoDraft.description ||
+        !textMatchesService(latestIntent, selectedService)
           ? draft.description || current.description
           : current.description,
     }))
@@ -940,14 +1134,14 @@ export function CreateOrderPage() {
 
   function describeChatError(error: unknown) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      return 'AI phản hồi quá lâu. Hệ thống đã dừng chờ để tránh treo màn hình, vui lòng gửi lại hoặc thử câu ngắn hơn.'
+      return t.aiTimeout
     }
     if (error instanceof ApiError) {
       const status = error.status ? ` · ${error.status}` : ''
       return `${error.message} (${error.method} ${error.path}${status})`
     }
     if (error instanceof Error && error.message) return error.message
-    return 'Không nhận được phản hồi từ backend.'
+    return t.noBackendResponse
   }
 
   async function recoverConsultationAfterSendFailure(consultationId: string) {
@@ -966,7 +1160,8 @@ export function CreateOrderPage() {
     } catch (error) {
       if (
         error instanceof ApiError &&
-        (error.status === 404 || error.message.toLowerCase().includes('consultation not found'))
+        (error.status === 404 ||
+          error.message.toLowerCase().includes('consultation not found'))
       ) {
         setConsultation(null)
         setChatMessages([])
@@ -978,7 +1173,10 @@ export function CreateOrderPage() {
   }
 
   function buildConsultationRequestContext(latestMessage = '') {
-    const keepCurrentRequest = textMatchesService(latestMessage, selectedService)
+    const keepCurrentRequest = textMatchesService(
+      latestMessage,
+      selectedService,
+    )
     return [
       'Thông tin vị trí/phạm vi từ Step 1:',
       `- Địa chỉ/khu vực: ${form.address || 'chưa nhập'}.`,
@@ -1007,7 +1205,11 @@ export function CreateOrderPage() {
     setMapPoint({ x: mapX, y: mapY })
 
     if (mapMeta) {
-      const { simX, simY } = viewportPercentToWorld({ x: mapX, y: mapY }, mapMeta, MAP_IMAGE_CROP)
+      const { simX, simY } = viewportPercentToWorld(
+        { x: mapX, y: mapY },
+        mapMeta,
+        MAP_IMAGE_CROP,
+      )
       update('latitude', simY.toFixed(3))
       update('longitude', simX.toFixed(3))
       const zone = findContainingZone([simX, simY], zones)
@@ -1023,30 +1225,40 @@ export function CreateOrderPage() {
     const nextErrors: Partial<Record<keyof FormState, string>> = {}
 
     if (targetStep >= 1) {
-      if (!form.address.trim()) nextErrors.address = 'Nhập địa chỉ/khu vực cần giám sát.'
-      if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = 'Latitude không hợp lệ.'
-      if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = 'Longitude không hợp lệ.'
+      if (!form.address.trim()) nextErrors.address = t.validation.address
+      if (!Number.isFinite(Number(form.latitude)))
+        nextErrors.latitude = t.validation.latitude
+      if (!Number.isFinite(Number(form.longitude)))
+        nextErrors.longitude = t.validation.longitude
       if (!monitoringValidation.valid) {
-        nextErrors.address = 'Vị trí này nằm ngoài các vùng giám sát đã cấu hình. Vui lòng chọn lại điểm trong vùng phục vụ.'
+        nextErrors.address = t.validation.outsideZone
       }
       if (!restrictedValidation.valid) {
-        nextErrors.address = `Vùng giám sát chạm vùng cấm: ${restrictedValidation.blockedZones
-          .map((zone) => zone.name)
-          .join(', ')}. Vui lòng chọn điểm hoặc giảm bán kính.`
+        nextErrors.address = t.validation.blockedZone(
+          restrictedValidation.blockedZones.map((zone) => zone.name).join(', '),
+        )
       }
     }
     if (targetStep >= 2) {
-      if (!form.serviceId) nextErrors.serviceId = 'Chọn dịch vụ giám sát.'
-      if (!form.title.trim()) nextErrors.title = 'Nhập tiêu đề yêu cầu.'
+      if (!form.serviceId) nextErrors.serviceId = t.validation.serviceId
+      if (!form.title.trim()) nextErrors.title = t.validation.title
     }
     if (targetStep >= 3) {
-      if (!form.preferredDateFrom) nextErrors.preferredDateFrom = 'Chọn ngày bắt đầu.'
-      if (!form.preferredDateTo) nextErrors.preferredDateTo = 'Chọn ngày kết thúc.'
-      if (form.preferredDateFrom && form.preferredDateTo && form.preferredDateFrom > form.preferredDateTo) {
-        nextErrors.preferredDateTo = 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.'
+      if (!form.preferredDateFrom)
+        nextErrors.preferredDateFrom = t.validation.preferredDateFrom
+      if (!form.preferredDateTo)
+        nextErrors.preferredDateTo = t.validation.preferredDateTo
+      if (
+        form.preferredDateFrom &&
+        form.preferredDateTo &&
+        form.preferredDateFrom > form.preferredDateTo
+      ) {
+        nextErrors.preferredDateTo = t.validation.preferredDateOrder
       }
-      if (!form.preferredTimeId) nextErrors.preferredTimeId = 'Chọn khung giờ.'
-      if (!form.deliverableTypeId) nextErrors.deliverableTypeId = 'Chọn kết quả bàn giao.'
+      if (!form.preferredTimeId)
+        nextErrors.preferredTimeId = t.validation.preferredTimeId
+      if (!form.deliverableTypeId)
+        nextErrors.deliverableTypeId = t.validation.deliverableTypeId
     }
 
     setErrors(nextErrors)
@@ -1060,7 +1272,7 @@ export function CreateOrderPage() {
 
   async function startConsultation() {
     if (!authSession.getAccessToken()) {
-      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      appendChatNotice(t.loginRequiredForAi)
       return
     }
     setChatBusy(true)
@@ -1096,10 +1308,12 @@ export function CreateOrderPage() {
     } catch (error) {
       console.error('Start AI consultation failed', error)
       const recovered = startedConsultationId
-        ? await recoverConsultationAfterSendFailure(startedConsultationId).catch(() => false)
+        ? await recoverConsultationAfterSendFailure(
+            startedConsultationId,
+          ).catch(() => false)
         : false
       if (!recovered) {
-        const message = `Không lấy được phản hồi AI. ${describeChatError(error)}`
+        const message = t.aiReplyFailed(describeChatError(error))
         appendChatNotice(message)
         setSubmitError(message)
       }
@@ -1112,10 +1326,12 @@ export function CreateOrderPage() {
     const text = (messageOverride ?? chatText).trim()
     if (!text) return
     if (!authSession.getAccessToken()) {
-      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      appendChatNotice(t.loginRequiredForAi)
       return
     }
-    let activeConsultationId = isReusableConsultation(consultation) ? consultation?.id : undefined
+    let activeConsultationId = isReusableConsultation(consultation)
+      ? consultation?.id
+      : undefined
     const localMessage: ConsultationMessage = {
       id: `local-${Date.now()}`,
       senderType: 'CUSTOMER',
@@ -1133,16 +1349,17 @@ export function CreateOrderPage() {
     }
     setChatBusy(true)
     setChatText('')
-    setChatMessages((current) => [
-      ...current,
-      localMessage,
-    ])
+    setChatMessages((current) => [...current, localMessage])
     const requestContext = buildConsultationRequestContext(text)
     try {
-      const currentConsultation = isReusableConsultation(consultation) ? consultation : null
-      const session = currentConsultation ?? (await withConsultationTimeout((signal) =>
-        customerApi.startConsultation(signal),
-      ))
+      const currentConsultation = isReusableConsultation(consultation)
+        ? consultation
+        : null
+      const session =
+        currentConsultation ??
+        (await withConsultationTimeout((signal) =>
+          customerApi.startConsultation(signal),
+        ))
       if (!currentConsultation) setConsultation(session)
       activeConsultationId = session.id
       const nextConsultation = await withConsultationTimeout((signal) =>
@@ -1155,10 +1372,12 @@ export function CreateOrderPage() {
     } catch (error) {
       console.error('Send AI consultation message failed', error)
       const recovered = activeConsultationId
-        ? await recoverConsultationAfterSendFailure(activeConsultationId).catch(() => false)
+        ? await recoverConsultationAfterSendFailure(activeConsultationId).catch(
+            () => false,
+          )
         : false
       if (!recovered) {
-        const message = `Không lấy được phản hồi AI. ${describeChatError(error)}`
+        const message = t.aiReplyFailed(describeChatError(error))
         appendChatNotice(message)
         setSubmitError(message)
       }
@@ -1212,7 +1431,9 @@ export function CreateOrderPage() {
             resolution: form.resolution,
             radiusM: form.radiusM,
             estimatedAreaHa: Number(calcArea(form.radiusM)),
-            consultationId: isReusableConsultation(consultation) ? consultation?.id : undefined,
+            consultationId: isReusableConsultation(consultation)
+              ? consultation?.id
+              : undefined,
             readinessScore: score.score,
           },
         },
@@ -1229,7 +1450,7 @@ export function CreateOrderPage() {
       window.localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
       setCreatedId(result.id)
     } catch (error: unknown) {
-      setSubmitError(error instanceof Error ? error.message : 'Không tạo được request.')
+      setSubmitError(error instanceof Error ? error.message : t.submitFailed)
     } finally {
       setSubmitting(false)
     }
@@ -1238,15 +1459,31 @@ export function CreateOrderPage() {
   if (createdId) {
     return (
       <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
-        <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--green-bg)', color: 'var(--green-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 18px' }}>
+        <div
+          style={{
+            width: 58,
+            height: 58,
+            borderRadius: '50%',
+            background: 'var(--green-bg)',
+            color: 'var(--green-fg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 26,
+            margin: '0 auto 18px',
+          }}
+        >
           ✓
         </div>
-        <h2 style={{ margin: 0, fontSize: 22 }}>Đã tạo request</h2>
+        <h2 style={{ margin: 0, fontSize: 22 }}>{t.createdTitle}</h2>
         <p style={{ color: 'var(--tx3)', lineHeight: 1.6 }}>
-          Yêu cầu đã được gửi qua API thật. Bộ phận vận hành có thể thấy trong hàng chờ để review và approve.
+          {t.createdDescription}
         </p>
-        <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-p">
-          Xem đơn của tôi
+        <a
+          href={customerHref({ screen: 'orders' })}
+          className="odm-btn odm-btn-p"
+        >
+          {t.viewMyOrders}
         </a>
       </div>
     )
@@ -1254,19 +1491,37 @@ export function CreateOrderPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+        }}
+      >
         <div>
-          <h1 style={{ margin: 0, fontSize: 22 }}>Tạo yêu cầu giám sát</h1>
+          <h1 style={{ margin: 0, fontSize: 22 }}>{t.pageTitle}</h1>
           <div style={{ marginTop: 4, color: 'var(--tx3)', fontSize: 13 }}>
-            Chọn vị trí trên bản đồ mô phỏng, nhập thông tin cần thiết, dùng AI tư vấn rồi gửi request.
+            {t.pageSubtitle}
           </div>
         </div>
-        <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-gh">
-          Huỷ
+        <a
+          href={customerHref({ screen: 'orders' })}
+          className="odm-btn odm-btn-gh"
+        >
+          {t.cancel}
         </a>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', border: '1px solid var(--bd)', borderRadius: 8, overflow: 'hidden' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          border: '1px solid var(--bd)',
+          borderRadius: 8,
+          overflow: 'hidden',
+        }}
+      >
         {([1, 2, 3, 4] as Step[]).map((item) => (
           <button
             key={item}
@@ -1276,7 +1531,12 @@ export function CreateOrderPage() {
               minHeight: 48,
               border: 0,
               borderRight: item === 4 ? 0 : '1px solid var(--bd)',
-              background: step === item ? 'var(--ink)' : item < step ? 'var(--sf2)' : 'var(--sf)',
+              background:
+                step === item
+                  ? 'var(--ink)'
+                  : item < step
+                    ? 'var(--sf2)'
+                    : 'var(--sf)',
               color: step === item ? 'var(--inkfg)' : 'var(--tx)',
               fontWeight: 700,
               textAlign: 'left',
@@ -1284,16 +1544,26 @@ export function CreateOrderPage() {
               cursor: item < step ? 'pointer' : 'default',
             }}
           >
-            <span style={{ marginRight: 10, color: step === item ? 'inherit' : 'var(--tx3)' }}>{item}</span>
-            {STEP_LABELS[item]}
+            <span
+              style={{
+                marginRight: 10,
+                color: step === item ? 'inherit' : 'var(--tx3)',
+              }}
+            >
+              {item}
+            </span>
+            {t.stepLabels[item]}
           </button>
         ))}
       </div>
 
-      {(metaError || mapError) && <Notice tone="error">{metaError || mapError}</Notice>}
+      {(metaError || mapError) && (
+        <Notice tone="error">{metaError || mapError}</Notice>
+      )}
 
       {step === 1 && (
         <StepLocation
+          t={t}
           form={form}
           mapImageUrl={mapImageUrl}
           mapMeta={mapMeta}
@@ -1308,6 +1578,7 @@ export function CreateOrderPage() {
       )}
       {step === 2 && (
         <StepService
+          t={t}
           form={form}
           services={services}
           loadingMeta={loadingMeta}
@@ -1326,10 +1597,18 @@ export function CreateOrderPage() {
         />
       )}
       {step === 3 && (
-        <StepSchedule form={form} preferredTimes={preferredTimes} deliverables={deliverables} errors={errors} update={update} />
+        <StepSchedule
+          t={t}
+          form={form}
+          preferredTimes={preferredTimes}
+          deliverables={deliverables}
+          errors={errors}
+          update={update}
+        />
       )}
       {step === 4 && (
         <StepReview
+          t={t}
           form={form}
           score={score}
           selectedService={selectedService}
@@ -1343,18 +1622,31 @@ export function CreateOrderPage() {
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         {step > 1 && (
-          <button type="button" className="odm-btn odm-btn-gh" onClick={() => setStep((current) => (current - 1) as Step)}>
-            Quay lại
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={() => setStep((current) => (current - 1) as Step)}
+          >
+            {t.back}
           </button>
         )}
         <div style={{ flex: 1 }} />
         {step < 4 ? (
-          <button type="button" className="odm-btn odm-btn-p" onClick={handleNext}>
-            Tiếp tục: {STEP_LABELS[(step + 1) as Step]}
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={handleNext}
+          >
+            {t.continueTo(t.stepLabels[(step + 1) as Step])}
           </button>
         ) : (
-          <button type="button" className="odm-btn odm-btn-p" onClick={handleSubmit} disabled={submitting || loadingMeta}>
-            {submitting ? 'Đang gửi request...' : 'Gửi request'}
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={handleSubmit}
+            disabled={submitting || loadingMeta}
+          >
+            {submitting ? t.submitting : t.submit}
           </button>
         )}
       </div>
@@ -1363,6 +1655,7 @@ export function CreateOrderPage() {
 }
 
 function StepLocation({
+  t,
   form,
   mapImageUrl,
   mapMeta,
@@ -1374,6 +1667,7 @@ function StepLocation({
   onMapClick,
   update,
 }: {
+  t: CreateOrderPageT
   form: FormState
   mapImageUrl: string
   mapMeta: SimulationMapMeta | null
@@ -1385,34 +1679,46 @@ function StepLocation({
   onMapClick: (event: React.MouseEvent<HTMLDivElement>) => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const tt = t.stepLocation
   const radiusPx = clamp(form.radiusM / SIM_RADIUS_SCALE, 34, 145)
   const restrictedZones = zones.filter((zone) => zone.restricted)
-  const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
+  const blockedZoneIds = new Set(
+    restrictedValidation.blockedZones.map((zone) => zone.id),
+  )
   const isBlocked = !restrictedValidation.valid
-  const isOutsideMonitoringZone = monitoringValidation.checked && !monitoringValidation.valid
+  const isOutsideMonitoringZone =
+    monitoringValidation.checked && !monitoringValidation.valid
   const hasLocationError = isBlocked || isOutsideMonitoringZone
   const statusTone = isOutsideMonitoringZone
     ? {
         border: '#f59e0b',
         background: '#fff7ed',
         color: '#9a3412',
-        title: 'Ngoài vùng phục vụ',
-        message: 'Điểm này chưa thuộc zone giám sát nào. Hãy bấm vào phần bản đồ nằm trong khu vực xanh để tạo request.',
+        title: tt.outsideZoneTitle,
+        message: tt.outsideZoneMessage,
       }
     : isBlocked
       ? {
           border: 'var(--red-fg)',
           background: 'var(--red-bg)',
           color: 'var(--red-fg)',
-          title: 'Chạm vùng cấm bay',
-          message: `Bán kính giám sát đang lấn vào vùng cấm ${restrictedValidation.blockedZones.map((zone) => zone.name).join(', ')}. Vui lòng chọn điểm khác hoặc giảm bán kính.`,
+          title: tt.blockedTitle,
+          message: tt.blockedMessage(
+            restrictedValidation.blockedZones
+              .map((zone) => zone.name)
+              .join(', '),
+          ),
         }
       : {
           border: 'var(--green-dot)',
           background: 'var(--green-bg)',
           color: 'var(--green-fg)',
-          title: 'Hợp lệ',
-          message: `Nằm trong vùng giám sát${monitoringValidation.zone?.name ? ` ${monitoringValidation.zone.name}` : ''} và không chạm vùng cấm bay.`,
+          title: tt.validTitle,
+          message: tt.validMessage(
+            monitoringValidation.zone?.name
+              ? ` ${monitoringValidation.zone.name}`
+              : '',
+          ),
         }
   const imageStyle = simulationMapImageStyle(MAP_IMAGE_CROP)
   const layerStyle: React.CSSProperties = {
@@ -1422,7 +1728,14 @@ function StepLocation({
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16, alignItems: 'start' }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) 360px',
+        gap: 16,
+        alignItems: 'start',
+      }}
+    >
       <div
         role="button"
         tabIndex={0}
@@ -1442,11 +1755,9 @@ function StepLocation({
           outline: 'none',
         }}
       >
-        <div
-          style={layerStyle}
-        >
+        <div style={layerStyle}>
           <img
-            alt="3D simulation map"
+            alt={tt.simulationMapAlt}
             src={mapImageUrl}
             style={{
               position: 'absolute',
@@ -1459,53 +1770,149 @@ function StepLocation({
               outline: 'none',
             }}
           />
-          {mapMeta && restrictedZones.map((zone) => {
-            const points = zone.coordinates
-              .map((point) => simPointToPercent(point, mapMeta))
-              .map((point) => `${point.x}% ${point.y}%`)
-              .join(', ')
-            const blocked = blockedZoneIds.has(zone.id)
+          {mapMeta &&
+            restrictedZones.map((zone) => {
+              const points = zone.coordinates
+                .map((point) => simPointToPercent(point, mapMeta))
+                .map((point) => `${point.x}% ${point.y}%`)
+                .join(', ')
+              const blocked = blockedZoneIds.has(zone.id)
 
-            return (
-              <div
-                key={zone.id}
-                title={zone.name}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  clipPath: `polygon(${points})`,
-                  background: blocked ? 'rgba(220,38,38,.28)' : 'rgba(220,38,38,.14)',
-                  border: 0,
-                  pointerEvents: 'none',
-                }}
-              />
-            )
-          })}
+              return (
+                <div
+                  key={zone.id}
+                  title={zone.name}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    clipPath: `polygon(${points})`,
+                    background: blocked
+                      ? 'rgba(220,38,38,.28)'
+                      : 'rgba(220,38,38,.14)',
+                    border: 0,
+                    pointerEvents: 'none',
+                  }}
+                />
+              )
+            })}
         </div>
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: radiusPx * 2, height: radiusPx * 2, transform: 'translate(-50%, -50%)', borderRadius: '50%', border: `2px solid ${hasLocationError ? 'var(--red-fg)' : 'var(--blue-solid)'}`, background: hasLocationError ? 'rgba(220,38,38,.18)' : 'rgba(31,111,214,.16)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: `${mapPoint.x}%`, top: `${mapPoint.y}%`, width: 14, height: 14, transform: 'translate(-50%, -50%)', borderRadius: '50%', background: hasLocationError ? 'var(--red-fg)' : 'var(--blue-solid)', border: 0, boxShadow: hasLocationError ? '0 0 0 2px rgba(220,38,38,.24)' : '0 0 0 2px rgba(31,111,214,.24)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: 12, bottom: 12, display: 'flex', gap: 8, alignItems: 'center', background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
-          <span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(220,38,38,.22)', border: '1px solid var(--red-fg)' }} />
-          Vùng cấm bay
+        <div
+          style={{
+            position: 'absolute',
+            left: `${mapPoint.x}%`,
+            top: `${mapPoint.y}%`,
+            width: radiusPx * 2,
+            height: radiusPx * 2,
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            border: `2px solid ${hasLocationError ? 'var(--red-fg)' : 'var(--blue-solid)'}`,
+            background: hasLocationError
+              ? 'rgba(220,38,38,.18)'
+              : 'rgba(31,111,214,.16)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: `${mapPoint.x}%`,
+            top: `${mapPoint.y}%`,
+            width: 14,
+            height: 14,
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            background: hasLocationError
+              ? 'var(--red-fg)'
+              : 'var(--blue-solid)',
+            border: 0,
+            boxShadow: hasLocationError
+              ? '0 0 0 2px rgba(220,38,38,.24)'
+              : '0 0 0 2px rgba(31,111,214,.24)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: 12,
+            bottom: 12,
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            background: 'var(--sf)',
+            border: '1px solid var(--bd)',
+            borderRadius: 8,
+            padding: '8px 10px',
+            fontSize: 12,
+          }}
+        >
+          <span
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 3,
+              background: 'rgba(220,38,38,.22)',
+              border: '1px solid var(--red-fg)',
+            }}
+          />
+          {tt.restrictedZoneLegend}
         </div>
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Vị trí và bán kính</div>
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Địa chỉ/khu vực" error={errors.address}>
-            <textarea value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="VD: KCN Long Hậu, Cần Giuộc, Long An" rows={4} style={{ ...inputStyle, height: 92, paddingTop: 8, resize: 'vertical' }} />
+        <div style={cardHead}>{tt.locationCardTitle}</div>
+        <div
+          style={{
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+          }}
+        >
+          <Field label={tt.addressLabel} error={errors.address}>
+            <textarea
+              value={form.address}
+              onChange={(event) => update('address', event.target.value)}
+              placeholder={tt.addressPlaceholder}
+              rows={4}
+              style={{
+                ...inputStyle,
+                height: 92,
+                paddingTop: 8,
+                resize: 'vertical',
+              }}
+            />
           </Field>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="Sim Y / Latitude" error={errors.latitude}>
-              <input value={form.latitude} onChange={(event) => update('latitude', event.target.value)} style={inputStyle} />
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
+          >
+            <Field label={tt.latitudeLabel} error={errors.latitude}>
+              <input
+                value={form.latitude}
+                onChange={(event) => update('latitude', event.target.value)}
+                style={inputStyle}
+              />
             </Field>
-            <Field label="Sim X / Longitude" error={errors.longitude}>
-              <input value={form.longitude} onChange={(event) => update('longitude', event.target.value)} style={inputStyle} />
+            <Field label={tt.longitudeLabel} error={errors.longitude}>
+              <input
+                value={form.longitude}
+                onChange={(event) => update('longitude', event.target.value)}
+                style={inputStyle}
+              />
             </Field>
           </div>
-          <Field label={`Bán kính giám sát: ${form.radiusM} m`}>
-            <input type="range" min={100} max={1500} step={50} value={form.radiusM} onChange={(event) => update('radiusM', Number(event.target.value))} style={{ width: '100%' }} />
+          <Field label={tt.radiusLabel(form.radiusM)}>
+            <input
+              type="range"
+              min={100}
+              max={1500}
+              step={50}
+              value={form.radiusM}
+              onChange={(event) =>
+                update('radiusM', Number(event.target.value))
+              }
+              style={{ width: '100%' }}
+            />
           </Field>
           <div
             style={{
@@ -1519,7 +1926,14 @@ function StepLocation({
               fontWeight: 700,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 4,
+              }}
+            >
               <span
                 aria-hidden="true"
                 style={{
@@ -1534,9 +1948,21 @@ function StepLocation({
             </div>
             <div style={{ fontWeight: 600 }}>{statusTone.message}</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Metric label="Diện tích ước tính" value={`${calcArea(form.radiusM)} ha`} />
-            <Metric label="Vùng giám sát" value={isOutsideMonitoringZone ? 'Ngoài vùng' : monitoringValidation.zone?.name ?? 'Đã kiểm tra'} />
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
+          >
+            <Metric
+              label={tt.areaEstimate}
+              value={`${calcArea(form.radiusM)} ha`}
+            />
+            <Metric
+              label={tt.monitoringZone}
+              value={
+                isOutsideMonitoringZone
+                  ? tt.outsideZoneValue
+                  : (monitoringValidation.zone?.name ?? tt.checkedValue)
+              }
+            />
           </div>
         </div>
       </div>
@@ -1545,6 +1971,7 @@ function StepLocation({
 }
 
 function StepService({
+  t,
   form,
   services,
   loadingMeta,
@@ -1561,6 +1988,7 @@ function StepService({
   clearRequestConsultation,
   update,
 }: {
+  t: CreateOrderPageT
   form: FormState
   services: ServiceOption[]
   loadingMeta: boolean
@@ -1577,12 +2005,16 @@ function StepService({
   clearRequestConsultation: () => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const tt = t.stepService
   const recommendedService = findRecommendedService(consultation, services)
   const aiSuggestedServices = recommendedService ? [recommendedService] : []
   const suggestionServiceId = selectedService?.id ?? recommendedService?.id
-  const [requirementSuggestions, setRequirementSuggestions] = useState<ServiceRequirementSuggestion[]>([])
+  const [requirementSuggestions, setRequirementSuggestions] = useState<
+    ServiceRequirementSuggestion[]
+  >([])
   const requirementGroups = buildRequirementQuickGroups(requirementSuggestions)
-  const [showRequirementShortcuts, setShowRequirementShortcuts] = useState(false)
+  const [showRequirementShortcuts, setShowRequirementShortcuts] =
+    useState(false)
   const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -1607,21 +2039,44 @@ function StepService({
   }, [chatMessages, chatBusy])
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) 360px',
+        gap: 16,
+      }}
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={card}>
           <div style={cardHead}>
-            AI tư vấn nhu cầu
+            {tt.aiCardTitle}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button type="button" className="odm-btn odm-btn-gh" onClick={clearRequestConsultation} disabled={chatBusy}>
-                Xoá toàn bộ
+              <button
+                type="button"
+                className="odm-btn odm-btn-gh"
+                onClick={clearRequestConsultation}
+                disabled={chatBusy}
+              >
+                {tt.clearAll}
               </button>
-              <button type="button" className="odm-btn odm-btn-gh" onClick={startConsultation} disabled={chatBusy}>
-                {consultation ? 'Tư vấn lại' : 'Nhờ AI tư vấn'}
+              <button
+                type="button"
+                className="odm-btn odm-btn-gh"
+                onClick={startConsultation}
+                disabled={chatBusy}
+              >
+                {consultation ? tt.consultAgain : tt.askAi}
               </button>
             </div>
           </div>
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div
+            style={{
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
             <div
               ref={chatScrollRef}
               style={{
@@ -1635,8 +2090,10 @@ function StepService({
               }}
             >
               {chatMessages.length === 0 && (
-                <div style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}>
-                  AI sẽ hỏi nhu cầu giám sát, mục tiêu, rủi ro cần phát hiện và đề xuất service phù hợp. Location đã lấy từ Step 1; AI không tự quyết lịch bay.
+                <div
+                  style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}
+                >
+                  {tt.emptyChatHint}
                 </div>
               )}
               {chatMessages.map((message) => {
@@ -1656,16 +2113,34 @@ function StepService({
                       whiteSpace: 'pre-wrap',
                     }}
                   >
-                    <div style={{ fontSize: 11, fontWeight: 800, opacity: 0.7, marginBottom: 3 }}>
-                      {mine ? 'Bạn' : 'AI tư vấn'}
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        opacity: 0.7,
+                        marginBottom: 3,
+                      }}
+                    >
+                      {mine ? tt.you : tt.aiAssistant}
                     </div>
                     <div>{message.message}</div>
                   </div>
                 )
               })}
               {chatBusy && (
-                <div style={{ alignSelf: 'flex-start', maxWidth: '86%', padding: '9px 11px', borderRadius: 8, background: 'var(--sf2)', color: 'var(--tx3)', fontSize: 13, lineHeight: 1.5 }}>
-                  AI đang trả lời...
+                <div
+                  style={{
+                    alignSelf: 'flex-start',
+                    maxWidth: '86%',
+                    padding: '9px 11px',
+                    borderRadius: 8,
+                    background: 'var(--sf2)',
+                    color: 'var(--tx3)',
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {tt.aiTyping}
                 </div>
               )}
             </div>
@@ -1680,36 +2155,68 @@ function StepService({
                 gap: showRequirementShortcuts ? 10 : 0,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+              >
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: 12.5 }}>Bổ sung nhanh yêu cầu</div>
+                  <div style={{ fontWeight: 800, fontSize: 12.5 }}>
+                    {tt.quickRequirementTitle}
+                  </div>
                   {!showRequirementShortcuts && (
-                    <div style={{ color: 'var(--tx3)', fontSize: 11.5, marginTop: 2 }}>
-                      Mở khi cần thêm mục tiêu, khu vực, kết quả hoặc thông báo.
+                    <div
+                      style={{
+                        color: 'var(--tx3)',
+                        fontSize: 11.5,
+                        marginTop: 2,
+                      }}
+                    >
+                      {tt.quickRequirementHint}
                     </div>
                   )}
                 </div>
                 <button
                   type="button"
                   className="odm-btn odm-btn-sm"
-                  onClick={() => setShowRequirementShortcuts((current) => !current)}
+                  onClick={() =>
+                    setShowRequirementShortcuts((current) => !current)
+                  }
                 >
-                  {showRequirementShortcuts ? 'Ẩn' : 'Mở'}
+                  {showRequirementShortcuts ? tt.hide : tt.show}
                 </button>
               </div>
               {showRequirementShortcuts && (
                 <>
                   {requirementGroups.length === 0 && (
-                    <div style={{ color: 'var(--tx3)', fontSize: 12, lineHeight: 1.5 }}>
-                      Chưa có gợi ý trong database cho dịch vụ này.
+                    <div
+                      style={{
+                        color: 'var(--tx3)',
+                        fontSize: 12,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {tt.noSuggestions}
                     </div>
                   )}
                   {requirementGroups.map((group) => (
                     <div key={group.label}>
-                      <div style={{ color: 'var(--tx3)', fontSize: 11.5, fontWeight: 800, marginBottom: 6 }}>
+                      <div
+                        style={{
+                          color: 'var(--tx3)',
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          marginBottom: 6,
+                        }}
+                      >
                         {group.label}
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      <div
+                        style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
+                      >
                         {group.replies.map((reply) => (
                           <button
                             key={reply}
@@ -1746,33 +2253,82 @@ function StepService({
                     sendChatMessage()
                   }
                 }}
-                placeholder="VD: Tôi trồng cà phê và muốn phát hiện cây bất thường..."
+                placeholder={tt.chatPlaceholder}
                 style={inputStyle}
               />
-              <button type="button" className="odm-btn odm-btn-p" onClick={() => sendChatMessage()} disabled={chatBusy || !chatText.trim()}>
-                Gửi
+              <button
+                type="button"
+                className="odm-btn odm-btn-p"
+                onClick={() => sendChatMessage()}
+                disabled={chatBusy || !chatText.trim()}
+              >
+                {tt.send}
               </button>
             </div>
           </div>
         </div>
 
         <div style={card}>
-          <div style={cardHead}>Đề xuất từ AI hoặc tự chọn dịch vụ</div>
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={cardHead}>{tt.suggestionsCardTitle}</div>
+          <div
+            style={{
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
             {aiSuggestedServices.length > 0 && (
-              <div style={{ border: '1.5px solid var(--green-dot)', background: 'var(--green-bg)', borderRadius: 8, padding: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div
+                style={{
+                  border: '1.5px solid var(--green-dot)',
+                  background: 'var(--green-bg)',
+                  borderRadius: 8,
+                  padding: 12,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
                   <div>
-                    <div style={{ fontWeight: 800, color: 'var(--green-fg)' }}>AI gợi ý service phù hợp</div>
-                    <div style={{ marginTop: 3, fontSize: 12, color: 'var(--green-fg)' }}>
-                      Dựa trên nội dung chat và thông tin request hiện tại.
+                    <div style={{ fontWeight: 800, color: 'var(--green-fg)' }}>
+                      {tt.aiSuggestedTitle}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 3,
+                        fontSize: 12,
+                        color: 'var(--green-fg)',
+                      }}
+                    >
+                      {tt.aiSuggestedHint}
                     </div>
                   </div>
                   {recommendedService && (
-                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--green-fg)' }}>Recommended</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: 'var(--green-fg)',
+                      }}
+                    >
+                      {tt.recommended}
+                    </span>
                   )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8, marginTop: 12 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, minmax(0,1fr))',
+                    gap: 8,
+                    marginTop: 12,
+                  }}
+                >
                   {aiSuggestedServices.map((service) => {
                     const active = form.serviceId === service.id
                     return (
@@ -1786,14 +2342,31 @@ function StepService({
                           padding: 10,
                           borderRadius: 8,
                           border: `1.5px solid ${active ? 'var(--green-dot)' : 'rgba(22,163,74,.35)'}`,
-                          background: active ? 'rgba(22,163,74,.16)' : 'var(--sf)',
+                          background: active
+                            ? 'rgba(22,163,74,.16)'
+                            : 'var(--sf)',
                           color: 'var(--tx)',
                           cursor: 'pointer',
                         }}
                       >
-                        <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.25 }}>{service.name}</div>
-                        <div style={{ marginTop: 6, color: 'var(--tx3)', fontSize: 11, lineHeight: 1.35 }}>
-                          {service.description || 'Dịch vụ giám sát bằng drone.'}
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            fontSize: 13,
+                            lineHeight: 1.25,
+                          }}
+                        >
+                          {service.name}
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            color: 'var(--tx3)',
+                            fontSize: 11,
+                            lineHeight: 1.35,
+                          }}
+                        >
+                          {service.description || tt.defaultServiceDescription}
                         </div>
                       </button>
                     )
@@ -1801,45 +2374,151 @@ function StepService({
                 </div>
               </div>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>Tất cả service active</div>
-              <div style={{ color: 'var(--tx3)', fontSize: 12 }}>{services.length} service</div>
-            </div>
-            <div style={{ maxHeight: 360, overflow: 'auto', paddingRight: 4 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12 }}>
-              {loadingMeta && <div style={{ color: 'var(--tx3)' }}>Đang tải dịch vụ...</div>}
-              {!loadingMeta && services.length === 0 && <div style={{ color: 'var(--red-fg)' }}>Chưa có service active trong backend.</div>}
-              {services.map((service) => {
-                const active = form.serviceId === service.id
-                const suggested = aiSuggestedServices.some((item) => item.id === service.id)
-                return (
-                  <button key={service.id} type="button" onClick={() => update('serviceId', service.id)} style={{ textAlign: 'left', padding: 14, borderRadius: 8, border: `1.5px solid ${active ? 'var(--blue-solid)' : 'var(--bd)'}`, background: active ? 'var(--blue-bg)' : 'var(--sf)', cursor: 'pointer' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontWeight: 800, color: active ? 'var(--blue-fg)' : 'var(--tx)' }}>{service.name}</div>
-                      {suggested && <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--green-fg)' }}>AI</span>}
-                    </div>
-                    <div style={{ marginTop: 8, color: 'var(--tx3)', fontSize: 12, lineHeight: 1.5 }}>{service.description || 'Dịch vụ giám sát bằng drone.'}</div>
-                  </button>
-                )
-              })}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 13 }}>
+                {tt.allActiveServices}
+              </div>
+              <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
+                {tt.serviceCountLabel(services.length)}
               </div>
             </div>
-            {errors.serviceId && <div style={{ color: 'var(--red-fg)', fontSize: 12 }}>{errors.serviceId}</div>}
+            <div style={{ maxHeight: 360, overflow: 'auto', paddingRight: 4 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0,1fr))',
+                  gap: 12,
+                }}
+              >
+                {loadingMeta && (
+                  <div style={{ color: 'var(--tx3)' }}>
+                    {tt.loadingServices}
+                  </div>
+                )}
+                {!loadingMeta && services.length === 0 && (
+                  <div style={{ color: 'var(--red-fg)' }}>
+                    {tt.noActiveServices}
+                  </div>
+                )}
+                {services.map((service) => {
+                  const active = form.serviceId === service.id
+                  const suggested = aiSuggestedServices.some(
+                    (item) => item.id === service.id,
+                  )
+                  return (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => update('serviceId', service.id)}
+                      style={{
+                        textAlign: 'left',
+                        padding: 14,
+                        borderRadius: 8,
+                        border: `1.5px solid ${active ? 'var(--blue-solid)' : 'var(--bd)'}`,
+                        background: active ? 'var(--blue-bg)' : 'var(--sf)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            color: active ? 'var(--blue-fg)' : 'var(--tx)',
+                          }}
+                        >
+                          {service.name}
+                        </div>
+                        {suggested && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              color: 'var(--green-fg)',
+                            }}
+                          >
+                            AI
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          marginTop: 8,
+                          color: 'var(--tx3)',
+                          fontSize: 12,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {service.description || tt.defaultServiceDescription}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {errors.serviceId && (
+              <div style={{ color: 'var(--red-fg)', fontSize: 12 }}>
+                {errors.serviceId}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Thông tin request</div>
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Tiêu đề" error={errors.title}>
-            <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="VD: Giám sát tiến độ khu công trình phía Đông" style={inputStyle} />
+        <div style={cardHead}>{tt.requestCardTitle}</div>
+        <div
+          style={{
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+          }}
+        >
+          <Field label={tt.titleLabel} error={errors.title}>
+            <input
+              value={form.title}
+              onChange={(event) => update('title', event.target.value)}
+              placeholder={tt.titlePlaceholder}
+              style={inputStyle}
+            />
           </Field>
-          <Field label="Mô tả yêu cầu">
-            <textarea value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Mô tả mục tiêu, khu vực cần chú ý, ràng buộc an toàn..." rows={8} style={{ ...inputStyle, height: 180, paddingTop: 8, resize: 'vertical' }} />
+          <Field label={tt.descriptionLabel}>
+            <textarea
+              value={form.description}
+              onChange={(event) => update('description', event.target.value)}
+              placeholder={tt.descriptionPlaceholder}
+              rows={8}
+              style={{
+                ...inputStyle,
+                height: 180,
+                paddingTop: 8,
+                resize: 'vertical',
+              }}
+            />
           </Field>
-          <Metric label="Service đã chọn" value={selectedService?.name || 'Chưa chọn'} />
-          {consultation?.status && <Metric label="Trạng thái tư vấn" value={consultation.status} />}
+          <Metric
+            label={tt.selectedServiceLabel}
+            value={selectedService?.name || tt.notSelected}
+          />
+          {consultation?.status && (
+            <Metric
+              label={tt.consultationStatusLabel}
+              value={consultation.status}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -1847,34 +2526,74 @@ function StepService({
 }
 
 function StepSchedule({
+  t,
   form,
   preferredTimes,
   deliverables,
   errors,
   update,
 }: {
+  t: CreateOrderPageT
   form: FormState
   preferredTimes: PreferredTimeOption[]
   deliverables: ServiceDeliverableOption[]
   errors: Partial<Record<keyof FormState, string>>
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const tt = t.stepSchedule
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) 360px',
+        gap: 16,
+      }}
+    >
       <div style={card}>
-        <div style={cardHead}>Thời gian bay</div>
-        <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <Field label="Ngày bắt đầu" error={errors.preferredDateFrom}>
-            <input type="date" value={form.preferredDateFrom} onChange={(event) => update('preferredDateFrom', event.target.value)} style={inputStyle} />
+        <div style={cardHead}>{tt.scheduleCardTitle}</div>
+        <div
+          style={{
+            padding: 16,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 14,
+          }}
+        >
+          <Field label={tt.startDate} error={errors.preferredDateFrom}>
+            <input
+              type="date"
+              value={form.preferredDateFrom}
+              onChange={(event) =>
+                update('preferredDateFrom', event.target.value)
+              }
+              style={inputStyle}
+            />
           </Field>
-          <Field label="Ngày kết thúc" error={errors.preferredDateTo}>
-            <input type="date" value={form.preferredDateTo} onChange={(event) => update('preferredDateTo', event.target.value)} style={inputStyle} />
+          <Field label={tt.endDate} error={errors.preferredDateTo}>
+            <input
+              type="date"
+              value={form.preferredDateTo}
+              onChange={(event) =>
+                update('preferredDateTo', event.target.value)
+              }
+              style={inputStyle}
+            />
           </Field>
           <div style={{ gridColumn: '1 / -1' }}>
-            <Field label="Khung giờ" error={errors.preferredTimeId}>
-              <select value={form.preferredTimeId} onChange={(event) => update('preferredTimeId', event.target.value)} style={inputStyle}>
-                <option value="">Chọn khung giờ</option>
-                {preferredTimes.map((time) => <option key={time.id} value={time.id}>{formatTimeLabel(time)}</option>)}
+            <Field label={tt.timeWindow} error={errors.preferredTimeId}>
+              <select
+                value={form.preferredTimeId}
+                onChange={(event) =>
+                  update('preferredTimeId', event.target.value)
+                }
+                style={inputStyle}
+              >
+                <option value="">{tt.selectTimeWindow}</option>
+                {preferredTimes.map((time) => (
+                  <option key={time.id} value={time.id}>
+                    {formatTimeLabel(time)}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
@@ -1882,27 +2601,67 @@ function StepSchedule({
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Kết quả bàn giao</div>
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Deliverable type" error={errors.deliverableTypeId}>
-            <select value={form.deliverableTypeId} onChange={(event) => update('deliverableTypeId', event.target.value)} style={inputStyle}>
-              <option value="">Chọn kết quả</option>
-              {deliverables.map((item) => <option key={item.id} value={item.deliverableTypeId}>{item.deliverableTypeName || item.deliverableTypeId}</option>)}
+        <div style={cardHead}>{tt.deliverableCardTitle}</div>
+        <div
+          style={{
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+          }}
+        >
+          <Field label={tt.deliverableType} error={errors.deliverableTypeId}>
+            <select
+              value={form.deliverableTypeId}
+              onChange={(event) =>
+                update('deliverableTypeId', event.target.value)
+              }
+              style={inputStyle}
+            >
+              <option value="">{tt.selectDeliverable}</option>
+              {deliverables.map((item) => (
+                <option key={item.id} value={item.deliverableTypeId}>
+                  {item.deliverableTypeName || item.deliverableTypeId}
+                </option>
+              ))}
             </select>
           </Field>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="Media">
-              <select value={form.mediaType} onChange={(event) => update('mediaType', event.target.value as FormState['mediaType'])} style={inputStyle}>
-                <option value="IMAGE">Ảnh</option>
-                <option value="VIDEO">Video</option>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
+          >
+            <Field label={tt.media}>
+              <select
+                value={form.mediaType}
+                onChange={(event) =>
+                  update(
+                    'mediaType',
+                    event.target.value as FormState['mediaType'],
+                  )
+                }
+                style={inputStyle}
+              >
+                <option value="IMAGE">{tt.photoOption}</option>
+                <option value="VIDEO">{tt.videoOption}</option>
               </select>
             </Field>
-            <Field label="Số lượng">
-              <input type="number" min={1} value={form.quantity} onChange={(event) => update('quantity', Number(event.target.value))} style={inputStyle} />
+            <Field label={tt.quantity}>
+              <input
+                type="number"
+                min={1}
+                value={form.quantity}
+                onChange={(event) =>
+                  update('quantity', Number(event.target.value))
+                }
+                style={inputStyle}
+              />
             </Field>
           </div>
-          <Field label="Độ phân giải">
-            <select value={form.resolution} onChange={(event) => update('resolution', event.target.value)} style={inputStyle}>
+          <Field label={tt.resolution}>
+            <select
+              value={form.resolution}
+              onChange={(event) => update('resolution', event.target.value)}
+              style={inputStyle}
+            >
               <option value="1080p">1080p</option>
               <option value="4K">4K</option>
               <option value="20MP">20MP</option>
@@ -1916,6 +2675,7 @@ function StepSchedule({
 }
 
 function StepReview(props: {
+  t: CreateOrderPageT
   form: FormState
   score: AiScore
   selectedService?: ServiceOption
@@ -1923,64 +2683,164 @@ function StepReview(props: {
   selectedDeliverable?: ServiceDeliverableOption
   consultation: CustomerConsultation | null
 }) {
-  const scoreColor = props.score.level === 'good' ? 'var(--green-fg)' : props.score.level === 'warn' ? 'var(--orange-fg)' : 'var(--red-fg)'
+  const tt = props.t.stepReview
+  const scoreColor =
+    props.score.level === 'good'
+      ? 'var(--green-fg)'
+      : props.score.level === 'warn'
+        ? 'var(--orange-fg)'
+        : 'var(--red-fg)'
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 420px', gap: 16 }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) 420px',
+        gap: 16,
+      }}
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={card}>
-          <div style={cardHead}>Xác nhận request</div>
-          <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '170px 1fr', gap: '10px 14px', fontSize: 13 }}>
-            <LabelValue label="Tiêu đề" value={props.form.title || '—'} />
-            <LabelValue label="Địa chỉ" value={props.form.address || '—'} />
-            <LabelValue label="Tọa độ" value={`${props.form.latitude}, ${props.form.longitude}`} mono />
-            <LabelValue label="Bán kính" value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
-            <LabelValue label="Dịch vụ" value={props.selectedService?.name || '—'} />
-            <LabelValue label="Ngày" value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
-            <LabelValue label="Khung giờ" value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
-            <LabelValue label="Deliverable" value={props.selectedDeliverable?.deliverableTypeName || '—'} />
-            <LabelValue label="AI consultation" value={props.consultation?.id ? 'Đã tư vấn' : 'Không dùng'} />
+          <div style={cardHead}>{tt.confirmCardTitle}</div>
+          <div
+            style={{
+              padding: 16,
+              display: 'grid',
+              gridTemplateColumns: '170px 1fr',
+              gap: '10px 14px',
+              fontSize: 13,
+            }}
+          >
+            <LabelValue label={tt.title} value={props.form.title || '—'} />
+            <LabelValue label={tt.address} value={props.form.address || '—'} />
+            <LabelValue
+              label={tt.coordinates}
+              value={`${props.form.latitude}, ${props.form.longitude}`}
+              mono
+            />
+            <LabelValue
+              label={tt.radius}
+              value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`}
+              mono
+            />
+            <LabelValue
+              label={tt.service}
+              value={props.selectedService?.name || '—'}
+            />
+            <LabelValue
+              label={tt.dates}
+              value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`}
+              mono
+            />
+            <LabelValue
+              label={tt.timeWindow}
+              value={
+                props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'
+              }
+            />
+            <LabelValue
+              label={tt.deliverable}
+              value={props.selectedDeliverable?.deliverableTypeName || '—'}
+            />
+            <LabelValue
+              label={tt.aiConsultation}
+              value={props.consultation?.id ? tt.consulted : tt.notUsed}
+            />
           </div>
         </div>
 
         <div style={card}>
-          <div style={cardHead}>AI chấm điểm mô phỏng</div>
+          <div style={cardHead}>{tt.scoreCardTitle}</div>
           <div style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 42, color: scoreColor }}>{props.score.score}</div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 800,
+                  fontSize: 42,
+                  color: scoreColor,
+                }}
+              >
+                {props.score.score}
+              </div>
               <div>
-                <div style={{ fontWeight: 800 }}>Điểm sẵn sàng gửi request</div>
-                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>Điểm này giúp user kiểm tra thiếu thông tin trước khi call API tạo order.</div>
+                <div style={{ fontWeight: 800 }}>{tt.scoreTitle}</div>
+                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>
+                  {tt.scoreHint}
+                </div>
               </div>
             </div>
-            <ul style={{ margin: '12px 0 0', paddingLeft: 18, color: 'var(--tx2)', lineHeight: 1.6 }}>
-              {props.score.notes.map((note) => <li key={note}>{note}</li>)}
+            <ul
+              style={{
+                margin: '12px 0 0',
+                paddingLeft: 18,
+                color: 'var(--tx2)',
+                lineHeight: 1.6,
+              }}
+            >
+              {props.score.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
             </ul>
           </div>
         </div>
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Tóm tắt tư vấn AI</div>
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {props.consultation?.recommendedServiceName || props.consultation?.recommendedServiceId ? (
-            <div style={{ padding: 12, borderRadius: 8, background: 'var(--green-bg)', color: 'var(--green-fg)', lineHeight: 1.5 }}>
-              <div style={{ fontWeight: 800 }}>Service đề xuất</div>
-              <div>{props.consultation.recommendedServiceName || props.selectedService?.name || props.consultation.recommendedServiceId}</div>
+        <div style={cardHead}>{tt.summaryCardTitle}</div>
+        <div
+          style={{
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          {props.consultation?.recommendedServiceName ||
+          props.consultation?.recommendedServiceId ? (
+            <div
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                background: 'var(--green-bg)',
+                color: 'var(--green-fg)',
+                lineHeight: 1.5,
+              }}
+            >
+              <div style={{ fontWeight: 800 }}>{tt.recommendedService}</div>
+              <div>
+                {props.consultation.recommendedServiceName ||
+                  props.selectedService?.name ||
+                  props.consultation.recommendedServiceId}
+              </div>
             </div>
           ) : (
             <div style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}>
-              Customer tự chọn service hoặc chưa dùng AI tư vấn ở Step 2.
+              {tt.noConsultationHint}
             </div>
           )}
           {props.consultation?.requirementSummary && (
-            <div style={{ padding: 12, borderRadius: 8, background: 'var(--blue-bg)', color: 'var(--blue-fg)', fontSize: 13, lineHeight: 1.6 }}>
+            <div
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                background: 'var(--blue-bg)',
+                color: 'var(--blue-fg)',
+                fontSize: 13,
+                lineHeight: 1.6,
+              }}
+            >
               {props.consultation.requirementSummary}
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Metric label="Media" value={`${props.form.mediaType} · ${props.form.resolution}`} />
-            <Metric label="Số lượng" value={String(props.form.quantity)} />
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
+          >
+            <Metric
+              label={props.t.stepSchedule.media}
+              value={`${props.form.mediaType} · ${props.form.resolution}`}
+            />
+            <Metric label={tt.quantity} value={String(props.form.quantity)} />
           </div>
         </div>
       </div>
@@ -1988,12 +2848,31 @@ function StepReview(props: {
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, fontWeight: 700, color: 'var(--tx2)' }}>
+    <label
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 5,
+        fontSize: 12,
+        fontWeight: 700,
+        color: 'var(--tx2)',
+      }}
+    >
       {label}
       {children}
-      {error && <span style={{ color: 'var(--red-fg)', fontWeight: 600 }}>{error}</span>}
+      {error && (
+        <span style={{ color: 'var(--red-fg)', fontWeight: 600 }}>{error}</span>
+      )}
     </label>
   )
 }
@@ -2007,18 +2886,46 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-function LabelValue({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function LabelValue({
+  label,
+  value,
+  mono,
+}: {
+  label: string
+  value: string
+  mono?: boolean
+}) {
   return (
     <>
       <span style={{ color: 'var(--tx3)' }}>{label}</span>
-      <span style={{ fontWeight: 700, fontFamily: mono ? 'var(--font-mono)' : undefined }}>{value}</span>
+      <span
+        style={{
+          fontWeight: 700,
+          fontFamily: mono ? 'var(--font-mono)' : undefined,
+        }}
+      >
+        {value}
+      </span>
     </>
   )
 }
 
-function Notice({ tone, children }: { tone: 'error'; children: React.ReactNode }) {
+function Notice({
+  tone,
+  children,
+}: {
+  tone: 'error'
+  children: React.ReactNode
+}) {
   return (
-    <div style={{ ...card, padding: 12, color: tone === 'error' ? 'var(--red-fg)' : 'var(--tx)', background: tone === 'error' ? 'var(--red-bg)' : 'var(--sf)' }}>
+    <div
+      style={{
+        ...card,
+        padding: 12,
+        color: tone === 'error' ? 'var(--red-fg)' : 'var(--tx)',
+        background: tone === 'error' ? 'var(--red-bg)' : 'var(--sf)',
+      }}
+    >
       {children}
     </div>
   )

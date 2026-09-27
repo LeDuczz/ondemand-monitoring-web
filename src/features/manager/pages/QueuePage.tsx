@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import type { OrderCreateResponse } from '../types/orders'
 import { ordersApi } from '../api/ordersApi'
 import {
@@ -11,17 +12,19 @@ import {
   type QueueSortMode,
 } from '../lib/queue'
 import { managerHref } from '../routes'
+import { queuePageMessages } from './QueuePage.messages'
 import '../manager.css'
 
-const sortOptions: Array<{ value: QueueSortMode; label: string }> = [
-  { value: 'longestWait', label: 'Chờ lâu nhất' },
-  { value: 'preferredDateAsc', label: 'Ngày mong muốn gần nhất' },
-]
-
 export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
+  const { t, lang, locale } = useI18n(queuePageMessages)
   const [now] = useState(() => nowProp ?? new Date())
   const [sortMode, setSortMode] = useState<QueueSortMode>('longestWait')
   const query = useApiQuery((signal) => ordersApi.getQueue(signal), [])
+
+  const sortOptions: Array<{ value: QueueSortMode; label: string }> = [
+    { value: 'longestWait', label: t.sortOptions.longestWait },
+    { value: 'preferredDateAsc', label: t.sortOptions.preferredDateAsc },
+  ]
 
   const overdueCount = useMemo(
     () => (query.data ?? []).filter((row) => isOverdue(now, row)).length,
@@ -37,10 +40,10 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
   if (query.error) {
     return (
       <div className="odm-mgr-dash">
-        <QueueHeader onRefresh={query.reload} />
+        <QueueHeader onRefresh={query.reload} t={t} />
         <StateView
           state="error"
-          title="Không tải được hàng đợi"
+          title={t.loadError}
           error={query.error}
           onRetry={query.reload}
         />
@@ -54,15 +57,17 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
     <div className="odm-mgr-dash">
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Hàng đợi duyệt đơn</h1>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
           <div className="odm-mgr-dash-date">
-            {data.length} đơn đang chờ · {overdueCount} đơn quá 24 giờ
+            {t.summary(data.length, overdueCount)}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a className="odm-btn" href="#portal/staff/assignments">Mission chờ phân công</a>
+          <a className="odm-btn" href="#portal/staff/assignments">
+            {t.missionsToAssign}
+          </a>
           <button type="button" className="odm-btn" onClick={query.reload}>
-            Làm mới
+            {t.refresh}
           </button>
         </div>
       </div>
@@ -70,14 +75,14 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
       {data.length === 0 ? (
         <StateView
           state="empty"
-          title="Không còn đơn chờ duyệt"
-          description="Tuyệt vời. Khi khách gửi đơn mới, đơn sẽ xuất hiện ở đây."
+          title={t.emptyTitle}
+          description={t.emptyDescription}
         />
       ) : (
         <>
           <div className="odm-mgr-queue-toolbar">
             <label className="odm-mgr-queue-sort">
-              <span className="odm-visually-hidden">Sắp xếp</span>
+              <span className="odm-visually-hidden">{t.sort}</span>
               <select
                 className="odm-inp"
                 value={sortMode}
@@ -96,11 +101,11 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
             <table className="odm-table">
               <thead>
                 <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách hàng</th>
-                  <th>Dịch vụ</th>
-                  <th>Ngày mong muốn</th>
-                  <th>Thời gian chờ</th>
+                  <th>{t.columns.orderCode}</th>
+                  <th>{t.columns.customer}</th>
+                  <th>{t.columns.service}</th>
+                  <th>{t.columns.preferredDate}</th>
+                  <th>{t.columns.waitTime}</th>
                   <th />
                 </tr>
               </thead>
@@ -119,7 +124,7 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
                     <td>
                       <span className="odm-tn">
                         {new Date(row.preferredDateFrom).toLocaleDateString(
-                          'vi-VN',
+                          locale,
                         )}{' '}
                         · {row.preferredTimeName}
                       </span>
@@ -134,7 +139,7 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
                             : 'var(--tx2)',
                         }}
                       >
-                        {formatWaitLabel(now, row)}
+                        {formatWaitLabel(now, row, lang)}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -145,7 +150,7 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
                           orderId: row.id,
                         })}
                       >
-                        Duyệt
+                        {t.review}
                       </a>
                     </td>
                   </tr>
@@ -159,20 +164,27 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
   )
 }
 
-function QueueHeader({ onRefresh }: { onRefresh: () => void }) {
+function QueueHeader({
+  onRefresh,
+  t,
+}: {
+  onRefresh: () => void
+  t: (typeof queuePageMessages)['vi']
+}) {
   return (
     <div className="odm-mgr-dash-head">
       <div>
-        <h1 className="odm-mgr-dash-title">Hàng đợi duyệt đơn</h1>
+        <h1 className="odm-mgr-dash-title">{t.title}</h1>
       </div>
       <button type="button" className="odm-btn" onClick={onRefresh}>
-        Làm mới
+        {t.refresh}
       </button>
     </div>
   )
 }
 
 function QueueSkeleton() {
+  const { t } = useI18n(queuePageMessages)
   return (
     <div className="odm-mgr-dash" aria-busy="true" aria-live="polite">
       <div className="odm-mgr-dash-head">
@@ -204,7 +216,7 @@ function QueueSkeleton() {
           />
         ))}
       </div>
-      <span className="odm-visually-hidden">Đang tải…</span>
+      <span className="odm-visually-hidden">{t.loading}</span>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
+import { useI18n } from '../../../shared/i18n'
 import type { FaultType, MaintenanceSeverity } from '../types/mission'
+import { maintenanceTicketDialogMessages } from './MaintenanceTicketDialog.messages'
 
 const FAULT_TYPES: { value: FaultType; label: string }[] = [
   { value: 'MOTOR_VIBRATION', label: 'MOTOR_VIBRATION' },
@@ -28,11 +30,16 @@ export function MaintenanceTicketDialog({
   defaultDescription: string
   submitting: boolean
   onCancel: () => void
-  onConfirm: (issueType: FaultType, severity: MaintenanceSeverity, description: string) => void
+  onConfirm: (
+    issueType: FaultType,
+    severity: MaintenanceSeverity,
+    description: string,
+  ) => void
 }) {
   const [issueType, setIssueType] = useState<FaultType>(defaultIssueType)
   const [severity, setSeverity] = useState<MaintenanceSeverity>('MEDIUM')
   const [description, setDescription] = useState(defaultDescription)
+  const { t } = useI18n(maintenanceTicketDialogMessages)
 
   return (
     <div
@@ -48,21 +55,41 @@ export function MaintenanceTicketDialog({
         zIndex: 100,
       }}
     >
-      <div className="odm-card" style={{ width: 460, maxWidth: '92vw', padding: 0 }}>
+      <div
+        className="odm-card"
+        style={{ width: 460, maxWidth: '92vw', padding: 0 }}
+      >
         <div className="odm-card-body" style={{ padding: 20 }}>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-            Tạo ticket bảo trì
+            {t.title}
           </h2>
           <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
-            Thông tin điền sẵn từ postflight. Ghi vào maintenance_ticket.
+            {t.subtitle}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              marginTop: 14,
+            }}
+          >
             <Field label="drone">
-              <input className="odm-input" value={droneCode} readOnly style={{ width: '100%' }} />
+              <input
+                className="odm-input"
+                value={droneCode}
+                readOnly
+                style={{ width: '100%' }}
+              />
             </Field>
             <Field label="mission_id">
-              <input className="odm-input" value={missionId} readOnly style={{ width: '100%' }} />
+              <input
+                className="odm-input"
+                value={missionId}
+                readOnly
+                style={{ width: '100%' }}
+              />
             </Field>
             <Field label="issue_type">
               <select
@@ -83,7 +110,9 @@ export function MaintenanceTicketDialog({
                 className="odm-input"
                 style={{ width: '100%' }}
                 value={severity}
-                onChange={(e) => setSeverity(e.target.value as MaintenanceSeverity)}
+                onChange={(e) =>
+                  setSeverity(e.target.value as MaintenanceSeverity)
+                }
               >
                 {SEVERITIES.map((s) => (
                   <option key={s} value={s}>
@@ -103,9 +132,21 @@ export function MaintenanceTicketDialog({
             </Field>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-            <button type="button" className="odm-btn" onClick={onCancel} disabled={submitting}>
-              Huỷ
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 8,
+              marginTop: 18,
+            }}
+          >
+            <button
+              type="button"
+              className="odm-btn"
+              onClick={onCancel}
+              disabled={submitting}
+            >
+              {t.cancel}
             </button>
             <button
               type="button"
@@ -113,7 +154,7 @@ export function MaintenanceTicketDialog({
               onClick={() => onConfirm(issueType, severity, description)}
               disabled={submitting}
             >
-              {submitting ? 'Đang tạo...' : 'Tạo ticket'}
+              {submitting ? t.submitting : t.submit}
             </button>
           </div>
         </div>
@@ -122,12 +163,23 @@ export function MaintenanceTicketDialog({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
     <label style={{ display: 'block' }}>
       <span
         className="odm-mono"
-        style={{ fontSize: 11.5, color: 'var(--tx3)', display: 'block', marginBottom: 4 }}
+        style={{
+          fontSize: 11.5,
+          color: 'var(--tx3)',
+          display: 'block',
+          marginBottom: 4,
+        }}
       >
         {label}
       </span>

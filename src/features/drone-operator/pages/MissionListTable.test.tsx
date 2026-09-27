@@ -1,0 +1,54 @@
+import { act } from 'react'
+import { describe, expect, it } from 'vitest'
+import { render, screen } from '@testing-library/react'
+
+import { setLanguage } from '../../../shared/i18n'
+import { MissionListTable } from './MissionListTable'
+import type { OperatorMission } from '../types/mission'
+
+const missions: OperatorMission[] = [
+  {
+    id: 'MSN-1',
+    status: 'PENDING',
+    title: 'Kiểm tra nhiệt',
+    location: 'KCN Hiệp Phước',
+    date: '2026-09-24',
+    startTime: '13:00',
+    endTime: '14:00',
+    serviceLabel: 'Kiểm tra nhiệt',
+    droneCode: null,
+    droneName: null,
+  },
+]
+
+describe('MissionListTable', () => {
+  it('renders vietnamese column headers and status label', () => {
+    render(
+      <MissionListTable
+        missions={missions}
+        now={new Date('2026-09-20T00:00:00+07:00')}
+      />,
+    )
+    expect(screen.getByText('Mã mission')).toBeTruthy()
+    expect(screen.getByText('Chờ phản hồi')).toBeTruthy()
+    expect(screen.getByText('Không phân công')).toBeTruthy()
+  })
+
+  it('renders english column headers and status label when language is switched', () => {
+    render(
+      <MissionListTable
+        missions={missions}
+        now={new Date('2026-09-20T00:00:00+07:00')}
+      />,
+    )
+    act(() => setLanguage('en'))
+    expect(screen.getByText('Mission code')).toBeTruthy()
+    expect(screen.getByText('Awaiting reply')).toBeTruthy()
+    expect(screen.getByText('Unassigned')).toBeTruthy()
+  })
+
+  it('renders the vietnamese empty state', () => {
+    render(<MissionListTable missions={[]} now={new Date()} />)
+    expect(screen.getByText('Không có mission')).toBeTruthy()
+  })
+})

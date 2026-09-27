@@ -1,0 +1,36 @@
+import { defineMessages } from '../../../shared/i18n'
+
+export const mediaLibraryPageMessages = defineMessages({
+  vi: {
+    missionsHeading: 'Lần bay',
+    all: 'Tất cả',
+    title: 'Thư viện kết quả',
+    typeFilter: { ALL: 'Tất cả', PHOTO: 'Ảnh', VIDEO: 'Video' },
+    selectedCount: (n: number) => `Đã chọn ${n} file`,
+    download: 'Tải xuống',
+    downloadMock: (n: number) => `Tải xuống ${n} file (mock)`,
+    clearSelection: 'Bỏ chọn',
+    emptyTitle: 'Không có media',
+    emptyDescription: 'Không có file nào khớp bộ lọc.',
+    fileCount: (n: number) => `${n} file`,
+    selectAll: 'Chọn tất cả',
+    newBadge: 'MỚI',
+    detail: 'Chi tiết',
+  },
+  en: {
+    missionsHeading: 'Flights',
+    all: 'All',
+    title: 'Result library',
+    typeFilter: { ALL: 'All', PHOTO: 'Photo', VIDEO: 'Video' },
+    selectedCount: (n: number) => `${n} file(s) selected`,
+    download: 'Download',
+    downloadMock: (n: number) => `Downloading ${n} file(s) (mock)`,
+    clearSelection: 'Clear selection',
+    emptyTitle: 'No media',
+    emptyDescription: 'No file matches this filter.',
+    fileCount: (n: number) => `${n} file(s)`,
+    selectAll: 'Select all',
+    newBadge: 'NEW',
+    detail: 'Details',
+  },
+})

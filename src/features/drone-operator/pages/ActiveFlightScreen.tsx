@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { useI18n } from '../../../shared/i18n'
 import { missionApi } from '../../mission/api/missionApi'
 import {
   getActiveMissionId,
@@ -11,13 +12,17 @@ import {
 } from '../api/liveMission'
 import InFlightControlScreen from '../omss/screens/InFlightControl'
 import { operatorHref } from '../routes'
+import { activeFlightScreenMessages } from './ActiveFlightScreen.messages'
 
 function missionIdFromCurrentFlightHash() {
-  const match = window.location.hash.match(/^#portal\/drone-operator\/flight\/([^/?#]+)/)
+  const match = window.location.hash.match(
+    /^#portal\/drone-operator\/flight\/([^/?#]+)/,
+  )
   return match?.[1] ? decodeURIComponent(match[1]) : null
 }
 
 function FlightOpeningShell() {
+  const { t } = useI18n(activeFlightScreenMessages)
   return (
     <main
       style={{
@@ -28,9 +33,7 @@ function FlightOpeningShell() {
         color: '#dbeafe',
       }}
     >
-      <div style={{ textAlign: 'center', fontWeight: 800 }}>
-        Đang mở buồng lái...
-      </div>
+      <div style={{ textAlign: 'center', fontWeight: 800 }}>{t.opening}</div>
     </main>
   )
 }
@@ -39,7 +42,7 @@ function FlightEmptyState({
   tone = 'info',
   title,
   message,
-  primaryLabel = 'Về Mission của tôi',
+  primaryLabel,
   primaryHref = operatorHref({ screen: 'missions' }),
 }: {
   tone?: 'info' | 'error' | 'loading'
@@ -48,7 +51,10 @@ function FlightEmptyState({
   primaryLabel?: string
   primaryHref?: string
 }) {
-  const accent = tone === 'error' ? '#dc2626' : tone === 'loading' ? '#2563eb' : '#16a34a'
+  const accent =
+    tone === 'error' ? '#dc2626' : tone === 'loading' ? '#2563eb' : '#16a34a'
+  const { t } = useI18n(activeFlightScreenMessages)
+  const resolvedPrimaryLabel = primaryLabel ?? t.backToMissions
 
   return (
     <main
@@ -90,11 +96,31 @@ function FlightEmptyState({
         >
           {tone === 'loading' ? '…' : tone === 'error' ? '!' : '◎'}
         </div>
-        <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.1, color: '#07142b' }}>{title}</h1>
-        <p style={{ margin: '12px auto 0', maxWidth: 430, color: '#53627a', fontSize: 15, lineHeight: 1.6 }}>
+        <h1
+          style={{ margin: 0, fontSize: 28, lineHeight: 1.1, color: '#07142b' }}
+        >
+          {title}
+        </h1>
+        <p
+          style={{
+            margin: '12px auto 0',
+            maxWidth: 430,
+            color: '#53627a',
+            fontSize: 15,
+            lineHeight: 1.6,
+          }}
+        >
           {message}
         </p>
-        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+          }}
+        >
           <a
             href={primaryHref}
             style={{
@@ -111,7 +137,7 @@ function FlightEmptyState({
               boxShadow: '0 12px 28px rgba(31,111,235,.24)',
             }}
           >
-            {primaryLabel}
+            {resolvedPrimaryLabel}
           </a>
           <a
             href={operatorHref({ screen: 'preflight' })}
@@ -129,7 +155,7 @@ function FlightEmptyState({
               textDecoration: 'none',
             }}
           >
-            Qua Preflight
+            {t.throughPreflight}
           </a>
         </div>
       </section>
@@ -137,22 +163,35 @@ function FlightEmptyState({
   )
 }
 
-export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: string }) {
-  const missionId = routeMissionId ?? missionIdFromCurrentFlightHash() ?? getActiveMissionId()
+export function ActiveFlightScreen({
+  missionId: routeMissionId,
+}: {
+  missionId?: string
+}) {
+  const missionId =
+    routeMissionId ?? missionIdFromCurrentFlightHash() ?? getActiveMissionId()
   const [mission, setMission] = useState<BackendMission | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const autoStart = window.sessionStorage.getItem('odm.operator.autoStartSimulation') === 'true'
+  const autoStart =
+    window.sessionStorage.getItem('odm.operator.autoStartSimulation') === 'true'
+  const { t } = useI18n(activeFlightScreenMessages)
 
   useEffect(() => {
     if (!missionId) return
     let active = true
-    void missionApi.getMissionById(missionId).then((result) => {
-      if (active) setMission(result as BackendMission)
-    }).catch((cause) => {
-      if (active) setError(cause instanceof Error ? cause.message : 'Không tải được mission')
-    })
-    return () => { active = false }
-  }, [missionId])
+    void missionApi
+      .getMissionById(missionId)
+      .then((result) => {
+        if (active) setMission(result as BackendMission)
+      })
+      .catch((cause) => {
+        if (active)
+          setError(cause instanceof Error ? cause.message : t.loadMissionFailed)
+      })
+    return () => {
+      active = false
+    }
+  }, [missionId, t.loadMissionFailed])
 
   if (!missionId) {
     return <FlightOpeningShell />
@@ -161,9 +200,9 @@ export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: 
     return (
       <FlightEmptyState
         tone="error"
-        title="Không mở được buồng lái"
+        title={t.cockpitOpenFailed}
         message={error}
-        primaryLabel="Quay lại Mission"
+        primaryLabel={t.backToMission}
       />
     )
   }
@@ -174,8 +213,8 @@ export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: 
     return (
       <FlightEmptyState
         tone="error"
-        title="Mission chưa có drone"
-        message="Mission này chưa được gán drone nên chưa thể mở buồng lái. Hãy quay lại danh sách mission hoặc yêu cầu quản lý gán drone trước."
+        title={t.noDroneTitle}
+        message={t.noDroneMessage}
       />
     )
   }
@@ -185,25 +224,42 @@ export function ActiveFlightScreen({ missionId: routeMissionId }: { missionId?: 
       mission={toFlightMission(mission)}
       drone={toFlightDrone(mission)}
       autoStartPlan={autoStart}
-      onAutoStartPlanConsumed={() => window.sessionStorage.removeItem('odm.operator.autoStartSimulation')}
+      onAutoStartPlanConsumed={() =>
+        window.sessionStorage.removeItem('odm.operator.autoStartSimulation')
+      }
       onReviewMedia={() => {
         setActiveMissionId(mission.id)
         markActiveMissionFlowStep(mission.id, 5)
-        window.location.hash = operatorHref({ screen: 'upload', missionId: mission.id })
+        window.location.hash = operatorHref({
+          screen: 'upload',
+          missionId: mission.id,
+        })
       }}
       onRTB={() => {
-        void missionApi.markReturning(mission.id).then(() =>
-          missionApi.startPostflight(mission.id),
-        ).then(() => {
-          setActiveMissionId(mission.id)
-          window.location.hash = operatorHref({ screen: 'postflight', missionId: mission.id })
-        }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Không chuyển được mission sang RETURNING'))
+        void missionApi
+          .markReturning(mission.id)
+          .then(() => missionApi.startPostflight(mission.id))
+          .then(() => {
+            setActiveMissionId(mission.id)
+            window.location.hash = operatorHref({
+              screen: 'postflight',
+              missionId: mission.id,
+            })
+          })
+          .catch((cause) =>
+            setError(cause instanceof Error ? cause.message : t.rtbFailed),
+          )
       }}
       onEmergency={() => {
-        const reason = window.prompt('Lý do kết thúc khẩn cấp')
+        const reason = window.prompt(t.emergencyPrompt)
         if (!reason?.trim()) return
-        void missionApi.failMission(mission.id, reason.trim()).catch((cause) =>
-          setError(cause instanceof Error ? cause.message : 'Không cập nhật được mission'))
+        void missionApi
+          .failMission(mission.id, reason.trim())
+          .catch((cause) =>
+            setError(
+              cause instanceof Error ? cause.message : t.emergencyUpdateFailed,
+            ),
+          )
       }}
     />
   )

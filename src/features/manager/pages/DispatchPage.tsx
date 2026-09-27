@@ -431,7 +431,7 @@ function DispatchBody({
           <div>
             <div className="odm-mgr-review-hint">{t.order}</div>
             <div style={{ fontWeight: 600 }}>
-              {mission.orderCode} · {t.attempt(mission.attemptNumber)}
+              {mission.orderCode} · {t.attempt(mission.attemptNumber ?? 1)}
             </div>
           </div>
           <div>

@@ -26,7 +26,6 @@ import { postflightScreenMessages } from '../i18n/postflightScreen.messages'
 import { FlightStepHeader } from './FlightStepper'
 import { MaintenanceTicketDialog } from './MaintenanceTicketDialog'
 
-type PostflightMessages = (typeof postflightScreenMessages)['vi']
 
 type PostflightCategoryDef = {
   title: string

@@ -71,7 +71,7 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
           <div className="odm-mgr-dash-date">
             {t.missionSummary(
               current.missionCode,
-              current.orderTitle ?? current.orderId,
+              current.orderTitle ?? current.orderId ?? '',
             )}
           </div>
         </div>

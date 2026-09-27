@@ -95,10 +95,10 @@ export function PolicyTable() {
                   {policy.description}
                 </td>
                 <td style={{ fontSize: 12 }}>
-                  {formatDateVi(policy.effectiveFrom)}
+                  {policy.effectiveFrom ? new Date(policy.effectiveFrom).toLocaleDateString('vi-VN') : ''}
                 </td>
                 <td style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                  {formatDateVi(policy.effectiveTo)}
+                  {policy.effectiveTo ? new Date(policy.effectiveTo).toLocaleDateString('vi-VN') : ''}
                 </td>
                 <td>
                   {isDirty && (

@@ -387,7 +387,7 @@ const PREFLIGHT_NAME_LABELS: Record<string, string> = {
   BATTERY: 'Pin',
   CAMERA: 'Camera dưới',
   GAZEBO: 'Mô phỏng Gazebo',
-  LIDAR: 'LiDAR',
+  LIDAR: 'Cảm biến LiDAR',
   LOCAL_POSITION: 'Vị trí cục bộ',
   MAVSDK: 'Kết nối MAVSDK',
   MAVSDK_HEALTH: 'Sức khỏe MAVSDK',
@@ -402,7 +402,7 @@ const PREFLIGHT_NAME_FALLBACKS: Record<string, string> = {
   Battery: 'Pin',
   'Downward Camera': 'Camera dưới',
   'Gazebo Simulation': 'Mô phỏng Gazebo',
-  LiDAR: 'LiDAR',
+  LiDAR: 'Cảm biến LiDAR',
   'Local Position': 'Vị trí cục bộ',
   'MAVSDK Connection': 'Kết nối MAVSDK',
   'MAVSDK Health': 'Sức khỏe MAVSDK',
@@ -629,13 +629,13 @@ function MissionDashboard({
         <div className="mds-col mds-left-col">
           <MissionMapCard mission={mission} />
           <WaypointTableCard mission={mission} />
+          <WeatherCard weather={weatherStatus} />
         </div>
 
-        {/* CENTER: flight summary + weather */}
+        {/* CENTER: flight summary + planning */}
         <div className="mds-col mds-center-col">
           <FlightSummaryCard mission={mission} />
           <MissionPlanningCard mission={mission} />
-          <WeatherCard weather={weatherStatus} />
         </div>
 
         {/* RIGHT: info + device + precheck + postcheck */}
@@ -1662,7 +1662,7 @@ function PrecheckCard({ preflight }: { preflight: RuntimePreflightStatus | null 
   return (
     <div className="odm-card">
       <div className="odm-card-header">
-        <span style={{ fontWeight: 700 }}>Kết quả precheck & thời tiết</span>
+        <span style={{ fontWeight: 700 }}>Kết quả precheck</span>
         <StatusBadge tone={statusTone(preflight?.status)}>
           {preflightLabel(preflight?.status)}
         </StatusBadge>
@@ -1907,10 +1907,10 @@ function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | nul
   const noteText = postflightNoteLabel(postflight?.notes)
   const checks: Array<[string, boolean | null | undefined]> = [
     ['Thân vỏ', postflight?.physicalConditionOk],
-    ['Motor', postflight?.motorOk],
+    ['Động cơ', postflight?.motorOk],
     ['Pin', postflight?.batteryOk],
     ['Camera', postflight?.cameraOk],
-    ['GPS', postflight?.gpsOk],
+    ['Định vị', postflight?.gpsOk],
     ['Kết nối', postflight?.communicationOk],
   ]
 
@@ -1919,7 +1919,7 @@ function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | nul
       <div className="odm-card-header">
         <span style={{ fontWeight: 700 }}>Kết quả postcheck</span>
         <StatusBadge tone={postflight ? (postflight.overallOk ? 'green' : 'red') : 'gray'}>
-          {postflight ? (postflight.overallOk ? 'OK' : 'Cần bảo trì') : 'Chưa postcheck'}
+          {postflight ? (postflight.overallOk ? 'Đạt' : 'Cần bảo trì') : 'Chưa postcheck'}
         </StatusBadge>
       </div>
       <div className="odm-card-body" style={{ padding: '10px 14px' }}>
@@ -1927,14 +1927,14 @@ function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | nul
           <>
             {/* Telemetry metrics 2×2 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 10 }}>
-              <PostMetric label="Check lúc" value={formatCheckedAt(postflight.checkedAt)} />
+              <PostMetric label="Kiểm tra lúc" value={formatCheckedAt(postflight.checkedAt)} />
               <PostMetric label="Độ cao" value={formatNumber(postflight.landingAltitudeM, ' m')} />
               <PostMetric label="Pin hạ cánh" value={formatNumber(postflight.landingBatteryPercent, '%')} />
               <PostMetric label="Tốc độ" value={formatNumber(postflight.landingSpeedMps, ' m/s')} />
               {postflight.landingTelemetryOnline != null && (
                 <PostMetric
                   label="Telemetry"
-                  value={postflight.landingTelemetryOnline ? 'Online' : 'Offline'}
+                  value={postflight.landingTelemetryOnline ? 'Trực tuyến' : 'Mất kết nối'}
                 />
               )}
               {postflight.landingHeadingDeg != null && (

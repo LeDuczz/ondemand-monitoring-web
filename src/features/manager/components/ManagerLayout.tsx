@@ -9,7 +9,8 @@ import '../manager.css'
 type NavItem = {
   label: string
   icon: ManagerIconName
-  route: ManagerRoute
+  route?: ManagerRoute
+  href?: string
   /** Key into `counts` for the numeric badge, when this item has one. */
   countKey?: 'pendingOrders' | 'openMaintenance' | 'mediaNeedsAction'
 }
@@ -17,10 +18,6 @@ type NavItem = {
 type NavGroup = { label: string; items: NavItem[] }
 
 // Groups + items copied from the sidebar markup shared by every MNG-*.dc.html
-// screen (checked against MNG-01/02/06). The design's sidebar also lists a
-// "Thông báo" item (SYS-06, badge 4) inside "Phân tích" — omitted here on
-// purpose: SYS-06 Notifications is out of scope for this phase [PLAN §8],
-// and rendering a nav link with no destination screen would be a dead link.
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Điều hành',
@@ -39,6 +36,16 @@ const NAV_GROUPS: NavGroup[] = [
         route: { screen: 'schedule' },
       },
       { label: 'Giám sát realtime', icon: 'live', route: { screen: 'live' } },
+    ],
+  },
+  {
+    label: 'Hỗ trợ khách hàng',
+    items: [
+      {
+        label: 'Support Center',
+        icon: 'reports',
+        href: '#portal/staff/support',
+      },
     ],
   },
   {
@@ -83,6 +90,7 @@ const activeNavLabel: Record<ManagerScreen, string> = {
   maintenance: 'Bảo trì',
   media: 'Media và giao kết quả',
   reports: 'Báo cáo',
+  support: 'Support Center',
   notFound: '',
 }
 
@@ -152,7 +160,7 @@ export function ManagerLayout({
                   return (
                     <a
                       key={item.label}
-                      href={managerHref(item.route)}
+                      href={item.href || (item.route ? managerHref(item.route) : '#')}
                       className={`odm-mgr-navi ${active ? 'is-active' : ''}`}
                       aria-current={active ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
@@ -204,6 +212,13 @@ export function ManagerLayout({
             </button>
             <div className="odm-mgr-breadcrumb">{breadcrumb}</div>
             <div className="odm-mgr-topbar-spacer" />
+            <a
+              href="#portal/staff/support"
+              className="odm-btn odm-btn-gh"
+              style={{ fontSize: 13, textDecoration: 'none', padding: '6px 12px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 8 }}
+            >
+              🎧 Support Center
+            </a>
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1"

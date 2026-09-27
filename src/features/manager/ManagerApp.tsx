@@ -17,6 +17,7 @@ import { ReportsPage } from './pages/ReportsPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
 import { SchedulePage } from './pages/SchedulePage'
+import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
 import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 
 function useHash(): string {
@@ -42,6 +43,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
   maintenance: 'Bảo trì',
   media: 'Media và giao kết quả',
   reports: 'Báo cáo',
+  support: 'Trung tâm Hỗ trợ',
   notFound: 'Không tìm thấy',
 }
 
@@ -70,10 +72,10 @@ export function ManagerApp() {
   // src/features/manager/types/dashboard.ts and evd/P3-manager-dashboard.md.
   const counts = data
     ? {
-        pendingOrders: data.navCounts.pendingOrders,
-        openMaintenance: data.navCounts.openMaintenanceTickets,
-        mediaNeedsAction: data.navCounts.mediaNeedsAction,
-      }
+      pendingOrders: data.navCounts.pendingOrders,
+      openMaintenance: data.navCounts.openMaintenanceTickets,
+      mediaNeedsAction: data.navCounts.mediaNeedsAction,
+    }
     : undefined
 
   return (
@@ -106,6 +108,7 @@ function renderScreen(route: ManagerRoute) {
   if (route.screen === 'maintenance') return <MaintenancePage />
   if (route.screen === 'media') return <MediaPage />
   if (route.screen === 'reports') return <ReportsPage />
+  if (route.screen === 'support') return <StaffSupportDashboardPage />
 
   // route.screen === 'notFound'
   return (

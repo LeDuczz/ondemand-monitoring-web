@@ -4,6 +4,7 @@ import { ErrorState, LoadingState } from '../../../shared/components/odm/StateVi
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { customerApi } from '../api/customerApi'
+import { ContextAwareHelpWidget } from '../../support/components/ContextAwareHelpWidget'
 import {
   fmtDate,
   fmtDateTime,
@@ -151,6 +152,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           )}
         </div>
       </div>
+
+      {/* Context-Aware Support Widget */}
+      <ContextAwareHelpWidget type="ORDER" id={data.orderCode} status={data.status} orderId={orderId} />
 
       {/* Approval card */}
       {data.approvalDecision === 'APPROVED' && (

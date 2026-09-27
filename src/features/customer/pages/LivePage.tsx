@@ -1,4 +1,5 @@
 import { EmptyState } from '../../../shared/components/odm/StateView'
+import { ContextAwareHelpWidget } from '../../support/components/ContextAwareHelpWidget'
 import { customerHref } from '../routes'
 
 export function LivePage({ orderId }: { orderId: string }) {
@@ -16,6 +17,7 @@ export function LivePage({ orderId }: { orderId: string }) {
         title="Giám sát realtime (CUS-06)"
         description="Tính năng xem trực tiếp đang được phát triển."
       />
+      <ContextAwareHelpWidget type="MISSION" id={orderId} status="IN_FLIGHT" orderId={orderId} />
     </div>
   )
 }

@@ -19,16 +19,18 @@ const roleLabels: Record<UserRole, string> = {
 
 const navItems: Record<UserRole, PortalNavItem[]> = {
   CUSTOMER: [
-    { label: 'Overview', icon: 'chart', href: '#portal/customer' },
-    { label: 'Create request', icon: 'plus', href: '#portal/customer/request' },
-    { label: 'My requests', icon: 'ticket', href: '#portal/customer/requests' },
-    { label: 'Reports', icon: 'file-text', href: '#portal/customer/reports' },
+    { label: 'Tổng quan', icon: 'chart', href: '#portal/customer' },
+    { label: 'Tạo yêu cầu', icon: 'plus', href: '#portal/customer/request' },
+    { label: 'Yêu cầu của tôi', icon: 'ticket', href: '#portal/customer/requests' },
+    { label: 'Trợ giúp & Hỗ trợ', icon: 'shield', href: '#help' },
+    { label: 'Báo cáo', icon: 'file-text', href: '#portal/customer/reports' },
   ],
   STAFF: [
-    { label: 'Operations overview', icon: 'chart', href: '#portal/staff' },
-    { label: 'Request queue', icon: 'ticket', href: '#portal/staff/queue' },
-    { label: 'Assignments', icon: 'users', href: '#portal/staff/assignments' },
-    { label: 'Schedule', icon: 'clock', href: '#portal/staff/schedule' },
+    { label: 'Tổng quan vận hành', icon: 'chart', href: '#portal/staff' },
+    { label: 'Hàng chờ xử lý', icon: 'ticket', href: '#portal/staff/queue' },
+    { label: 'Phân công bay', icon: 'users', href: '#portal/staff/assignments' },
+    { label: 'Trung tâm Hỗ trợ (Support)', icon: 'shield', href: '#portal/staff/support' },
+    { label: 'Lịch làm việc', icon: 'clock', href: '#portal/staff/schedule' },
   ],
   DRONE_OPERATOR: [
     { label: 'Mission console', icon: 'route', href: '#portal/drone-operator' },

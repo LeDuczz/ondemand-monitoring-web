@@ -1069,12 +1069,12 @@ export function CreateOrderPage() {
         <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--green-bg)', color: 'var(--green-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 18px' }}>
           ✓
         </div>
-        <h2 style={{ margin: 0, fontSize: 22 }}>Đã tạo request</h2>
+        <h2 style={{ margin: 0, fontSize: 22 }}>{t.createdTitle}</h2>
         <p style={{ color: 'var(--tx3)', lineHeight: 1.6 }}>
-          Yêu cầu đã được gửi qua API thật. Bộ phận vận hành có thể thấy trong hàng chờ để review và approve.
+          {t.createdDescription}
         </p>
         <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-p">
-          Xem đơn của tôi
+          {t.viewMyOrders}
         </a>
       </div>
     )
@@ -1084,13 +1084,13 @@ export function CreateOrderPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22 }}>Tạo yêu cầu giám sát</h1>
+          <h1 style={{ margin: 0, fontSize: 22 }}>{t.pageTitle}</h1>
           <div style={{ marginTop: 4, color: 'var(--tx3)', fontSize: 13 }}>
-            Chọn vị trí trên bản đồ mô phỏng, nhập thông tin cần thiết, dùng AI tư vấn rồi gửi request.
+            {t.pageSubtitle}
           </div>
         </div>
         <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-gh">
-          Huỷ
+          {t.cancel}
         </a>
       </div>
 
@@ -1176,17 +1176,17 @@ export function CreateOrderPage() {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         {step > 1 && (
           <button type="button" className="odm-btn odm-btn-gh" onClick={() => setStep((current) => (current - 1) as Step)}>
-            Quay lại
+            {t.back}
           </button>
         )}
         <div style={{ flex: 1 }} />
         {step < 4 ? (
           <button type="button" className="odm-btn odm-btn-p" onClick={handleNext}>
-            Tiếp tục: {STEP_LABELS[(step + 1) as Step]}
+            {t.continueTo(STEP_LABELS[(step + 1) as Step])}
           </button>
         ) : (
           <button type="button" className="odm-btn odm-btn-p" onClick={handleSubmit} disabled={submitting || loadingMeta}>
-            {submitting ? 'Đang gửi request...' : 'Gửi request'}
+            {submitting ? t.submitting : t.submit}
           </button>
         )}
       </div>

@@ -20,6 +20,8 @@ import {
   type ServiceDeliverableOption,
   type ServiceOption,
 } from '../api/customerApi'
+import { useI18n } from '../../../shared/i18n'
+import { createOrderPageMessages } from './CreateOrderPage.messages'
 import { customerHref } from '../routes'
 
 type Step = 1 | 2 | 3 | 4
@@ -250,7 +252,7 @@ function useSimulationMapMeta() {
         const payload = (await response.json()) as SimulationMapMeta
         if (alive) setMeta(payload)
       } catch {
-        if (alive) setError('Không tải được map mô phỏng 3D.')
+        if (alive) setError(t.mapMetaUnavailable)
       }
     }
 
@@ -432,25 +434,25 @@ function scoreRequest(form: FormState): AiScore {
 
   if (!form.address.trim()) {
     score -= 18
-    notes.push('Thiếu địa chỉ mô tả khu vực giám sát.')
+    notes.push(t.scoreNotes.missingAddress)
   }
   if (!form.serviceId) {
     score -= 20
-    notes.push('Chưa chọn dịch vụ giám sát.')
+    notes.push(t.scoreNotes.missingService)
   }
   if (!form.deliverableTypeId) {
     score -= 14
-    notes.push('Chưa chọn kết quả bàn giao.')
+    notes.push(t.scoreNotes.missingDeliverable)
   }
   if (!form.preferredDateFrom || !form.preferredDateTo || !form.preferredTimeId) {
     score -= 18
-    notes.push('Thiếu ngày hoặc khung giờ bay.')
+    notes.push(t.scoreNotes.missingSchedule)
   }
   if (form.radiusM > 900) {
     score -= 12
-    notes.push('Bán kính lớn, nên chia khu vực thành nhiều lượt bay.')
+    notes.push(t.scoreNotes.largeRadius)
   }
-  if (notes.length === 0) notes.push('Thông tin đủ để gửi yêu cầu cho bộ phận vận hành kiểm tra.')
+  if (notes.length === 0) notes.push(t.scoreNotes.allGood)
 
   return {
     score: clamp(score, 0, 100),
@@ -550,6 +552,7 @@ function formatMoney(value?: number | null) {
 }
 
 export function CreateOrderPage() {
+  const { t } = useI18n(createOrderPageMessages)
   const { meta: mapMeta, error: mapError } = useSimulationMapMeta()
   const zones = useSimulationZones()
   const storedDraft = useMemo(() => readStoredCreateOrderDraft(), [])
@@ -651,7 +654,7 @@ export function CreateOrderPage() {
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        setMetaError(error instanceof Error ? error.message : 'Không tải được dữ liệu tạo yêu cầu.')
+        setMetaError(error instanceof Error ? error.message : t.metaError)
       })
       .finally(() => setLoadingMeta(false))
 
@@ -781,14 +784,14 @@ export function CreateOrderPage() {
 
   function describeChatError(error: unknown) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      return 'AI phản hồi quá lâu. Hệ thống đã dừng chờ để tránh treo màn hình, vui lòng gửi lại hoặc thử câu ngắn hơn.'
+      return t.aiTimeout
     }
     if (error instanceof ApiError) {
       const status = error.status ? ` · ${error.status}` : ''
       return `${error.message} (${error.method} ${error.path}${status})`
     }
     if (error instanceof Error && error.message) return error.message
-    return 'Không nhận được phản hồi từ backend.'
+    return t.noBackendResponse
   }
 
   async function recoverConsultationAfterSendFailure(consultationId: string) {
@@ -861,11 +864,11 @@ export function CreateOrderPage() {
     const nextErrors: Partial<Record<keyof FormState, string>> = {}
 
     if (targetStep >= 1) {
-      if (!form.address.trim()) nextErrors.address = 'Nhập địa chỉ/khu vực cần giám sát.'
-      if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = 'Latitude không hợp lệ.'
-      if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = 'Longitude không hợp lệ.'
+      if (!form.address.trim()) nextErrors.address = t.validation.address
+      if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = t.validation.latitude
+      if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = t.validation.longitude
       if (!monitoringValidation.valid) {
-        nextErrors.address = 'Vị trí này nằm ngoài các vùng giám sát đã cấu hình. Vui lòng chọn lại điểm trong vùng phục vụ.'
+        nextErrors.address = t.validation.outsideZone
       }
       if (!restrictedValidation.valid) {
         nextErrors.address = `Vùng giám sát chạm vùng cấm: ${restrictedValidation.blockedZones
@@ -874,17 +877,17 @@ export function CreateOrderPage() {
       }
     }
     if (targetStep >= 2) {
-      if (!form.serviceId) nextErrors.serviceId = 'Chọn dịch vụ giám sát.'
-      if (!form.title.trim()) nextErrors.title = 'Nhập tiêu đề yêu cầu.'
+      if (!form.serviceId) nextErrors.serviceId = t.validation.serviceId
+      if (!form.title.trim()) nextErrors.title = t.validation.title
     }
     if (targetStep >= 3) {
-      if (!form.preferredDateFrom) nextErrors.preferredDateFrom = 'Chọn ngày bắt đầu.'
-      if (!form.preferredDateTo) nextErrors.preferredDateTo = 'Chọn ngày kết thúc.'
+      if (!form.preferredDateFrom) nextErrors.preferredDateFrom = t.validation.preferredDateFrom
+      if (!form.preferredDateTo) nextErrors.preferredDateTo = t.validation.preferredDateTo
       if (form.preferredDateFrom && form.preferredDateTo && form.preferredDateFrom > form.preferredDateTo) {
-        nextErrors.preferredDateTo = 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.'
+        nextErrors.preferredDateTo = t.validation.preferredDateOrder
       }
-      if (!form.preferredTimeId) nextErrors.preferredTimeId = 'Chọn khung giờ.'
-      if (!form.deliverableTypeId) nextErrors.deliverableTypeId = 'Chọn kết quả bàn giao.'
+      if (!form.preferredTimeId) nextErrors.preferredTimeId = t.validation.preferredTimeId
+      if (!form.deliverableTypeId) nextErrors.deliverableTypeId = t.validation.deliverableTypeId
     }
 
     setErrors(nextErrors)
@@ -898,7 +901,7 @@ export function CreateOrderPage() {
 
   async function startConsultation() {
     if (!authSession.getAccessToken()) {
-      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      appendChatNotice(t.loginRequiredForAi)
       return
     }
     setChatBusy(true)
@@ -928,7 +931,7 @@ export function CreateOrderPage() {
     const text = (messageOverride ?? chatText).trim()
     if (!text) return
     if (!authSession.getAccessToken()) {
-      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      appendChatNotice(t.loginRequiredForAi)
       return
     }
     let activeConsultationId = isReusableConsultation(consultation) ? consultation?.id : undefined
@@ -1049,7 +1052,7 @@ export function CreateOrderPage() {
       window.localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
       setCreatedId(result.id)
     } catch (error: unknown) {
-      setSubmitError(error instanceof Error ? error.message : 'Không tạo được request.')
+      setSubmitError(error instanceof Error ? error.message : t.submitFailed)
     } finally {
       setSubmitting(false)
     }
@@ -1221,7 +1224,7 @@ function StepLocation({
         background: '#fff7ed',
         color: '#9a3412',
         title: 'Ngoài vùng phục vụ',
-        message: 'Điểm này chưa thuộc zone giám sát nào. Hãy bấm vào phần bản đồ nằm trong khu vực xanh để tạo request.',
+        message: {t.stepLocation.outsideZoneMessage},
       }
     : isBlocked
       ? {
@@ -1318,7 +1321,7 @@ function StepLocation({
         <div style={cardHead}>Vị trí và bán kính</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Địa chỉ/khu vực" error={errors.address}>
-            <textarea value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="VD: KCN Long Hậu, Cần Giuộc, Long An" rows={4} style={{ ...inputStyle, height: 92, paddingTop: 8, resize: 'vertical' }} />
+            <textarea value={form.address} onChange={(event) => update('address', event.target.value)} placeholder={t.stepLocation.addressPlaceholder} rows={4} style={{ ...inputStyle, height: 92, paddingTop: 8, resize: 'vertical' }} />
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Field label="Sim Y / Latitude" error={errors.latitude}>
@@ -1328,7 +1331,7 @@ function StepLocation({
               <input value={form.longitude} onChange={(event) => update('longitude', event.target.value)} style={inputStyle} />
             </Field>
           </div>
-          <Field label={`Bán kính giám sát: ${form.radiusM} m`}>
+          <Field label={t.stepLocation.radiusLabel(form.radiusM)}>
             <input type="range" min={100} max={1500} step={50} value={form.radiusM} onChange={(event) => update('radiusM', Number(event.target.value))} style={{ width: '100%' }} />
           </Field>
           <div
@@ -1467,7 +1470,7 @@ function StepService({
                     }}
                   >
                     <div style={{ fontSize: 11, fontWeight: 800, opacity: 0.7, marginBottom: 3 }}>
-                      {mine ? 'Bạn' : 'AI tư vấn'}
+                      {mine ? t.stepService.you : t.stepService.aiAssistant}
                     </div>
                     <div>{message.message}</div>
                   </div>
@@ -1604,7 +1607,7 @@ function StepService({
         <div style={cardHead}>Thông tin request</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Tiêu đề" error={errors.title}>
-            <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="VD: Giám sát tiến độ khu công trình phía Đông" style={inputStyle} />
+            <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder={t.stepService.titlePlaceholder} style={inputStyle} />
           </Field>
           <div>
             <div style={{ color: 'var(--tx3)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>AI đã hiểu nhu cầu</div>

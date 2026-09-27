@@ -368,10 +368,10 @@ function statusTone(status?: RuntimeOverallStatus | WeatherCheckStatus) {
 }
 
 function preflightLabel(status?: RuntimeOverallStatus) {
-  if (status === 'READY') return 'PASSED'
-  if (status === 'FAILED') return 'FAILED'
-  if (status === 'CHECKING') return 'CHECKING'
-  return 'Chưa trigger'
+  if (status === 'READY') return 'Đã đạt'
+  if (status === 'FAILED') return 'Không đạt'
+  if (status === 'CHECKING') return 'Đang kiểm'
+  return 'Chưa kiểm'
 }
 
 function checkLabel(status: RuntimeStatus) {
@@ -380,6 +380,64 @@ function checkLabel(status: RuntimeStatus) {
   if (status === 'FAIL') return 'Không đạt'
   if (status === 'CHECKING') return 'Đang kiểm'
   return 'Chờ kiểm'
+}
+
+const PREFLIGHT_NAME_LABELS: Record<string, string> = {
+  BACKEND: 'Kết nối backend',
+  BATTERY: 'Pin',
+  CAMERA: 'Camera dưới',
+  GAZEBO: 'Mô phỏng Gazebo',
+  LIDAR: 'LiDAR',
+  LOCAL_POSITION: 'Vị trí cục bộ',
+  MAVSDK: 'Kết nối MAVSDK',
+  MAVSDK_HEALTH: 'Sức khỏe MAVSDK',
+  MEDIA: 'Tải media',
+  MODULES: 'Kiểm tra module',
+  PX4: 'Bộ điều khiển bay PX4',
+  PX4_CONTROL: 'Điều khiển PX4',
+}
+
+const PREFLIGHT_NAME_FALLBACKS: Record<string, string> = {
+  'Backend Connection': 'Kết nối backend',
+  Battery: 'Pin',
+  'Downward Camera': 'Camera dưới',
+  'Gazebo Simulation': 'Mô phỏng Gazebo',
+  LiDAR: 'LiDAR',
+  'Local Position': 'Vị trí cục bộ',
+  'MAVSDK Connection': 'Kết nối MAVSDK',
+  'MAVSDK Health': 'Sức khỏe MAVSDK',
+  'Media Upload': 'Tải media',
+  'Module Check': 'Kiểm tra module',
+  'PX4 Control': 'Điều khiển PX4',
+  'PX4 Flight Controller': 'Bộ điều khiển bay PX4',
+}
+
+function preflightCheckName(item: RuntimeCheck) {
+  return PREFLIGHT_NAME_LABELS[item.key] ?? PREFLIGHT_NAME_FALLBACKS[item.name] ?? item.name
+}
+
+function preflightMessageLabel(message: string) {
+  const text = message.trim()
+  if (!text) return ''
+
+  const lower = text.toLowerCase()
+  if (lower.includes('required components')) return 'Đã tải đủ thành phần cần thiết'
+  if (lower.includes('fresh scan received')) return 'Đã nhận dữ liệu quét mới'
+  if (lower.includes('ready for takeoff')) return 'Sẵn sàng cất cánh'
+  if (lower.includes('camera frames received')) return 'Đã nhận khung hình camera'
+  if (lower.includes('sufficient for operation')) return text.replace('sufficient for operation', 'đủ để vận hành')
+  if (lower.includes('ready to fly')) return 'Sẵn sàng bay'
+  if (lower.includes('px4 health ready')) return 'Trạng thái PX4 sẵn sàng'
+  if (lower.includes('drone model loaded')) return 'Đã tải mô hình drone'
+  if (lower.includes('media capture pipeline ready')) return 'Luồng ghi media đã sẵn sàng'
+  if (lower.includes('px4 discovered')) return 'Đã phát hiện PX4'
+  if (lower.includes('flight controller')) return 'Bộ điều khiển bay đã sẵn sàng'
+  if (lower.includes('heartbeat not available')) return 'Chưa nhận được heartbeat'
+  if (lower.includes('too low for safe mission start')) return text.replace('too low for safe mission start', 'quá thấp để bắt đầu an toàn')
+  if (lower === 'pending') return 'Đang chờ'
+  if (lower.includes('waiting for flight controller api')) return 'Đang chờ API bộ điều khiển bay'
+
+  return text
 }
 
 function formatNumber(value?: number | null, suffix = '', decimals = 1) {
@@ -1661,61 +1719,65 @@ function PrecheckCard({ preflight }: { preflight: RuntimePreflightStatus | null 
                 overflow: 'hidden',
               }}
             >
-              {visibleChecks.map((item, idx) => (
-                <div
-                  key={`${item.key}-${idx}`}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '18px 1fr auto',
-                    gap: 6,
-                    alignItems: 'center',
-                    padding: '7px 10px',
-                    borderBottom: idx < visibleChecks.length - 1 ? '1px solid var(--bd)' : 'none',
-                    background: item.status === 'FAIL' ? 'var(--red-bg)' : '#fff',
-                    fontSize: 12,
-                  }}
-                >
-                  <span
+              {visibleChecks.map((item, idx) => {
+                const message = preflightMessageLabel(item.message)
+                return (
+                  <div
+                    key={`${item.key}-${idx}`}
                     style={{
-                      fontWeight: 800,
-                      color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--green-fg)',
-                      fontSize: 13,
+                      display: 'grid',
+                      gridTemplateColumns: '18px 1fr auto',
+                      gap: 6,
+                      alignItems: 'center',
+                      padding: '7px 10px',
+                      borderBottom: idx < visibleChecks.length - 1 ? '1px solid var(--bd)' : 'none',
+                      background: item.status === 'FAIL' ? 'var(--red-bg)' : '#fff',
+                      fontSize: 12,
                     }}
                   >
-                    {item.status === 'FAIL' ? '✗' : item.status === 'PASS' || item.status === 'WARN' ? '✓' : '○'}
-                  </span>
-                  <div>
-                    <div style={{ fontWeight: 600, color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--tx)' }}>
-                      {item.name}
-                    </div>
-                    {item.message && (
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--tx3)',
-                          marginTop: 1,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: 140,
-                        }}
-                      >
-                        {item.message}
+                    <span
+                      style={{
+                        fontWeight: 800,
+                        color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--green-fg)',
+                        fontSize: 13,
+                      }}
+                    >
+                      {item.status === 'FAIL' ? '✗' : item.status === 'PASS' || item.status === 'WARN' ? '✓' : '○'}
+                    </span>
+                    <div>
+                      <div style={{ fontWeight: 600, color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--tx)' }}>
+                        {preflightCheckName(item)}
                       </div>
-                    )}
+                      {message && (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--tx3)',
+                            marginTop: 1,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: 140,
+                          }}
+                          title={message}
+                        >
+                          {message}
+                        </div>
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--green-fg)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {checkLabel(item.status)}
+                    </span>
                   </div>
-                  <span
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 11.5,
-                      color: item.status === 'FAIL' ? 'var(--red-fg)' : 'var(--green-fg)',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {checkLabel(item.status)}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {hasMore && (

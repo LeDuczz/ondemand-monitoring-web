@@ -1,6 +1,8 @@
 export const CUSTOMER_ROOT = '#portal/customer'
 
 export type CustomerRoute =
+  | { screen: 'missionHistory' }
+  | { screen: 'missionHistoryDetail'; missionId: string }
   | { screen: 'dashboard' }
   | { screen: 'orders' }
   | { screen: 'createOrder' }
@@ -29,6 +31,10 @@ export function parseCustomerRoute(hash: string): CustomerRoute {
   const [head, ...tail] = segments
 
   switch (head) {
+    case 'mission-history':
+      if (tail.length === 0) return { screen: 'missionHistory' }
+      if (tail.length === 1) return { screen: 'missionHistoryDetail', missionId: tail[0] }
+      return { screen: 'notFound' }
     case 'orders': {
       if (tail.length === 0) return { screen: 'orders' }
       if (tail[0] === 'new') return { screen: 'createOrder' }
@@ -57,6 +63,10 @@ export function parseCustomerRoute(hash: string): CustomerRoute {
 
 export function customerHref(route: CustomerRoute): string {
   switch (route.screen) {
+    case 'missionHistory':
+      return `${CUSTOMER_ROOT}/mission-history`
+    case 'missionHistoryDetail':
+      return `${CUSTOMER_ROOT}/mission-history/${encodeURIComponent(route.missionId)}`
     case 'dashboard':
       return CUSTOMER_ROOT
     case 'orders':

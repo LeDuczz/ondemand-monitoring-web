@@ -133,6 +133,7 @@ export type MediaFile = {
   maxAttempts: number
   status: MediaFileStatus
   manualTaskCreated?: boolean
+  validationPending?: boolean
 }
 
 export type PostflightItemKey =

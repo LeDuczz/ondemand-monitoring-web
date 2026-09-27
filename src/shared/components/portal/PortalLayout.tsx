@@ -5,46 +5,74 @@ import { LogoutButton } from '../../../features/auth/components/LogoutButton'
 import { getRoleHomePath } from '../../../features/auth/routing'
 import type { UserRole } from '../../../features/auth/types'
 import { Icon, type IconName } from '../Icon'
-import { LanguageToggle } from '../LanguageToggle'
-import { useI18n } from '../../i18n'
-import { portalLayoutMessages } from './PortalLayout.messages'
 
-type PortalNavItem = { icon: IconName; href: string }
+type PortalNavItem = { label: string; icon: IconName; href: string }
 
-// Labels are translated (see PortalLayout.messages.ts, same order as here);
-// icon + href stay as plain data.
+const roleLabels: Record<UserRole, string> = {
+  CUSTOMER: 'Customer workspace',
+  STAFF: 'Operations workspace',
+  DRONE_OPERATOR: 'Drone operations',
+  SYSTEM_OPERATOR: 'System operations',
+  ADMIN: 'Administration',
+  AUDITOR: 'Audit workspace',
+}
+
 const navItems: Record<UserRole, PortalNavItem[]> = {
   CUSTOMER: [
-    { icon: 'chart', href: '#portal/customer' },
-    { icon: 'plus', href: '#portal/customer/request' },
-    { icon: 'ticket', href: '#portal/customer/requests' },
-    { icon: 'file-text', href: '#portal/customer/reports' },
+    { label: 'Tổng quan', icon: 'chart', href: '#portal/customer' },
+    { label: 'Tạo yêu cầu', icon: 'plus', href: '#portal/customer/request' },
+    { label: 'Yêu cầu của tôi', icon: 'ticket', href: '#portal/customer/requests' },
+    { label: 'Trợ giúp & Hỗ trợ', icon: 'shield', href: '#help' },
+    { label: 'Báo cáo', icon: 'file-text', href: '#portal/customer/reports' },
   ],
   STAFF: [
-    { icon: 'chart', href: '#portal/staff' },
-    { icon: 'ticket', href: '#portal/staff/queue' },
-    { icon: 'users', href: '#portal/staff/assignments' },
-    { icon: 'clock', href: '#portal/staff/schedule' },
+    { label: 'Tổng quan vận hành', icon: 'chart', href: '#portal/staff' },
+    { label: 'Hàng chờ xử lý', icon: 'ticket', href: '#portal/staff/queue' },
+    { label: 'Phân công bay', icon: 'users', href: '#portal/staff/assignments' },
+    { label: 'Trung tâm Hỗ trợ (Support)', icon: 'shield', href: '#portal/staff/support' },
+    { label: 'Lịch làm việc', icon: 'clock', href: '#portal/staff/schedule' },
   ],
   DRONE_OPERATOR: [
-    { icon: 'route', href: '#portal/drone-operator' },
-    { icon: 'shield', href: '#portal/drone-operator/preflight' },
-    { icon: 'activity', href: '#portal/drone-operator' },
+    { label: 'Mission console', icon: 'route', href: '#portal/drone-operator' },
+    {
+      label: 'Preflight checks',
+      icon: 'shield',
+      href: '#portal/drone-operator/preflight',
+    },
+    { label: 'Telemetry', icon: 'activity', href: '#portal/drone-operator' },
   ],
   SYSTEM_OPERATOR: [
-    { icon: 'chart', href: '#portal/system-operator' },
-    { icon: 'ticket', href: '#portal/system-operator/maintenance' },
-    { icon: 'radio', href: '#portal/system-operator/devices' },
-    { icon: 'activity', href: '#portal/system-operator/telemetry' },
-    { icon: 'shield', href: '#portal/system-operator/alerts' },
+    {
+      label: 'System overview',
+      icon: 'chart',
+      href: '#portal/system-operator',
+    },
+    {
+      label: 'Bảo trì & Sự cố',
+      icon: 'ticket',
+      href: '#portal/system-operator/maintenance',
+    },
+    {
+      label: 'Devices',
+      icon: 'radio',
+      href: '#portal/system-operator/devices',
+    },
+    {
+      label: 'Telemetry',
+      icon: 'activity',
+      href: '#portal/system-operator/telemetry',
+    },
+    { label: 'Alerts', icon: 'shield', href: '#portal/system-operator/alerts' },
   ],
   ADMIN: [
-    { icon: 'chart', href: '#portal/admin' },
-    { icon: 'users', href: '#portal/admin/accounts/new' },
-    { icon: 'route', href: '#portal/admin/missions' },
-    { icon: 'clipboard', href: '#portal/admin/audit' },
+    { label: 'Admin overview', icon: 'chart', href: '#portal/admin' },
+    { label: 'Users', icon: 'users', href: '#portal/admin/accounts/new' },
+    { label: 'Missions', icon: 'route', href: '#portal/admin/missions' },
+    { label: 'Audit logs', icon: 'clipboard', href: '#portal/admin/audit' },
   ],
-  AUDITOR: [{ icon: 'clipboard', href: '#portal/admin/audit-log' }],
+  AUDITOR: [
+    { label: 'Audit log', icon: 'clipboard', href: '#portal/admin/audit-log' },
+  ],
 }
 
 export function PortalLayout({
@@ -63,13 +91,10 @@ export function PortalLayout({
   )
   const [menuOpen, setMenuOpen] = useState(false)
   const user = authSession.getUser()
-  const { t } = useI18n(portalLayoutMessages)
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
-
-  const labels = t.navLabels[role]
 
   return (
     <div className="portal-shell">
@@ -82,28 +107,27 @@ export function PortalLayout({
           </span>
           <span>FIELDWISE</span>
         </a>
-        <div className="portal-role-label">{t.roleLabels[role]}</div>
-        <nav className="portal-nav" aria-label={t.nav}>
-          {navItems[role].map((item, index) => (
+        <div className="portal-role-label">{roleLabels[role]}</div>
+        <nav className="portal-nav" aria-label="Portal navigation">
+          {navItems[role].map((item) => (
             <a
-              key={`${item.href}-${index}`}
+              key={item.href}
               href={item.href}
               onClick={() => setMenuOpen(false)}
             >
               <Icon name={item.icon} />
-              <span>{labels[index]}</span>
+              <span>{item.label}</span>
             </a>
           ))}
         </nav>
         <div className="portal-sidebar-footer">
-          <LanguageToggle className="portal-utility-button" />
           <button
             type="button"
             className="portal-utility-button"
             onClick={() => setDark(!dark)}
           >
             <Icon name={dark ? 'sun' : 'moon'} />
-            <span>{dark ? t.lightMode : t.darkMode}</span>
+            <span>{dark ? 'Light mode' : 'Dark mode'}</span>
           </button>
           <LogoutButton className="portal-logout-button" />
         </div>
@@ -111,7 +135,7 @@ export function PortalLayout({
       {menuOpen ? (
         <button
           className="portal-scrim"
-          aria-label={t.closeNav}
+          aria-label="Close navigation"
           onClick={() => setMenuOpen(false)}
         />
       ) : null}
@@ -120,13 +144,13 @@ export function PortalLayout({
           <button
             className="portal-menu-toggle"
             type="button"
-            aria-label={t.openNav}
+            aria-label="Open navigation"
             onClick={() => setMenuOpen(true)}
           >
             <Icon name="menu" />
           </button>
           <div>
-            <p className="eyebrow">{t.roleLabels[role]}</p>
+            <p className="eyebrow">{roleLabels[role]}</p>
             <h1>{title}</h1>
             <p>{subtitle}</p>
           </div>
@@ -135,11 +159,10 @@ export function PortalLayout({
               {user?.fullName?.slice(0, 1).toUpperCase() ?? 'F'}
             </span>
             <span>
-              <strong>{user?.fullName ?? t.fieldwiseUser}</strong>
+              <strong>{user?.fullName ?? 'Fieldwise user'}</strong>
               <small>{user?.email ?? role}</small>
             </span>
           </div>
-          <LanguageToggle />
         </header>
         <div className="portal-content">{children}</div>
       </main>

@@ -25,6 +25,7 @@ export type ManagerRoute =
   | { screen: 'maintenance' }
   | { screen: 'media' }
   | { screen: 'reports' }
+  | { screen: 'support' }
   | { screen: 'notFound' }
 
 export type ManagerScreen = ManagerRoute['screen']
@@ -43,6 +44,7 @@ export const managerScreenCode: Record<ManagerScreen, string> = {
   maintenance: 'MNG-10',
   media: 'MNG-11',
   reports: 'MNG-12',
+  support: 'MNG-SUP',
   notFound: '',
 }
 
@@ -98,6 +100,8 @@ export function parseManagerRoute(hash: string): ManagerRoute {
       return tail.length === 0 ? { screen: 'media' } : { screen: 'notFound' }
     case 'reports':
       return tail.length === 0 ? { screen: 'reports' } : { screen: 'notFound' }
+    case 'support':
+      return tail.length === 0 ? { screen: 'support' } : { screen: 'notFound' }
     default:
       return { screen: 'notFound' }
   }
@@ -136,6 +140,8 @@ export function managerHref(route: ManagerRoute): string {
       return `${MANAGER_ROOT}/media`
     case 'reports':
       return `${MANAGER_ROOT}/reports`
+    case 'support':
+      return `${MANAGER_ROOT}/support`
     case 'notFound':
       return MANAGER_ROOT
   }

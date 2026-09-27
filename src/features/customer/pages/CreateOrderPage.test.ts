@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildDraftFromConsultation } from './CreateOrderPage'
+import { buildDraftFromConsultation, findRecommendedService } from './CreateOrderPage'
 import type {
   ConsultationMessage,
   CustomerConsultation,
@@ -24,7 +24,7 @@ const consultation: CustomerConsultation = {
 }
 
 describe('buildDraftFromConsultation', () => {
-  it('keeps the customer-selected building safety goal instead of copying every assistant option', () => {
+  it('does not fill request title or description while consultation still needs more info', () => {
     const messages: ConsultationMessage[] = [
       {
         id: 'assistant-1',
@@ -46,14 +46,11 @@ describe('buildDraftFromConsultation', () => {
 
     const draft = buildDraftFromConsultation(consultation, messages, service)
 
-    expect(draft.title).toBe('Giám sát công trình phát hiện an toàn')
-    expect(draft.description).toContain('rà soát an toàn khu vực')
-    expect(draft.description).toContain('Ưu tiên mặt đứng và mặt tiền.')
-    expect(draft.description).not.toContain('phát hiện điểm nóng')
-    expect(draft.description).not.toContain('theo dõi tiến độ')
+    expect(draft.title).toBe('')
+    expect(draft.description).toBe('')
   })
 
-  it('ignores a polluted start-consultation seed once the customer gives direct answers', () => {
+  it('fills request title and description from ready consultation draft fields', () => {
     const messages: ConsultationMessage[] = [
       {
         id: 'customer-seed',
@@ -67,11 +64,56 @@ describe('buildDraftFromConsultation', () => {
         message: 'Rà soát an toàn khu vực.',
       },
     ]
+    const readyConsultation: CustomerConsultation = {
+      ...consultation,
+      status: 'READY_FOR_CONFIRMATION',
+      requestTitle: 'Kiểm tra nứt và hư hỏng mặt ngoài công trình',
+      requestSummary:
+        'Giám sát mặt ngoài công trình bằng drone, tập trung phát hiện vết nứt, bong tróc và khu vực hư hỏng.',
+    }
 
-    const draft = buildDraftFromConsultation(consultation, messages, service)
+    const draft = buildDraftFromConsultation(readyConsultation, messages, service)
 
-    expect(draft.description).toContain('rà soát an toàn khu vực')
-    expect(draft.description).not.toContain('nứt vỡ/hư hỏng')
-    expect(draft.description).not.toContain('điểm nóng')
+    expect(draft.title).toBe('Kiểm tra nứt và hư hỏng mặt ngoài công trình')
+    expect(draft.description).toBe(
+      'Giám sát mặt ngoài công trình bằng drone, tập trung phát hiện vết nứt, bong tróc và khu vực hư hỏng.',
+    )
+  })
+})
+
+describe('findRecommendedService', () => {
+  it('matches AI recommendation by service id', () => {
+    const services: ServiceOption[] = [
+      service,
+      {
+        id: 'svc-progress',
+        name: 'Giám sát Tiến độ Xây dựng',
+        description: 'Theo dõi tiến độ thi công',
+      },
+    ]
+
+    const match = findRecommendedService(
+      {
+        ...consultation,
+        recommendedServiceId: 'svc-progress',
+        recommendedServiceName: service.name,
+      },
+      services,
+    )
+
+    expect(match?.id).toBe('svc-progress')
+  })
+
+  it('does not infer AI recommendation from service name without id', () => {
+    const match = findRecommendedService(
+      {
+        ...consultation,
+        recommendedServiceId: undefined,
+        recommendedServiceName: service.name,
+      },
+      [service],
+    )
+
+    expect(match).toBeUndefined()
   })
 })

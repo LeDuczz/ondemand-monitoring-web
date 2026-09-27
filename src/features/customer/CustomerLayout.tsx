@@ -14,11 +14,13 @@ type NavItemKey = keyof typeof customerLayoutMessages.vi.navItems
 type NavItem = {
   key: NavItemKey
   icon: string
-  route: CustomerRoute
+  route?: CustomerRoute
+  href?: string
   newMediaBadge?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { key: 'missionHistory', icon: '◷', route: { screen: 'missionHistory' } },
   { key: 'dashboard', icon: '⊞', route: { screen: 'dashboard' } },
   { key: 'orders', icon: '≡', route: { screen: 'orders' } },
   { key: 'createOrder', icon: '+', route: { screen: 'createOrder' } },
@@ -28,10 +30,14 @@ const NAV_ITEMS: NavItem[] = [
     route: { screen: 'mediaLibrary' },
     newMediaBadge: true,
   },
+  { key: 'help', icon: '❓', href: '#help' },
+  { key: 'support', icon: '🎫', href: '#help/tickets' },
   { key: 'notifications', icon: '🔔', route: { screen: 'notifications' } },
 ]
 
 const activeNavKey: Record<CustomerScreen, NavItemKey | null> = {
+  missionHistory: 'missionHistory',
+  missionHistoryDetail: 'missionHistory',
   dashboard: 'dashboard',
   orders: 'orders',
   createOrder: 'createOrder',
@@ -110,7 +116,7 @@ export function CustomerLayout({
               return (
                 <a
                   key={item.key}
-                  href={customerHref(item.route)}
+                  href={item.href || (item.route ? customerHref(item.route) : '#')}
                   className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
@@ -167,6 +173,13 @@ export function CustomerLayout({
             </button>
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
+            <a
+              href="#help"
+              className="odm-btn odm-btn-gh"
+              style={{ fontSize: 13, textDecoration: 'none', padding: '6px 12px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 8 }}
+            >
+              ❓ Trợ giúp & Hỗ trợ
+            </a>
             <LanguageToggle />
             <button
               type="button"

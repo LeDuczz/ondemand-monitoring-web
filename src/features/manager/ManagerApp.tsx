@@ -3,9 +3,7 @@ import { env } from '../../config/env'
 
 import { StateView } from '../../shared/components/odm/StateView'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
-import { useI18n } from '../../shared/i18n'
 import { managerApi } from './api/dashboardApi'
-import { managerAppMessages } from './ManagerApp.messages'
 import { ManagerLayout } from './components/ManagerLayout'
 import { CreateMissionPage } from './pages/CreateMissionPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -19,6 +17,7 @@ import { ReportsPage } from './pages/ReportsPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
 import { QueuePage } from './pages/QueuePage'
 import { SchedulePage } from './pages/SchedulePage'
+import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
 import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 
 function useHash(): string {
@@ -29,6 +28,23 @@ function useHash(): string {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
   return hash
+}
+
+const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
+  dashboard: 'Dashboard',
+  orderQueue: 'Duyệt đơn',
+  orderReview: 'Duyệt đơn',
+  missionCreate: 'Mission',
+  missionDispatch: 'Mission',
+  schedule: 'Lịch mission',
+  live: 'Giám sát realtime',
+  missions: 'Mission',
+  drones: 'Đội drone',
+  maintenance: 'Bảo trì',
+  media: 'Media và giao kết quả',
+  reports: 'Báo cáo',
+  support: 'Trung tâm Hỗ trợ',
+  notFound: 'Không tìm thấy',
 }
 
 /**
@@ -46,7 +62,6 @@ export function ManagerApp() {
   const hash = useHash()
   const route = parseManagerRoute(hash)
   const navCounts = useApiQuery((signal) => managerApi.getDashboard(signal), [])
-  const { t } = useI18n(managerAppMessages)
 
   const data = navCounts.data
   // Nav badges come from the dashboard's (PROPOSED) `navCounts` field, not
@@ -57,37 +72,32 @@ export function ManagerApp() {
   // src/features/manager/types/dashboard.ts and evd/P3-manager-dashboard.md.
   const counts = data
     ? {
-        pendingOrders: data.navCounts.pendingOrders,
-        openMaintenance: data.navCounts.openMaintenanceTickets,
-        mediaNeedsAction: data.navCounts.mediaNeedsAction,
-      }
+      pendingOrders: data.navCounts.pendingOrders,
+      openMaintenance: data.navCounts.openMaintenanceTickets,
+      mediaNeedsAction: data.navCounts.mediaNeedsAction,
+    }
     : undefined
 
   return (
     <ManagerLayout
       route={route}
-      breadcrumb={t.breadcrumb[route.screen]}
+      breadcrumb={breadcrumbLabel[route.screen]}
       counts={counts}
     >
-      {renderScreen(route, t)}
+      {renderScreen(route)}
     </ManagerLayout>
   )
 }
 
-function renderScreen(
-  route: ManagerRoute,
-  t: (typeof managerAppMessages)['vi'],
-) {
+function renderScreen(route: ManagerRoute) {
   if (route.screen === 'dashboard') return <DashboardPage />
   if (route.screen === 'orderQueue') return <QueuePage />
   if (route.screen === 'orderReview')
     return <OrderReviewPage orderId={route.orderId} />
   if (route.screen === 'missionCreate')
-    return env.useMockApi || import.meta.env.MODE === 'test' ? (
-      <CreateMissionPage orderId={route.orderId} />
-    ) : (
-      <RedirectToAssignments text={t.redirecting} />
-    )
+    return env.useMockApi || import.meta.env.MODE === 'test'
+      ? <CreateMissionPage orderId={route.orderId} />
+      : <RedirectToAssignments />
   if (route.screen === 'missionDispatch')
     return <DispatchPage missionId={route.missionId} />
   if (route.screen === 'schedule') return <SchedulePage />
@@ -98,28 +108,29 @@ function renderScreen(
   if (route.screen === 'maintenance') return <MaintenancePage />
   if (route.screen === 'media') return <MediaPage />
   if (route.screen === 'reports') return <ReportsPage />
+  if (route.screen === 'support') return <StaffSupportDashboardPage />
 
   // route.screen === 'notFound'
   return (
     <StateView
       state="empty"
-      title={t.notFoundTitle}
-      description={t.notFoundDescription}
+      title="Không tìm thấy màn hình"
+      description="Đường dẫn này không tồn tại trong khu vực Manager."
       action={
         <a
           className="odm-btn odm-btn-p"
           href={managerHref({ screen: 'dashboard' })}
         >
-          {t.backToDashboard}
+          Về Dashboard
         </a>
       }
     />
   )
 }
 
-function RedirectToAssignments({ text }: { text: string }) {
+function RedirectToAssignments() {
   useEffect(() => {
     window.location.hash = '#portal/staff/assignments'
   }, [])
-  return <p>{text}</p>
+  return <p>Mission đã được backend tạo khi duyệt đơn. Đang mở trang phân công…</p>
 }

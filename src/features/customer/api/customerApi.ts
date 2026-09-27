@@ -26,6 +26,17 @@ export type CreateOrderPayload = {
   }>
 }
 
+export type ServicePricingEstimate = {
+  serviceId: string
+  servicePrice: number
+  additionalRequirements: Array<{
+    type: 'AI_IMAGE_ANALYSIS' | string
+    description: string
+    additionalPrice: number
+  }>
+  totalPrice: number
+}
+
 export type GeoJsonPolygon = {
   type: 'Polygon'
   coordinates: number[][][]
@@ -80,6 +91,8 @@ export type CustomerConsultation = {
   status?: string
   requirementData?: string
   requirementSummary?: string
+  requestTitle?: string
+  requestSummary?: string
   startedAt?: string
   completedAt?: string
   messages?: ConsultationMessage[]
@@ -246,6 +259,18 @@ export const customerApi = {
         signal,
       },
     ),
+
+  getPricingEstimate: (
+    serviceId: string,
+    params: { aiImageAnalysis?: boolean; signal?: AbortSignal } = {},
+  ) =>
+    apiRequest<ServicePricingEstimate>('/api/services/pricing-estimate', {
+      query: {
+        serviceId,
+        aiImageAnalysis: Boolean(params.aiImageAnalysis),
+      },
+      signal: params.signal,
+    }),
 
   startConsultation: (signal?: AbortSignal) =>
     apiRequest<CustomerConsultation>('/api/customer/consultations', {

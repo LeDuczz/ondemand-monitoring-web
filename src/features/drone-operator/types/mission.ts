@@ -7,6 +7,7 @@ export type OperatorMission = {
   backendStatus?: string
   status: OperatorMissionStatus
   title: string
+  description?: string
   location: string
   date: string
   startTime: string
@@ -129,6 +130,7 @@ export type MediaFile = {
   maxAttempts: number
   status: MediaFileStatus
   manualTaskCreated?: boolean
+  validationPending?: boolean
 }
 
 export type PostflightItemKey =

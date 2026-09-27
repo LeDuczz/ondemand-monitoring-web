@@ -10,6 +10,7 @@ import { authSession } from '../features/auth/api/authApi'
 import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
 import { CustomerApp } from '../features/customer/CustomerApp'
+import { CustomerLayout } from '../features/customer/CustomerLayout'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
 import { ManagerApp } from '../features/manager/ManagerApp'
 import { StaffAssignmentPage } from '../features/staff/pages/StaffAssignmentPage'
@@ -17,6 +18,9 @@ import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOpe
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminApp } from '../features/admin/AdminApp'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
+import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHomePage'
+import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsListPage'
+import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetailPage'
 
 function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) {
   const user = authSession.getUser()
@@ -26,6 +30,14 @@ function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) 
   }
   if (user.role !== role) {
     window.location.hash = getRoleHomePath(user.role)
+    return null
+  }
+  return children
+}
+
+function AuthRoute({ children }: { children: ReactNode }) {
+  if (!authSession.getAccessToken() || !authSession.getUser()) {
+    window.location.hash = '#auth/login'
     return null
   }
   return children
@@ -45,6 +57,33 @@ export function Router() {
       window.removeEventListener('popstate', handleNavigation)
     }
   }, [])
+
+  if (hash.startsWith('#help/tickets/')) {
+    const ticketId = hash.replace('#help/tickets/', '')
+    return (
+      <AuthRoute>
+        <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb="Chi tiết yêu cầu hỗ trợ">
+          <CustomerTicketDetailPage ticketId={ticketId} />
+        </CustomerLayout>
+      </AuthRoute>
+    )
+  }
+  if (hash === '#help/tickets')
+    return (
+      <AuthRoute>
+        <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb="Yêu cầu hỗ trợ của tôi">
+          <CustomerTicketsListPage />
+        </CustomerLayout>
+      </AuthRoute>
+    )
+  if (hash === '#help' || hash.startsWith('#help/'))
+    return (
+      <AuthRoute>
+        <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb="Trung tâm Hỗ trợ">
+          <HelpCenterHomePage />
+        </CustomerLayout>
+      </AuthRoute>
+    )
 
   if (pathname === '/social/callback') return <SocialCallbackPage />
   if (hash === '#auth/register')

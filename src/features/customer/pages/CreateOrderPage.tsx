@@ -1696,21 +1696,22 @@ function StepSchedule({
   errors: Partial<Record<keyof FormState, string>>
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
       <div style={card}>
-        <div style={cardHead}>Thời gian bay</div>
+        <div style={cardHead}>{t.stepSchedule.scheduleCardTitle}</div>
         <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <Field label="Ngày bắt đầu" error={errors.preferredDateFrom}>
+          <Field label={t.stepSchedule.startDate} error={errors.preferredDateFrom}>
             <input type="date" value={form.preferredDateFrom} onChange={(event) => update('preferredDateFrom', event.target.value)} style={inputStyle} />
           </Field>
-          <Field label="Ngày kết thúc" error={errors.preferredDateTo}>
+          <Field label={t.stepSchedule.endDate} error={errors.preferredDateTo}>
             <input type="date" value={form.preferredDateTo} onChange={(event) => update('preferredDateTo', event.target.value)} style={inputStyle} />
           </Field>
           <div style={{ gridColumn: '1 / -1' }}>
-            <Field label="Khung giờ" error={errors.preferredTimeId}>
+            <Field label={t.stepSchedule.timeWindow} error={errors.preferredTimeId}>
               <select value={form.preferredTimeId} onChange={(event) => update('preferredTimeId', event.target.value)} style={inputStyle}>
-                <option value="">Chọn khung giờ</option>
+                <option value="">{t.stepSchedule.selectTimeWindow}</option>
                 {preferredTimes.map((time) => <option key={time.id} value={time.id}>{formatTimeLabel(time)}</option>)}
               </select>
             </Field>
@@ -1719,26 +1720,26 @@ function StepSchedule({
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Kết quả bàn giao</div>
+        <div style={cardHead}>{t.stepSchedule.deliverableCardTitle}</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Deliverable type" error={errors.deliverableTypeId}>
+          <Field label={t.stepSchedule.deliverableType} error={errors.deliverableTypeId}>
             <select value={form.deliverableTypeId} onChange={(event) => update('deliverableTypeId', event.target.value)} style={inputStyle}>
-              <option value="">Chọn kết quả</option>
+              <option value="">{t.stepSchedule.selectDeliverable}</option>
               {deliverables.map((item) => <option key={item.id} value={item.deliverableTypeId}>{item.deliverableTypeName || item.deliverableTypeId}</option>)}
             </select>
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="Media">
+            <Field label={t.stepSchedule.media}>
               <select value={form.mediaType} onChange={(event) => update('mediaType', event.target.value as FormState['mediaType'])} style={inputStyle}>
-                <option value="IMAGE">Ảnh</option>
-                <option value="VIDEO">Video</option>
+                <option value="IMAGE">{t.stepSchedule.photoOption}</option>
+                <option value="VIDEO">{t.stepSchedule.videoOption}</option>
               </select>
             </Field>
-            <Field label="Số lượng">
+            <Field label={t.stepSchedule.quantity}>
               <input type="number" min={1} value={form.quantity} onChange={(event) => update('quantity', Number(event.target.value))} style={inputStyle} />
             </Field>
           </div>
-          <Field label="Độ phân giải">
+          <Field label={t.stepSchedule.resolution}>
             <select value={form.resolution} onChange={(event) => update('resolution', event.target.value)} style={inputStyle}>
               <option value="1080p">1080p</option>
               <option value="4K">4K</option>
@@ -1762,27 +1763,28 @@ function StepReview(props: {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   const scoreColor = props.score.level === 'good' ? 'var(--green-fg)' : props.score.level === 'warn' ? 'var(--orange-fg)' : 'var(--red-fg)'
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 420px', gap: 16 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={card}>
-          <div style={cardHead}>Xác nhận request</div>
+          <div style={cardHead}>{t.stepReview.confirmCardTitle}</div>
           <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '170px 1fr', gap: '10px 14px', fontSize: 13 }}>
-            <LabelValue label="Tiêu đề" value={props.form.title || '—'} />
-            <LabelValue label="Địa chỉ" value={props.form.address || '—'} />
-            <LabelValue label="Tọa độ" value={`${props.form.latitude}, ${props.form.longitude}`} mono />
-            <LabelValue label="Bán kính" value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
-            <LabelValue label="Dịch vụ" value={props.selectedService?.name || '—'} />
+            <LabelValue label={t.stepService.titleLabel} value={props.form.title || '—'} />
+            <LabelValue label={t.stepReview.address} value={props.form.address || '—'} />
+            <LabelValue label={t.stepReview.coordinates} value={`${props.form.latitude}, ${props.form.longitude}`} mono />
+            <LabelValue label={t.stepReview.radius} value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
+            <LabelValue label={t.stepReview.service} value={props.selectedService?.name || '—'} />
             <LabelValue
-              label="Yêu cầu bổ sung"
+              label={t.stepService.quickRequirementTitle}
               value={props.aiAnalysisRequested ? 'AI phân tích hình ảnh' : 'Không có'}
             />
-            <LabelValue label="Ngày" value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
-            <LabelValue label="Khung giờ" value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
-            <LabelValue label="Deliverable" value={props.selectedDeliverable?.deliverableTypeName || '—'} />
-            <LabelValue label="AI consultation" value={props.consultation?.id ? 'Đã tư vấn' : 'Không dùng'} />
+            <LabelValue label={t.stepReview.dates} value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
+            <LabelValue label={t.stepSchedule.timeWindow} value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
+            <LabelValue label={t.stepReview.deliverable} value={props.selectedDeliverable?.deliverableTypeName || '—'} />
+            <LabelValue label={t.stepReview.aiConsultation} value={props.consultation?.id ? t.stepReview.consulted : t.stepReview.notUsed} />
           </div>
         </div>
 
@@ -1790,7 +1792,7 @@ function StepReview(props: {
           <div style={cardHead}>Chi phí dự kiến</div>
           <div style={{ padding: 16, display: 'grid', gap: 10, fontSize: 13 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-              <span>Giá service</span>
+              <span>{t.stepSchedule.scheduleCardTitle.replace('bay', 'service')}</span>
               <strong>{formatMoney(props.pricingEstimate?.servicePrice)}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
@@ -1809,13 +1811,13 @@ function StepReview(props: {
         </div>
 
         <div style={card}>
-          <div style={cardHead}>AI chấm điểm mô phỏng</div>
+          <div style={cardHead}>{t.stepReview.scoreCardTitle}</div>
           <div style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 42, color: scoreColor }}>{props.score.score}</div>
               <div>
-                <div style={{ fontWeight: 800 }}>Điểm sẵn sàng gửi request</div>
-                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>Điểm này giúp user kiểm tra thiếu thông tin trước khi call API tạo order.</div>
+                <div style={{ fontWeight: 800 }}>{t.stepReview.scoreTitle}</div>
+                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>{t.stepReview.scoreHint}</div>
               </div>
             </div>
             <ul style={{ margin: '12px 0 0', paddingLeft: 18, color: 'var(--tx2)', lineHeight: 1.6 }}>
@@ -1826,16 +1828,16 @@ function StepReview(props: {
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Tóm tắt tư vấn AI</div>
+        <div style={cardHead}>{t.stepReview.summaryCardTitle}</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {props.consultation?.recommendedServiceName || props.consultation?.recommendedServiceId ? (
             <div style={{ padding: 12, borderRadius: 8, background: 'var(--green-bg)', color: 'var(--green-fg)', lineHeight: 1.5 }}>
-              <div style={{ fontWeight: 800 }}>Service đề xuất</div>
+              <div style={{ fontWeight: 800 }}>{t.stepReview.recommendedService}</div>
               <div>{props.consultation.recommendedServiceName || props.selectedService?.name || props.consultation.recommendedServiceId}</div>
             </div>
           ) : (
             <div style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}>
-              Customer tự chọn service hoặc chưa dùng AI tư vấn ở Step 2.
+              {t.stepReview.noConsultationHint}
             </div>
           )}
           {props.consultation?.requirementSummary && (
@@ -1844,8 +1846,8 @@ function StepReview(props: {
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Metric label="Media" value={`${props.form.mediaType} · ${props.form.resolution}`} />
-            <Metric label="Số lượng" value={String(props.form.quantity)} />
+            <Metric label={t.stepSchedule.media} value={`${props.form.mediaType} · ${props.form.resolution}`} />
+            <Metric label={t.stepSchedule.quantity} value={String(props.form.quantity)} />
           </div>
         </div>
       </div>

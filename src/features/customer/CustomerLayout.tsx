@@ -9,7 +9,8 @@ import './customer.css'
 type NavItem = {
   label: string
   icon: string
-  route: CustomerRoute
+  route?: CustomerRoute
+  href?: string
   newMediaBadge?: boolean
 }
 
@@ -18,6 +19,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Đơn của tôi', icon: '≡', route: { screen: 'orders' } },
   { label: 'Tạo yêu cầu', icon: '+', route: { screen: 'createOrder' } },
   { label: 'Thư viện kết quả', icon: '⊟', route: { screen: 'mediaLibrary' }, newMediaBadge: true },
+  { label: 'Trợ giúp & FAQ', icon: '❓', href: '#help' },
+  { label: 'Yêu cầu hỗ trợ', icon: '🎫', href: '#help/tickets' },
   { label: 'Thông báo', icon: '🔔', route: { screen: 'notifications' } },
 ]
 
@@ -96,7 +99,7 @@ export function CustomerLayout({
               return (
                 <a
                   key={item.label}
-                  href={customerHref(item.route)}
+                  href={item.href || (item.route ? customerHref(item.route) : '#')}
                   className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
@@ -144,6 +147,13 @@ export function CustomerLayout({
             </button>
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
+            <a
+              href="#help"
+              className="odm-btn odm-btn-gh"
+              style={{ fontSize: 13, textDecoration: 'none', padding: '6px 12px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 8 }}
+            >
+              ❓ Trợ giúp & Hỗ trợ
+            </a>
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1"

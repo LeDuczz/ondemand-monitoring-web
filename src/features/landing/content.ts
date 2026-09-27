@@ -299,4 +299,5 @@ export const navLinks = [
   { label: 'Tính năng', href: '#features' },
   { label: 'Ứng dụng', href: '#industries' },
   { label: 'Câu hỏi thường gặp', href: '#faq' },
+  { label: 'Trung tâm Trợ giúp', href: '#help' },
 ]

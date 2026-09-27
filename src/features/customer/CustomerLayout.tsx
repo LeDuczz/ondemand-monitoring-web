@@ -14,6 +14,7 @@ type NavItem = {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { label: 'Lịch sử mission', icon: '◷', route: { screen: 'missionHistory' } },
   { label: 'Tổng quan', icon: '⊞', route: { screen: 'dashboard' } },
   { label: 'Đơn của tôi', icon: '≡', route: { screen: 'orders' } },
   { label: 'Tạo yêu cầu', icon: '+', route: { screen: 'createOrder' } },
@@ -22,6 +23,8 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 const activeScreen: Record<CustomerScreen, string> = {
+  missionHistory: 'Lịch sử mission',
+  missionHistoryDetail: 'Lịch sử mission',
   dashboard: 'Tổng quan',
   orders: 'Đơn của tôi',
   createOrder: 'Tạo yêu cầu',

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MissionUploadedMedia } from '../../../media/components/MissionUploadedMedia'
 import { env } from '../../../../config/env'
 import {
   SIMULATION_MAP_DEFAULT_CROP,
@@ -948,6 +949,10 @@ export default function MissionDetail({
       </div>
 
       {/* Bottom actions */}
+      {mission.state === 'COMPLETED' ? (
+        <MissionUploadedMedia missionId={mission.backendId ?? mission.id} />
+      ) : null}
+
       {isAcceptable && (
         <div
           style={{

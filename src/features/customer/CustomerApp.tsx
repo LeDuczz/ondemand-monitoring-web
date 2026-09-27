@@ -15,6 +15,8 @@ import { MediaPage } from './pages/MediaPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { OrderDetailPage } from './pages/OrderDetailPage'
 import { OrdersPage } from './pages/OrdersPage'
+import { MissionHistoryPage } from './pages/MissionHistoryPage'
+import { MissionHistoryDetailPage } from './pages/MissionHistoryDetailPage'
 import { customerHref, parseCustomerRoute, type CustomerRoute } from './routes'
 
 function useHash(): string {
@@ -28,6 +30,8 @@ function useHash(): string {
 }
 
 const breadcrumbLabel: Record<CustomerRoute['screen'], string> = {
+  missionHistory: 'Lịch sử mission',
+  missionHistoryDetail: 'Chi tiết mission',
   dashboard: 'Tổng quan',
   orders: 'Đơn của tôi',
   createOrder: 'Tạo yêu cầu',
@@ -61,6 +65,8 @@ export function CustomerApp() {
 }
 
 function renderScreen(route: CustomerRoute) {
+  if (route.screen === 'missionHistory') return <MissionHistoryPage />
+  if (route.screen === 'missionHistoryDetail') return <MissionHistoryDetailPage missionId={route.missionId} />
   if (route.screen === 'dashboard') return <DashboardPage />
   if (route.screen === 'orders') return <OrdersPage />
   if (route.screen === 'createOrder') return <CreateOrderPage />

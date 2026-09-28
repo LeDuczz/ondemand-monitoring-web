@@ -5,7 +5,7 @@
 //   GET  /api/orders/{id}/analysis/latest    [BRIEF C4]
 //   GET  /api/orders/{id}/resource-preview   PROPOSED (no source endpoint)
 //   PUT  /api/orders/{id}/internal-note      PROPOSED (no source endpoint)
-//   POST /api/orders/{id}/approve            [BE] (creates a mission)
+//   POST /api/orders/{id}/approve            [BE] approve only; staff schedules later
 //   POST /api/orders/{id}/approval           [BRIEF C4] {decision, reason}
 //   POST /api/orders/{id}/deliver            [BRIEF C4] mark as delivered
 import type {
@@ -20,7 +20,7 @@ import type {
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import analysesSeed from '../data/order-analyses.json'
-import { missions, newMinimalMission } from './missionsStore'
+import { missions } from './missionsStore'
 import { findOrder, orders, type SeedOrder } from './ordersStore'
 
 type Approval = {
@@ -239,8 +239,11 @@ registerMockRoutes([
         )
       }
       order.status = 'APPROVED'
-      missions.push(newMinimalMission(order.id, order.code))
-      return ok(undefined, 'Order approved and mission created successfully')
+      order.orderStatus = 'APPROVED'
+      order.reviewById = REVIEWER_ID
+      order.reviewByName = REVIEWER_NAME
+      order.reviewAt = new Date().toISOString()
+      return ok(toOrderCreateResponse(order), 'Order approved successfully')
     },
   },
   {

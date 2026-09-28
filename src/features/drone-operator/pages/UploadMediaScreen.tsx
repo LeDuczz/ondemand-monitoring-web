@@ -155,7 +155,7 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
   return (
     <div className="odm-card" style={{ marginBottom: 0 }}>
       <FlightStepHeader title="Upload media" missionId={missionId ?? 'Đang mở mission'} active={6}
-        right={<span style={{ padding: '6px 12px', borderRadius: 16, background: 'var(--sf3)', fontWeight: 700, fontSize: 13 }}>{items[0]?.droneCode ?? '—'}</span>} />
+        right={<span style={{ padding: '6px 12px', borderRadius: 16, background: 'var(--sf3)', fontWeight: 700, fontSize: 13 }}>{items[0]?.deviceId ?? '—'}</span>} />
       <div style={{ padding: '18px 22px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 18, alignItems: 'center', padding: '12px 18px', borderRadius: 14, background: 'var(--sf)', border: '1.5px solid var(--bd)' }}>

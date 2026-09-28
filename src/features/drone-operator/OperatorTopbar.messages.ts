@@ -5,14 +5,14 @@ export const operatorTopbarMessages = defineMessages({
     pilotLabel: 'Phi công',
     maintenanceLink: 'Bảo trì & Sự cố',
     search: 'Tìm kiếm',
-    searchPlaceholder: 'Tìm mã đơn, mission, drone...',
+    searchPlaceholder: 'Tìm mã đơn, mission, thiết bị...',
     toggleTheme: 'Đổi giao diện sáng / tối',
   },
   en: {
     pilotLabel: 'Pilot',
     maintenanceLink: 'Maintenance & Incidents',
     search: 'Search',
-    searchPlaceholder: 'Search order, mission, drone id...',
+    searchPlaceholder: 'Search order, mission, device id...',
     toggleTheme: 'Switch to light / dark theme',
   },
 })

@@ -13,6 +13,7 @@ export type OperatorMission = {
   startTime: string
   endTime: string
   serviceLabel: string
+  deviceId?: string | null
   droneCode: string | null
   droneName: string | null
   flightStartedAt?: string

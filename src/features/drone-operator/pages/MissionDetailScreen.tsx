@@ -302,7 +302,7 @@ async function fetchLatestWeatherCheck(missionId: string, signal?: AbortSignal) 
 
 async function fetchLatestPostflightCheck(missionId: string, signal?: AbortSignal) {
   const response = await authenticatedFetch(
-    `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/postflight-checks/latest`,
+    `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/post-device-checks/current`,
     { cache: 'no-store', signal },
   )
   if (!response.ok) return null
@@ -579,17 +579,18 @@ function MissionDashboard({
   onAccept: () => void
   onOpenReject: () => void
 }) {
+  const deviceId = mission.deviceId
   const [preflightStatus, setPreflightStatus] = useState<RuntimePreflightStatus | null>(() =>
-    readStoredPreflightState(mission.id, mission.droneCode),
+    readStoredPreflightState(mission.id, deviceId),
   )
   const [weatherStatus, setWeatherStatus] = useState<WeatherPreflightStatus | null>(() =>
-    readStoredWeatherState(mission.id, mission.droneCode),
+    readStoredWeatherState(mission.id, deviceId),
   )
   const [postflightStatus, setPostflightStatus] = useState<PostflightCheckStatus | null>(null)
 
   useEffect(() => {
-    setPreflightStatus(readStoredPreflightState(mission.id, mission.droneCode))
-    setWeatherStatus(readStoredWeatherState(mission.id, mission.droneCode))
+    setPreflightStatus(readStoredPreflightState(mission.id, deviceId))
+    setWeatherStatus(readStoredWeatherState(mission.id, deviceId))
     setPostflightStatus(null)
     const controller = new AbortController()
     fetchPersistedPreflight(mission.id, controller.signal)
@@ -614,7 +615,7 @@ function MissionDashboard({
         setPostflightStatus(null)
       })
     return () => controller.abort()
-  }, [mission.droneCode, mission.id])
+  }, [deviceId, mission.id])
 
   return (
     <div>
@@ -1579,13 +1580,14 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
   )
 }
 
-// ─── Drone device card ────────────────────────────────────────────────────────
+// ─── Device card ──────────────────────────────────────────────────────────────
 
 function DroneDeviceCard({ mission }: { mission: OperatorMission }) {
+  const deviceId = mission.deviceId
   const droneLabel =
-    mission.droneName && mission.droneName !== mission.droneCode
-      ? `${mission.droneCode} ${mission.droneName}`
-      : mission.droneCode ?? 'Chưa gán drone'
+    mission.droneName && mission.droneName !== deviceId
+      ? `${deviceId} ${mission.droneName}`
+      : deviceId ?? 'Chưa gán thiết bị'
 
   return (
     <div className="odm-card">
@@ -1594,7 +1596,7 @@ function DroneDeviceCard({ mission }: { mission: OperatorMission }) {
       </div>
       <div className="odm-card-body" style={{ padding: '10px 14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Drone icon placeholder */}
+          {/* Device icon placeholder */}
           <div
             style={{
               width: 44,

@@ -3,13 +3,13 @@ import { defineMessages } from '../../../shared/i18n'
 export const flightTelemetryHudMessages = defineMessages({
   vi: {
     uploadError: (msg: string) => `Lỗi upload ảnh: ${msg}`,
-    stationTitle: (deviceCode: string, missionId: string) =>
-      `Trạm Điều Khiển Chuyến Bay — ${deviceCode} (Mission ${missionId})`,
+    stationTitle: (deviceId: string, missionId: string) =>
+      `Trạm điều khiển chuyến bay - thiết bị ${deviceId} (Mission ${missionId})`,
     altitudeLabel: 'ĐỘ CAO (ALTITUDE)',
     relativeAlt: 'Relative Alt (AGL)',
     speedLabel: 'VẬN TỐC (GROUND SPEED)',
-    batteryLabel: 'MỨC PIN DRONE',
-    uploadTitle: 'Upload Hình ảnh / Video Chụp từ Drone (Amazon S3 Direct)',
+    batteryLabel: 'MỨC PIN THIẾT BỊ',
+    uploadTitle: 'Upload hình ảnh / video từ thiết bị (Amazon S3 Direct)',
     uploadSuccess: 'Đã lưu tập tin lên S3 thành công!',
     chooseFile: 'Chọn ảnh/video...',
     uploading: '⏳ Đang tải lên...',
@@ -18,13 +18,13 @@ export const flightTelemetryHudMessages = defineMessages({
   },
   en: {
     uploadError: (msg: string) => `Image upload error: ${msg}`,
-    stationTitle: (deviceCode: string, missionId: string) =>
-      `Flight Control Station — ${deviceCode} (Mission ${missionId})`,
+    stationTitle: (deviceId: string, missionId: string) =>
+      `Flight Control Station - device ${deviceId} (Mission ${missionId})`,
     altitudeLabel: 'ALTITUDE',
     relativeAlt: 'Relative Alt (AGL)',
     speedLabel: 'GROUND SPEED',
-    batteryLabel: 'DRONE BATTERY LEVEL',
-    uploadTitle: 'Upload Drone Image / Video (Amazon S3 Direct)',
+    batteryLabel: 'DEVICE BATTERY LEVEL',
+    uploadTitle: 'Upload device image / video (Amazon S3 Direct)',
     uploadSuccess: 'File saved to S3 successfully!',
     chooseFile: 'Choose image/video...',
     uploading: '⏳ Uploading...',

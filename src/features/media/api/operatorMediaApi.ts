@@ -8,7 +8,7 @@ export type LocalMedia = {
   localMediaId: string
   missionId: string
   missionCode?: string
-  droneCode: string
+  deviceId?: string
   mediaType: 'IMAGE' | 'VIDEO'
   fileName: string
   contentType: string
@@ -82,8 +82,12 @@ export const operatorMediaApi = {
     return response.media.filter((item) => item.missionId === missionId)
       .map((item) => ({ ...item, backendMediaId: item.backendMediaId ?? storedMediaId(item) }))
   },
-  manualTasks(missionId: string) {
-    return backend<LocalMedia[]>(`/missions/${encodeURIComponent(missionId)}/manual-media-uploads`)
+  async manualTasks(missionId: string) {
+    try {
+      return await backend<LocalMedia[]>(`/missions/${encodeURIComponent(missionId)}/manual-media-uploads`)
+    } catch {
+      return []
+    }
   },
   async reviewItems(missionId: string): Promise<LocalMedia[]> {
     const [local, tasks] = await Promise.all([
@@ -156,7 +160,7 @@ export const operatorMediaApi = {
     const missionId = encodeURIComponent(item.missionId)
     const preparePath = `/missions/${missionId}/media-uploads`
     let plan = await backend<UploadPlan>(preparePath, 'POST', {
-      droneCode: item.droneCode,
+      deviceId: item.deviceId,
       localMediaId: item.localMediaId,
       mediaType: item.mediaType,
       fileName: item.fileName,

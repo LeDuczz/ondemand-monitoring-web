@@ -10,7 +10,7 @@ const mission = {
   id: '540c79a9-c987-4ea2-a46b-57a7ae967f93',
   missionCode: 'MS-8E897AE9',
   status: 'IN_FLIGHT',
-  droneCode: 'DRN-0048',
+  deviceId: 'device-0048',
   orderTitle: 'Giám sát khu vực',
   plan: {
     waypoints: [
@@ -26,7 +26,7 @@ describe('live mission mapping', () => {
     expect(toOperatorMission(mission).missionCode).toBe(mission.missionCode)
     expect(toFlightMission(mission).backendId).toBe(mission.id)
     expect(toFlightMission(mission).id).toBe(mission.missionCode)
-    expect(toFlightDrone(mission).id).toBe(mission.droneCode)
+    expect(toFlightDrone(mission).id).toBe(mission.deviceId)
   })
 
   it('uses only the assigned mission route in sequence order', () => {

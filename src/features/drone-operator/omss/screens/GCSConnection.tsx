@@ -78,7 +78,7 @@ export default function GCSConnection({
       const verified = await flightControlApi.status()
       if (
         verified.missionId !== missionId ||
-        verified.deviceCode !== drone.id
+        verified.deviceId !== drone.id
       ) {
         throw new Error(t.errors.sessionVerificationFailed)
       }

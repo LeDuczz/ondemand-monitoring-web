@@ -23,8 +23,8 @@ export function isSelectableMission(status?: string | null) {
   )
 }
 
-function hasAssignedDrone(mission?: BackendMission) {
-  return Boolean(mission?.droneCode || mission?.droneId)
+function hasAssignedDevice(mission?: BackendMission) {
+  return Boolean(mission?.deviceId)
 }
 
 export function mergeMissionSnapshot(
@@ -37,8 +37,7 @@ export function mergeMissionSnapshot(
   return {
     ...listItem,
     ...detail,
-    droneId: detail.droneId ?? listItem.droneId ?? null,
-    droneCode: detail.droneCode ?? listItem.droneCode ?? null,
+    deviceId: detail.deviceId ?? listItem.deviceId ?? null,
     plan: detail.plan ?? listItem.plan ?? null,
   }
 }
@@ -63,7 +62,7 @@ export function useActiveMission(paramMissionId?: string) {
   const activeMissions = allMissions.filter((m) =>
     isSelectableMission(m.status),
   )
-  const activeMissionsWithDrone = activeMissions.filter(hasAssignedDrone)
+  const activeMissionsWithDevice = activeMissions.filter(hasAssignedDevice)
 
   // Resolve target mission ID:
   // 1. Explicit parameter
@@ -90,8 +89,8 @@ export function useActiveMission(paramMissionId?: string) {
   if (!targetId && postflightMissions.length > 0) {
     targetId = postflightMissions[0].id
   }
-  if (!targetId && activeMissionsWithDrone.length > 0) {
-    targetId = activeMissionsWithDrone[0].id
+  if (!targetId && activeMissionsWithDevice.length > 0) {
+    targetId = activeMissionsWithDevice[0].id
   }
   if (!targetId && activeMissions.length > 0) {
     targetId = activeMissions[0].id

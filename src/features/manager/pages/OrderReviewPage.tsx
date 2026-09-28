@@ -17,11 +17,13 @@ import {
 import { ordersApi } from '../api/ordersApi'
 import { env } from '../../../config/env'
 import { managerHref } from '../routes'
+import { CreateMissionPage } from './CreateMissionPage'
 import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import type {
   ApprovalDecision,
   OrderAnalysis,
   OrderDetail,
+  OrderMissionBrief,
   OrderResourcePreview,
 } from '../types/orders'
 import '../manager.css'
@@ -57,10 +59,17 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
   const [modal, setModal] = useState<ModalKind>(null)
   const [navigateHome, setNavigateHome] = useState(false)
+  const [scheduleBrief, setScheduleBrief] = useState<OrderMissionBrief | null>(
+    null,
+  )
 
   if (navigateHome) {
     window.location.hash = managerHref({ screen: 'orderQueue' })
     return null
+  }
+
+  if (scheduleBrief) {
+    return <CreateMissionPage orderId={scheduleBrief.id} initialBrief={scheduleBrief} />
   }
 
   if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} t={t} />
@@ -147,27 +156,33 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
       <div className="odm-mgr-review-actionbar">
         <span className="odm-mgr-review-actionbar-hint">{t.actionHint}</span>
-        <button
-          type="button"
-          className="odm-btn odm-btn-yl odm-btn-lg"
-          disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
-          title={
-            !env.useMockApi && import.meta.env.MODE !== 'test'
-              ? t.requestInfoDisabled
-              : undefined
-          }
-          onClick={() => setModal('info')}
-        >
-          {t.requestInfo}
-        </button>
-        <button
-          type="button"
-          className="odm-btn odm-btn-rd odm-btn-lg"
-          onClick={() => setModal('reject')}
-        >
-          {t.reject}
-        </button>
-        <ApproveButton orderId={order.id} t={t} />
+        <div className="odm-mgr-review-actionbar-actions">
+          <button
+            type="button"
+            className="odm-btn odm-btn-yl odm-btn-lg"
+            disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
+            title={
+              !env.useMockApi && import.meta.env.MODE !== 'test'
+                ? t.requestInfoDisabled
+                : undefined
+            }
+            onClick={() => setModal('info')}
+          >
+            {t.requestInfo}
+          </button>
+          <button
+            type="button"
+            className="odm-btn odm-btn-rd odm-btn-lg"
+            onClick={() => setModal('reject')}
+          >
+            {t.reject}
+          </button>
+          <ApproveButton
+            orderId={order.id}
+            t={t}
+            onApproved={() => setScheduleBrief(toMissionBrief(order))}
+          />
+        </div>
       </div>
 
       {modal ? (
@@ -182,6 +197,22 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       ) : null}
     </div>
   )
+}
+
+function toMissionBrief(order: OrderDetail): OrderMissionBrief {
+  return {
+    id: order.id,
+    code: order.code,
+    serviceName: order.serviceName,
+    customerFullName: order.customer.fullName,
+    preferredDate: order.preferredDate,
+    preferredTimeName: order.preferredTimeName,
+    addressText: order.addressText,
+    center: order.center,
+    radiusM: order.radiusM,
+    nearestBase: order.nearestBase,
+    mediaRequirements: order.mediaRequirements,
+  }
 }
 
 function formatVn(iso: string, locale: 'vi-VN' | 'en-US'): string {
@@ -859,7 +890,15 @@ function InternalNoteCard({
   )
 }
 
-function ApproveButton({ orderId, t }: { orderId: string; t: PageMessages }) {
+function ApproveButton({
+  orderId,
+  t,
+  onApproved,
+}: {
+  orderId: string
+  t: PageMessages
+  onApproved: () => void
+}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -867,10 +906,8 @@ function ApproveButton({ orderId, t }: { orderId: string; t: PageMessages }) {
     setBusy(true)
     setError(null)
     try {
-      const mission = await ordersApi.approve(orderId)
-      window.location.hash = mission?.id
-        ? managerHref({ screen: 'missionDispatch', missionId: mission.id })
-        : managerHref({ screen: 'missionCreate', orderId })
+      await ordersApi.approve(orderId)
+      onApproved()
     } catch {
       setError(t.approveFailed)
       setBusy(false)

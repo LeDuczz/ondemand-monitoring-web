@@ -1702,6 +1702,9 @@ function StepSchedule({
       <div style={card}>
         <div style={cardHead}>{t.stepSchedule.scheduleCardTitle}</div>
         <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ gridColumn: '1 / -1', color: 'var(--tx3)', fontSize: 13 }}>
+            {t.stepSchedule.dateRangeHint}
+          </div>
           <Field label={t.stepSchedule.startDate} error={errors.preferredDateFrom}>
             <input type="date" value={form.preferredDateFrom} onChange={(event) => update('preferredDateFrom', event.target.value)} style={inputStyle} />
           </Field>

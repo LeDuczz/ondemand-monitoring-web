@@ -18,10 +18,8 @@ export const managerAppMessages = defineMessages({
       notFound: 'Không tìm thấy',
     },
     notFoundTitle: 'Không tìm thấy màn hình',
-    notFoundDescription: 'Đường dẫn này không tồn tại trong khu vực Manager.',
+    notFoundDescription: 'Đường dẫn này không tồn tại trong khu vực Staff.',
     backToDashboard: 'Về Dashboard',
-    redirecting:
-      'Mission đã được backend tạo khi duyệt đơn. Đang mở trang phân công…',
   },
   en: {
     breadcrumb: {
@@ -40,9 +38,7 @@ export const managerAppMessages = defineMessages({
       notFound: 'Not found',
     },
     notFoundTitle: 'Screen not found',
-    notFoundDescription: 'This path does not exist in the Manager area.',
+    notFoundDescription: 'This path does not exist in the Staff area.',
     backToDashboard: 'Back to Dashboard',
-    redirecting:
-      'The mission was already created by the backend when the order was approved. Opening the assignment page…',
   },
 })

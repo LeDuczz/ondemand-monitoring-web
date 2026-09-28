@@ -213,37 +213,43 @@ describe('OrderReviewPage', () => {
     )
   })
 
-  it('navigates to the create-mission route after approve', async () => {
+  it('opens the schedule/create-mission form inline after approve', async () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'approve').mockResolvedValue(undefined)
+    const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Duyệt và tạo mission' }),
+      screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
     )
 
     await waitFor(() =>
-      expect(window.location.hash).toBe(
-        '#portal/staff/orders/ord-2609-0157/mission',
-      ),
+      expect(screen.getByRole('heading', { name: 'Tạo mission' })).toBeInTheDocument(),
+    )
+    expect(briefSpy).not.toHaveBeenCalled()
+    expect(window.location.hash).not.toBe(
+      '#portal/staff/orders/ord-2609-0157/mission',
     )
   })
 
-  it('opens assignment for the mission returned by the backend', async () => {
+  it('does not open dispatch even if an old backend response includes a mission id', async () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'approve').mockResolvedValue({
       id: 'mission-real',
     } as Awaited<ReturnType<typeof ordersApi.approve>>)
+    const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
     fireEvent.click(
-      screen.getByRole('button', { name: 'Duyệt và tạo mission' }),
+      screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
     )
     await waitFor(() =>
-      expect(window.location.hash).toBe(
-        '#portal/staff/missions/mission-real/dispatch',
-      ),
+      expect(screen.getByRole('heading', { name: 'Tạo mission' })).toBeInTheDocument(),
+    )
+    expect(briefSpy).not.toHaveBeenCalled()
+    expect(window.location.hash).not.toBe(
+      '#portal/staff/missions/mission-real/dispatch',
     )
   })
 
@@ -294,7 +300,7 @@ describe('OrderReviewPage', () => {
     expect(screen.getByText('Không có finding nào.')).toBeInTheDocument()
     // Action bar still renders — the page didn't crash on null fields.
     expect(
-      screen.getByRole('button', { name: 'Duyệt và tạo mission' }),
+      screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
     ).toBeInTheDocument()
   })
 
@@ -330,7 +336,7 @@ describe('OrderReviewPage', () => {
     expect(screen.getAllByText('FEASIBLE').length).toBeGreaterThan(0)
     expect(screen.getByText('Customer')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Approve & create mission' }),
+      screen.getByRole('button', { name: 'Approve & schedule' }),
     ).toBeInTheDocument()
   })
 })

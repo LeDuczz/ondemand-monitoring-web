@@ -90,7 +90,7 @@ describe('POST /api/orders/{id}/missions', () => {
     expect(payload.code).toBe('FLIGHT_PLAN_GENERATION_FAILED')
   })
 
-  it('attaches the plan to the bare CREATED mission from approve()', async () => {
+  it('creates the first mission attempt after staff schedules an approved order', async () => {
     await call('POST', '/api/orders/ord-2609-0157/approve')
     const { status, payload } = await call(
       'POST',
@@ -162,6 +162,7 @@ describe('GET /api/missions/{id}/resource-suggestions', () => {
 
   it('falls back to default suggestions for a mission with no seeded data', async () => {
     await call('POST', '/api/orders/ord-2609-0157/approve')
+    await call('POST', '/api/orders/ord-2609-0157/missions', validRequest)
     const { status, payload } = await call(
       'GET',
       '/api/missions/msn-2609-0157-1/resource-suggestions',

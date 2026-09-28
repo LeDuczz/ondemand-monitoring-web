@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/httpClient'
+import { ApiError, apiRequest } from '../../../shared/api/httpClient'
 import type {
   ApprovalRequest,
   OrderAnalysis,
@@ -8,7 +8,6 @@ import type {
   OrderMissionBrief,
   OrderResourcePreview,
 } from '../types/orders'
-import type { MissionResponse } from '../types/missions'
 
 function formatRequirementValue(value: unknown, suffix = '') {
   if (typeof value !== 'number' && typeof value !== 'string') return null
@@ -73,6 +72,22 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
   }
 }
 
+function toOrderMissionBrief(order: OrderDetail): OrderMissionBrief {
+  return {
+    id: order.id,
+    code: order.code,
+    serviceName: order.serviceName,
+    customerFullName: order.customer.fullName,
+    preferredDate: order.preferredDate,
+    preferredTimeName: order.preferredTimeName,
+    addressText: order.addressText,
+    center: order.center,
+    radiusM: order.radiusM,
+    nearestBase: order.nearestBase,
+    mediaRequirements: order.mediaRequirements,
+  }
+}
+
 /** MNG-02 / MNG-03 order-review APIs. See evd/00-PLAN.md §3. */
 export const ordersApi = {
   /** `GET /api/orders/pending` [BE]. */
@@ -117,9 +132,9 @@ export const ordersApi = {
     })
   },
 
-  /** `POST /api/orders/{id}/approve` [BE] — no body, creates a mission. */
-  approve(id: string): Promise<MissionResponse | void> {
-    return apiRequest<MissionResponse | void>(`/api/orders/${id}/approve`, { method: 'POST' })
+  /** `POST /api/orders/{id}/approve` [BE] — approves only; staff schedules the mission later. */
+  approve(id: string): Promise<OrderCreateResponse | void> {
+    return apiRequest<OrderCreateResponse | void>(`/api/orders/${id}/approve`, { method: 'POST' })
   },
 
   /** `POST /api/orders/{id}/approval` [BRIEF C4] `{decision, reason}`. */
@@ -130,17 +145,29 @@ export const ordersApi = {
     })
   },
 
-  /**
-   * `GET /api/orders/{id}/mission-brief` — PROPOSED (P5). Read-only order
-   * projection for an APPROVED order, used to prefill CreateMissionPage
-   * (MNG-04). See `OrderMissionBrief` for why this can't reuse `getOrder`.
-   */
+  /** Read-only order projection used to prefill CreateMissionPage (MNG-04). */
   getOrderForMission(
     id: string,
     signal?: AbortSignal,
   ): Promise<OrderMissionBrief> {
-    return apiRequest<OrderMissionBrief>(`/api/orders/${id}/mission-brief`, {
-      signal,
-    })
+    return this.getOrder(id, signal)
+      .then((order) => {
+        if (order.status !== 'APPROVED') {
+          throw new ApiError('Đơn không còn ở trạng thái đã duyệt.', {
+            status: 409,
+            method: 'GET',
+            path: `/api/orders/${id}`,
+          })
+        }
+        return toOrderMissionBrief(order)
+      })
+      .catch((error) => {
+        if (error instanceof ApiError && error.status === 409) {
+          return apiRequest<OrderMissionBrief>(`/api/orders/${id}/mission-brief`, {
+            signal,
+          })
+        }
+        throw error
+      })
   },
 }

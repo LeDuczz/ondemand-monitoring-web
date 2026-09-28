@@ -14,12 +14,12 @@ describe('active mission selection', () => {
     expect(isSelectableMission('FAILED_PREFLIGHT')).toBe(true)
   })
 
-  it('keeps the assigned drone from the list when detail temporarily omits it', () => {
+  it('keeps the assigned device from the list when detail temporarily omits it', () => {
     expect(
       mergeMissionSnapshot(
-        { id: 'm-1', status: 'READY_TO_FLY', droneCode: null },
-        { id: 'm-1', status: 'CONNECTED', droneCode: 'DRN-0052' },
-      )?.droneCode,
-    ).toBe('DRN-0052')
+        { id: 'm-1', status: 'READY_TO_FLY', deviceId: null },
+        { id: 'm-1', status: 'CONNECTED', deviceId: 'device-0052' },
+      )?.deviceId,
+    ).toBe('device-0052')
   })
 })

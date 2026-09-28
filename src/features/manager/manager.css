@@ -987,26 +987,76 @@
   position: sticky;
   bottom: 0;
   margin: 20px -24px -28px;
-  padding: 12px 24px;
+  padding: 14px 24px;
   background: var(--sf);
   border-top: 1px solid var(--bd);
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .odm-mgr-review-actionbar-hint {
   color: var(--tx3);
   flex: 1;
-  min-width: 200px;
+  min-width: 240px;
+  max-width: 760px;
+  line-height: 1.45;
+}
+
+.odm-mgr-review-actionbar-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.odm-mgr-review-actionbar-actions .odm-btn {
+  min-width: 112px;
+}
+
+.odm-mgr-review-actionbar-actions .odm-btn-ok {
+  min-width: 188px;
 }
 
 @media (max-width: 640px) {
   .odm-mgr-review-actionbar {
     margin: 20px -16px -16px;
     padding: 12px 16px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .odm-mgr-review-actionbar-hint {
+    min-width: 0;
+  }
+
+  .odm-mgr-review-actionbar-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .odm-mgr-review-actionbar-actions .odm-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1180px) {
+  .odm-mgr-review-actionbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .odm-mgr-review-actionbar-actions {
+    width: 100%;
+  }
+
+  .odm-mgr-review-actionbar-actions .odm-btn {
+    flex: 1;
   }
 }
 

@@ -6,7 +6,7 @@ import { authenticatedFetch } from '../../auth/api/authApi'
 vi.mock('../../auth/api/authApi', () => ({ authenticatedFetch: vi.fn() }))
 
 const item: LocalMedia = {
-  localMediaId: 'capture', missionId: 'mission', droneCode: 'DRN-0050',
+  localMediaId: 'capture', missionId: 'mission', deviceId: 'device-0050',
   mediaType: 'IMAGE', fileName: 'capture.jpg', contentType: 'image/jpeg',
   fileSize: 100, checksumSha256: 'a'.repeat(64), capturedAt: '2026-09-26T00:00:00Z',
   status: 'REVIEW_PENDING',

@@ -209,7 +209,7 @@ export function ActiveFlightScreen({
   if (!mission) {
     return <FlightOpeningShell />
   }
-  if (!mission.droneCode) {
+  if (!mission.deviceId) {
     return (
       <FlightEmptyState
         tone="error"

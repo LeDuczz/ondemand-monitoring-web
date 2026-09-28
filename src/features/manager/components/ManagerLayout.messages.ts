@@ -22,7 +22,7 @@ export const managerLayoutMessages = defineMessages({
     closeNav: 'Đóng điều hướng',
     openNav: 'Mở điều hướng',
     toggleTheme: 'Đổi giao diện sáng / tối',
-    manager: 'Manager',
+    manager: 'Staff',
   },
   en: {
     nav: 'Main navigation',
@@ -45,6 +45,6 @@ export const managerLayoutMessages = defineMessages({
     closeNav: 'Close navigation',
     openNav: 'Open navigation',
     toggleTheme: 'Switch to light / dark theme',
-    manager: 'Manager',
+    manager: 'Staff',
   },
 })

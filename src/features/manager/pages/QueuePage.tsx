@@ -63,7 +63,7 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a className="odm-btn" href="#portal/staff/assignments">
+          <a className="odm-btn" href={managerHref({ screen: 'missions' })}>
             {t.missionsToAssign}
           </a>
           <button type="button" className="odm-btn" onClick={query.reload}>

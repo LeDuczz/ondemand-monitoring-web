@@ -76,7 +76,7 @@ export function OperatorMaintenanceScreen() {
       setSuccessMsg(
         t.resolveSuccess(
           selectedTicket.ticketCode,
-          selectedTicket.deviceCode || '',
+          selectedTicket.deviceId || '',
           targetDroneStatus,
         ),
       )
@@ -389,7 +389,7 @@ export function OperatorMaintenanceScreen() {
                 >
                   <div>
                     {t.droneLabel}{' '}
-                    <b>{ticket.deviceCode || ticket.deviceId || 'DRONE'}</b>
+                    <b>{ticket.deviceId || 'DEVICE'}</b>
                   </div>
                   <div>
                     {t.technicianLabel}{' '}
@@ -541,7 +541,7 @@ export function OperatorMaintenanceScreen() {
                 {t.modalTicketPrefix}{' '}
                 <b className="odm-mono">{selectedTicket.ticketCode}</b> ·{' '}
                 {t.modalDronePrefix}{' '}
-                <b>{selectedTicket.deviceCode || 'DRONE'}</b>
+                <b>{selectedTicket.deviceId || 'DEVICE'}</b>
               </div>
               <div style={{ color: '#64748b', marginTop: 2 }}>
                 {selectedTicket.description}

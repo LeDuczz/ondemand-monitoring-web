@@ -18,7 +18,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export type FlightControlStatus = {
   online: boolean
   missionId?: string
-  deviceCode?: string
+  deviceId?: string
   inAir?: boolean
   positionReady?: boolean
   altitudeM?: number
@@ -32,7 +32,7 @@ export type FlightControlStatus = {
 export const flightControlApi = {
   baseUrl,
   status: () => request<FlightControlStatus>('/api/control/status'),
-  bindSession: async (missionId: string, droneCode: string) => {
+  bindSession: async (missionId: string, deviceId: string) => {
     const authorization = await authenticatedFetch(
       `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}`,
     )
@@ -45,12 +45,12 @@ export const flightControlApi = {
     if (!accessToken) {
       throw new Error('Authentication is required to bind the flight session')
     }
-    return request<{ ok: boolean; missionId: string; droneCode: string }>(
+    return request<{ ok: boolean; missionId: string; deviceId: string }>(
       '/api/control/session',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ missionId, droneCode, accessToken }),
+        body: JSON.stringify({ missionId, deviceId, accessToken }),
       },
     )
   },

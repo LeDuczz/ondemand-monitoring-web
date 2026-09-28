@@ -75,7 +75,7 @@ export function MaintenanceTicketDialog({
               marginTop: 14,
             }}
           >
-            <Field label="drone">
+            <Field label="device_id">
               <input
                 className="odm-input"
                 value={droneCode}

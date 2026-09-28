@@ -162,21 +162,23 @@ describe('POST /api/orders/{id}/approval', () => {
 })
 
 describe('POST /api/orders/{id}/approve', () => {
-  it('approves and creates a mission in the mock missions collection', async () => {
+  it('approves without creating a mission in the mock missions collection', async () => {
+    const missionCountBefore = __testing.missions.length
     const { status, payload } = await call(
       'POST',
       '/api/orders/ord-2609-0157/approve',
     )
     expect(status).toBe(200)
     expect(payload.success).toBe(true)
-    expect(
-      __testing.missions.some(
-        (m) => m.orderId === 'ord-2609-0157' && m.status === 'CREATED',
-      ),
-    ).toBe(true)
+    expect(__testing.missions.length).toBe(missionCountBefore)
 
-    const missionsResponse = await call('GET', '/api/orders/ord-2609-0157')
-    expect(missionsResponse.status).toBe(409)
+    const orderResponse = await call('GET', '/api/orders/ord-2609-0157')
+    expect(orderResponse.status).toBe(409)
+    const briefResponse = await call(
+      'GET',
+      '/api/orders/ord-2609-0157/mission-brief',
+    )
+    expect(briefResponse.status).toBe(200)
   })
 
   it('409s when the order is no longer PENDING', async () => {

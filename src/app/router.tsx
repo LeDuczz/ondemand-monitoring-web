@@ -13,7 +13,6 @@ import { CustomerApp } from '../features/customer/CustomerApp'
 import { CustomerLayout } from '../features/customer/CustomerLayout'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
 import { ManagerApp } from '../features/manager/ManagerApp'
-import { StaffAssignmentPage } from '../features/staff/pages/StaffAssignmentPage'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminApp } from '../features/admin/AdminApp'
@@ -100,12 +99,6 @@ export function Router() {
     return (
       <RoleRoute role="CUSTOMER">
         <CustomerApp />
-      </RoleRoute>
-    )
-  if (hash === '#portal/staff/assignments')
-    return (
-      <RoleRoute role="STAFF">
-        <StaffAssignmentPage />
       </RoleRoute>
     )
   if (hash === '#portal/staff' || hash.startsWith('#portal/staff/'))

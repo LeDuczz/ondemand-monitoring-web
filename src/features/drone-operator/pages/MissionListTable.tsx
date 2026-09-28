@@ -215,12 +215,12 @@ export function MissionListTable({
                   <span className="odm-opr-chip">{mission.serviceLabel}</span>
                 </td>
                 <td>
-                  {mission.droneCode ? (
+                  {mission.deviceId ? (
                     <>
                       {mission.droneName &&
-                      mission.droneName !== mission.droneCode
-                        ? `${mission.droneCode} ${mission.droneName}`
-                        : mission.droneCode}
+                      mission.droneName !== mission.deviceId
+                        ? `${mission.deviceId} ${mission.droneName}`
+                        : mission.deviceId}
                     </>
                   ) : (
                     <span style={{ color: 'var(--tx3)' }}>{t.unassigned}</span>

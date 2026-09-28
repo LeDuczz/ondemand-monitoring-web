@@ -10,14 +10,14 @@ import { ConnectDroneScreen } from './ConnectDroneScreen'
 describe('ConnectDroneScreen', () => {
   it('renders vietnamese chrome text', () => {
     render(<ConnectDroneScreen />)
-    expect(screen.getByText('Kết nối drone')).toBeTruthy()
+    expect(screen.getByText('Kết nối thiết bị')).toBeTruthy()
     expect(screen.getByText('Xác thực phiên operator')).toBeTruthy()
   })
 
   it('renders english chrome text when language is switched', () => {
     render(<ConnectDroneScreen />)
     act(() => setLanguage('en'))
-    expect(screen.getByText('Connect drone')).toBeTruthy()
+    expect(screen.getByText('Connect device')).toBeTruthy()
     expect(screen.getByText('Authenticate operator session')).toBeTruthy()
   })
 })

@@ -33,8 +33,8 @@ type BackendMission = {
   missionCode?: string
   status?: Mission['state']
   operatorId?: string
+  deviceId?: string
   droneId?: string
-  droneCode?: string
   latitude?: number
   longitude?: number
   address?: string
@@ -202,7 +202,7 @@ function adaptBackendMission(mission: BackendMission): Mission {
     title: mission.orderTitle ?? mission.missionCode ?? mission.id,
     state: mission.status ?? 'RESOURCE_ASSIGNING',
     priority: 'NORMAL',
-    droneId: mission.droneCode ?? mission.droneId ?? '',
+    droneId: mission.deviceId ?? mission.droneId ?? '',
     operatorId: mission.operatorId ?? '',
     customer: mission.customerName ?? '',
     location: mission.address ?? '',
@@ -497,7 +497,7 @@ export default function OperatorWorkspace() {
       const controlStatus = await flightControlApi.status()
       if (
         controlStatus.missionId !== missionId ||
-        controlStatus.deviceCode !== drone.id
+        controlStatus.deviceId !== drone.id
       ) {
         await flightControlApi.bindSession(missionId, drone.id)
       }
@@ -505,7 +505,7 @@ export default function OperatorWorkspace() {
       const deadline = Date.now() + 20_000
       while (true) {
         const telemetry = await missionApi.getTelemetryReadiness(missionId)
-        if (telemetry.droneCode !== drone.id) {
+        if (telemetry.deviceId !== drone.id) {
           throw new Error(t.errors.missionDroneChanged)
         }
         if (telemetry.ready) break

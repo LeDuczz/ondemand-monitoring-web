@@ -331,11 +331,13 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
   const [starting, setStarting] = useState(false)
 
   async function handleContinueToHandover() {
-    if (!mission.missionId || !mission.data?.droneCode) {
+    const data = mission.data
+    const deviceId = data?.deviceId
+    if (!mission.missionId || !deviceId) {
       setStartError(t.noDroneAssignedError)
       return
     }
-    if (isMissionInFlight(mission.data.status)) {
+    if (isMissionInFlight(data?.status)) {
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
       window.location.hash = operatorHref({
         screen: 'flight',
@@ -346,9 +348,8 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
     setStarting(true)
     setStartError(null)
     try {
-      const droneCode = mission.data.droneCode
-      await flightControlApi.bindSession(mission.missionId, droneCode)
-      if (mission.data.status === 'READY_TO_FLY') {
+      await flightControlApi.bindSession(mission.missionId, deviceId)
+      if (data?.status === 'READY_TO_FLY') {
         window.location.hash = operatorHref({
           screen: 'handover',
           missionId: mission.missionId,
@@ -356,16 +357,16 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         return
       }
       const storedToken = window.sessionStorage.getItem(
-        backendPreflightTokenStorageKey(mission.missionId, droneCode),
+        backendPreflightTokenStorageKey(mission.missionId, deviceId),
       )
       const check = storedToken
         ? null
-        : await missionApi.runPreflightCheck(mission.missionId, droneCode)
+        : await missionApi.runPreflightCheck(mission.missionId, deviceId)
       const tokenValue = storedToken ?? check?.flightToken?.tokenValue
       if (!tokenValue)
         throw new Error(check?.failureReason || t.backendPreflightFailed)
       window.sessionStorage.setItem(
-        backendPreflightTokenStorageKey(mission.missionId, droneCode),
+        backendPreflightTokenStorageKey(mission.missionId, deviceId),
         tokenValue,
       )
       window.location.hash = operatorHref({
@@ -397,7 +398,9 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         missionLabel={
           mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
         }
-        droneLabel={mission.data?.droneCode ?? NO_DRONE_SENTINEL}
+        droneLabel={
+          mission.data?.deviceId ?? NO_DRONE_SENTINEL
+        }
         missionStatus={mission.data?.status}
         latitude={mission.data?.latitude ?? undefined}
         longitude={mission.data?.longitude ?? undefined}
@@ -534,7 +537,7 @@ export function PreflightChecklistPanel({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             missionId,
-            droneCode: droneLabel,
+            deviceId: droneLabel,
             latitude,
             longitude,
           }),
@@ -568,10 +571,10 @@ export function PreflightChecklistPanel({
           !payload?.missionId ||
           payload.missionId === missionId ||
           payload.missionCode === missionLabel
-        const boundToCurrentDrone =
-          !payload?.deviceCode || payload.deviceCode === droneLabel
+        const boundToCurrentDevice =
+          !payload?.deviceId || payload.deviceId === droneLabel
         if (!alive) return
-        if (!boundToCurrentMission || !boundToCurrentDrone) {
+        if (!boundToCurrentMission || !boundToCurrentDevice) {
           throw new Error('Controller bound to another mission')
         }
         const nextRuntimeSessionId =

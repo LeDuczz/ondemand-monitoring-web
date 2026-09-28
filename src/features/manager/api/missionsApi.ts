@@ -96,19 +96,19 @@ export const missionsApi = {
     )
   },
 
-  /** `POST /api/missions/{id}/assign-drone?droneId=` [BE]. */
+  /** `POST /api/missions/{id}/assign-device` [BE]. */
   assignDrone(missionId: string, droneId: string): Promise<Mission> {
-    return apiRequest<Mission>(`/api/missions/${missionId}/assign-drone`, {
+    return apiRequest<Mission>(`/api/missions/${missionId}/assign-device`, {
       method: 'POST',
-      query: { droneId },
+      body: { deviceId: droneId, deviceRole: 'MAIN' },
     })
   },
 
-  /** `POST /api/missions/{id}/assign-operator?operatorId=` [BE]. */
+  /** `POST /api/missions/{id}/assign-staff` [BE]. */
   assignOperator(missionId: string, operatorId: string): Promise<Mission> {
-    return apiRequest<Mission>(`/api/missions/${missionId}/assign-operator`, {
+    return apiRequest<Mission>(`/api/missions/${missionId}/assign-staff`, {
       method: 'POST',
-      query: { operatorId },
+      body: { staffId: operatorId, assignedRole: 'PILOT' },
     })
   },
 

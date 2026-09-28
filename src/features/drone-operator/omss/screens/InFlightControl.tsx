@@ -95,7 +95,7 @@ type IconName =
 type ControlStatus = {
   online?: boolean
   missionId?: string | null
-  deviceCode?: string | null
+  deviceId?: string | null
   positionReady?: boolean
   positionGazebo?: { x: number; y: number }
   positionNed?: { northM: number; eastM: number; downM: number }
@@ -2962,7 +2962,7 @@ export default function InFlightControl({
       if (
         (command === 'photo' || command === 'video_toggle') &&
         (controlStatus?.missionId !== (mission.backendId ?? mission.id) ||
-          controlStatus?.deviceCode !== drone.id)
+          controlStatus?.deviceId !== drone.id)
       ) {
         setLastCommand(t.status.controllerNotBound)
         return
@@ -3019,7 +3019,7 @@ export default function InFlightControl({
       }
     },
     [
-      controlStatus?.deviceCode,
+      controlStatus?.deviceId,
       controlStatus?.missionId,
       drone.id,
       mission.backendId,

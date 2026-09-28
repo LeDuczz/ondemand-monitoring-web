@@ -99,7 +99,7 @@ describe('Router - manager routes (#portal/staff*)', () => {
   }
 
   beforeEach(() => {
-    localStorage.setItem('fieldwise.accessToken', 'mock-staff-token')
+    localStorage.setItem('fieldwise.accessToken', 'mock.staff.token')
     localStorage.setItem(
       'fieldwise.user',
       JSON.stringify({
@@ -134,5 +134,16 @@ describe('Router - manager routes (#portal/staff*)', () => {
     await waitFor(() =>
       expect(screen.getByText('Hàng đợi duyệt đơn')).toBeInTheDocument(),
     )
+  })
+
+  it('does not route #portal/staff/assignments to the legacy FIELDWISE staff shell', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
+    window.location.hash = '#portal/staff/assignments'
+    render(<Router />)
+
+    await waitFor(() =>
+      expect(screen.getByText('Không tìm thấy màn hình')).toBeInTheDocument(),
+    )
+    expect(screen.queryByText('FIELDWISE')).not.toBeInTheDocument()
   })
 })

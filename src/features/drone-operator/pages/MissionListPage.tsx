@@ -373,9 +373,9 @@ function NextFlightCard({
         {mission.location}
       </div>
       <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 12 }}>
-        {mission.droneName && mission.droneName !== mission.droneCode
-          ? `${mission.droneCode} ${mission.droneName}`
-          : mission.droneCode}
+        {mission.droneName && mission.droneName !== mission.deviceId
+          ? `${mission.deviceId} ${mission.droneName}`
+          : mission.deviceId}
       </div>
       <a
         className="odm-btn odm-btn-ok"

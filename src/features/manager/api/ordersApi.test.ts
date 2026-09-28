@@ -109,14 +109,20 @@ describe('ordersApi (mock mode)', () => {
 
   it('approve resolves without throwing', async () => {
     setHttpTransport(mockFetch)
-    await expect(ordersApi.approve('ord-2609-0157')).resolves.toBeUndefined()
+    await expect(ordersApi.approve('ord-2609-0157')).resolves.toMatchObject({
+      id: 'ord-2609-0157',
+      orderStatus: 'APPROVED',
+    })
   })
 
-  it('returns the mission created by the real approve endpoint', async () => {
+  it('returns the approved order from the real approve endpoint', async () => {
     setHttpTransport(async () => new Response(JSON.stringify({ success: true, data: {
-      id: 'mission-real', missionCode: 'MS-REAL', status: 'RESOURCE_ASSIGNING',
+      id: 'order-real', orderStatus: 'APPROVED',
     } }), { status: 200 }))
-    await expect(ordersApi.approve('order-real')).resolves.toMatchObject({ id: 'mission-real' })
+    await expect(ordersApi.approve('order-real')).resolves.toMatchObject({
+      id: 'order-real',
+      orderStatus: 'APPROVED',
+    })
   })
 
   it('submitApproval REJECTED resolves without throwing', async () => {

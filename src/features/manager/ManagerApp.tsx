@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { env } from '../../config/env'
 
 import { StateView } from '../../shared/components/odm/StateView'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -72,9 +71,9 @@ export function ManagerApp() {
   // src/features/manager/types/dashboard.ts and evd/P3-manager-dashboard.md.
   const counts = data
     ? {
-      pendingOrders: data.navCounts.pendingOrders,
-      openMaintenance: data.navCounts.openMaintenanceTickets,
-      mediaNeedsAction: data.navCounts.mediaNeedsAction,
+      pendingOrders: data.navCounts?.pendingOrders ?? 0,
+      openMaintenance: data.navCounts?.openMaintenanceTickets ?? 0,
+      mediaNeedsAction: data.navCounts?.mediaNeedsAction ?? 0,
     }
     : undefined
 
@@ -95,9 +94,7 @@ function renderScreen(route: ManagerRoute) {
   if (route.screen === 'orderReview')
     return <OrderReviewPage orderId={route.orderId} />
   if (route.screen === 'missionCreate')
-    return env.useMockApi || import.meta.env.MODE === 'test'
-      ? <CreateMissionPage orderId={route.orderId} />
-      : <RedirectToAssignments />
+    return <CreateMissionPage orderId={route.orderId} />
   if (route.screen === 'missionDispatch')
     return <DispatchPage missionId={route.missionId} />
   if (route.screen === 'schedule') return <SchedulePage />
@@ -115,7 +112,7 @@ function renderScreen(route: ManagerRoute) {
     <StateView
       state="empty"
       title="Không tìm thấy màn hình"
-      description="Đường dẫn này không tồn tại trong khu vực Manager."
+      description="Đường dẫn này không tồn tại trong khu vực Staff."
       action={
         <a
           className="odm-btn odm-btn-p"
@@ -128,9 +125,3 @@ function renderScreen(route: ManagerRoute) {
   )
 }
 
-function RedirectToAssignments() {
-  useEffect(() => {
-    window.location.hash = '#portal/staff/assignments'
-  }, [])
-  return <p>Mission đã được backend tạo khi duyệt đơn. Đang mở trang phân công…</p>
-}

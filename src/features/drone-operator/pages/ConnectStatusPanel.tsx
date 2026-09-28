@@ -88,7 +88,7 @@ export function ConnectStatusPanel({
                 ? new Date(mission.scheduledStartAt).toLocaleString(locale)
                 : t.noSchedule}
             </span>
-            <span>{mission?.droneCode ?? t.noDroneAssigned}</span>
+            <span>{mission?.deviceId ?? t.noDroneAssigned}</span>
             <span>{mission?.address ?? t.noAddress}</span>
           </div>
         </div>

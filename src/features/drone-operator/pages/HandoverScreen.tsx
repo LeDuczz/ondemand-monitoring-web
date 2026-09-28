@@ -39,34 +39,35 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
     setSubmitting(true)
     setError(null)
     try {
-      if (!mission.missionId || !mission.data?.droneCode)
+      const data = mission.data
+      const deviceId = data?.deviceId
+      if (!mission.missionId || !deviceId)
         throw new Error(t.noDroneAssignedError)
-      const droneCode = mission.data.droneCode
       const storedToken = window.sessionStorage.getItem(
-        backendPreflightTokenStorageKey(mission.missionId, droneCode),
+        backendPreflightTokenStorageKey(mission.missionId, deviceId),
       )
-      if (!storedToken && mission.data.status !== 'READY_TO_FLY') {
+      if (!storedToken && data?.status !== 'READY_TO_FLY') {
         throw new Error(t.precheckRequiredError)
       }
       window.sessionStorage.setItem(
         `fieldwise.operator.handoverAcknowledged.${mission.missionId}`,
         'true',
       )
-      await flightControlApi.bindSession(mission.missionId, droneCode)
+      await flightControlApi.bindSession(mission.missionId, deviceId)
       await missionApi.handoverMyMission(mission.missionId)
       await missionApi.startMission(mission.missionId, storedToken ?? undefined)
       window.sessionStorage.removeItem(
-        backendPreflightTokenStorageKey(mission.missionId, droneCode),
+        backendPreflightTokenStorageKey(mission.missionId, deviceId),
       )
       window.localStorage.setItem(
         preflightReadyStorageKey(
-          mission.data.missionCode ?? mission.missionId,
-          droneCode,
+          data?.missionCode ?? mission.missionId,
+          deviceId,
         ),
         'true',
       )
       window.localStorage.setItem(
-        preflightReadyStorageKey(mission.missionId, droneCode),
+        preflightReadyStorageKey(mission.missionId, deviceId),
         'true',
       )
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
@@ -109,7 +110,9 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
           )}
           <DroneStrip
             missionLabel={missionLabel}
-            droneLabel={mission.data?.droneCode ?? t.noDroneAssigned}
+            droneLabel={
+              mission.data?.deviceId ?? t.noDroneAssigned
+            }
           />
 
           {revoked ? (

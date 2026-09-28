@@ -61,14 +61,21 @@ export const missionApi = {
 
   assignResources: async (
     missionId: string,
-    droneId: string,
-    operatorId: string,
+    deviceId: string,
+    staffId: string,
   ): Promise<Mission> => {
-    return request<Mission>(
-      `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-resources`,
+    await request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-device`,
       {
         method: 'POST',
-        body: JSON.stringify({ droneId, operatorId }),
+        body: JSON.stringify({ deviceId, deviceRole: 'MAIN' }),
+      },
+    )
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-staff`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ staffId, assignedRole: 'PILOT' }),
       },
     )
   },
@@ -99,8 +106,11 @@ export const missionApi = {
 
   assignDrone: async (missionId: string, droneId: string): Promise<Mission> => {
     return request<Mission>(
-      `${API_BASE}/missions/${missionId}/assign-drone?droneId=${encodeURIComponent(droneId)}`,
-      { method: 'POST' },
+      `${API_BASE}/missions/${missionId}/assign-device`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ deviceId: droneId, deviceRole: 'MAIN' }),
+      },
     )
   },
 
@@ -109,8 +119,11 @@ export const missionApi = {
     operatorId: string,
   ): Promise<Mission> => {
     return request<Mission>(
-      `${API_BASE}/missions/${missionId}/assign-operator?operatorId=${encodeURIComponent(operatorId)}`,
-      { method: 'POST' },
+      `${API_BASE}/missions/${missionId}/assign-staff`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ staffId: operatorId, assignedRole: 'PILOT' }),
+      },
     )
   },
 
@@ -162,7 +175,7 @@ export const missionApi = {
   getTelemetryReadiness: async (
     missionId: string,
   ): Promise<{
-    droneCode: string
+    deviceId: string
     ready: boolean
     lastTelemetryAt: string | null
   }> => {
@@ -171,14 +184,14 @@ export const missionApi = {
     )
   },
 
-  // F3.2 Run Pre-flight check (POST /api/missions/{id}/preflight-check?deviceCode=DRONE-01)
+  // F3.2 Run Pre-flight check (POST /api/missions/{id}/preflight-check?deviceId=...)
   runPreflightCheck: async (
     missionId: string,
-    deviceCode: string,
+    deviceId: string,
   ): Promise<PreflightCheck> => {
     return request<PreflightCheck>(
-      `${API_BASE}/missions/${missionId}/preflight-check?droneCode=${encodeURIComponent(
-        deviceCode,
+      `${API_BASE}/missions/${missionId}/preflight-check?deviceId=${encodeURIComponent(
+        deviceId,
       )}`,
       { method: 'POST' },
     )
@@ -224,11 +237,11 @@ export const missionApi = {
   // F3.3 Upload Mission Image / Media (POST /api/missions/{id}/media)
   uploadMedia: async (
     missionId: string,
-    deviceCode: string,
+    deviceId: string,
     file: File,
   ): Promise<DeviceImage> => {
     const formData = new FormData()
-    formData.append('deviceCode', deviceCode)
+    formData.append('deviceId', deviceId)
     formData.append('file', file)
 
     const res = await authenticatedFetch(
@@ -262,23 +275,23 @@ export const missionApi = {
     })
   },
 
-  // F3.5 Update Post-flight Status & Complete (PATCH /api/missions/{id}/postflight-status?deviceCode=...)
+  // F3.5 Update Post-flight Status & Complete (PATCH /api/missions/{id}/postflight-status?deviceId=...)
   postFlightStatus: async (
     missionId: string,
-    deviceCode: string,
-    newDroneStatus: DeviceStatus,
+    deviceId: string,
+    newDeviceStatus: DeviceStatus,
     notes: string,
     inspectionResults?: Record<string, 'PASS' | 'WARN' | 'FAIL'>,
     telemetrySnapshot?: FlightControlStatus | null,
   ): Promise<Mission> => {
     return request<Mission>(
-      `${API_BASE}/missions/${missionId}/postflight-status?droneCode=${encodeURIComponent(
-        deviceCode,
+      `${API_BASE}/missions/${missionId}/postflight-status?deviceId=${encodeURIComponent(
+        deviceId,
       )}`,
       {
         method: 'PATCH',
         body: JSON.stringify({
-          newDroneStatus,
+          newDeviceStatus,
           notes,
           inspectionResults,
           telemetrySnapshot,

@@ -124,7 +124,7 @@ function removeStorageByPrefix(storage: Storage, prefix: string) {
 function clearCompletedMissionState(
   missionId: string,
   missionLabel: string,
-  droneCode: string,
+  deviceId: string,
 ) {
   clearActiveMissionId(missionId)
   window.sessionStorage.removeItem(postflightTelemetryKey(missionId))
@@ -137,10 +137,10 @@ function clearCompletedMissionState(
     `omss.droneOperator.backendPreflightToken.${missionId}.`,
   )
   window.localStorage.removeItem(
-    `omss.droneOperator.preflightReady.${missionLabel}.${droneCode}`,
+    `omss.droneOperator.preflightReady.${missionLabel}.${deviceId}`,
   )
   window.localStorage.removeItem(
-    `omss.droneOperator.preflightReady.${missionId}.${droneCode}`,
+    `omss.droneOperator.preflightReady.${missionId}.${deviceId}`,
   )
 }
 
@@ -158,7 +158,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   const effectiveMissionId = activeData?.id || activeId || ''
   const missionLabel =
     activeData?.missionCode || effectiveMissionId || t.defaultMissionLabel
-  const droneCode = activeData?.droneCode ?? 'DRONE'
+  const deviceId = activeData?.deviceId ?? 'DEVICE'
   const categories = useMemo(() => postflightCategories(lang), [lang])
 
   const [error, setError] = useState<string | null>(null)
@@ -251,7 +251,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       // BE automatically creates MaintenanceTicket if targetDroneStatus is MAINTENANCE
       await missionApi.postFlightStatus(
         effectiveMissionId,
-        droneCode,
+        deviceId,
         targetDroneStatus,
         notes,
         inspectionResults,
@@ -270,7 +270,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       await flightControlApi.releaseSession(effectiveMissionId).catch(() => {
         // Controller may be offline after landing; local cleanup still allows the operator flow to reset.
       })
-      clearCompletedMissionState(effectiveMissionId, missionLabel, droneCode)
+      clearCompletedMissionState(effectiveMissionId, missionLabel, deviceId)
 
       setCompleted({
         overallOk: !hasFailures,
@@ -363,7 +363,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   style={{ fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}
                 >
                   {t.missionCodeLabel} <b>{missionLabel}</b> · {t.deviceLabel}{' '}
-                  <b>{droneCode}</b>
+                  <b>{deviceId}</b>
                 </div>
               </div>
             </div>
@@ -390,7 +390,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 }
               />
               <Row
-                label={t.droneStatusLabel(droneCode)}
+                label={t.droneStatusLabel(deviceId)}
                 value={
                   completed.overallOk
                     ? t.droneStatusAvailable
@@ -473,7 +473,8 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 >
                   {postflightMissions.map((m) => (
                     <option key={m.id} value={m.id}>
-                      🎯 {m.missionCode || m.id} ({m.droneCode || 'DRONE'}) —{' '}
+                      🎯 {m.missionCode || m.id} (
+                      {m.deviceId || 'DEVICE'}) —{' '}
                       {m.status}
                     </option>
                   ))}
@@ -494,7 +495,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 border: '1px solid var(--bd, #cbd5e1)',
               }}
             >
-              🚁 {droneCode}
+              🚁 {deviceId}
             </span>
           </div>
         }
@@ -828,7 +829,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 </div>
                 <div style={{ fontSize: 13, color: '#78350f', marginTop: 4 }}>
                   {t.autoTicketNotePrefix} <b>{t.autoTicketNoteBold}</b>{' '}
-                  {t.autoTicketNoteMid} <b>{droneCode}</b>{' '}
+                  {t.autoTicketNoteMid} <b>{deviceId}</b>{' '}
                   {t.autoTicketNoteSuffix}
                 </div>
               </div>
@@ -913,7 +914,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
 
       {showTicketDialog && (
         <MaintenanceTicketDialog
-          droneCode={droneCode}
+          droneCode={deviceId}
           missionId={missionLabel}
           defaultIssueType="PHYSICAL_DAMAGE"
           defaultDescription={t.failedItemsDescription(failItems.join(', '))}

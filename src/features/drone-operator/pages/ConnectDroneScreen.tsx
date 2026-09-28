@@ -11,7 +11,7 @@ import { connectDroneScreenMessages } from './ConnectDroneScreen.messages'
 export type ConnectState =
   'default' | 'connecting' | 'connected' | 'failed' | 'expired'
 
-/** OPR-04W — Kết nối drone: token/gcs form + trạng thái kết nối. */
+/** OPR-04W — Kết nối thiết bị: token/gcs form + trạng thái kết nối. */
 export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
   const mission = useActiveMission(missionId)
   const { t } = useI18n(connectDroneScreenMessages)
@@ -24,13 +24,15 @@ export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
     setState('connecting')
     setError(null)
     try {
-      if (!mission.missionId || !mission.data?.droneCode)
+      const data = mission.data
+      const deviceId = data?.deviceId
+      if (!mission.missionId || !deviceId)
         throw new Error(t.noMissionAssigned)
       await flightControlApi.bindSession(
         mission.missionId,
-        mission.data.droneCode,
+        deviceId,
       )
-      if (mission.data.status === 'SCHEDULED')
+      if (data?.status === 'SCHEDULED')
         await missionApi.connectGcs(mission.missionId)
       setState('connected')
     } catch (cause) {
@@ -48,7 +50,11 @@ export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
         }
         active={2}
         right={
-          <DroneChip label={mission.data?.droneCode ?? t.noDroneAssigned} />
+          <DroneChip
+            label={
+              mission.data?.deviceId ?? t.noDroneAssigned
+            }
+          />
         }
       />
       <div style={{ padding: '18px 22px' }}>

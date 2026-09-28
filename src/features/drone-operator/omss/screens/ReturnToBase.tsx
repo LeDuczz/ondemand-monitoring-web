@@ -36,7 +36,7 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
         setTelemetry(status)
         setError(null)
         const sessionMatches =
-          status.missionId === missionId && status.deviceCode === drone.id
+          status.missionId === missionId && status.deviceId === drone.id
         const landed =
           sessionMatches &&
           status.connection?.px4Connected === true &&

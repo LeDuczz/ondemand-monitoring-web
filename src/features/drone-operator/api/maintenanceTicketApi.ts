@@ -4,7 +4,6 @@ export type MaintenanceTicketDto = {
   id: string
   ticketCode: string
   deviceId?: string | null
-  deviceCode?: string | null
   assignedTechnicianId?: string | null
   assignedTechnicianName?: string | null
   reportedBy?: string | null

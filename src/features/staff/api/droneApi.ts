@@ -6,7 +6,9 @@ import { droneApiMessages } from './droneApi.messages'
 interface DroneResponse {
   id: string
   serialNumber: string
-  droneModel: { modelCode: string } | null
+  name?: string
+  deviceModel?: { modelCode?: string; name?: string } | null
+  droneModel?: { modelCode?: string; name?: string } | null
 }
 
 interface DronePage {
@@ -36,9 +38,12 @@ export const droneApi = {
     }
 
     const payload: ApiResponse<DronePage> = await response.json()
-    return payload.data.items.map((drone) => ({
-      id: drone.id,
-      label: `${drone.serialNumber} (${drone.droneModel?.modelCode ?? t.unknownModel})`,
-    }))
+    return payload.data.items.map((device) => {
+      const model = device.deviceModel ?? device.droneModel
+      return {
+        id: device.id,
+        label: `${device.serialNumber || device.name || device.id} (${model?.modelCode ?? model?.name ?? t.unknownModel})`,
+      }
+    })
   },
 }

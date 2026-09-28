@@ -497,12 +497,9 @@ registerMockRoutes([
         )
       }
 
-      // Conflict resolution [documented in evd/P5-manager-mission-dispatch.md]:
-      // the backend's `POST /orders/{id}/approve` already creates a bare
-      // CREATED mission with no plan. Attach this request's plan/schedule
-      // to that mission if one exists without a plan yet; otherwise this is
-      // a re-plan attempt (e.g. after a manual retry) — start a new
-      // `...-N+1` mission attempt.
+      // If older seed data already has a bare CREATED mission without a
+      // plan, attach this request's plan/schedule to it. Otherwise the staff
+      // scheduling flow creates the first mission attempt here.
       const existing = findMissionsForOrder(order.id).find(
         (m) => m.status === 'CREATED' && !m.flightPlan,
       )

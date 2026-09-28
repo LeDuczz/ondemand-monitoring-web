@@ -66,7 +66,7 @@ afterEach(() => {
 })
 
 describe('CreateMissionPage', () => {
-  it('shows a loading skeleton, then prefills the schedule from Sáng', async () => {
+  it('shows the customer window but leaves the flight schedule for staff to choose', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     render(
       <CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />,
@@ -77,8 +77,17 @@ describe('CreateMissionPage', () => {
         screen.getByRole('heading', { name: 'Tạo mission' }),
       ).toBeInTheDocument(),
     )
-    const startInput = screen.getByLabelText('Bắt đầu') as HTMLInputElement
-    expect(startInput.value).toBe('2026-09-24T07:00')
+    expect(screen.getByText('Khoảng thời gian khách yêu cầu')).toBeTruthy()
+    expect(screen.getByText('24/09 · Sáng')).toBeTruthy()
+    const startInput = screen.getByLabelText('Giờ cất cánh') as HTMLInputElement
+    const endInput = screen.getByLabelText(
+      'Giờ kết thúc dự kiến',
+    ) as HTMLInputElement
+    expect(startInput.value).toBe('')
+    expect(endInput.value).toBe('')
+    expect(screen.queryByText('Flight plan')).not.toBeInTheDocument()
+    expect(screen.queryByText('Kiểu bay')).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Xem trước đường bay' })).toBeNull()
   })
 
   it('shows the error state with a mono debug line when the brief fails to load', async () => {
@@ -98,43 +107,6 @@ describe('CreateMissionPage', () => {
     expect(screen.getByText(/mission-brief · 409/)).toBeInTheDocument()
   })
 
-  it('changing plan type regenerates the waypoint table', async () => {
-    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
-    render(
-      <CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />,
-    )
-    await waitFor(() =>
-      expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
-      ).toBeInTheDocument(),
-    )
-    const orbitCount = screen.getAllByRole('row').length
-    fireEvent.click(screen.getByRole('button', { name: 'POINT' }))
-    await waitFor(() => {
-      const pointCount = screen.getAllByRole('row').length
-      expect(pointCount).not.toBe(orbitCount)
-    })
-  })
-
-  it('shows an altitude warning above the service ceiling', async () => {
-    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
-    render(
-      <CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />,
-    )
-    await waitFor(() =>
-      expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
-      ).toBeInTheDocument(),
-    )
-    const altInput = screen.getByLabelText('Độ cao (m)')
-    fireEvent.change(altInput, { target: { value: '130' } })
-    await waitFor(() =>
-      expect(
-        screen.getByText(/vượt trần khai thác thông thường/),
-      ).toBeInTheDocument(),
-    )
-  })
-
   it('submits and navigates to the dispatch page on success', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
@@ -146,7 +118,26 @@ describe('CreateMissionPage', () => {
         screen.getByRole('heading', { name: 'Tạo mission' }),
       ).toBeInTheDocument(),
     )
+    fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
+      target: { value: '2026-09-24T08:00' },
+    })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
+      target: { value: '2026-09-24T09:30' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Tạo mission' }))
+    await waitFor(() =>
+      expect(missionsApi.createMission).toHaveBeenCalledWith(
+        'ord-2609-0153',
+        expect.objectContaining({
+          scheduledStart: '2026-09-24T01:00:00.000Z',
+          scheduledEnd: '2026-09-24T02:30:00.000Z',
+          flightPlan: expect.objectContaining({
+            planType: 'ORBIT',
+            generatedBy: 'SYSTEM',
+          }),
+        }),
+      ),
+    )
     await waitFor(() =>
       expect(window.location.hash).toBe(
         '#portal/staff/missions/msn-2609-0153-1/dispatch',
@@ -154,7 +145,31 @@ describe('CreateMissionPage', () => {
     )
   })
 
-  it('422 shows the design error copy with retry + manual waypoint entry', async () => {
+  it('blocks submit when the finish time is before takeoff time', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
+    render(
+      <CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />,
+    )
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Tạo mission' }),
+      ).toBeInTheDocument(),
+    )
+    fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
+      target: { value: '2026-09-11T18:58' },
+    })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
+      target: { value: '2026-09-10T15:58' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo mission' }))
+    expect(
+      await screen.findByText('Giờ kết thúc phải sau giờ cất cánh.'),
+    ).toBeInTheDocument()
+    expect(missionsApi.createMission).not.toHaveBeenCalled()
+  })
+
+  it('422 shows the design error copy with retry', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     vi.spyOn(missionsApi, 'createMission').mockRejectedValue(
       new ApiError('Dịch vụ tạo đường bay báo lỗi cho khu vực này.', {
@@ -172,6 +187,12 @@ describe('CreateMissionPage', () => {
         screen.getByRole('heading', { name: 'Tạo mission' }),
       ).toBeInTheDocument(),
     )
+    fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
+      target: { value: '2026-09-24T08:00' },
+    })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
+      target: { value: '2026-09-24T09:30' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Tạo mission' }))
     await waitFor(() =>
       expect(
@@ -179,19 +200,13 @@ describe('CreateMissionPage', () => {
       ).toBeInTheDocument(),
     )
     expect(
-      screen.getByRole('button', { name: 'Nhập waypoint thủ công' }),
-    ).toBeInTheDocument()
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Nhập waypoint thủ công' }),
-    )
-    await waitFor(() =>
-      expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
-      ).toBeInTheDocument(),
-    )
+      screen.queryByRole('button', { name: 'Nhập waypoint thủ công' }),
+    ).not.toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Thêm waypoint' }),
+      screen.queryByRole('button', { name: 'Thêm waypoint' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Thử lại' }),
     ).toBeInTheDocument()
   })
 
@@ -206,7 +221,10 @@ describe('CreateMissionPage', () => {
         screen.getByRole('heading', { name: 'Create mission' }),
       ).toBeInTheDocument(),
     )
-    expect(screen.getByText('Flight schedule')).toBeTruthy()
+    expect(screen.getByText('Customer requested window')).toBeTruthy()
+    expect(
+      screen.getByText('Actual flight schedule selected by staff'),
+    ).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Create mission' })).toBeTruthy()
   })
 })

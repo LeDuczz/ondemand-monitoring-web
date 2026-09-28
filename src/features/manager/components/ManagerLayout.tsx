@@ -183,7 +183,7 @@ export function ManagerLayout({
             </span>
             <span className="odm-mgr-user-text">
               <span className="odm-mgr-user-name">
-                {user?.fullName ?? 'Manager'}
+                {user?.fullName ?? 'Staff'}
               </span>
               <span className="odm-mgr-user-email">{user?.email ?? ''}</span>
             </span>

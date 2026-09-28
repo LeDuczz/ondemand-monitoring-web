@@ -10,8 +10,8 @@ export type BackendMission = {
   customerName?: string | null
   status: string
   operatorId?: string | null
-  droneId?: string | null
-  droneCode?: string | null
+  staffId?: string | null
+  deviceId?: string | null
   latitude?: number | null
   longitude?: number | null
   radiusM?: number | null
@@ -147,8 +147,9 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
     startTime: scheduled.time,
     endTime: end.time,
     serviceLabel: source.serviceName ?? source.mediaType ?? '—',
-    droneCode: source.droneCode ?? null,
-    droneName: source.droneCode ?? null,
+    deviceId: source.deviceId ?? null,
+    droneCode: source.deviceId ?? null,
+    droneName: source.deviceId ?? null,
     flightStartedAt: source.startedAt ?? undefined,
     completedAt: source.completedAt ?? undefined,
     rejectReason: source.rejectionReason ?? undefined,
@@ -218,8 +219,8 @@ export function toFlightMission(source: BackendMission): Mission {
     title: source.orderTitle ?? source.missionCode ?? source.id,
     state: source.status as Mission['state'],
     priority: 'NORMAL',
-    droneId: source.droneCode ?? '',
-    operatorId: source.operatorId ?? '',
+    droneId: source.deviceId ?? '',
+    operatorId: source.staffId ?? source.operatorId ?? '',
     customer: source.customerName ?? '',
     location: source.address ?? '',
     lat: source.latitude ?? 0,
@@ -235,11 +236,11 @@ export function toFlightMission(source: BackendMission): Mission {
 }
 
 export function toFlightDrone(source: BackendMission): Drone {
-  const code = source.droneCode ?? ''
+  const code = source.deviceId ?? ''
   return {
     id: code,
     name: code,
-    model: 'Assigned mission drone',
+    model: 'Assigned mission device',
     serialNumber: '',
     state: source.status === 'IN_FLIGHT' ? 'ACTIVE_MISSION' : 'PREFLIGHT',
     battery: 0,

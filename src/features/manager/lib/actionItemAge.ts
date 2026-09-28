@@ -3,6 +3,11 @@
 // src/mocks/data/manager-dashboard.json); every display string below is
 // computed relative to a `now` passed in by the caller so it never drifts
 // from what the design shows and stays deterministic in tests.
+//
+// Every formatter takes an optional trailing `lang` (default `'vi'`, so
+// every existing call site/test keeps working unchanged) and renders the
+// English wording when `lang === 'en'`.
+import type { Language } from '../../../shared/i18n'
 
 const MINUTE_MS = 60_000
 const HOUR_MS = 60 * MINUTE_MS
@@ -23,10 +28,16 @@ export function formatOrderAge(
   now: Date,
   submittedAtIso: string,
   overdueHours = 24,
+  lang: Language = 'vi',
 ): string {
   const hours = Math.floor(
     (now.getTime() - new Date(submittedAtIso).getTime()) / HOUR_MS,
   )
+  if (lang === 'en') {
+    return hours >= overdueHours
+      ? `${hours}h · over ${overdueHours}h`
+      : `${hours}h`
+  }
   return hours >= overdueHours
     ? `${hours} giờ · quá ${overdueHours}h`
     : `${hours} giờ`
@@ -39,6 +50,7 @@ export function formatOrderAge(
 export function formatMissionCountdown(
   now: Date,
   scheduledStartIso: string,
+  lang: Language = 'vi',
 ): string {
   const totalMinutes = Math.round(
     (new Date(scheduledStartIso).getTime() - now.getTime()) / MINUTE_MS,
@@ -47,16 +59,24 @@ export function formatMissionCountdown(
   const abs = Math.abs(totalMinutes)
   const hours = Math.floor(abs / 60)
   const minutes = abs % 60
+  if (lang === 'en') {
+    const label = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
+    return late ? `${label} late` : `In ${label}`
+  }
   const label = hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`
   return late ? `Trễ ${label}` : `Còn ${label}`
 }
 
 /** Maintenance ticket open duration, e.g. "Mở 6 ngày". */
-export function formatTicketAge(now: Date, openedAtIso: string): string {
+export function formatTicketAge(
+  now: Date,
+  openedAtIso: string,
+  lang: Language = 'vi',
+): string {
   const days = Math.floor(
     (now.getTime() - new Date(openedAtIso).getTime()) / DAY_MS,
   )
-  return `Mở ${days} ngày`
+  return lang === 'en' ? `Open ${days} days` : `Mở ${days} ngày`
 }
 
 /**
@@ -65,8 +85,19 @@ export function formatTicketAge(now: Date, openedAtIso: string): string {
  * (e.g. "294 phút trước"): under 60 minutes it's minutes, under 24 hours
  * it's hours, and beyond that it falls back to whole days.
  */
-export function formatMinutesAgo(now: Date, createdAtIso: string): string {
+export function formatMinutesAgo(
+  now: Date,
+  createdAtIso: string,
+  lang: Language = 'vi',
+): string {
   const minutes = diffMinutes(now, createdAtIso)
+  if (lang === 'en') {
+    if (minutes < 60) return `${minutes} min ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `${days}d ago`
+  }
   if (minutes < 60) return `${minutes} phút trước`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours} giờ trước`
@@ -79,8 +110,18 @@ export function formatMinutesAgo(now: Date, createdAtIso: string): string {
  * 60 minutes it switches to "Bay X giờ Y phút" rather than an ever-growing
  * minute count, matching the same tiering as `formatMinutesAgo`.
  */
-export function formatFlightMinutes(now: Date, startedAtIso: string): string {
+export function formatFlightMinutes(
+  now: Date,
+  startedAtIso: string,
+  lang: Language = 'vi',
+): string {
   const minutes = diffMinutes(now, startedAtIso)
+  if (lang === 'en') {
+    if (minutes < 60) return `Flying ${minutes} min`
+    const hours = Math.floor(minutes / 60)
+    const remainderMinutes = minutes % 60
+    return `Flying ${hours}h ${remainderMinutes}m`
+  }
   if (minutes < 60) return `Bay ${minutes} phút`
   const hours = Math.floor(minutes / 60)
   const remainderMinutes = minutes % 60
@@ -94,7 +135,8 @@ function pad2(value: number): string {
 /**
  * Elapsed/planned progress label for the "Đang bay" card, matching [TK
  * MNG-01] literally: elapsed time as HH:MM (e.g. 58 minutes -> "00:58") over
- * the planned duration shown as raw-minutes:00 (e.g. 90 -> "90:00").
+ * the planned duration shown as raw-minutes:00 (e.g. 90 -> "90:00"). Purely
+ * numeric — no `lang` parameter needed.
  */
 export function formatFlightProgress(
   now: Date,

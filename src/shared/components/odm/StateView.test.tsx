@@ -1,7 +1,9 @@
+import { act } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../api/httpClient'
+import { setLanguage } from '../../i18n'
 import { StateView } from './StateView'
 
 describe('StateView', () => {
@@ -48,5 +50,25 @@ describe('StateView', () => {
   it('falls back to a generic message for a non-ApiError error', () => {
     render(<StateView state="error" error={new Error('boom')} />)
     expect(screen.getByText('boom')).toBeInTheDocument()
+  })
+
+  it('uses bilingual default texts when no label/title override is given', () => {
+    render(<StateView state="loading" />)
+    expect(screen.getByText('Đang tải…')).toBeInTheDocument()
+
+    render(
+      <StateView
+        state="error"
+        error={new ApiError('', { method: 'GET', path: '/x' })}
+        onRetry={() => {}}
+      />,
+    )
+    expect(screen.getByText('Không tải được dữ liệu')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
+
+    act(() => setLanguage('en'))
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    expect(screen.getByText('Could not load data')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
   })
 })

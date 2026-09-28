@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Mission, Drone } from '../types'
 import { flightControlApi } from '../api/flightControlApi'
+import { useI18n } from '../../../../shared/i18n'
+import { gcsConnectionMessages } from '../i18n/gcsConnection'
 
 interface Props {
   mission: Mission
@@ -10,25 +12,6 @@ interface Props {
 }
 
 type Phase = 'idle' | 'discover' | 'handshake' | 'sync' | 'done' | 'fail'
-
-const STEPS = [
-  {
-    id: 'discover',
-    label: 'Discover drone',
-    detail: 'Scanning MAVLink endpoints',
-  },
-  {
-    id: 'handshake',
-    label: 'Establish link',
-    detail: 'Negotiating heartbeat protocol',
-  },
-  {
-    id: 'sync',
-    label: 'Sync parameters',
-    detail: 'Downloading flight parameters',
-  },
-  { id: 'done', label: 'Connection ready', detail: 'GCS link established' },
-]
 
 interface LogEntry {
   t: string
@@ -42,6 +25,13 @@ export default function GCSConnection({
   onConnected,
   onBack,
 }: Props) {
+  const { t } = useI18n(gcsConnectionMessages)
+  const STEPS = [
+    { id: 'discover', ...t.steps.discover },
+    { id: 'handshake', ...t.steps.handshake },
+    { id: 'sync', ...t.steps.sync },
+    { id: 'done', ...t.steps.done },
+  ]
   const [phase, setPhase] = useState<Phase>('idle')
   const [log, setLog] = useState<LogEntry[]>([])
 
@@ -54,14 +44,17 @@ export default function GCSConnection({
 
   async function start() {
     setPhase('discover')
-    addLog('Initiating GCS connection…')
+    addLog(t.log.initiating)
     try {
       const status = await flightControlApi.status()
-      if (!status.online) throw new Error('Flight Controller is offline')
-      if (!status.connection?.grpcConnected || !status.connection?.px4Connected) {
-        throw new Error('MAVSDK or PX4 is not connected')
+      if (!status.online) throw new Error(t.errors.offline)
+      if (
+        !status.connection?.grpcConnected ||
+        !status.connection?.px4Connected
+      ) {
+        throw new Error(t.errors.mavsdkNotConnected)
       }
-      addLog(`Flight Controller online for drone ${drone.id}`)
+      addLog(t.log.controllerOnline(drone.id))
       setPhase('handshake')
       const missionId = mission.backendId ?? mission.id
       let bound: Awaited<ReturnType<typeof flightControlApi.bindSession>>
@@ -69,31 +62,41 @@ export default function GCSConnection({
         bound = await flightControlApi.bindSession(missionId, drone.id)
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : ''
-        if (!message.includes('Cannot switch control session while recording or in flight')) {
+        if (
+          !message.includes(
+            'Cannot switch control session while recording or in flight',
+          )
+        ) {
           throw cause
         }
-        addLog('Phiên điều khiển cũ chưa được xoá, đang reset controller…', false)
+        addLog(t.log.staleSession, false)
         await flightControlApi.releaseSession()
         bound = await flightControlApi.bindSession(missionId, drone.id)
       }
-      addLog(`Control session bound to mission ${bound.missionId}`)
+      addLog(t.log.sessionBound(bound.missionId))
       setPhase('sync')
       const verified = await flightControlApi.status()
       if (
         verified.missionId !== missionId ||
         verified.deviceCode !== drone.id
       ) {
-        throw new Error('Flight Controller session verification failed')
+        throw new Error(t.errors.sessionVerificationFailed)
       }
-      if (!verified.connection?.grpcConnected || !verified.connection?.px4Connected) {
-        throw new Error('MAVSDK or PX4 disconnected during session binding')
+      if (
+        !verified.connection?.grpcConnected ||
+        !verified.connection?.px4Connected
+      ) {
+        throw new Error(t.errors.mavsdkDisconnected)
       }
-      addLog('MAVSDK/PX4 status received and session verified')
+      addLog(t.log.statusVerified)
       setPhase('done')
-      addLog('GCS link ready ✓')
+      addLog(t.log.linkReady)
     } catch (cause) {
       setPhase('fail')
-      addLog(cause instanceof Error ? cause.message : 'GCS connection failed', false)
+      addLog(
+        cause instanceof Error ? cause.message : t.errors.genericFailed,
+        false,
+      )
     }
   }
 
@@ -136,7 +139,7 @@ export default function GCSConnection({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Mission detail
+        {t.missionDetail}
       </button>
 
       <div style={{ maxWidth: 560 }}>
@@ -148,11 +151,11 @@ export default function GCSConnection({
             margin: '0 0 6px',
           }}
         >
-          GCS connection
+          {t.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          Connecting to <strong>{drone.name}</strong> ({drone.id}) for mission{' '}
-          <strong>{mission.id}</strong>.
+          {t.connectingTo} <strong>{drone.name}</strong> ({drone.id}){' '}
+          {t.forMission} <strong>{mission.id}</strong>.
         </p>
 
         {/* Steps */}
@@ -335,7 +338,7 @@ export default function GCSConnection({
               cursor: 'pointer',
             }}
           >
-            Connect to drone
+            {t.connectToDrone}
           </button>
         )}
         {(phase === 'discover' ||
@@ -355,7 +358,7 @@ export default function GCSConnection({
               cursor: 'not-allowed',
             }}
           >
-            Connecting…
+            {t.connecting}
           </button>
         )}
         {phase === 'done' && (
@@ -374,16 +377,24 @@ export default function GCSConnection({
             }}
           >
             {mission.state === 'IN_FLIGHT'
-              ? 'Return to mission control'
-              : 'Continue to pre-flight check'}
+              ? t.returnToMissionControl
+              : t.continueToPreflight}
           </button>
         )}
         {phase === 'fail' && (
           <button
             onClick={() => void start()}
-            style={{ width: '100%', padding: 11, borderRadius: 8, border: 'none', background: 'var(--red)', color: '#fff', cursor: 'pointer' }}
+            style={{
+              width: '100%',
+              padding: 11,
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--red)',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
           >
-            Retry connection
+            {t.retryConnection}
           </button>
         )}
       </div>

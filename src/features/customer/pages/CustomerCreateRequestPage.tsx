@@ -5,6 +5,7 @@ import { authSession } from '../../auth/api/authApi'
 import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
 import { PortalLayout } from '../../../shared/components/portal/PortalLayout'
+import { useI18n } from '../../../shared/i18n'
 import {
   OrderApiError,
   orderApi,
@@ -12,6 +13,7 @@ import {
   type OrderCreatePayload,
   type PreferredTime,
 } from '../api/orderApi'
+import { customerCreateRequestPageMessages } from './CustomerCreateRequestPage.messages'
 
 const SIMULATION_MAP_TOP_IMAGE = '/simulation-viewer/simulation_map_top.png'
 
@@ -84,20 +86,11 @@ const initialForm: FormState = {
   durationOfVideo: 120,
 }
 
-const steps = [
-  ['Service Information', 'Tell us what you need'],
-  ['Target Location', 'Select on simulation map'],
-  ['Schedule', 'Choose preferred time'],
-  ['Media Requirements', 'Specify capture output'],
-  ['Customer & Status', 'Review account details'],
-  ['Review & Submit', 'Create monitoring order'],
-] as const
-
-function formatCoord(value: number | undefined) {
-  return typeof value === 'number' ? `${value.toFixed(2)} m` : 'Not selected'
+function formatCoord(value: number | undefined, notSelectedText: string) {
+  return typeof value === 'number' ? `${value.toFixed(2)} m` : notSelectedText
 }
 
-function useSimulationMapMeta() {
+function useSimulationMapMeta(unavailableMessage: string) {
   const [meta, setMeta] = useState<MapMeta | null>(null)
   const [error, setError] = useState('')
 
@@ -113,7 +106,7 @@ function useSimulationMapMeta() {
         const payload = (await response.json()) as MapMeta
         if (alive) setMeta(payload)
       } catch {
-        if (alive) setError('Simulation map metadata is unavailable.')
+        if (alive) setError(unavailableMessage)
       }
     }
 
@@ -121,7 +114,7 @@ function useSimulationMapMeta() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [unavailableMessage])
 
   return { meta, error }
 }
@@ -221,8 +214,9 @@ function useSimulationZones() {
 }
 
 export function CustomerCreateRequestPage() {
+  const { t } = useI18n(customerCreateRequestPageMessages)
   const user = authSession.getUser()
-  const { meta, error: mapError } = useSimulationMapMeta()
+  const { meta, error: mapError } = useSimulationMapMeta(t.mapMetaUnavailable)
   const mapImageUrl = meta
     ? `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}${meta.imageVersion ? `?v=${encodeURIComponent(meta.imageVersion)}` : ''}`
     : ''
@@ -260,7 +254,7 @@ export function CustomerCreateRequestPage() {
         setError(
           exception instanceof Error
             ? exception.message
-            : 'Unable to load request options.',
+            : t.unableToLoadOptions,
         )
       } finally {
         if (alive) setLoadingOptions(false)
@@ -271,7 +265,7 @@ export function CustomerCreateRequestPage() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [t.unableToLoadOptions])
 
   const selectedService = services.find((item) => item.id === form.serviceId)
   const selectedTime = preferredTimes.find(
@@ -376,7 +370,7 @@ export function CustomerCreateRequestPage() {
     setNotice('')
 
     if (!payload) {
-      setError('Select a target on the simulation map before creating request.')
+      setError(t.selectTargetFirst)
       return
     }
 
@@ -384,14 +378,12 @@ export function CustomerCreateRequestPage() {
     try {
       const response = await orderApi.createOrder(payload)
       setCreatedOrderId(response.id)
-      setNotice(
-        `Order ${response.id} created successfully and waiting for review.`,
-      )
+      setNotice(t.orderCreatedNotice(response.id))
     } catch (exception) {
       if (exception instanceof OrderApiError) {
         setError(exception.message)
       } else {
-        setError('Unable to create request.')
+        setError(t.unableToCreate)
       }
     } finally {
       setSubmitting(false)
@@ -399,14 +391,10 @@ export function CustomerCreateRequestPage() {
   }
 
   return (
-    <PortalLayout
-      role="CUSTOMER"
-      title="Create Monitoring Request"
-      subtitle="Submit a new drone monitoring order for review and assignment."
-    >
+    <PortalLayout role="CUSTOMER" title={t.pageTitle} subtitle={t.pageSubtitle}>
       <form className="customer-request-page" onSubmit={submit}>
-        <aside className="request-stepper" aria-label="Request steps">
-          {steps.map(([label, help], index) => (
+        <aside className="request-stepper" aria-label={t.stepsAriaLabel}>
+          {t.steps.map(([label, help], index) => (
             <div className="request-step" key={label}>
               <span>{index + 1}</span>
               <div>
@@ -429,11 +417,11 @@ export function CustomerCreateRequestPage() {
           <section className="request-card-panel">
             <div className="request-section-title">
               <Icon name="file-text" />
-              <h2>1. Service Information</h2>
+              <h2>{t.section1Title}</h2>
             </div>
             <div className="request-grid-2">
               <label className="request-field">
-                <span>Service Category *</span>
+                <span>{t.serviceCategory}</span>
                 <select
                   disabled={loadingOptions}
                   value={form.serviceId}
@@ -442,7 +430,7 @@ export function CustomerCreateRequestPage() {
                   }
                 >
                   {services.length === 0 ? (
-                    <option value="">No service category available</option>
+                    <option value="">{t.noServiceCategory}</option>
                   ) : null}
                   {services.map((service) => (
                     <option key={service.id} value={service.id}>
@@ -452,32 +440,32 @@ export function CustomerCreateRequestPage() {
                 </select>
               </label>
               <label className="request-field">
-                <span>Request Title *</span>
+                <span>{t.requestTitle}</span>
                 <input
                   value={form.title}
                   onChange={(event) => updateField('title', event.target.value)}
-                  placeholder="Forest boundary inspection"
+                  placeholder={t.requestTitlePlaceholder}
                   required
                 />
               </label>
             </div>
             <label className="request-field">
-              <span>Purpose</span>
+              <span>{t.purpose}</span>
               <input
                 value={form.purpose}
                 onChange={(event) => updateField('purpose', event.target.value)}
-                placeholder="Risk detection, site inspection, progress capture..."
+                placeholder={t.purposePlaceholder}
               />
             </label>
             <label className="request-field">
-              <span>Description / Inspection Notes</span>
+              <span>{t.description}</span>
               <textarea
                 maxLength={1000}
                 value={form.description}
                 onChange={(event) =>
                   updateField('description', event.target.value)
                 }
-                placeholder="Describe what the drone should inspect or capture."
+                placeholder={t.descriptionPlaceholder}
               />
               <small>{form.description.length}/1000</small>
             </label>
@@ -486,7 +474,7 @@ export function CustomerCreateRequestPage() {
           <section className="request-card-panel">
             <div className="request-section-title">
               <Icon name="route" />
-              <h2>2. Target Location</h2>
+              <h2>{t.section2Title}</h2>
             </div>
             <div className="simulation-picker-grid">
               <button
@@ -495,7 +483,7 @@ export function CustomerCreateRequestPage() {
                 onClick={selectMapPoint}
                 disabled={!meta}
               >
-                <img alt="Local simulation map" src={mapImageUrl} />
+                <img alt={t.simulationMapAlt} src={mapImageUrl} />
                 {target ? (
                   <span
                     className="simulation-target-marker"
@@ -507,20 +495,20 @@ export function CustomerCreateRequestPage() {
                 ) : null}
               </button>
               <div className="selected-target-card">
-                <strong>Selected Target</strong>
-                <span>X: {formatCoord(target?.x)}</span>
-                <span>Y: {formatCoord(target?.y)}</span>
+                <strong>{t.selectedTarget}</strong>
+                <span>{t.coordX(formatCoord(target?.x, t.notSelected))}</span>
+                <span>{t.coordY(formatCoord(target?.y, t.notSelected))}</span>
                 <div
                   className={`zone-label-pill ${target?.zone?.restricted ? 'zone-label-pill--restricted' : ''}`}
                 >
                   {target?.zone
-                    ? `${target.zone.name}${target.zone.restricted ? ' · Restricted' : ''}`
+                    ? `${target.zone.name}${target.zone.restricted ? t.restrictedSuffix : ''}`
                     : target
-                      ? 'Outside configured monitoring zones'
-                      : 'No zone selected'}
+                      ? t.outsideZones
+                      : t.noZoneSelected}
                 </div>
                 <label className="request-field">
-                  <span>Location Label</span>
+                  <span>{t.locationLabel}</span>
                   <input
                     value={form.address}
                     onChange={(event) =>
@@ -528,10 +516,7 @@ export function CustomerCreateRequestPage() {
                     }
                   />
                 </label>
-                <small>
-                  Uses the local Gazebo XY simulation map, not latitude or
-                  longitude.
-                </small>
+                <small>{t.gazeboNote}</small>
               </div>
             </div>
           </section>
@@ -539,13 +524,13 @@ export function CustomerCreateRequestPage() {
           <section className="request-card-panel">
             <div className="request-section-title">
               <Icon name="clock" />
-              <h2>3. Schedule</h2>
+              <h2>{t.section3Title}</h2>
             </div>
             <div
               className={`request-grid-2 ${preferredTimes.length > 0 ? 'request-grid-3' : ''}`}
             >
               <label className="request-field">
-                <span>Preferred Date *</span>
+                <span>{t.preferredDate}</span>
                 <input
                   min={today}
                   type="date"
@@ -558,7 +543,7 @@ export function CustomerCreateRequestPage() {
               </label>
               {preferredTimes.length > 0 ? (
                 <label className="request-field">
-                  <span>Preferred Time Window *</span>
+                  <span>{t.preferredTimeWindow}</span>
                   <select
                     disabled={loadingOptions}
                     value={form.preferredTimeId}
@@ -578,7 +563,7 @@ export function CustomerCreateRequestPage() {
                 </label>
               ) : null}
               <label className="request-field">
-                <span>Media Output *</span>
+                <span>{t.mediaOutput}</span>
                 <select
                   value={form.mediaType}
                   onChange={(event) =>
@@ -588,8 +573,8 @@ export function CustomerCreateRequestPage() {
                     )
                   }
                 >
-                  <option value="IMAGE">Photo</option>
-                  <option value="VIDEO">Video</option>
+                  <option value="IMAGE">{t.photoOption}</option>
+                  <option value="VIDEO">{t.videoOption}</option>
                 </select>
               </label>
             </div>
@@ -598,12 +583,12 @@ export function CustomerCreateRequestPage() {
           <section className="request-card-panel">
             <div className="request-section-title">
               <Icon name="camera" />
-              <h2>4. Media Requirements</h2>
+              <h2>{t.section4Title}</h2>
             </div>
             <div className="request-grid-2">
               {form.mediaType === 'IMAGE' ? (
                 <label className="request-field">
-                  <span>Number of Photos</span>
+                  <span>{t.numberOfPhotos}</span>
                   <input
                     min={1}
                     type="number"
@@ -615,7 +600,7 @@ export function CustomerCreateRequestPage() {
                 </label>
               ) : (
                 <label className="request-field">
-                  <span>Video Duration (seconds)</span>
+                  <span>{t.videoDuration}</span>
                   <input
                     min={10}
                     type="number"
@@ -632,20 +617,18 @@ export function CustomerCreateRequestPage() {
           <section className="request-card-panel">
             <div className="request-section-title">
               <Icon name="users" />
-              <h2>5. Customer & Order Status</h2>
+              <h2>{t.section5Title}</h2>
             </div>
             <div className="request-readonly-grid">
               <div className="request-readonly-item">
-                <span>Customer</span>
-                <strong>{user?.fullName ?? 'Current customer'}</strong>
-                <small>{user?.email ?? 'Signed-in account'}</small>
+                <span>{t.customer}</span>
+                <strong>{user?.fullName ?? t.currentCustomer}</strong>
+                <small>{user?.email ?? t.signedInAccount}</small>
               </div>
               <div className="request-readonly-item">
-                <span>Order Status</span>
+                <span>{t.orderStatus}</span>
                 <strong>PENDING</strong>
-                <small>
-                  Created automatically when the order is submitted.
-                </small>
+                <small>{t.createdAutomatically}</small>
               </div>
             </div>
           </section>
@@ -654,28 +637,27 @@ export function CustomerCreateRequestPage() {
         <aside className="request-summary-card">
           <div className="request-summary-head">
             <Icon name="clipboard" />
-            <strong>Request Summary</strong>
+            <strong>{t.requestSummary}</strong>
           </div>
-          <SummaryBlock title="Service Information">
-            <strong>{selectedService?.name ?? 'Select service'}</strong>
-            <span>{form.title || 'Untitled request'}</span>
-            <small>{form.description || 'No inspection notes yet.'}</small>
+          <SummaryBlock title={t.serviceInformationLabel}>
+            <strong>{selectedService?.name ?? t.selectService}</strong>
+            <span>{form.title || t.untitledRequest}</span>
+            <small>{form.description || t.noInspectionNotes}</small>
           </SummaryBlock>
-          <SummaryBlock title="Location">
+          <SummaryBlock title={t.location}>
             <span>{form.address || 'Local simulation target'}</span>
             <small>
-              X {formatCoord(target?.x)} · Y {formatCoord(target?.y)}
+              {t.coordX(formatCoord(target?.x, t.notSelected))} ·{' '}
+              {t.coordY(formatCoord(target?.y, t.notSelected))}
             </small>
             <small>
-              Zone:{' '}
-              {target?.zone?.name ??
-                (target
-                  ? 'Outside configured monitoring zones'
-                  : 'Not selected')}
+              {t.zone(
+                target?.zone?.name ?? (target ? t.outsideZones : t.notSelected),
+              )}
             </small>
             <div className="request-summary-map-preview">
               <img
-                alt="Selected simulation target"
+                alt={t.selectedTarget}
                 className={target ? 'request-summary-map-zoom' : undefined}
                 src={mapImageUrl}
                 style={
@@ -693,39 +675,41 @@ export function CustomerCreateRequestPage() {
                 <span className="simulation-target-marker request-summary-target-marker" />
               ) : (
                 <span className="request-summary-map-empty">
-                  Select a target on the map
+                  {t.selectTargetOnMap}
                 </span>
               )}
             </div>
           </SummaryBlock>
-          <SummaryBlock title="Schedule">
-            <span>{form.preferredDate || 'No date selected'}</span>
-            <small>{selectedTime?.name ?? 'No time window selected'}</small>
+          <SummaryBlock title={t.schedule}>
+            <span>{form.preferredDate || t.noDateSelected}</span>
+            <small>{selectedTime?.name ?? t.noTimeWindowSelected}</small>
           </SummaryBlock>
-          <SummaryBlock title="Media Requirements">
-            <span>{form.mediaType === 'IMAGE' ? 'Photo' : 'Video'}</span>
+          <SummaryBlock title={t.mediaRequirements}>
+            <span>
+              {form.mediaType === 'IMAGE' ? t.photoOption : t.videoOption}
+            </span>
             <small>
               {form.mediaType === 'IMAGE'
-                ? `${form.numberOfPhoto} photos`
-                : `${form.durationOfVideo} seconds`}
+                ? t.photosCount(form.numberOfPhoto)
+                : t.secondsCount(form.durationOfVideo)}
             </small>
           </SummaryBlock>
-          <SummaryBlock title="Contact Information">
-            <span>{user?.fullName ?? 'Current customer'}</span>
-            <small>{user?.email ?? 'Signed-in account'}</small>
+          <SummaryBlock title={t.contactInformation}>
+            <span>{user?.fullName ?? t.currentCustomer}</span>
+            <small>{user?.email ?? t.signedInAccount}</small>
           </SummaryBlock>
-          <SummaryBlock title="Order Status">
+          <SummaryBlock title={t.orderStatus}>
             <span>{createdOrderId ? 'CREATED' : 'PENDING'}</span>
             <small>
               {createdOrderId
-                ? 'Request created successfully.'
-                : 'Backend sets this after creating the order.'}
+                ? t.requestCreatedSuccessfully
+                : t.backendSetsStatus}
             </small>
           </SummaryBlock>
           {createdOrderId ? (
             <div className="request-summary-success">
-              <strong>Request created successfully</strong>
-              <small>Your request is waiting for review.</small>
+              <strong>{t.requestCreatedTitle}</strong>
+              <small>{t.waitingForReview}</small>
             </div>
           ) : null}
           <Button
@@ -735,10 +719,10 @@ export function CustomerCreateRequestPage() {
             type="submit"
           >
             {createdOrderId
-              ? 'Request Created'
+              ? t.requestCreatedButton
               : submitting
-                ? 'Creating...'
-                : 'Create Request'}
+                ? t.creating
+                : t.createRequestButton}
           </Button>
         </aside>
       </form>

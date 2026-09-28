@@ -6,9 +6,11 @@ import {
   LoadingState,
 } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { customerApi } from '../api/customerApi'
 import type { MediaAsset } from '../types/orders'
 import { customerHref } from '../routes'
+import { mediaLibraryPageMessages } from './MediaLibraryPage.messages'
 
 function fmtBytes(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} MB`
@@ -17,7 +19,10 @@ function fmtBytes(n: number): string {
 }
 
 export function MediaLibraryPage() {
-  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null)
+  const { t, locale } = useI18n(mediaLibraryPageMessages)
+  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(
+    null,
+  )
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL')
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
@@ -65,8 +70,15 @@ export function MediaLibraryPage() {
           padding: '12px 0',
         }}
       >
-        <div style={{ padding: '0 14px 10px', fontSize: 12, fontWeight: 600, color: 'var(--tx3)' }}>
-          Lần bay
+        <div
+          style={{
+            padding: '0 14px 10px',
+            fontSize: 12,
+            fontWeight: 600,
+            color: 'var(--tx3)',
+          }}
+        >
+          {t.missionsHeading}
         </div>
         <button
           type="button"
@@ -75,15 +87,21 @@ export function MediaLibraryPage() {
             width: '100%',
             textAlign: 'left',
             padding: '8px 14px',
-            background: selectedMissionId === null ? 'var(--blue-muted, #eff6ff)' : 'none',
+            background:
+              selectedMissionId === null
+                ? 'var(--blue-muted, #eff6ff)'
+                : 'none',
             border: 'none',
-            borderLeft: selectedMissionId === null ? '3px solid var(--blue-solid)' : '3px solid transparent',
+            borderLeft:
+              selectedMissionId === null
+                ? '3px solid var(--blue-solid)'
+                : '3px solid transparent',
             cursor: 'pointer',
             fontSize: 13,
             color: 'var(--tx)',
           }}
         >
-          Tất cả
+          {t.all}
           <span style={{ float: 'right', fontSize: 11, color: 'var(--tx3)' }}>
             {data.assets.length}
           </span>
@@ -97,7 +115,10 @@ export function MediaLibraryPage() {
               width: '100%',
               textAlign: 'left',
               padding: '8px 14px',
-              background: selectedMissionId === m.missionId ? 'var(--blue-muted, #eff6ff)' : 'none',
+              background:
+                selectedMissionId === m.missionId
+                  ? 'var(--blue-muted, #eff6ff)'
+                  : 'none',
               border: 'none',
               borderLeft:
                 selectedMissionId === m.missionId
@@ -109,8 +130,17 @@ export function MediaLibraryPage() {
             }}
           >
             <div style={{ fontWeight: 600 }}>{m.missionCode}</div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)' }}>{m.orderCode}</div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', float: 'right', marginTop: -22 }}>
+            <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
+              {m.orderCode}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--tx3)',
+                float: 'right',
+                marginTop: -22,
+              }}
+            >
               {m.photoCount + m.videoCount}
             </div>
           </button>
@@ -129,17 +159,19 @@ export function MediaLibraryPage() {
             flexWrap: 'wrap',
           }}
         >
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Thư viện kết quả</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+            {t.title}
+          </h1>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-            {(['ALL', 'PHOTO', 'VIDEO'] as const).map((t) => (
+            {(['ALL', 'PHOTO', 'VIDEO'] as const).map((filterKey) => (
               <button
-                key={t}
+                key={filterKey}
                 type="button"
-                className={`odm-btn ${typeFilter === t ? 'odm-btn-p' : 'odm-btn-gh'}`}
+                className={`odm-btn ${typeFilter === filterKey ? 'odm-btn-p' : 'odm-btn-gh'}`}
                 style={{ fontSize: 12 }}
-                onClick={() => setTypeFilter(t)}
+                onClick={() => setTypeFilter(filterKey)}
               >
-                {t === 'ALL' ? 'Tất cả' : t === 'PHOTO' ? 'Ảnh' : 'Video'}
+                {t.typeFilter[filterKey]}
               </button>
             ))}
           </div>
@@ -160,14 +192,14 @@ export function MediaLibraryPage() {
               fontSize: 13,
             }}
           >
-            <span>Đã chọn {selected.size} file</span>
+            <span>{t.selectedCount(selected.size)}</span>
             <button
               type="button"
               className="odm-btn odm-btn-p"
               style={{ fontSize: 12, padding: '3px 10px' }}
-              onClick={() => alert(`Tải xuống ${selected.size} file (mock)`)}
+              onClick={() => alert(t.downloadMock(selected.size))}
             >
-              Tải xuống
+              {t.download}
             </button>
             <button
               type="button"
@@ -175,13 +207,13 @@ export function MediaLibraryPage() {
               style={{ fontSize: 12, padding: '3px 10px' }}
               onClick={clearSelect}
             >
-              Bỏ chọn
+              {t.clearSelection}
             </button>
           </div>
         )}
 
         {visibleAssets.length === 0 ? (
-          <EmptyState title="Không có media" description="Không có file nào khớp bộ lọc." />
+          <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
         ) : (
           <>
             <div
@@ -194,13 +226,20 @@ export function MediaLibraryPage() {
                 color: 'var(--tx3)',
               }}
             >
-              <span>{visibleAssets.length} file</span>
+              <span>{t.fileCount(visibleAssets.length)}</span>
               <button
                 type="button"
-                style={{ fontSize: 12, color: 'var(--blue-solid)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                style={{
+                  fontSize: 12,
+                  color: 'var(--blue-solid)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
                 onClick={selectAll}
               >
-                Chọn tất cả
+                {t.selectAll}
               </button>
             </div>
             <div
@@ -254,7 +293,7 @@ export function MediaLibraryPage() {
                             borderRadius: 3,
                           }}
                         >
-                          MỚI
+                          {t.newBadge}
                         </span>
                       )}
                       {isSelected && (
@@ -283,13 +322,22 @@ export function MediaLibraryPage() {
                       <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
                         {fmtBytes(asset.fileSizeBytes)}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 2 }}>
-                        {new Date(asset.capturedAt).toLocaleDateString('vi-VN')}
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--tx3)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {new Date(asset.capturedAt).toLocaleDateString(locale)}
                       </div>
                     </div>
                     {/* Detail link */}
                     <a
-                      href={customerHref({ screen: 'mediaDetail', mediaId: asset.id })}
+                      href={customerHref({
+                        screen: 'mediaDetail',
+                        mediaId: asset.id,
+                      })}
                       style={{
                         position: 'absolute',
                         bottom: 6,
@@ -304,7 +352,7 @@ export function MediaLibraryPage() {
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Chi tiết
+                      {t.detail}
                     </a>
                   </div>
                 )

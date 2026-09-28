@@ -1,5 +1,7 @@
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
 import type { AdminAccountItem } from '../types/accounts'
+import { accountActionsMessages } from './AccountActions.messages'
 
 export function AccountActions({
   account,
@@ -12,14 +14,17 @@ export function AccountActions({
   onLock: () => void
   onResetPassword: () => void
 }) {
+  const { t } = useI18n(accountActionsMessages)
+  const lockLabel = account.status === 'INACTIVE' ? t.unlock : t.lock
+
   return (
     <div className="odm-adm-account-actions">
       <button
         type="button"
         className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
         onClick={onChangeRole}
-        aria-label="Đổi vai trò"
-        title="Đổi vai trò"
+        aria-label={t.changeRole}
+        title={t.changeRole}
       >
         <Icon name="shield" width={15} height={15} />
       </button>
@@ -27,8 +32,8 @@ export function AccountActions({
         type="button"
         className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
         onClick={onLock}
-        aria-label={account.status === 'INACTIVE' ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
-        title={account.status === 'INACTIVE' ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
+        aria-label={lockLabel}
+        title={lockLabel}
       >
         <Icon name="lock" width={15} height={15} />
       </button>
@@ -36,8 +41,8 @@ export function AccountActions({
         type="button"
         className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
         onClick={onResetPassword}
-        aria-label="Reset mật khẩu"
-        title="Reset mật khẩu"
+        aria-label={t.resetPassword}
+        title={t.resetPassword}
       >
         <Icon name="key" width={15} height={15} />
       </button>

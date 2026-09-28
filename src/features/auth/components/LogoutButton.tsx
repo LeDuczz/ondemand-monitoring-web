@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
 import { logout } from '../api/logout'
+import { logoutButtonMessages } from './LogoutButton.messages'
 
 /**
  * Reusable "Đăng xuất" (sign out) button. Wraps `.odm` on itself so the
@@ -10,6 +12,7 @@ import { logout } from '../api/logout'
  * under `.odm`. Meant to be reused by the Manager sidebar in a later phase.
  */
 export function LogoutButton({ className = '' }: { className?: string }) {
+  const { t } = useI18n(logoutButtonMessages)
   const [pending, setPending] = useState(false)
 
   const handleClick = async () => {
@@ -30,7 +33,7 @@ export function LogoutButton({ className = '' }: { className?: string }) {
       aria-busy={pending}
     >
       <Icon name="arrow-left" />
-      <span>{pending ? 'Đang đăng xuất...' : 'Đăng xuất'}</span>
+      <span>{pending ? t.loggingOut : t.logout}</span>
     </button>
   )
 }

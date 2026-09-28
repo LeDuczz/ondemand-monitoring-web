@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setLanguage } from '../../../../shared/i18n'
 import type { Drone, Mission } from '../types'
 import MissionDetail from './MissionDetail'
 
@@ -34,6 +35,12 @@ const drone = {
   gpsCount: 12,
   storageMB: 100,
 } as Drone
+
+beforeEach(() => {
+  // This suite asserts on the screen's original (English) copy; setup.ts
+  // resets the language back to 'vi' afterEach.
+  setLanguage('en')
+})
 
 afterEach(() => {
   cleanup()

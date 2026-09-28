@@ -1,4 +1,10 @@
-import type { AiVerdict, FindingSeverity, MediaStatus, MissionStatus, OrderStatus } from '../../../shared/types/domain'
+import type {
+  AiVerdict,
+  FindingSeverity,
+  MediaStatus,
+  MissionStatus,
+  OrderStatus,
+} from '../../../shared/types/domain'
 
 /** One row in `GET /api/customer/orders` list */
 export type CustomerOrderItem = {
@@ -83,7 +89,11 @@ export type CustomerOrderDetail = {
   approvalActorName: string | null
   statusHistory: OrderStatusEvent[]
   missions: OrderMissionSummary[]
-  aiSummary: { verdict: AiVerdict; warningCount: number; blockerCount: number } | null
+  aiSummary: {
+    verdict: AiVerdict
+    warningCount: number
+    blockerCount: number
+  } | null
   canCancel: boolean
 }
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
+import { useLanguage } from '../../shared/i18n'
+import { operatorSidebarMessages } from './OperatorSidebar.messages'
 import { operatorApi } from './api/operatorApi'
 import { missionsByTab } from './lib/filterMissions'
 import { demoNow } from './lib/demoNow'
@@ -46,6 +48,7 @@ export function DroneOperatorApp() {
   const hash = useHash()
   const route = parseOperatorRoute(hash)
   const [searchQuery, setSearchQuery] = useState('')
+  const { lang } = useLanguage()
   const guardedRoute = guardOperatorFlowRoute(
     route,
     getActiveMissionId(),
@@ -90,27 +93,39 @@ export function DroneOperatorApp() {
       onSearchChange={setSearchQuery}
       fillContent={route.screen === 'zoneMap'}
     >
-      {renderScreen(route, searchQuery)}
+      {renderScreen(route, searchQuery, lang)}
     </OperatorLayout>
   )
 }
 
-function renderScreen(route: OperatorRoute, searchQuery: string) {
+function renderScreen(
+  route: OperatorRoute,
+  searchQuery: string,
+  lang: 'vi' | 'en',
+) {
   if (route.screen === 'missions')
     return <MissionListPage searchQuery={searchQuery} />
   if (route.screen === 'missionDetail')
     return <MissionDetailScreen missionId={route.missionId} />
   if (route.screen === 'availability') return <AvailabilityScreen />
-  if (route.screen === 'connect') return <ConnectDroneScreen missionId={route.missionId} />
-  if (route.screen === 'handover') return <HandoverScreen missionId={route.missionId} />
-  if (route.screen === 'preflight') return <PreflightScreen missionId={route.missionId} />
-  if (route.screen === 'upload') return <UploadMediaScreen missionId={route.missionId} />
-  if (route.screen === 'postflight') return <PostflightScreen missionId={route.missionId} />
+  if (route.screen === 'connect')
+    return <ConnectDroneScreen missionId={route.missionId} />
+  if (route.screen === 'handover')
+    return <HandoverScreen missionId={route.missionId} />
+  if (route.screen === 'preflight')
+    return <PreflightScreen missionId={route.missionId} />
+  if (route.screen === 'upload')
+    return <UploadMediaScreen missionId={route.missionId} />
+  if (route.screen === 'postflight')
+    return <PostflightScreen missionId={route.missionId} />
   if (route.screen === 'maintenance') return <OperatorMaintenanceScreen />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return (
     <PlaceholderPage
-      title={operatorActiveLabel(route.screen) || 'Không tìm thấy'}
+      title={
+        operatorActiveLabel(route.screen, lang) ||
+        operatorSidebarMessages[lang].notFoundTitle
+      }
     />
   )
 }

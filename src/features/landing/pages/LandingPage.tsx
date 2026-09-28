@@ -2,25 +2,30 @@ import { useState, type ReactNode } from 'react'
 
 import { authSession } from '../../auth/api/authApi'
 import { Icon, type IconName } from '../../../shared/components/Icon'
+import { LanguageToggle } from '../../../shared/components/LanguageToggle'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
+import { useI18n } from '../../../shared/i18n'
 import {
   aiVerdictTone,
   findingSeverityTone,
 } from '../../../shared/lib/statusTone'
 import type { StatusTone } from '../../../shared/types/domain'
-import * as content from '../content'
+import { landingMessages } from '../content'
 import { HeroMap, LiveMap } from '../components/LeafletMap'
 import { resolveCreateRequestTarget } from '../resolveCreateRequestTarget'
 import { ChatbotWidget } from '../components/ChatbotWidget'
+import { landingPageMessages } from './LandingPage.messages'
 import type { FeasibilityCheck } from '../types'
 import '../landing.css'
 
 function Logo() {
+  const { t: content } = useI18n(landingMessages)
+  const { t } = useI18n(landingPageMessages)
   return (
     <a
       className="lp-logo"
       href="#top"
-      aria-label={`${content.brandName} - trang chủ`}
+      aria-label={t.logoHomeAriaLabel(content.brandName)}
     >
       <img
         src="/images/logo-new.png"
@@ -57,13 +62,15 @@ function SectionIntro({
 
 function Header({ createRequestTarget }: { createRequestTarget: string }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { t: content } = useI18n(landingMessages)
+  const { t } = useI18n(landingPageMessages)
   return (
     <header className="lp-header">
       <div className="lp-container lp-header-inner">
         <Logo />
         <nav
           className={`lp-nav ${menuOpen ? 'lp-nav--open' : ''}`}
-          aria-label="Điều hướng chính"
+          aria-label={t.mainNavAriaLabel}
         >
           {content.navLinks.map((link) => (
             <a
@@ -76,32 +83,30 @@ function Header({ createRequestTarget }: { createRequestTarget: string }) {
           ))}
           <div className="lp-nav-actions">
             <a className="lp-btn-o" href="#auth/login">
-              Đăng nhập
+              {t.login}
             </a>
             <a className="lp-btn-p" href={createRequestTarget}>
-              Tạo yêu cầu
+              {t.createRequest}
             </a>
           </div>
         </nav>
         <span className="lp-spacer" />
+        <LanguageToggle className="lp-lang-toggle" />
         <div className="lp-header-actions">
-          <a
-            className="lp-btn-o lp-header-actions-login"
-            href="#auth/login"
-          >
-            Đăng nhập
+          <a className="lp-btn-o lp-header-actions-login" href="#auth/login">
+            {t.login}
           </a>
           <a
             className="lp-btn-p lp-header-actions-cta"
             href={createRequestTarget}
           >
-            Tạo yêu cầu
+            {t.createRequest}
           </a>
         </div>
         <button
           className="lp-menu-btn"
           type="button"
-          aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
+          aria-label={menuOpen ? t.closeMenu : t.openMenu}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((value) => !value)}
         >
@@ -113,6 +118,7 @@ function Header({ createRequestTarget }: { createRequestTarget: string }) {
 }
 
 function HeroIllustration() {
+  const { t: content } = useI18n(landingMessages)
   const { heroAiCard, heroMissionCard } = content
   return (
     <div className="lp-mapcard">
@@ -128,7 +134,9 @@ function HeroIllustration() {
             <span className="lp-score-ring-inner">{heroAiCard.score}</span>
           </div>
           <div>
-            <small style={{ color: 'var(--lp-mute)' }}>{heroAiCard.label}</small>
+            <small style={{ color: 'var(--lp-mute)' }}>
+              {heroAiCard.label}
+            </small>
             <br />
             <b>{heroAiCard.status}</b>{' '}
             <span className="lp-pill lp-pill-g">PASS</span>
@@ -154,14 +162,14 @@ function HeroIllustration() {
 function FeatureList({
   items,
 }: {
-  items: { title: string; detail: string; icon: IconName; emoji?: string }[]
+  items: { title: string; detail: string; icon: string; emoji?: string }[]
 }) {
   return (
     <ul className="lp-feature-list">
       {items.map((item) => (
         <li key={item.title}>
           <span className="lp-feature-list-icon" aria-hidden="true">
-            {item.emoji || <Icon name={item.icon} />}
+            {item.emoji || <Icon name={item.icon as IconName} />}
           </span>
           <span>
             <strong>{item.title}</strong>
@@ -180,6 +188,8 @@ const checkTone: Record<FeasibilityCheck['result'], StatusTone> = {
 }
 
 function AiResultPanel() {
+  const { t: content } = useI18n(landingMessages)
+  const { t } = useI18n(landingPageMessages)
   const { aiResultPanel, aiFeasibilityChecks } = content
   return (
     <div className="odm-card lp-panel">
@@ -192,7 +202,12 @@ function AiResultPanel() {
       <div className="odm-card-body lp-panel-body">
         <div
           className="lp-score-ring-wrap"
-          style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            margin: '16px 0',
+          }}
         >
           <div
             className="lp-score-ring"
@@ -214,7 +229,9 @@ function AiResultPanel() {
           {aiFeasibilityChecks.map((check) => (
             <li key={check.label}>
               <span>{check.label}</span>
-              <StatusBadge tone={checkTone[check.result]}>
+              <StatusBadge
+                tone={checkTone[check.result as FeasibilityCheck['result']]}
+              >
                 {check.result}
               </StatusBadge>
             </li>
@@ -222,11 +239,11 @@ function AiResultPanel() {
         </ul>
         <div className="lp-alt-suggestion">
           <div>
-            <span>Gợi ý ngày thay thế</span>
+            <span>{t.altSuggestionLabel}</span>
             <strong>{aiResultPanel.altSuggestion}</strong>
           </div>
           <button className="lp-btn-p" type="button">
-            Chọn
+            {t.choose}
           </button>
         </div>
       </div>
@@ -235,6 +252,7 @@ function AiResultPanel() {
 }
 
 function LivePanel() {
+  const { t: content } = useI18n(landingMessages)
   const { livePanel, liveResultFiles } = content
   return (
     <div className="odm-card lp-panel">
@@ -278,6 +296,7 @@ function LivePanel() {
 
 function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const { t: content } = useI18n(landingMessages)
 
   return (
     <div className="lp-faq-list">
@@ -347,11 +366,13 @@ function TwoColumnFeature({
 
 export function LandingPage() {
   const createRequestTarget = resolveCreateRequestTarget(authSession.getUser())
+  const { t: content } = useI18n(landingMessages)
+  const { t } = useI18n(landingPageMessages)
 
   return (
     <div id="top" className="odm odm-landing">
       <a className="lp-skip-link" href="#main-content">
-        Bỏ qua tới nội dung
+        {t.skipLink}
       </a>
       <Header createRequestTarget={createRequestTarget} />
       <main id="main-content">
@@ -367,10 +388,10 @@ export function LandingPage() {
               <p className="lp-hero-lede">{content.heroLede}</p>
               <div className="lp-hero-actions">
                 <a className="lp-btn-p" href={createRequestTarget}>
-                  Tạo yêu cầu giám sát →
+                  {t.createRequestCta}
                 </a>
                 <a className="lp-btn-o" href="#auth/login">
-                  Đăng nhập
+                  {t.login}
                 </a>
               </div>
               <ul className="lp-hero-checklist">
@@ -410,7 +431,7 @@ export function LandingPage() {
                   <div className="lp-workflow-card-top">
                     <span className="odm-mono">{step.no}</span>
                     <div className="lp-step-icon">
-                      {step.emoji || <Icon name={step.icon} />}
+                      {step.emoji || <Icon name={step.icon as IconName} />}
                     </div>
                   </div>
                   <h3>{step.title}</h3>
@@ -466,7 +487,7 @@ export function LandingPage() {
               {content.industries.map((card) => (
                 <div className="odm-card lp-industry-card" key={card.title}>
                   <div className="lp-step-icon" aria-hidden="true">
-                    {card.emoji || <Icon name={card.icon} />}
+                    {card.emoji || <Icon name={card.icon as IconName} />}
                   </div>
                   <h3>{card.title}</h3>
                   <p>{card.detail}</p>
@@ -502,17 +523,25 @@ export function LandingPage() {
             <div className="lp-cta-actions">
               <a
                 className="lp-btn-p"
-                style={{ background: '#fff', color: 'var(--lp-blue)', borderColor: '#fff' }}
+                style={{
+                  background: '#fff',
+                  color: 'var(--lp-blue)',
+                  borderColor: '#fff',
+                }}
                 href={createRequestTarget}
               >
-                Tạo yêu cầu giám sát
+                {t.createRequestCtaShort}
               </a>
               <a
                 className="lp-btn-o"
-                style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.6)' }}
+                style={{
+                  background: 'transparent',
+                  color: '#fff',
+                  borderColor: 'rgba(255,255,255,.6)',
+                }}
                 href="#auth/login"
               >
-                Đăng nhập
+                {t.login}
               </a>
             </div>
           </div>

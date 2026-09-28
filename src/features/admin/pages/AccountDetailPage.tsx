@@ -1,17 +1,32 @@
 import { useState } from 'react'
 
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
-import { ACCOUNT_STATUS_META, fmtDate, fmtDateTime, ROLE_LABEL } from '../lib/accountStatus'
+import {
+  getAccountStatusMeta,
+  fmtDate,
+  fmtDateTime,
+  getRoleLabel,
+} from '../lib/accountStatus'
 import { adminHref } from '../routes'
 import type { UserRole } from '../../auth/types'
 import type { AdminAccountDetail } from '../types/accounts'
+import { accountDetailPageMessages } from './AccountDetailPage.messages'
 
 type EmployeeRole = Exclude<UserRole, 'CUSTOMER' | 'ADMIN'>
 
-const EMPLOYEE_ROLES: EmployeeRole[] = ['STAFF', 'DRONE_OPERATOR', 'SYSTEM_OPERATOR']
+const EMPLOYEE_ROLES: EmployeeRole[] = [
+  'STAFF',
+  'DRONE_OPERATOR',
+  'SYSTEM_OPERATOR',
+]
 
 function EditNameModal({
   account,
@@ -22,6 +37,7 @@ function EditNameModal({
   onClose: () => void
   onSaved: (name: string) => void
 }) {
+  const { t } = useI18n(accountDetailPageMessages)
   const [value, setValue] = useState(account.fullName)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
@@ -29,7 +45,7 @@ function EditNameModal({
   async function handleSave() {
     const trimmed = value.trim()
     if (!trimmed) {
-      setErr('Bắt buộc')
+      setErr(t.required)
       return
     }
     setSaving(true)
@@ -38,7 +54,7 @@ function EditNameModal({
       await adminApi.updateAccount(account.id, { fullName: trimmed })
       onSaved(trimmed)
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : 'Có lỗi xảy ra.')
+      setErr(e instanceof Error ? e.message : t.genericError)
     } finally {
       setSaving(false)
     }
@@ -68,7 +84,7 @@ function EditNameModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>Sửa họ và tên</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>{t.editNameTitle}</h3>
         <input
           className="odm-input"
           value={value}
@@ -79,10 +95,27 @@ function EditNameModal({
           autoFocus
           style={{ marginBottom: 4 }}
         />
-        {err && <div style={{ fontSize: 12, color: 'var(--red-solid)', marginBottom: 8 }}>{err}</div>}
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-          <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
-            Huỷ
+        {err && (
+          <div
+            style={{ fontSize: 12, color: 'var(--red-solid)', marginBottom: 8 }}
+          >
+            {err}
+          </div>
+        )}
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginTop: 12,
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onClose}
+          >
+            {t.cancel}
           </button>
           <button
             type="button"
@@ -90,7 +123,7 @@ function EditNameModal({
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? 'Đang lưu...' : 'Lưu'}
+            {saving ? t.saving : t.save}
           </button>
         </div>
       </div>
@@ -99,6 +132,7 @@ function EditNameModal({
 }
 
 export function AccountDetailPage({ accountId }: { accountId: string }) {
+  const { t, lang } = useI18n(accountDetailPageMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.getAccount(accountId, signal),
     [accountId],
@@ -114,7 +148,7 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
   if (loading) return <LoadingState />
   if (error || !display) return <ErrorState error={error} onRetry={reload} />
 
-  const statusMeta = ACCOUNT_STATUS_META[display.status]
+  const statusMeta = getAccountStatusMeta(display.status, lang)
   const canChangeRole = EMPLOYEE_ROLES.includes(display.role as EmployeeRole)
 
   async function handleRoleChange(newRole: EmployeeRole) {
@@ -122,10 +156,12 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
     setActionLoading(true)
     setActionError(null)
     try {
-      const updated = await adminApi.updateAccount(display!.id, { role: newRole })
+      const updated = await adminApi.updateAccount(display!.id, {
+        role: newRole,
+      })
       setAccount(updated)
     } catch (e: unknown) {
-      setActionError(e instanceof Error ? e.message : 'Có lỗi xảy ra.')
+      setActionError(e instanceof Error ? e.message : t.genericError)
     } finally {
       setActionLoading(false)
     }
@@ -138,7 +174,7 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
       const updated = await adminApi.deactivateAccount(display!.id)
       setAccount(updated)
     } catch (e: unknown) {
-      setActionError(e instanceof Error ? e.message : 'Có lỗi xảy ra.')
+      setActionError(e instanceof Error ? e.message : t.genericError)
     } finally {
       setActionLoading(false)
     }
@@ -151,13 +187,13 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
       const updated = await adminApi.activateAccount(display!.id)
       setAccount(updated)
     } catch (e: unknown) {
-      setActionError(e instanceof Error ? e.message : 'Có lỗi xảy ra.')
+      setActionError(e instanceof Error ? e.message : t.genericError)
     } finally {
       setActionLoading(false)
     }
   }
 
-  if (!display) return <EmptyState title="Không tìm thấy tài khoản" />
+  if (!display) return <EmptyState title={t.notFound} />
 
   return (
     <div style={{ maxWidth: 720 }}>
@@ -173,8 +209,11 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
       )}
 
       <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--tx3)' }}>
-        <a href={adminHref({ screen: 'accounts' })} style={{ color: 'var(--tx3)', textDecoration: 'none' }}>
-          ← Tài khoản
+        <a
+          href={adminHref({ screen: 'accounts' })}
+          style={{ color: 'var(--tx3)', textDecoration: 'none' }}
+        >
+          {t.backToAccounts}
         </a>
       </div>
 
@@ -193,7 +232,9 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
             height: 56,
             borderRadius: '50%',
             background: display.avatarUrl ? undefined : 'var(--sf3)',
-            backgroundImage: display.avatarUrl ? `url(${display.avatarUrl})` : undefined,
+            backgroundImage: display.avatarUrl
+              ? `url(${display.avatarUrl})`
+              : undefined,
             backgroundSize: 'cover',
             display: 'flex',
             alignItems: 'center',
@@ -206,18 +247,29 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
           {!display.avatarUrl && (display.fullName[0] ?? '?').toUpperCase()}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{display.fullName}</h1>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              flexWrap: 'wrap',
+            }}
+          >
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+              {display.fullName}
+            </h1>
             <button
               type="button"
               className="odm-btn odm-btn-gh"
               style={{ fontSize: 11, padding: '3px 8px' }}
               onClick={() => setEditingName(true)}
             >
-              Đổi tên
+              {t.changeName}
             </button>
           </div>
-          <div style={{ fontSize: 13, color: 'var(--tx3)', marginTop: 2 }}>{display.email}</div>
+          <div style={{ fontSize: 13, color: 'var(--tx3)', marginTop: 2 }}>
+            {display.email}
+          </div>
         </div>
         <StatusBadge tone={statusMeta.tone} size="lg">
           {statusMeta.label}
@@ -234,7 +286,9 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
           marginBottom: 16,
         }}
       >
-        <h2 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>Thông tin tài khoản</h2>
+        <h2 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
+          {t.accountInfo}
+        </h2>
         <div
           style={{
             display: 'grid',
@@ -243,41 +297,65 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
           }}
         >
           <div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Mã ID</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{display.id}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Vai trò</div>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>
-              {ROLE_LABEL[display.role] ?? display.role}
+            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>
+              {t.idLabel}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+              {display.id}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Xác minh email</div>
+            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>
+              {t.roleLabel}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>
+              {getRoleLabel(display.role, lang) ?? display.role}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>
+              {t.emailVerification}
+            </div>
             <div style={{ fontSize: 13 }}>
               {display.emailVerified ? (
-                <span style={{ color: 'var(--green-solid)' }}>Đã xác minh</span>
+                <span style={{ color: 'var(--green-solid)' }}>
+                  {t.verified}
+                </span>
               ) : (
-                <span style={{ color: 'var(--yellow-solid)' }}>Chưa xác minh</span>
+                <span style={{ color: 'var(--yellow-solid)' }}>
+                  {t.unverified}
+                </span>
               )}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Ngày tạo</div>
+            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>
+              {t.createdAt}
+            </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-              {fmtDate(display.createdAt)}
+              {fmtDate(display.createdAt, lang)}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Đăng nhập gần nhất</div>
+            <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>
+              {t.lastLogin}
+            </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-              {display.lastLoginAt ? fmtDateTime(display.lastLoginAt) : '—'}
+              {display.lastLoginAt
+                ? fmtDateTime(display.lastLoginAt, lang)
+                : '—'}
             </div>
           </div>
           {display.linkedProviders.length > 0 && (
             <div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>OAuth</div>
-              <div style={{ fontSize: 12 }}>{display.linkedProviders.join(', ')}</div>
+              <div
+                style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+              >
+                OAuth
+              </div>
+              <div style={{ fontSize: 12 }}>
+                {display.linkedProviders.join(', ')}
+              </div>
             </div>
           )}
         </div>
@@ -294,7 +372,9 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
             marginBottom: 16,
           }}
         >
-          <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Thay đổi vai trò</h2>
+          <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
+            {t.changeRole}
+          </h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {EMPLOYEE_ROLES.map((r) => (
               <button
@@ -304,7 +384,7 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
                 disabled={actionLoading || display.role === r}
                 onClick={() => handleRoleChange(r)}
               >
-                {ROLE_LABEL[r]}
+                {getRoleLabel(r, lang)}
               </button>
             ))}
           </div>
@@ -321,9 +401,11 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
           marginBottom: 16,
         }}
       >
-        <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Hành động</h2>
+        <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>
+          {t.actions}
+        </h2>
         <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--tx3)' }}>
-          Vô hiệu hoá tài khoản sẽ ngăn người dùng đăng nhập. Có thể kích hoạt lại bất kỳ lúc nào.
+          {t.deactivateHint}
         </p>
 
         {actionError && (
@@ -348,11 +430,14 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
             <button
               type="button"
               className="odm-btn odm-btn-gh"
-              style={{ borderColor: 'var(--red-solid)', color: 'var(--red-solid)' }}
+              style={{
+                borderColor: 'var(--red-solid)',
+                color: 'var(--red-solid)',
+              }}
               disabled={actionLoading}
               onClick={handleDeactivate}
             >
-              {actionLoading ? 'Đang xử lý...' : 'Vô hiệu hoá'}
+              {actionLoading ? t.processing : t.deactivate}
             </button>
           )}
           {display.status === 'INACTIVE' && (
@@ -362,7 +447,7 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
               disabled={actionLoading}
               onClick={handleActivate}
             >
-              {actionLoading ? 'Đang xử lý...' : 'Kích hoạt lại'}
+              {actionLoading ? t.processing : t.reactivate}
             </button>
           )}
         </div>

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { postflightCheckMessages } from '../i18n/postflightCheck'
 import type { Drone } from '../types'
 import type { FlightControlStatus } from '../api/flightControlApi'
 
@@ -17,72 +19,6 @@ interface Item {
   desc: string
   result: R
 }
-
-const ITEMS: Item[] = [
-  {
-    id: 'a1',
-    cat: 'Airframe',
-    label: 'Frame integrity',
-    desc: 'Check arms, body, and motor mounts for cracks or impact damage',
-    result: null,
-  },
-  {
-    id: 'a2',
-    cat: 'Airframe',
-    label: 'Propeller condition',
-    desc: 'Inspect all propellers for chips, cracks, or leading-edge wear',
-    result: null,
-  },
-  {
-    id: 'p1',
-    cat: 'Propulsion',
-    label: 'Motor temperature',
-    desc: 'All motors cool within normal range (< 60°C)',
-    result: null,
-  },
-  {
-    id: 'p2',
-    cat: 'Propulsion',
-    label: 'Motor rotation',
-    desc: 'All motors spin freely without binding or grinding',
-    result: null,
-  },
-  {
-    id: 'e1',
-    cat: 'Electronics',
-    label: 'Battery pack',
-    desc: 'No swelling, deformation, heat damage, or smell',
-    result: null,
-  },
-  {
-    id: 'e4',
-    cat: 'Electronics',
-    label: 'Remaining battery',
-    desc: 'Confirm post-flight battery telemetry is saved and still safe for handling',
-    result: null,
-  },
-  {
-    id: 'e2',
-    cat: 'Electronics',
-    label: 'Camera and gimbal',
-    desc: 'Lens clear, gimbal axes move smoothly, no loose fasteners',
-    result: null,
-  },
-  {
-    id: 'e3',
-    cat: 'Electronics',
-    label: 'Landing gear',
-    desc: 'All struts intact, no cracks, damping pads in good condition',
-    result: null,
-  },
-  {
-    id: 'd1',
-    cat: 'Data',
-    label: 'Flight data saved',
-    desc: 'Confirm telemetry logs and media saved correctly to storage',
-    result: null,
-  },
-]
 
 const BTN: Record<string, { bg: string; border: string; color: string }> = {
   'pass-active': {
@@ -107,7 +43,78 @@ const BTN: Record<string, { bg: string; border: string; color: string }> = {
   },
 }
 
-export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, onFault }: Props) {
+export default function PostflightCheck({
+  drone,
+  telemetrySnapshot,
+  onComplete,
+  onFault,
+}: Props) {
+  const { t } = useI18n(postflightCheckMessages)
+  const ITEMS: Item[] = [
+    {
+      id: 'a1',
+      cat: t.categories.airframe,
+      label: t.items.a1.label,
+      desc: t.items.a1.desc,
+      result: null,
+    },
+    {
+      id: 'a2',
+      cat: t.categories.airframe,
+      label: t.items.a2.label,
+      desc: t.items.a2.desc,
+      result: null,
+    },
+    {
+      id: 'p1',
+      cat: t.categories.propulsion,
+      label: t.items.p1.label,
+      desc: t.items.p1.desc,
+      result: null,
+    },
+    {
+      id: 'p2',
+      cat: t.categories.propulsion,
+      label: t.items.p2.label,
+      desc: t.items.p2.desc,
+      result: null,
+    },
+    {
+      id: 'e1',
+      cat: t.categories.electronics,
+      label: t.items.e1.label,
+      desc: t.items.e1.desc,
+      result: null,
+    },
+    {
+      id: 'e4',
+      cat: t.categories.electronics,
+      label: t.items.e4.label,
+      desc: t.items.e4.desc,
+      result: null,
+    },
+    {
+      id: 'e2',
+      cat: t.categories.electronics,
+      label: t.items.e2.label,
+      desc: t.items.e2.desc,
+      result: null,
+    },
+    {
+      id: 'e3',
+      cat: t.categories.electronics,
+      label: t.items.e3.label,
+      desc: t.items.e3.desc,
+      result: null,
+    },
+    {
+      id: 'd1',
+      cat: t.categories.data,
+      label: t.items.d1.label,
+      desc: t.items.d1.desc,
+      result: null,
+    },
+  ]
   const [items, setItems] = useState<Item[]>(ITEMS)
   const [notes, setNotes] = useState('')
 
@@ -124,7 +131,10 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
   function submit(callback: Props['onComplete']) {
     if (!allDone) return
     const results = Object.fromEntries(
-      items.map((item) => [item.id, item.result!.toUpperCase() as InspectionResult]),
+      items.map((item) => [
+        item.id,
+        item.result!.toUpperCase() as InspectionResult,
+      ]),
     )
     callback(results, notes.trim())
   }
@@ -152,22 +162,31 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
                 margin: '0 0 6px',
               }}
             >
-              Post-flight inspection
+              {t.title}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-              Physical inspection of <strong>{drone.id}</strong> — {drone.name}
+              {t.physicalInspectionOf} <strong>{drone.id}</strong> —{' '}
+              {drone.name}
             </p>
             {telemetrySnapshot && (
-              <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '6px 0 0' }}>
-                Saved landing telemetry · Battery{' '}
+              <p
+                style={{
+                  fontSize: 13,
+                  color: 'var(--text-3)',
+                  margin: '6px 0 0',
+                }}
+              >
+                {t.savedLandingTelemetry} · {t.battery}{' '}
                 {typeof telemetrySnapshot.batteryPercent === 'number'
                   ? `${telemetrySnapshot.batteryPercent.toFixed(1)}%`
                   : '--'}
-                {' · '}Altitude{' '}
+                {' · '}
+                {t.altitude}{' '}
                 {typeof telemetrySnapshot.altitudeM === 'number'
                   ? `${telemetrySnapshot.altitudeM.toFixed(1)} m`
                   : '--'}
-                {' · '}Speed{' '}
+                {' · '}
+                {t.speed}{' '}
                 {typeof telemetrySnapshot.speedMps === 'number'
                   ? `${telemetrySnapshot.speedMps.toFixed(1)} m/s`
                   : '--'}
@@ -190,7 +209,7 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
               {pct}%
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-              {done}/{items.length} completed
+              {done}/{items.length} {t.completed}
             </div>
           </div>
         </div>
@@ -294,7 +313,7 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
                             transition: 'all .1s',
                           }}
                         >
-                          {{ pass: 'Pass', warn: 'Warn', fail: 'Fail' }[res]}
+                          {{ pass: t.pass, warn: t.warn, fail: t.fail }[res]}
                         </button>
                       )
                     })}
@@ -322,14 +341,14 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
               marginBottom: 8,
             }}
           >
-            Inspection notes (optional)
+            {t.inspectionNotes}
           </div>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             maxLength={500}
             rows={3}
-            placeholder="Describe any damage, wear, or observations…"
+            placeholder={t.notesPlaceholder}
             style={{ width: '100%', padding: '10px 12px', fontSize: 13 }}
           />
         </div>
@@ -351,9 +370,7 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
                 color: hasFail ? 'var(--red-text)' : 'var(--green-text)',
               }}
             >
-              {hasFail
-                ? 'Faults detected — drone must be flagged for maintenance.'
-                : 'All items passed — mission can be completed.'}
+              {hasFail ? t.faultsDetected : t.allPassed}
             </div>
           </div>
         )}
@@ -374,7 +391,7 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
                 cursor: 'pointer',
               }}
             >
-              Report fault and flag for maintenance
+              {t.reportFault}
             </button>
           ) : (
             <button
@@ -393,8 +410,8 @@ export default function PostflightCheck({ drone, telemetrySnapshot, onComplete, 
               }}
             >
               {allDone
-                ? 'Complete inspection'
-                : `Complete all ${items.length} items to continue`}
+                ? t.completeInspection
+                : t.completeAllItems(items.length)}
             </button>
           )}
         </div>

@@ -1,4 +1,7 @@
+import { useI18n } from '../../../shared/i18n'
+import type { Language } from '../../../shared/i18n/languageStore'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
+import { preflightItemMessages } from './PreflightItem.messages'
 
 export type PreflightItemDef = {
   key: PreflightItemKey
@@ -7,96 +10,49 @@ export type PreflightItemDef = {
   code: string
 }
 
-export const PREFLIGHT_GROUPS: { title: string; items: PreflightItemDef[] }[] =
-  [
+/** Bilingual preflight item groups. `key`/`code` stay stable across languages. */
+export function preflightGroups(
+  lang: Language,
+): { title: string; items: PreflightItemDef[] }[] {
+  const t = preflightItemMessages[lang]
+  return [
     {
-      title: 'Thiết bị',
+      title: t.groups.device,
       items: [
-        {
-          key: 'battery',
-          label: 'Pin',
-          detail: 'telemetry hiện tại',
-          code: 'battery_ok',
-        },
-        {
-          key: 'camera',
-          label: 'Camera',
-          detail: 'camera hiện tại',
-          code: 'camera_ok',
-        },
-        {
-          key: 'lidar',
-          label: 'LiDAR',
-          detail: 'range sensor',
-          code: 'lidar_ok',
-        },
-        {
-          key: 'modules',
-          label: 'Module Check',
-          detail: 'system modules',
-          code: 'modules_ok',
-        },
+        { key: 'battery', ...t.items.battery, code: 'battery_ok' },
+        { key: 'camera', ...t.items.camera, code: 'camera_ok' },
+        { key: 'lidar', ...t.items.lidar, code: 'lidar_ok' },
+        { key: 'modules', ...t.items.modules, code: 'modules_ok' },
       ],
     },
     {
-      title: 'Kết nối',
+      title: t.groups.connection,
       items: [
-        {
-          key: 'gazebo',
-          label: 'Gazebo Simulation',
-          detail: 'simulation world',
-          code: 'gazebo_ok',
-        },
-        {
-          key: 'px4',
-          label: 'PX4 Flight Controller',
-          detail: 'flight controller',
-          code: 'px4_ok',
-        },
-        {
-          key: 'mavsdk',
-          label: 'MAVSDK Connection',
-          detail: 'telemetry bridge',
-          code: 'mavsdk_ok',
-        },
-        {
-          key: 'px4Control',
-          label: 'PX4 Control',
-          detail: 'command channel',
-          code: 'px4_control_ok',
-        },
+        { key: 'gazebo', ...t.items.gazebo, code: 'gazebo_ok' },
+        { key: 'px4', ...t.items.px4, code: 'px4_ok' },
+        { key: 'mavsdk', ...t.items.mavsdk, code: 'mavsdk_ok' },
+        { key: 'px4Control', ...t.items.px4Control, code: 'px4_control_ok' },
         {
           key: 'localPosition',
-          label: 'Local Position',
-          detail: 'PX4 local pose',
+          ...t.items.localPosition,
           code: 'local_position_ok',
         },
         {
           key: 'mavsdkHealth',
-          label: 'MAVSDK Health',
-          detail: 'armable health',
+          ...t.items.mavsdkHealth,
           code: 'mavsdk_health_ok',
         },
       ],
     },
     {
-      title: 'Hệ thống',
+      title: t.groups.system,
       items: [
-        {
-          key: 'backend',
-          label: 'Backend Connection',
-          detail: 'mission backend',
-          code: 'backend_ok',
-        },
-        {
-          key: 'media',
-          label: 'Media Upload',
-          detail: 'upload pipeline',
-          code: 'media_ok',
-        },
+        { key: 'backend', ...t.items.backend, code: 'backend_ok' },
+        { key: 'media', ...t.items.media, code: 'media_ok' },
       ],
     },
   ]
+}
 
 export function PreflightItemRow({
   def,
@@ -111,6 +67,7 @@ export function PreflightItemRow({
   onSetResult: (result: PreflightItemResult) => void
   onSetNote: (note: string) => void
 }) {
+  const { t } = useI18n(preflightItemMessages)
   const failed = result === 'fail'
   return (
     <div
@@ -166,7 +123,7 @@ export function PreflightItemRow({
             borderColor: result === 'ok' ? 'var(--green-solid)' : undefined,
           }}
         >
-          Đạt
+          {t.pass}
         </button>
         <button
           type="button"
@@ -179,7 +136,7 @@ export function PreflightItemRow({
             borderColor: failed ? 'var(--red-solid)' : undefined,
           }}
         >
-          Không đạt
+          {t.fail}
         </button>
       </div>
       {failed ? (
@@ -187,7 +144,7 @@ export function PreflightItemRow({
           className="odm-input"
           rows={2}
           style={{ marginTop: 8, resize: 'none' }}
-          placeholder="Ghi chú lỗi (bắt buộc khi không đạt)"
+          placeholder={t.notePlaceholder}
           value={note}
           onChange={(e) => onSetNote(e.target.value)}
         />

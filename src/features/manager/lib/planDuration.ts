@@ -120,16 +120,37 @@ export function ceilingWarnings(
   serviceMaxAltitudeM: number,
   noFlyCeilingM: number,
 ): CeilingWarning[] {
+  return getCeilingWarnings(altitudeM, serviceMaxAltitudeM, noFlyCeilingM, 'vi')
+}
+
+/**
+ * Lang-aware variant of `ceilingWarnings` (kept as its own export — not a
+ * default `lang` parameter — so `ceilingWarnings`'s existing call sites,
+ * e.g. `CreateMissionPage`, keep compiling and behaving exactly as before
+ * without having to pass a `lang` argument through).
+ */
+export function getCeilingWarnings(
+  altitudeM: number,
+  serviceMaxAltitudeM: number,
+  noFlyCeilingM: number,
+  lang: import('../../../shared/i18n').Language,
+): CeilingWarning[] {
   const warnings: CeilingWarning[] = []
   if (altitudeM > noFlyCeilingM) {
     warnings.push({
       code: 'ABOVE_NO_FLY_CEILING',
-      message: `Độ cao ${altitudeM} m vượt trần cấm bay ${noFlyCeilingM} m.`,
+      message:
+        lang === 'en'
+          ? `Altitude ${altitudeM} m exceeds the no-fly ceiling ${noFlyCeilingM} m.`
+          : `Độ cao ${altitudeM} m vượt trần cấm bay ${noFlyCeilingM} m.`,
     })
   } else if (altitudeM > serviceMaxAltitudeM) {
     warnings.push({
       code: 'ABOVE_SERVICE_CEILING',
-      message: `Độ cao ${altitudeM} m vượt trần khai thác thông thường ${serviceMaxAltitudeM} m.`,
+      message:
+        lang === 'en'
+          ? `Altitude ${altitudeM} m exceeds the normal operating ceiling ${serviceMaxAltitudeM} m.`
+          : `Độ cao ${altitudeM} m vượt trần khai thác thông thường ${serviceMaxAltitudeM} m.`,
     })
   }
   return warnings

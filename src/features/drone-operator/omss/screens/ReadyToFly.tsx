@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { readyToFlyMessages } from '../i18n/readyToFly'
 import type { Mission, Drone, FlightToken } from '../types'
 
 interface Props {
@@ -16,6 +18,7 @@ export default function ReadyToFly({
   onStart,
   onAbort,
 }: Props) {
+  const { t } = useI18n(readyToFlyMessages)
   const [remaining, setRemaining] = useState(
     Math.max(0, Math.round((token.expiresAt - Date.now()) / 1000)),
   )
@@ -33,11 +36,11 @@ export default function ReadyToFly({
   const canStart = tokenValid && confirmed
 
   const CHECKS = [
-    { label: 'Mission accepted', ok: true },
-    { label: 'Drone connected', ok: true },
-    { label: 'Pre-flight passed', ok: true },
-    { label: 'Handover completed', ok: true },
-    { label: 'Flight token valid', ok: tokenValid },
+    { key: 'missionAccepted', label: t.checks.missionAccepted, ok: true },
+    { key: 'droneConnected', label: t.checks.droneConnected, ok: true },
+    { key: 'preflightPassed', label: t.checks.preflightPassed, ok: true },
+    { key: 'handoverCompleted', label: t.checks.handoverCompleted, ok: true },
+    { key: 'tokenValid', label: t.checks.tokenValid, ok: tokenValid },
   ]
 
   return (
@@ -54,11 +57,10 @@ export default function ReadyToFly({
             margin: '0 0 6px',
           }}
         >
-          Ready to fly
+          {t.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          All pre-flight requirements have been met. Review and start the
-          mission.
+          {t.description}
         </p>
 
         {/* Readiness card */}
@@ -96,12 +98,12 @@ export default function ReadyToFly({
                 color: 'var(--green-text)',
               }}
             >
-              Ready to fly
+              {t.readyToFly}
             </span>
           </div>
           {CHECKS.map((c) => (
             <div
-              key={c.label}
+              key={c.key}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -151,7 +153,7 @@ export default function ReadyToFly({
                   marginBottom: 3,
                 }}
               >
-                Flight token
+                {t.flightToken}
               </div>
               <div
                 style={{
@@ -182,7 +184,7 @@ export default function ReadyToFly({
                   marginTop: 2,
                 }}
               >
-                remaining
+                {t.remaining}
               </div>
             </div>
           </div>
@@ -200,13 +202,13 @@ export default function ReadyToFly({
           }}
         >
           {[
-            ['Mission', mission.id],
-            ['Drone', `${drone.name} (${drone.id})`],
-            ['Location', mission.location],
-            ['Battery', `${drone.battery}%`],
-          ].map(([l, v]) => (
+            [t.fields.mission, mission.id, true],
+            [t.fields.drone, `${drone.name} (${drone.id})`, true],
+            [t.fields.location, mission.location, false],
+            [t.fields.battery, `${drone.battery}%`, false],
+          ].map(([l, v, isData]) => (
             <div
-              key={l}
+              key={l as string}
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -220,10 +222,7 @@ export default function ReadyToFly({
                   fontSize: 13,
                   fontWeight: 500,
                   color: 'var(--text)',
-                  fontFamily:
-                    l === 'Mission' || l === 'Drone'
-                      ? 'var(--font-data)'
-                      : undefined,
+                  fontFamily: isData ? 'var(--font-data)' : undefined,
                 }}
               >
                 {v}
@@ -249,7 +248,7 @@ export default function ReadyToFly({
                 color: 'var(--red-text)',
               }}
             >
-              Flight token expired
+              {t.tokenExpired}
             </div>
             <div
               style={{
@@ -259,7 +258,7 @@ export default function ReadyToFly({
                 marginTop: 3,
               }}
             >
-              Return to control handover to issue a new token before starting.
+              {t.tokenExpiredBody}
             </div>
           </div>
         )}
@@ -284,8 +283,7 @@ export default function ReadyToFly({
             disabled={!tokenValid}
           />
           <span style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
-            I confirm all pre-flight requirements are met and I am ready to
-            begin the mission.
+            {t.confirmLabel}
           </span>
         </label>
 
@@ -303,7 +301,7 @@ export default function ReadyToFly({
               cursor: 'pointer',
             }}
           >
-            Abort
+            {t.abort}
           </button>
           <button
             onClick={onStart}
@@ -320,7 +318,7 @@ export default function ReadyToFly({
               cursor: canStart ? 'pointer' : 'not-allowed',
             }}
           >
-            Start mission
+            {t.startMission}
           </button>
         </div>
       </div>

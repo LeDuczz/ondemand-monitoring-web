@@ -1,11 +1,21 @@
-import { ErrorState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
-import { ACCOUNT_STATUS_META, fmtDate, ROLE_LABEL } from '../lib/accountStatus'
+import {
+  getAccountStatusMeta,
+  fmtDate,
+  getRoleLabel,
+} from '../lib/accountStatus'
 import { adminHref } from '../routes'
+import { adminDashboardPageMessages } from './AdminDashboardPage.messages'
 
 export function AdminDashboardPage() {
+  const { t, lang } = useI18n(adminDashboardPageMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.getDashboard(signal),
     [],
@@ -14,47 +24,69 @@ export function AdminDashboardPage() {
   if (loading) return <LoadingState />
   if (error || !data) return <ErrorState error={error} onRetry={reload} />
 
-  const roleOrder = ['ADMIN', 'STAFF', 'DRONE_OPERATOR', 'SYSTEM_OPERATOR', 'CUSTOMER']
+  const roleOrder = [
+    'ADMIN',
+    'STAFF',
+    'DRONE_OPERATOR',
+    'SYSTEM_OPERATOR',
+    'CUSTOMER',
+  ]
 
   return (
     <div>
       <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        }}
       >
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Tổng quan hệ thống</h1>
-        <a className="odm-btn odm-btn-p" href={adminHref({ screen: 'createAccount' })}>
-          + Tạo tài khoản
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{t.title}</h1>
+        <a
+          className="odm-btn odm-btn-p"
+          href={adminHref({ screen: 'createAccount' })}
+        >
+          {t.createAccount}
         </a>
       </div>
 
       {/* KPI cards */}
       <div className="odm-adm-kpi-row">
         <div className="odm-adm-kpi-card">
-          <div className="odm-adm-kpi-label">Tổng tài khoản</div>
+          <div className="odm-adm-kpi-label">{t.totalAccounts}</div>
           <div className="odm-adm-kpi-value">{data.totalAccounts}</div>
-          <div className="odm-adm-kpi-sub">toàn hệ thống</div>
+          <div className="odm-adm-kpi-sub">{t.systemWide}</div>
         </div>
         <div className="odm-adm-kpi-card">
-          <div className="odm-adm-kpi-label">Đang hoạt động</div>
-          <div className="odm-adm-kpi-value" style={{ color: 'var(--green-solid, #22c55e)' }}>
-            {data.activeAccounts}
-          </div>
-          <div className="odm-adm-kpi-sub">tài khoản</div>
-        </div>
-        <div className="odm-adm-kpi-card">
-          <div className="odm-adm-kpi-label">Chờ xác minh</div>
+          <div className="odm-adm-kpi-label">{t.active}</div>
           <div
             className="odm-adm-kpi-value"
-            style={{ color: data.pendingAccounts > 0 ? 'var(--yellow-solid, #eab308)' : undefined }}
+            style={{ color: 'var(--green-solid, #22c55e)' }}
+          >
+            {data.activeAccounts}
+          </div>
+          <div className="odm-adm-kpi-sub">{t.accountsUnit}</div>
+        </div>
+        <div className="odm-adm-kpi-card">
+          <div className="odm-adm-kpi-label">{t.pendingVerification}</div>
+          <div
+            className="odm-adm-kpi-value"
+            style={{
+              color:
+                data.pendingAccounts > 0
+                  ? 'var(--yellow-solid, #eab308)'
+                  : undefined,
+            }}
           >
             {data.pendingAccounts}
           </div>
-          <div className="odm-adm-kpi-sub">tài khoản</div>
+          <div className="odm-adm-kpi-sub">{t.accountsUnit}</div>
         </div>
         <div className="odm-adm-kpi-card">
-          <div className="odm-adm-kpi-label">Vô hiệu hoá</div>
+          <div className="odm-adm-kpi-label">{t.inactive}</div>
           <div className="odm-adm-kpi-value">{data.inactiveAccounts}</div>
-          <div className="odm-adm-kpi-sub">tài khoản</div>
+          <div className="odm-adm-kpi-sub">{t.accountsUnit}</div>
         </div>
       </div>
 
@@ -69,7 +101,7 @@ export function AdminDashboardPage() {
           }}
         >
           <h2 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
-            Phân bổ theo vai trò
+            {t.byRole}
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {roleOrder
@@ -87,8 +119,18 @@ export function AdminDashboardPage() {
                         marginBottom: 4,
                       }}
                     >
-                      <span>{ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r}</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--tx2)' }}>
+                      <span>
+                        {getRoleLabel(
+                          r as Parameters<typeof getRoleLabel>[0],
+                          lang,
+                        ) ?? r}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--tx2)',
+                        }}
+                      >
                         {count}
                       </span>
                     </div>
@@ -133,17 +175,23 @@ export function AdminDashboardPage() {
               marginBottom: 12,
             }}
           >
-            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Tài khoản mới nhất</h2>
+            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+              {t.latestAccounts}
+            </h2>
             <a
               href={adminHref({ screen: 'accounts' })}
-              style={{ fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+              style={{
+                fontSize: 12,
+                color: 'var(--blue-solid)',
+                textDecoration: 'none',
+              }}
             >
-              Xem tất cả →
+              {t.viewAll}
             </a>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {data.recentAccounts.map((acc) => {
-              const meta = ACCOUNT_STATUS_META[acc.status]
+              const meta = getAccountStatusMeta(acc.status, lang)
               return (
                 <div
                   key={acc.id}
@@ -173,7 +221,10 @@ export function AdminDashboardPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <a
-                      href={adminHref({ screen: 'accountDetail', accountId: acc.id })}
+                      href={adminHref({
+                        screen: 'accountDetail',
+                        accountId: acc.id,
+                      })}
                       style={{
                         color: 'var(--tx)',
                         textDecoration: 'none',
@@ -188,7 +239,7 @@ export function AdminDashboardPage() {
                       {acc.fullName}
                     </a>
                     <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                      {fmtDate(acc.createdAt)}
+                      {fmtDate(acc.createdAt, lang)}
                     </div>
                   </div>
                   <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>

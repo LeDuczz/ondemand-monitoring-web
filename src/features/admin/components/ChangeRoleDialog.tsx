@@ -1,9 +1,11 @@
 import { useState } from 'react'
 
 import { adminApi } from '../api/adminApi'
-import { ROLE_LABEL } from '../lib/accountStatus'
+import { getRoleLabel } from '../lib/accountStatus'
+import { useI18n } from '../../../shared/i18n'
 import type { AdminAccountItem } from '../types/accounts'
 import type { UserRole } from '../../auth/types'
+import { changeRoleDialogMessages } from './ChangeRoleDialog.messages'
 
 type Props = {
   account: AdminAccountItem
@@ -20,6 +22,7 @@ const ASSIGNABLE_ROLES: UserRole[] = [
 ]
 
 export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
+  const { t, lang } = useI18n(changeRoleDialogMessages)
   const [role, setRole] = useState<UserRole>(account.role)
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
@@ -40,7 +43,7 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
       })
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi đổi vai trò.')
+      setError(err instanceof Error ? err.message : t.genericError)
     } finally {
       setLoading(false)
     }
@@ -54,15 +57,15 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
         style={{ maxWidth: 420 }}
         role="dialog"
         aria-modal="true"
-        aria-label="Đổi vai trò"
+        aria-label={t.title}
       >
         <div className="odm-dialog-header">
-          <h2 className="odm-dialog-title">Đổi vai trò</h2>
+          <h2 className="odm-dialog-title">{t.title}</h2>
           <button
             type="button"
             className="odm-dialog-close"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.close}
           >
             x
           </button>
@@ -73,7 +76,7 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
             style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
           >
             <p style={{ margin: 0, color: 'var(--tx2)', fontSize: 13 }}>
-              Người dùng: <strong>{account.fullName}</strong>
+              {t.user} <strong>{account.fullName}</strong>
             </p>
             <div>
               <label
@@ -84,7 +87,7 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
                   marginBottom: 4,
                 }}
               >
-                Vai trò mới
+                {t.newRole}
               </label>
               <select
                 className="odm-input"
@@ -93,7 +96,7 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
               >
                 {ASSIGNABLE_ROLES.map((r) => (
                   <option key={r} value={r}>
-                    {ROLE_LABEL[r]}
+                    {getRoleLabel(r, lang)}
                   </option>
                 ))}
               </select>
@@ -107,13 +110,13 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
                   marginBottom: 4,
                 }}
               >
-                Lý do (tuỳ chọn)
+                {t.reason}
               </label>
               <input
                 className="odm-input"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Ví dụ: Thăng chức, chuyển bộ phận..."
+                placeholder={t.reasonPlaceholder}
               />
             </div>
             {error && (
@@ -128,14 +131,14 @@ export function ChangeRoleDialog({ account, onClose, onSuccess }: Props) {
               className="odm-btn odm-btn-gh"
               onClick={onClose}
             >
-              Huỷ
+              {t.cancel}
             </button>
             <button
               type="submit"
               className="odm-btn odm-btn-p"
               disabled={loading}
             >
-              {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+              {loading ? t.saving : t.save}
             </button>
           </div>
         </form>

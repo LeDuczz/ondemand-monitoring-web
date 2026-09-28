@@ -7,9 +7,10 @@ import {
 } from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
 import {
-  ACCOUNT_STATUS_META,
+  getAccountStatusMeta,
   accountsSubtitle,
   certDaysLeftLabel,
   computeAccountCounts,
@@ -20,13 +21,18 @@ import {
 } from '../lib/accountStatus'
 import { adminHref } from '../routes'
 import { AccountActions } from '../components/AccountActions'
-import { AccountsFilters, type RoleFilter, type StatusFilter } from '../components/AccountsFilters'
+import {
+  AccountsFilters,
+  type RoleFilter,
+  type StatusFilter,
+} from '../components/AccountsFilters'
 import { CertExpiryBanner } from '../components/CertExpiryBanner'
 import { ChangeRoleDialog } from '../components/ChangeRoleDialog'
 import { LockAccountDialog } from '../components/LockAccountDialog'
 import { ResetPasswordDialog } from '../components/ResetPasswordDialog'
 import { RoleCodeBadge } from '../components/RoleCodeBadge'
 import type { AdminAccountItem } from '../types/accounts'
+import { accountsPageMessages } from './AccountsPage.messages'
 
 type DialogState =
   | { type: 'changeRole'; account: AdminAccountItem }
@@ -35,6 +41,7 @@ type DialogState =
   | null
 
 export function AccountsPage() {
+  const { t, lang } = useI18n(accountsPageMessages)
   const [query, setQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
@@ -48,7 +55,11 @@ export function AccountsPage() {
   const filtered = useMemo(
     () =>
       data
-        ? filterAccounts(data.items, { query, role: roleFilter, status: statusFilter })
+        ? filterAccounts(data.items, {
+            query,
+            role: roleFilter,
+            status: statusFilter,
+          })
         : [],
     [data, query, roleFilter, statusFilter],
   )
@@ -69,17 +80,27 @@ export function AccountsPage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, lineHeight: 1.3 }}>
-            Người dùng
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 700,
+              lineHeight: 1.3,
+            }}
+          >
+            {t.title}
           </h1>
           {data && (
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-              {accountsSubtitle(computeAccountCounts(data.items))}
+              {accountsSubtitle(computeAccountCounts(data.items), lang)}
             </p>
           )}
         </div>
-        <a className="odm-btn odm-btn-p" href={adminHref({ screen: 'createAccount' })}>
-          + Tạo người dùng nội bộ
+        <a
+          className="odm-btn odm-btn-p"
+          href={adminHref({ screen: 'createAccount' })}
+        >
+          {t.createInternal}
         </a>
       </div>
 
@@ -96,15 +117,20 @@ export function AccountsPage() {
 
       {loading && <LoadingState />}
 
-      {!loading && (error || !data) && <ErrorState error={error} onRetry={reload} />}
+      {!loading && (error || !data) && (
+        <ErrorState error={error} onRetry={reload} />
+      )}
 
       {!loading && data && filtered.length === 0 && (
         <EmptyState
-          title="Không tìm thấy tài khoản"
-          description="Thử thay đổi bộ lọc hoặc tạo tài khoản mới."
+          title={t.emptyTitle}
+          description={t.emptyDescription}
           action={
-            <a className="odm-btn odm-btn-p" href={adminHref({ screen: 'createAccount' })}>
-              Tạo tài khoản
+            <a
+              className="odm-btn odm-btn-p"
+              href={adminHref({ screen: 'createAccount' })}
+            >
+              {t.createAccount}
             </a>
           }
         />
@@ -122,22 +148,30 @@ export function AccountsPage() {
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Người dùng</th>
-                <th>Vai trò</th>
-                <th>Trạng thái</th>
-                <th>Chứng chỉ hết hạn</th>
-                <th>Đăng nhập cuối</th>
-                <th style={{ textAlign: 'right' }}>Thao tác</th>
+                <th>{t.columnUser}</th>
+                <th>{t.columnRole}</th>
+                <th>{t.columnStatus}</th>
+                <th>{t.columnCertExpiry}</th>
+                <th>{t.columnLastLogin}</th>
+                <th style={{ textAlign: 'right' }}>{t.columnActions}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((acc) => {
-                const statusMeta = ACCOUNT_STATUS_META[acc.status]
-                const certLabel = acc.certExpiry ? certDaysLeftLabel(acc.certExpiry) : null
+                const statusMeta = getAccountStatusMeta(acc.status, lang)
+                const certLabel = acc.certExpiry
+                  ? certDaysLeftLabel(acc.certExpiry, lang)
+                  : null
                 return (
                   <tr key={acc.id}>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
                         <span
                           style={{
                             width: 32,
@@ -164,7 +198,10 @@ export function AccountsPage() {
                         </span>
                         <div>
                           <a
-                            href={adminHref({ screen: 'accountDetail', accountId: acc.id })}
+                            href={adminHref({
+                              screen: 'accountDetail',
+                              accountId: acc.id,
+                            })}
                             style={{
                               color: 'var(--tx)',
                               textDecoration: 'none',
@@ -174,7 +211,9 @@ export function AccountsPage() {
                           >
                             {acc.fullName}
                           </a>
-                          <div style={{ fontSize: 11, color: 'var(--tx3)' }}>{acc.email}</div>
+                          <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
+                            {acc.email}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -182,34 +221,55 @@ export function AccountsPage() {
                       <RoleCodeBadge role={acc.role} />
                     </td>
                     <td>
-                      <StatusBadge tone={statusMeta.tone}>{statusMeta.label}</StatusBadge>
+                      <StatusBadge tone={statusMeta.tone}>
+                        {statusMeta.label}
+                      </StatusBadge>
                       {!acc.emailVerified && (
                         <div className="odm-adm-subnote odm-adm-subnote-warn">
-                          Chưa xác thực email
+                          {t.unverifiedEmail}
                         </div>
                       )}
                     </td>
-                    <td style={{ fontSize: 12, color: acc.certExpiry ? 'var(--tx2)' : 'var(--tx3)' }}>
+                    <td
+                      style={{
+                        fontSize: 12,
+                        color: acc.certExpiry ? 'var(--tx2)' : 'var(--tx3)',
+                      }}
+                    >
                       {acc.certExpiry ? (
                         <>
-                          {fmtDate(acc.certExpiry)}
+                          {fmtDate(acc.certExpiry, lang)}
                           {certLabel && (
-                            <div className="odm-adm-subnote odm-adm-subnote-cert">{certLabel}</div>
+                            <div className="odm-adm-subnote odm-adm-subnote-cert">
+                              {certLabel}
+                            </div>
                           )}
                         </>
                       ) : (
                         '—'
                       )}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--tx3)' }}>
-                      {acc.lastLoginAt ? fmtDateTime(acc.lastLoginAt) : '—'}
+                    <td
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        color: 'var(--tx3)',
+                      }}
+                    >
+                      {acc.lastLoginAt
+                        ? fmtDateTime(acc.lastLoginAt, lang)
+                        : '—'}
                     </td>
                     <td>
                       <AccountActions
                         account={acc}
-                        onChangeRole={() => setDialog({ type: 'changeRole', account: acc })}
+                        onChangeRole={() =>
+                          setDialog({ type: 'changeRole', account: acc })
+                        }
                         onLock={() => setDialog({ type: 'lock', account: acc })}
-                        onResetPassword={() => setDialog({ type: 'resetPwd', account: acc })}
+                        onResetPassword={() =>
+                          setDialog({ type: 'resetPwd', account: acc })
+                        }
                       />
                     </td>
                   </tr>
@@ -225,7 +285,7 @@ export function AccountsPage() {
               borderTop: '1px solid var(--bd)',
             }}
           >
-            {pageRangeLabel(filtered.length, filtered.length)}
+            {pageRangeLabel(filtered.length, filtered.length, lang)}
           </div>
         </div>
       )}

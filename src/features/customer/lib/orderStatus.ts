@@ -1,49 +1,150 @@
-import type { OrderStatus, MissionStatus, StatusTone } from '../../../shared/types/domain'
+import type { Language } from '../../../shared/i18n'
+import type {
+  OrderStatus,
+  MissionStatus,
+  StatusTone,
+} from '../../../shared/types/domain'
 
-type StatusMeta = { label: string; tone: StatusTone }
-
-export const ORDER_STATUS_META: Record<OrderStatus, StatusMeta> = {
-  DRAFT: { label: 'Nháp', tone: 'gray' },
-  AI_ANALYZED: { label: 'Đã phân tích AI', tone: 'blue' },
-  SUBMITTED: { label: 'Đã gửi duyệt', tone: 'yellow' },
-  PENDING: { label: 'Đang duyệt', tone: 'yellow' },
-  APPROVED: { label: 'Đã duyệt', tone: 'blue' },
-  SCHEDULED: { label: 'Đã lên lịch', tone: 'blue' },
-  IN_PROGRESS: { label: 'Đang thực hiện', tone: 'green' },
-  COMPLETED: { label: 'Hoàn thành', tone: 'green' },
-  REJECTED: { label: 'Bị từ chối', tone: 'red' },
-  CANCELLED: { label: 'Đã huỷ', tone: 'gray' },
+export const ORDER_STATUS_TONE: Record<OrderStatus, StatusTone> = {
+  DRAFT: 'gray',
+  AI_ANALYZED: 'blue',
+  SUBMITTED: 'yellow',
+  PENDING: 'yellow',
+  APPROVED: 'blue',
+  SCHEDULED: 'blue',
+  IN_PROGRESS: 'green',
+  COMPLETED: 'green',
+  REJECTED: 'red',
+  CANCELLED: 'gray',
 }
 
-export const MISSION_STATUS_META: Record<MissionStatus, StatusMeta> = {
-  CREATED: { label: 'Mới tạo', tone: 'gray' },
-  RESOURCE_ASSIGNING: { label: 'Phân công nguồn lực', tone: 'yellow' },
-  WAITING_OPERATOR_ACCEPTANCE: { label: 'Chờ phi công xác nhận', tone: 'yellow' },
-  SCHEDULED: { label: 'Đã lên lịch', tone: 'blue' },
-  CONNECTED: { label: 'Đã kết nối', tone: 'blue' },
-  PREFLIGHT_CHECKING: { label: 'Kiểm tra trước bay', tone: 'blue' },
-  READY_TO_FLY: { label: 'Sẵn sàng bay', tone: 'green' },
-  FAILED_PREFLIGHT: { label: 'Lỗi kiểm tra', tone: 'red' },
-  PENDING_APPROVAL: { label: 'Chờ phê duyệt', tone: 'yellow' },
-  IN_FLIGHT: { label: 'Đang bay', tone: 'blue' },
-  IN_PROGRESS: { label: 'Đang thực hiện', tone: 'blue' },
-  RETURNING: { label: 'Đang quay về', tone: 'orange' },
-  POSTFLIGHT_CHECKING: { label: 'Kiểm tra sau bay', tone: 'orange' },
-  COMPLETED: { label: 'Hoàn thành', tone: 'green' },
-  FAILED: { label: 'Thất bại', tone: 'red' },
-  CANCELLED: { label: 'Đã huỷ', tone: 'gray' },
+const ORDER_STATUS_LABEL_VI: Record<OrderStatus, string> = {
+  DRAFT: 'Nháp',
+  AI_ANALYZED: 'Đã phân tích AI',
+  SUBMITTED: 'Đã gửi duyệt',
+  PENDING: 'Đang duyệt',
+  APPROVED: 'Đã duyệt',
+  SCHEDULED: 'Đã lên lịch',
+  IN_PROGRESS: 'Đang thực hiện',
+  COMPLETED: 'Hoàn thành',
+  REJECTED: 'Bị từ chối',
+  CANCELLED: 'Đã huỷ',
 }
 
-export function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('vi-VN', {
+const ORDER_STATUS_LABEL_EN: Record<OrderStatus, string> = {
+  DRAFT: 'Draft',
+  AI_ANALYZED: 'AI analyzed',
+  SUBMITTED: 'Submitted',
+  PENDING: 'Pending review',
+  APPROVED: 'Approved',
+  SCHEDULED: 'Scheduled',
+  IN_PROGRESS: 'In progress',
+  COMPLETED: 'Completed',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
+}
+
+export const MISSION_STATUS_TONE: Record<MissionStatus, StatusTone> = {
+  CREATED: 'gray',
+  RESOURCE_ASSIGNING: 'yellow',
+  WAITING_OPERATOR_ACCEPTANCE: 'yellow',
+  SCHEDULED: 'blue',
+  CONNECTED: 'blue',
+  PREFLIGHT_CHECKING: 'blue',
+  READY_TO_FLY: 'green',
+  FAILED_PREFLIGHT: 'red',
+  PENDING_APPROVAL: 'yellow',
+  IN_FLIGHT: 'blue',
+  IN_PROGRESS: 'blue',
+  RETURNING: 'orange',
+  POSTFLIGHT_CHECKING: 'orange',
+  COMPLETED: 'green',
+  FAILED: 'red',
+  CANCELLED: 'gray',
+}
+
+const MISSION_STATUS_LABEL_VI: Record<MissionStatus, string> = {
+  CREATED: 'Mới tạo',
+  RESOURCE_ASSIGNING: 'Phân công nguồn lực',
+  WAITING_OPERATOR_ACCEPTANCE: 'Chờ phi công xác nhận',
+  SCHEDULED: 'Đã lên lịch',
+  CONNECTED: 'Đã kết nối',
+  PREFLIGHT_CHECKING: 'Kiểm tra trước bay',
+  READY_TO_FLY: 'Sẵn sàng bay',
+  FAILED_PREFLIGHT: 'Lỗi kiểm tra',
+  PENDING_APPROVAL: 'Chờ phê duyệt',
+  IN_FLIGHT: 'Đang bay',
+  IN_PROGRESS: 'Đang thực hiện',
+  RETURNING: 'Đang quay về',
+  POSTFLIGHT_CHECKING: 'Kiểm tra sau bay',
+  COMPLETED: 'Hoàn thành',
+  FAILED: 'Thất bại',
+  CANCELLED: 'Đã huỷ',
+}
+
+const MISSION_STATUS_LABEL_EN: Record<MissionStatus, string> = {
+  CREATED: 'Created',
+  RESOURCE_ASSIGNING: 'Assigning resources',
+  WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',
+  SCHEDULED: 'Scheduled',
+  CONNECTED: 'Connected',
+  PREFLIGHT_CHECKING: 'Preflight check running',
+  READY_TO_FLY: 'Ready to fly',
+  FAILED_PREFLIGHT: 'Preflight check failed',
+  PENDING_APPROVAL: 'Pending approval',
+  IN_FLIGHT: 'In flight',
+  IN_PROGRESS: 'In progress',
+  RETURNING: 'Returning',
+  POSTFLIGHT_CHECKING: 'Postflight check running',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed',
+  CANCELLED: 'Cancelled',
+}
+
+export type StatusMeta = { label: string; tone: StatusTone }
+
+export function getOrderStatusMeta(
+  status: OrderStatus,
+  lang: Language,
+): StatusMeta {
+  return {
+    label:
+      lang === 'en'
+        ? ORDER_STATUS_LABEL_EN[status]
+        : ORDER_STATUS_LABEL_VI[status],
+    tone: ORDER_STATUS_TONE[status],
+  }
+}
+
+export function getMissionStatusMeta(
+  status: MissionStatus,
+  lang: Language,
+): StatusMeta {
+  return {
+    label:
+      lang === 'en'
+        ? MISSION_STATUS_LABEL_EN[status]
+        : MISSION_STATUS_LABEL_VI[status],
+    tone: MISSION_STATUS_TONE[status],
+  }
+}
+
+export function fmtDate(
+  iso: string,
+  locale: 'vi-VN' | 'en-US' = 'vi-VN',
+): string {
+  return new Date(iso).toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   })
 }
 
-export function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('vi-VN', {
+export function fmtDateTime(
+  iso: string,
+  locale: 'vi-VN' | 'en-US' = 'vi-VN',
+): string {
+  return new Date(iso).toLocaleString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

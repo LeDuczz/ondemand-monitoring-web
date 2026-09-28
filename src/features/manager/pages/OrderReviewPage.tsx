@@ -3,49 +3,30 @@ import { useEffect, useRef, useState } from 'react'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n, type Language } from '../../../shared/i18n'
 import {
   SIMULATION_MAP_DEFAULT_CROP,
   simulationMapImageStyle,
   worldToViewportPercent,
 } from '../../../shared/lib/simulationMapProjection'
 import {
-  aiVerdictLabel,
   aiVerdictTone,
   findingSeverityTone,
+  getAiVerdictLabel,
 } from '../../../shared/lib/statusTone'
 import { ordersApi } from '../api/ordersApi'
 import { env } from '../../../config/env'
 import { managerHref } from '../routes'
+import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import type {
   ApprovalDecision,
-  FindingCustomerAction,
   OrderAnalysis,
   OrderDetail,
   OrderResourcePreview,
 } from '../types/orders'
 import '../manager.css'
 
-const customerActionLabel: Record<
-  Exclude<FindingCustomerAction, null>,
-  string
-> = {
-  ACCEPTED: 'ACCEPTED',
-  IGNORED: 'IGNORED',
-  AUTO_FIXED: 'AUTO_FIXED',
-}
-
-const rejectReasonChips = [
-  'Vùng cấm bay',
-  'Thiếu nguồn lực',
-  'Thông tin chưa rõ ràng',
-  'Ngoài phạm vi dịch vụ',
-]
-
-const infoReasonChips = [
-  'Cần mặt bằng chi tiết',
-  'Cần xác nhận quyền sử dụng đất',
-  'Cần rõ khung giờ',
-]
+type PageMessages = (typeof orderReviewPageMessages)['vi']
 
 type ModalKind = 'reject' | 'info' | null
 
@@ -60,6 +41,7 @@ const SIMULATION_MAP_BOUNDS = {
 const SIMULATION_MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 
 export function OrderReviewPage({ orderId }: { orderId: string }) {
+  const { t, lang, locale } = useI18n(orderReviewPageMessages)
   const orderQuery = useApiQuery(
     (signal) => ordersApi.getOrder(orderId, signal),
     [orderId],
@@ -81,28 +63,24 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     return null
   }
 
-  if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} />
+  if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} t={t} />
 
   if (orderQuery.error) {
     const is409 =
       orderQuery.error instanceof ApiError && orderQuery.error.status === 409
     return (
       <div className="odm-mgr-dash">
-        <ReviewBreadcrumbHeader orderId={orderId} />
+        <ReviewBreadcrumbHeader orderId={orderId} t={t} />
         <div className="odm-card">
           <div className="odm-mgr-review-error">
             <div className="odm-mgr-review-error-icon" aria-hidden="true">
               !
             </div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>
-              Không tải được hồ sơ đơn
-            </div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>{t.loadError}</div>
             <div
               style={{ color: 'var(--tx3)', maxWidth: 420, lineHeight: 1.5 }}
             >
-              {is409
-                ? 'Đơn không còn ở trạng thái chờ duyệt (đã được xử lý bởi đồng nghiệp) hoặc máy chủ lỗi.'
-                : 'Đã có lỗi khi kết nối tới máy chủ. Kiểm tra mạng rồi thử lại.'}
+              {is409 ? t.error409 : t.errorGeneric}
             </div>
             <div
               className="odm-mono"
@@ -120,13 +98,13 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
                       ? ` · ${orderQuery.error.status}`
                       : ''
                   }${orderQuery.error.code ? ` ${orderQuery.error.code}` : ''}`
-                : 'GET /orders/{id}'}
+                : t.debugFallback}
             </div>
             <a
               className="odm-btn odm-btn-p"
               href={managerHref({ screen: 'orderQueue' })}
             >
-              Về hàng đợi
+              {t.backToQueue}
             </a>
           </div>
         </div>
@@ -139,55 +117,57 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
   return (
     <div className="odm-mgr-dash">
-      <ReviewBreadcrumbHeader orderId={order.code} />
+      <ReviewBreadcrumbHeader orderId={order.code} t={t} />
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Duyệt đơn {order.code}</h1>
+          <h1 className="odm-mgr-dash-title">{t.reviewTitle(order.code)}</h1>
           <div className="odm-mgr-dash-date">
-            {order.serviceName} · gửi {formatVn(order.submittedAt)}
+            {order.serviceName} ·{' '}
+            {t.submittedAt(formatVn(order.submittedAt, locale))}
           </div>
         </div>
         <StatusBadge tone="yellow" size="lg">
-          Đang duyệt
+          {t.underReview}
         </StatusBadge>
       </div>
 
       <div className="odm-mgr-review-grid">
         <div className="odm-mgr-review-col">
-          <CustomerCard order={order} />
-          <LocationCard order={order} />
-          <ServiceCard order={order} />
-          <AttachmentsCard order={order} />
+          <CustomerCard order={order} t={t} />
+          <LocationCard order={order} t={t} />
+          <ServiceCard order={order} t={t} />
+          <AttachmentsCard order={order} t={t} />
         </div>
         <div className="odm-mgr-review-col">
-          <AnalysisCard query={analysisQuery} order={order} />
-          <ResourcePreviewCard query={previewQuery} />
-          <InternalNoteCard orderId={order.id} />
+          <AnalysisCard query={analysisQuery} order={order} t={t} lang={lang} />
+          <ResourcePreviewCard query={previewQuery} t={t} />
+          <InternalNoteCard orderId={order.id} t={t} locale={locale} />
         </div>
       </div>
 
       <div className="odm-mgr-review-actionbar">
-        <span className="odm-mgr-review-actionbar-hint">
-          Quyết định sẽ ghi vào order_approval, order_status_history và gửi
-          thông báo cho khách.
-        </span>
+        <span className="odm-mgr-review-actionbar-hint">{t.actionHint}</span>
         <button
           type="button"
           className="odm-btn odm-btn-yl odm-btn-lg"
           disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
-          title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ yêu cầu bổ sung thông tin' : undefined}
+          title={
+            !env.useMockApi && import.meta.env.MODE !== 'test'
+              ? t.requestInfoDisabled
+              : undefined
+          }
           onClick={() => setModal('info')}
         >
-          Yêu cầu bổ sung
+          {t.requestInfo}
         </button>
         <button
           type="button"
           className="odm-btn odm-btn-rd odm-btn-lg"
           onClick={() => setModal('reject')}
         >
-          Từ chối
+          {t.reject}
         </button>
-        <ApproveButton orderId={order.id} />
+        <ApproveButton orderId={order.id} t={t} />
       </div>
 
       {modal ? (
@@ -197,22 +177,28 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
           orderId={order.id}
           onClose={() => setModal(null)}
           onDone={() => setNavigateHome(true)}
+          t={t}
         />
       ) : null}
     </div>
   )
 }
 
-function formatVn(iso: string): string {
+function formatVn(iso: string, locale: 'vi-VN' | 'en-US'): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   const pad = (n: number) => String(n).padStart(2, '0')
+  if (locale === 'en-US') {
+    return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()} ${pad(
+      d.getHours(),
+    )}:${pad(d.getMinutes())}`
+  }
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(
     d.getHours(),
   )}:${pad(d.getMinutes())}`
 }
 
-function humanizeMediaRequirement(label: string) {
+function humanizeMediaRequirement(label: string, t: PageMessages) {
   const jsonStart = label.indexOf('{')
   if (jsonStart === -1) return label
 
@@ -221,10 +207,12 @@ function humanizeMediaRequirement(label: string) {
     const data = JSON.parse(label.slice(jsonStart)) as Record<string, unknown>
     const parts = [
       typeof data.mediaType === 'string' ? data.mediaType : null,
-      typeof data.quantity === 'number' ? `${data.quantity} mục` : null,
+      typeof data.quantity === 'number' ? t.unit.items(data.quantity) : null,
       typeof data.resolution === 'string' ? data.resolution : null,
       typeof data.radiusM === 'number' ? `${data.radiusM} m` : null,
-      typeof data.estimatedAreaHa === 'number' ? `${data.estimatedAreaHa} ha` : null,
+      typeof data.estimatedAreaHa === 'number'
+        ? `${data.estimatedAreaHa} ha`
+        : null,
     ].filter(Boolean)
     return parts.length > 0 ? `${title} · ${parts.join(' · ')}` : title
   } catch {
@@ -232,13 +220,19 @@ function humanizeMediaRequirement(label: string) {
   }
 }
 
-function buildOrderFallbackAnalysis(order: OrderDetail): OrderAnalysis {
+function buildOrderFallbackAnalysis(
+  order: OrderDetail,
+  lang: Language,
+): OrderAnalysis {
   const findings: OrderAnalysis['findings'] = []
 
   if (order.center) {
     findings.push({
       severity: 'INFO',
-      message: `Đã xác định tọa độ mục tiêu X ${order.center.lon.toFixed(1)} · Y ${order.center.lat.toFixed(1)}.`,
+      message:
+        lang === 'en'
+          ? `Identified target coordinates X ${order.center.lon.toFixed(1)} · Y ${order.center.lat.toFixed(1)}.`
+          : `Đã xác định tọa độ mục tiêu X ${order.center.lon.toFixed(1)} · Y ${order.center.lat.toFixed(1)}.`,
       evidence: {
         center: `${order.center.lat}, ${order.center.lon}`,
         address: order.addressText ?? '—',
@@ -248,7 +242,10 @@ function buildOrderFallbackAnalysis(order: OrderDetail): OrderAnalysis {
   } else {
     findings.push({
       severity: 'WARNING',
-      message: 'Đơn chưa có tọa độ mục tiêu rõ ràng, cần bổ sung trước khi tạo mission.',
+      message:
+        lang === 'en'
+          ? 'The order has no clear target coordinates yet — needs one before a mission can be created.'
+          : 'Đơn chưa có tọa độ mục tiêu rõ ràng, cần bổ sung trước khi tạo mission.',
       evidence: {
         address: order.addressText ?? '—',
       },
@@ -258,9 +255,14 @@ function buildOrderFallbackAnalysis(order: OrderDetail): OrderAnalysis {
 
   findings.push({
     severity: order.radiusM == null ? 'WARNING' : 'INFO',
-    message: order.radiusM == null
-      ? 'Chưa có bán kính giám sát, cần xác nhận phạm vi bay.'
-      : `Bán kính giám sát khoảng ${order.radiusM} m.`,
+    message:
+      order.radiusM == null
+        ? lang === 'en'
+          ? 'No monitoring radius yet — needs the flight coverage confirmed.'
+          : 'Chưa có bán kính giám sát, cần xác nhận phạm vi bay.'
+        : lang === 'en'
+          ? `Monitoring radius of about ${order.radiusM} m.`
+          : `Bán kính giám sát khoảng ${order.radiusM} m.`,
     evidence: {
       radius_m: order.radiusM != null ? `${order.radiusM}` : '—',
       service: order.serviceName,
@@ -271,7 +273,10 @@ function buildOrderFallbackAnalysis(order: OrderDetail): OrderAnalysis {
   if (order.purpose) {
     findings.push({
       severity: 'INFO',
-      message: 'Mục tiêu giám sát đã có mô tả để đội vận hành lập kế hoạch.',
+      message:
+        lang === 'en'
+          ? 'The monitoring target has a description the ops team can plan from.'
+          : 'Mục tiêu giám sát đã có mô tả để đội vận hành lập kế hoạch.',
       evidence: {
         purpose: order.purpose.slice(0, 140),
       },
@@ -279,37 +284,59 @@ function buildOrderFallbackAnalysis(order: OrderDetail): OrderAnalysis {
     })
   }
 
-  const warningCount = findings.filter((finding) => finding.severity === 'WARNING').length
-  const blockerCount = findings.filter((finding) => finding.severity === 'BLOCKER').length
+  const warningCount = findings.filter(
+    (finding) => finding.severity === 'WARNING',
+  ).length
+  const blockerCount = findings.filter(
+    (finding) => finding.severity === 'BLOCKER',
+  ).length
+
+  const llmSummary =
+    lang === 'en'
+      ? `Quick analysis from the order data: ${order.serviceName}. ${
+          blockerCount > 0
+            ? 'Blocking issues need to be resolved before approval.'
+            : warningCount > 0
+              ? 'A few things need double-checking before approval.'
+              : 'Enough basic information to move to approval and create the mission.'
+        }`
+      : `Phân tích nhanh từ thông tin đơn: ${order.serviceName}. ${
+          blockerCount > 0
+            ? 'Cần xử lý lỗi chặn trước khi duyệt.'
+            : warningCount > 0
+              ? 'Có một số thông tin cần kiểm tra thêm trước khi tạo mission.'
+              : 'Đủ thông tin cơ bản để chuyển sang bước duyệt và tạo mission.'
+        }`
 
   return {
-    overallVerdict: blockerCount > 0 ? 'INFEASIBLE' : warningCount > 0 ? 'RISKY' : 'FEASIBLE',
+    overallVerdict:
+      blockerCount > 0 ? 'INFEASIBLE' : warningCount > 0 ? 'RISKY' : 'FEASIBLE',
     blockerCount,
     warningCount,
     ruleEngineMs: null,
     createdAt: null,
-    llmSummary: `Phân tích nhanh từ thông tin đơn: ${order.serviceName}. ${
-      blockerCount > 0
-        ? 'Cần xử lý lỗi chặn trước khi duyệt.'
-        : warningCount > 0
-          ? 'Có một số thông tin cần kiểm tra thêm trước khi tạo mission.'
-          : 'Đủ thông tin cơ bản để chuyển sang bước duyệt và tạo mission.'
-    }`,
+    llmSummary,
     findings,
   }
 }
 
-function ReviewBreadcrumbHeader({ orderId }: { orderId: string }) {
+function ReviewBreadcrumbHeader({
+  orderId,
+  t,
+}: {
+  orderId: string
+  t: PageMessages
+}) {
   return (
     <div className="odm-mgr-review-breadcrumb">
-      <a href={managerHref({ screen: 'orderQueue' })}>Duyệt đơn</a>
+      <a href={managerHref({ screen: 'orderQueue' })}>{t.breadcrumb}</a>
       <span aria-hidden="true">/</span>
       <span>{orderId}</span>
     </div>
   )
 }
 
-function CustomerCard({ order }: { order: OrderDetail }) {
+function CustomerCard({ order, t }: { order: OrderDetail; t: PageMessages }) {
   const initials = order.customer.fullName
     .split(' ')
     .slice(-2)
@@ -318,7 +345,7 @@ function CustomerCard({ order }: { order: OrderDetail }) {
     .toUpperCase()
   return (
     <div className="odm-card">
-      <div className="odm-card-header">Khách hàng</div>
+      <div className="odm-card-header">{t.customer}</div>
       <div className="odm-card-body odm-mgr-review-customer">
         <span className="odm-mgr-review-avatar" aria-hidden="true">
           {initials}
@@ -342,29 +369,42 @@ function CustomerCard({ order }: { order: OrderDetail }) {
   )
 }
 
-function LocationCard({ order }: { order: OrderDetail }) {
+function LocationCard({ order, t }: { order: OrderDetail; t: PageMessages }) {
   const target = order.center
-    ? worldToViewportPercent({ simX: order.center.lon, simY: order.center.lat }, SIMULATION_MAP_BOUNDS, SIMULATION_MAP_IMAGE_CROP)
+    ? worldToViewportPercent(
+        { simX: order.center.lon, simY: order.center.lat },
+        SIMULATION_MAP_BOUNDS,
+        SIMULATION_MAP_IMAGE_CROP,
+      )
     : { x: 50, y: 50 }
-  const radiusPx = order.radiusM == null
-    ? null
-    : Math.min(24, Math.max(4, (order.radiusM / (SIMULATION_MAP_BOUNDS.maxX - SIMULATION_MAP_BOUNDS.minX)) * 100))
+  const radiusPx =
+    order.radiusM == null
+      ? null
+      : Math.min(
+          24,
+          Math.max(
+            4,
+            (order.radiusM /
+              (SIMULATION_MAP_BOUNDS.maxX - SIMULATION_MAP_BOUNDS.minX)) *
+              100,
+          ),
+        )
   const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}?v=${SIMULATION_MAP_VERSION}`
   const imageStyle = simulationMapImageStyle(SIMULATION_MAP_IMAGE_CROP)
 
   if (!order.center && !order.addressText) {
     return (
       <div className="odm-card">
-        <div className="odm-card-header">Vị trí và vùng giám sát</div>
+        <div className="odm-card-header">{t.location}</div>
         <div className="odm-card-body odm-mgr-review-nodata">
-          Chưa có dữ liệu vị trí cho đơn này.
+          {t.noLocationData}
         </div>
       </div>
     )
   }
   return (
     <div className="odm-card">
-      <div className="odm-card-header">Vị trí và vùng giám sát</div>
+      <div className="odm-card-header">{t.location}</div>
       <div className="odm-mgr-review-map">
         <img
           className="odm-mgr-review-map-image"
@@ -372,15 +412,33 @@ function LocationCard({ order }: { order: OrderDetail }) {
           alt=""
           style={imageStyle}
         />
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Bản đồ khu vực giám sát">
-          {radiusPx != null && <circle cx={target.x} cy={target.y} r={radiusPx} className="odm-mgr-map-radius" vectorEffect="non-scaling-stroke" />}
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={t.mapAriaLabel}
+        >
+          {radiusPx != null && (
+            <circle
+              cx={target.x}
+              cy={target.y}
+              r={radiusPx}
+              className="odm-mgr-map-radius"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
           <g transform={`translate(${target.x},${target.y})`}>
             <path
               d="M0 0 C-2.6 -3.1 -3.5 -4.7 -3.5 -6 a3.5 3.5 0 017 0 C3.5 -4.7 2.6 -3.1 0 0z"
               className="odm-mgr-map-pin"
               vectorEffect="non-scaling-stroke"
             />
-            <circle cy="-6" r="1.2" className="odm-mgr-map-pin-dot" vectorEffect="non-scaling-stroke" />
+            <circle
+              cy="-6"
+              r="1.2"
+              className="odm-mgr-map-pin-dot"
+              vectorEffect="non-scaling-stroke"
+            />
           </g>
           <text
             x={target.x}
@@ -388,29 +446,30 @@ function LocationCard({ order }: { order: OrderDetail }) {
             textAnchor="middle"
             className="odm-mgr-map-label"
           >
-            TARGET · X {order.center?.lon.toFixed(1) ?? '—'} · Y {order.center?.lat.toFixed(1) ?? '—'}
+            TARGET · X {order.center?.lon.toFixed(1) ?? '—'} · Y{' '}
+            {order.center?.lat.toFixed(1) ?? '—'}
           </text>
         </svg>
       </div>
       <div className="odm-card-body odm-mgr-review-location-grid">
         <div>
-          <div className="odm-mgr-review-hint">address_text</div>
+          <div className="odm-mgr-review-hint">{t.addressText}</div>
           <div style={{ fontWeight: 600 }}>{order.addressText ?? '—'}</div>
         </div>
         <div>
-          <div className="odm-mgr-review-hint">center</div>
+          <div className="odm-mgr-review-hint">{t.center}</div>
           <div className="odm-mono" style={{ fontWeight: 600 }}>
             {order.center ? `${order.center.lat}, ${order.center.lon}` : '—'}
           </div>
         </div>
         <div>
-          <div className="odm-mgr-review-hint">radius_m</div>
+          <div className="odm-mgr-review-hint">{t.radiusM}</div>
           <div className="odm-tn" style={{ fontWeight: 600 }}>
             {order.radiusM != null ? `${order.radiusM} m` : '—'}
           </div>
         </div>
         <div>
-          <div className="odm-mgr-review-hint">Trạm gần nhất</div>
+          <div className="odm-mgr-review-hint">{t.nearestBase}</div>
           <div style={{ fontWeight: 600 }}>{order.nearestBase ?? '—'}</div>
         </div>
       </div>
@@ -418,35 +477,35 @@ function LocationCard({ order }: { order: OrderDetail }) {
   )
 }
 
-function ServiceCard({ order }: { order: OrderDetail }) {
+function ServiceCard({ order, t }: { order: OrderDetail; t: PageMessages }) {
   return (
     <div className="odm-card">
-      <div className="odm-card-header">Dịch vụ và yêu cầu media</div>
+      <div className="odm-card-header">{t.serviceAndMedia}</div>
       <div className="odm-card-body">
         <dl className="odm-mgr-review-kv">
           <div>
-            <dt>Dịch vụ</dt>
+            <dt>{t.service}</dt>
             <dd>{order.serviceName}</dd>
           </div>
           <div>
-            <dt>Thời gian mong muốn</dt>
+            <dt>{t.preferredWindow}</dt>
             <dd>{order.preferredWindow ?? '—'}</dd>
           </div>
           {order.mediaRequirements == null ? (
             <div>
-              <dt>Yêu cầu media</dt>
-              <dd>Chưa có dữ liệu</dd>
+              <dt>{t.mediaRequirements}</dt>
+              <dd>{t.noData}</dd>
             </div>
           ) : (
             order.mediaRequirements.map((req, i) => (
               <div key={i}>
-                <dt>Media {i + 1}</dt>
-                <dd>{humanizeMediaRequirement(req.label)}</dd>
+                <dt>{t.mediaN(i + 1)}</dt>
+                <dd>{humanizeMediaRequirement(req.label, t)}</dd>
               </div>
             ))
           )}
           <div>
-            <dt>Mục đích</dt>
+            <dt>{t.purpose}</dt>
             <dd>{order.purpose ?? '—'}</dd>
           </div>
         </dl>
@@ -455,13 +514,19 @@ function ServiceCard({ order }: { order: OrderDetail }) {
   )
 }
 
-function AttachmentsCard({ order }: { order: OrderDetail }) {
+function AttachmentsCard({
+  order,
+  t,
+}: {
+  order: OrderDetail
+  t: PageMessages
+}) {
   if (order.attachments == null) {
     return (
       <div className="odm-card">
-        <div className="odm-card-header">Tệp đính kèm</div>
+        <div className="odm-card-header">{t.attachments}</div>
         <div className="odm-card-body odm-mgr-review-nodata">
-          Chưa có dữ liệu tệp đính kèm cho đơn này.
+          {t.noAttachmentsData}
         </div>
       </div>
     )
@@ -469,7 +534,7 @@ function AttachmentsCard({ order }: { order: OrderDetail }) {
   if (order.attachments.length === 0) return null
   return (
     <div className="odm-card">
-      <div className="odm-card-header">Tệp đính kèm</div>
+      <div className="odm-card-header">{t.attachments}</div>
       <div
         className="odm-card-body"
         style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
@@ -483,7 +548,7 @@ function AttachmentsCard({ order }: { order: OrderDetail }) {
               </div>
             </div>
             <a className="odm-btn odm-btn-sm" href={att.url}>
-              Tải
+              {t.download}
             </a>
           </div>
         ))}
@@ -495,9 +560,13 @@ function AttachmentsCard({ order }: { order: OrderDetail }) {
 function AnalysisCard({
   query,
   order,
+  t,
+  lang,
 }: {
   query: ReturnType<typeof useApiQuery<OrderAnalysis>>
   order: OrderDetail
+  t: PageMessages
+  lang: Language
 }) {
   if (query.loading) {
     return (
@@ -511,13 +580,13 @@ function AnalysisCard({
       </div>
     )
   }
-  const analysis = query.data ?? buildOrderFallbackAnalysis(order)
+  const analysis = query.data ?? buildOrderFallbackAnalysis(order, lang)
   const isFallback = !query.data
   const tone = aiVerdictTone[analysis.overallVerdict]
   return (
     <div className="odm-card">
       <div className="odm-card-header">
-        <span>Phân tích AI</span>
+        <span>{t.aiAnalysis}</span>
         {analysis.ruleEngineMs ? (
           <span
             style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}
@@ -525,15 +594,17 @@ function AnalysisCard({
             rule {analysis.ruleEngineMs} ms
           </span>
         ) : (
-          <span style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}>
-            {isFallback ? 'phân tích nhanh' : null}
+          <span
+            style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}
+          >
+            {isFallback ? t.quickAnalysis : null}
           </span>
         )}
       </div>
       <div className="odm-card-body">
         {Boolean(query.error) && (
           <div className="odm-mgr-review-hint" style={{ marginBottom: 10 }}>
-            Chưa tải được bản phân tích lưu từ backend, đang hiển thị phân tích nhanh từ dữ liệu đơn.
+            {t.analysisLoadError}
           </div>
         )}
         <div className={`odm-mgr-verdict-banner odm-mgr-verdict-${tone}`}>
@@ -542,7 +613,7 @@ function AnalysisCard({
           </span>
           <div style={{ flex: 1 }}>
             <div className="odm-mgr-verdict-title">
-              {aiVerdictLabel[analysis.overallVerdict].toUpperCase()}{' '}
+              {getAiVerdictLabel(analysis.overallVerdict, lang).toUpperCase()}{' '}
               <span className="odm-mono odm-mgr-verdict-code">
                 {analysis.overallVerdict}
               </span>
@@ -561,7 +632,7 @@ function AnalysisCard({
 
         {analysis.findings.length === 0 ? (
           <div className="odm-mgr-review-hint" style={{ marginTop: 10 }}>
-            Không có finding nào.
+            {t.noFindings}
           </div>
         ) : (
           analysis.findings.map((finding, i) => (
@@ -574,7 +645,7 @@ function AnalysisCard({
               </div>
               <div className="odm-mgr-finding-evidence">
                 <span style={{ fontWeight: 700, color: 'var(--tx3)' }}>
-                  Bằng chứng
+                  {t.evidence}
                 </span>
                 {Object.entries(finding.evidence).map(([k, v]) => (
                   <span key={k}>
@@ -586,10 +657,10 @@ function AnalysisCard({
                 ))}
               </div>
               <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
-                Hành động của khách (ai_finding_action):{' '}
+                {t.customerActionLine}{' '}
                 {finding.customerAction ? (
                   <StatusBadge tone="blue">
-                    {customerActionLabel[finding.customerAction]}
+                    {t.customerActionLabel[finding.customerAction]}
                   </StatusBadge>
                 ) : (
                   '—'
@@ -605,42 +676,50 @@ function AnalysisCard({
 
 function ResourcePreviewCard({
   query,
+  t,
 }: {
   query: ReturnType<typeof useApiQuery<OrderResourcePreview | null>>
+  t: PageMessages
 }) {
   if (query.loading) return null
   if (query.error) return null
   return (
     <div className="odm-card">
       <div className="odm-card-header">
-        <span>Nguồn lực khả dụng</span>
+        <span>{t.resourcePreview}</span>
         <span style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}>
-          xem trước · chưa phân công
+          {t.previewNotAssigned}
         </span>
       </div>
       {!query.data ? (
         <div className="odm-card-body odm-mgr-review-nodata">
-          Chưa có dữ liệu nguồn lực cho đơn này.
+          {t.noResourceData}
         </div>
       ) : (
-        <ResourcePreviewBody preview={query.data} />
+        <ResourcePreviewBody preview={query.data} t={t} />
       )}
     </div>
   )
 }
 
-function ResourcePreviewBody({ preview }: { preview: OrderResourcePreview }) {
+function ResourcePreviewBody({
+  preview,
+  t,
+}: {
+  preview: OrderResourcePreview
+  t: PageMessages
+}) {
   return (
     <>
       <div className="odm-card-body">
         <div className="odm-mgr-resource-counts">
           <div className="odm-mgr-resource-count">
-            <b className="odm-tn">{preview.eligibleDroneCount}</b> drone đủ điều
-            kiện
+            <b className="odm-tn">{preview.eligibleDroneCount}</b>{' '}
+            {t.eligibleDrones}
           </div>
           <div className="odm-mgr-resource-count">
-            <b className="odm-tn">{preview.eligiblePilotCount}</b> phi công đủ
-            điều kiện
+            <b className="odm-tn">{preview.eligiblePilotCount}</b>{' '}
+            {t.eligiblePilots}
           </div>
         </div>
         {preview.topDrones.length > 0 ? (
@@ -649,7 +728,7 @@ function ResourcePreviewBody({ preview }: { preview: OrderResourcePreview }) {
               className="odm-mgr-review-hint"
               style={{ fontWeight: 700, margin: '8px 0 4px' }}
             >
-              Top drone
+              {t.topDrones}
             </div>
             {preview.topDrones.map((d) => (
               <div key={d.name} className="odm-mgr-resource-row">
@@ -670,7 +749,7 @@ function ResourcePreviewBody({ preview }: { preview: OrderResourcePreview }) {
               className="odm-mgr-review-hint"
               style={{ fontWeight: 700, margin: '8px 0 4px' }}
             >
-              Top phi công
+              {t.topPilots}
             </div>
             {preview.topPilots.map((p) => (
               <div key={p.name} className="odm-mgr-resource-row">
@@ -690,7 +769,15 @@ function ResourcePreviewBody({ preview }: { preview: OrderResourcePreview }) {
   )
 }
 
-function InternalNoteCard({ orderId }: { orderId: string }) {
+function InternalNoteCard({
+  orderId,
+  t,
+  locale,
+}: {
+  orderId: string
+  t: PageMessages
+  locale: 'vi-VN' | 'en-US'
+}) {
   const [draft, setDraft] = useState('')
   const [saved, setSaved] = useState<{
     note: string
@@ -714,7 +801,7 @@ function InternalNoteCard({ orderId }: { orderId: string }) {
 
   return (
     <div className="odm-card">
-      <div className="odm-card-header">Ghi chú nội bộ</div>
+      <div className="odm-card-header">{t.internalNote}</div>
       <div
         className="odm-card-body"
         style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
@@ -722,7 +809,7 @@ function InternalNoteCard({ orderId }: { orderId: string }) {
         {saved ? (
           <div className="odm-mgr-review-note-existing">
             <div className="odm-mgr-review-hint">
-              {saved.authorName} · {formatVn(saved.updatedAt)}
+              {saved.authorName} · {formatVn(saved.updatedAt, locale)}
             </div>
             {saved.note}
           </div>
@@ -730,7 +817,7 @@ function InternalNoteCard({ orderId }: { orderId: string }) {
         <textarea
           className="odm-inp"
           rows={3}
-          placeholder="Thêm ghi chú cho đồng nghiệp (khách không thấy)"
+          placeholder={t.internalNotePlaceholder}
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value)
@@ -741,21 +828,29 @@ function InternalNoteCard({ orderId }: { orderId: string }) {
           <button
             type="button"
             className="odm-btn odm-btn-sm"
-            disabled={(!env.useMockApi && import.meta.env.MODE !== 'test') || draft.trim().length === 0 || status === 'saving'}
-            title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ ghi chú nội bộ' : undefined}
+            disabled={
+              (!env.useMockApi && import.meta.env.MODE !== 'test') ||
+              draft.trim().length === 0 ||
+              status === 'saving'
+            }
+            title={
+              !env.useMockApi && import.meta.env.MODE !== 'test'
+                ? t.internalNoteDisabled
+                : undefined
+            }
             onClick={handleSave}
           >
-            Lưu ghi chú
+            {t.saveNote}
           </button>
           {status === 'saving' ? (
-            <span className="odm-mgr-review-hint">Đang lưu…</span>
+            <span className="odm-mgr-review-hint">{t.saving}</span>
           ) : null}
           {status === 'saved' ? (
-            <span className="odm-mgr-review-hint">Đã lưu</span>
+            <span className="odm-mgr-review-hint">{t.saved}</span>
           ) : null}
           {status === 'error' ? (
             <span style={{ color: 'var(--red-fg)', fontSize: 11.5 }}>
-              Lưu thất bại
+              {t.saveFailed}
             </span>
           ) : null}
         </div>
@@ -764,7 +859,7 @@ function InternalNoteCard({ orderId }: { orderId: string }) {
   )
 }
 
-function ApproveButton({ orderId }: { orderId: string }) {
+function ApproveButton({ orderId, t }: { orderId: string; t: PageMessages }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -777,7 +872,7 @@ function ApproveButton({ orderId }: { orderId: string }) {
         ? managerHref({ screen: 'missionDispatch', missionId: mission.id })
         : managerHref({ screen: 'missionCreate', orderId })
     } catch {
-      setError('Duyệt đơn thất bại, thử lại.')
+      setError(t.approveFailed)
       setBusy(false)
     }
   }
@@ -790,7 +885,7 @@ function ApproveButton({ orderId }: { orderId: string }) {
         onClick={handleApprove}
         disabled={busy}
       >
-        Duyệt và tạo mission
+        {t.approveAndCreateMission}
       </button>
       {error ? (
         <span style={{ color: 'var(--red-fg)', fontSize: 11.5 }}>{error}</span>
@@ -805,12 +900,14 @@ function DecisionModal({
   orderId,
   onClose,
   onDone,
+  t,
 }: {
   kind: 'reject' | 'info'
   orderCode: string
   orderId: string
   onClose: () => void
   onDone: () => void
+  t: PageMessages
 }) {
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -826,13 +923,13 @@ function DecisionModal({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
-  const chips = kind === 'reject' ? rejectReasonChips : infoReasonChips
+  const chips = kind === 'reject' ? t.rejectReasonChips : t.infoReasonChips
   const decision: ApprovalDecision =
     kind === 'reject' ? 'REJECTED' : 'NEED_INFO'
 
   async function handleConfirm() {
     if (!reason.trim()) {
-      setError('Lý do là bắt buộc')
+      setError(t.reasonRequired)
       return
     }
     setBusy(true)
@@ -841,7 +938,7 @@ function DecisionModal({
       await ordersApi.submitApproval(orderId, { decision, reason })
       onDone()
     } catch {
-      setError('Gửi thất bại, thử lại.')
+      setError(t.submitFailed)
       setBusy(false)
     }
   }
@@ -860,20 +957,18 @@ function DecisionModal({
           <div>
             <div id="odm-mgr-modal-title" className="odm-mgr-modal-title">
               {kind === 'reject'
-                ? `Từ chối đơn ${orderCode}`
-                : 'Yêu cầu khách bổ sung thông tin'}
+                ? t.rejectModalTitle(orderCode)
+                : t.infoModalTitle}
             </div>
             <div className="odm-mgr-review-hint">
-              {kind === 'reject'
-                ? 'Khách sẽ nhận thông báo kèm lý do. Đơn chuyển sang REJECTED.'
-                : 'Đơn quay lại trạng thái cần chỉnh sửa (decision NEED_INFO).'}
+              {kind === 'reject' ? t.rejectModalHint : t.infoModalHint}
             </div>
           </div>
           <button
             type="button"
             className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.close}
           >
             ×
           </button>
@@ -893,27 +988,25 @@ function DecisionModal({
           </div>
           <label>
             <span className="odm-mgr-modal-label">
-              Lý do (bắt buộc) <span style={{ color: 'var(--red-fg)' }}>*</span>
+              {t.reasonLabel} <span style={{ color: 'var(--red-fg)' }}>*</span>
             </span>
             <textarea
               className="odm-inp"
               rows={4}
-              placeholder="Khách hàng sẽ nhìn thấy nội dung này"
+              placeholder={t.reasonPlaceholder}
               value={reason}
               onChange={(e) => {
                 setReason(e.target.value)
                 setError(null)
               }}
             />
-            <div className="odm-mgr-review-hint">
-              Lưu vào order_approval.reason
-            </div>
+            <div className="odm-mgr-review-hint">{t.reasonSavedHint}</div>
             {error ? <div className="odm-mgr-modal-error">{error}</div> : null}
           </label>
         </div>
         <div className="odm-mgr-modal-footer">
           <button type="button" className="odm-btn" onClick={onClose}>
-            Huỷ
+            {t.cancel}
           </button>
           <button
             type="button"
@@ -923,7 +1016,7 @@ function DecisionModal({
             onClick={handleConfirm}
             disabled={busy}
           >
-            {kind === 'reject' ? 'Xác nhận từ chối' : 'Gửi yêu cầu'}
+            {kind === 'reject' ? t.confirmReject : t.sendRequest}
           </button>
         </div>
       </div>
@@ -931,10 +1024,10 @@ function DecisionModal({
   )
 }
 
-function ReviewSkeleton({ orderId }: { orderId: string }) {
+function ReviewSkeleton({ orderId, t }: { orderId: string; t: PageMessages }) {
   return (
     <div className="odm-mgr-dash" aria-busy="true" aria-live="polite">
-      <ReviewBreadcrumbHeader orderId={orderId} />
+      <ReviewBreadcrumbHeader orderId={orderId} t={t} />
       <div className="odm-mgr-review-grid">
         <div className="odm-mgr-review-col">
           <span className="odm-sk" style={{ width: '100%', height: 90 }} />
@@ -946,7 +1039,7 @@ function ReviewSkeleton({ orderId }: { orderId: string }) {
           <span className="odm-sk" style={{ width: '100%', height: 220 }} />
         </div>
       </div>
-      <span className="odm-visually-hidden">Đang tải…</span>
+      <span className="odm-visually-hidden">{t.loading}</span>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
+import { useLanguage } from '../../shared/i18n'
 import { OperatorSidebar, operatorActiveLabel } from './OperatorSidebar'
 import { OperatorTopbar } from './OperatorTopbar'
 import type { OperatorRoute } from './routes'
@@ -25,6 +26,7 @@ export function OperatorLayout({
   const [dark, setDark] = useState(
     () => document.documentElement.dataset.theme === 'dark',
   )
+  const { lang } = useLanguage()
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
@@ -34,7 +36,7 @@ export function OperatorLayout({
     <div className="odm odm-opr">
       <div className="odm-opr-shell">
         <OperatorTopbar
-          breadcrumb={operatorActiveLabel(route.screen)}
+          breadcrumb={operatorActiveLabel(route.screen, lang)}
           dark={dark}
           onToggleDark={() => setDark((v) => !v)}
           searchQuery={searchQuery}

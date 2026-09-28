@@ -1,7 +1,9 @@
+import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
+import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import type { OrderCreateResponse } from '../types/orders'
 import { QueuePage } from './QueuePage'
@@ -111,5 +113,17 @@ describe('QueuePage', () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
     render(<QueuePage now={FIXED_NOW} />)
     await waitFor(() => screen.getByText('Không còn đơn chờ duyệt'))
+  })
+
+  it('renders the English title and summary when language is switched', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
+    render(<QueuePage now={FIXED_NOW} />)
+    await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
+
+    act(() => setLanguage('en'))
+    expect(screen.getByText('Order review queue')).toBeInTheDocument()
+    expect(
+      screen.getByText('2 orders pending · 0 orders over 24h'),
+    ).toBeInTheDocument()
   })
 })

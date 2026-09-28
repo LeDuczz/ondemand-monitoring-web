@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { toFlightDrone, toFlightMission, toOperatorMission } from './liveMission'
+import {
+  toFlightDrone,
+  toFlightMission,
+  toOperatorMission,
+} from './liveMission'
 
 const mission = {
   id: '540c79a9-c987-4ea2-a46b-57a7ae967f93',
@@ -8,7 +12,12 @@ const mission = {
   status: 'IN_FLIGHT',
   droneCode: 'DRN-0048',
   orderTitle: 'Giám sát khu vực',
-  plan: { waypoints: [{ id: '2', sequence: 2, simX: 2, simY: 3, altitudeM: 10 }, { id: '1', sequence: 1, simX: 0, simY: 0, altitudeM: 5 }] },
+  plan: {
+    waypoints: [
+      { id: '2', sequence: 2, simX: 2, simY: 3, altitudeM: 10 },
+      { id: '1', sequence: 1, simX: 0, simY: 0, altitudeM: 5 },
+    ],
+  },
 }
 
 describe('live mission mapping', () => {
@@ -21,6 +30,8 @@ describe('live mission mapping', () => {
   })
 
   it('uses only the assigned mission route in sequence order', () => {
-    expect(toFlightMission(mission).routePoints?.map((point) => point.sequence)).toEqual([1, 2])
+    expect(
+      toFlightMission(mission).routePoints?.map((point) => point.sequence),
+    ).toEqual([1, 2])
   })
 })

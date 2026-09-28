@@ -20,6 +20,8 @@ import {
   type ServiceDeliverableOption,
   type ServiceOption,
 } from '../api/customerApi'
+import { useI18n } from '../../../shared/i18n'
+import { createOrderPageMessages } from './CreateOrderPage.messages'
 import { customerHref } from '../routes'
 
 type Step = 1 | 2 | 3 | 4
@@ -235,6 +237,7 @@ function formatTimeLabel(time: PreferredTimeOption) {
 }
 
 function useSimulationMapMeta() {
+  const { t } = useI18n(createOrderPageMessages)
   const [meta, setMeta] = useState<SimulationMapMeta | null>(null)
   const [error, setError] = useState('')
 
@@ -250,7 +253,7 @@ function useSimulationMapMeta() {
         const payload = (await response.json()) as SimulationMapMeta
         if (alive) setMeta(payload)
       } catch {
-        if (alive) setError('Không tải được map mô phỏng 3D.')
+        if (alive) setError(t.mapMetaUnavailable)
       }
     }
 
@@ -426,31 +429,35 @@ function useSimulationZones() {
   return zones
 }
 
-function scoreRequest(form: FormState): AiScore {
+function scoreRequest(
+  form: FormState,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  scoreNotesT: any
+): AiScore {
   const notes: string[] = []
   let score = 92
 
   if (!form.address.trim()) {
     score -= 18
-    notes.push('Thiếu địa chỉ mô tả khu vực giám sát.')
+    notes.push(scoreNotesT.missingAddress)
   }
   if (!form.serviceId) {
     score -= 20
-    notes.push('Chưa chọn dịch vụ giám sát.')
+    notes.push(scoreNotesT.missingService)
   }
   if (!form.deliverableTypeId) {
     score -= 14
-    notes.push('Chưa chọn kết quả bàn giao.')
+    notes.push(scoreNotesT.missingDeliverable)
   }
   if (!form.preferredDateFrom || !form.preferredDateTo || !form.preferredTimeId) {
     score -= 18
-    notes.push('Thiếu ngày hoặc khung giờ bay.')
+    notes.push(scoreNotesT.missingSchedule)
   }
   if (form.radiusM > 900) {
     score -= 12
-    notes.push('Bán kính lớn, nên chia khu vực thành nhiều lượt bay.')
+    notes.push(scoreNotesT.largeRadius)
   }
-  if (notes.length === 0) notes.push('Thông tin đủ để gửi yêu cầu cho bộ phận vận hành kiểm tra.')
+  if (notes.length === 0) notes.push(scoreNotesT.allGood)
 
   return {
     score: clamp(score, 0, 100),
@@ -550,6 +557,7 @@ function formatMoney(value?: number | null) {
 }
 
 export function CreateOrderPage() {
+  const { t } = useI18n(createOrderPageMessages)
   const { meta: mapMeta, error: mapError } = useSimulationMapMeta()
   const zones = useSimulationZones()
   const storedDraft = useMemo(() => readStoredCreateOrderDraft(), [])
@@ -584,7 +592,7 @@ export function CreateOrderPage() {
   const selectedService = services.find((service) => service.id === form.serviceId)
   const selectedTime = preferredTimes.find((time) => time.id === form.preferredTimeId)
   const selectedDeliverable = deliverables.find((item) => item.deliverableTypeId === form.deliverableTypeId)
-  const score = useMemo(() => scoreRequest(form), [form])
+  const score = useMemo(() => scoreRequest(form, t.scoreNotes), [form, t.scoreNotes])
   const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}${
     mapMeta?.imageVersion ? `?v=${encodeURIComponent(mapMeta.imageVersion)}` : ''
   }`
@@ -651,7 +659,7 @@ export function CreateOrderPage() {
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        setMetaError(error instanceof Error ? error.message : 'Không tải được dữ liệu tạo yêu cầu.')
+        setMetaError(error instanceof Error ? error.message : t.metaError)
       })
       .finally(() => setLoadingMeta(false))
 
@@ -781,14 +789,14 @@ export function CreateOrderPage() {
 
   function describeChatError(error: unknown) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      return 'AI phản hồi quá lâu. Hệ thống đã dừng chờ để tránh treo màn hình, vui lòng gửi lại hoặc thử câu ngắn hơn.'
+      return t.aiTimeout
     }
     if (error instanceof ApiError) {
       const status = error.status ? ` · ${error.status}` : ''
       return `${error.message} (${error.method} ${error.path}${status})`
     }
     if (error instanceof Error && error.message) return error.message
-    return 'Không nhận được phản hồi từ backend.'
+    return t.noBackendResponse
   }
 
   async function recoverConsultationAfterSendFailure(consultationId: string) {
@@ -861,11 +869,11 @@ export function CreateOrderPage() {
     const nextErrors: Partial<Record<keyof FormState, string>> = {}
 
     if (targetStep >= 1) {
-      if (!form.address.trim()) nextErrors.address = 'Nhập địa chỉ/khu vực cần giám sát.'
-      if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = 'Latitude không hợp lệ.'
-      if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = 'Longitude không hợp lệ.'
+      if (!form.address.trim()) nextErrors.address = t.validation.address
+      if (!Number.isFinite(Number(form.latitude))) nextErrors.latitude = t.validation.latitude
+      if (!Number.isFinite(Number(form.longitude))) nextErrors.longitude = t.validation.longitude
       if (!monitoringValidation.valid) {
-        nextErrors.address = 'Vị trí này nằm ngoài các vùng giám sát đã cấu hình. Vui lòng chọn lại điểm trong vùng phục vụ.'
+        nextErrors.address = t.validation.outsideZone
       }
       if (!restrictedValidation.valid) {
         nextErrors.address = `Vùng giám sát chạm vùng cấm: ${restrictedValidation.blockedZones
@@ -874,17 +882,17 @@ export function CreateOrderPage() {
       }
     }
     if (targetStep >= 2) {
-      if (!form.serviceId) nextErrors.serviceId = 'Chọn dịch vụ giám sát.'
-      if (!form.title.trim()) nextErrors.title = 'Nhập tiêu đề yêu cầu.'
+      if (!form.serviceId) nextErrors.serviceId = t.validation.serviceId
+      if (!form.title.trim()) nextErrors.title = t.validation.title
     }
     if (targetStep >= 3) {
-      if (!form.preferredDateFrom) nextErrors.preferredDateFrom = 'Chọn ngày bắt đầu.'
-      if (!form.preferredDateTo) nextErrors.preferredDateTo = 'Chọn ngày kết thúc.'
+      if (!form.preferredDateFrom) nextErrors.preferredDateFrom = t.validation.preferredDateFrom
+      if (!form.preferredDateTo) nextErrors.preferredDateTo = t.validation.preferredDateTo
       if (form.preferredDateFrom && form.preferredDateTo && form.preferredDateFrom > form.preferredDateTo) {
-        nextErrors.preferredDateTo = 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.'
+        nextErrors.preferredDateTo = t.validation.preferredDateOrder
       }
-      if (!form.preferredTimeId) nextErrors.preferredTimeId = 'Chọn khung giờ.'
-      if (!form.deliverableTypeId) nextErrors.deliverableTypeId = 'Chọn kết quả bàn giao.'
+      if (!form.preferredTimeId) nextErrors.preferredTimeId = t.validation.preferredTimeId
+      if (!form.deliverableTypeId) nextErrors.deliverableTypeId = t.validation.deliverableTypeId
     }
 
     setErrors(nextErrors)
@@ -898,7 +906,7 @@ export function CreateOrderPage() {
 
   async function startConsultation() {
     if (!authSession.getAccessToken()) {
-      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      appendChatNotice(t.loginRequiredForAi)
       return
     }
     setChatBusy(true)
@@ -928,7 +936,7 @@ export function CreateOrderPage() {
     const text = (messageOverride ?? chatText).trim()
     if (!text) return
     if (!authSession.getAccessToken()) {
-      appendChatNotice('Bạn cần đăng nhập lại trước khi dùng AI tư vấn.')
+      appendChatNotice(t.loginRequiredForAi)
       return
     }
     let activeConsultationId = isReusableConsultation(consultation) ? consultation?.id : undefined
@@ -1049,7 +1057,7 @@ export function CreateOrderPage() {
       window.localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
       setCreatedId(result.id)
     } catch (error: unknown) {
-      setSubmitError(error instanceof Error ? error.message : 'Không tạo được request.')
+      setSubmitError(error instanceof Error ? error.message : t.submitFailed)
     } finally {
       setSubmitting(false)
     }
@@ -1061,12 +1069,12 @@ export function CreateOrderPage() {
         <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--green-bg)', color: 'var(--green-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 18px' }}>
           ✓
         </div>
-        <h2 style={{ margin: 0, fontSize: 22 }}>Đã tạo request</h2>
+        <h2 style={{ margin: 0, fontSize: 22 }}>{t.createdTitle}</h2>
         <p style={{ color: 'var(--tx3)', lineHeight: 1.6 }}>
-          Yêu cầu đã được gửi qua API thật. Bộ phận vận hành có thể thấy trong hàng chờ để review và approve.
+          {t.createdDescription}
         </p>
         <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-p">
-          Xem đơn của tôi
+          {t.viewMyOrders}
         </a>
       </div>
     )
@@ -1076,13 +1084,13 @@ export function CreateOrderPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22 }}>Tạo yêu cầu giám sát</h1>
+          <h1 style={{ margin: 0, fontSize: 22 }}>{t.pageTitle}</h1>
           <div style={{ marginTop: 4, color: 'var(--tx3)', fontSize: 13 }}>
-            Chọn vị trí trên bản đồ mô phỏng, nhập thông tin cần thiết, dùng AI tư vấn rồi gửi request.
+            {t.pageSubtitle}
           </div>
         </div>
         <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-gh">
-          Huỷ
+          {t.cancel}
         </a>
       </div>
 
@@ -1168,17 +1176,17 @@ export function CreateOrderPage() {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         {step > 1 && (
           <button type="button" className="odm-btn odm-btn-gh" onClick={() => setStep((current) => (current - 1) as Step)}>
-            Quay lại
+            {t.back}
           </button>
         )}
         <div style={{ flex: 1 }} />
         {step < 4 ? (
           <button type="button" className="odm-btn odm-btn-p" onClick={handleNext}>
-            Tiếp tục: {STEP_LABELS[(step + 1) as Step]}
+            {t.continueTo(STEP_LABELS[(step + 1) as Step])}
           </button>
         ) : (
           <button type="button" className="odm-btn odm-btn-p" onClick={handleSubmit} disabled={submitting || loadingMeta}>
-            {submitting ? 'Đang gửi request...' : 'Gửi request'}
+            {submitting ? t.submitting : t.submit}
           </button>
         )}
       </div>
@@ -1209,6 +1217,7 @@ function StepLocation({
   onMapClick: (event: React.MouseEvent<HTMLDivElement>) => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   const radiusPx = clamp(form.radiusM / SIM_RADIUS_SCALE, 34, 145)
   const restrictedZones = zones.filter((zone) => zone.restricted)
   const blockedZoneIds = new Set(restrictedValidation.blockedZones.map((zone) => zone.id))
@@ -1220,8 +1229,8 @@ function StepLocation({
         border: '#f59e0b',
         background: '#fff7ed',
         color: '#9a3412',
-        title: 'Ngoài vùng phục vụ',
-        message: 'Điểm này chưa thuộc zone giám sát nào. Hãy bấm vào phần bản đồ nằm trong khu vực xanh để tạo request.',
+        title: t.stepLocation.outsideZoneTitle,
+        message: t.stepLocation.outsideZoneMessage,
       }
     : isBlocked
       ? {
@@ -1318,7 +1327,7 @@ function StepLocation({
         <div style={cardHead}>Vị trí và bán kính</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Địa chỉ/khu vực" error={errors.address}>
-            <textarea value={form.address} onChange={(event) => update('address', event.target.value)} placeholder="VD: KCN Long Hậu, Cần Giuộc, Long An" rows={4} style={{ ...inputStyle, height: 92, paddingTop: 8, resize: 'vertical' }} />
+            <textarea value={form.address} onChange={(event) => update('address', event.target.value)} placeholder={t.stepLocation.addressPlaceholder} rows={4} style={{ ...inputStyle, height: 92, paddingTop: 8, resize: 'vertical' }} />
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Field label="Sim Y / Latitude" error={errors.latitude}>
@@ -1328,7 +1337,7 @@ function StepLocation({
               <input value={form.longitude} onChange={(event) => update('longitude', event.target.value)} style={inputStyle} />
             </Field>
           </div>
-          <Field label={`Bán kính giám sát: ${form.radiusM} m`}>
+          <Field label={t.stepLocation.radiusLabel(form.radiusM)}>
             <input type="range" min={100} max={1500} step={50} value={form.radiusM} onChange={(event) => update('radiusM', Number(event.target.value))} style={{ width: '100%' }} />
           </Field>
           <div
@@ -1405,6 +1414,7 @@ function StepService({
   clearRequestConsultation: () => void
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   const recommendedService = findRecommendedService(consultation, services)
   const aiSuggestedServices = recommendedService ? [recommendedService] : []
   const chatScrollRef = useRef<HTMLDivElement | null>(null)
@@ -1467,7 +1477,7 @@ function StepService({
                     }}
                   >
                     <div style={{ fontSize: 11, fontWeight: 800, opacity: 0.7, marginBottom: 3 }}>
-                      {mine ? 'Bạn' : 'AI tư vấn'}
+                      {mine ? t.stepService.you : t.stepService.aiAssistant}
                     </div>
                     <div>{message.message}</div>
                   </div>
@@ -1604,7 +1614,7 @@ function StepService({
         <div style={cardHead}>Thông tin request</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Tiêu đề" error={errors.title}>
-            <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="VD: Giám sát tiến độ khu công trình phía Đông" style={inputStyle} />
+            <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder={t.stepService.titlePlaceholder} style={inputStyle} />
           </Field>
           <div>
             <div style={{ color: 'var(--tx3)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>AI đã hiểu nhu cầu</div>
@@ -1686,21 +1696,22 @@ function StepSchedule({
   errors: Partial<Record<keyof FormState, string>>
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 16 }}>
       <div style={card}>
-        <div style={cardHead}>Thời gian bay</div>
+        <div style={cardHead}>{t.stepSchedule.scheduleCardTitle}</div>
         <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <Field label="Ngày bắt đầu" error={errors.preferredDateFrom}>
+          <Field label={t.stepSchedule.startDate} error={errors.preferredDateFrom}>
             <input type="date" value={form.preferredDateFrom} onChange={(event) => update('preferredDateFrom', event.target.value)} style={inputStyle} />
           </Field>
-          <Field label="Ngày kết thúc" error={errors.preferredDateTo}>
+          <Field label={t.stepSchedule.endDate} error={errors.preferredDateTo}>
             <input type="date" value={form.preferredDateTo} onChange={(event) => update('preferredDateTo', event.target.value)} style={inputStyle} />
           </Field>
           <div style={{ gridColumn: '1 / -1' }}>
-            <Field label="Khung giờ" error={errors.preferredTimeId}>
+            <Field label={t.stepSchedule.timeWindow} error={errors.preferredTimeId}>
               <select value={form.preferredTimeId} onChange={(event) => update('preferredTimeId', event.target.value)} style={inputStyle}>
-                <option value="">Chọn khung giờ</option>
+                <option value="">{t.stepSchedule.selectTimeWindow}</option>
                 {preferredTimes.map((time) => <option key={time.id} value={time.id}>{formatTimeLabel(time)}</option>)}
               </select>
             </Field>
@@ -1709,26 +1720,26 @@ function StepSchedule({
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Kết quả bàn giao</div>
+        <div style={cardHead}>{t.stepSchedule.deliverableCardTitle}</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Deliverable type" error={errors.deliverableTypeId}>
+          <Field label={t.stepSchedule.deliverableType} error={errors.deliverableTypeId}>
             <select value={form.deliverableTypeId} onChange={(event) => update('deliverableTypeId', event.target.value)} style={inputStyle}>
-              <option value="">Chọn kết quả</option>
+              <option value="">{t.stepSchedule.selectDeliverable}</option>
               {deliverables.map((item) => <option key={item.id} value={item.deliverableTypeId}>{item.deliverableTypeName || item.deliverableTypeId}</option>)}
             </select>
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="Media">
+            <Field label={t.stepSchedule.media}>
               <select value={form.mediaType} onChange={(event) => update('mediaType', event.target.value as FormState['mediaType'])} style={inputStyle}>
-                <option value="IMAGE">Ảnh</option>
-                <option value="VIDEO">Video</option>
+                <option value="IMAGE">{t.stepSchedule.photoOption}</option>
+                <option value="VIDEO">{t.stepSchedule.videoOption}</option>
               </select>
             </Field>
-            <Field label="Số lượng">
+            <Field label={t.stepSchedule.quantity}>
               <input type="number" min={1} value={form.quantity} onChange={(event) => update('quantity', Number(event.target.value))} style={inputStyle} />
             </Field>
           </div>
-          <Field label="Độ phân giải">
+          <Field label={t.stepSchedule.resolution}>
             <select value={form.resolution} onChange={(event) => update('resolution', event.target.value)} style={inputStyle}>
               <option value="1080p">1080p</option>
               <option value="4K">4K</option>
@@ -1752,27 +1763,28 @@ function StepReview(props: {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
 }) {
+  const { t } = useI18n(createOrderPageMessages)
   const scoreColor = props.score.level === 'good' ? 'var(--green-fg)' : props.score.level === 'warn' ? 'var(--orange-fg)' : 'var(--red-fg)'
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 420px', gap: 16 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={card}>
-          <div style={cardHead}>Xác nhận request</div>
+          <div style={cardHead}>{t.stepReview.confirmCardTitle}</div>
           <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '170px 1fr', gap: '10px 14px', fontSize: 13 }}>
-            <LabelValue label="Tiêu đề" value={props.form.title || '—'} />
-            <LabelValue label="Địa chỉ" value={props.form.address || '—'} />
-            <LabelValue label="Tọa độ" value={`${props.form.latitude}, ${props.form.longitude}`} mono />
-            <LabelValue label="Bán kính" value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
-            <LabelValue label="Dịch vụ" value={props.selectedService?.name || '—'} />
+            <LabelValue label={t.stepService.titleLabel} value={props.form.title || '—'} />
+            <LabelValue label={t.stepReview.address} value={props.form.address || '—'} />
+            <LabelValue label={t.stepReview.coordinates} value={`${props.form.latitude}, ${props.form.longitude}`} mono />
+            <LabelValue label={t.stepReview.radius} value={`${props.form.radiusM} m · ${calcArea(props.form.radiusM)} ha`} mono />
+            <LabelValue label={t.stepReview.service} value={props.selectedService?.name || '—'} />
             <LabelValue
-              label="Yêu cầu bổ sung"
+              label={t.stepService.quickRequirementTitle}
               value={props.aiAnalysisRequested ? 'AI phân tích hình ảnh' : 'Không có'}
             />
-            <LabelValue label="Ngày" value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
-            <LabelValue label="Khung giờ" value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
-            <LabelValue label="Deliverable" value={props.selectedDeliverable?.deliverableTypeName || '—'} />
-            <LabelValue label="AI consultation" value={props.consultation?.id ? 'Đã tư vấn' : 'Không dùng'} />
+            <LabelValue label={t.stepReview.dates} value={`${props.form.preferredDateFrom} → ${props.form.preferredDateTo}`} mono />
+            <LabelValue label={t.stepSchedule.timeWindow} value={props.selectedTime ? formatTimeLabel(props.selectedTime) : '—'} />
+            <LabelValue label={t.stepReview.deliverable} value={props.selectedDeliverable?.deliverableTypeName || '—'} />
+            <LabelValue label={t.stepReview.aiConsultation} value={props.consultation?.id ? t.stepReview.consulted : t.stepReview.notUsed} />
           </div>
         </div>
 
@@ -1780,7 +1792,7 @@ function StepReview(props: {
           <div style={cardHead}>Chi phí dự kiến</div>
           <div style={{ padding: 16, display: 'grid', gap: 10, fontSize: 13 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-              <span>Giá service</span>
+              <span>{t.stepSchedule.scheduleCardTitle.replace('bay', 'service')}</span>
               <strong>{formatMoney(props.pricingEstimate?.servicePrice)}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
@@ -1799,13 +1811,13 @@ function StepReview(props: {
         </div>
 
         <div style={card}>
-          <div style={cardHead}>AI chấm điểm mô phỏng</div>
+          <div style={cardHead}>{t.stepReview.scoreCardTitle}</div>
           <div style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 42, color: scoreColor }}>{props.score.score}</div>
               <div>
-                <div style={{ fontWeight: 800 }}>Điểm sẵn sàng gửi request</div>
-                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>Điểm này giúp user kiểm tra thiếu thông tin trước khi call API tạo order.</div>
+                <div style={{ fontWeight: 800 }}>{t.stepReview.scoreTitle}</div>
+                <div style={{ color: 'var(--tx3)', fontSize: 13 }}>{t.stepReview.scoreHint}</div>
               </div>
             </div>
             <ul style={{ margin: '12px 0 0', paddingLeft: 18, color: 'var(--tx2)', lineHeight: 1.6 }}>
@@ -1816,16 +1828,16 @@ function StepReview(props: {
       </div>
 
       <div style={card}>
-        <div style={cardHead}>Tóm tắt tư vấn AI</div>
+        <div style={cardHead}>{t.stepReview.summaryCardTitle}</div>
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {props.consultation?.recommendedServiceName || props.consultation?.recommendedServiceId ? (
             <div style={{ padding: 12, borderRadius: 8, background: 'var(--green-bg)', color: 'var(--green-fg)', lineHeight: 1.5 }}>
-              <div style={{ fontWeight: 800 }}>Service đề xuất</div>
+              <div style={{ fontWeight: 800 }}>{t.stepReview.recommendedService}</div>
               <div>{props.consultation.recommendedServiceName || props.selectedService?.name || props.consultation.recommendedServiceId}</div>
             </div>
           ) : (
             <div style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6 }}>
-              Customer tự chọn service hoặc chưa dùng AI tư vấn ở Step 2.
+              {t.stepReview.noConsultationHint}
             </div>
           )}
           {props.consultation?.requirementSummary && (
@@ -1834,8 +1846,8 @@ function StepReview(props: {
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Metric label="Media" value={`${props.form.mediaType} · ${props.form.resolution}`} />
-            <Metric label="Số lượng" value={String(props.form.quantity)} />
+            <Metric label={t.stepSchedule.media} value={`${props.form.mediaType} · ${props.form.resolution}`} />
+            <Metric label={t.stepSchedule.quantity} value={String(props.form.quantity)} />
           </div>
         </div>
       </div>

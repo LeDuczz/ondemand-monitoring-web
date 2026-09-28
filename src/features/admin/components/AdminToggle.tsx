@@ -1,3 +1,6 @@
+import { useI18n } from '../../../shared/i18n'
+import { adminToggleMessages } from './AdminToggle.messages'
+
 export function AdminToggle({
   active,
   label,
@@ -9,11 +12,12 @@ export function AdminToggle({
   onToggle: () => void
   disabled?: boolean
 }) {
+  const { t } = useI18n(adminToggleMessages)
   return (
     <button
       type="button"
       className={`odm-adm-toggle${active ? ' is-on' : ''}`}
-      aria-label={`${active ? 'Tắt' : 'Kích hoạt'} ${label}`}
+      aria-label={`${active ? t.on : t.off} ${label}`}
       aria-pressed={active}
       onClick={onToggle}
       disabled={disabled}

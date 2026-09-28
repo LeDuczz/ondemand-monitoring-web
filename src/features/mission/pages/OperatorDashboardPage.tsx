@@ -15,6 +15,9 @@ import { FlightTelemetryHUD } from '../components/FlightTelemetryHUD'
 import { PostflightModal } from '../components/PostflightModal'
 import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
+import { LanguageToggle } from '../../../shared/components/LanguageToggle'
+import { useI18n } from '../../../shared/i18n'
+import { operatorDashboardPageMessages } from './OperatorDashboardPage.messages'
 
 const STEP_BY_STATUS: Record<string, number> = {
   WAITING_OPERATOR_ACCEPTANCE: 1,
@@ -53,14 +56,23 @@ function formatPercent(value?: number | null) {
   return `${formatNumber(value, 2)}%`
 }
 
-function planFeasibilityMessage(status?: string) {
+function planFeasibilityMessage(status: string | undefined, lang: 'vi' | 'en') {
+  if (lang === 'en') {
+    if (status === 'INSUFFICIENT_BATTERY') {
+      return 'Mission battery estimate is below the configured safety reserve.'
+    }
+    if (status === 'BATTERY_DATA_UNAVAILABLE') {
+      return 'Current drone battery telemetry is unavailable; mission cannot be marked safe.'
+    }
+    return 'No safe route could be generated for this mission.'
+  }
   if (status === 'INSUFFICIENT_BATTERY') {
-    return 'Mission battery estimate is below the configured safety reserve.'
+    return 'Ước tính pin của nhiệm vụ thấp hơn mức dự trữ an toàn đã cấu hình.'
   }
   if (status === 'BATTERY_DATA_UNAVAILABLE') {
-    return 'Current drone battery telemetry is unavailable; mission cannot be marked safe.'
+    return 'Không có dữ liệu pin drone hiện tại; không thể xác nhận nhiệm vụ an toàn.'
   }
-  return 'No safe route could be generated for this mission.'
+  return 'Không thể tạo lộ trình an toàn cho nhiệm vụ này.'
 }
 
 function PlanMetric({ label, value }: { label: string; value: string }) {
@@ -91,6 +103,7 @@ function PlanMetric({ label, value }: { label: string; value: string }) {
 }
 
 export function OperatorDashboardPage() {
+  const { t, lang } = useI18n(operatorDashboardPageMessages)
   const [mission, setMission] = useState<Mission | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -157,8 +170,7 @@ export function OperatorDashboardPage() {
               style={{ animation: 'spin 1s linear infinite' }}
             />
             <span>
-              Đang kết nối backend server
-              http://localhost:8080/api/missions/M-001...
+              {t.loadingConnecting('http://localhost:8080/api/missions/M-001')}
             </span>
           </div>
         </div>
@@ -199,7 +211,7 @@ export function OperatorDashboardPage() {
             >
               <Icon name="x" style={{ width: '28px', height: '28px' }} />
               <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-                Không thể kết nối Backend API
+                {t.cannotConnect}
               </h2>
             </div>
             <p
@@ -210,16 +222,15 @@ export function OperatorDashboardPage() {
                 lineHeight: 1.6,
               }}
             >
-              Lỗi: <strong>{error || 'Mission M-001 không tồn tại'}</strong>.
-              Hãy đảm bảo Spring Boot server đang khởi chạy tại{' '}
-              <code>http://localhost:8080</code>.
+              {t.errorPrefix} <strong>{error || t.missionNotFound}</strong>.{' '}
+              {t.ensureServerPrefix} <code>http://localhost:8080</code>.
             </p>
             <Button
               variant="primary"
               icon="route"
               onClick={() => window.location.reload()}
             >
-              Thử lại (Reload)
+              {t.retry}
             </Button>
           </div>
         </div>
@@ -249,7 +260,7 @@ export function OperatorDashboardPage() {
       )
       setMission(updated)
     } catch (err) {
-      alert(`[Lỗi API Accept]: ${(err as Error).message}`)
+      alert(`${t.apiAcceptError} ${(err as Error).message}`)
     } finally {
       setIsAccepting(false)
     }
@@ -259,13 +270,13 @@ export function OperatorDashboardPage() {
     try {
       const updated = await missionApi.rejectMission(
         mission.id,
-        rejectReason || 'Lý do cá nhân',
+        rejectReason || t.defaultRejectReason,
         mission.operatorId || 'OP-001',
       )
       setMission(updated)
       setShowRejectModal(false)
     } catch (err) {
-      alert(`[Lỗi API Reject]: ${(err as Error).message}`)
+      alert(`${t.apiRejectError} ${(err as Error).message}`)
     }
   }
 
@@ -277,7 +288,7 @@ export function OperatorDashboardPage() {
       setIsGcsConnected(true)
       setDeviceStatus('PREFLIGHT')
     } catch (err) {
-      alert(`[Lỗi API Connect GCS]: ${(err as Error).message}`)
+      alert(`${t.apiConnectGcsError} ${(err as Error).message}`)
     } finally {
       setIsConnecting(false)
     }
@@ -300,7 +311,7 @@ export function OperatorDashboardPage() {
         setFlightToken(check.flightToken)
       }
     } catch (err) {
-      alert(`[Lỗi API Pre-flight Check]: ${(err as Error).message}`)
+      alert(`${t.apiPreflightError} ${(err as Error).message}`)
     } finally {
       setIsConnecting(false)
     }
@@ -315,7 +326,7 @@ export function OperatorDashboardPage() {
       setFlightToken(null)
       setShowReplaceModal(false)
     } catch (err) {
-      alert(`[Lỗi API Replace Drone]: ${(err as Error).message}`)
+      alert(`${t.apiReplaceDroneError} ${(err as Error).message}`)
     }
   }
 
@@ -328,7 +339,7 @@ export function OperatorDashboardPage() {
       setMission(updated)
       setDeviceStatus('ACTIVE_MISSION')
     } catch (err) {
-      alert(`[Lỗi API Start Mission]: ${(err as Error).message}`)
+      alert(`${t.apiStartMissionError} ${(err as Error).message}`)
     }
   }
 
@@ -340,9 +351,9 @@ export function OperatorDashboardPage() {
         mission.deviceCode || 'DRONE-01',
         file,
       )
-      alert('Tải tệp hình ảnh/video lên S3 thành công!')
+      alert(t.uploadMediaSuccess)
     } catch (err) {
-      alert(`[Lỗi API Upload Media]: ${(err as Error).message}`)
+      alert(`${t.apiUploadMediaError} ${(err as Error).message}`)
     } finally {
       setIsUploading(false)
     }
@@ -353,7 +364,7 @@ export function OperatorDashboardPage() {
       const updated = await missionApi.markReturning(mission.id)
       setMission(updated)
     } catch (err) {
-      alert(`[Lỗi API Mark Returning]: ${(err as Error).message}`)
+      alert(`${t.apiMarkReturningError} ${(err as Error).message}`)
     }
   }
 
@@ -372,7 +383,7 @@ export function OperatorDashboardPage() {
       setDeviceStatus(status)
       setIsPostflightOpen(false)
     } catch (err) {
-      alert(`[Lỗi API Post-flight Status]: ${(err as Error).message}`)
+      alert(`${t.apiPostflightError} ${(err as Error).message}`)
     }
   }
 
@@ -416,7 +427,7 @@ export function OperatorDashboardPage() {
                     letterSpacing: '-0.04em',
                   }}
                 >
-                  Nhiệm vụ {mission.missionCode}
+                  {t.missionTitle(mission.missionCode)}
                 </h1>
                 <MissionStatusBadge status={mission.status} />
               </div>
@@ -428,9 +439,9 @@ export function OperatorDashboardPage() {
                   lineHeight: 1.6,
                 }}
               >
-                Địa điểm: <strong>{mission.address}</strong> | Phân công:{' '}
-                <strong>{mission.operatorId}</strong> | Thiết bị:{' '}
-                <strong>{mission.deviceCode}</strong>
+                {t.locationLabel} <strong>{mission.address}</strong> |{' '}
+                {t.assignedLabel} <strong>{mission.operatorId}</strong> |{' '}
+                {t.deviceLabel} <strong>{mission.deviceCode}</strong>
               </p>
             </div>
 
@@ -442,9 +453,10 @@ export function OperatorDashboardPage() {
                   fontWeight: 600,
                 }}
               >
-                Trạng thái Drone:
+                {t.droneStatusLabel}
               </span>
               <DeviceStatusBadge status={deviceStatus} />
+              <LanguageToggle />
             </div>
           </div>
         </div>
@@ -458,7 +470,7 @@ export function OperatorDashboardPage() {
               {currentStep > 1 ? '✓' : '1'}
             </span>
             <div className="flow-step-label">
-              <strong>F3.1 Tiếp nhận</strong>
+              <strong>{t.step1Title}</strong>
               <small>Accept / Reject</small>
             </div>
           </div>
@@ -472,7 +484,7 @@ export function OperatorDashboardPage() {
               {currentStep > 2 ? '✓' : '2'}
             </span>
             <div className="flow-step-label">
-              <strong>F3.2 Digital Pre-flight</strong>
+              <strong>{t.step2Title}</strong>
               <small>Diagnostics & Token</small>
             </div>
           </div>
@@ -486,7 +498,7 @@ export function OperatorDashboardPage() {
               {currentStep > 3 ? '✓' : '3'}
             </span>
             <div className="flow-step-label">
-              <strong>F3.3 Điều khiển Bay</strong>
+              <strong>{t.step3Title}</strong>
               <small>Live HUD & Upload</small>
             </div>
           </div>
@@ -498,7 +510,7 @@ export function OperatorDashboardPage() {
           >
             <span className="flow-step-number">4</span>
             <div className="flow-step-label">
-              <strong>F3.4 Hoàn thành</strong>
+              <strong>{t.step4Title}</strong>
               <small>Post-flight Inspection</small>
             </div>
           </div>
@@ -525,8 +537,7 @@ export function OperatorDashboardPage() {
                 fontSize: '0.8rem',
               }}
             >
-              <Icon name="activity" /> BẢNG THEO DÕI THÔNG SỐ TELEMETRY THỜI
-              GIAN THỰC:
+              <Icon name="activity" /> {t.telemetryBarLabel}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -537,7 +548,7 @@ export function OperatorDashboardPage() {
                   fontWeight: 700,
                 }}
               >
-                🔋 Pin:{' '}
+                {t.batteryLabel}{' '}
                 <span
                   className="mono"
                   style={{ color: batteryLevel >= 80 ? '#15803d' : '#b91c1c' }}
@@ -565,7 +576,7 @@ export function OperatorDashboardPage() {
                   fontWeight: 700,
                 }}
               >
-                🛰️ Vệ tinh GPS:{' '}
+                {t.gpsLabel}{' '}
                 <span
                   className="mono"
                   style={{ color: gpsSatellites >= 8 ? '#15803d' : '#b91c1c' }}
@@ -605,12 +616,12 @@ export function OperatorDashboardPage() {
                 F3.1 OPERATOR ACCEPTANCE GATE
               </p>
               <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>
-                Xác nhận Tiếp nhận Nhiệm vụ Giám sát
+                {t.confirmAcceptanceTitle}
               </h2>
               <p className="section-copy" style={{ marginTop: '8px' }}>
-                Quản lý vừa phân công nhiệm vụ{' '}
-                <strong>{mission.missionCode}</strong> cho bạn. Vui lòng kiểm
-                tra thông tin địa điểm và thời gian để xác nhận tiếp nhận.
+                {t.confirmAcceptancePrefix}{' '}
+                <strong>{mission.missionCode}</strong>{' '}
+                {t.confirmAcceptanceSuffix}
               </p>
             </div>
 
@@ -622,9 +633,7 @@ export function OperatorDashboardPage() {
                 disabled={isAccepting}
                 style={{ backgroundColor: '#15803d', padding: '0 32px' }}
               >
-                {isAccepting
-                  ? 'ĐANG TẠO MISSION PLAN...'
-                  : 'CHẤP NHẬN NHIỆM VỤ (ACCEPT)'}
+                {isAccepting ? t.creatingPlan : t.acceptMission}
               </Button>
 
               <Button
@@ -633,7 +642,7 @@ export function OperatorDashboardPage() {
                 onClick={() => setShowRejectModal(true)}
                 style={{ color: '#b91c1c', borderColor: '#fca5a5' }}
               >
-                Từ chối (Reject)
+                {t.rejectMission}
               </Button>
             </div>
           </div>
@@ -687,21 +696,54 @@ export function OperatorDashboardPage() {
                   gap: '12px',
                 }}
               >
-                <PlanMetric label="Distance" value={formatMeters(plan.plannedDistanceM)} />
-                <PlanMetric label="Duration" value={formatSeconds(plan.plannedDurationSec)} />
-                <PlanMetric label="World Z" value={formatMeters(plan.maxPlannedAltitudeM)} />
-                <PlanMetric label="Energy" value={formatMah(plan.estimatedEnergyMah)} />
-                <PlanMetric label="Battery Capacity" value={formatMah(plan.batteryCapacityMah)} />
-                <PlanMetric label="Current Battery" value={formatPercent(plan.availableBatteryPercentAtPlanning)} />
-                <PlanMetric label="Battery Use" value={formatPercent(plan.estimatedBatteryUsedPercent)} />
-                <PlanMetric label="After Mission" value={formatPercent(plan.estimatedRemainingBatteryPercent)} />
-                <PlanMetric label="Safety Reserve" value={formatPercent(plan.safetyReservePercent)} />
-                <PlanMetric label="Required Battery" value={formatPercent(plan.requiredBatteryPercent)} />
-                <PlanMetric label="Waypoints" value={`${plan.waypoints?.length ?? 0}`} />
+                <PlanMetric
+                  label="Distance"
+                  value={formatMeters(plan.plannedDistanceM)}
+                />
+                <PlanMetric
+                  label="Duration"
+                  value={formatSeconds(plan.plannedDurationSec)}
+                />
+                <PlanMetric
+                  label="World Z"
+                  value={formatMeters(plan.maxPlannedAltitudeM)}
+                />
+                <PlanMetric
+                  label="Energy"
+                  value={formatMah(plan.estimatedEnergyMah)}
+                />
+                <PlanMetric
+                  label="Battery Capacity"
+                  value={formatMah(plan.batteryCapacityMah)}
+                />
+                <PlanMetric
+                  label="Current Battery"
+                  value={formatPercent(plan.availableBatteryPercentAtPlanning)}
+                />
+                <PlanMetric
+                  label="Battery Use"
+                  value={formatPercent(plan.estimatedBatteryUsedPercent)}
+                />
+                <PlanMetric
+                  label="After Mission"
+                  value={formatPercent(plan.estimatedRemainingBatteryPercent)}
+                />
+                <PlanMetric
+                  label="Safety Reserve"
+                  value={formatPercent(plan.safetyReservePercent)}
+                />
+                <PlanMetric
+                  label="Required Battery"
+                  value={formatPercent(plan.requiredBatteryPercent)}
+                />
+                <PlanMetric
+                  label="Waypoints"
+                  value={`${plan.waypoints?.length ?? 0}`}
+                />
               </div>
             ) : (
               <p style={{ margin: 0, color: '#b91c1c', fontWeight: 700 }}>
-                {planFeasibilityMessage(plan.feasibilityStatus)}
+                {planFeasibilityMessage(plan.feasibilityStatus, lang)}
               </p>
             )}
           </div>
@@ -710,8 +752,7 @@ export function OperatorDashboardPage() {
         {/* ------------------------------------------------------------------ */}
         {/* PHASE 2 & 3: GCS CONNECT & PREFLIGHT DIAGNOSTICS (F3.2) */}
         {/* ------------------------------------------------------------------ */}
-        {(canEnterPreflight ||
-          mission.status === 'PENDING_APPROVAL') && (
+        {(canEnterPreflight || mission.status === 'PENDING_APPROVAL') && (
           <div style={{ marginBottom: '32px' }}>
             <PreflightDiagnosticCard
               check={preflightCheck}
@@ -739,7 +780,7 @@ export function OperatorDashboardPage() {
                   icon="route"
                   onClick={() => setShowReplaceModal(true)}
                 >
-                  🔄 Đổi Drone Dự Phòng (Replace Drone)
+                  {t.replaceDroneStandby}
                 </Button>
               )}
 
@@ -757,7 +798,7 @@ export function OperatorDashboardPage() {
                     boxShadow: '0 10px 25px rgba(21, 128, 61, 0.3)',
                   }}
                 >
-                  XÁC NHẬN CẤT CÁNH (START FLIGHT)
+                  {t.startFlight}
                 </Button>
               )}
             </div>
@@ -787,7 +828,7 @@ export function OperatorDashboardPage() {
                   onClick={() => setIsPostflightOpen(true)}
                   style={{ padding: '0 32px' }}
                 >
-                  Mở Kiểm tra Post-flight & Hoàn thành Mission
+                  {t.openPostflight}
                 </Button>
               </div>
             )}
@@ -831,15 +872,15 @@ export function OperatorDashboardPage() {
                 color: '#166534',
               }}
             >
-              Nhiệm vụ {mission.missionCode} Đã Hoàn Thành!
+              {t.missionCompletedTitle(mission.missionCode)}
             </h2>
             <p
               className="section-copy"
               style={{ margin: '0 auto 28px', maxWidth: '520px' }}
             >
-              Dữ liệu hình ảnh và nhật ký kiểm tra đã được lưu trữ an toàn.
-              Drone <strong>{mission.deviceCode}</strong> đã sẵn sàng cho nhiệm
-              vụ tiếp theo.
+              {t.missionCompletedDescriptionPrefix}{' '}
+              <strong>{mission.deviceCode}</strong>{' '}
+              {t.missionCompletedDescriptionSuffix}
             </p>
           </div>
         )}
@@ -876,13 +917,13 @@ export function OperatorDashboardPage() {
                   color: 'var(--color-foreground)',
                 }}
               >
-                Từ chối Nhiệm vụ
+                {t.rejectModalTitle}
               </h3>
               <textarea
                 rows={3}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Nhập lý do từ chối..."
+                placeholder={t.rejectReasonPlaceholder}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -903,14 +944,14 @@ export function OperatorDashboardPage() {
                   variant="secondary"
                   onClick={() => setShowRejectModal(false)}
                 >
-                  Hủy
+                  {t.cancel}
                 </Button>
                 <Button
                   variant="primary"
                   onClick={handleReject}
                   style={{ backgroundColor: '#b91c1c' }}
                 >
-                  Xác nhận Từ chối
+                  {t.confirmReject}
                 </Button>
               </div>
             </div>
@@ -948,7 +989,7 @@ export function OperatorDashboardPage() {
                   color: 'var(--color-foreground)',
                 }}
               >
-                Đổi Drone Dự Phòng
+                {t.replaceModalTitle}
               </h3>
               <select
                 value={newDeviceCode}
@@ -981,10 +1022,10 @@ export function OperatorDashboardPage() {
                   variant="secondary"
                   onClick={() => setShowReplaceModal(false)}
                 >
-                  Hủy
+                  {t.cancel}
                 </Button>
                 <Button variant="primary" onClick={handleReplaceDrone}>
-                  Xác nhận Đổi Drone
+                  {t.confirmReplace}
                 </Button>
               </div>
             </div>

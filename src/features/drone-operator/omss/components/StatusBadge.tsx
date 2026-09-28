@@ -1,4 +1,10 @@
 import type { MissionState, DroneState, CheckStatus } from '../types'
+import { useLanguage } from '../../../../shared/i18n'
+import {
+  getDroneStatusLabel,
+  getMissionStatusLabel,
+} from '../../../../shared/lib/statusTone'
+import { statusBadgeMessages } from './StatusBadge.messages'
 
 /* ── Status dot helper ─────────────────────────────────────── */
 function Dot({ color }: { color: string }) {
@@ -17,63 +23,28 @@ function Dot({ color }: { color: string }) {
 }
 
 /* ── Mission status ────────────────────────────────────────── */
-const MISSION_CFG: Record<
-  MissionState,
-  { label: string; color: string; dot: string }
-> = {
-  WAITING_OPERATOR_ACCEPTANCE: {
-    label: 'Awaiting acceptance',
-    color: 'var(--amber)',
-    dot: 'var(--amber)',
-  },
-  RESOURCE_ASSIGNING: {
-    label: 'Assigning resources',
-    color: 'var(--blue)',
-    dot: 'var(--blue)',
-  },
-  SCHEDULED: { label: 'Scheduled', color: 'var(--blue)', dot: 'var(--blue)' },
-  CONNECTED: { label: 'Connected', color: 'var(--green)', dot: 'var(--green)' },
-  PREFLIGHT_CHECKING: {
-    label: 'Pre-flight check',
-    color: 'var(--blue)',
-    dot: 'var(--blue)',
-  },
-  READY_TO_FLY: {
-    label: 'Ready to fly',
-    color: 'var(--green)',
-    dot: 'var(--green)',
-  },
-  FAILED_PREFLIGHT: {
-    label: 'Pre-flight failed',
-    color: 'var(--red)',
-    dot: 'var(--red)',
-  },
-  PENDING_APPROVAL: {
-    label: 'Pending approval',
-    color: 'var(--amber)',
-    dot: 'var(--amber)',
-  },
-  IN_FLIGHT: { label: 'In flight', color: 'var(--green)', dot: 'var(--green)' },
-  RETURNING: { label: 'Returning', color: 'var(--blue)', dot: 'var(--blue)' },
-  POSTFLIGHT_CHECKING: {
-    label: 'Post-flight check',
-    color: 'var(--blue)',
-    dot: 'var(--blue)',
-  },
-  COMPLETED: {
-    label: 'Completed',
-    color: 'var(--green-text)',
-    dot: 'var(--green)',
-  },
-  FAILED: { label: 'Failed', color: 'var(--red-text)', dot: 'var(--red)' },
-  CANCELLED: {
-    label: 'Cancelled',
-    color: 'var(--text-3)',
-    dot: 'var(--text-3)',
-  },
+// Colours only — labels come from the bilingual `getMissionStatusLabel`
+// accessor (src/shared/lib/statusTone.ts, Phase 1) so this stays in sync
+// with every other screen's mission status colour/label pairing.
+const MISSION_CFG: Record<MissionState, { color: string; dot: string }> = {
+  WAITING_OPERATOR_ACCEPTANCE: { color: 'var(--amber)', dot: 'var(--amber)' },
+  RESOURCE_ASSIGNING: { color: 'var(--blue)', dot: 'var(--blue)' },
+  SCHEDULED: { color: 'var(--blue)', dot: 'var(--blue)' },
+  CONNECTED: { color: 'var(--green)', dot: 'var(--green)' },
+  PREFLIGHT_CHECKING: { color: 'var(--blue)', dot: 'var(--blue)' },
+  READY_TO_FLY: { color: 'var(--green)', dot: 'var(--green)' },
+  FAILED_PREFLIGHT: { color: 'var(--red)', dot: 'var(--red)' },
+  PENDING_APPROVAL: { color: 'var(--amber)', dot: 'var(--amber)' },
+  IN_FLIGHT: { color: 'var(--green)', dot: 'var(--green)' },
+  RETURNING: { color: 'var(--blue)', dot: 'var(--blue)' },
+  POSTFLIGHT_CHECKING: { color: 'var(--blue)', dot: 'var(--blue)' },
+  COMPLETED: { color: 'var(--green-text)', dot: 'var(--green)' },
+  FAILED: { color: 'var(--red-text)', dot: 'var(--red)' },
+  CANCELLED: { color: 'var(--text-3)', dot: 'var(--text-3)' },
 }
 
 export function MissionBadge({ state }: { state: MissionState }) {
+  const { lang } = useLanguage()
   const c = MISSION_CFG[state]
   return (
     <span
@@ -86,36 +57,23 @@ export function MissionBadge({ state }: { state: MissionState }) {
       }}
     >
       <Dot color={c.dot} />
-      {c.label}
+      {getMissionStatusLabel(state, lang)}
     </span>
   )
 }
 
 /* ── Drone status ──────────────────────────────────────────── */
-const DRONE_CFG: Record<
-  DroneState,
-  { label: string; color: string; dot: string }
-> = {
-  AVAILABLE: { label: 'Available', color: 'var(--green)', dot: 'var(--green)' },
-  PREFLIGHT: { label: 'Pre-flight', color: 'var(--blue)', dot: 'var(--blue)' },
-  ACTIVE_MISSION: {
-    label: 'Active mission',
-    color: 'var(--green)',
-    dot: 'var(--green)',
-  },
-  IDLE_CHARGING: {
-    label: 'Charging',
-    color: 'var(--amber)',
-    dot: 'var(--amber)',
-  },
-  MAINTENANCE: {
-    label: 'Maintenance',
-    color: 'var(--red-text)',
-    dot: 'var(--red)',
-  },
+// Colours only — labels come from `getDroneStatusLabel` (Phase 1 accessor).
+const DRONE_CFG: Record<DroneState, { color: string; dot: string }> = {
+  AVAILABLE: { color: 'var(--green)', dot: 'var(--green)' },
+  PREFLIGHT: { color: 'var(--blue)', dot: 'var(--blue)' },
+  ACTIVE_MISSION: { color: 'var(--green)', dot: 'var(--green)' },
+  IDLE_CHARGING: { color: 'var(--amber)', dot: 'var(--amber)' },
+  MAINTENANCE: { color: 'var(--red-text)', dot: 'var(--red)' },
 }
 
 export function DroneBadge({ state }: { state: DroneState }) {
+  const { lang } = useLanguage()
   const c = DRONE_CFG[state]
   return (
     <span
@@ -128,23 +86,22 @@ export function DroneBadge({ state }: { state: DroneState }) {
       }}
     >
       <Dot color={c.dot} />
-      {c.label}
+      {getDroneStatusLabel(state, lang)}
     </span>
   )
 }
 
 /* ── Check status ──────────────────────────────────────────── */
-const CHECK_CFG: Record<
-  CheckStatus,
-  { label: string; color: string; icon: string }
-> = {
-  PASS: { label: 'Passed', color: 'var(--green)', icon: '✓' },
-  FAIL: { label: 'Failed', color: 'var(--red-text)', icon: '✕' },
-  WARNING: { label: 'Warning', color: 'var(--amber)', icon: '⚠' },
-  PENDING: { label: 'Pending', color: 'var(--text-3)', icon: '—' },
+const CHECK_CFG: Record<CheckStatus, { color: string; icon: string }> = {
+  PASS: { color: 'var(--green)', icon: '✓' },
+  FAIL: { color: 'var(--red-text)', icon: '✕' },
+  WARNING: { color: 'var(--amber)', icon: '⚠' },
+  PENDING: { color: 'var(--text-3)', icon: '—' },
 }
 
 export function CheckBadge({ status }: { status: CheckStatus }) {
+  const { lang } = useLanguage()
+  const t = statusBadgeMessages[lang]
   const c = CHECK_CFG[status]
   return (
     <span
@@ -158,21 +115,17 @@ export function CheckBadge({ status }: { status: CheckStatus }) {
       }}
     >
       <span>{c.icon}</span>
-      {c.label}
+      {t.check[status]}
     </span>
   )
 }
 
 /* ── Priority ──────────────────────────────────────────────── */
 const PRI_CFG = {
-  CRITICAL: {
-    label: 'Critical',
-    color: 'var(--red-text)',
-    bg: 'var(--red-bg)',
-  },
-  HIGH: { label: 'High', color: 'var(--amber-text)', bg: 'var(--amber-bg)' },
-  NORMAL: { label: 'Normal', color: 'var(--text-2)', bg: 'var(--surface-2)' },
-  LOW: { label: 'Low', color: 'var(--text-3)', bg: 'var(--surface-2)' },
+  CRITICAL: { color: 'var(--red-text)', bg: 'var(--red-bg)' },
+  HIGH: { color: 'var(--amber-text)', bg: 'var(--amber-bg)' },
+  NORMAL: { color: 'var(--text-2)', bg: 'var(--surface-2)' },
+  LOW: { color: 'var(--text-3)', bg: 'var(--surface-2)' },
 }
 
 export function PriorityBadge({
@@ -180,6 +133,8 @@ export function PriorityBadge({
 }: {
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
 }) {
+  const { lang } = useLanguage()
+  const t = statusBadgeMessages[lang]
   const c = PRI_CFG[priority]
   return (
     <span
@@ -192,7 +147,7 @@ export function PriorityBadge({
         background: c.bg,
       }}
     >
-      {c.label}
+      {t.priority[priority]}
     </span>
   )
 }

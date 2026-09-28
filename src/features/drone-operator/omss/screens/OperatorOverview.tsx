@@ -1,3 +1,7 @@
+import { useI18n } from '../../../../shared/i18n'
+import { getMissionStatusLabel } from '../../../../shared/lib/statusTone'
+import type { MissionStatus } from '../../../../shared/types/domain'
+import { operatorOverviewMessages } from '../i18n/operatorOverview'
 import type { Mission } from '../types'
 
 interface Props {
@@ -10,50 +14,92 @@ interface Props {
 
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED'])
 
-function formatSchedule(value: string) {
+function formatSchedule(value: string, notScheduledLabel: string) {
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? 'Not scheduled' : date.toLocaleString()
+  return Number.isNaN(date.getTime())
+    ? notScheduledLabel
+    : date.toLocaleString()
 }
 
 const RESULT_CFG = {
   completed: {
     color: 'var(--green-text)',
     dot: 'var(--green)',
-    label: 'Completed',
   },
-  failed: { color: 'var(--red-text)', dot: 'var(--red)', label: 'Failed' },
+  failed: { color: 'var(--red-text)', dot: 'var(--red)' },
   cancelled: {
     color: 'var(--text-3)',
     dot: 'var(--text-3)',
-    label: 'Cancelled',
   },
 }
 
-export default function OperatorOverview({ allMissions, operatorName, operatorId, onGoMissions, onGoMission }: Props) {
+export default function OperatorOverview({
+  allMissions,
+  operatorName,
+  operatorId,
+  onGoMissions,
+  onGoMission,
+}: Props) {
+  const { t, lang, locale } = useI18n(operatorOverviewMessages)
   const activeMission = allMissions.find(
     (m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE',
   )
-  const assignedMission = allMissions.find((mission) => mission.droneId && !TERMINAL_STATES.has(mission.state))
+  const assignedMission = allMissions.find(
+    (mission) => mission.droneId && !TERMINAL_STATES.has(mission.state),
+  )
   const droneId = assignedMission?.droneId
   const STATS = [
-    { label: 'Assigned missions', value: String(allMissions.length), sub: 'Current operator' },
-    { label: 'Awaiting acceptance', value: String(allMissions.filter((mission) => mission.state === 'WAITING_OPERATOR_ACCEPTANCE').length), sub: 'Needs a response' },
-    { label: 'Active flights', value: String(allMissions.filter((mission) => ['IN_FLIGHT', 'RETURNING'].includes(mission.state)).length), sub: 'In progress' },
-    { label: 'Missions completed', value: String(allMissions.filter((mission) => mission.state === 'COMPLETED').length), sub: 'Assigned history' },
+    {
+      label: t.stats.assignedMissions,
+      value: String(allMissions.length),
+      sub: t.stats.assignedMissionsSub,
+    },
+    {
+      label: t.stats.awaitingAcceptance,
+      value: String(
+        allMissions.filter(
+          (mission) => mission.state === 'WAITING_OPERATOR_ACCEPTANCE',
+        ).length,
+      ),
+      sub: t.stats.awaitingAcceptanceSub,
+    },
+    {
+      label: t.stats.activeFlights,
+      value: String(
+        allMissions.filter((mission) =>
+          ['IN_FLIGHT', 'RETURNING'].includes(mission.state),
+        ).length,
+      ),
+      sub: t.stats.activeFlightsSub,
+    },
+    {
+      label: t.stats.missionsCompleted,
+      value: String(
+        allMissions.filter((mission) => mission.state === 'COMPLETED').length,
+      ),
+      sub: t.stats.missionsCompletedSub,
+    },
   ]
-  const UPCOMING = allMissions.filter((mission) => !TERMINAL_STATES.has(mission.state)).slice(0, 5).map((mission) => ({
-    id: mission.id,
-    title: mission.title,
-    time: formatSchedule(mission.scheduledAt),
-    loc: mission.location,
-    priority: mission.priority,
-  }))
-  const RECENT = allMissions.filter((mission) => TERMINAL_STATES.has(mission.state)).slice(0, 5).map((mission) => ({
-    id: mission.id,
-    title: mission.title,
-    date: formatSchedule(mission.scheduledAt),
-    result: mission.state.toLowerCase() as 'completed' | 'failed' | 'cancelled',
-  }))
+  const UPCOMING = allMissions
+    .filter((mission) => !TERMINAL_STATES.has(mission.state))
+    .slice(0, 5)
+    .map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      time: formatSchedule(mission.scheduledAt, t.notScheduled),
+      loc: mission.location,
+      priority: mission.priority,
+    }))
+  const RECENT = allMissions
+    .filter((mission) => TERMINAL_STATES.has(mission.state))
+    .slice(0, 5)
+    .map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      date: formatSchedule(mission.scheduledAt, t.notScheduled),
+      result: mission.state.toLowerCase() as
+        'completed' | 'failed' | 'cancelled',
+    }))
 
   return (
     <div
@@ -71,10 +117,11 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
               margin: '0 0 4px',
             }}
           >
-            Welcome, {operatorName}
+            {t.welcome(operatorName)}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            {new Date().toLocaleDateString()} · Operator ID: {operatorId}
+            {new Date().toLocaleDateString(locale)} · {t.operatorId}:{' '}
+            {operatorId}
           </p>
         </div>
 
@@ -153,7 +200,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                       marginBottom: 3,
                     }}
                   >
-                    Mission awaiting your acceptance
+                    {t.missionAwaiting}
                   </div>
                   <div
                     style={{
@@ -180,7 +227,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                     marginLeft: 16,
                   }}
                 >
-                  Review now
+                  {t.reviewNow}
                 </button>
               </div>
             )}
@@ -212,7 +259,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                     color: 'var(--text)',
                   }}
                 >
-                  Upcoming today
+                  {t.upcomingToday}
                 </span>
                 <button
                   onClick={onGoMissions}
@@ -225,7 +272,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                     fontWeight: 500,
                   }}
                 >
-                  View all missions
+                  {t.viewAllMissions}
                 </button>
               </div>
               {UPCOMING.map((m, i) => (
@@ -256,7 +303,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                       {m.time}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                      today
+                      {t.today}
                     </div>
                   </div>
                   <div
@@ -335,10 +382,14 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                   color: 'var(--text)',
                 }}
               >
-                Recent missions
+                {t.recentMissions}
               </div>
               {RECENT.map((m, i) => {
                 const cfg = RESULT_CFG[m.result]
+                const resultLabel = getMissionStatusLabel(
+                  m.result.toUpperCase() as MissionStatus,
+                  lang,
+                )
                 return (
                   <div
                     key={m.id}
@@ -387,7 +438,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                     <span
                       style={{ fontSize: 12, color: cfg.color, flexShrink: 0 }}
                     >
-                      {cfg.label}
+                      {resultLabel}
                     </span>
                     <span
                       style={{
@@ -426,7 +477,7 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                   color: 'var(--text)',
                 }}
               >
-                Assigned drone
+                {t.assignedDrone}
               </div>
               <div style={{ padding: '16px' }}>
                 <div
@@ -437,13 +488,29 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                     marginBottom: 2,
                   }}
                 >
-                  {droneId ?? 'No drone assigned'}
+                  {droneId ?? t.noDroneAssigned}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 14 }}>
-                  {assignedMission ? `Mission ${assignedMission.id}` : 'Select a mission to view its assigned drone'}
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-2)',
+                    marginBottom: 14,
+                  }}
+                >
+                  {assignedMission
+                    ? t.missionRef(assignedMission.id)
+                    : t.selectMissionHint}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-2)', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6 }}>
-                  Live battery, GPS and signal are shown during preflight and flight control.
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-2)',
+                    padding: '8px 12px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                  }}
+                >
+                  {t.liveTelemetryHint}
                 </div>
               </div>
             </div>
@@ -468,9 +535,9 @@ export default function OperatorOverview({ allMissions, operatorName, operatorId
                   color: 'var(--text)',
                 }}
               >
-                Quick actions
+                {t.quickActions}
               </div>
-              {[{ label: 'View all missions', action: onGoMissions }].map(
+              {[{ label: t.viewAllMissions, action: onGoMissions }].map(
                 (q, i) => (
                   <button
                     key={i}

@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 
-const CHIPS = ['Tạo yêu cầu', 'Kiểm tra vùng bay', 'Chi phí', 'Thời tiết']
+import { useI18n } from '../../../shared/i18n'
+import { customerChatbotMessages } from './CustomerChatbot.messages'
 
-const KB: [RegExp, string][] = [
-  [/t[aạ]o|[dđ][aặ]t|y[eê]u c[aầ]u/i, 'Bạn chọn vị trí trên bản đồ, nhập bán kính giám sát, dùng AI tư vấn mục tiêu rồi gửi yêu cầu để quản lý duyệt.'],
-  [/v[uù]ng|c[aấ]m bay|b[aả]n [dđ][oồ]/i, 'Khi bạn kéo vị trí hoặc đổi bán kính, hệ thống sẽ kiểm tra vùng cấm bay và báo hợp lệ ngay trên bản đồ.'],
-  [/gi[aá]|ph[ií]|chi ph[ií]|bao nhi[eê]u/i, 'Chi phí phụ thuộc diện tích, thời lượng, loại payload và độ phức tạp mission. Báo giá sẽ hiện trước khi bạn gửi duyệt.'],
-  [/th[oờ]i ti[eế]t|m[uư]a|gi[oó]/i, 'Nếu thời tiết xấu, hệ thống sẽ cảnh báo và có thể gợi ý đổi lịch bay để đảm bảo an toàn.'],
-  [/duy[eệ]t|tr[aạ]ng th[aá]i/i, 'Sau khi gửi yêu cầu, bạn theo dõi trạng thái ở mục Đơn của tôi và nhận thông báo khi đơn được duyệt.'],
+type ReplyKey = keyof (typeof customerChatbotMessages.vi)['replies']
+type ChipKey = keyof (typeof customerChatbotMessages.vi)['chips']
+
+const CHIP_KEYS: ChipKey[] = ['createRequest', 'flightZone', 'cost', 'weather']
+
+// Keyword matching stays Vietnamese-only (matches the customer's typed
+// question, independent of the current UI language) — only the reply text
+// shown to the customer is bilingual.
+const KB: [RegExp, ReplyKey][] = [
+  [/t[aạ]o|[dđ][aặ]t|y[eê]u c[aầ]u/i, 'createRequest'],
+  [/v[uù]ng|c[aấ]m bay|b[aả]n [dđ][oồ]/i, 'flightZone'],
+  [/gi[aá]|ph[ií]|chi ph[ií]|bao nhi[eê]u/i, 'cost'],
+  [/th[oờ]i ti[eế]t|m[uư]a|gi[oó]/i, 'weather'],
+  [/duy[eệ]t|tr[aạ]ng th[aá]i/i, 'status'],
 ]
 
 type ChatMessage = {
@@ -15,21 +24,19 @@ type ChatMessage = {
   from: 'user' | 'bot'
 }
 
-function getReply(text: string) {
-  for (const [pattern, reply] of KB) {
-    if (pattern.test(text)) return reply
+function getReplyKey(text: string): ReplyKey {
+  for (const [pattern, key] of KB) {
+    if (pattern.test(text)) return key
   }
-  return 'Mình có thể hỗ trợ về tạo yêu cầu, vùng bay, chi phí, thời tiết và trạng thái đơn. Bạn hỏi ngắn hơn một chút nhé.'
+  return 'fallback'
 }
 
 export function CustomerChatbot() {
+  const { t } = useI18n(customerChatbotMessages)
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      from: 'bot',
-      text: 'Xin chào! Mình có thể hỗ trợ bạn tạo yêu cầu giám sát và kiểm tra thông tin mission.',
-    },
+    { from: 'bot', text: t.greeting },
   ])
   const messagesRef = useRef<HTMLDivElement>(null)
 
@@ -43,7 +50,10 @@ export function CustomerChatbot() {
     if (!trimmed) return
     setMessages((current) => [...current, { from: 'user', text: trimmed }])
     setTimeout(() => {
-      setMessages((current) => [...current, { from: 'bot', text: getReply(trimmed) }])
+      setMessages((current) => [
+        ...current,
+        { from: 'bot', text: t.replies[getReplyKey(trimmed)] },
+      ])
     }, 350)
   }
 
@@ -56,14 +66,21 @@ export function CustomerChatbot() {
   return (
     <div className={`odm-cus-chatbot ${open ? 'is-open' : ''}`}>
       {open ? (
-        <section className="odm-cus-chatbot-panel" aria-label="Trợ lý khách hàng">
+        <section
+          className="odm-cus-chatbot-panel"
+          aria-label={t.assistantLabel}
+        >
           <header className="odm-cus-chatbot-head">
             <img src="/images/chatbot-avatar.png" alt="" />
             <span>
-              <b>Trợ lý ODMS</b>
-              <small>Đang trực tuyến</small>
+              <b>{t.assistantName}</b>
+              <small>{t.online}</small>
             </span>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Đóng chatbot">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label={t.closeChatbot}
+            >
               ×
             </button>
           </header>
@@ -80,9 +97,9 @@ export function CustomerChatbot() {
           </div>
 
           <div className="odm-cus-chatbot-chips">
-            {CHIPS.map((chip) => (
-              <button key={chip} type="button" onClick={() => ask(chip)}>
-                {chip}
+            {CHIP_KEYS.map((key) => (
+              <button key={key} type="button" onClick={() => ask(t.chips[key])}>
+                {t.chips[key]}
               </button>
             ))}
           </div>
@@ -91,20 +108,20 @@ export function CustomerChatbot() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Nhập câu hỏi..."
+              placeholder={t.inputPlaceholder}
               autoComplete="off"
             />
-            <button type="submit">Gửi</button>
+            <button type="submit">{t.send}</button>
           </form>
         </section>
       ) : (
         <>
-          <div className="odm-cus-chatbot-bubble">Cần hỗ trợ?</div>
+          <div className="odm-cus-chatbot-bubble">{t.bubble}</div>
           <button
             type="button"
             className="odm-cus-chatbot-fab"
             onClick={() => setOpen(true)}
-            aria-label="Mở chatbot"
+            aria-label={t.openChatbot}
           >
             <img src="/images/chatbot-avatar.png" alt="" />
           </button>

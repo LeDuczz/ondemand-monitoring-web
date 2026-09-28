@@ -1,7 +1,9 @@
+import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
+import { setLanguage } from '../../../shared/i18n'
 import { managerApi } from '../api/dashboardApi'
 import type { ManagerDashboardResponse } from '../types/dashboard'
 import { DashboardPage } from './DashboardPage'
@@ -158,5 +160,18 @@ describe('DashboardPage', () => {
       screen.getByText('Chưa có mission trong 7 ngày qua'),
     ).toBeInTheDocument()
     expect(screen.getByText('0/0')).toBeInTheDocument()
+  })
+
+  it('renders English labels and content after switching language', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
+    render(<DashboardPage />)
+    await waitFor(() => screen.getByText('Dashboard điều hành'))
+
+    act(() => setLanguage('en'))
+
+    expect(screen.getByText('Operations dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Reports')).toBeInTheDocument()
+    expect(screen.getByText('Needs attention now')).toBeInTheDocument()
+    expect(screen.getByText('In flight')).toBeInTheDocument()
   })
 })

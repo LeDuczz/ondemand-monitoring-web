@@ -28,9 +28,11 @@ export const OPERATOR_FLOW_SCREENS = [
   'postflight',
 ] as const
 
-type OperatorFlowScreen = typeof OPERATOR_FLOW_SCREENS[number]
+type OperatorFlowScreen = (typeof OPERATOR_FLOW_SCREENS)[number]
 
-export function isOperatorFlowScreen(screen: OperatorScreen): screen is OperatorFlowScreen {
+export function isOperatorFlowScreen(
+  screen: OperatorScreen,
+): screen is OperatorFlowScreen {
   return (OPERATOR_FLOW_SCREENS as readonly string[]).includes(screen)
 }
 
@@ -39,7 +41,10 @@ export function operatorFlowStep(screen: OperatorScreen): number | null {
   return index >= 0 ? index : null
 }
 
-export function operatorFlowRoute(screen: OperatorFlowScreen, missionId: string): OperatorRoute {
+export function operatorFlowRoute(
+  screen: OperatorFlowScreen,
+  missionId: string,
+): OperatorRoute {
   if (screen === 'missionDetail') return { screen: 'missionDetail', missionId }
   return { screen, missionId } as OperatorRoute
 }
@@ -55,7 +60,9 @@ export function guardOperatorFlowRoute(
   if (route.screen === 'missionDetail') return null
 
   if (!('missionId' in route) || !route.missionId) {
-    return activeMissionId ? operatorFlowRoute(route.screen as OperatorFlowScreen, activeMissionId) : { screen: 'missions' }
+    return activeMissionId
+      ? operatorFlowRoute(route.screen as OperatorFlowScreen, activeMissionId)
+      : { screen: 'missions' }
   }
 
   if (activeMissionId !== route.missionId) {
@@ -64,7 +71,10 @@ export function guardOperatorFlowRoute(
 
   const allowedStep = Math.min(OPERATOR_FLOW_SCREENS.length - 1, maxStep + 1)
   if (step > allowedStep) {
-    return operatorFlowRoute(OPERATOR_FLOW_SCREENS[allowedStep], route.missionId)
+    return operatorFlowRoute(
+      OPERATOR_FLOW_SCREENS[allowedStep],
+      route.missionId,
+    )
   }
 
   return null
@@ -123,17 +133,29 @@ export function operatorHref(route: OperatorRoute): string {
     case 'availability':
       return `${OPERATOR_ROOT}/availability`
     case 'connect':
-      return route.missionId ? `${OPERATOR_ROOT}/connect/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/connect`
+      return route.missionId
+        ? `${OPERATOR_ROOT}/connect/${encodeURIComponent(route.missionId)}`
+        : `${OPERATOR_ROOT}/connect`
     case 'handover':
-      return route.missionId ? `${OPERATOR_ROOT}/handover/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/handover`
+      return route.missionId
+        ? `${OPERATOR_ROOT}/handover/${encodeURIComponent(route.missionId)}`
+        : `${OPERATOR_ROOT}/handover`
     case 'preflight':
-      return route.missionId ? `${OPERATOR_ROOT}/preflight/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/preflight`
+      return route.missionId
+        ? `${OPERATOR_ROOT}/preflight/${encodeURIComponent(route.missionId)}`
+        : `${OPERATOR_ROOT}/preflight`
     case 'flight':
-      return route.missionId ? `${OPERATOR_ROOT}/flight/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/flight`
+      return route.missionId
+        ? `${OPERATOR_ROOT}/flight/${encodeURIComponent(route.missionId)}`
+        : `${OPERATOR_ROOT}/flight`
     case 'upload':
-      return route.missionId ? `${OPERATOR_ROOT}/upload/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/upload`
+      return route.missionId
+        ? `${OPERATOR_ROOT}/upload/${encodeURIComponent(route.missionId)}`
+        : `${OPERATOR_ROOT}/upload`
     case 'postflight':
-      return route.missionId ? `${OPERATOR_ROOT}/postflight/${encodeURIComponent(route.missionId)}` : `${OPERATOR_ROOT}/postflight`
+      return route.missionId
+        ? `${OPERATOR_ROOT}/postflight/${encodeURIComponent(route.missionId)}`
+        : `${OPERATOR_ROOT}/postflight`
     case 'maintenance':
       return `${OPERATOR_ROOT}/maintenance`
     case 'zoneMap':

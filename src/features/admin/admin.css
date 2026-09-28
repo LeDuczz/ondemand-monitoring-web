@@ -520,8 +520,12 @@
 /* ---------- Mobile ---------- */
 
 @media (min-width: 768px) {
-  .odm-adm-menu-toggle { display: none; }
-  .odm-adm-scrim { display: none; }
+  .odm-adm-menu-toggle {
+    display: none;
+  }
+  .odm-adm-scrim {
+    display: none;
+  }
 }
 
 @media (max-width: 767px) {
@@ -536,12 +540,12 @@
   }
   .odm-adm-side.is-open {
     left: 0;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   }
   .odm-adm-scrim {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
     z-index: 199;
     border: 0;
     cursor: default;

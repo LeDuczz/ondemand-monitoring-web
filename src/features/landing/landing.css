@@ -9,19 +9,19 @@
 .odm-landing {
   min-height: 100vh;
   overflow-x: hidden;
-  font-family: "Be Vietnam Pro", Inter, system-ui, sans-serif;
+  font-family: 'Be Vietnam Pro', Inter, system-ui, sans-serif;
 
-  --lp-blue: #1565E8;
-  --lp-blue-d: #0B3FA8;
-  --lp-blue-l: #E8F1FF;
-  --lp-sky: #38B6FF;
-  --lp-navy: #0B1F44;
-  --lp-ink: #1E2B4A;
-  --lp-mute: #5B6B8C;
-  --lp-line: #D6E4FA;
-  --lp-bg: #F3F8FF;
-  --lp-green: #1FA971;
-  --lp-amber: #F59E0B;
+  --lp-blue: #1565e8;
+  --lp-blue-d: #0b3fa8;
+  --lp-blue-l: #e8f1ff;
+  --lp-sky: #38b6ff;
+  --lp-navy: #0b1f44;
+  --lp-ink: #1e2b4a;
+  --lp-mute: #5b6b8c;
+  --lp-line: #d6e4fa;
+  --lp-bg: #f3f8ff;
+  --lp-green: #1fa971;
+  --lp-amber: #f59e0b;
 }
 
 .odm-landing .lp-container {
@@ -131,6 +131,11 @@
   flex: 1;
 }
 
+.odm-landing .lp-lang-toggle {
+  flex: none;
+  margin-right: 10px;
+}
+
 .odm-landing .lp-menu-btn {
   display: none;
   align-items: center;
@@ -147,7 +152,7 @@
 /* ---------- Hero ---------- */
 .odm-landing .lp-hero {
   padding: 56px 0 64px;
-  background: linear-gradient(180deg, #EAF3FF 0%, #fff 100%);
+  background: linear-gradient(180deg, #eaf3ff 0%, #fff 100%);
 }
 
 .odm-landing .lp-hero-grid {
@@ -342,7 +347,7 @@
 }
 
 .odm-landing .lp-stat span {
-  color: #B7C7E6;
+  color: #b7c7e6;
   font-size: 13px;
 }
 
@@ -351,20 +356,20 @@
   background: linear-gradient(135deg, var(--lp-blue), var(--lp-sky));
   color: #fff;
   border: none;
-  box-shadow: 0 8px 20px rgba(21,101,232,.28);
+  box-shadow: 0 8px 20px rgba(21, 101, 232, 0.28);
   border-radius: 12px;
   padding: 11px 20px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: .15s;
+  transition: 0.15s;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 .odm-landing .lp-btn-p:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(21,101,232,.36);
+  box-shadow: 0 12px 26px rgba(21, 101, 232, 0.36);
 }
 .odm-landing .lp-btn-o {
   background: #fff;
@@ -375,12 +380,14 @@
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: .15s;
+  transition: 0.15s;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
-.odm-landing .lp-btn-o:hover { background: var(--lp-blue-l); }
+.odm-landing .lp-btn-o:hover {
+  background: var(--lp-blue-l);
+}
 
 /* ---------- Sections ---------- */
 .odm-landing .lp-section {
@@ -392,7 +399,7 @@
   color: var(--lp-blue);
   font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -400,7 +407,7 @@
   margin: 0 0 12px;
   color: var(--lp-navy);
   font-size: clamp(1.5rem, 3vw, 2.1rem);
-  letter-spacing: -.3px;
+  letter-spacing: -0.3px;
 }
 
 .odm-landing .lp-section-copy {
@@ -433,12 +440,14 @@
   position: relative;
   border-radius: 18px;
   border-color: var(--lp-line);
-  transition: transform .15s, box-shadow .15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .odm-landing .lp-workflow-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 36px rgba(21,101,232,.14);
+  box-shadow: 0 16px 36px rgba(21, 101, 232, 0.14);
   border-color: var(--lp-sky);
 }
 
@@ -456,7 +465,7 @@
   top: 14px;
   font-size: 30px;
   font-weight: 800;
-  color: #DCE9FF;
+  color: #dce9ff;
   font-style: normal;
 }
 
@@ -568,7 +577,7 @@
   border: 1px solid var(--lp-line);
   border-radius: 20px;
   padding: 26px;
-  box-shadow: 0 20px 50px rgba(21,101,232,.12);
+  box-shadow: 0 20px 50px rgba(21, 101, 232, 0.12);
   background: #fff;
 }
 
@@ -617,17 +626,26 @@
   padding: 2px 9px;
   border-radius: 99px;
 }
-.odm-landing .lp-pill-g { background: #DDF6EA; color: #0E7A4F; }
-.odm-landing .lp-pill-a { background: #FFF0D1; color: #A3610A; }
-.odm-landing .lp-pill-b { background: var(--lp-blue-l); color: var(--lp-blue); }
+.odm-landing .lp-pill-g {
+  background: #ddf6ea;
+  color: #0e7a4f;
+}
+.odm-landing .lp-pill-a {
+  background: #fff0d1;
+  color: #a3610a;
+}
+.odm-landing .lp-pill-b {
+  background: var(--lp-blue-l);
+  color: var(--lp-blue);
+}
 
 /* ---------- Hero map card ---------- */
 .odm-landing .lp-mapcard {
   position: relative;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid var(--lp-line, #D6E4FA);
-  box-shadow: 0 24px 60px rgba(21,101,232,.18);
+  border: 1px solid var(--lp-line, #d6e4fa);
+  box-shadow: 0 24px 60px rgba(21, 101, 232, 0.18);
   background: #fff;
   flex: 1.05;
   min-width: 0;
@@ -638,7 +656,7 @@
   z-index: 500;
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(11,31,68,.18);
+  box-shadow: 0 10px 30px rgba(11, 31, 68, 0.18);
   padding: 12px 16px;
   font-size: 13px;
 }
@@ -651,7 +669,7 @@
 
 /* ---------- Alternating section background ---------- */
 .odm-landing .lp-section-alt {
-  background: var(--lp-bg, #F3F8FF);
+  background: var(--lp-bg, #f3f8ff);
 }
 
 .odm-landing .lp-panel-body {
@@ -760,12 +778,14 @@
   padding: 20px;
   border-radius: 18px;
   border-color: var(--lp-line);
-  transition: border-color .15s, box-shadow .15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .odm-landing .lp-industry-card:hover {
   border-color: var(--lp-blue);
-  box-shadow: 0 12px 28px rgba(21,101,232,.12);
+  box-shadow: 0 12px 28px rgba(21, 101, 232, 0.12);
 }
 
 .odm-landing .lp-industry-icon {
@@ -809,7 +829,7 @@
 /* ---------- FAQ ---------- */
 .odm-landing .lp-faq {
   display: grid;
-  grid-template-columns: .8fr 1.2fr;
+  grid-template-columns: 0.8fr 1.2fr;
   gap: 56px;
   max-width: none;
 }
@@ -872,13 +892,18 @@
 /* ---------- CTA ---------- */
 .odm-landing .lp-cta {
   padding: 72px 0;
-  background: linear-gradient(135deg, var(--lp-blue-d), var(--lp-blue) 55%, var(--lp-sky));
+  background: linear-gradient(
+    135deg,
+    var(--lp-blue-d),
+    var(--lp-blue) 55%,
+    var(--lp-sky)
+  );
   color: #fff;
   text-align: center;
 }
 
 .odm-landing .lp-cta .lp-eyebrow {
-  color: #DCEBFF;
+  color: #dcebff;
 }
 
 .odm-landing .lp-cta-inner {
@@ -900,13 +925,13 @@
 
 .odm-landing .lp-cta .lp-section-copy,
 .odm-landing .lp-cta p {
-  color: #DCEBFF;
+  color: #dcebff;
 }
 
 .odm-landing .lp-cta .odm-btn.odm-btn-gh,
 .odm-landing .lp-cta .lp-btn-ghost {
   color: #fff;
-  border-color: rgba(255,255,255,.5);
+  border-color: rgba(255, 255, 255, 0.5);
   background: transparent;
 }
 
@@ -924,7 +949,7 @@
 .odm-landing .lp-footer {
   border-top: none;
   background: var(--lp-navy);
-  color: #B7C7E6;
+  color: #b7c7e6;
   padding: 56px 0 24px;
 }
 
@@ -953,7 +978,7 @@
 .odm-landing .lp-footer-brand p {
   max-width: 300px;
   margin-top: 14px;
-  color: #B7C7E6;
+  color: #b7c7e6;
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-line;
@@ -972,7 +997,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: #B7C7E6;
+  color: #b7c7e6;
   font-size: 14px;
 }
 
@@ -981,8 +1006,8 @@
   justify-content: space-between;
   margin-top: 44px;
   padding-top: 20px;
-  border-top: 1px solid #1E3560;
-  color: #B7C7E6;
+  border-top: 1px solid #1e3560;
+  color: #b7c7e6;
   font-size: 12.5px;
 }
 
@@ -1124,8 +1149,8 @@
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  background: linear-gradient(135deg, #fff, #DCEBFF);
-  box-shadow: 0 12px 32px rgba(21,101,232,.4);
+  background: linear-gradient(135deg, #fff, #dcebff);
+  box-shadow: 0 12px 32px rgba(21, 101, 232, 0.4);
   padding: 6px;
   position: relative;
   animation: lp-bob 3s ease-in-out infinite;
@@ -1145,13 +1170,15 @@
   top: 2px;
   width: 16px;
   height: 16px;
-  background: var(--lp-green, #1FA971);
+  background: var(--lp-green, #1fa971);
   border: 3px solid #fff;
   border-radius: 50%;
 }
 
 @keyframes lp-bob {
-  50% { transform: translateY(-6px); }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .odm-landing .lp-bot-hint {
@@ -1159,13 +1186,13 @@
   right: 88px;
   bottom: 22px;
   background: #fff;
-  border: 1px solid var(--lp-line, #D6E4FA);
+  border: 1px solid var(--lp-line, #d6e4fa);
   border-radius: 14px 14px 4px 14px;
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  box-shadow: 0 8px 20px rgba(11,31,68,.14);
+  box-shadow: 0 8px 20px rgba(11, 31, 68, 0.14);
 }
 
 .odm-landing .lp-bot-win {
@@ -1173,15 +1200,19 @@
   height: 500px;
   background: #fff;
   border-radius: 20px;
-  box-shadow: 0 24px 64px rgba(11,31,68,.34);
+  box-shadow: 0 24px 64px rgba(11, 31, 68, 0.34);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--lp-line, #D6E4FA);
+  border: 1px solid var(--lp-line, #d6e4fa);
 }
 
 .odm-landing .lp-bot-header {
-  background: linear-gradient(135deg, var(--lp-blue-d, #0B3FA8), var(--lp-blue, #1565E8));
+  background: linear-gradient(
+    135deg,
+    var(--lp-blue-d, #0b3fa8),
+    var(--lp-blue, #1565e8)
+  );
   color: #fff;
   padding: 14px 16px;
   display: flex;
@@ -1204,7 +1235,7 @@
 }
 
 .odm-landing .lp-bot-header small {
-  opacity: .85;
+  opacity: 0.85;
   font-size: 12px;
 }
 
@@ -1229,7 +1260,7 @@
   flex: 1;
   overflow: auto;
   padding: 16px;
-  background: var(--lp-bg, #F3F8FF);
+  background: var(--lp-bg, #f3f8ff);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1245,13 +1276,13 @@
 
 .odm-landing .lp-bot-msg--bot {
   background: #fff;
-  border: 1px solid var(--lp-line, #D6E4FA);
+  border: 1px solid var(--lp-line, #d6e4fa);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
 }
 
 .odm-landing .lp-bot-msg--user {
-  background: var(--lp-blue, #1565E8);
+  background: var(--lp-blue, #1565e8);
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
@@ -1262,13 +1293,13 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 0 16px 10px;
-  background: var(--lp-bg, #F3F8FF);
+  background: var(--lp-bg, #f3f8ff);
 }
 
 .odm-landing .lp-bot-chips button {
   background: #fff;
-  border: 1px solid var(--lp-blue, #1565E8);
-  color: var(--lp-blue, #1565E8);
+  border: 1px solid var(--lp-blue, #1565e8);
+  color: var(--lp-blue, #1565e8);
   border-radius: 99px;
   padding: 5px 12px;
   font-size: 12px;
@@ -1277,20 +1308,20 @@
 }
 
 .odm-landing .lp-bot-chips button:hover {
-  background: var(--lp-blue-l, #E8F1FF);
+  background: var(--lp-blue-l, #e8f1ff);
 }
 
 .odm-landing .lp-bot-form {
   display: flex;
   padding: 10px;
   gap: 8px;
-  border-top: 1px solid var(--lp-line, #D6E4FA);
+  border-top: 1px solid var(--lp-line, #d6e4fa);
 }
 
 .odm-landing .lp-bot-form input {
   flex: 1;
   padding: 10px 14px;
-  border: 1px solid var(--lp-line, #D6E4FA);
+  border: 1px solid var(--lp-line, #d6e4fa);
   border-radius: 12px;
   font-size: 13px;
   font-family: inherit;
@@ -1298,12 +1329,12 @@
 }
 
 .odm-landing .lp-bot-form input:focus {
-  border-color: var(--lp-blue, #1565E8);
+  border-color: var(--lp-blue, #1565e8);
 }
 
 .odm-landing .lp-bot-form button {
   padding: 10px 16px;
-  background: var(--lp-blue, #1565E8);
+  background: var(--lp-blue, #1565e8);
   color: #fff;
   border: none;
   border-radius: 12px;

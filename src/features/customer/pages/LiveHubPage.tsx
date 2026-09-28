@@ -1,9 +1,15 @@
-import { ErrorState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { customerApi } from '../api/customerApi'
 import { customerHref } from '../routes'
+import { liveHubPageMessages } from './LiveHubPage.messages'
 
 export function LiveHubPage() {
+  const { t } = useI18n(liveHubPageMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => customerApi.getDashboard(signal),
     [],
@@ -16,7 +22,9 @@ export function LiveHubPage() {
 
   return (
     <div>
-      <h1 style={{ margin: '0 0 20px', fontSize: 20, fontWeight: 700 }}>Xem trực tiếp</h1>
+      <h1 style={{ margin: '0 0 20px', fontSize: 20, fontWeight: 700 }}>
+        {t.title}
+      </h1>
 
       {live ? (
         <div>
@@ -42,18 +50,18 @@ export function LiveHubPage() {
                 padding: '2px 8px',
               }}
             >
-              ● LIVE
+              {t.live}
             </span>
             <span style={{ fontWeight: 600 }}>{live.orderTitle}</span>
             <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
-              {live.missionCode} · 👥 {live.viewerCount} đang xem
+              {live.missionCode} · {t.viewersWatching(live.viewerCount)}
             </span>
           </div>
           <a
             href={customerHref({ screen: 'live', orderId: live.orderId })}
             className="odm-btn odm-btn-p"
           >
-            Vào xem trực tiếp →
+            {t.enterLive}
           </a>
         </div>
       ) : (
@@ -67,9 +75,11 @@ export function LiveHubPage() {
           }}
         >
           <div style={{ fontSize: 40, marginBottom: 12 }}>📡</div>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>Không có phiên trực tiếp</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+            {t.noSessionTitle}
+          </div>
           <div style={{ fontSize: 13, color: 'var(--tx3)' }}>
-            Hiện chưa có mission nào đang bay trực tiếp.
+            {t.noSessionDescription}
           </div>
         </div>
       )}

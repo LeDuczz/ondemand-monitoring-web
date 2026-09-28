@@ -80,7 +80,10 @@ export const missionApi = {
     )
   },
 
-  rejectMyMission: async (missionId: string, reason: string): Promise<Mission> => {
+  rejectMyMission: async (
+    missionId: string,
+    reason: string,
+  ): Promise<Mission> => {
     return request<Mission>(
       `${API_BASE}/missions/${encodeURIComponent(missionId)}/reject-current`,
       { method: 'PATCH', body: JSON.stringify({ reason }) },
@@ -101,7 +104,10 @@ export const missionApi = {
     )
   },
 
-  assignOperator: async (missionId: string, operatorId: string): Promise<Mission> => {
+  assignOperator: async (
+    missionId: string,
+    operatorId: string,
+  ): Promise<Mission> => {
     return request<Mission>(
       `${API_BASE}/missions/${missionId}/assign-operator?operatorId=${encodeURIComponent(operatorId)}`,
       { method: 'POST' },
@@ -113,9 +119,12 @@ export const missionApi = {
     missionId: string,
     _operatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/accept-current`, {
-      method: 'PATCH',
-    })
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/accept-current`,
+      {
+        method: 'PATCH',
+      },
+    )
   },
 
   // F3.1 Reject mission (PATCH /api/missions/{id}/reject)
@@ -124,10 +133,13 @@ export const missionApi = {
     reason: string,
     _operatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/reject-current`, {
-      method: 'PATCH',
-      body: JSON.stringify({ reason }),
-    })
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/reject-current`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ reason }),
+      },
+    )
   },
 
   // F3.2 Connect GCS (POST /api/missions/{id}/connect)
@@ -137,19 +149,26 @@ export const missionApi = {
     })
   },
 
-  disconnectGcs: async (missionId: string, reason = 'MISSION_COMPLETED'): Promise<Mission> => {
+  disconnectGcs: async (
+    missionId: string,
+    reason = 'MISSION_COMPLETED',
+  ): Promise<Mission> => {
     return request<Mission>(
       `${API_BASE}/missions/${encodeURIComponent(missionId)}/disconnect?reason=${encodeURIComponent(reason)}`,
       { method: 'POST' },
     )
   },
 
-  getTelemetryReadiness: async (missionId: string): Promise<{
+  getTelemetryReadiness: async (
+    missionId: string,
+  ): Promise<{
     droneCode: string
     ready: boolean
     lastTelemetryAt: string | null
   }> => {
-    return request(`${API_BASE}/missions/${encodeURIComponent(missionId)}/telemetry-readiness`)
+    return request(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/telemetry-readiness`,
+    )
   },
 
   // F3.2 Run Pre-flight check (POST /api/missions/{id}/preflight-check?deviceCode=DRONE-01)
@@ -181,9 +200,12 @@ export const missionApi = {
     missionId: string,
     _newOperatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/handover-current`, {
-      method: 'POST',
-    })
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/handover-current`,
+      {
+        method: 'POST',
+      },
+    )
   },
 
   // F3.3 Start Mission / Takeoff (POST /api/missions/{id}/start)
@@ -209,10 +231,13 @@ export const missionApi = {
     formData.append('deviceCode', deviceCode)
     formData.append('file', file)
 
-    const res = await authenticatedFetch(`${API_BASE}/missions/${missionId}/media`, {
-      method: 'POST',
-      body: formData,
-    })
+    const res = await authenticatedFetch(
+      `${API_BASE}/missions/${missionId}/media`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+    )
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
@@ -252,7 +277,12 @@ export const missionApi = {
       )}`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ newDroneStatus, notes, inspectionResults, telemetrySnapshot }),
+        body: JSON.stringify({
+          newDroneStatus,
+          notes,
+          inspectionResults,
+          telemetrySnapshot,
+        }),
       },
     )
   },

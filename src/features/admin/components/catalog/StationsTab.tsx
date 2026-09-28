@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
 
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import { AdminToggle } from '../AdminToggle'
 import { StationDialog } from './StationDialog'
 import type { AdminStation } from '../../types/catalog'
+import { stationsTabMessages } from './StationsTab.messages'
 
 export function StationsTab({ createSignal }: { createSignal: number }) {
+  const { t } = useI18n(stationsTabMessages)
   const [dialog, setDialog] = useState<{ station?: AdminStation } | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
-  const { data, loading, error, reload } = useApiQuery((signal) => adminApi.listStations(signal), [])
+  const { data, loading, error, reload } = useApiQuery(
+    (signal) => adminApi.listStations(signal),
+    [],
+  )
 
   useEffect(() => {
     if (createSignal > 0) setDialog({})
@@ -29,13 +38,15 @@ export function StationsTab({ createSignal }: { createSignal: number }) {
   return (
     <div>
       {loading && <LoadingState />}
-      {!loading && (error || !data) && <ErrorState error={error} onRetry={reload} />}
+      {!loading && (error || !data) && (
+        <ErrorState error={error} onRetry={reload} />
+      )}
       {!loading && data && (
         <div className="odm-card" style={{ overflow: 'hidden' }}>
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th>Trạm</th>
+                <th>{t.station}</th>
                 <th style={{ width: 170 }}>lat, lon</th>
                 <th style={{ width: 150 }}>max_service_radius_m</th>
                 <th style={{ width: 80 }}>is_active</th>
@@ -46,13 +57,19 @@ export function StationsTab({ createSignal }: { createSignal: number }) {
               {data.items.map((sta) => (
                 <tr key={sta.id}>
                   <td>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{sta.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{sta.address}</div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {sta.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                      {sta.address}
+                    </div>
                   </td>
                   <td className="odm-mono" style={{ fontSize: 12 }}>
                     {sta.lat.toFixed(4)}, {sta.lon.toFixed(4)}
                   </td>
-                  <td className="odm-mono">{(sta.maxServiceRadiusM / 1000).toFixed(0)} km</td>
+                  <td className="odm-mono">
+                    {(sta.maxServiceRadiusM / 1000).toFixed(0)} km
+                  </td>
                   <td>
                     <AdminToggle
                       active={sta.isActive}
@@ -66,9 +83,18 @@ export function StationsTab({ createSignal }: { createSignal: number }) {
                       type="button"
                       className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
                       onClick={() => setDialog({ station: sta })}
-                      aria-label="Sửa trạm"
+                      aria-label={t.editStation}
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="M4 20l4-1 11-11-3-3L5 16z" />
                         <path d="M14 6l3 3" />
                       </svg>
@@ -84,7 +110,10 @@ export function StationsTab({ createSignal }: { createSignal: number }) {
         <StationDialog
           station={dialog.station}
           onClose={() => setDialog(null)}
-          onSuccess={() => { setDialog(null); reload() }}
+          onSuccess={() => {
+            setDialog(null)
+            reload()
+          }}
         />
       )}
     </div>

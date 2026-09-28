@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
+import { useI18n } from '../../shared/i18n'
+import { adminAppMessages } from './AdminApp.messages'
 
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash)
@@ -25,20 +27,7 @@ import { AiKnowledgePage } from './pages/AiKnowledgePage'
 import { AuditLogPage } from './pages/AuditLogPage'
 import type { AdminRoute } from './routes'
 
-const BREADCRUMB: Record<AdminRoute['screen'], string> = {
-  dashboard: 'Tổng quan',
-  accounts: 'Người dùng',
-  createAccount: 'Tạo tài khoản',
-  accountDetail: 'Chi tiết tài khoản',
-  roles: 'Vai trò',
-  catalog: 'Danh mục',
-  operatingConfig: 'Cấu hình vận hành',
-  aiKnowledge: 'Tri thức AI và luật',
-  auditLog: 'Nhật ký hệ thống',
-  notFound: 'Không tìm thấy',
-}
-
-function renderScreen(route: AdminRoute) {
+function renderScreen(route: AdminRoute, notFoundText: string) {
   switch (route.screen) {
     case 'dashboard':
       return <AdminDashboardPage />
@@ -61,7 +50,7 @@ function renderScreen(route: AdminRoute) {
     default:
       return (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--tx3)' }}>
-          Trang không tồn tại.
+          {notFoundText}
         </div>
       )
   }
@@ -70,6 +59,7 @@ function renderScreen(route: AdminRoute) {
 export function AdminApp() {
   const hash = useHash()
   const route = parseAdminRoute(hash)
+  const { t } = useI18n(adminAppMessages)
 
   const { data } = useApiQuery((signal) => adminApi.getDashboard(signal), [])
   const pendingCount = data?.pendingAccounts
@@ -77,10 +67,10 @@ export function AdminApp() {
   return (
     <AdminLayout
       route={route}
-      breadcrumb={BREADCRUMB[route.screen]}
+      breadcrumb={t.breadcrumb[route.screen]}
       pendingCount={pendingCount}
     >
-      {renderScreen(route)}
+      {renderScreen(route, t.notFoundPage)}
     </AdminLayout>
   )
 }

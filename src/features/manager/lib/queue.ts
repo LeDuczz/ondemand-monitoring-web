@@ -6,6 +6,7 @@
 // verdict-based `feasibleFirst` sort mode and `countByVerdict` helper were
 // removed along with them. Wait time is now measured from `createdAt` and
 // the preferred-date sort parses the ISO `preferredDateFrom` timestamp.
+import type { Language } from '../../../shared/i18n'
 import type { OrderCreateResponse } from '../types/orders'
 
 export type QueueSortMode = 'longestWait' | 'preferredDateAsc'
@@ -40,8 +41,19 @@ export function isOverdue(now: Date, row: OrderCreateResponse): boolean {
   return waitMs(now, row) >= 24 * 60 * 60 * 1000
 }
 
-/** `"N giờ"` / `"N giờ · quá 24h"` wait-time label, per [TK MNG-02]. */
-export function formatWaitLabel(now: Date, row: OrderCreateResponse): string {
+/**
+ * `"N giờ"` / `"N giờ · quá 24h"` wait-time label, per [TK MNG-02].
+ * `lang` defaults to `'vi'` so existing callers/tests keep working.
+ */
+export function formatWaitLabel(
+  now: Date,
+  row: OrderCreateResponse,
+  lang: Language = 'vi',
+): string {
   const hours = Math.floor(waitMs(now, row) / (60 * 60 * 1000))
-  return isOverdue(now, row) ? `${hours} giờ · quá 24h` : `${hours} giờ`
+  const overdue = isOverdue(now, row)
+  if (lang === 'en') {
+    return overdue ? `${hours}h · over 24h` : `${hours}h`
+  }
+  return overdue ? `${hours} giờ · quá 24h` : `${hours} giờ`
 }

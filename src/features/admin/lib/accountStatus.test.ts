@@ -4,6 +4,8 @@ import {
   accountsSubtitle,
   computeAccountCounts,
   filterAccounts,
+  getAccountStatusMeta,
+  getRoleLabel,
   pageRangeLabel,
 } from './accountStatus'
 import type { AdminAccountItem } from '../types/accounts'
@@ -34,7 +36,11 @@ describe('computeAccountCounts', () => {
       acc({ id: '3', role: 'CUSTOMER', status: 'INACTIVE' }),
       acc({ id: '4', role: 'ADMIN', status: 'ACTIVE' }),
     ]
-    expect(computeAccountCounts(items)).toEqual({ total: 4, pilots: 2, locked: 2 })
+    expect(computeAccountCounts(items)).toEqual({
+      total: 4,
+      pilots: 2,
+      locked: 2,
+    })
   })
 })
 
@@ -54,13 +60,54 @@ describe('pageRangeLabel', () => {
   it('formats the visible range', () => {
     expect(pageRangeLabel(13, 13)).toBe('Hiển thị 1–13/13')
   })
+
+  it('formats in english', () => {
+    expect(pageRangeLabel(0, 0, 'en')).toBe('Showing 0/0')
+    expect(pageRangeLabel(13, 13, 'en')).toBe('Showing 1–13/13')
+  })
+})
+
+describe('bilingual label accessors', () => {
+  it('getRoleLabel returns vi by default and en when asked', () => {
+    expect(getRoleLabel('ADMIN')).toBe('Quản trị viên')
+    expect(getRoleLabel('ADMIN', 'en')).toBe('Administrator')
+  })
+
+  it('getAccountStatusMeta returns vi by default and en when asked', () => {
+    expect(getAccountStatusMeta('ACTIVE')).toEqual({
+      label: 'Hoạt động',
+      tone: 'green',
+    })
+    expect(getAccountStatusMeta('ACTIVE', 'en')).toEqual({
+      label: 'Active',
+      tone: 'green',
+    })
+  })
 })
 
 describe('filterAccounts', () => {
   const items = [
-    acc({ id: '1', fullName: 'Nguyễn Minh Khoa', email: 'khoa@odms.vn', role: 'CUSTOMER', status: 'ACTIVE' }),
-    acc({ id: '2', fullName: 'Trần Thị Thu Hà', email: 'ha@odms.vn', role: 'STAFF', status: 'INACTIVE' }),
-    acc({ id: '3', fullName: 'Hoàng Đức Thắng', email: 'thang@odms.vn', role: 'DRONE_OPERATOR', status: 'PENDING' }),
+    acc({
+      id: '1',
+      fullName: 'Nguyễn Minh Khoa',
+      email: 'khoa@odms.vn',
+      role: 'CUSTOMER',
+      status: 'ACTIVE',
+    }),
+    acc({
+      id: '2',
+      fullName: 'Trần Thị Thu Hà',
+      email: 'ha@odms.vn',
+      role: 'STAFF',
+      status: 'INACTIVE',
+    }),
+    acc({
+      id: '3',
+      fullName: 'Hoàng Đức Thắng',
+      email: 'thang@odms.vn',
+      role: 'DRONE_OPERATOR',
+      status: 'PENDING',
+    }),
   ]
 
   it('returns all items with no filters', () => {
@@ -68,23 +115,33 @@ describe('filterAccounts', () => {
   })
 
   it('filters by role', () => {
-    expect(filterAccounts(items, { role: 'STAFF' }).map((a) => a.id)).toEqual(['2'])
+    expect(filterAccounts(items, { role: 'STAFF' }).map((a) => a.id)).toEqual([
+      '2',
+    ])
   })
 
   it('filters by status', () => {
-    expect(filterAccounts(items, { status: 'PENDING' }).map((a) => a.id)).toEqual(['3'])
+    expect(
+      filterAccounts(items, { status: 'PENDING' }).map((a) => a.id),
+    ).toEqual(['3'])
   })
 
   it('filters by query matching name or email, case-insensitive', () => {
-    expect(filterAccounts(items, { query: 'thu hà' }).map((a) => a.id)).toEqual(['2'])
-    expect(filterAccounts(items, { query: 'THANG@ODMS' }).map((a) => a.id)).toEqual(['3'])
+    expect(filterAccounts(items, { query: 'thu hà' }).map((a) => a.id)).toEqual(
+      ['2'],
+    )
+    expect(
+      filterAccounts(items, { query: 'THANG@ODMS' }).map((a) => a.id),
+    ).toEqual(['3'])
   })
 
   it('combines filters', () => {
     expect(
-      filterAccounts(items, { role: 'CUSTOMER', status: 'ACTIVE', query: 'khoa' }).map(
-        (a) => a.id,
-      ),
+      filterAccounts(items, {
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+        query: 'khoa',
+      }).map((a) => a.id),
     ).toEqual(['1'])
   })
 })

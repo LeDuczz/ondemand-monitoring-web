@@ -1,0 +1,36 @@
+import { defineMessages } from '../../../../shared/i18n'
+
+export const timeslotsTabMessages = defineMessages({
+  vi: {
+    expired: 'Đã hết hiệu lực',
+    upcoming: 'Sắp tới',
+    inEffect: 'Đang hiệu lực',
+    createTitle: 'Tạo phiên bản khung giờ',
+    name: 'Tên *',
+    namePlaceholder: 'Khung sáng',
+    start: 'Bắt đầu',
+    end: 'Kết thúc',
+    cancel: 'Hủy',
+    creating: 'Đang tạo...',
+    create: 'Tạo phiên bản',
+    genericError: 'Lỗi khi tạo khung giờ.',
+    timeslot: 'Khung giờ',
+    status: 'Trạng thái',
+  },
+  en: {
+    expired: 'Expired',
+    upcoming: 'Upcoming',
+    inEffect: 'In effect',
+    createTitle: 'Create timeslot version',
+    name: 'Name *',
+    namePlaceholder: 'Morning slot',
+    start: 'Start',
+    end: 'End',
+    cancel: 'Cancel',
+    creating: 'Creating...',
+    create: 'Create version',
+    genericError: 'Failed to create the timeslot.',
+    timeslot: 'Timeslot',
+    status: 'Status',
+  },
+})

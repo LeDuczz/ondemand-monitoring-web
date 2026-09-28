@@ -1,0 +1,56 @@
+import { defineMessages } from '../../../shared/i18n'
+
+export const dashboardPageMessages = defineMessages({
+  vi: {
+    title: 'Tổng quan',
+    createOrder: '+ Tạo yêu cầu giám sát',
+    live: '● LIVE',
+    viewersWatching: (n: number) => `👥 ${n} đang xem →`,
+    kpi: {
+      pending: 'Chờ duyệt',
+      inProgress: 'Đang thực hiện',
+      completed: 'Hoàn thành',
+      newMedia: 'Media mới',
+    },
+    kpiUnit: 'đơn hàng',
+    kpiUnitMedia: 'chờ xem',
+    recentOrders: 'Đơn hàng gần đây',
+    viewAll: 'Xem tất cả →',
+    newMediaBadge: 'Media mới',
+    emptyTitle: 'Chưa có đơn hàng nào',
+    emptyDescription: 'Tạo yêu cầu giám sát đầu tiên của bạn.',
+    emptyAction: 'Tạo yêu cầu đầu tiên →',
+    columns: {
+      title: 'Tiêu đề',
+      address: 'Địa điểm',
+      flightDate: 'Ngày bay',
+      status: 'Trạng thái',
+    },
+  },
+  en: {
+    title: 'Overview',
+    createOrder: '+ Create monitoring request',
+    live: '● LIVE',
+    viewersWatching: (n: number) => `👥 ${n} watching →`,
+    kpi: {
+      pending: 'Pending review',
+      inProgress: 'In progress',
+      completed: 'Completed',
+      newMedia: 'New media',
+    },
+    kpiUnit: 'orders',
+    kpiUnitMedia: 'waiting to view',
+    recentOrders: 'Recent orders',
+    viewAll: 'View all →',
+    newMediaBadge: 'New media',
+    emptyTitle: 'No orders yet',
+    emptyDescription: 'Create your first monitoring request.',
+    emptyAction: 'Create your first request →',
+    columns: {
+      title: 'Title',
+      address: 'Location',
+      flightDate: 'Flight date',
+      status: 'Status',
+    },
+  },
+})

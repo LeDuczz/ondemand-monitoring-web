@@ -5,24 +5,26 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import {
-  droneStatusLabel,
   droneStatusTone,
+  getDroneStatusLabel,
 } from '../../../shared/lib/statusTone'
 import type { DroneStatus } from '../../../shared/types/domain'
 import { dronesApi } from '../api/dronesApi'
 import type { DroneResponse } from '../types/drones'
+import { dronesPageMessages } from './DronesPage.messages'
 import '../manager.css'
 
 type FilterChip =
   'ALL' | 'AVAILABLE' | 'FLYING' | 'MAINTENANCE' | 'OUT_OF_SERVICE'
 
-const FILTER_CHIPS: Array<{ value: FilterChip; label: string }> = [
-  { value: 'ALL', label: 'Tất cả' },
-  { value: 'AVAILABLE', label: 'Sẵn sàng' },
-  { value: 'FLYING', label: 'Đang bay' },
-  { value: 'MAINTENANCE', label: 'Bảo trì' },
-  { value: 'OUT_OF_SERVICE', label: 'Ngừng dùng' },
+const FILTER_CHIP_VALUES: FilterChip[] = [
+  'ALL',
+  'AVAILABLE',
+  'FLYING',
+  'MAINTENANCE',
+  'OUT_OF_SERVICE',
 ]
 
 // Manager-actionable transitions [ĐỀ XUẤT per MNG-09]
@@ -58,6 +60,7 @@ function StatusChangeModal({
   onClose,
   onChanged,
 }: StatusChangeModalProps) {
+  const { t, lang } = useI18n(dronesPageMessages)
   const nextStatuses = MANUAL_TRANSITIONS[drone.status] ?? []
   const [selectedStatus, setSelectedStatus] = useState<DroneStatus | ''>(
     nextStatuses[0] ?? '',
@@ -69,7 +72,7 @@ function StatusChangeModal({
   async function handleSave() {
     if (!selectedStatus) return
     if (!reason.trim()) {
-      setError('Vui lòng nhập lý do')
+      setError(t.modal.reasonRequired)
       return
     }
     setSaving(true)
@@ -83,7 +86,7 @@ function StatusChangeModal({
       })
       onChanged(updated)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Lỗi không xác định')
+      setError(e instanceof Error ? e.message : t.unknownError)
     } finally {
       setSaving(false)
     }
@@ -108,13 +111,12 @@ function StatusChangeModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>
-          Đổi trạng thái — {drone.serialNumber}{' '}
-          {drone.droneModel?.modelCode ?? ''}
+          {t.modal.title(drone.serialNumber, drone.droneModel?.modelCode ?? '')}
         </h3>
 
         {nextStatuses.length === 0 ? (
           <div style={{ color: 'var(--tx3)', fontSize: 13 }}>
-            Không thể thay đổi trạng thái thủ công từ {drone.status}.
+            {t.modal.cannotChange(getDroneStatusLabel(drone.status, lang))}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -128,7 +130,7 @@ function StatusChangeModal({
                   marginBottom: 4,
                 }}
               >
-                Trạng thái mới
+                {t.modal.newStatus}
               </label>
               <select
                 id="drone-new-status"
@@ -141,7 +143,7 @@ function StatusChangeModal({
               >
                 {nextStatuses.map((s) => (
                   <option key={s} value={s}>
-                    {droneStatusLabel[s]}
+                    {getDroneStatusLabel(s, lang)}
                   </option>
                 ))}
               </select>
@@ -157,7 +159,7 @@ function StatusChangeModal({
                   marginBottom: 4,
                 }}
               >
-                Lý do *
+                {t.modal.reason}
               </label>
               <textarea
                 id="drone-reason"
@@ -165,7 +167,7 @@ function StatusChangeModal({
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Nhập lý do thay đổi trạng thái..."
+                placeholder={t.modal.reasonPlaceholder}
                 style={{ width: '100%', resize: 'vertical' }}
               />
             </div>
@@ -185,7 +187,7 @@ function StatusChangeModal({
                 onClick={onClose}
                 disabled={saving}
               >
-                Huỷ
+                {t.modal.cancel}
               </button>
               <button
                 type="button"
@@ -193,7 +195,7 @@ function StatusChangeModal({
                 onClick={handleSave}
                 disabled={saving || !selectedStatus}
               >
-                {saving ? 'Đang lưu...' : 'Xác nhận'}
+                {saving ? t.modal.saving : t.modal.confirm}
               </button>
             </div>
           </div>
@@ -209,10 +211,9 @@ type DronesPageProps = {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function DronesPage({ droneId: _droneId }: DronesPageProps) {
+  const { t, lang } = useI18n(dronesPageMessages)
   const [filter, setFilter] = useState<FilterChip>('ALL')
-  const [changingDrone, setChangingDrone] = useState<DroneResponse | null>(
-    null,
-  )
+  const [changingDrone, setChangingDrone] = useState<DroneResponse | null>(null)
   const [drones, setDrones] = useState<DroneResponse[] | null>(null)
 
   const query = useApiQuery((signal) => dronesApi.listDrones({ signal }), [])
@@ -243,11 +244,15 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
       {/* Header */}
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Đội drone</h1>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
           {!query.loading && !query.error && (
             <div className="odm-mgr-dash-date" style={{ fontSize: 13 }}>
-              {counts.available} sẵn sàng · {counts.flying} đang bay ·{' '}
-              {counts.maintenance} bảo trì · {counts.outOfService} ngừng dùng
+              {t.summary(
+                counts.available,
+                counts.flying,
+                counts.maintenance,
+                counts.outOfService,
+              )}
             </div>
           )}
         </div>
@@ -257,14 +262,14 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
       <div
         style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}
       >
-        {FILTER_CHIPS.map((chip) => (
+        {FILTER_CHIP_VALUES.map((chip) => (
           <button
-            key={chip.value}
+            key={chip}
             type="button"
-            className={`odm-chip${filter === chip.value ? ' odm-chip-active' : ''}`}
-            onClick={() => setFilter(chip.value)}
+            className={`odm-chip${filter === chip ? ' odm-chip-active' : ''}`}
+            onClick={() => setFilter(chip)}
           >
-            {chip.label}
+            {t.filters[chip]}
           </button>
         ))}
       </div>
@@ -280,7 +285,7 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
         <div style={{ padding: 24 }}>
           <StateView
             state="error"
-            title="Không tải được đội drone"
+            title={t.loadError}
             error={query.error}
             onRetry={query.reload}
           />
@@ -303,8 +308,8 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
       {!query.loading && !query.error && visible.length === 0 && (
         <StateView
           state="empty"
-          title="Không có drone nào"
-          description="Không có drone nào trong bộ lọc này."
+          title={t.emptyTitle}
+          description={t.emptyDescription}
         />
       )}
 
@@ -321,21 +326,29 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                   textAlign: 'left',
                 }}
               >
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Drone</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Model</th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  Trạng thái
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Pin</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>Trạm</th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  Payload
+                  {t.columns.drone}
                 </th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  Giờ bay
+                  {t.columns.model}
                 </th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  Hoạt động cuối
+                  {t.columns.status}
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  {t.columns.battery}
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  {t.columns.station}
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  {t.columns.payload}
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  {t.columns.flightHours}
+                </th>
+                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                  {t.columns.lastActivity}
                 </th>
                 <th style={{ padding: '8px 12px', fontWeight: 500 }} />
               </tr>
@@ -368,7 +381,7 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                     </td>
                     <td style={{ padding: '8px 12px' }}>
                       <StatusBadge tone={droneStatusTone[drone.status]}>
-                        {droneStatusLabel[drone.status]}
+                        {getDroneStatusLabel(drone.status, lang)}
                       </StatusBadge>
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
@@ -394,7 +407,7 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
                           style={{ fontSize: 12 }}
                           onClick={() => setChangingDrone(drone)}
                         >
-                          Đổi trạng thái
+                          {t.changeStatus}
                         </button>
                       )}
                     </td>

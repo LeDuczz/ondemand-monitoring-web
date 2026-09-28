@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { authApi, authSession } from '../api/authApi'
+import { setLanguage } from '../../../shared/i18n'
 import { LogoutButton } from './LogoutButton'
 
 afterEach(() => {
@@ -24,5 +25,11 @@ describe('LogoutButton', () => {
 
     expect(authApi.logout).toHaveBeenCalledWith('token-123')
     expect(window.location.hash).toBe('#auth/login')
+  })
+
+  it('renders the English label when language is switched', () => {
+    render(<LogoutButton />)
+    act(() => setLanguage('en'))
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
   })
 })

@@ -1,5 +1,7 @@
+import { useI18n } from '../../../shared/i18n'
 import { droneStatusTone } from '../../../shared/lib/statusTone'
 import type { StatusTone } from '../../../shared/types/domain'
+import { droneStatusDonutMessages } from './DroneStatusDonut.messages'
 import type { DroneStatusBreakdown } from '../types/dashboard'
 
 const TONE_COLOR: Record<StatusTone, string> = {
@@ -21,6 +23,7 @@ const TONE_COLOR: Record<StatusTone, string> = {
  * mapping table in evd/P3-manager-dashboard.md.
  */
 export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
+  const { t } = useI18n(droneStatusDonutMessages)
   const total = data.reduce((sum, entry) => sum + entry.count, 0)
   const size = 120
   const stroke = 18
@@ -49,7 +52,7 @@ export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         role="img"
-        aria-label={`Trạng thái đội drone: ${total} drone. ${summary}.`}
+        aria-label={t.ariaLabel(total, summary)}
       >
         <circle
           cx={size / 2}
@@ -90,7 +93,7 @@ export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
           fontSize={10}
           fill="var(--tx3)"
         >
-          drone
+          {t.unit}
         </text>
       </svg>
       <div className="odm-mgr-donut-legend">

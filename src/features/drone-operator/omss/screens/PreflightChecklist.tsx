@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { preflightChecklistMessages } from '../i18n/preflightChecklist'
 import type { CheckItem } from '../types'
 
 interface Props {
@@ -14,6 +16,7 @@ export default function PreflightChecklist({
   onFail,
   onBack,
 }: Props) {
+  const { t } = useI18n(preflightChecklistMessages)
   const [ran, setRan] = useState(false)
   const [running, setRunning] = useState(false)
 
@@ -50,12 +53,7 @@ export default function PreflightChecklist({
     WARNING: 'var(--amber-border)',
     PENDING: 'var(--border)',
   }
-  const statusLabel = {
-    PASS: 'Passed',
-    FAIL: 'Failed',
-    WARNING: 'Warning',
-    PENDING: 'Pending',
-  }
+  const statusLabel = t.statusLabel
   const statusIcon = { PASS: '✓', FAIL: '✕', WARNING: '⚠', PENDING: '—' }
 
   return (
@@ -88,7 +86,7 @@ export default function PreflightChecklist({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Back
+        {t.back}
       </button>
 
       <div style={{ maxWidth: 640 }}>
@@ -109,10 +107,10 @@ export default function PreflightChecklist({
                 margin: '0 0 6px',
               }}
             >
-              Pre-flight check
+              {t.title}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-              Automated safety checks before flight authorisation.
+              {t.description}
             </p>
           </div>
           {ran && (
@@ -128,7 +126,7 @@ export default function PreflightChecklist({
                 {passed}/{checklist.length}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-                checks passed
+                {t.checksPassed}
               </div>
             </div>
           )}
@@ -272,9 +270,7 @@ export default function PreflightChecklist({
                 color: allPass ? 'var(--green-text)' : 'var(--red-text)',
               }}
             >
-              {allPass
-                ? `All ${passed} checks passed — ready to proceed.`
-                : `${failed} check${failed > 1 ? 's' : ''} failed${warned > 0 ? `, ${warned} warning${warned > 1 ? 's' : ''}` : ''} — review the results below.`}
+              {allPass ? t.allPassed(passed) : t.someFailed(failed, warned)}
             </div>
           </div>
         )}
@@ -294,7 +290,7 @@ export default function PreflightChecklist({
               cursor: 'pointer',
             }}
           >
-            Run pre-flight checks
+            {t.runChecks}
           </button>
         )}
         {running && (
@@ -326,7 +322,7 @@ export default function PreflightChecklist({
               }}
               className="spin"
             />
-            Running checks…
+            {t.runningChecks}
           </button>
         )}
         {ran && allPass && (
@@ -344,7 +340,7 @@ export default function PreflightChecklist({
               cursor: 'pointer',
             }}
           >
-            Continue to control handover
+            {t.continueToHandover}
           </button>
         )}
         {ran && !allPass && (
@@ -362,7 +358,7 @@ export default function PreflightChecklist({
               cursor: 'pointer',
             }}
           >
-            View failure report
+            {t.viewFailureReport}
           </button>
         )}
       </div>

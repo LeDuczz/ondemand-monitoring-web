@@ -1,3 +1,6 @@
+import { useI18n } from '../../../../shared/i18n'
+import { managerOverviewMessages } from '../i18n/managerOverview'
+
 const TEAM = [
   {
     id: 'OPR-112',
@@ -36,25 +39,12 @@ const TEAM = [
   },
 ]
 
-const TEAM_CFG: Record<string, { dot: string; label: string; color: string }> =
-  {
-    active: {
-      dot: 'var(--green)',
-      label: 'In mission',
-      color: 'var(--green-text)',
-    },
-    available: {
-      dot: 'var(--blue)',
-      label: 'Available',
-      color: 'var(--blue-text)',
-    },
-    preflight: {
-      dot: 'var(--amber)',
-      label: 'Pre-flight',
-      color: 'var(--amber-text)',
-    },
-    offline: { dot: 'var(--text-3)', label: 'Offline', color: 'var(--text-3)' },
-  }
+const TEAM_CFG: Record<string, { dot: string; color: string }> = {
+  active: { dot: 'var(--green)', color: 'var(--green-text)' },
+  available: { dot: 'var(--blue)', color: 'var(--blue-text)' },
+  preflight: { dot: 'var(--amber)', color: 'var(--amber-text)' },
+  offline: { dot: 'var(--text-3)', color: 'var(--text-3)' },
+}
 
 const APPROVALS = [
   {
@@ -111,28 +101,16 @@ const SCHEDULE = [
   },
 ]
 
-const STATE_CFG: Record<string, { dot: string; label: string; color: string }> =
-  {
-    in_flight: {
-      dot: 'var(--green)',
-      label: 'In flight',
-      color: 'var(--green-text)',
-    },
-    preflight: {
-      dot: 'var(--amber)',
-      label: 'Pre-flight',
-      color: 'var(--amber-text)',
-    },
-    scheduled: {
-      dot: 'var(--accent)',
-      label: 'Scheduled',
-      color: 'var(--accent)',
-    },
-  }
+const STATE_CFG: Record<string, { dot: string; color: string }> = {
+  in_flight: { dot: 'var(--green)', color: 'var(--green-text)' },
+  preflight: { dot: 'var(--amber)', color: 'var(--amber-text)' },
+  scheduled: { dot: 'var(--accent)', color: 'var(--accent)' },
+}
 
 export default function ManagerOverview() {
-  const online = TEAM.filter((t) => t.status !== 'offline').length
-  const active = TEAM.filter((t) => t.status === 'active').length
+  const { t } = useI18n(managerOverviewMessages)
+  const online = TEAM.filter((m) => m.status !== 'offline').length
+  const active = TEAM.filter((m) => m.status === 'active').length
 
   return (
     <div
@@ -149,10 +127,10 @@ export default function ManagerOverview() {
               margin: '0 0 4px',
             }}
           >
-            Operations overview
+            {t.title}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            Manager: S. Kim · MGR-007 · Wednesday, 9 September 2026
+            {t.managerLine}: S. Kim · MGR-007 · Wednesday, 9 September 2026
           </p>
         </div>
 
@@ -167,22 +145,22 @@ export default function ManagerOverview() {
         >
           {[
             {
-              label: 'Operators online',
+              label: t.stats.operatorsOnline,
               value: `${online}/${TEAM.length}`,
               color: online > 0 ? 'var(--green-text)' : 'var(--text)',
             },
             {
-              label: 'Active flights',
+              label: t.stats.activeFlights,
               value: `${active}`,
               color: active > 0 ? 'var(--blue-text)' : 'var(--text)',
             },
             {
-              label: 'Pending approvals',
+              label: t.stats.pendingApprovals,
               value: `${APPROVALS.length}`,
               color: APPROVALS.length > 0 ? 'var(--amber-text)' : 'var(--text)',
             },
             {
-              label: 'Missions today',
+              label: t.stats.missionsToday,
               value: `${SCHEDULE.length}`,
               color: 'var(--text)',
             },
@@ -248,7 +226,7 @@ export default function ManagerOverview() {
                   color: 'var(--amber-text)',
                 }}
               >
-                Pending approvals — action required
+                {t.pendingApprovalsAction}
               </span>
             </div>
             {APPROVALS.map((a, i) => (
@@ -283,7 +261,7 @@ export default function ManagerOverview() {
                       marginTop: 2,
                     }}
                   >
-                    {a.operator} · {a.drone} · Submitted {a.submitted}
+                    {a.operator} · {a.drone} · {t.submitted(a.submitted)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -299,7 +277,7 @@ export default function ManagerOverview() {
                       cursor: 'pointer',
                     }}
                   >
-                    Reject
+                    {t.reject}
                   </button>
                   <button
                     style={{
@@ -313,7 +291,7 @@ export default function ManagerOverview() {
                       cursor: 'pointer',
                     }}
                   >
-                    Approve
+                    {t.approve}
                   </button>
                 </div>
               </div>
@@ -344,12 +322,17 @@ export default function ManagerOverview() {
                 color: 'var(--text)',
               }}
             >
-              Mission schedule — today
+              {t.missionScheduleToday}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Time', 'Mission', 'Operator', 'Status'].map((h) => (
+                  {[
+                    t.tableHeaders.time,
+                    t.tableHeaders.mission,
+                    t.tableHeaders.operator,
+                    t.tableHeaders.status,
+                  ].map((h) => (
                     <th
                       key={h}
                       style={{
@@ -371,9 +354,11 @@ export default function ManagerOverview() {
                 {SCHEDULE.map((s, i) => {
                   const cfg = STATE_CFG[s.state] ?? {
                     dot: 'var(--text-3)',
-                    label: s.state,
                     color: 'var(--text-3)',
                   }
+                  const stateLabel =
+                    t.scheduleState[s.state as keyof typeof t.scheduleState] ??
+                    s.state
                   return (
                     <tr
                       key={s.id}
@@ -431,7 +416,9 @@ export default function ManagerOverview() {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {s.operator}
+                        {s.operator === 'Unassigned'
+                          ? t.unassigned
+                          : s.operator}
                       </td>
                       <td style={{ padding: '11px 16px' }}>
                         <span
@@ -452,7 +439,7 @@ export default function ManagerOverview() {
                               display: 'inline-block',
                             }}
                           />
-                          {cfg.label}
+                          {stateLabel}
                         </span>
                       </td>
                     </tr>
@@ -482,10 +469,12 @@ export default function ManagerOverview() {
                 color: 'var(--text)',
               }}
             >
-              Team status
+              {t.teamStatus}
             </div>
             {TEAM.map((m, i) => {
               const cfg = TEAM_CFG[m.status]
+              const teamLabel =
+                t.teamState[m.status as keyof typeof t.teamState] ?? m.status
               return (
                 <div
                   key={m.id}
@@ -562,7 +551,7 @@ export default function ManagerOverview() {
                           display: 'inline-block',
                         }}
                       />
-                      {cfg.label}
+                      {teamLabel}
                     </span>
                   </div>
                 </div>

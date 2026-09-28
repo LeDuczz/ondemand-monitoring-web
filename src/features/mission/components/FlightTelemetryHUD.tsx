@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
+import { flightTelemetryHudMessages } from './FlightTelemetryHUD.messages'
 
 interface FlightTelemetryHUDProps {
   deviceCode: string
@@ -17,6 +19,7 @@ export function FlightTelemetryHUD({
   onReturnToBase,
   isUploading,
 }: FlightTelemetryHUDProps) {
+  const { t } = useI18n(flightTelemetryHudMessages)
   const [file, setFile] = useState<File | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -35,7 +38,7 @@ export function FlightTelemetryHUD({
       setFile(null)
       setTimeout(() => setUploadSuccess(false), 4000)
     } catch (err) {
-      alert(`Lỗi upload ảnh: ${(err as Error).message}`)
+      alert(t.uploadError((err as Error).message))
     }
   }
 
@@ -75,7 +78,7 @@ export function FlightTelemetryHUD({
               letterSpacing: '-0.03em',
             }}
           >
-            Trạm Điều Khiển Chuyến Bay — {deviceCode} (Mission {missionId})
+            {t.stationTitle(deviceCode, missionId)}
           </h3>
         </div>
 
@@ -124,7 +127,7 @@ export function FlightTelemetryHUD({
             <span
               style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}
             >
-              ĐỘ CAO (ALTITUDE)
+              {t.altitudeLabel}
             </span>
             <Icon name="route" style={{ width: '16px', color: '#38bdf8' }} />
           </div>
@@ -140,7 +143,7 @@ export function FlightTelemetryHUD({
             54.2 <small style={{ fontSize: '0.8rem' }}>m</small>
           </strong>
           <span style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>
-            Relative Alt (AGL)
+            {t.relativeAlt}
           </span>
         </div>
 
@@ -155,7 +158,7 @@ export function FlightTelemetryHUD({
             <span
               style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}
             >
-              VẬN TỐC (GROUND SPEED)
+              {t.speedLabel}
             </span>
             <Icon name="activity" style={{ width: '16px', color: '#38bdf8' }} />
           </div>
@@ -186,7 +189,7 @@ export function FlightTelemetryHUD({
             <span
               style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}
             >
-              MỨC PIN DRONE
+              {t.batteryLabel}
             </span>
             <Icon name="check" style={{ width: '16px', color: '#4ade80' }} />
           </div>
@@ -263,7 +266,7 @@ export function FlightTelemetryHUD({
             <span
               style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc' }}
             >
-              Upload Hình ảnh / Video Chụp từ Drone (Amazon S3 Direct)
+              {t.uploadTitle}
             </span>
           </div>
           {uploadSuccess && (
@@ -277,7 +280,7 @@ export function FlightTelemetryHUD({
                 gap: '4px',
               }}
             >
-              <Icon name="check" /> Đã lưu tập tin lên S3 thành công!
+              <Icon name="check" /> {t.uploadSuccess}
             </span>
           )}
         </div>
@@ -308,7 +311,7 @@ export function FlightTelemetryHUD({
               minHeight: '44px',
             }}
           >
-            {file ? file.name : 'Chọn ảnh/video...'}
+            {file ? file.name : t.chooseFile}
           </Button>
 
           <Button
@@ -322,7 +325,7 @@ export function FlightTelemetryHUD({
               opacity: !file || isUploading ? 0.6 : 1,
             }}
           >
-            {isUploading ? '⏳ Uploading...' : 'Tải lên S3 Cloud'}
+            {isUploading ? t.uploading : t.uploadToS3}
           </Button>
         </div>
       </div>
@@ -343,7 +346,7 @@ export function FlightTelemetryHUD({
             boxShadow: '0 10px 20px rgba(234, 88, 12, 0.3)',
           }}
         >
-          🚁 HẠ CÁNH / BAY VỀ TRẠM (RETURN TO BASE)
+          {t.returnToBase}
         </button>
       </div>
     </div>

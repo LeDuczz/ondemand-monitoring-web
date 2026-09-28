@@ -1,3 +1,6 @@
+import { useI18n } from '../../../../shared/i18n'
+import { adminOverviewMessages } from '../i18n/adminOverview'
+
 const USERS = [
   {
     id: 'USR-0042',
@@ -91,15 +94,16 @@ const TYPE_CFG: Record<string, string> = {
 }
 
 const CONFIG_ITEMS = [
-  { label: 'Max flight altitude', value: '120 m AGL' },
-  { label: 'Default flight radius', value: '500 m' },
-  { label: 'Token TTL', value: '15 min' },
-  { label: 'Auto RTB battery threshold', value: '20%' },
-  { label: 'GCS heartbeat interval', value: '5 s' },
-  { label: 'Media retention period', value: '90 days' },
-]
+  { key: 'Max flight altitude', value: '120 m AGL' },
+  { key: 'Default flight radius', value: '500 m' },
+  { key: 'Token TTL', value: '15 min' },
+  { key: 'Auto RTB battery threshold', value: '20%' },
+  { key: 'GCS heartbeat interval', value: '5 s' },
+  { key: 'Media retention period', value: '90 days' },
+] as const
 
 export default function AdminOverview() {
+  const { t } = useI18n(adminOverviewMessages)
   const activeUsers = USERS.filter((u) => u.status === 'active').length
 
   return (
@@ -117,10 +121,10 @@ export default function AdminOverview() {
               margin: '0 0 4px',
             }}
           >
-            Administration
+            {t.title}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            L. Torres · ADM-001 · Platform Administrator · OMSS v2.4.1
+            L. Torres · ADM-001 · {t.headerLine} · OMSS v2.4.1
           </p>
         </div>
 
@@ -135,20 +139,24 @@ export default function AdminOverview() {
         >
           {[
             {
-              label: 'Total users',
+              label: t.stats.totalUsers,
               value: `${USERS.length}`,
-              sub: `${activeUsers} active`,
+              sub: t.stats.active(activeUsers),
             },
-            { label: 'Platform uptime', value: '99.97%', sub: 'Last 30 days' },
             {
-              label: 'API calls today',
+              label: t.stats.platformUptime,
+              value: '99.97%',
+              sub: t.stats.last30Days,
+            },
+            {
+              label: t.stats.apiCallsToday,
               value: '14,821',
-              sub: '↑ 8% vs yesterday',
+              sub: t.stats.vsYesterday,
             },
             {
-              label: 'Storage used',
+              label: t.stats.storageUsed,
               value: '1.2 TB',
-              sub: 'of 10 TB capacity',
+              sub: t.stats.ofCapacity,
             },
           ].map((s) => (
             <div
@@ -220,7 +228,7 @@ export default function AdminOverview() {
                     color: 'var(--text)',
                   }}
                 >
-                  User accounts
+                  {t.userAccounts}
                 </span>
                 <button
                   style={{
@@ -234,30 +242,34 @@ export default function AdminOverview() {
                     cursor: 'pointer',
                   }}
                 >
-                  Add user
+                  {t.addUser}
                 </button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Name', 'Email', 'Role', 'Status', 'Last active'].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          style={{
-                            padding: '8px 16px',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: 'var(--text-2)',
-                            textAlign: 'left',
-                            borderBottom: '1px solid var(--border)',
-                            background: 'var(--surface-2)',
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ),
-                    )}
+                    {[
+                      t.tableHeaders.name,
+                      t.tableHeaders.email,
+                      t.tableHeaders.role,
+                      t.tableHeaders.status,
+                      t.tableHeaders.lastActive,
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: '8px 16px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: 'var(--text-2)',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--border)',
+                          background: 'var(--surface-2)',
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -308,7 +320,7 @@ export default function AdminOverview() {
                           color: 'var(--text-2)',
                         }}
                       >
-                        {u.role}
+                        {t.roles[u.role as keyof typeof t.roles] ?? u.role}
                       </td>
                       <td style={{ padding: '11px 16px' }}>
                         <span
@@ -328,7 +340,7 @@ export default function AdminOverview() {
                             borderRadius: 4,
                           }}
                         >
-                          {u.status === 'active' ? 'Active' : 'Inactive'}
+                          {u.status === 'active' ? t.active : t.inactive}
                         </span>
                       </td>
                       <td
@@ -373,10 +385,10 @@ export default function AdminOverview() {
                     color: 'var(--text)',
                   }}
                 >
-                  Audit log
+                  {t.auditLog}
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                  Last 24 h
+                  {t.last24h}
                 </span>
               </div>
               {AUDIT.map((a, i) => (
@@ -459,7 +471,7 @@ export default function AdminOverview() {
                     color: 'var(--text)',
                   }}
                 >
-                  System configuration
+                  {t.systemConfiguration}
                 </span>
                 <button
                   style={{
@@ -473,12 +485,12 @@ export default function AdminOverview() {
                     cursor: 'pointer',
                   }}
                 >
-                  Edit
+                  {t.edit}
                 </button>
               </div>
               {CONFIG_ITEMS.map((c, i) => (
                 <div
-                  key={c.label}
+                  key={c.key}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -490,7 +502,7 @@ export default function AdminOverview() {
                   }}
                 >
                   <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                    {c.label}
+                    {t.configLabels[c.key]}
                   </span>
                   <span
                     style={{
@@ -523,16 +535,18 @@ export default function AdminOverview() {
                   marginBottom: 12,
                 }}
               >
-                Quick actions
+                {t.quickActions}
               </div>
-              {[
-                'Export audit log',
-                'Manage integrations',
-                'View system health',
-                'Backup configuration',
-              ].map((label, i) => (
+              {(
+                [
+                  'Export audit log',
+                  'Manage integrations',
+                  'View system health',
+                  'Backup configuration',
+                ] as const
+              ).map((label, i) => (
                 <button
-                  key={i}
+                  key={label}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -548,7 +562,7 @@ export default function AdminOverview() {
                     textAlign: 'left',
                   }}
                 >
-                  {label}
+                  {t.quickActionLabels[label]}
                   <svg
                     width="14"
                     height="14"

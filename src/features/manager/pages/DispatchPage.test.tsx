@@ -1,3 +1,4 @@
+import { act } from 'react'
 import {
   fireEvent,
   render,
@@ -8,6 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
+import { setLanguage } from '../../../shared/i18n'
 import { missionsApi } from '../api/missionsApi'
 import type { Mission, ResourceSuggestions } from '../types/missions'
 import { DispatchPage } from './DispatchPage'
@@ -229,14 +231,12 @@ describe('DispatchPage', () => {
   it('auto-assign picks rank 1 for both drone and operator', async () => {
     vi.spyOn(missionsApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
-    const droneSpy = vi
-      .spyOn(missionsApi, 'assignDrone')
-      .mockResolvedValue({
-        ...mission,
-        droneId: 'drn-01',
-        droneAssignmentId: 'mda-1',
-        status: 'RESOURCE_ASSIGNING',
-      })
+    const droneSpy = vi.spyOn(missionsApi, 'assignDrone').mockResolvedValue({
+      ...mission,
+      droneId: 'drn-01',
+      droneAssignmentId: 'mda-1',
+      status: 'RESOURCE_ASSIGNING',
+    })
     const operatorSpy = vi
       .spyOn(missionsApi, 'assignOperator')
       .mockResolvedValue({
@@ -364,5 +364,18 @@ describe('DispatchPage', () => {
         screen.getByText('Không lấy được gợi ý nguồn lực'),
       ).toBeInTheDocument(),
     )
+  })
+
+  it('renders English title and buttons when language is switched', async () => {
+    vi.spyOn(missionsApi, 'getMission').mockResolvedValue(mission)
+    vi.spyOn(missionsApi, 'getResourceSuggestions').mockResolvedValue(feasible)
+    render(<DispatchPage missionId="msn-2609-0153-1" />)
+    act(() => setLanguage('en'))
+    await waitFor(() =>
+      expect(screen.getByText('Resource assignment')).toBeInTheDocument(),
+    )
+    expect(
+      screen.getAllByRole('button', { name: 'Select this drone' })[0],
+    ).toBeTruthy()
   })
 })

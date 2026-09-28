@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { managerApi } from '../api/dashboardApi'
 import { DroneStatusDonut } from '../components/DroneStatusDonut'
 import { MissionStatusChart } from '../components/MissionStatusChart'
@@ -13,20 +14,15 @@ import {
   formatOrderAge,
   formatTicketAge,
 } from '../lib/actionItemAge'
-import { formatVnDateTime } from '../lib/formatVnDateTime'
+import { formatDateTime } from '../lib/formatVnDateTime'
+import { dashboardPageMessages } from './DashboardPage.messages'
 import { managerHref, type ManagerRoute } from '../routes'
 import type { ActionItem } from '../types/dashboard'
+import type { Language } from '../../../shared/i18n'
 import '../manager.css'
 
 type ActionItemType = ActionItem['type']
-
-const actionItemActionLabel: Record<ActionItemType, string> = {
-  ORDER_PENDING: 'Duyệt',
-  MISSION_UNASSIGNED: 'Phân công',
-  MAINTENANCE_TICKET: 'Xem ticket',
-  MEDIA_ACTION: 'Xử lý',
-  MISSION_FLYING: 'Giám sát',
-}
+type PageMessages = (typeof dashboardPageMessages)['vi']
 
 function actionItemRoute(item: ActionItem): ManagerRoute {
   switch (item.type) {
@@ -43,18 +39,18 @@ function actionItemRoute(item: ActionItem): ManagerRoute {
   }
 }
 
-function actionItemAge(now: Date, item: ActionItem): string {
+function actionItemAge(now: Date, item: ActionItem, lang: Language): string {
   switch (item.type) {
     case 'ORDER_PENDING':
-      return formatOrderAge(now, item.submittedAtIso)
+      return formatOrderAge(now, item.submittedAtIso, 24, lang)
     case 'MISSION_UNASSIGNED':
-      return formatMissionCountdown(now, item.scheduledStartIso)
+      return formatMissionCountdown(now, item.scheduledStartIso, lang)
     case 'MAINTENANCE_TICKET':
-      return formatTicketAge(now, item.openedAtIso)
+      return formatTicketAge(now, item.openedAtIso, lang)
     case 'MEDIA_ACTION':
-      return formatMinutesAgo(now, item.createdAtIso)
+      return formatMinutesAgo(now, item.createdAtIso, lang)
     case 'MISSION_FLYING':
-      return formatFlightMinutes(now, item.startedAtIso)
+      return formatFlightMinutes(now, item.startedAtIso, lang)
   }
 }
 
@@ -67,26 +63,20 @@ function actionItemAge(now: Date, item: ActionItem): string {
 // toggle. The list keeps its own small filter-chip row instead, matching
 // the design's "filter chip + Xoá lọc" affordance without depending on KPI
 // clicks (documented in evd/P3-manager-dashboard.md).
-const actionItemTypeLabel: Record<ActionItemType, string> = {
-  ORDER_PENDING: 'Đơn chờ duyệt',
-  MISSION_UNASSIGNED: 'Mission chưa phân công',
-  MAINTENANCE_TICKET: 'Ticket bảo trì',
-  MEDIA_ACTION: 'Media cần xử lý',
-  MISSION_FLYING: 'Đang bay',
-}
 
 export function DashboardPage() {
+  const { t, lang } = useI18n(dashboardPageMessages)
   const [now] = useState(() => new Date())
   const [filter, setFilter] = useState<ActionItemType | 'all'>('all')
   const query = useApiQuery((signal) => managerApi.getDashboard(signal), [])
 
-  if (query.loading) return <DashboardSkeleton />
+  if (query.loading) return <DashboardSkeleton t={t} />
 
   if (query.error) {
     return (
       <StateView
         state="error"
-        title="Không tải được số liệu điều hành"
+        title={t.loadError}
         error={query.error}
         onRetry={query.reload}
       />
@@ -109,41 +99,41 @@ export function DashboardPage() {
     <div className="odm-mgr-dash">
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Dashboard điều hành</h1>
-          <div className="odm-mgr-dash-date">{formatVnDateTime(now)}</div>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
+          <div className="odm-mgr-dash-date">{formatDateTime(now, lang)}</div>
         </div>
         <a className="odm-btn" href={managerHref({ screen: 'reports' })}>
-          Báo cáo
+          {t.reports}
         </a>
       </div>
 
       <div className="odm-mgr-kpi-row">
         <KpiCard
-          label="Đơn chờ duyệt"
+          label={t.kpis.pendingOrders}
           value={String(data.kpis.pendingOrders.count)}
           detail={data.kpis.pendingOrders.detail}
           href={managerHref({ screen: 'orderQueue' })}
         />
         <KpiCard
-          label="Mission hôm nay"
+          label={t.kpis.missionsToday}
           value={String(data.kpis.missionsToday.count)}
           detail={data.kpis.missionsToday.detail}
           href={managerHref({ screen: 'missions' })}
         />
         <KpiCard
-          label="Mission đang bay"
+          label={t.kpis.missionsInFlight}
           value={String(data.kpis.missionsInFlight.count)}
           detail={data.kpis.missionsInFlight.detail}
           href={managerHref({ screen: 'live' })}
         />
         <KpiCard
-          label="Drone sẵn sàng / tổng"
+          label={t.kpis.dronesReady}
           value={`${data.kpis.dronesReady.ready}/${data.kpis.dronesReady.total}`}
           detail={data.kpis.dronesReady.detail}
           href={managerHref({ screen: 'drones' })}
         />
         <KpiCard
-          label="Việc cần xử lý"
+          label={t.kpis.actionItems}
           value={String(data.kpis.actionItems.count)}
           detail={data.kpis.actionItems.detail}
           href={managerHref({ screen: 'media' })}
@@ -152,15 +142,13 @@ export function DashboardPage() {
 
       <div className="odm-mgr-charts-row">
         <div className="odm-card">
-          <div className="odm-card-header">
-            Mission theo trạng thái · 7 ngày gần nhất
-          </div>
+          <div className="odm-card-header">{t.missionsByStatus}</div>
           <div className="odm-card-body">
             <MissionStatusChart days={data.missionStatusByDay} />
           </div>
         </div>
         <div className="odm-card">
-          <div className="odm-card-header">Trạng thái đội drone</div>
+          <div className="odm-card-header">{t.droneFleetStatus}</div>
           <div className="odm-card-body">
             <DroneStatusDonut data={data.droneStatusBreakdown} />
           </div>
@@ -170,14 +158,14 @@ export function DashboardPage() {
       <div className="odm-mgr-lower">
         <div className="odm-card">
           <div className="odm-card-header">
-            <span>Cần xử lý ngay</span>
+            <span>{t.actionListTitle}</span>
             {filter !== 'all' ? (
               <button
                 type="button"
                 className="odm-btn odm-btn-gh odm-btn-sm"
                 onClick={() => setFilter('all')}
               >
-                Xoá lọc
+                {t.clearFilter}
               </button>
             ) : null}
           </div>
@@ -193,7 +181,7 @@ export function DashboardPage() {
                     setFilter((current) => (current === type ? 'all' : type))
                   }
                 >
-                  {actionItemTypeLabel[type]} (
+                  {t.actionTypeFilter[type]} (
                   {data.actionItems.filter((item) => item.type === type).length}
                   )
                 </button>
@@ -202,12 +190,9 @@ export function DashboardPage() {
           ) : null}
           {visibleItems.length === 0 ? (
             <div className="odm-mgr-empty-list">
-              <div className="odm-mgr-empty-list-title">
-                Không có việc cần xử lý
-              </div>
+              <div className="odm-mgr-empty-list-title">{t.emptyListTitle}</div>
               <div className="odm-mgr-empty-list-desc">
-                Đơn chờ duyệt, mission chưa phân công và ticket nghiêm trọng sẽ
-                hiện ở đây.
+                {t.emptyListDescription}
               </div>
             </div>
           ) : (
@@ -221,13 +206,13 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="odm-mgr-action-age odm-tn">
-                    {actionItemAge(now, item)}
+                    {actionItemAge(now, item, lang)}
                   </div>
                   <a
                     className="odm-btn odm-btn-sm"
                     href={managerHref(actionItemRoute(item))}
                   >
-                    {actionItemActionLabel[item.type]}
+                    {t.actionType[item.type]}
                   </a>
                 </li>
               ))}
@@ -237,7 +222,7 @@ export function DashboardPage() {
 
         {data.flyingMission ? (
           <div className="odm-card odm-mgr-flying-card">
-            <div className="odm-card-header">Đang bay</div>
+            <div className="odm-card-header">{t.flying.title}</div>
             <div className="odm-card-body odm-mgr-flying-body">
               <div>
                 <div className="odm-mgr-flying-code odm-mono">
@@ -248,14 +233,16 @@ export function DashboardPage() {
                 </div>
               </div>
               <div className="odm-mgr-flying-field">
-                <div className="odm-mgr-flying-label">Drone / phi công</div>
+                <div className="odm-mgr-flying-label">
+                  {t.flying.droneOperator}
+                </div>
                 <div>
                   {data.flyingMission.droneCode} ·{' '}
                   {data.flyingMission.operatorName}
                 </div>
               </div>
               <div className="odm-mgr-flying-field">
-                <div className="odm-mgr-flying-label">Pin</div>
+                <div className="odm-mgr-flying-label">{t.flying.battery}</div>
                 <div className="odm-mgr-battery">
                   <span className="odm-mgr-battery-track">
                     <span
@@ -269,7 +256,9 @@ export function DashboardPage() {
                 </div>
               </div>
               <div className="odm-mgr-flying-field">
-                <div className="odm-mgr-flying-label">Thời gian bay</div>
+                <div className="odm-mgr-flying-label">
+                  {t.flying.flightTime}
+                </div>
                 <div className="odm-tn">
                   {formatFlightProgress(
                     now,
@@ -285,7 +274,7 @@ export function DashboardPage() {
                   missionId: data.flyingMission.missionId,
                 })}
               >
-                Giám sát
+                {t.flying.monitor}
               </a>
             </div>
           </div>
@@ -317,7 +306,7 @@ function KpiCard({
   )
 }
 
-function DashboardSkeleton() {
+function DashboardSkeleton({ t }: { t: PageMessages }) {
   return (
     <div className="odm-mgr-dash" aria-busy="true" aria-live="polite">
       <div className="odm-mgr-kpi-row">
@@ -339,7 +328,7 @@ function DashboardSkeleton() {
       <div className="odm-card odm-mgr-chart-sk">
         <span className="odm-sk" style={{ width: '100%', height: 160 }} />
       </div>
-      <span className="odm-visually-hidden">Đang tải…</span>
+      <span className="odm-visually-hidden">{t.loading}</span>
     </div>
   )
 }

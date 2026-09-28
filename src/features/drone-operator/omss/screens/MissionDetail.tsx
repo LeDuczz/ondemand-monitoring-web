@@ -6,12 +6,16 @@ import {
   simulationMapImageStyle,
   worldToViewportPercent,
 } from '../../../../shared/lib/simulationMapProjection'
+import { useI18n } from '../../../../shared/i18n'
+import { missionDetailMessages } from '../i18n/missionDetail'
 import type { Mission, Drone, Screen, MissionRoutePoint } from '../types'
 import {
   MissionBadge,
   DroneBadge,
   PriorityBadge,
 } from '../components/StatusBadge'
+
+type MissionDetailMessages = typeof missionDetailMessages.vi
 
 interface Props {
   mission: Mission
@@ -153,7 +157,10 @@ function planBounds(points: MissionRoutePoint[]) {
   }
 }
 
-function mapPlanPoint(point: MissionRoutePoint, bounds: ReturnType<typeof planBounds>) {
+function mapPlanPoint(
+  point: MissionRoutePoint,
+  bounds: ReturnType<typeof planBounds>,
+) {
   const spanX = Math.max(1, bounds.maxX - bounds.minX)
   const spanY = Math.max(1, bounds.maxY - bounds.minY)
   const drawableWidth = MAP_WIDTH - MAP_PADDING * 2
@@ -205,34 +212,39 @@ function waypointVisualLabel(reason: string, point: MissionRoutePoint) {
   return String(point.sequence)
 }
 
-function MissionPlanMap({ mission }: { mission: Mission }) {
+function MissionPlanMap({
+  mission,
+  t,
+}: {
+  mission: Mission
+  t: MissionDetailMessages
+}) {
   const meta = useSimulationMapMeta()
   const routePoints = (mission.routePoints ?? [])
     .slice()
     .sort((a, b) => a.sequence - b.sequence)
   const hasRoute = routePoints.length > 0
   const bounds = hasRoute && !meta ? planBounds(routePoints) : null
-  const screenPoints =
-    !hasRoute
-      ? []
-      : routePoints.map((point) => ({
-          point,
-          screen: meta
-            ? mapSimulationPoint(point, meta)
-            : mapPlanPoint(point, bounds as ReturnType<typeof planBounds>),
-        }))
+  const screenPoints = !hasRoute
+    ? []
+    : routePoints.map((point) => ({
+        point,
+        screen: meta
+          ? mapSimulationPoint(point, meta)
+          : mapPlanPoint(point, bounds as ReturnType<typeof planBounds>),
+      }))
   const targetPoint =
     screenPoints.find(
       ({ point }, index) =>
         normalizedWaypointReason(point, index, screenPoints.length) ===
         'TARGET',
-    ) ??
-    screenPoints[screenPoints.length - 1]
+    ) ?? screenPoints[screenPoints.length - 1]
   const startPoint = screenPoints[0]
   const routePolyline = screenPoints
     .map(({ screen }) => `${screen.x.toFixed(2)},${screen.y.toFixed(2)}`)
     .join(' ')
-  const mapImagePath = meta?.image ?? '/simulation-viewer/simulation_map_top.png'
+  const mapImagePath =
+    meta?.image ?? '/simulation-viewer/simulation_map_top.png'
   const mapImageVersion = meta?.imageVersion
     ? `?v=${encodeURIComponent(meta.imageVersion)}`
     : ''
@@ -369,7 +381,7 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
             stroke="rgba(15,23,42,.9)"
             strokeWidth="2"
           >
-            {routePoints.length} mission plan waypoints
+            {t.missionPlanWaypoints(routePoints.length)}
           </text>
         </>
       ) : (
@@ -381,7 +393,7 @@ function MissionPlanMap({ mission }: { mission: Mission }) {
           fontSize="12"
           fontWeight="600"
         >
-          No mission plan waypoints
+          {t.noMissionPlanWaypoints}
         </text>
       )}
 
@@ -416,11 +428,17 @@ export default function MissionDetail({
   onBack,
   onStartFlight,
 }: Props) {
+  const { t, locale } = useI18n(missionDetailMessages)
   const hasPlan = (mission.routePoints?.length ?? 0) > 0
   const planSummary = mission.planSummary
   const isAcceptable = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
   const canStartFlight = hasPlan && mission.state === 'READY_TO_FLY'
-  const canContinueSetup = ['SCHEDULED', 'CONNECTED', 'PREFLIGHT_CHECKING', 'IN_FLIGHT'].includes(mission.state)
+  const canContinueSetup = [
+    'SCHEDULED',
+    'CONNECTED',
+    'PREFLIGHT_CHECKING',
+    'IN_FLIGHT',
+  ].includes(mission.state)
 
   return (
     <div
@@ -453,7 +471,7 @@ export default function MissionDetail({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        My missions
+        {t.myMissions}
       </button>
 
       {/* Page header */}
@@ -500,7 +518,14 @@ export default function MissionDetail({
           </div>
         </div>
         {(isAcceptable || canStartFlight || canContinueSetup) && (
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 10,
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
+            }}
+          >
             {canStartFlight && (
               <button
                 onClick={onStartFlight}
@@ -515,7 +540,7 @@ export default function MissionDetail({
                   cursor: 'pointer',
                 }}
               >
-                Start flight
+                {t.startFlight}
               </button>
             )}
             {canContinueSetup && (
@@ -532,41 +557,41 @@ export default function MissionDetail({
                   cursor: 'pointer',
                 }}
               >
-                {mission.state === 'SCHEDULED' ? 'Connect GCS' : 'Reconnect GCS'}
+                {mission.state === 'SCHEDULED' ? t.connectGcs : t.reconnectGcs}
               </button>
             )}
             {isAcceptable && (
               <>
-            <button
-              onClick={() => onScreen('accept-reject')}
-              style={{
-                padding: '9px 18px',
-                borderRadius: 8,
-                border: '1px solid var(--border-2)',
-                background: 'var(--surface)',
-                fontSize: 14,
-                fontWeight: 500,
-                color: 'var(--text)',
-                cursor: 'pointer',
-              }}
-            >
-              Reject
-            </button>
-            <button
-              onClick={() => onScreen('accept-reject')}
-              style={{
-                padding: '9px 20px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'var(--accent)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#fff',
-                cursor: 'pointer',
-              }}
-            >
-              Accept mission
-            </button>
+                <button
+                  onClick={() => onScreen('accept-reject')}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border-2)',
+                    background: 'var(--surface)',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--text)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t.reject}
+                </button>
+                <button
+                  onClick={() => onScreen('accept-reject')}
+                  style={{
+                    padding: '9px 20px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'var(--accent)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t.acceptMission}
+                </button>
               </>
             )}
           </div>
@@ -599,19 +624,19 @@ export default function MissionDetail({
               margin: '0 0 4px',
             }}
           >
-            Mission details
+            {t.missionDetails}
           </h2>
           <p
             style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 16px' }}
           >
-            Assignment and operational parameters
+            {t.assignmentAndParams}
           </p>
-          <KV label="Customer" value={mission.customer} />
-          <KV label="Mission type" value="Infrastructure survey" />
-          <KV label="Target location" value={mission.location} />
+          <KV label={t.fields.customer} value={mission.customer} />
+          <KV label={t.fields.missionType} value={t.fields.missionTypeValue} />
+          <KV label={t.fields.targetLocation} value={mission.location} />
           <KV
-            label="Scheduled"
-            value={new Date(mission.scheduledAt).toLocaleString('en-US', {
+            label={t.fields.scheduled}
+            value={new Date(mission.scheduledAt).toLocaleString(locale, {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
@@ -621,14 +646,21 @@ export default function MissionDetail({
             })}
           />
           <KV
-            label="Duration estimate"
+            label={t.fields.durationEstimate}
             value={`${mission.estimatedMinutes} min`}
           />
-          <KV label="Max altitude" value={`${mission.maxAltitudeM} m AGL`} />
-          <KV label="Distance" value={`${mission.distanceKm} km`} />
           <KV
-            label="Flight plan"
-            value={hasPlan ? `${mission.routePoints?.length ?? 0} waypoints ready` : 'No plan'}
+            label={t.fields.maxAltitude}
+            value={`${mission.maxAltitudeM} m AGL`}
+          />
+          <KV label={t.fields.distance} value={`${mission.distanceKm} km`} />
+          <KV
+            label={t.fields.flightPlan}
+            value={
+              hasPlan
+                ? t.waypointsReady(mission.routePoints?.length ?? 0)
+                : t.noPlan
+            }
           />
           {planSummary && (
             <div
@@ -653,42 +685,42 @@ export default function MissionDetail({
                     color: 'var(--text)',
                   }}
                 >
-                  Mission Planning
+                  {t.missionPlanning}
                 </div>
               </div>
               <div style={{ padding: '0 12px 2px' }}>
                 <KV
-                  label="Algorithm"
+                  label={t.plan.algorithm}
                   value={formatPlanStatus(planSummary.planningAlgorithm)}
                 />
                 <KV
-                  label="Route distance"
+                  label={t.plan.routeDistance}
                   value={formatPlanDistance(planSummary.plannedDistanceM)}
                 />
                 <KV
-                  label="Estimated energy"
+                  label={t.plan.estimatedEnergy}
                   value={formatPlanMah(planSummary.estimatedEnergyMah)}
                 />
                 <KV
-                  label="Current battery"
+                  label={t.plan.currentBattery}
                   value={formatPlanPercent(
                     planSummary.availableBatteryPercentAtPlanning,
                   )}
                 />
                 <KV
-                  label="Battery usage"
+                  label={t.plan.batteryUsage}
                   value={formatPlanPercent(
                     planSummary.estimatedBatteryUsedPercent,
                   )}
                 />
                 <KV
-                  label="After mission"
+                  label={t.plan.afterMission}
                   value={formatPlanPercent(
                     planSummary.estimatedRemainingBatteryPercent,
                   )}
                 />
                 <KV
-                  label="Safety reserve"
+                  label={t.plan.safetyReserve}
                   value={formatPlanPercent(planSummary.safetyReservePercent)}
                 />
                 <div
@@ -705,7 +737,7 @@ export default function MissionDetail({
                       minWidth: 140,
                     }}
                   >
-                    Feasibility
+                    {t.plan.feasibility}
                   </span>
                   <span
                     style={{
@@ -762,14 +794,14 @@ export default function MissionDetail({
                 margin: '0 0 2px',
               }}
             >
-              Location map
+              {t.locationMap}
             </h2>
             <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>
-              {mission.location} · {mission.routePoints?.length ?? 0} waypoint
-              {(mission.routePoints?.length ?? 0) === 1 ? '' : 's'}
+              {mission.location} ·{' '}
+              {t.waypointCount(mission.routePoints?.length ?? 0)}
             </p>
           </div>
-          <MissionPlanMap mission={mission} />
+          <MissionPlanMap mission={mission} t={t} />
         </div>
 
         {/* Drone */}
@@ -793,12 +825,12 @@ export default function MissionDetail({
               margin: '0 0 4px',
             }}
           >
-            Assigned drone
+            {t.assignedDrone}
           </h2>
           <p
             style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 16px' }}
           >
-            Current status and readiness
+            {t.currentStatusReadiness}
           </p>
 
           <div
@@ -884,17 +916,30 @@ export default function MissionDetail({
           </div>
 
           {[
-            { label: 'Model', value: drone.model },
-            { label: 'Serial', value: drone.serialNumber },
-            { label: 'Battery', value: `${drone.battery}%` },
-            { label: 'GPS', value: `${drone.gpsCount} satellites` },
+            { key: 'model', label: t.droneFields.model, value: drone.model },
             {
-              label: 'Storage',
-              value: `${(drone.storageMB / 1024).toFixed(1)} GB free`,
+              key: 'serial',
+              label: t.droneFields.serial,
+              value: drone.serialNumber,
             },
-          ].map((r) => (
+            {
+              key: 'other',
+              label: t.droneFields.battery,
+              value: `${drone.battery}%`,
+            },
+            {
+              key: 'other',
+              label: t.droneFields.gps,
+              value: `${drone.gpsCount} ${t.satellites}`,
+            },
+            {
+              key: 'other',
+              label: t.droneFields.storage,
+              value: `${(drone.storageMB / 1024).toFixed(1)} ${t.gbFree}`,
+            },
+          ].map((r, idx) => (
             <div
-              key={r.label}
+              key={`${r.label}-${idx}`}
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -911,7 +956,9 @@ export default function MissionDetail({
                   fontWeight: 500,
                   color: 'var(--text)',
                   fontFamily:
-                    r.label === 'Serial' ? 'var(--font-data)' : undefined,
+                    r.label === t.droneFields.serial
+                      ? 'var(--font-data)'
+                      : undefined,
                 }}
               >
                 {r.value}
@@ -937,12 +984,12 @@ export default function MissionDetail({
                 marginBottom: 4,
               }}
             >
-              Weather — Good to fly
+              {t.weatherGood}
             </div>
             <div
               style={{ fontSize: 12, color: 'var(--green-text)', opacity: 0.8 }}
             >
-              Wind 8 km/h · Visibility 14 km · Partly cloudy
+              {t.weatherDetail}
             </div>
           </div>
         </div>
@@ -975,7 +1022,7 @@ export default function MissionDetail({
               cursor: 'pointer',
             }}
           >
-            Reject mission
+            {t.rejectMission}
           </button>
           <button
             onClick={() => onScreen('accept-reject')}
@@ -990,7 +1037,7 @@ export default function MissionDetail({
               cursor: 'pointer',
             }}
           >
-            Accept mission
+            {t.acceptMission}
           </button>
         </div>
       )}

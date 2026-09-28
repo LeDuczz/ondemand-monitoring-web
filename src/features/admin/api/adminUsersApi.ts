@@ -24,14 +24,19 @@ export const adminUsersApi = {
   },
   /** `GET /api/v1/admin/users/{userId}` [BE]. */
   getUser(userId: string, signal?: AbortSignal): Promise<AdminUserResponse> {
-    return apiRequest<AdminUserResponse>(`/api/v1/admin/users/${userId}`, { signal })
+    return apiRequest<AdminUserResponse>(`/api/v1/admin/users/${userId}`, {
+      signal,
+    })
   },
   /** `PATCH /api/v1/admin/users/{userId}/status` [BE]. */
   updateUserStatus(userId: string, status: string): Promise<AdminUserResponse> {
-    return apiRequest<AdminUserResponse>(`/api/v1/admin/users/${userId}/status`, {
-      method: 'PATCH',
-      body: { status },
-    })
+    return apiRequest<AdminUserResponse>(
+      `/api/v1/admin/users/${userId}/status`,
+      {
+        method: 'PATCH',
+        body: { status },
+      },
+    )
   },
   /** `POST /api/v1/admin/accounts` [BE]. */
   createAccount(data: CreateAccountRequest): Promise<AdminUserResponse> {

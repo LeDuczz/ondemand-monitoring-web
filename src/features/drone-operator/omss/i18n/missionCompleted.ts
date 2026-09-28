@@ -1,0 +1,76 @@
+import { defineMessages } from '../../../../shared/i18n'
+
+export const missionCompletedMessages = defineMessages({
+  vi: {
+    missionCompleted: 'Nhiệm vụ hoàn thành',
+    statLabels: {
+      flightTime: 'Thời gian bay',
+      distance: 'Quãng đường',
+      maxAltitude: 'Độ cao tối đa',
+      avgSpeed: 'Tốc độ trung bình',
+      batteryUsed: 'Pin đã dùng',
+      photos: 'Ảnh',
+      video: 'Video',
+      mediaSize: 'Dung lượng media',
+    },
+    statUnits: {
+      consumed: 'đã dùng',
+      files: 'tệp',
+      duration: 'thời lượng',
+    },
+    missionStatistics: 'Thống kê nhiệm vụ',
+    missionRecord: 'Hồ sơ nhiệm vụ',
+    fields: {
+      mission: 'Nhiệm vụ',
+      customer: 'Khách hàng',
+      drone: 'Drone',
+      operator: 'Operator',
+      postflight: 'Sau bay',
+      media: 'Media',
+    },
+    currentOperator: 'Operator hiện tại',
+    inspectionCompleted: 'Đã hoàn tất kiểm tra',
+    openMediaReview: 'Mở kiểm tra media để xem trạng thái hiện tại',
+    nextStep: 'Bước tiếp theo:',
+    nextStepBody: (files: number, sizeGb: string) =>
+      `Tải lên ${files} tệp (${sizeGb} GB) để hoàn tất hồ sơ nhiệm vụ. Tải lên tự động sẽ bắt đầu ở màn hình tiếp theo.`,
+    backToMissions: 'Quay lại danh sách nhiệm vụ',
+    uploadMissionMedia: 'Tải lên media nhiệm vụ',
+  },
+  en: {
+    missionCompleted: 'Mission completed',
+    statLabels: {
+      flightTime: 'Flight time',
+      distance: 'Distance',
+      maxAltitude: 'Max altitude',
+      avgSpeed: 'Avg speed',
+      batteryUsed: 'Battery used',
+      photos: 'Photos',
+      video: 'Video',
+      mediaSize: 'Media size',
+    },
+    statUnits: {
+      consumed: 'consumed',
+      files: 'files',
+      duration: 'duration',
+    },
+    missionStatistics: 'Mission statistics',
+    missionRecord: 'Mission record',
+    fields: {
+      mission: 'Mission',
+      customer: 'Customer',
+      drone: 'Drone',
+      operator: 'Operator',
+      postflight: 'Post-flight',
+      media: 'Media',
+    },
+    currentOperator: 'Current operator',
+    inspectionCompleted: 'Inspection completed',
+    openMediaReview: 'Open media review for current status',
+    nextStep: 'Next step:',
+    nextStepBody: (files: number, sizeGb: string) =>
+      `Upload ${files} files (${sizeGb} GB) to finalise the mission record. Automatic upload will begin on the next screen.`,
+    backToMissions: 'Back to missions',
+    uploadMissionMedia: 'Upload mission media',
+  },
+})

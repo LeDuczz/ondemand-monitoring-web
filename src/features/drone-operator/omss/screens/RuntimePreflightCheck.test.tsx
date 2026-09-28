@@ -6,8 +6,16 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setLanguage } from '../../../../shared/i18n'
 import RuntimePreflightCheck from './RuntimePreflightCheck'
+
+// This suite asserts on the screen's original (English) copy, so switch the
+// i18n store to English before each test; setup.ts resets it back to 'vi'
+// afterEach.
+beforeEach(() => {
+  setLanguage('en')
+})
 
 const readyPayload = {
   checkId: 'PF-1',
@@ -162,19 +170,26 @@ describe('RuntimePreflightCheck', () => {
         ? mockJson({ checkId: 'PF-READY', status: 'CHECKING' })
         : mockJson(readyPayload),
     )
-    const onReady = vi.fn().mockRejectedValueOnce(new Error('Waiting for fresh drone telemetry'))
+    const onReady = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Waiting for fresh drone telemetry'))
     render(<RuntimePreflightCheck onReady={onReady} />)
 
     const continueButton = await screen.findByRole('button', {
       name: /ok - go to drone operator/i,
     })
-    await waitFor(() => expect((continueButton as HTMLButtonElement).disabled).toBe(false), {
-      timeout: 5000,
-    })
+    await waitFor(
+      () => expect((continueButton as HTMLButtonElement).disabled).toBe(false),
+      {
+        timeout: 5000,
+      },
+    )
     fireEvent.click(continueButton)
 
     await waitFor(() =>
-      expect(screen.getByText('Waiting for fresh drone telemetry')).toBeTruthy(),
+      expect(
+        screen.getByText('Waiting for fresh drone telemetry'),
+      ).toBeTruthy(),
     )
     expect(onReady).toHaveBeenCalledTimes(1)
     expect((continueButton as HTMLButtonElement).disabled).toBe(false)

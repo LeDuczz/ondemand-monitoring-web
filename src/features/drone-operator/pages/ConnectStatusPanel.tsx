@@ -1,13 +1,9 @@
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
+import { useI18n } from '../../../shared/i18n'
 import { operatorHref } from '../routes'
 import type { ConnectState } from './ConnectDroneScreen'
 import type { BackendMission } from '../api/liveMission'
-
-const TRACKER_STEPS = [
-  'Xác thực operator',
-  'Mở liên kết tới GCS',
-  'Nhận heartbeat telemetry',
-]
+import { connectStatusPanelMessages } from './ConnectStatusPanel.messages'
 
 export function ConnectStatusPanel({
   state,
@@ -18,6 +14,8 @@ export function ConnectStatusPanel({
   error: string | null
   mission?: BackendMission
 }) {
+  const { t, locale } = useI18n(connectStatusPanelMessages)
+  const TRACKER_STEPS = t.trackerSteps
   const doneCount =
     state === 'connected'
       ? 3
@@ -39,12 +37,12 @@ export function ConnectStatusPanel({
           : 'gray'
   const badgeLabel =
     state === 'connected'
-      ? 'Đã kết nối'
+      ? t.badge.connected
       : state === 'connecting'
-        ? 'Đang kết nối'
+        ? t.badge.connecting
         : state === 'failed'
-          ? 'Thất bại'
-          : 'Chưa kết nối'
+          ? t.badge.failed
+          : t.badge.default
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -69,12 +67,12 @@ export function ConnectStatusPanel({
               className="odm-mono"
               style={{ fontWeight: 700, fontSize: 13 }}
             >
-              {mission?.missionCode ?? mission?.id ?? 'Chưa chọn mission'}
+              {mission?.missionCode ?? mission?.id ?? t.noMissionSelected}
             </span>
-            <StatusBadge tone="green">Đã nhận</StatusBadge>
+            <StatusBadge tone="green">{t.received}</StatusBadge>
           </div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>
-            {mission?.orderTitle ?? 'Mission đang được gán'}
+            {mission?.orderTitle ?? t.missionBeingAssigned}
           </div>
           <div
             style={{
@@ -85,9 +83,13 @@ export function ConnectStatusPanel({
               gap: 3,
             }}
           >
-            <span>{mission?.scheduledStartAt ? new Date(mission.scheduledStartAt).toLocaleString('vi-VN') : 'Chưa có lịch bay'}</span>
-            <span>{mission?.droneCode ?? 'Chưa gán drone'}</span>
-            <span>{mission?.address ?? 'Chưa có địa chỉ'}</span>
+            <span>
+              {mission?.scheduledStartAt
+                ? new Date(mission.scheduledStartAt).toLocaleString(locale)
+                : t.noSchedule}
+            </span>
+            <span>{mission?.droneCode ?? t.noDroneAssigned}</span>
+            <span>{mission?.address ?? t.noAddress}</span>
           </div>
         </div>
       </div>
@@ -111,12 +113,9 @@ export function ConnectStatusPanel({
             }}
           >
             <div style={{ fontWeight: 700, fontSize: 15 }}>
-              Mã kết nối đã hết hạn
+              {t.codeExpiredTitle}
             </div>
-            <div style={{ fontSize: 12.5 }}>
-              Mã flight_token chỉ có hiệu lực 10 phút. Yêu cầu quản lý cấp mã
-              mới rồi nhập lại.
-            </div>
+            <div style={{ fontSize: 12.5 }}>{t.codeExpiredBody}</div>
           </div>
         </div>
       ) : (
@@ -130,7 +129,7 @@ export function ConnectStatusPanel({
               }}
             >
               <span style={{ fontWeight: 700, fontSize: 14 }}>
-                Trạng thái kết nối
+                {t.connectionStatus}
               </span>
               <StatusBadge tone={badgeTone}>{badgeLabel}</StatusBadge>
             </div>
@@ -226,11 +225,11 @@ export function ConnectStatusPanel({
                     fontSize: 12.5,
                   }}
                 >
-                  <span>Heartbeat telemetry</span>
+                  <span>{t.heartbeatTelemetry}</span>
                   <span className="odm-mono">10 Hz</span>
                 </div>
                 <div style={{ fontSize: 12, marginTop: 4 }}>
-                  telemetry_active = TRUE · pin drone 100% · 18 vệ tinh
+                  {t.telemetrySummary(18)}
                 </div>
               </div>
             ) : null}
@@ -244,7 +243,7 @@ export function ConnectStatusPanel({
           href={operatorHref({ screen: 'preflight', missionId: mission?.id })}
           style={{ width: '100%' }}
         >
-          Tiếp tục: precheck
+          {t.continueToPrecheck}
         </a>
       ) : (
         <a
@@ -252,7 +251,7 @@ export function ConnectStatusPanel({
           href={operatorHref({ screen: 'missions' })}
           style={{ width: '100%' }}
         >
-          Quay lại mission
+          {t.backToMission}
         </a>
       )}
     </div>

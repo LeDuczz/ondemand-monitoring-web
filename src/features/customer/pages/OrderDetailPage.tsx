@@ -1,26 +1,35 @@
 import { useState } from 'react'
 
-import { ErrorState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { customerApi } from '../api/customerApi'
 import { ContextAwareHelpWidget } from '../../support/components/ContextAwareHelpWidget'
 import {
   fmtDate,
   fmtDateTime,
-  MISSION_STATUS_META,
-  ORDER_STATUS_META,
+  getMissionStatusMeta,
+  getOrderStatusMeta,
 } from '../lib/orderStatus'
 import { customerHref } from '../routes'
+import { orderDetailPageMessages } from './OrderDetailPage.messages'
 
-const VERDICT_TONE = { FEASIBLE: 'green', RISKY: 'yellow', INFEASIBLE: 'red' } as const
-const VERDICT_LABEL = { FEASIBLE: 'Khả thi', RISKY: 'Có rủi ro', INFEASIBLE: 'Không khả thi' } as const
+const VERDICT_TONE = {
+  FEASIBLE: 'green',
+  RISKY: 'yellow',
+  INFEASIBLE: 'red',
+} as const
 
 export function OrderDetailPage({ orderId }: { orderId: string }) {
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [showAi, setShowAi] = useState(false)
+  const { t, lang, locale } = useI18n(orderDetailPageMessages)
 
   const { data, loading, error, reload } = useApiQuery(
     (signal) => customerApi.getOrder(orderId, signal),
@@ -30,18 +39,18 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
   if (loading) return <LoadingState />
   if (error || !data) return <ErrorState error={error} onRetry={reload} />
 
-  const statusMeta = ORDER_STATUS_META[data.status]
+  const statusMeta = getOrderStatusMeta(data.status, lang)
   const canCancel = data.canCancel
 
   async function handleCancel() {
-    if (!confirm('Bạn có chắc muốn huỷ đơn hàng này?')) return
+    if (!confirm(t.confirmCancel)) return
     setCancelling(true)
     setCancelError(null)
     try {
       await customerApi.cancelOrder(orderId)
       reload()
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Có lỗi xảy ra.'
+      const msg = e instanceof Error ? e.message : t.genericError
       setCancelError(msg)
     } finally {
       setCancelling(false)
@@ -56,7 +65,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           href={customerHref({ screen: 'orders' })}
           style={{ color: 'var(--tx3)', textDecoration: 'none' }}
         >
-          Đơn của tôi
+          {t.myOrders}
         </a>{' '}
         / <span style={{ color: 'var(--tx)' }}>{data.orderCode}</span>
       </div>
@@ -91,7 +100,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             fontSize: 13,
           }}
         >
-          <strong>Lý do từ chối:</strong> {data.approvalReason}
+          <strong>{t.rejectionReason}</strong> {data.approvalReason}
         </div>
       )}
 
@@ -106,48 +115,57 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
         }}
       >
         <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
-          Thông tin đơn hàng
+          {t.orderInfo}
         </h2>
         <div className="odm-cus-detail-grid">
           <div>
-            <div className="odm-cus-detail-label">Mã đơn</div>
-            <div className="odm-cus-detail-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+            <div className="odm-cus-detail-label">{t.orderCode}</div>
+            <div
+              className="odm-cus-detail-value"
+              style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+            >
               {data.orderCode}
             </div>
           </div>
           <div>
-            <div className="odm-cus-detail-label">Ngày nộp</div>
+            <div className="odm-cus-detail-label">{t.submittedAt}</div>
             <div className="odm-cus-detail-value">
-              {data.submittedAt ? fmtDateTime(data.submittedAt) : '—'}
+              {data.submittedAt ? fmtDateTime(data.submittedAt, locale) : '—'}
             </div>
           </div>
           <div>
-            <div className="odm-cus-detail-label">Địa điểm</div>
-            <div className="odm-cus-detail-value">{data.addressText ?? '—'}</div>
+            <div className="odm-cus-detail-label">{t.address}</div>
+            <div className="odm-cus-detail-value">
+              {data.addressText ?? '—'}
+            </div>
           </div>
           <div>
-            <div className="odm-cus-detail-label">Ngày bay mong muốn</div>
+            <div className="odm-cus-detail-label">{t.preferredDate}</div>
             <div className="odm-cus-detail-value">
-              {fmtDate(data.preferredDate)}
+              {fmtDate(data.preferredDate, locale)}
               {data.preferredTimeName ? ` · ${data.preferredTimeName}` : ''}
             </div>
           </div>
           {data.purpose && (
             <div style={{ gridColumn: '1 / -1' }}>
-              <div className="odm-cus-detail-label">Mục đích</div>
+              <div className="odm-cus-detail-label">{t.purpose}</div>
               <div className="odm-cus-detail-value">{data.purpose}</div>
             </div>
           )}
           {data.description && (
             <div style={{ gridColumn: '1 / -1' }}>
-              <div className="odm-cus-detail-label">Mô tả chi tiết</div>
-              <div style={{ fontSize: 13, lineHeight: 1.6 }}>{data.description}</div>
+              <div className="odm-cus-detail-label">{t.description}</div>
+              <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+                {data.description}
+              </div>
             </div>
           )}
           {data.serviceNames.length > 0 && (
             <div style={{ gridColumn: '1 / -1' }}>
-              <div className="odm-cus-detail-label">Dịch vụ</div>
-              <div className="odm-cus-detail-value">{data.serviceNames.join(', ')}</div>
+              <div className="odm-cus-detail-label">{t.service}</div>
+              <div className="odm-cus-detail-value">
+                {data.serviceNames.join(', ')}
+              </div>
             </div>
           )}
         </div>
@@ -169,9 +187,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: 4 }}>
-            ✓ Đã được duyệt
-            {data.approvalActorName ? ` bởi ${data.approvalActorName}` : ''}
-            {data.approvalAt ? ` · ${fmtDateTime(data.approvalAt)}` : ''}
+            {t.approved}
+            {data.approvalActorName ? t.approvedBy(data.approvalActorName) : ''}
+            {data.approvalAt
+              ? ` · ${fmtDateTime(data.approvalAt, locale)}`
+              : ''}
           </div>
           {data.approvalReason && (
             <div style={{ color: 'var(--tx2)' }}>{data.approvalReason}</div>
@@ -209,29 +229,43 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             onClick={() => setShowAi((v) => !v)}
           >
             <span>{showAi ? '▾' : '▸'}</span>
-            <span>Kết quả phân tích AI</span>
+            <span>{t.aiAnalysis}</span>
             <StatusBadge tone={VERDICT_TONE[data.aiSummary.verdict]}>
-              {VERDICT_LABEL[data.aiSummary.verdict]}
+              {t.aiVerdict[data.aiSummary.verdict]}
             </StatusBadge>
             <a
               href={customerHref({ screen: 'analysis', orderId })}
-              style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+              style={{
+                marginLeft: 'auto',
+                fontSize: 12,
+                color: 'var(--blue-solid)',
+                textDecoration: 'none',
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              Chi tiết →
+              {t.detail}
             </a>
           </button>
           {showAi && (
-            <div style={{ padding: '0 16px 14px', fontSize: 13, color: 'var(--tx2)' }}>
+            <div
+              style={{
+                padding: '0 16px 14px',
+                fontSize: 13,
+                color: 'var(--tx2)',
+              }}
+            >
               {data.aiSummary.blockerCount > 0 && (
-                <span style={{ marginRight: 12 }}>🚫 {data.aiSummary.blockerCount} blocker</span>
+                <span style={{ marginRight: 12 }}>
+                  {t.blockerCount(data.aiSummary.blockerCount)}
+                </span>
               )}
               {data.aiSummary.warningCount > 0 && (
-                <span style={{ marginRight: 12 }}>⚠ {data.aiSummary.warningCount} cảnh báo</span>
+                <span style={{ marginRight: 12 }}>
+                  {t.warningCount(data.aiSummary.warningCount)}
+                </span>
               )}
-              {data.aiSummary.blockerCount === 0 && data.aiSummary.warningCount === 0 && (
-                <span>Không có vấn đề.</span>
-              )}
+              {data.aiSummary.blockerCount === 0 &&
+                data.aiSummary.warningCount === 0 && <span>{t.noIssues}</span>}
             </div>
           )}
         </div>
@@ -267,33 +301,62 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             onClick={() => setShowHistory((v) => !v)}
           >
             <span>{showHistory ? '▾' : '▸'}</span>
-            <span>Lịch sử trạng thái</span>
-            <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--tx3)', marginLeft: 4 }}>
-              {data.statusHistory.length} sự kiện
+            <span>{t.statusHistory}</span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 400,
+                color: 'var(--tx3)',
+                marginLeft: 4,
+              }}
+            >
+              {t.eventCount(data.statusHistory.length)}
             </span>
           </button>
           {showHistory && (
             <div style={{ padding: '0 16px 16px' }}>
               <div className="odm-cus-timeline">
                 {[...data.statusHistory].reverse().map((evt, i) => {
-                  const meta = ORDER_STATUS_META[evt.status]
+                  const meta = getOrderStatusMeta(evt.status, lang)
                   return (
                     <div key={i} className="odm-cus-timeline-item">
                       <div className="odm-cus-timeline-dot" />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <StatusBadge tone={meta.tone}>
+                            {meta.label}
+                          </StatusBadge>
                           {evt.actorName && (
                             <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                              bởi {evt.actorName}
+                              {t.by(evt.actorName)}
                             </span>
                           )}
-                          <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--tx3)', marginLeft: 'auto' }}>
-                            {fmtDateTime(evt.at)}
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontFamily: 'var(--font-mono)',
+                              color: 'var(--tx3)',
+                              marginLeft: 'auto',
+                            }}
+                          >
+                            {fmtDateTime(evt.at, locale)}
                           </span>
                         </div>
                         {evt.note && (
-                          <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: 'var(--tx2)',
+                              marginTop: 2,
+                            }}
+                          >
                             {evt.note}
                           </div>
                         )}
@@ -319,11 +382,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           }}
         >
           <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
-            Các lần bay ({data.missions.length})
+            {t.missions(data.missions.length)}
           </h2>
           <div className="odm-cus-timeline">
             {data.missions.map((m) => {
-              const mMeta = MISSION_STATUS_META[m.status]
+              const mMeta = getMissionStatusMeta(m.status, lang)
               const dotClass =
                 m.status === 'COMPLETED'
                   ? 'done'
@@ -345,34 +408,56 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
                       }}
                     >
                       <span style={{ fontWeight: 600, fontSize: 13 }}>
-                        Lần {m.attemptNumber} · {m.missionCode}
+                        {t.attempt(m.attemptNumber, m.missionCode)}
                       </span>
                       <StatusBadge tone={mMeta.tone}>{mMeta.label}</StatusBadge>
                       {m.hasLive && (
                         <a
                           href={customerHref({ screen: 'live', orderId })}
-                          style={{ fontSize: 11, color: 'var(--blue-solid)', textDecoration: 'none' }}
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--blue-solid)',
+                            textDecoration: 'none',
+                          }}
                         >
-                          📡 Live
+                          {t.live}
                         </a>
                       )}
                       {m.mediaCount > 0 && (
                         <a
                           href={customerHref({ screen: 'media', orderId })}
-                          style={{ fontSize: 11, color: 'var(--blue-solid)', textDecoration: 'none' }}
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--blue-solid)',
+                            textDecoration: 'none',
+                          }}
                         >
-                          📷 {m.mediaCount} file
+                          {t.fileCount(m.mediaCount)}
                         </a>
                       )}
                     </div>
                     {m.scheduledStartAt && (
-                      <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>
-                        {fmtDateTime(m.scheduledStartAt)}
-                        {m.scheduledEndAt ? ` → ${fmtDateTime(m.scheduledEndAt)}` : ''}
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--tx3)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {fmtDateTime(m.scheduledStartAt, locale)}
+                        {m.scheduledEndAt
+                          ? ` → ${fmtDateTime(m.scheduledEndAt, locale)}`
+                          : ''}
                       </div>
                     )}
                     {m.failureReason && (
-                      <div style={{ fontSize: 12, color: 'var(--red-solid)', marginTop: 4 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--red-solid)',
+                          marginTop: 4,
+                        }}
+                      >
                         ⚠ {m.failureReason}
                       </div>
                     )}
@@ -393,14 +478,14 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             onClick={handleCancel}
             disabled={cancelling}
           >
-            {cancelling ? 'Đang huỷ...' : 'Huỷ đơn hàng'}
+            {cancelling ? t.cancelling : t.cancelOrder}
           </button>
         )}
         <a
           href={customerHref({ screen: 'orders' })}
           className="odm-btn odm-btn-gh"
         >
-          ← Quay lại
+          {t.back}
         </a>
       </div>
 

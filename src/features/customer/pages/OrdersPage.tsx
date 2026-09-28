@@ -7,32 +7,39 @@ import {
 } from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import type { OrderStatus } from '../../../shared/types/domain'
 import { customerApi } from '../api/customerApi'
-import { fmtDate, ORDER_STATUS_META } from '../lib/orderStatus'
+import { fmtDate, getOrderStatusMeta } from '../lib/orderStatus'
 import { customerHref } from '../routes'
+import { ordersPageMessages } from './OrdersPage.messages'
 
-type FilterOption = { label: string; value: OrderStatus | '' }
+type FilterOption = {
+  key: keyof typeof ordersPageMessages.vi.filters
+  value: OrderStatus | ''
+}
 
 const FILTERS: FilterOption[] = [
-  { label: 'Tất cả', value: '' },
-  { label: 'Nháp', value: 'DRAFT' },
-  { label: 'Đã phân tích AI', value: 'AI_ANALYZED' },
-  { label: 'Đã gửi duyệt', value: 'SUBMITTED' },
-  { label: 'Đang duyệt', value: 'PENDING' },
-  { label: 'Đã duyệt', value: 'APPROVED' },
-  { label: 'Đã lên lịch', value: 'SCHEDULED' },
-  { label: 'Đang thực hiện', value: 'IN_PROGRESS' },
-  { label: 'Hoàn thành', value: 'COMPLETED' },
-  { label: 'Từ chối', value: 'REJECTED' },
-  { label: 'Đã huỷ', value: 'CANCELLED' },
+  { key: 'all', value: '' },
+  { key: 'DRAFT', value: 'DRAFT' },
+  { key: 'AI_ANALYZED', value: 'AI_ANALYZED' },
+  { key: 'SUBMITTED', value: 'SUBMITTED' },
+  { key: 'PENDING', value: 'PENDING' },
+  { key: 'APPROVED', value: 'APPROVED' },
+  { key: 'SCHEDULED', value: 'SCHEDULED' },
+  { key: 'IN_PROGRESS', value: 'IN_PROGRESS' },
+  { key: 'COMPLETED', value: 'COMPLETED' },
+  { key: 'REJECTED', value: 'REJECTED' },
+  { key: 'CANCELLED', value: 'CANCELLED' },
 ]
 
 export function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
+  const { t, lang, locale } = useI18n(ordersPageMessages)
 
   const { data, loading, error, reload } = useApiQuery(
-    (signal) => customerApi.listOrders({ status: statusFilter || undefined, signal }),
+    (signal) =>
+      customerApi.listOrders({ status: statusFilter || undefined, signal }),
     [statusFilter],
   )
 
@@ -46,9 +53,12 @@ export function OrdersPage() {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Đơn của tôi</h1>
-        <a className="odm-btn odm-btn-p" href={customerHref({ screen: 'createOrder' })}>
-          + Tạo yêu cầu
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{t.title}</h1>
+        <a
+          className="odm-btn odm-btn-p"
+          href={customerHref({ screen: 'createOrder' })}
+        >
+          {t.createOrder}
         </a>
       </div>
 
@@ -60,7 +70,7 @@ export function OrdersPage() {
             className={`odm-btn ${statusFilter === f.value ? 'odm-btn-p' : 'odm-btn-gh'}`}
             onClick={() => setStatusFilter(f.value as OrderStatus | '')}
           >
-            {f.label}
+            {t.filters[f.key]}
           </button>
         ))}
       </div>
@@ -73,15 +83,14 @@ export function OrdersPage() {
 
       {!loading && data && data.items.length === 0 && (
         <EmptyState
-          title="Không có đơn hàng"
-          description={
-            statusFilter
-              ? 'Không có đơn ở trạng thái này.'
-              : 'Bạn chưa có đơn hàng nào.'
-          }
+          title={t.emptyTitle}
+          description={statusFilter ? t.emptyFiltered : t.emptyAll}
           action={
-            <a className="odm-btn odm-btn-p" href={customerHref({ screen: 'createOrder' })}>
-              Tạo yêu cầu giám sát
+            <a
+              className="odm-btn odm-btn-p"
+              href={customerHref({ screen: 'createOrder' })}
+            >
+              {t.emptyAction}
             </a>
           }
         />
@@ -99,28 +108,41 @@ export function OrdersPage() {
           <table className="odm-cus-orders-table">
             <thead>
               <tr>
-                <th>Mã đơn</th>
-                <th>Tiêu đề</th>
-                <th>Địa điểm</th>
-                <th>Ngày bay</th>
-                <th>Dịch vụ</th>
-                <th>Bán kính</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
+                <th>{t.columns.code}</th>
+                <th>{t.columns.title}</th>
+                <th>{t.columns.address}</th>
+                <th>{t.columns.flightDate}</th>
+                <th>{t.columns.service}</th>
+                <th>{t.columns.radius}</th>
+                <th>{t.columns.status}</th>
+                <th>{t.columns.actions}</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((order) => {
-                const meta = ORDER_STATUS_META[order.status]
+                const meta = getOrderStatusMeta(order.status, lang)
                 return (
                   <tr key={order.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--tx3)' }}>
+                    <td
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        color: 'var(--tx3)',
+                      }}
+                    >
                       {order.orderCode}
                     </td>
                     <td>
                       <a
-                        href={customerHref({ screen: 'orderDetail', orderId: order.id })}
-                        style={{ color: 'var(--tx)', textDecoration: 'none', fontWeight: 500 }}
+                        href={customerHref({
+                          screen: 'orderDetail',
+                          orderId: order.id,
+                        })}
+                        style={{
+                          color: 'var(--tx)',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                        }}
                       >
                         {order.title}
                         {order.hasNewMedia && (
@@ -135,7 +157,7 @@ export function OrdersPage() {
                               padding: '1px 5px',
                             }}
                           >
-                            Media mới
+                            {t.newMediaBadge}
                           </span>
                         )}
                       </a>
@@ -143,13 +165,17 @@ export function OrdersPage() {
                     <td style={{ color: 'var(--tx3)', fontSize: 12 }}>
                       {order.addressText ?? '—'}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                      {fmtDate(order.preferredDate)}
+                    <td
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                    >
+                      {fmtDate(order.preferredDate, locale)}
                     </td>
                     <td style={{ fontSize: 12 }}>
                       {order.serviceNames.join(', ') || '—'}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                    <td
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                    >
                       {order.radiusM != null ? `${order.radiusM} m` : '—'}
                     </td>
                     <td>
@@ -157,19 +183,34 @@ export function OrdersPage() {
                     </td>
                     <td>
                       <a
-                        href={customerHref({ screen: 'orderDetail', orderId: order.id })}
-                        style={{ fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+                        href={customerHref({
+                          screen: 'orderDetail',
+                          orderId: order.id,
+                        })}
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--blue-solid)',
+                          textDecoration: 'none',
+                        }}
                       >
-                        Xem
+                        {t.view}
                       </a>
-                      {(order.status === 'DRAFT' || order.status === 'AI_ANALYZED') && (
+                      {(order.status === 'DRAFT' ||
+                        order.status === 'AI_ANALYZED') && (
                         <>
                           {' · '}
                           <a
-                            href={customerHref({ screen: 'analysis', orderId: order.id })}
-                            style={{ fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+                            href={customerHref({
+                              screen: 'analysis',
+                              orderId: order.id,
+                            })}
+                            style={{
+                              fontSize: 12,
+                              color: 'var(--blue-solid)',
+                              textDecoration: 'none',
+                            }}
                           >
-                            AI
+                            {t.ai}
                           </a>
                         </>
                       )}

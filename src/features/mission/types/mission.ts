@@ -27,9 +27,7 @@ export type DeviceStatus =
 export type MediaType = 'IMAGE' | 'VIDEO' | 'THERMAL'
 
 export type PlanningAlgorithm =
-  | 'DIRECT'
-  | 'ASTAR_SHORTEST'
-  | 'ASTAR_ENERGY_AWARE'
+  'DIRECT' | 'ASTAR_SHORTEST' | 'ASTAR_ENERGY_AWARE'
 
 export type FeasibilityStatus =
   | 'FEASIBLE'

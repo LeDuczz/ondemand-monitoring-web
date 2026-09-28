@@ -5,6 +5,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
+import { setLanguage } from '../shared/i18n/languageStore'
+
 // vite.config.ts does not set `test.globals: true`, so @testing-library/react
 // cannot auto-detect a global `afterEach` to register its DOM cleanup. Without
 // this, multiple `render()` calls across tests in the same file pile up in
@@ -12,4 +14,26 @@ import { afterEach } from 'vitest'
 // matching N.
 afterEach(() => {
   cleanup()
+  // Reset the i18n language store between tests so a test that switches to
+  // English never leaks into the next test file (localStorage persists the
+  // pick, and languageStore is a module-level singleton).
+  localStorage.clear()
+  setLanguage('vi')
 })
+
+// jsdom does not implement window.matchMedia. Several components probe
+// prefers-reduced-motion / pointer capabilities (e.g. useParallax), so give
+// every test a default implementation (nothing matches) unless a test
+// stubs its own via vi.stubGlobal('matchMedia', ...).
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })
+}

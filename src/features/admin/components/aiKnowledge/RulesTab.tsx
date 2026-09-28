@@ -6,9 +6,11 @@ import {
   LoadingState,
 } from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { RuleSeverity, RuleCategory } from '../../types/aiKnowledge'
 import type { StatusTone } from '../../../../shared/types/domain'
+import { rulesTabMessages } from './RulesTab.messages'
 
 const CATEGORY_TONE: Record<RuleCategory, StatusTone> = {
   SCHEDULE: 'blue',
@@ -18,6 +20,7 @@ const CATEGORY_TONE: Record<RuleCategory, StatusTone> = {
 }
 
 export function RulesTab() {
+  const { t } = useI18n(rulesTabMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.listRules(signal),
     [],
@@ -65,12 +68,12 @@ export function RulesTab() {
         <thead>
           <tr>
             <th>Code</th>
-            <th>Tên luật</th>
-            <th>Loại</th>
-            <th>Mức độ</th>
-            <th>Trọng số</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
+            <th>{t.ruleName}</th>
+            <th>{t.type}</th>
+            <th>{t.severity}</th>
+            <th>{t.weight}</th>
+            <th>{t.status}</th>
+            <th>{t.actions}</th>
           </tr>
         </thead>
         <tbody>
@@ -128,7 +131,7 @@ export function RulesTab() {
                 </td>
                 <td>
                   <StatusBadge tone={rule.isActive ? 'green' : 'gray'}>
-                    {rule.isActive ? 'Bật' : 'Tắt'}
+                    {rule.isActive ? t.on : t.off}
                   </StatusBadge>
                 </td>
                 <td>
@@ -141,7 +144,7 @@ export function RulesTab() {
                         disabled={saving === rule.id}
                         onClick={() => handleSave(rule.id)}
                       >
-                        {saving === rule.id ? '...' : 'Lưu'}
+                        {saving === rule.id ? '...' : t.save}
                       </button>
                     )}
                     <button
@@ -150,7 +153,7 @@ export function RulesTab() {
                       style={{ fontSize: 11, padding: '3px 8px' }}
                       onClick={() => handleToggle(rule.id, rule.isActive)}
                     >
-                      {rule.isActive ? 'Tắt' : 'Bật'}
+                      {rule.isActive ? t.off : t.on}
                     </button>
                   </div>
                 </td>

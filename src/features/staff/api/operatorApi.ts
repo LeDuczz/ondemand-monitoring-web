@@ -1,5 +1,7 @@
 import { env } from '../../../config/env'
+import { getLanguage } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
+import { operatorApiMessages } from './operatorApi.messages'
 
 export interface AvailableOperator {
   id: string
@@ -21,7 +23,10 @@ export const operatorApi = {
       ApiResponse<AvailableOperator[]>
     >
     if (!response.ok) {
-      throw new Error(payload.message || `Failed to load operators (HTTP ${response.status})`)
+      throw new Error(
+        payload.message ||
+          operatorApiMessages[getLanguage()].loadFailed(response.status),
+      )
     }
     return payload.data ?? []
   },

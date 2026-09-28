@@ -1,0 +1,66 @@
+import { defineMessages } from '../../../shared/i18n'
+
+export const analysisPageMessages = defineMessages({
+  vi: {
+    backToOrder: '← Quay lại đơn hàng',
+    title: 'Phân tích AI',
+    verdict: {
+      FEASIBLE: 'Khả thi',
+      RISKY: 'Có rủi ro',
+      INFEASIBLE: 'Không khả thi',
+    },
+    severity: {
+      BLOCKER: 'Chặn',
+      WARNING: 'Cảnh báo',
+      INFO: 'Thông tin',
+    },
+    blockerSummary: (n: number) => `🚫 ${n} BLOCKER — không thể gửi duyệt`,
+    warningSummary: (n: number) => `⚠ ${n} Cảnh báo`,
+    infoSummary: (n: number) => `ℹ ${n} Thông tin`,
+    emptyTitle: 'Không có điểm cần lưu ý',
+    emptyDescription: 'AI đánh giá yêu cầu hoàn toàn khả thi.',
+    suggestion: (label: string) => `Gợi ý: ${label}`,
+    apply: 'Áp dụng',
+    ignore: 'Bỏ qua',
+    applied: '✓ Đã áp dụng gợi ý',
+    ignored: '— Bỏ qua',
+    confirmSubmit: 'Gửi đơn để quản lý duyệt?',
+    genericError: 'Có lỗi xảy ra.',
+    submitting: 'Đang gửi...',
+    submit: 'Gửi duyệt',
+    submitBlocked: (n: number) => `Gửi duyệt (cần giải quyết ${n} BLOCKER)`,
+    back: '← Quay lại',
+  },
+  en: {
+    backToOrder: '← Back to order',
+    title: 'AI analysis',
+    verdict: {
+      FEASIBLE: 'Feasible',
+      RISKY: 'Some risk',
+      INFEASIBLE: 'Not feasible',
+    },
+    severity: {
+      BLOCKER: 'Blocker',
+      WARNING: 'Warning',
+      INFO: 'Info',
+    },
+    blockerSummary: (n: number) =>
+      `🚫 ${n} BLOCKER — cannot submit for approval`,
+    warningSummary: (n: number) => `⚠ ${n} Warning(s)`,
+    infoSummary: (n: number) => `ℹ ${n} Info`,
+    emptyTitle: 'No issues found',
+    emptyDescription: 'AI assessed this request as fully feasible.',
+    suggestion: (label: string) => `Suggestion: ${label}`,
+    apply: 'Apply',
+    ignore: 'Ignore',
+    applied: '✓ Suggestion applied',
+    ignored: '— Ignored',
+    confirmSubmit: 'Submit this order for manager approval?',
+    genericError: 'Something went wrong.',
+    submitting: 'Submitting...',
+    submit: 'Submit for approval',
+    submitBlocked: (n: number) =>
+      `Submit for approval (resolve ${n} BLOCKER first)`,
+    back: '← Back',
+  },
+})

@@ -5,10 +5,11 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import {
-  mediaStatusLabel,
+  getMediaStatusLabel,
+  getMissionStatusLabel,
   mediaStatusTone,
-  missionStatusLabel,
   missionStatusTone,
 } from '../../../shared/lib/statusTone'
 import { mediaApi } from '../api/mediaApi'
@@ -17,17 +18,21 @@ import type {
   ManualUploadTask,
   WaitingDeliveryMission,
 } from '../types/media'
+import { mediaPageMessages } from './MediaPage.messages'
 import '../manager.css'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-function formatAge(iso: string): string {
+function formatAge(
+  iso: string,
+  t: (typeof mediaPageMessages)['vi']['age'],
+): string {
   const ms = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(ms / 60000)
-  if (mins < 60) return `${mins} phút trước`
+  if (mins < 60) return t.minsAgo(mins)
   const hours = Math.floor(ms / 3600000)
-  if (hours < 24) return `${hours} giờ trước`
-  return `${Math.floor(ms / 86400000)} ngày trước`
+  if (hours < 24) return t.hoursAgo(hours)
+  return t.daysAgo(Math.floor(ms / 86400000))
 }
 
 function formatVnDate(iso: string): string {
@@ -89,6 +94,7 @@ function ReassignModal({
   onClose,
   onSuccess,
 }: ReassignModalProps) {
+  const { t } = useI18n(mediaPageMessages)
   const [selectedId, setSelectedId] = useState(task.assignedOperatorId)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,7 +106,7 @@ function ReassignModal({
       await mediaApi.reassignTask(task.id, selectedId)
       onSuccess()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Có lỗi xảy ra')
+      setError(err instanceof ApiError ? err.message : t.genericError)
     } finally {
       setSubmitting(false)
     }
@@ -111,7 +117,7 @@ function ReassignModal({
       style={OVERLAY_STYLE}
       role="dialog"
       aria-modal="true"
-      aria-label="Giao lại cho phi công"
+      aria-label={t.reassignModal.ariaLabel}
     >
       <div style={{ ...DLG_STYLE, width: 460, maxWidth: 'calc(100% - 48px)' }}>
         <div style={DLG_HEAD_STYLE}>
@@ -119,7 +125,7 @@ function ReassignModal({
             <div
               style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}
             >
-              Giao lại cho phi công
+              {t.reassignModal.title}
             </div>
             <div
               style={{
@@ -129,14 +135,14 @@ function ReassignModal({
                 lineHeight: 1.45,
               }}
             >
-              Cập nhật manual_upload_task.assigned_operator_id
+              {t.reassignModal.subtitle}
             </div>
           </div>
           <button
             type="button"
             className="odm-btn odm-btn-gh odm-btn-ic1 odm-btn-sm"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.reassignModal.close}
           >
             ✕
           </button>
@@ -152,7 +158,7 @@ function ReassignModal({
                 marginBottom: 4,
               }}
             >
-              Phi công
+              {t.reassignModal.pilot}
             </span>
             <select
               className="odm-inp"
@@ -162,7 +168,9 @@ function ReassignModal({
               {operators.map((op) => (
                 <option key={op.id} value={op.id}>
                   {op.name}
-                  {op.id === task.assignedOperatorId ? ' (đang giao)' : ''}
+                  {op.id === task.assignedOperatorId
+                    ? t.reassignModal.currentlyAssignedSuffix
+                    : ''}
                 </option>
               ))}
             </select>
@@ -177,7 +185,7 @@ function ReassignModal({
         </div>
         <div style={DLG_FOOT_STYLE}>
           <button type="button" className="odm-btn" onClick={onClose}>
-            Huỷ
+            {t.reassignModal.cancel}
           </button>
           <button
             type="button"
@@ -185,7 +193,7 @@ function ReassignModal({
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? 'Đang giao…' : 'Giao lại'}
+            {submitting ? t.reassignModal.submitting : t.reassignModal.submit}
           </button>
         </div>
       </div>
@@ -204,9 +212,8 @@ function ReuploadModal({
   onClose,
   onSuccess,
 }: ReuploadModalProps) {
-  const [reason, setReason] = useState(
-    'Tệp bị lỗi khi xác thực, vui lòng upload lại từ thiết bị.',
-  )
+  const { t } = useI18n(mediaPageMessages)
+  const [reason, setReason] = useState(t.reuploadModal.defaultReason)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -217,7 +224,7 @@ function ReuploadModal({
       await mediaApi.requestReupload(_media.id, reason)
       onSuccess()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Có lỗi xảy ra')
+      setError(err instanceof ApiError ? err.message : t.genericError)
     } finally {
       setSubmitting(false)
     }
@@ -228,7 +235,7 @@ function ReuploadModal({
       style={OVERLAY_STYLE}
       role="dialog"
       aria-modal="true"
-      aria-label="Yêu cầu upload lại"
+      aria-label={t.reuploadModal.ariaLabel}
     >
       <div style={{ ...DLG_STYLE, width: 460, maxWidth: 'calc(100% - 48px)' }}>
         <div style={DLG_HEAD_STYLE}>
@@ -236,7 +243,7 @@ function ReuploadModal({
             <div
               style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}
             >
-              Yêu cầu upload lại?
+              {t.reuploadModal.title}
             </div>
             <div
               style={{
@@ -246,14 +253,14 @@ function ReuploadModal({
                 lineHeight: 1.45,
               }}
             >
-              Media về trạng thái PENDING_UPLOAD và phi công nhận thông báo.
+              {t.reuploadModal.subtitle}
             </div>
           </div>
           <button
             type="button"
             className="odm-btn odm-btn-gh odm-btn-ic1 odm-btn-sm"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.reuploadModal.close}
           >
             ✕
           </button>
@@ -269,7 +276,7 @@ function ReuploadModal({
                 marginBottom: 4,
               }}
             >
-              Ghi chú cho phi công
+              {t.reuploadModal.noteForPilot}
             </span>
             <textarea
               className="odm-inp"
@@ -288,7 +295,7 @@ function ReuploadModal({
         </div>
         <div style={DLG_FOOT_STYLE}>
           <button type="button" className="odm-btn" onClick={onClose}>
-            Huỷ
+            {t.reuploadModal.cancel}
           </button>
           <button
             type="button"
@@ -296,7 +303,7 @@ function ReuploadModal({
             onClick={handleSubmit}
             disabled={submitting || !reason.trim()}
           >
-            {submitting ? 'Đang gửi…' : 'Gửi yêu cầu'}
+            {submitting ? t.reuploadModal.submitting : t.reuploadModal.submit}
           </button>
         </div>
       </div>
@@ -311,6 +318,7 @@ type DeliverModalProps = {
 }
 
 function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
+  const { t } = useI18n(mediaPageMessages)
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -322,7 +330,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
       await mediaApi.deliverOrder(mission.orderId, note || undefined)
       onSuccess()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Có lỗi xảy ra')
+      setError(err instanceof ApiError ? err.message : t.genericError)
     } finally {
       setSubmitting(false)
     }
@@ -333,7 +341,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
       style={OVERLAY_STYLE}
       role="dialog"
       aria-modal="true"
-      aria-label="Giao kết quả cho khách"
+      aria-label={t.deliverModal.ariaLabel}
     >
       <div style={{ ...DLG_STYLE, width: 640, maxWidth: 'calc(100% - 48px)' }}>
         <div style={DLG_HEAD_STYLE}>
@@ -341,7 +349,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
             <div
               style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.01em' }}
             >
-              Giao kết quả cho khách
+              {t.deliverModal.title}
             </div>
             <div
               style={{
@@ -359,7 +367,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
             type="button"
             className="odm-btn odm-btn-gh odm-btn-ic1 odm-btn-sm"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.deliverModal.close}
           >
             ✕
           </button>
@@ -373,8 +381,11 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
           }}
         >
           <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
-            Xem trước {mission.totalFiles} tệp ({mission.photoCount} ảnh,{' '}
-            {mission.videoCount} video) · tất cả VALIDATED
+            {t.deliverModal.preview(
+              mission.totalFiles,
+              mission.photoCount,
+              mission.videoCount,
+            )}
           </div>
           <label style={{ display: 'block' }}>
             <span
@@ -386,14 +397,14 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
                 marginBottom: 4,
               }}
             >
-              note (hiển thị cho khách)
+              {t.deliverModal.noteForCustomer}
             </span>
             <textarea
               className="odm-inp"
               rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Ghi chú tuỳ chọn cho khách…"
+              placeholder={t.deliverModal.notePlaceholder}
             />
           </label>
           <div
@@ -406,12 +417,13 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
               lineHeight: 1.6,
             }}
           >
-            Khi xác nhận hệ thống sẽ: đặt{' '}
-            <span className="odm-mono">available_at</span> cho{' '}
-            {mission.totalFiles} tệp → tạo{' '}
-            <span className="odm-mono">media_delivery</span> (media_count ={' '}
-            {mission.totalFiles}) → gửi{' '}
-            <span className="odm-mono">notification</span> tới khách.
+            {t.deliverModal.confirmInfoBefore}
+            <span className="odm-mono">available_at</span>
+            {t.deliverModal.confirmInfoMid(mission.totalFiles)}
+            <span className="odm-mono">media_delivery</span>
+            {t.deliverModal.confirmInfoEnd(mission.totalFiles)}
+            <span className="odm-mono">notification</span>
+            {t.deliverModal.confirmInfoTail}
           </div>
           {error && (
             <div style={{ fontSize: 11.5, color: 'var(--red-fg)' }}>
@@ -421,7 +433,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
         </div>
         <div style={DLG_FOOT_STYLE}>
           <button type="button" className="odm-btn" onClick={onClose}>
-            Huỷ
+            {t.deliverModal.cancel}
           </button>
           <button
             type="button"
@@ -429,7 +441,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? 'Đang giao…' : 'Giao kết quả'}
+            {submitting ? t.deliverModal.submitting : t.deliverModal.submit}
           </button>
         </div>
       </div>
@@ -446,6 +458,7 @@ type ActiveModal =
   | null
 
 export function MediaPage() {
+  const { t, lang } = useI18n(mediaPageMessages)
   const [activeTab, setActiveTab] = useState<'man' | 'bad' | 'wait'>('man')
   const [modal, setModal] = useState<ActiveModal>(null)
 
@@ -471,7 +484,7 @@ export function MediaPage() {
             letterSpacing: '-.01em',
           }}
         >
-          Media và giao kết quả
+          {t.pageTitle}
         </h1>
         <div className="odm-card" style={{ padding: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -499,11 +512,11 @@ export function MediaPage() {
             letterSpacing: '-.01em',
           }}
         >
-          Media và giao kết quả
+          {t.pageTitle}
         </h1>
         <StateView
           state="error"
-          title="Không tải được danh sách media"
+          title={t.loadError}
           error={query.error}
           onRetry={reload}
         />
@@ -524,12 +537,12 @@ export function MediaPage() {
             letterSpacing: '-.01em',
           }}
         >
-          Media và giao kết quả
+          {t.pageTitle}
         </h1>
         <StateView
           state="empty"
-          title="Không có việc tồn đọng"
-          description="Mọi media đã được upload, xác thực và giao cho khách."
+          title={t.emptyTitle}
+          description={t.emptyDescription}
         />
       </div>
     )
@@ -556,11 +569,10 @@ export function MediaPage() {
               lineHeight: 1.25,
             }}
           >
-            Media và giao kết quả
+            {t.pageTitle}
           </h1>
           <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-            {manualCount} tệp cần upload thủ công · {badCount} tệp lỗi xác thực
-            · {waitCount} mission chờ giao
+            {t.summary(manualCount, badCount, waitCount)}
           </div>
         </div>
       </div>
@@ -577,9 +589,9 @@ export function MediaPage() {
       >
         {(
           [
-            { id: 'man', label: 'Manual upload', count: manualCount },
-            { id: 'bad', label: 'Media lỗi validate', count: badCount },
-            { id: 'wait', label: 'Chờ giao kết quả', count: waitCount },
+            { id: 'man', label: t.tabs.manual, count: manualCount },
+            { id: 'bad', label: t.tabs.bad, count: badCount },
+            { id: 'wait', label: t.tabs.wait, count: waitCount },
           ] as const
         ).map((tab) => (
           <button
@@ -629,12 +641,12 @@ export function MediaPage() {
             <table className="odm-table">
               <thead>
                 <tr>
-                  <th>Tệp</th>
+                  <th>{t.manualTab.file}</th>
                   <th style={{ width: 145 }}>Mission</th>
-                  <th>Lý do (manual_upload_task.reason)</th>
-                  <th style={{ width: 160 }}>Phi công được giao</th>
-                  <th style={{ width: 120 }}>Trạng thái</th>
-                  <th style={{ width: 100 }}>Tạo lúc</th>
+                  <th>{t.manualTab.reason}</th>
+                  <th style={{ width: 160 }}>{t.manualTab.assignedOperator}</th>
+                  <th style={{ width: 120 }}>{t.manualTab.status}</th>
+                  <th style={{ width: 100 }}>{t.manualTab.createdAt}</th>
                   <th style={{ width: 190, textAlign: 'right' }} />
                 </tr>
               </thead>
@@ -648,7 +660,7 @@ export function MediaPage() {
                       <div style={{ color: 'var(--tx3)', fontSize: 11.5 }}>
                         {task.mediaType} · {task.fileSizeLabel} ·{' '}
                         <StatusBadge tone={mediaStatusTone[task.mediaStatus]}>
-                          {mediaStatusLabel[task.mediaStatus]}
+                          {getMediaStatusLabel(task.mediaStatus, lang)}
                         </StatusBadge>
                       </div>
                     </td>
@@ -661,12 +673,14 @@ export function MediaPage() {
                     <td>{task.assignedOperatorName}</td>
                     <td>
                       <StatusBadge tone="yellow">
-                        {task.taskStatus === 'OPEN' ? 'Mở' : task.taskStatus}
+                        {task.taskStatus === 'OPEN'
+                          ? t.manualTab.open
+                          : task.taskStatus}
                       </StatusBadge>
                     </td>
                     <td>
                       <span className="odm-mono" style={{ fontSize: 11.5 }}>
-                        {formatAge(task.createdAt)}
+                        {formatAge(task.createdAt, t.age)}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -675,7 +689,7 @@ export function MediaPage() {
                         className="odm-btn odm-btn-sm"
                         onClick={() => setModal({ kind: 'reassign', task })}
                       >
-                        Giao lại
+                        {t.manualTab.reassign}
                       </button>
                     </td>
                   </tr>
@@ -684,8 +698,7 @@ export function MediaPage() {
             </table>
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-            Phi công bị lỗi upload 3 lần liên tiếp ở OPR-08 sẽ tự sinh
-            manual_upload_task.
+            {t.manualTab.footnote}
           </div>
         </div>
       )}
@@ -696,11 +709,11 @@ export function MediaPage() {
           <table className="odm-table">
             <thead>
               <tr>
-                <th>Tệp</th>
+                <th>{t.badTab.file}</th>
                 <th style={{ width: 145 }}>Mission</th>
-                <th style={{ width: 150 }}>media_status</th>
-                <th>validation_error</th>
-                <th style={{ width: 120 }}>Phi công</th>
+                <th style={{ width: 150 }}>{t.badTab.mediaStatus}</th>
+                <th>{t.badTab.validationError}</th>
+                <th style={{ width: 120 }}>{t.badTab.operator}</th>
                 <th style={{ width: 150, textAlign: 'right' }} />
               </tr>
             </thead>
@@ -720,7 +733,7 @@ export function MediaPage() {
                   </td>
                   <td>
                     <StatusBadge tone={mediaStatusTone[item.mediaStatus]}>
-                      {mediaStatusLabel[item.mediaStatus]}
+                      {getMediaStatusLabel(item.mediaStatus, lang)}
                     </StatusBadge>
                   </td>
                   <td>
@@ -737,7 +750,7 @@ export function MediaPage() {
                         setModal({ kind: 'reupload', media: item })
                       }
                     >
-                      Yêu cầu upload lại
+                      {t.badTab.requestReupload}
                     </button>
                   </td>
                 </tr>
@@ -771,7 +784,7 @@ export function MediaPage() {
                     <StatusBadge
                       tone={missionStatusTone[mission.missionStatus]}
                     >
-                      {missionStatusLabel[mission.missionStatus]}
+                      {getMissionStatusLabel(mission.missionStatus, lang)}
                     </StatusBadge>
                   </div>
                   <div style={{ fontWeight: 600, margin: '3px 0' }}>
@@ -822,11 +835,16 @@ export function MediaPage() {
                         border: '1px solid var(--bd)',
                       }}
                     >
-                      {mission.totalFiles} tệp · {mission.photoCount} ảnh ·{' '}
-                      {mission.videoCount} video
+                      {t.waitTab.filesSummary(
+                        mission.totalFiles,
+                        mission.photoCount,
+                        mission.videoCount,
+                      )}
                     </span>
                     {mission.allValidated && (
-                      <StatusBadge tone="green">Đã xác thực</StatusBadge>
+                      <StatusBadge tone="green">
+                        {t.waitTab.validated}
+                      </StatusBadge>
                     )}
                     <span
                       style={{
@@ -843,7 +861,8 @@ export function MediaPage() {
                         border: '1px solid var(--bd)',
                       }}
                     >
-                      validated_at {formatVnDate(mission.validatedAt)}
+                      {t.waitTab.validatedAt}{' '}
+                      {formatVnDate(mission.validatedAt)}
                     </span>
                   </div>
                 </div>
@@ -852,7 +871,7 @@ export function MediaPage() {
                   className="odm-btn odm-btn-p"
                   onClick={() => setModal({ kind: 'deliver', mission })}
                 >
-                  Giao kết quả cho khách
+                  {t.waitTab.deliverToCustomer}
                 </button>
               </div>
             </div>

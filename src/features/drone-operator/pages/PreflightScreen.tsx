@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { env } from '../../../config/env'
+import { useI18n } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
@@ -8,8 +9,15 @@ import { useActiveMission } from '../api/useActiveMission'
 import { backendPreflightTokenStorageKey } from '../lib/flightWorkflowStorage'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
+import { preflightScreenMessages } from '../i18n/preflightScreen.messages'
 import { FlightStepHeader } from './FlightStepper'
-import { PREFLIGHT_GROUPS, type PreflightItemDef } from './PreflightItem'
+import { preflightGroups, type PreflightItemDef } from './PreflightItem'
+
+// Internal sentinel for "no mission selected" — never rendered, only used
+// for control flow so it stays stable across language switches (unlike the
+// translated `noMissionSelected` label, which is only for display).
+const NO_MISSION_SENTINEL = '__no_mission_selected__'
+const NO_DRONE_SENTINEL = '__no_drone_assigned__'
 
 const controlBaseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
@@ -85,7 +93,6 @@ type ItemState = {
   status?: RuntimeStatus
 }
 
-const ALL_ITEMS = PREFLIGHT_GROUPS.flatMap((group) => group.items)
 const RUNTIME_KEY_MAP: Record<string, PreflightItemKey> = {
   GAZEBO: 'gazebo',
   PX4: 'px4',
@@ -128,13 +135,19 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
   return mapped
 }
 
-function statusText(status?: RuntimeStatus, message?: string) {
-  if (!status) return 'Chưa trigger precheck'
-  if (status === 'PASS') return message || 'Đạt'
-  if (status === 'WARN') return message || 'Cảnh báo nhưng không chặn bay'
-  if (status === 'FAIL') return message || 'Không đạt'
-  if (status === 'CHECKING') return message || 'Đang kiểm tra'
-  return message || 'Đang chờ'
+type PreflightMessages = (typeof preflightScreenMessages)['vi']
+
+function statusText(
+  t: PreflightMessages,
+  status?: RuntimeStatus,
+  message?: string,
+) {
+  if (!status) return t.statusNoTrigger
+  if (status === 'PASS') return message || t.itemPass
+  if (status === 'WARN') return message || t.statusWarnNoBlock
+  if (status === 'FAIL') return message || t.itemFail
+  if (status === 'CHECKING') return message || t.statusChecking
+  return message || t.statusWaiting
 }
 
 function preflightStateStorageKey(missionId: string, droneLabel: string) {
@@ -295,7 +308,10 @@ function writeStoredWeatherState(
   try {
     window.localStorage.setItem(
       storageKey,
-      JSON.stringify({ savedAt: Date.now(), status } satisfies StoredWeatherStatus),
+      JSON.stringify({
+        savedAt: Date.now(),
+        status,
+      } satisfies StoredWeatherStatus),
     )
   } catch {
     // Weather check still works if storage is unavailable.
@@ -303,19 +319,28 @@ function writeStoredWeatherState(
 }
 
 function isMissionInFlight(status?: string | null) {
-  return status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING'
+  return (
+    status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING'
+  )
 }
 
 export function PreflightScreen({ missionId }: { missionId?: string }) {
   const mission = useActiveMission(missionId)
+  const { t } = useI18n(preflightScreenMessages)
   const [startError, setStartError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
   async function handleContinueToHandover() {
-    if (!mission.missionId || !mission.data?.droneCode) { setStartError('Mission chưa được gán drone'); return }
+    if (!mission.missionId || !mission.data?.droneCode) {
+      setStartError(t.noDroneAssignedError)
+      return
+    }
     if (isMissionInFlight(mission.data.status)) {
       window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-      window.location.hash = operatorHref({ screen: 'flight', missionId: mission.missionId })
+      window.location.hash = operatorHref({
+        screen: 'flight',
+        missionId: mission.missionId,
+      })
       return
     }
     setStarting(true)
@@ -324,34 +349,64 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
       const droneCode = mission.data.droneCode
       await flightControlApi.bindSession(mission.missionId, droneCode)
       if (mission.data.status === 'READY_TO_FLY') {
-        window.location.hash = operatorHref({ screen: 'handover', missionId: mission.missionId })
+        window.location.hash = operatorHref({
+          screen: 'handover',
+          missionId: mission.missionId,
+        })
         return
       }
-      const storedToken = window.sessionStorage.getItem(backendPreflightTokenStorageKey(mission.missionId, droneCode))
+      const storedToken = window.sessionStorage.getItem(
+        backendPreflightTokenStorageKey(mission.missionId, droneCode),
+      )
       const check = storedToken
         ? null
         : await missionApi.runPreflightCheck(mission.missionId, droneCode)
       const tokenValue = storedToken ?? check?.flightToken?.tokenValue
-      if (!tokenValue) throw new Error(check?.failureReason || 'Backend preflight không đạt')
-      window.sessionStorage.setItem(backendPreflightTokenStorageKey(mission.missionId, droneCode), tokenValue)
-      window.location.hash = operatorHref({ screen: 'handover', missionId: mission.missionId })
+      if (!tokenValue)
+        throw new Error(check?.failureReason || t.backendPreflightFailed)
+      window.sessionStorage.setItem(
+        backendPreflightTokenStorageKey(mission.missionId, droneCode),
+        tokenValue,
+      )
+      window.location.hash = operatorHref({
+        screen: 'handover',
+        missionId: mission.missionId,
+      })
     } catch (cause) {
-      setStartError(cause instanceof Error ? cause.message : 'Không xác nhận được precheck')
+      setStartError(
+        cause instanceof Error ? cause.message : t.confirmPrecheckFailed,
+      )
     } finally {
       setStarting(false)
     }
   }
 
-  return <>
-    {(mission.error || startError) && <p role="alert" style={{ color: 'var(--red-fg)' }}>{startError ?? (mission.error instanceof Error ? mission.error.message : 'Không tải được mission')}</p>}
-    {starting && <p>Đang xác nhận telemetry, precheck và flight token…</p>}
-    <PreflightChecklistPanel missionId={mission.missionId ?? 'Chưa chọn mission'}
-      missionLabel={mission.data?.missionCode ?? mission.missionId ?? 'Chưa chọn mission'}
-      droneLabel={mission.data?.droneCode ?? 'Chưa gán drone'}
-      missionStatus={mission.data?.status}
-      latitude={mission.data?.latitude ?? undefined} longitude={mission.data?.longitude ?? undefined}
-      onReady={() => { void handleContinueToHandover() }} />
-  </>
+  return (
+    <>
+      {(mission.error || startError) && (
+        <p role="alert" style={{ color: 'var(--red-fg)' }}>
+          {startError ??
+            (mission.error instanceof Error
+              ? mission.error.message
+              : t.loadMissionFailed)}
+        </p>
+      )}
+      {starting && <p>{t.confirmingTelemetry}</p>}
+      <PreflightChecklistPanel
+        missionId={mission.missionId ?? NO_MISSION_SENTINEL}
+        missionLabel={
+          mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
+        }
+        droneLabel={mission.data?.droneCode ?? NO_DRONE_SENTINEL}
+        missionStatus={mission.data?.status}
+        latitude={mission.data?.latitude ?? undefined}
+        longitude={mission.data?.longitude ?? undefined}
+        onReady={() => {
+          void handleContinueToHandover()
+        }}
+      />
+    </>
+  )
 }
 
 export function PreflightChecklistPanel({
@@ -373,6 +428,11 @@ export function PreflightChecklistPanel({
   onReady?: () => void
   embedded?: boolean
 }) {
+  const { t, lang } = useI18n(preflightScreenMessages)
+  const ALL_ITEMS = useMemo(
+    () => preflightGroups(lang).flatMap((group) => group.items),
+    [lang],
+  )
   const storageKey = useMemo(
     () => preflightStateStorageKey(missionId, droneLabel),
     [droneLabel, missionId],
@@ -391,8 +451,11 @@ export function PreflightChecklistPanel({
       readStoredWeatherState(weatherStorageKey),
     )
   const [error, setError] = useState<string | null>(null)
-  const [backendPreflightMessage, setBackendPreflightMessage] = useState<string | null>(null)
-  const [backendPreflightRegistering, setBackendPreflightRegistering] = useState(false)
+  const [backendPreflightMessage, setBackendPreflightMessage] = useState<
+    string | null
+  >(null)
+  const [backendPreflightRegistering, setBackendPreflightRegistering] =
+    useState(false)
   const backendPreflightRegisteredRef = useRef(false)
   const [triggering, setTriggering] = useState(false)
   const [weatherChecking, setWeatherChecking] = useState(false)
@@ -414,8 +477,9 @@ export function PreflightChecklistPanel({
     () => mapRuntimeToItems(runtimeStatus?.checks ?? []),
     [runtimeStatus],
   )
-  const nOk = ALL_ITEMS.filter((item) => itemStates[item.key]?.result === 'ok')
-    .length
+  const nOk = ALL_ITEMS.filter(
+    (item) => itemStates[item.key]?.result === 'ok',
+  ).length
   const nTotal = ALL_ITEMS.length
   const failedItems = ALL_ITEMS.filter(
     (item) => itemStates[item.key]?.result === 'fail',
@@ -452,7 +516,7 @@ export function PreflightChecklistPanel({
       setCheckId(payload.checkId)
     } catch {
       setRuntimeStatus(null)
-      setError('Không gọi được API trigger precheck. Hãy mở Drone Stack rồi bấm Trigger lại.')
+      setError(t.triggerFailed)
     } finally {
       setTriggering(false)
     }
@@ -463,24 +527,28 @@ export function PreflightChecklistPanel({
     setWeatherError(null)
 
     try {
-      const response = await authenticatedFetch(`${env.apiBaseUrl}/api/weather/preflight-check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          missionId,
-          droneCode: droneLabel,
-          latitude,
-          longitude,
-        }),
-      })
+      const response = await authenticatedFetch(
+        `${env.apiBaseUrl}/api/weather/preflight-check`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            missionId,
+            droneCode: droneLabel,
+            latitude,
+            longitude,
+          }),
+        },
+      )
       if (!response.ok) throw new Error(`Weather API ${response.status}`)
       const payload = await response.json()
       const nextStatus = payload.data ?? payload
-      if (!isWeatherStatus(nextStatus)) throw new Error('Invalid weather payload')
+      if (!isWeatherStatus(nextStatus))
+        throw new Error('Invalid weather payload')
       setWeatherStatus(nextStatus)
       writeStoredWeatherState(weatherStorageKey, nextStatus)
     } catch {
-      setWeatherError('Không gọi được API thời tiết. Kiểm tra backend rồi bấm lại.')
+      setWeatherError(t.weatherApiFailed)
     } finally {
       setWeatherChecking(false)
     }
@@ -559,7 +627,7 @@ export function PreflightChecklistPanel({
 
   useEffect(() => {
     if (!controllerOnline) return
-    if (!missionId || missionId === 'Chưa chọn mission') return
+    if (!missionId || missionId === NO_MISSION_SENTINEL) return
     let alive = true
     const controller = new AbortController()
 
@@ -600,7 +668,7 @@ export function PreflightChecklistPanel({
         }
       } catch {
         if (!alive) return
-        setError('Mất kết nối precheck API. Bấm Trigger precheck để chạy lại.')
+        setError(t.precheckConnectionLost)
         setCheckId(null)
       }
     }
@@ -648,15 +716,22 @@ export function PreflightChecklistPanel({
     return () => {
       alive = false
     }
-  }, [checkId, missionId, runtimeSessionId, runtimeStatus, storageKey, triggering])
+  }, [
+    checkId,
+    missionId,
+    runtimeSessionId,
+    runtimeStatus,
+    storageKey,
+    triggering,
+  ])
 
   useEffect(() => {
     if (
       !isReady ||
       isAlreadyInFlight ||
       backendPreflightRegisteredRef.current ||
-      missionId === 'Chưa chọn mission' ||
-      droneLabel === 'Chưa gán drone'
+      missionId === NO_MISSION_SENTINEL ||
+      droneLabel === NO_DRONE_SENTINEL
     ) {
       return
     }
@@ -666,22 +741,26 @@ export function PreflightChecklistPanel({
 
     async function registerBackendPreflight() {
       setBackendPreflightRegistering(true)
-      setBackendPreflightMessage('Đang xác nhận precheck với backend...')
+      setBackendPreflightMessage(t.confirmingBackendPrecheck)
       try {
         const check = await missionApi.runPreflightCheck(missionId, droneLabel)
         if (!alive) return
         if (!check.overallPassed || !check.flightToken) {
-          throw new Error(check.failureReason || 'Backend preflight không đạt')
+          throw new Error(check.failureReason || t.backendPreflightFailed)
         }
         window.sessionStorage.setItem(
           backendPreflightTokenStorageKey(missionId, droneLabel),
           check.flightToken.tokenValue,
         )
-        setBackendPreflightMessage('Backend đã đổi mission sang READY_TO_FLY.')
+        setBackendPreflightMessage(t.backendSwitchedReady)
       } catch (cause) {
         if (!alive) return
         backendPreflightRegisteredRef.current = false
-        setBackendPreflightMessage(cause instanceof Error ? cause.message : 'Không xác nhận được backend preflight.')
+        setBackendPreflightMessage(
+          cause instanceof Error
+            ? cause.message
+            : t.backendPreflightUnconfirmed,
+        )
       } finally {
         if (alive) setBackendPreflightRegistering(false)
       }
@@ -706,7 +785,7 @@ export function PreflightChecklistPanel({
       }}
     >
       <FlightStepHeader
-        title="Preflight checklist"
+        title={t.stepTitle}
         missionId={missionLabel ?? missionId}
         active={isAlreadyInFlight ? 5 : 3}
         right={
@@ -728,11 +807,16 @@ export function PreflightChecklistPanel({
               textOverflow: 'ellipsis',
             }}
           >
-            {droneLabel}
+            {droneLabel === NO_DRONE_SENTINEL ? t.noDroneAssigned : droneLabel}
           </span>
         }
       />
-      <div style={{ padding: '18px 22px', overflow: embedded ? 'auto' : undefined }}>
+      <div
+        style={{
+          padding: '18px 22px',
+          overflow: embedded ? 'auto' : undefined,
+        }}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <SummaryBanner
             nOk={nOk}
@@ -758,7 +842,7 @@ export function PreflightChecklistPanel({
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {PREFLIGHT_GROUPS.map((group) => (
+            {preflightGroups(lang).map((group) => (
               <div
                 key={group.title}
                 style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
@@ -829,13 +913,22 @@ function SummaryBanner({
   backendPreflightMessage?: string | null
   backendPreflightRegistering?: boolean
 }) {
-  const bg = isFailed ? 'var(--red-bg)' : isReady ? 'var(--green-bg)' : 'var(--sf)'
+  const { t } = useI18n(preflightScreenMessages)
+  const bg = isFailed
+    ? 'var(--red-bg)'
+    : isReady
+      ? 'var(--green-bg)'
+      : 'var(--sf)'
   const border = isFailed
     ? 'var(--red-dot)'
     : isReady
       ? 'var(--green-dot)'
       : 'var(--bd)'
-  const fg = isFailed ? 'var(--red-fg)' : isReady ? 'var(--green-fg)' : 'var(--tx)'
+  const fg = isFailed
+    ? 'var(--red-fg)'
+    : isReady
+      ? 'var(--green-fg)'
+      : 'var(--tx)'
 
   return (
     <div
@@ -857,14 +950,12 @@ function SummaryBanner({
         >
           {nOk}/{nTotal}
         </div>
-        <div style={{ fontSize: 12.5, fontWeight: 600 }}>mục đạt</div>
+        <div style={{ fontSize: 12.5, fontWeight: 600 }}>{t.itemsPassed}</div>
       </div>
       <div style={{ flex: 1 }}>
         {isReady ? (
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>
-              PASS · đủ điều kiện cất cánh
-            </div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>{t.passReady}</div>
             {backendPreflightMessage ? (
               <div style={{ fontSize: 12.5, marginTop: 4 }}>
                 {backendPreflightMessage}
@@ -873,15 +964,12 @@ function SummaryBanner({
           </div>
         ) : isFailed ? (
           <div style={{ fontSize: 18, fontWeight: 700 }}>
-            FAIL · CHẶN BAY · Không đạt:{' '}
-            <b>{failedItems.map((item) => item.label).join(', ')}</b>
+            {t.failBlocked(failedItems.map((item) => item.label).join(', '))}
           </div>
         ) : (
           <div style={{ fontSize: 13.5 }}>
             {error ??
-              (hasTriggered
-                ? `Đang chạy precheck... ${progress}%`
-                : 'Bấm Trigger precheck để gọi API kiểm tra drone.')}
+              (hasTriggered ? t.runningPrecheck(progress) : t.pressTriggerHint)}
           </div>
         )}
       </div>
@@ -894,7 +982,9 @@ function SummaryBanner({
             disabled={backendPreflightRegistering}
             style={{ minWidth: 220 }}
           >
-            {backendPreflightRegistering ? 'Đang đổi READY_TO_FLY...' : 'Tiếp tục tới bàn giao'}
+            {backendPreflightRegistering
+              ? t.switchingToReady
+              : t.continueToHandover}
           </button>
         ) : (
           <a
@@ -902,7 +992,7 @@ function SummaryBanner({
             href={operatorHref({ screen: 'handover', missionId })}
             style={{ minWidth: 220 }}
           >
-            Tiếp tục tới bàn giao
+            {t.continueToHandover}
           </a>
         )
       ) : isFailed ? (
@@ -913,7 +1003,7 @@ function SummaryBanner({
           disabled={triggering}
           style={{ minWidth: 200 }}
         >
-          {triggering ? 'Đang trigger...' : 'Trigger lại precheck'}
+          {triggering ? t.triggeringAgain : t.triggerAgain}
         </button>
       ) : !hasTriggered || error ? (
         <button
@@ -923,7 +1013,7 @@ function SummaryBanner({
           disabled={triggering}
           style={{ minWidth: 220 }}
         >
-          {triggering ? 'Đang trigger...' : 'Trigger precheck'}
+          {triggering ? t.triggeringAgain : t.triggerPrecheck}
         </button>
       ) : (
         <button
@@ -932,7 +1022,7 @@ function SummaryBanner({
           disabled
           style={{ minWidth: 220 }}
         >
-          Tiếp tục tới bàn giao
+          {t.continueToHandover}
         </button>
       )}
     </div>
@@ -950,6 +1040,7 @@ function WeatherCheckPanel({
   error: string | null
   onCheck: () => void
 }) {
+  const { t } = useI18n(preflightScreenMessages)
   const failed = status?.status === 'FAIL'
   const warned = status?.status === 'WARN'
   const passed = status?.status === 'PASS'
@@ -998,7 +1089,7 @@ function WeatherCheckPanel({
             flexWrap: 'wrap',
           }}
         >
-          <strong style={{ fontSize: 14.5 }}>Thời tiết bay</strong>
+          <strong style={{ fontSize: 14.5 }}>{t.weatherTitle}</strong>
           <span
             style={{
               height: 24,
@@ -1018,14 +1109,16 @@ function WeatherCheckPanel({
               fontWeight: 800,
             }}
           >
-            {status ? status.status : 'CHƯA CHECK'}
+            {status ? status.status : t.weatherNotChecked}
           </span>
           {status && (
             <span style={{ fontSize: 12, color: 'inherit' }}>
-              Gió {status.windSpeedMps.toFixed(1)} m/s · Giật{' '}
-              {status.windGustMps.toFixed(1)} m/s · Mưa{' '}
-              {status.precipitationMmH.toFixed(1)} mm/h · Tầm nhìn{' '}
-              {status.visibilityKm.toFixed(1)} km
+              {t.weatherSummary(
+                status.windSpeedMps.toFixed(1),
+                status.windGustMps.toFixed(1),
+                status.precipitationMmH.toFixed(1),
+                status.visibilityKm.toFixed(1),
+              )}
             </span>
           )}
         </div>
@@ -1040,9 +1133,7 @@ function WeatherCheckPanel({
           }}
           title={error ?? status?.advisories.join(' ') ?? undefined}
         >
-          {error ??
-            status?.summary ??
-            'Bấm Check thời tiết để kiểm tra điều kiện gió, mưa và tầm nhìn trước khi bay.'}
+          {error ?? status?.summary ?? t.weatherHint}
           {status?.advisories?.[0] ? ` ${status.advisories[0]}` : ''}
         </div>
       </div>
@@ -1053,7 +1144,11 @@ function WeatherCheckPanel({
         disabled={checking}
         style={{ minWidth: 170 }}
       >
-        {checking ? 'Đang check...' : status ? 'Check lại thời tiết' : 'Check thời tiết'}
+        {checking
+          ? t.weatherChecking
+          : status
+            ? t.weatherRecheck
+            : t.weatherCheck}
       </button>
     </div>
   )
@@ -1066,25 +1161,26 @@ function RuntimePreflightItemRow({
   def: PreflightItemDef
   state: ItemState
 }) {
+  const { t } = useI18n(preflightScreenMessages)
   const failed = state.result === 'fail'
   const passed = state.result === 'ok'
   const checking = state.status === 'CHECKING'
   const tone = failed
     ? {
-        label: 'Không đạt',
+        label: t.itemFail,
         bg: 'var(--red-solid)',
         fg: 'var(--red-on)',
         border: 'var(--red-solid)',
       }
     : passed
       ? {
-          label: 'Đạt',
+          label: t.itemPass,
           bg: 'var(--green-solid)',
           fg: 'var(--green-on)',
           border: 'var(--green-solid)',
         }
       : {
-          label: checking ? 'Đang kiểm' : 'Chờ kiểm',
+          label: checking ? t.itemChecking : t.itemPending,
           bg: 'var(--sf3)',
           fg: 'var(--tx2)',
           border: 'var(--bd2)',
@@ -1101,7 +1197,14 @@ function RuntimePreflightItemRow({
         padding: 12,
       }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '44px minmax(0, 1fr) 104px', alignItems: 'center', gap: 12 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '44px minmax(0, 1fr) 104px',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
         <span
           style={{
             width: 40,
@@ -1124,7 +1227,13 @@ function RuntimePreflightItemRow({
             fontWeight: 700,
           }}
         >
-          {passed ? '✓' : failed ? '✕' : state.status === 'CHECKING' ? '◌' : '•'}
+          {passed
+            ? '✓'
+            : failed
+              ? '✕'
+              : state.status === 'CHECKING'
+                ? '◌'
+                : '•'}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.2 }}>
@@ -1143,9 +1252,9 @@ function RuntimePreflightItemRow({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}
-            title={statusText(state.status, state.message)}
+            title={statusText(t, state.status, state.message)}
           >
-            {statusText(state.status, state.message)}
+            {statusText(t, state.status, state.message)}
           </div>
         </div>
         <span

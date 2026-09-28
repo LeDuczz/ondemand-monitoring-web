@@ -1,12 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const REASONS = [
-  'Trùng lịch cá nhân',
-  'Chưa đủ điều kiện vận hành',
-  'Địa điểm quá xa',
-  'Dự báo thời tiết xấu',
-  'Lý do khác',
-]
+import { useI18n } from '../../../shared/i18n'
+import { rejectDialogMessages } from './RejectDialog.messages'
 
 export function RejectDialog({
   missionId,
@@ -19,8 +14,16 @@ export function RejectDialog({
   onCancel: () => void
   onConfirm: (reason: string, notes: string) => void
 }) {
-  const [reason, setReason] = useState(REASONS[0])
+  const { t } = useI18n(rejectDialogMessages)
+  const [reason, setReason] = useState(t.reasons[0])
   const [notes, setNotes] = useState('')
+
+  // Keep the selected reason valid if the language changes while the dialog
+  // is open (reasons are re-translated, so re-pick the first one by default).
+  useEffect(() => {
+    if (!t.reasons.includes(reason)) setReason(t.reasons[0])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t.reasons])
 
   return (
     <div
@@ -42,13 +45,26 @@ export function RejectDialog({
       >
         <div className="odm-card-body" style={{ padding: 20 }}>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-            Từ chối mission {missionId}
+            {t.title(missionId)}
           </h2>
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {REASONS.map((r) => (
+          <div
+            style={{
+              marginTop: 14,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {t.reasons.map((r) => (
               <label
                 key={r}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
               >
                 <input
                   type="radio"
@@ -62,8 +78,16 @@ export function RejectDialog({
             ))}
           </div>
           <div style={{ marginTop: 14 }}>
-            <label htmlFor="reject-notes" style={{ fontSize: 12.5, color: 'var(--tx3)', display: 'block', marginBottom: 6 }}>
-              Ghi chú (tuỳ chọn)
+            <label
+              htmlFor="reject-notes"
+              style={{
+                fontSize: 12.5,
+                color: 'var(--tx3)',
+                display: 'block',
+                marginBottom: 6,
+              }}
+            >
+              {t.notesLabel}
             </label>
             <textarea
               id="reject-notes"
@@ -72,12 +96,24 @@ export function RejectDialog({
               style={{ width: '100%', resize: 'vertical' }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Mô tả thêm lý do từ chối..."
+              placeholder={t.notesPlaceholder}
             />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-            <button type="button" className="odm-btn" onClick={onCancel} disabled={submitting}>
-              Huỷ
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 8,
+              marginTop: 18,
+            }}
+          >
+            <button
+              type="button"
+              className="odm-btn"
+              onClick={onCancel}
+              disabled={submitting}
+            >
+              {t.cancel}
             </button>
             <button
               type="button"
@@ -85,7 +121,7 @@ export function RejectDialog({
               onClick={() => onConfirm(reason, notes)}
               disabled={submitting}
             >
-              {submitting ? 'Đang gửi...' : 'Xác nhận từ chối'}
+              {submitting ? t.submitting : t.submit}
             </button>
           </div>
         </div>

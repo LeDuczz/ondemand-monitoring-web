@@ -9,15 +9,21 @@ describe('drone operator routes', () => {
     expect(operatorHref({ screen: 'connect', missionId })).toBe(
       `#portal/drone-operator/connect/${missionId}`,
     )
-    expect(parseOperatorRoute(`#portal/drone-operator/connect/${missionId}`)).toEqual({
+    expect(
+      parseOperatorRoute(`#portal/drone-operator/connect/${missionId}`),
+    ).toEqual({
       screen: 'connect',
       missionId,
     })
-    expect(parseOperatorRoute(`#portal/drone-operator/preflight/${missionId}`)).toEqual({
+    expect(
+      parseOperatorRoute(`#portal/drone-operator/preflight/${missionId}`),
+    ).toEqual({
       screen: 'preflight',
       missionId,
     })
-    expect(parseOperatorRoute(`#portal/drone-operator/flight/${missionId}`)).toEqual({
+    expect(
+      parseOperatorRoute(`#portal/drone-operator/flight/${missionId}`),
+    ).toEqual({
       screen: 'flight',
       missionId,
     })

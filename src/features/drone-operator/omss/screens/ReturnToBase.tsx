@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { flightControlApi, type FlightControlStatus } from '../api/flightControlApi'
+import {
+  flightControlApi,
+  type FlightControlStatus,
+} from '../api/flightControlApi'
+import { useI18n } from '../../../../shared/i18n'
+import { returnToBaseMessages } from '../i18n/returnToBase'
 import type { Drone } from '../types'
 
 interface Props {
@@ -9,9 +14,12 @@ interface Props {
 }
 
 export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
+  const { t: msg } = useI18n(returnToBaseMessages)
   const [telemetry, setTelemetry] = useState<FlightControlStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [phase, setPhase] = useState<'rth' | 'descend' | 'land' | 'landed'>('rth')
+  const [phase, setPhase] = useState<'rth' | 'descend' | 'land' | 'landed'>(
+    'rth',
+  )
   const stableLandingSamples = useRef(0)
   const completed = useRef(false)
   const onLandedRef = useRef(onLanded)
@@ -27,38 +35,61 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
         if (!mounted) return
         setTelemetry(status)
         setError(null)
-        const sessionMatches = status.missionId === missionId && status.deviceCode === drone.id
-        const landed = sessionMatches && status.connection?.px4Connected === true &&
-          status.positionReady === true && status.inAir === false &&
-          typeof status.altitudeM === 'number' && status.altitudeM <= 1.2 &&
-          typeof status.speedMps === 'number' && status.speedMps <= 0.5
-        stableLandingSamples.current = landed ? stableLandingSamples.current + 1 : 0
+        const sessionMatches =
+          status.missionId === missionId && status.deviceCode === drone.id
+        const landed =
+          sessionMatches &&
+          status.connection?.px4Connected === true &&
+          status.positionReady === true &&
+          status.inAir === false &&
+          typeof status.altitudeM === 'number' &&
+          status.altitudeM <= 1.2 &&
+          typeof status.speedMps === 'number' &&
+          status.speedMps <= 0.5
+        stableLandingSamples.current = landed
+          ? stableLandingSamples.current + 1
+          : 0
         if (stableLandingSamples.current >= 2 && !completed.current) {
           completed.current = true
           setPhase('landed')
           onLandedRef.current()
-        } else if (sessionMatches && status.inAir && typeof status.altitudeM === 'number') {
-          setPhase(status.altitudeM <= 1.2 ? 'land' : status.altitudeM <= 5 ? 'descend' : 'rth')
+        } else if (
+          sessionMatches &&
+          status.inAir &&
+          typeof status.altitudeM === 'number'
+        ) {
+          setPhase(
+            status.altitudeM <= 1.2
+              ? 'land'
+              : status.altitudeM <= 5
+                ? 'descend'
+                : 'rth',
+          )
         }
       } catch (cause) {
         if (mounted) {
           stableLandingSamples.current = 0
-          setError(cause instanceof Error ? cause.message : 'Telemetry unavailable')
+          setError(
+            cause instanceof Error ? cause.message : msg.telemetryUnavailable,
+          )
         }
       }
     }
     void poll()
     const timer = window.setInterval(() => void poll(), 2000)
-    return () => { mounted = false; window.clearInterval(timer) }
+    return () => {
+      mounted = false
+      window.clearInterval(timer)
+    }
   }, [drone.id, missionId])
 
   const distM: number | null = null // Flight Controller does not expose distance-to-home.
   const pct = 0
   const phaseLabel = {
-    rth: 'Returning to home',
-    descend: 'Descending',
-    land: 'Landing sequence',
-    landed: 'Landed',
+    rth: msg.phaseLabels.rth,
+    descend: msg.phaseLabels.descend,
+    land: msg.phaseLabels.land,
+    landed: msg.phaseLabels.landed,
   }[phase]
   const phaseColor = {
     rth: 'var(--amber)',
@@ -67,7 +98,12 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
     landed: 'var(--green)',
   }[phase]
 
-  const PHASES = ['Returning', 'Descending', 'Landing', 'Landed']
+  const PHASES = [
+    msg.phases.rth,
+    msg.phases.descend,
+    msg.phases.land,
+    msg.phases.landed,
+  ]
   const phaseIdx = { rth: 0, descend: 1, land: 2, landed: 3 }[phase]
 
   return (
@@ -105,12 +141,16 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
             margin: '0 0 6px',
           }}
         >
-          Return to base
+          {msg.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          Drone is executing autonomous return-to-home sequence.
+          {msg.description}
         </p>
-        {error && <p role="alert" style={{ color: 'var(--red)' }}>{error}</p>}
+        {error && (
+          <p role="alert" style={{ color: 'var(--red)' }}>
+            {error}
+          </p>
+        )}
 
         {/* Phase steps */}
         <div
@@ -205,7 +245,9 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
                 marginBottom: 6,
               }}
             >
-              <span style={{ color: 'var(--text-2)' }}>Distance to home</span>
+              <span style={{ color: 'var(--text-2)' }}>
+                {msg.distanceToHome}
+              </span>
               <span
                 style={{
                   fontFamily: 'var(--font-data)',
@@ -213,7 +255,7 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
                   color: 'var(--text)',
                 }}
               >
-                {distM === null ? 'Unavailable' : `${distM} m`}
+                {distM === null ? msg.unavailable : `${distM} m`}
               </span>
             </div>
             <div
@@ -248,30 +290,41 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
         >
           {[
             {
-              l: 'Altitude AGL',
-              v: typeof telemetry?.altitudeM === 'number' ? `${telemetry.altitudeM.toFixed(1)} m` : '—',
+              l: msg.telemetry.altitude,
+              v:
+                typeof telemetry?.altitudeM === 'number'
+                  ? `${telemetry.altitudeM.toFixed(1)} m`
+                  : '—',
               warn: false,
             },
             {
-              l: 'Ground speed',
-              v: typeof telemetry?.speedMps === 'number' ? `${telemetry.speedMps.toFixed(1)} m/s` : '—',
+              l: msg.telemetry.groundSpeed,
+              v:
+                typeof telemetry?.speedMps === 'number'
+                  ? `${telemetry.speedMps.toFixed(1)} m/s`
+                  : '—',
               warn: false,
             },
             {
-              l: 'Battery',
-              v: typeof telemetry?.batteryPercent === 'number' ? `${telemetry.batteryPercent.toFixed(0)}%` : '—',
-              warn: typeof telemetry?.batteryPercent === 'number' && telemetry.batteryPercent < 25,
+              l: msg.telemetry.battery,
+              v:
+                typeof telemetry?.batteryPercent === 'number'
+                  ? `${telemetry.batteryPercent.toFixed(0)}%`
+                  : '—',
+              warn:
+                typeof telemetry?.batteryPercent === 'number' &&
+                telemetry.batteryPercent < 25,
             },
-            { l: 'GPS satellites', v: '—', warn: false },
-            { l: 'Signal (RSSI)', v: '—', warn: false },
+            { l: msg.telemetry.gpsSatellites, v: '—', warn: false },
+            { l: msg.telemetry.signal, v: '—', warn: false },
             {
-              l: 'ETA home',
-              v: phase === 'landed' ? 'Landed' : '—',
+              l: msg.telemetry.etaHome,
+              v: phase === 'landed' ? msg.landedLabel : '—',
               warn: false,
             },
-          ].map((t) => (
+          ].map((item) => (
             <div
-              key={t.l}
+              key={item.l}
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
@@ -286,17 +339,17 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
                   marginBottom: 4,
                 }}
               >
-                {t.l}
+                {item.l}
               </div>
               <div
                 style={{
                   fontSize: 18,
                   fontFamily: 'var(--font-data)',
                   fontWeight: 600,
-                  color: t.warn ? 'var(--red)' : 'var(--text)',
+                  color: item.warn ? 'var(--red)' : 'var(--text)',
                 }}
               >
-                {t.v}
+                {item.v}
               </div>
             </div>
           ))}
@@ -319,7 +372,7 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
                 color: 'var(--green-text)',
               }}
             >
-              ✓ Drone landed successfully
+              {msg.droneLandedSuccessfully}
             </div>
             <div
               style={{
@@ -329,7 +382,7 @@ export default function ReturnToBase({ drone, missionId, onLanded }: Props) {
                 marginTop: 4,
               }}
             >
-              Proceeding to post-flight inspection…
+              {msg.proceedingToPostflight}
             </div>
           </div>
         )}

@@ -6,12 +6,14 @@ import {
   LoadingState,
 } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
 import { DeleteRoleDialog } from '../components/roles/DeleteRoleDialog'
 import { RoleDialog } from '../components/roles/RoleDialog'
 import { RolesTable } from '../components/roles/RolesTable'
 import { rolesSubtitle } from '../lib/rolesSubtitle'
 import type { AdminRole } from '../types/roles'
+import { rolesPageMessages } from './RolesPage.messages'
 
 type DialogState =
   | { type: 'create' }
@@ -20,6 +22,7 @@ type DialogState =
   | null
 
 export function RolesPage() {
+  const { t, lang } = useI18n(rolesPageMessages)
   const [dialog, setDialog] = useState<DialogState>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const { data, loading, error, reload } = useApiQuery(
@@ -54,10 +57,12 @@ export function RolesPage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>Vai trò</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
+            {t.title}
+          </h1>
           {data && (
             <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-              {rolesSubtitle(data.items)}
+              {rolesSubtitle(data.items, lang)}
             </div>
           )}
         </div>
@@ -66,7 +71,7 @@ export function RolesPage() {
           className="odm-btn odm-btn-p"
           onClick={() => setDialog({ type: 'create' })}
         >
-          + Tạo vai trò
+          {t.createRole}
         </button>
       </div>
 
@@ -75,7 +80,7 @@ export function RolesPage() {
         <ErrorState error={error} onRetry={reload} />
       )}
       {!loading && data && data.items.length === 0 && (
-        <EmptyState title="Chưa có vai trò nào" description="" />
+        <EmptyState title={t.emptyTitle} description="" />
       )}
 
       {!loading && data && data.items.length > 0 && (

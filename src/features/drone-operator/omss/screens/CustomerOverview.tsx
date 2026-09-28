@@ -1,3 +1,6 @@
+import { useI18n } from '../../../../shared/i18n'
+import { customerOverviewMessages } from '../i18n/customerOverview'
+
 const REQUESTS = [
   {
     id: 'REQ-8841',
@@ -63,33 +66,27 @@ const MEDIA = [
   },
 ]
 
-const STATUS_CFG: Record<
-  string,
-  { dot: string; label: string; color: string }
-> = {
+const STATUS_CFG: Record<string, { dot: string; color: string }> = {
   in_flight: {
     dot: 'var(--blue)',
-    label: 'In flight',
     color: 'var(--blue-text)',
   },
   scheduled: {
     dot: 'var(--accent)',
-    label: 'Scheduled',
     color: 'var(--accent)',
   },
   completed: {
     dot: 'var(--green)',
-    label: 'Completed',
     color: 'var(--green-text)',
   },
   cancelled: {
     dot: 'var(--text-3)',
-    label: 'Cancelled',
     color: 'var(--text-3)',
   },
 }
 
 export default function CustomerOverview() {
+  const { t } = useI18n(customerOverviewMessages)
   const active = REQUESTS.filter((r) => r.status === 'in_flight')
   const pending = REQUESTS.filter((r) => r.status === 'scheduled')
 
@@ -108,10 +105,10 @@ export default function CustomerOverview() {
               margin: '0 0 4px',
             }}
           >
-            Client overview
+            {t.title}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            Account: A. Chen · ACC-4421 · Premium tier
+            {t.accountPrefix}: A. Chen · ACC-4421 · {t.premiumTier}
           </p>
         </div>
 
@@ -126,22 +123,22 @@ export default function CustomerOverview() {
         >
           {[
             {
-              label: 'Active flights',
+              label: t.stats.activeFlights,
               value: `${active.length}`,
               color: active.length > 0 ? 'var(--blue-text)' : 'var(--text)',
             },
             {
-              label: 'Scheduled',
+              label: t.stats.scheduled,
               value: `${pending.length}`,
               color: 'var(--text)',
             },
             {
-              label: 'Completed this month',
+              label: t.stats.completedThisMonth,
               value: '11',
               color: 'var(--text)',
             },
             {
-              label: 'Media ready to download',
+              label: t.stats.mediaReady,
               value: `${MEDIA.length}`,
               color: MEDIA.length > 0 ? 'var(--green-text)' : 'var(--text)',
             },
@@ -222,7 +219,7 @@ export default function CustomerOverview() {
                   marginTop: 2,
                 }}
               >
-                {active[0].id} · Flight in progress
+                {active[0].id} · {t.flightInProgress}
               </div>
             </div>
             <div
@@ -232,7 +229,7 @@ export default function CustomerOverview() {
                 fontWeight: 500,
               }}
             >
-              Live tracking available
+              {t.liveTrackingAvailable}
             </div>
           </div>
         )}
@@ -260,12 +257,17 @@ export default function CustomerOverview() {
                 color: 'var(--text)',
               }}
             >
-              My requests
+              {t.myRequests}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--surface-2)' }}>
-                  {['Ref', 'Description', 'Scheduled', 'Status'].map((h) => (
+                  {[
+                    t.tableHeaders.ref,
+                    t.tableHeaders.description,
+                    t.tableHeaders.scheduled,
+                    t.tableHeaders.status,
+                  ].map((h) => (
                     <th
                       key={h}
                       style={{
@@ -330,7 +332,7 @@ export default function CustomerOverview() {
                             marginTop: 2,
                           }}
                         >
-                          Submitted {r.submitted}
+                          {t.submitted(r.submitted)}
                         </div>
                       </td>
                       <td
@@ -363,7 +365,7 @@ export default function CustomerOverview() {
                               flexShrink: 0,
                             }}
                           />
-                          {cfg.label}
+                          {t.status[r.status as keyof typeof t.status]}
                         </span>
                       </td>
                     </tr>
@@ -394,7 +396,7 @@ export default function CustomerOverview() {
                   color: 'var(--text)',
                 }}
               >
-                Ready for download
+                {t.readyForDownload}
               </div>
               {MEDIA.map((m, i) => (
                 <div
@@ -427,7 +429,7 @@ export default function CustomerOverview() {
                     }}
                   >
                     <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                      {m.date} · {m.files} files · {m.sizeGB} GB
+                      {m.date} · {m.files} {t.files} · {m.sizeGB} GB
                     </div>
                     <button
                       style={{
@@ -441,7 +443,7 @@ export default function CustomerOverview() {
                         cursor: 'pointer',
                       }}
                     >
-                      Download
+                      {t.download}
                     </button>
                   </div>
                 </div>
@@ -465,13 +467,13 @@ export default function CustomerOverview() {
                   marginBottom: 10,
                 }}
               >
-                Account summary
+                {t.accountSummary}
               </div>
               {[
-                { label: 'Contract', value: 'Enterprise Annual' },
-                { label: 'Flights remaining', value: '38 / 60' },
-                { label: 'Storage used', value: '42.1 GB / 200 GB' },
-                { label: 'Account manager', value: 'T. Wright' },
+                { label: t.fields.contract, value: 'Enterprise Annual' },
+                { label: t.fields.flightsRemaining, value: '38 / 60' },
+                { label: t.fields.storageUsed, value: '42.1 GB / 200 GB' },
+                { label: t.fields.accountManager, value: 'T. Wright' },
               ].map((r) => (
                 <div
                   key={r.label}
@@ -510,7 +512,7 @@ export default function CustomerOverview() {
                   fontWeight: 500,
                 }}
               >
-                View billing
+                {t.viewBilling}
               </button>
             </div>
           </div>

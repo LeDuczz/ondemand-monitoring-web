@@ -2,6 +2,7 @@
 // evd/design/Landing.dc.html. This is page copy, not API data: it is not
 // fetched, so it is not modeled as a mock endpoint per evd/AGENT-RULES.md
 // rule 3/5 (mock data is only for resources the app actually fetches).
+import { defineMessages } from '../../shared/i18n'
 import type {
   FaqItem,
   FeasibilityCheck,
@@ -299,4 +300,43 @@ export const navLinks = [
   { label: 'Tính năng', href: '#features' },
   { label: 'Ứng dụng', href: '#industries' },
   { label: 'Câu hỏi thường gặp', href: '#faq' },
+  { label: 'Trung tâm Trợ giúp', href: '#help' },
 ]
+
+// Compatibility export: LandingPage.tsx uses useI18n(landingMessages) to consume this data.
+const _viContent = {
+  brandName,
+  heroChip,
+  heroTitleLines,
+  heroLede,
+  heroChecklist,
+  heroAiCard,
+  heroMissionCard,
+  heroStats,
+  workflowSection,
+  workflowSteps,
+  aiFeatureSection,
+  aiFeatureHighlights,
+  aiResultPanel,
+  aiFeasibilityChecks,
+  liveFeatureSection,
+  liveFeatureHighlights,
+  livePanel,
+  liveResultFiles,
+  industriesSection,
+  industries,
+  faqSection,
+  faqItems,
+  ctaSection,
+  footerTagline,
+  footerLinkGroups,
+  footerCopyright,
+  footerLegal,
+  footerBrandDescription,
+  navLinks,
+}
+
+export const landingMessages = defineMessages({
+  vi: _viContent,
+  en: _viContent,
+})

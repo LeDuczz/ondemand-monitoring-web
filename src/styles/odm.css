@@ -74,14 +74,12 @@
   background: var(--bg);
 }
 
-.odm :where(
-  .odm-adm-brand-name,
+.odm :where(.odm-adm-brand-name,
   .odm-cus-brand-name,
   .odm-mgr-brand-name,
   .odm-opr-brand-name,
   .odm-auth-brand-name,
-  .lp-logo-text
-) {
+  .lp-logo-text) {
   font-family: 'Arial Black', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   font-weight: 900;
   letter-spacing: -0.03em;
@@ -93,14 +91,12 @@
     0 4px 10px var(--brand-shadow);
 }
 
-.odm :where(
-  .odm-adm-brand-accent,
+.odm :where(.odm-adm-brand-accent,
   .odm-cus-brand-accent,
   .odm-mgr-brand-accent,
   .odm-opr-brand-accent,
   .odm-auth-brand-accent,
-  .lp-logo-accent
-) {
+  .lp-logo-accent) {
   color: var(--brand-accent);
   -webkit-text-fill-color: var(--brand-accent);
   text-shadow:
@@ -360,6 +356,7 @@
   background: var(--gray-bg);
   color: var(--gray-fg);
 }
+
 .odm-badge-gray .odm-badge-dot {
   background: var(--gray-dot);
 }
@@ -368,6 +365,7 @@
   background: var(--yellow-bg);
   color: var(--yellow-fg);
 }
+
 .odm-badge-yellow .odm-badge-dot {
   background: var(--yellow-dot);
 }
@@ -376,6 +374,7 @@
   background: var(--blue-bg);
   color: var(--blue-fg);
 }
+
 .odm-badge-blue .odm-badge-dot {
   background: var(--blue-dot);
 }
@@ -384,6 +383,7 @@
   background: var(--green-bg);
   color: var(--green-fg);
 }
+
 .odm-badge-green .odm-badge-dot {
   background: var(--green-dot);
 }
@@ -392,6 +392,7 @@
   background: var(--orange-bg);
   color: var(--orange-fg);
 }
+
 .odm-badge-orange .odm-badge-dot {
   background: var(--orange-dot);
 }
@@ -400,6 +401,7 @@
   background: var(--red-bg);
   color: var(--red-fg);
 }
+
 .odm-badge-red .odm-badge-dot {
   background: var(--red-dot);
 }
@@ -493,12 +495,10 @@
 
 /* ---------- Skeleton / motion ---------- */
 .odm-sk {
-  background: linear-gradient(
-    90deg,
-    var(--sf3) 25%,
-    var(--sf2) 50%,
-    var(--sf3) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--sf3) 25%,
+      var(--sf2) 50%,
+      var(--sf3) 75%);
   background-size: 200% 100%;
   animation: odm-shim 1.5s infinite linear;
   border-radius: 5px;
@@ -508,6 +508,7 @@
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -533,4 +534,38 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------- Action Link & Interactive Hover Effects ---------- */
+.odm-action-link {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.odm-action-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  text-decoration: underline !important;
+}
+
+.odm-action-link-green {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.odm-action-link-green:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+  text-decoration: underline !important;
+}
+
+.odm-hover-glow {
+  transition: all 0.2s ease-in-out;
+}
+
+.odm-hover-glow:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 12px rgba(79, 70, 229, 0.4);
 }

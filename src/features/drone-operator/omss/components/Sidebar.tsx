@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import type { NavId, Screen, Role } from '../types'
 import { authApi, authSession } from '../../../auth/api/authApi'
+import { LanguageToggle } from '../../../../shared/components/LanguageToggle'
+import { useI18n } from '../../../../shared/i18n'
+import { sidebarMessages } from './Sidebar.messages'
 
 interface Props {
   role: Role
@@ -10,113 +13,139 @@ interface Props {
 }
 interface NavItem {
   id: NavId
-  label: string
+  labelKey: string
   screen?: Screen
   icon: React.ReactNode
 }
 
-const OPERATOR_NAV: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Overview',
-    screen: 'operator-overview',
-    icon: <GridIcon />,
-  },
-  {
-    id: 'my-missions',
-    label: 'My missions',
-    screen: 'mission-list',
-    icon: <ListIcon />,
-  },
-  {
-    id: 'mission-control',
-    label: 'Mission control',
-    screen: 'in-flight',
-    icon: <RadioIcon />,
-  },
-  { id: 'media', label: 'Media', screen: 'media-upload', icon: <MediaIcon /> },
-  {
-    id: 'history',
-    label: 'Mission history',
-    screen: 'mission-list',
-    icon: <HistoryIcon />,
-  },
-  {
-    id: 'zone-map',
-    label: 'Zone map',
-    screen: 'simulation-zones',
-    icon: <MapIcon />,
-  },
-]
-const CUSTOMER_NAV: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Overview',
-    screen: 'customer-overview',
-    icon: <GridIcon />,
-  },
-  { id: 'my-requests', label: 'My requests', icon: <ListIcon /> },
-  { id: 'media-downloads', label: 'Media downloads', icon: <MediaIcon /> },
-  { id: 'billing', label: 'Billing', icon: <BillingIcon /> },
-  { id: 'support', label: 'Support', icon: <SupportIcon /> },
-]
-const MANAGER_NAV: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Overview',
-    screen: 'manager-overview',
-    icon: <GridIcon />,
-  },
-  { id: 'team', label: 'Team', icon: <TeamIcon /> },
-  { id: 'approvals', label: 'Approvals', icon: <CheckIcon /> },
-  { id: 'fleet', label: 'Fleet', icon: <FleetIcon /> },
-  { id: 'reports', label: 'Reports', icon: <ChartIcon /> },
-]
-const SYSOP_NAV: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Overview',
-    screen: 'sysop-overview',
-    icon: <GridIcon />,
-  },
-  { id: 'fleet-health', label: 'Fleet health', icon: <FleetIcon /> },
-  { id: 'maintenance', label: 'Maintenance', icon: <WrenchIcon /> },
-  { id: 'systems', label: 'Systems', icon: <ServerIcon /> },
-  { id: 'sys-alerts', label: 'Alerts', icon: <BellIcon /> },
-]
-const ADMIN_NAV: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Overview',
-    screen: 'admin-overview',
-    icon: <GridIcon />,
-  },
-  { id: 'users', label: 'Users', icon: <TeamIcon /> },
-  { id: 'configuration', label: 'Configuration', icon: <SettingsIcon /> },
-  { id: 'audit', label: 'Audit log', icon: <HistoryIcon /> },
-  { id: 'integrations', label: 'Integrations', icon: <ServerIcon /> },
-]
-
-const ROLE_NAV: Record<Role, NavItem[]> = {
-  operator: OPERATOR_NAV,
-  customer: CUSTOMER_NAV,
-  manager: MANAGER_NAV,
-  sysop: SYSOP_NAV,
-  admin: ADMIN_NAV,
+function operatorNav(): NavItem[] {
+  return [
+    {
+      id: 'dashboard',
+      labelKey: 'dashboard',
+      screen: 'operator-overview',
+      icon: <GridIcon />,
+    },
+    {
+      id: 'my-missions',
+      labelKey: 'myMissions',
+      screen: 'mission-list',
+      icon: <ListIcon />,
+    },
+    {
+      id: 'mission-control',
+      labelKey: 'missionControl',
+      screen: 'in-flight',
+      icon: <RadioIcon />,
+    },
+    {
+      id: 'media',
+      labelKey: 'media',
+      screen: 'media-upload',
+      icon: <MediaIcon />,
+    },
+    {
+      id: 'history',
+      labelKey: 'history',
+      screen: 'mission-list',
+      icon: <HistoryIcon />,
+    },
+    {
+      id: 'zone-map',
+      labelKey: 'zoneMap',
+      screen: 'simulation-zones',
+      icon: <MapIcon />,
+    },
+  ]
+}
+function customerNav(): NavItem[] {
+  return [
+    {
+      id: 'dashboard',
+      labelKey: 'dashboard',
+      screen: 'customer-overview',
+      icon: <GridIcon />,
+    },
+    { id: 'my-requests', labelKey: 'myRequests', icon: <ListIcon /> },
+    {
+      id: 'media-downloads',
+      labelKey: 'mediaDownloads',
+      icon: <MediaIcon />,
+    },
+    { id: 'billing', labelKey: 'billing', icon: <BillingIcon /> },
+    { id: 'support', labelKey: 'support', icon: <SupportIcon /> },
+  ]
+}
+function managerNav(): NavItem[] {
+  return [
+    {
+      id: 'dashboard',
+      labelKey: 'dashboard',
+      screen: 'manager-overview',
+      icon: <GridIcon />,
+    },
+    { id: 'team', labelKey: 'team', icon: <TeamIcon /> },
+    { id: 'approvals', labelKey: 'approvals', icon: <CheckIcon /> },
+    { id: 'fleet', labelKey: 'fleet', icon: <FleetIcon /> },
+    { id: 'reports', labelKey: 'reports', icon: <ChartIcon /> },
+  ]
+}
+function sysopNav(): NavItem[] {
+  return [
+    {
+      id: 'dashboard',
+      labelKey: 'dashboard',
+      screen: 'sysop-overview',
+      icon: <GridIcon />,
+    },
+    { id: 'fleet-health', labelKey: 'fleetHealth', icon: <FleetIcon /> },
+    { id: 'maintenance', labelKey: 'maintenance', icon: <WrenchIcon /> },
+    { id: 'systems', labelKey: 'systems', icon: <ServerIcon /> },
+    { id: 'sys-alerts', labelKey: 'alerts', icon: <BellIcon /> },
+  ]
+}
+function adminNav(): NavItem[] {
+  return [
+    {
+      id: 'dashboard',
+      labelKey: 'dashboard',
+      screen: 'admin-overview',
+      icon: <GridIcon />,
+    },
+    { id: 'users', labelKey: 'users', icon: <TeamIcon /> },
+    { id: 'configuration', labelKey: 'configuration', icon: <SettingsIcon /> },
+    { id: 'audit', labelKey: 'audit', icon: <HistoryIcon /> },
+    { id: 'integrations', labelKey: 'integrations', icon: <ServerIcon /> },
+  ]
 }
 
-const ROLE_LABEL: Record<Role, string> = {
-  operator: 'Drone operations',
-  customer: 'Client portal',
-  manager: 'Operations console',
-  sysop: 'System operations',
-  admin: 'Administration',
+const ROLE_NAV_BUILDER: Record<Role, () => NavItem[]> = {
+  operator: operatorNav,
+  customer: customerNav,
+  manager: managerNav,
+  sysop: sysopNav,
+  admin: adminNav,
 }
 
+const ROLE_NAV_MESSAGE_KEY: Record<
+  Role,
+  'operatorNav' | 'customerNav' | 'managerNav' | 'sysopNav' | 'adminNav'
+> = {
+  operator: 'operatorNav',
+  customer: 'customerNav',
+  manager: 'managerNav',
+  sysop: 'sysopNav',
+  admin: 'adminNav',
+}
 
 export default function Sidebar({ role, active, onChange, alerts }: Props) {
-  const nav = ROLE_NAV[role] ?? ROLE_NAV['operator']
-  const roleLabel = ROLE_LABEL[role] ?? 'Drone operations'
+  const { t } = useI18n(sidebarMessages)
+  const nav = (ROLE_NAV_BUILDER[role] ?? ROLE_NAV_BUILDER['operator'])()
+  const navLabels = t[ROLE_NAV_MESSAGE_KEY[role] ?? 'operatorNav'] as Record<
+    string,
+    string
+  >
+  const roleLabel = t.roleLabel[role] ?? t.roleLabel.operator
 
   const [dark, setDark] = useState(
     () => document.documentElement.dataset.theme === 'dark',
@@ -148,7 +177,7 @@ export default function Sidebar({ role, active, onChange, alerts }: Props) {
       <div className="portal-role-label">{roleLabel}</div>
 
       {/* Nav */}
-      <nav className="portal-nav" aria-label="Drone operator navigation">
+      <nav className="portal-nav" aria-label={t.nav}>
         {nav.map((item) => (
           <button
             key={item.id}
@@ -165,7 +194,8 @@ export default function Sidebar({ role, active, onChange, alerts }: Props) {
               border: 'none',
               cursor: 'pointer',
               textAlign: 'left',
-              background: active === item.id ? 'var(--accent-bg)' : 'transparent',
+              background:
+                active === item.id ? 'var(--accent-bg)' : 'transparent',
               color: active === item.id ? 'var(--accent)' : 'var(--text-2)',
               fontFamily: 'var(--font-ui)',
               fontSize: 14,
@@ -173,12 +203,31 @@ export default function Sidebar({ role, active, onChange, alerts }: Props) {
               transition: 'background .1s, color .1s',
             }}
           >
-            <span style={{ color: active === item.id ? 'var(--accent)' : 'var(--text-3)', display: 'flex', flexShrink: 0 }}>
+            <span
+              style={{
+                color: active === item.id ? 'var(--accent)' : 'var(--text-3)',
+                display: 'flex',
+                flexShrink: 0,
+              }}
+            >
               {item.icon}
             </span>
-            <span style={{ flex: 1 }}>{item.label}</span>
+            <span style={{ flex: 1 }}>{navLabels[item.labelKey]}</span>
             {item.id === 'notifications' && alerts > 0 ? (
-              <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--red)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: 'var(--red)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 {alerts}
               </span>
             ) : null}
@@ -188,13 +237,22 @@ export default function Sidebar({ role, active, onChange, alerts }: Props) {
 
       {/* Footer — identical to PortalLayout */}
       <div className="portal-sidebar-footer">
-        <button type="button" className="portal-utility-button" onClick={() => setDark(!dark)}>
+        <LanguageToggle className="portal-utility-button" />
+        <button
+          type="button"
+          className="portal-utility-button"
+          onClick={() => setDark(!dark)}
+        >
           {dark ? <SunIcon /> : <MoonIcon />}
-          <span>{dark ? 'Light mode' : 'Dark mode'}</span>
+          <span>{dark ? t.lightMode : t.darkMode}</span>
         </button>
-        <button type="button" className="portal-utility-button" onClick={logout}>
+        <button
+          type="button"
+          className="portal-utility-button"
+          onClick={logout}
+        >
           <ArrowLeftIcon />
-          <span>Sign out</span>
+          <span>{t.signOut}</span>
         </button>
       </div>
     </aside>
@@ -460,7 +518,14 @@ function MapIcon() {
 
 function SunIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="8" cy="8" r="3" />
       <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4" />
     </svg>
@@ -469,7 +534,14 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" />
     </svg>
   )
@@ -477,9 +549,15 @@ function MoonIcon() {
 
 function ArrowLeftIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <path d="M10 3L5 8l5 5" />
     </svg>
   )
 }
-

@@ -4,23 +4,21 @@ import {
   LoadingState,
 } from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import { fmtDateTime } from '../../lib/accountStatus'
 import type { AnalysisVerdict } from '../../types/aiKnowledge'
 import type { StatusTone } from '../../../../shared/types/domain'
+import { analysisLogTabMessages } from './AnalysisLogTab.messages'
 
 const VERDICT_TONE: Record<AnalysisVerdict, StatusTone> = {
   FEASIBLE: 'green',
   RISKY: 'orange',
   INFEASIBLE: 'red',
 }
-const VERDICT_LABEL: Record<AnalysisVerdict, string> = {
-  FEASIBLE: 'Khả thi',
-  RISKY: 'Rủi ro',
-  INFEASIBLE: 'Không khả thi',
-}
 
 export function AnalysisLogTab() {
+  const { t, lang } = useI18n(analysisLogTabMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.listAnalysisLogs(signal),
     [],
@@ -46,7 +44,7 @@ export function AnalysisLogTab() {
             <th>Session</th>
             <th>order_id</th>
             <th>overall_verdict</th>
-            <th>Blocker / Warning</th>
+            <th>{t.blockerWarning}</th>
             <th>rule_engine_ms</th>
             <th>llm_tokens</th>
             <th>triggered_by</th>
@@ -76,7 +74,7 @@ export function AnalysisLogTab() {
               </td>
               <td>
                 <StatusBadge tone={VERDICT_TONE[log.overallVerdict]}>
-                  {VERDICT_LABEL[log.overallVerdict]}
+                  {t.verdict[log.overallVerdict]}
                 </StatusBadge>
               </td>
               <td style={{ fontSize: 12 }}>
@@ -100,7 +98,7 @@ export function AnalysisLogTab() {
               </td>
               <td style={{ fontSize: 12 }}>{log.triggeredBy}</td>
               <td style={{ fontSize: 11, color: 'var(--tx2)' }}>
-                {fmtDateTime(log.createdAt)}
+                {fmtDateTime(log.createdAt, lang)}
               </td>
             </tr>
           ))}

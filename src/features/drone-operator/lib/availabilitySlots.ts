@@ -53,10 +53,12 @@ export function rangeSelect(
   const dayTo = days.indexOf(current.day)
   const timeFrom = times.indexOf(anchor.time)
   const timeTo = times.indexOf(current.time)
-  if (dayFrom === -1 || dayTo === -1 || timeFrom === -1 || timeTo === -1) return []
+  if (dayFrom === -1 || dayTo === -1 || timeFrom === -1 || timeTo === -1)
+    return []
 
   const [dMin, dMax] = dayFrom <= dayTo ? [dayFrom, dayTo] : [dayTo, dayFrom]
-  const [tMin, tMax] = timeFrom <= timeTo ? [timeFrom, timeTo] : [timeTo, timeFrom]
+  const [tMin, tMax] =
+    timeFrom <= timeTo ? [timeFrom, timeTo] : [timeTo, timeFrom]
 
   const keys: string[] = []
   for (let di = dMin; di <= dMax; di++) {

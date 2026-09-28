@@ -1,0 +1,96 @@
+import { defineMessages } from '../../../shared/i18n'
+
+export const missionListPageMessages = defineMessages({
+  vi: {
+    tabLabel: {
+      pending: 'Chờ phản hồi',
+      upcoming: 'Sắp tới',
+      history: 'Lịch sử',
+    },
+    weekdays: [
+      'Chủ Nhật',
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy',
+    ],
+    loadFailedTitle: 'Không tải được danh sách mission',
+    loadFailedDesc:
+      'Mất kết nối hoặc máy chủ đang bận. Dữ liệu đã lưu vẫn an toàn.',
+    retry: 'Thử lại',
+    title: 'Mission của tôi',
+    pilotRank: (rank: string) => ` · phi công hạng ${rank}`,
+    declareAvailability: 'Khai báo lịch rảnh',
+    manageMaintenance: 'Quản lý Bảo trì & Sự cố',
+    certExpiring: (expiry: string, daysLeft: number) =>
+      `Chứng chỉ hết hạn ${expiry}, còn ${daysLeft} ngày.`,
+    certExpiringHint: 'Gia hạn để không bị chặn phân công.',
+    viewProfile: 'Xem hồ sơ',
+    kpi: {
+      pending: 'Chờ phản hồi',
+      pendingSub: (deadline: string) => `trước ${deadline}`,
+      today: 'Hôm nay',
+      todayFlyingSub: (count: number) => `${count} đang bay`,
+      upcomingWeek: 'Sắp tới trong tuần',
+      certValid: 'Chứng chỉ còn hiệu lực',
+      certDays: (days: number) => `${days} ngày`,
+      certNoData: 'Chưa có dữ liệu',
+      certExpirySub: (expiry: string) => `hết hạn ${expiry}`,
+    },
+    upcomingSoon: 'Sắp tới giờ',
+    noUpcomingMission: 'Không có mission sắp bay.',
+    accepted: 'Đã nhận',
+    timeLeft: (hours: number, minutes: number) =>
+      `còn ${hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`}`,
+    today2: 'Hôm nay',
+    startFlight: 'Bắt đầu chuyến bay',
+  },
+  en: {
+    tabLabel: {
+      pending: 'Awaiting reply',
+      upcoming: 'Upcoming',
+      history: 'History',
+    },
+    weekdays: [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ],
+    loadFailedTitle: 'Could not load the mission list',
+    loadFailedDesc:
+      'Connection lost or the server is busy. Saved data is still safe.',
+    retry: 'Retry',
+    title: 'My missions',
+    pilotRank: (rank: string) => ` · pilot rank ${rank}`,
+    declareAvailability: 'Set availability',
+    manageMaintenance: 'Manage maintenance & incidents',
+    certExpiring: (expiry: string, daysLeft: number) =>
+      `Certificate expires ${expiry}, ${daysLeft} days left.`,
+    certExpiringHint: 'Renew it so assignments are not blocked.',
+    viewProfile: 'View profile',
+    kpi: {
+      pending: 'Awaiting reply',
+      pendingSub: (deadline: string) => `by ${deadline}`,
+      today: 'Today',
+      todayFlyingSub: (count: number) => `${count} in flight`,
+      upcomingWeek: 'Upcoming this week',
+      certValid: 'Certificate valid for',
+      certDays: (days: number) => `${days} days`,
+      certNoData: 'No data yet',
+      certExpirySub: (expiry: string) => `expires ${expiry}`,
+    },
+    upcomingSoon: 'Coming up soon',
+    noUpcomingMission: 'No upcoming missions.',
+    accepted: 'Accepted',
+    timeLeft: (hours: number, minutes: number) =>
+      `${hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`} left`,
+    today2: 'Today',
+    startFlight: 'Start flight',
+  },
+})

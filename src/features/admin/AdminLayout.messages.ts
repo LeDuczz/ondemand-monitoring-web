@@ -1,0 +1,42 @@
+import { defineMessages } from '../../shared/i18n'
+
+export const adminLayoutMessages = defineMessages({
+  vi: {
+    nav: 'Điều hướng quản trị',
+    menu: 'Menu',
+    navItems: {
+      accounts: 'Người dùng',
+      roles: 'Vai trò',
+      catalog: 'Danh mục',
+      operatingConfig: 'Cấu hình vận hành',
+      aiKnowledge: 'Tri thức AI và luật',
+      auditLog: 'Nhật ký hệ thống',
+    },
+    closeNav: 'Đóng điều hướng',
+    openNav: 'Mở điều hướng',
+    search: 'Tìm kiếm',
+    searchPlaceholder: 'Tìm mã đơn, mission, drone...',
+    toggleTheme: 'Đổi giao diện sáng / tối',
+    notifications: 'Thông báo',
+    admin: 'Admin',
+  },
+  en: {
+    nav: 'Admin navigation',
+    menu: 'Menu',
+    navItems: {
+      accounts: 'Users',
+      roles: 'Roles',
+      catalog: 'Catalog',
+      operatingConfig: 'Operating configuration',
+      aiKnowledge: 'AI knowledge & rules',
+      auditLog: 'Audit log',
+    },
+    closeNav: 'Close navigation',
+    openNav: 'Open navigation',
+    search: 'Search',
+    searchPlaceholder: 'Search order, mission, drone id...',
+    toggleTheme: 'Switch to light / dark theme',
+    notifications: 'Notifications',
+    admin: 'Admin',
+  },
+})

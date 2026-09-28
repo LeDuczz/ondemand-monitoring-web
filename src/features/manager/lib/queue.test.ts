@@ -82,3 +82,16 @@ describe('isOverdue / formatWaitLabel', () => {
     expect(isOverdue(now, almost)).toBe(false)
   })
 })
+
+describe('formatWaitLabel (lang="en")', () => {
+  it('renders hours-based wait label in English', () => {
+    const overdue = row({
+      createdAt: new Date(now.getTime() - 31 * 3600_000).toISOString(),
+    })
+    const fresh = row({
+      createdAt: new Date(now.getTime() - 6 * 3600_000).toISOString(),
+    })
+    expect(formatWaitLabel(now, overdue, 'en')).toBe('31h · over 24h')
+    expect(formatWaitLabel(now, fresh, 'en')).toBe('6h')
+  })
+})

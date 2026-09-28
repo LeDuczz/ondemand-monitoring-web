@@ -153,16 +153,24 @@ function toCustomerOrderItem(order: BackendOrderResponse): CustomerOrderItem {
     radiusM: order.radiusM ?? null,
     status,
     serviceNames: order.serviceName ? [order.serviceName] : [],
-    missionCount: status === 'APPROVED' || status === 'IN_PROGRESS' || status === 'COMPLETED' ? 1 : 0,
+    missionCount:
+      status === 'APPROVED' ||
+      status === 'IN_PROGRESS' ||
+      status === 'COMPLETED'
+        ? 1
+        : 0,
     hasNewMedia: false,
     submittedAt: order.createdAt ?? null,
     canCancel: status === 'PENDING',
   }
 }
 
-function toCustomerOrderDetail(order: BackendOrderResponse): CustomerOrderDetail {
+function toCustomerOrderDetail(
+  order: BackendOrderResponse,
+): CustomerOrderDetail {
   const status = order.orderStatus ?? 'PENDING'
-  const statusAt = order.updatedAt ?? order.createdAt ?? new Date().toISOString()
+  const statusAt =
+    order.updatedAt ?? order.createdAt ?? new Date().toISOString()
   return {
     id: order.id,
     orderCode: order.id,
@@ -179,7 +187,11 @@ function toCustomerOrderDetail(order: BackendOrderResponse): CustomerOrderDetail
     serviceNames: order.serviceName ? [order.serviceName] : [],
     submittedAt: order.createdAt ?? null,
     approvalDecision:
-      status === 'APPROVED' ? 'APPROVED' : status === 'REJECTED' ? 'REJECTED' : null,
+      status === 'APPROVED'
+        ? 'APPROVED'
+        : status === 'REJECTED'
+          ? 'REJECTED'
+          : null,
     approvalReason: order.rejectReason ?? null,
     approvalAt: order.reviewAt ?? null,
     approvalActorName: order.reviewByName ?? null,
@@ -240,10 +252,13 @@ export const customerApi = {
     }),
 
   listRequirementSuggestions: (serviceId?: string, signal?: AbortSignal) =>
-    apiRequest<ServiceRequirementSuggestion[]>('/api/services/requirement-suggestions', {
-      query: serviceId ? { serviceId } : undefined,
-      signal,
-    }),
+    apiRequest<ServiceRequirementSuggestion[]>(
+      '/api/services/requirement-suggestions',
+      {
+        query: serviceId ? { serviceId } : undefined,
+        signal,
+      },
+    ),
 
   getPricingEstimate: (
     serviceId: string,
@@ -304,7 +319,9 @@ export const customerApi = {
     }),
 
   getAnalysis: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<AiAnalysisResult>(`/api/customer/orders/${orderId}/analysis`, { signal }),
+    apiRequest<AiAnalysisResult>(`/api/customer/orders/${orderId}/analysis`, {
+      signal,
+    }),
 
   applyFindingSuggestion: (orderId: string, findingId: string) =>
     apiRequest<AiAnalysisResult>(

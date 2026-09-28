@@ -7,11 +7,16 @@ import {
   droneStatusTone,
   findingSeverityLabel,
   findingSeverityTone,
+  getDroneStatusLabel,
+  getMediaStatusLabel,
+  getMissionStatusLabel,
+  getOrderStatusLabel,
   mediaStatusLabel,
   mediaStatusTone,
   missionStatusLabel,
   missionStatusTone,
   orderStatusLabel,
+  orderStatusLabelEn,
   orderStatusTone,
   ticketSeverityLabel,
   ticketSeverityTone,
@@ -179,5 +184,46 @@ describe('statusTone maps', () => {
     expect(mediaStatusTone.VALIDATION_FAILED).toBe('red')
     expect(mediaStatusTone.UPLOADING).toBe('blue')
     expect(mediaStatusTone.AVAILABLE).toBe('green')
+  })
+})
+
+describe('bilingual label accessors', () => {
+  it.each(ORDER_STATUSES)(
+    'getOrderStatusLabel(%s) matches vi/en records by language',
+    (status) => {
+      expect(getOrderStatusLabel(status, 'vi')).toBe(orderStatusLabel[status])
+      expect(getOrderStatusLabel(status, 'en')).toBe(orderStatusLabelEn[status])
+    },
+  )
+
+  it.each(MISSION_STATUSES)(
+    'getMissionStatusLabel(%s) returns a non-empty vi/en label',
+    (status) => {
+      expect(getMissionStatusLabel(status, 'vi')).toBe(
+        missionStatusLabel[status],
+      )
+      expect(getMissionStatusLabel(status, 'en')).toBeTruthy()
+    },
+  )
+
+  it.each(DRONE_STATUSES)(
+    'getDroneStatusLabel(%s) returns a non-empty vi/en label',
+    (status) => {
+      expect(getDroneStatusLabel(status, 'vi')).toBe(droneStatusLabel[status])
+      expect(getDroneStatusLabel(status, 'en')).toBeTruthy()
+    },
+  )
+
+  it.each(MEDIA_STATUSES)(
+    'getMediaStatusLabel(%s) returns a non-empty vi/en label',
+    (status) => {
+      expect(getMediaStatusLabel(status, 'vi')).toBe(mediaStatusLabel[status])
+      expect(getMediaStatusLabel(status, 'en')).toBeTruthy()
+    },
+  )
+
+  it('English labels differ from Vietnamese ones', () => {
+    expect(getOrderStatusLabel('APPROVED', 'en')).toBe('Approved')
+    expect(getOrderStatusLabel('APPROVED', 'vi')).toBe('Đã duyệt')
   })
 })

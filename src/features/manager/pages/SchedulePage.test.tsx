@@ -1,3 +1,4 @@
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 
@@ -7,6 +8,7 @@ import {
 } from '../../../shared/api/httpClient'
 import { resetMockDb } from '../../../mocks/db'
 import { mockFetch } from '../../../mocks'
+import { setLanguage } from '../../../shared/i18n'
 import { SchedulePage } from './SchedulePage'
 
 beforeEach(() => {
@@ -58,5 +60,15 @@ describe('SchedulePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tuần sau' }))
     fireEvent.click(screen.getByRole('button', { name: 'Hôm nay' }))
     expect(screen.getByRole('button', { name: 'Hôm nay' })).toBeTruthy()
+  })
+
+  it('renders the English title and nav buttons when language is switched', async () => {
+    render(<SchedulePage />)
+    await waitFor(() =>
+      expect(document.querySelector('[aria-busy="true"]')).toBeNull(),
+    )
+    act(() => setLanguage('en'))
+    expect(screen.getByText('Mission schedule')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Today' })).toBeTruthy()
   })
 })

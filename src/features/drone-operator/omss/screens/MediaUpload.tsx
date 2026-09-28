@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { operatorMediaApi, type LocalMedia } from '../../../media/api/operatorMediaApi'
+import {
+  operatorMediaApi,
+  type LocalMedia,
+} from '../../../media/api/operatorMediaApi'
+import { useI18n } from '../../../../shared/i18n'
+import { mediaUploadMessages } from '../i18n/mediaUpload'
 import type { Mission } from '../types'
 
 interface Props {
@@ -9,6 +14,7 @@ interface Props {
 }
 
 export default function MediaUpload({ mission, onDone, onManual }: Props) {
+  const { t } = useI18n(mediaUploadMessages)
   const operationalMissionId = mission.backendId ?? mission.id
   const [items, setItems] = useState<LocalMedia[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -21,21 +27,26 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
       const local = await operatorMediaApi.list(operationalMissionId)
       setItems(local)
       setError(null)
-      const ids = local.filter((item) => item.backendMediaId).map((item) => item.backendMediaId!)
-      const results = await Promise.allSettled(ids.map((id) => operatorMediaApi.status(id)))
+      const ids = local
+        .filter((item) => item.backendMediaId)
+        .map((item) => item.backendMediaId!)
+      const results = await Promise.allSettled(
+        ids.map((id) => operatorMediaApi.status(id)),
+      )
       setStatus((previous) => {
         const next = { ...previous }
         results.forEach((result, index) => {
-          if (result.status === 'fulfilled') next[ids[index]] = result.value.status
+          if (result.status === 'fulfilled')
+            next[ids[index]] = result.value.status
         })
         return next
       })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Cannot load local media')
+      setError(cause instanceof Error ? cause.message : t.cannotLoad)
     } finally {
       setLoading(false)
     }
-  }, [operationalMissionId])
+  }, [operationalMissionId, t.cannotLoad])
 
   useEffect(() => {
     void refresh()
@@ -44,13 +55,13 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
   }, [refresh])
 
   async function discard(item: LocalMedia) {
-    if (!window.confirm(`Discard ${item.fileName} from the Flight Controller?`)) return
+    if (!window.confirm(t.discardConfirm(item.fileName))) return
     setBusyId(item.localMediaId)
     try {
       await operatorMediaApi.discard(item.localMediaId)
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Discard failed')
+      setError(cause instanceof Error ? cause.message : t.discardFailed)
     } finally {
       setBusyId(null)
     }
@@ -64,7 +75,7 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
       setStatus((previous) => ({ ...previous, [mediaId]: 'VALIDATING' }))
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Upload failed')
+      setError(cause instanceof Error ? cause.message : t.uploadFailed)
       await refresh()
     } finally {
       setBusyId(null)
@@ -72,44 +83,121 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
   }
 
   return (
-    <section className="fade-in" style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}>
+    <section
+      className="fade-in"
+      style={{ flex: 1, overflowY: 'auto', padding: '32px 36px' }}
+    >
       <div style={{ maxWidth: 1100 }}>
-        <h1 style={{ fontSize: 22, marginBottom: 8 }}>Review captured media</h1>
-        <p style={{ color: 'var(--text-2)' }}>
-          Files remain on the Flight Controller until you discard them. Approve sends the original
-          directly to S3; the Customer sees it only after backend validation.
-        </p>
+        <h1 style={{ fontSize: 22, marginBottom: 8 }}>{t.title}</h1>
+        <p style={{ color: 'var(--text-2)' }}>{t.description}</p>
         <div style={{ display: 'flex', gap: 10, margin: '20px 0' }}>
-          <button onClick={() => void refresh()}>Refresh</button>
-          <button onClick={onManual}>Manual upload tasks</button>
-          <button onClick={onDone}>Back to missions</button>
+          <button onClick={() => void refresh()}>{t.refresh}</button>
+          <button onClick={onManual}>{t.manualUploadTasks}</button>
+          <button onClick={onDone}>{t.backToMissions}</button>
         </div>
-        {error && <p role="alert" style={{ color: 'var(--red-text)' }}>{error}</p>}
-        {loading && <p>Loading local media…</p>}
-        {!loading && items.length === 0 && <p>No captures for this mission yet.</p>}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+        {error && (
+          <p role="alert" style={{ color: 'var(--red-text)' }}>
+            {error}
+          </p>
+        )}
+        {loading && <p>{t.loading}</p>}
+        {!loading && items.length === 0 && <p>{t.noCaptures}</p>}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: 16,
+          }}
+        >
           {items.map((item) => {
-            const backendStatus = item.backendMediaId ? status[item.backendMediaId] : undefined
+            const backendStatus = item.backendMediaId
+              ? status[item.backendMediaId]
+              : undefined
             const effective = backendStatus ?? item.status
-            const canApprove = !busyId && ['REVIEW_PENDING', 'UPLOAD_FAILED', 'UPLOAD_PENDING', 'RETRY_REQUIRED', 'MANUAL_UPLOAD_REQUIRED'].includes(effective)
+            const canApprove =
+              !busyId &&
+              [
+                'REVIEW_PENDING',
+                'UPLOAD_FAILED',
+                'UPLOAD_PENDING',
+                'RETRY_REQUIRED',
+                'MANUAL_UPLOAD_REQUIRED',
+              ].includes(effective)
             return (
-              <article key={item.localMediaId} style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--surface)' }}>
+              <article
+                key={item.localMediaId}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                  background: 'var(--surface)',
+                }}
+              >
                 {item.mediaType === 'IMAGE' ? (
-                  <img src={operatorMediaApi.previewUrl(item.localMediaId)} alt={item.fileName} style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'contain', background: '#222' }} />
+                  <img
+                    src={operatorMediaApi.previewUrl(item.localMediaId)}
+                    alt={item.fileName}
+                    style={{
+                      width: '100%',
+                      aspectRatio: '16 / 9',
+                      objectFit: 'contain',
+                      background: '#222',
+                    }}
+                  />
                 ) : (
-                  <video src={operatorMediaApi.previewUrl(item.localMediaId)} controls preload="metadata" style={{ width: '100%', aspectRatio: '16 / 9', background: '#222' }} />
+                  <video
+                    src={operatorMediaApi.previewUrl(item.localMediaId)}
+                    controls
+                    preload="metadata"
+                    style={{
+                      width: '100%',
+                      aspectRatio: '16 / 9',
+                      background: '#222',
+                    }}
+                  />
                 )}
                 <div style={{ padding: 16 }}>
-                  <strong style={{ overflowWrap: 'anywhere' }}>{item.fileName}</strong>
-                  <p>{item.mediaType} · {(item.fileSize / 1024 / 1024).toFixed(2)} MB · {effective} · {item.missionCode ?? item.missionId}</p>
-                  {item.previewError && <p role="alert" style={{ color: 'var(--red-text)' }}>{item.previewError}</p>}
-                  {item.backendMediaId && <p style={{ overflowWrap: 'anywhere' }}>Backend media: {item.backendMediaId}</p>}
+                  <strong style={{ overflowWrap: 'anywhere' }}>
+                    {item.fileName}
+                  </strong>
+                  <p>
+                    {item.mediaType} ·{' '}
+                    {(item.fileSize / 1024 / 1024).toFixed(2)} MB · {effective}{' '}
+                    · {item.missionCode ?? item.missionId}
+                  </p>
+                  {item.previewError && (
+                    <p role="alert" style={{ color: 'var(--red-text)' }}>
+                      {item.previewError}
+                    </p>
+                  )}
+                  {item.backendMediaId && (
+                    <p style={{ overflowWrap: 'anywhere' }}>
+                      {t.backendMedia}: {item.backendMediaId}
+                    </p>
+                  )}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button disabled={!canApprove} onClick={() => void approve(item)}>
-                      {busyId === item.localMediaId ? 'Uploading…' : 'Approve & upload'}
+                    <button
+                      disabled={!canApprove}
+                      onClick={() => void approve(item)}
+                    >
+                      {busyId === item.localMediaId
+                        ? t.uploading
+                        : t.approveAndUpload}
                     </button>
-                    <button disabled={!!busyId || !(['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status) || backendStatus === 'AVAILABLE')} onClick={() => void discard(item)}>
-                      {backendStatus === 'AVAILABLE' ? 'Remove local copy' : 'Discard'}
+                    <button
+                      disabled={
+                        !!busyId ||
+                        !(
+                          ['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(
+                            item.status,
+                          ) || backendStatus === 'AVAILABLE'
+                        )
+                      }
+                      onClick={() => void discard(item)}
+                    >
+                      {backendStatus === 'AVAILABLE'
+                        ? t.removeLocalCopy
+                        : t.discard}
                     </button>
                   </div>
                 </div>

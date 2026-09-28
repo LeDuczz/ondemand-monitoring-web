@@ -1,4 +1,8 @@
+import { useI18n } from '../../../shared/i18n'
+import { placeholderPageMessages } from './PlaceholderPage.messages'
+
 export function PlaceholderPage({ title }: { title: string }) {
+  const { t } = useI18n(placeholderPageMessages)
   return (
     <div className="odm-card">
       <div
@@ -14,7 +18,7 @@ export function PlaceholderPage({ title }: { title: string }) {
         }}
       >
         <div style={{ fontSize: 15, fontWeight: 600 }}>{title}</div>
-        <div style={{ color: 'var(--tx3)' }}>Đang phát triển</div>
+        <div style={{ color: 'var(--tx3)' }}>{t.inDevelopment}</div>
       </div>
     </div>
   )

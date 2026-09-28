@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { getDroneStatusLabel } from '../../../../shared/lib/statusTone'
+import type { DroneStatus } from '../../../../shared/types/domain'
+import { droneReplacementMessages } from '../i18n/droneReplacement'
 import type { Drone } from '../types'
 
 interface Props {
@@ -14,6 +18,7 @@ export default function DroneReplacement({
   onSelect,
   onBack,
 }: Props) {
+  const { t, lang } = useI18n(droneReplacementMessages)
   const [sel, setSel] = useState<string | null>(null)
 
   function BatBar({ pct }: { pct: number }) {
@@ -76,7 +81,7 @@ export default function DroneReplacement({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Pre-flight failure
+        {t.preflightFailure}
       </button>
 
       <div style={{ maxWidth: 640 }}>
@@ -88,11 +93,10 @@ export default function DroneReplacement({
             margin: '0 0 6px',
           }}
         >
-          Select replacement drone
+          {t.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 10px' }}>
-          Current drone <strong>{current.id}</strong> is unavailable. Choose an
-          available replacement from the list below.
+          {current.id} {t.description}
         </p>
 
         {/* Current drone */}
@@ -121,7 +125,8 @@ export default function DroneReplacement({
             <div
               style={{ fontSize: 12, color: 'var(--red-text)', opacity: 0.8 }}
             >
-              Unavailable · State: {current.state}
+              {t.unavailable} · {t.state}:{' '}
+              {getDroneStatusLabel(current.state as DroneStatus, lang)}
             </div>
           </div>
           <span
@@ -135,7 +140,7 @@ export default function DroneReplacement({
               fontWeight: 600,
             }}
           >
-            ✕ Removed
+            {t.removed}
           </span>
         </div>
 
@@ -210,7 +215,7 @@ export default function DroneReplacement({
                           borderRadius: 5,
                         }}
                       >
-                        Not ready
+                        {t.notReady}
                       </span>
                     )}
                     {ready && !selected && (
@@ -224,7 +229,7 @@ export default function DroneReplacement({
                           borderRadius: 5,
                         }}
                       >
-                        Available
+                        {t.available}
                       </span>
                     )}
                     {selected && (
@@ -238,7 +243,7 @@ export default function DroneReplacement({
                           fontWeight: 600,
                         }}
                       >
-                        ✓ Selected
+                        {t.selected}
                       </span>
                     )}
                   </div>
@@ -258,7 +263,7 @@ export default function DroneReplacement({
                         marginBottom: 5,
                       }}
                     >
-                      Battery
+                      {t.battery}
                     </div>
                     <BatBar pct={d.battery} />
                   </div>
@@ -270,7 +275,7 @@ export default function DroneReplacement({
                         marginBottom: 5,
                       }}
                     >
-                      GPS
+                      {t.gps}
                     </div>
                     <div
                       style={{
@@ -279,7 +284,7 @@ export default function DroneReplacement({
                         color: d.gpsCount >= 8 ? 'var(--green)' : 'var(--red)',
                       }}
                     >
-                      {d.gpsCount} sats
+                      {d.gpsCount} {t.sats}
                     </div>
                   </div>
                   <div>
@@ -290,7 +295,7 @@ export default function DroneReplacement({
                         marginBottom: 5,
                       }}
                     >
-                      Storage
+                      {t.storage}
                     </div>
                     <div
                       style={{
@@ -326,7 +331,7 @@ export default function DroneReplacement({
             cursor: sel ? 'pointer' : 'not-allowed',
           }}
         >
-          Confirm replacement — run pre-flight
+          {t.confirmReplacement}
         </button>
       </div>
     </div>

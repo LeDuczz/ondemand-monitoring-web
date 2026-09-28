@@ -18,14 +18,26 @@ export type ConsultationMessage = {
 
 export const consultationApi = {
   /** `GET /api/customer/consultations/{consultationId}` [BE]. */
-  getConsultation(consultationId: string, signal?: AbortSignal): Promise<ConsultationResponse> {
-    return apiRequest<ConsultationResponse>(`/api/customer/consultations/${consultationId}`, { signal })
+  getConsultation(
+    consultationId: string,
+    signal?: AbortSignal,
+  ): Promise<ConsultationResponse> {
+    return apiRequest<ConsultationResponse>(
+      `/api/customer/consultations/${consultationId}`,
+      { signal },
+    )
   },
   /** `POST /api/customer/consultations/{consultationId}/messages` [BE]. */
-  sendMessage(consultationId: string, content: string): Promise<ConsultationMessage> {
-    return apiRequest<ConsultationMessage>(`/api/customer/consultations/${consultationId}/messages`, {
-      method: 'POST',
-      body: { content },
-    })
+  sendMessage(
+    consultationId: string,
+    content: string,
+  ): Promise<ConsultationMessage> {
+    return apiRequest<ConsultationMessage>(
+      `/api/customer/consultations/${consultationId}/messages`,
+      {
+        method: 'POST',
+        body: { content },
+      },
+    )
   },
 }

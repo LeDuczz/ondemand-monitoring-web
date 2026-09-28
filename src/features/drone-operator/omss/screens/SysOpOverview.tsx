@@ -1,3 +1,8 @@
+import { useI18n } from '../../../../shared/i18n'
+import { getDroneStatusLabel } from '../../../../shared/lib/statusTone'
+import type { DroneStatus } from '../../../../shared/types/domain'
+import { sysOpOverviewMessages } from '../i18n/sysOpOverview'
+
 const FLEET = [
   {
     id: 'DR-ALPHA-1',
@@ -132,14 +137,6 @@ const STATE_COLOR: Record<string, string> = {
   MAINTENANCE: 'var(--red)',
 }
 
-const STATE_LABEL: Record<string, string> = {
-  ACTIVE_MISSION: 'Active',
-  AVAILABLE: 'Available',
-  PREFLIGHT: 'Pre-flight',
-  IDLE_CHARGING: 'Charging',
-  MAINTENANCE: 'Maintenance',
-}
-
 const SEV_CFG: Record<
   string,
   { bg: string; border: string; color: string; dot: string }
@@ -164,21 +161,14 @@ const SEV_CFG: Record<
   },
 }
 
-const GCS_CFG: Record<string, { dot: string; label: string; color: string }> = {
-  operational: {
-    dot: 'var(--green)',
-    label: 'Operational',
-    color: 'var(--green-text)',
-  },
-  degraded: {
-    dot: 'var(--amber)',
-    label: 'Degraded',
-    color: 'var(--amber-text)',
-  },
-  offline: { dot: 'var(--red)', label: 'Offline', color: 'var(--red-text)' },
+const GCS_CFG: Record<string, { dot: string; color: string }> = {
+  operational: { dot: 'var(--green)', color: 'var(--green-text)' },
+  degraded: { dot: 'var(--amber)', color: 'var(--amber-text)' },
+  offline: { dot: 'var(--red)', color: 'var(--red-text)' },
 }
 
 export default function SysOpOverview() {
+  const { t, lang } = useI18n(sysOpOverviewMessages)
   const criticals = ALERTS_LIST.filter((a) => a.sev === 'critical').length
   const warnings = ALERTS_LIST.filter((a) => a.sev === 'warning').length
   const activeCount = FLEET.filter((d) => d.state === 'ACTIVE_MISSION').length
@@ -199,10 +189,10 @@ export default function SysOpOverview() {
               margin: '0 0 4px',
             }}
           >
-            System overview
+            {t.title}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            R. Patel · SYS-003 · System Operator · Last refreshed just now
+            R. Patel · SYS-003 · {t.headerLine}
           </p>
         </div>
 
@@ -217,22 +207,24 @@ export default function SysOpOverview() {
         >
           {[
             {
-              label: 'Fleet size',
+              label: t.stats.fleetSize,
               value: `${FLEET.length}`,
-              sub: `${activeCount} active`,
+              sub: t.stats.active(activeCount),
             },
             {
-              label: 'GCS stations',
+              label: t.stats.gcsStations,
               value: `${GCS_STATIONS.length}`,
-              sub: `${GCS_STATIONS.filter((g) => g.status === 'operational').length} operational`,
+              sub: t.stats.operational(
+                GCS_STATIONS.filter((g) => g.status === 'operational').length,
+              ),
             },
             {
-              label: 'Critical alerts',
+              label: t.stats.criticalAlerts,
               value: `${criticals}`,
               color: criticals > 0 ? 'var(--red-text)' : 'var(--text)',
             },
             {
-              label: 'Maintenance queue',
+              label: t.stats.maintenanceQueue,
               value: `${maintenanceCount}`,
               color: maintenanceCount > 0 ? 'var(--amber-text)' : 'var(--text)',
             },
@@ -307,8 +299,7 @@ export default function SysOpOverview() {
                 color: 'var(--red-text)',
               }}
             >
-              {criticals} critical alert{criticals > 1 ? 's' : ''} require
-              immediate attention
+              {t.criticalRequireAttention(criticals)}
             </span>
           </div>
         )}
@@ -337,18 +328,18 @@ export default function SysOpOverview() {
                   color: 'var(--text)',
                 }}
               >
-                Fleet status
+                {t.fleetStatus}
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     {[
-                      'Drone ID',
-                      'Model',
-                      'Battery',
-                      'GCS',
-                      'State',
-                      'Last telemetry',
+                      t.tableHeaders.droneId,
+                      t.tableHeaders.model,
+                      t.tableHeaders.battery,
+                      t.tableHeaders.gcs,
+                      t.tableHeaders.state,
+                      t.tableHeaders.lastTelemetry,
                     ].map((h) => (
                       <th
                         key={h}
@@ -459,7 +450,7 @@ export default function SysOpOverview() {
                                 : 'var(--text-3)',
                             }}
                           >
-                            {d.gcs ? 'Connected' : '—'}
+                            {d.gcs ? t.connected : '—'}
                           </span>
                         </td>
                         <td style={{ padding: '10px 14px' }}>
@@ -481,7 +472,7 @@ export default function SysOpOverview() {
                                 display: 'inline-block',
                               }}
                             />
-                            {STATE_LABEL[d.state]}
+                            {getDroneStatusLabel(d.state as DroneStatus, lang)}
                           </span>
                         </td>
                         <td
@@ -521,10 +512,12 @@ export default function SysOpOverview() {
                   color: 'var(--text)',
                 }}
               >
-                GCS stations
+                {t.gcsStationsTitle}
               </div>
               {GCS_STATIONS.map((g, i) => {
                 const cfg = GCS_CFG[g.status]
+                const gcsLabel =
+                  t.gcsStatus[g.status as keyof typeof t.gcsStatus] ?? g.status
                 return (
                   <div
                     key={g.id}
@@ -557,7 +550,7 @@ export default function SysOpOverview() {
                           marginTop: 2,
                         }}
                       >
-                        {g.id} · {g.connected} drones connected · Uptime{' '}
+                        {g.id} · {t.dronesConnected(g.connected)} · {t.uptime}{' '}
                         {g.uptime}
                       </div>
                     </div>
@@ -580,7 +573,7 @@ export default function SysOpOverview() {
                           display: 'inline-block',
                         }}
                       />
-                      {cfg.label}
+                      {gcsLabel}
                     </span>
                   </div>
                 )
@@ -612,7 +605,7 @@ export default function SysOpOverview() {
               <span
                 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}
               >
-                System alerts
+                {t.systemAlerts}
               </span>
               {criticals + warnings > 0 && (
                 <span
@@ -626,7 +619,7 @@ export default function SysOpOverview() {
                     fontWeight: 700,
                   }}
                 >
-                  {criticals + warnings} open
+                  {t.openCount(criticals + warnings)}
                 </span>
               )}
             </div>

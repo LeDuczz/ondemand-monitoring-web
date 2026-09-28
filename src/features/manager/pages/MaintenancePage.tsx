@@ -5,26 +5,31 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n, type Language } from '../../../shared/i18n'
 import {
-  ticketSeverityLabel,
+  getTicketSeverityLabel,
+  getTicketStatusLabel,
   ticketSeverityTone,
-  ticketStatusLabel,
   ticketStatusTone,
 } from '../../../shared/lib/statusTone'
 import type { TicketSeverity, TicketStatus } from '../../../shared/types/domain'
 import { maintenanceApi } from '../api/maintenanceApi'
 import type { MaintenanceTicket } from '../types/maintenance'
+import { maintenancePageMessages } from './MaintenancePage.messages'
 import '../manager.css'
 
 const COLUMNS: TicketStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']
 
-function formatAge(openedAt: string): string {
+function formatAge(
+  openedAt: string,
+  t: (typeof maintenancePageMessages)['vi']['age'],
+): string {
   const ms = Date.now() - new Date(openedAt).getTime()
   const days = Math.floor(ms / (1000 * 60 * 60 * 24))
-  if (days > 0) return `${days} ngày trước`
+  if (days > 0) return t.daysAgo(days)
   const hours = Math.floor(ms / (1000 * 60 * 60))
-  if (hours > 0) return `${hours} giờ trước`
-  return 'Vừa tạo'
+  if (hours > 0) return t.hoursAgo(hours)
+  return t.justNow
 }
 
 type TicketCardProps = {
@@ -40,6 +45,7 @@ function TicketCard({
   onAssignClick,
   selected,
 }: TicketCardProps) {
+  const { t, lang } = useI18n(maintenancePageMessages)
   const priorityBorderColor: Record<TicketSeverity, string> = {
     CRITICAL: '#ef4444',
     HIGH: '#f97316',
@@ -56,7 +62,9 @@ function TicketCard({
         cursor: 'pointer',
         borderLeft: `4px solid ${priorityBorderColor[ticket.priority]}`,
         background: selected ? '#f8fafc' : '#ffffff',
-        boxShadow: selected ? '0 0 0 2px #2563eb' : '0 1px 3px rgba(0,0,0,0.06)',
+        boxShadow: selected
+          ? '0 0 0 2px #2563eb'
+          : '0 1px 3px rgba(0,0,0,0.06)',
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
@@ -64,22 +72,45 @@ function TicketCard({
       }}
       onClick={() => onSelect(ticket)}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="odm-mono" style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span
+          className="odm-mono"
+          style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}
+        >
           {ticket.code}
         </span>
         <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
-          {formatAge(ticket.openedAt)}
+          {formatAge(ticket.openedAt, t.age)}
         </span>
       </div>
 
-      <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.35, color: '#0f172a' }}>
+      <div
+        style={{
+          fontWeight: 700,
+          fontSize: 14,
+          lineHeight: 1.35,
+          color: '#0f172a',
+        }}
+      >
         {ticket.title}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 6,
+          alignItems: 'center',
+        }}
+      >
         <StatusBadge tone={ticketSeverityTone[ticket.priority]}>
-          {ticketSeverityLabel[ticket.priority]}
+          {getTicketSeverityLabel(ticket.priority, lang)}
         </StatusBadge>
         <span
           style={{
@@ -95,16 +126,59 @@ function TicketCard({
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, fontSize: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 2,
+          fontSize: 12,
+        }}
+      >
         {ticket.assignedTo ? (
-          <div style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-            <span>Operator: <b>{ticket.assignedTo}</b></span>
+          <div
+            style={{
+              color: '#059669',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#10b981',
+                display: 'inline-block',
+              }}
+            />
+            <span>
+              {t.card.operatorLabel}
+              <b>{ticket.assignedTo}</b>
+            </span>
           </div>
         ) : (
-          <div style={{ color: '#d97706', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
-            <span>Chưa phân công</span>
+          <div
+            style={{
+              color: '#d97706',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#f59e0b',
+                display: 'inline-block',
+              }}
+            />
+            <span>{t.card.unassigned}</span>
           </div>
         )}
       </div>
@@ -113,19 +187,36 @@ function TicketCard({
         <button
           type="button"
           className="odm-btn odm-btn-p"
-          style={{ fontSize: 12.5, marginTop: 4, fontWeight: 600, padding: '7px 12px', borderRadius: 8 }}
+          style={{
+            fontSize: 12.5,
+            marginTop: 4,
+            fontWeight: 600,
+            padding: '7px 12px',
+            borderRadius: 8,
+          }}
           onClick={(e) => {
             e.stopPropagation()
             onAssignClick(ticket)
           }}
         >
-          {ticket.assignedTo ? 'Đổi System Operator' : 'Phân công System Operator'}
+          {ticket.assignedTo ? t.card.changeOperator : t.card.assignOperator}
         </button>
       )}
 
       {ticket.status === 'RESOLVED' && (
-        <div style={{ fontSize: 12, color: '#059669', fontWeight: 600, background: '#f0fdf4', padding: '5px 10px', borderRadius: 6, textAlign: 'center', marginTop: 2 }}>
-          Đã được khắc phục xong
+        <div
+          style={{
+            fontSize: 12,
+            color: '#059669',
+            fontWeight: 600,
+            background: '#f0fdf4',
+            padding: '5px 10px',
+            borderRadius: 6,
+            textAlign: 'center',
+            marginTop: 2,
+          }}
+        >
+          {t.card.resolved}
         </div>
       )}
     </div>
@@ -139,6 +230,7 @@ type DetailPanelProps = {
 }
 
 function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
+  const { t, lang, locale } = useI18n(maintenancePageMessages)
   return (
     <div
       style={{
@@ -160,26 +252,33 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
           alignItems: 'center',
         }}
       >
-        <span className="odm-mono" style={{ fontWeight: 700, fontSize: 14, color: '#475569' }}>{ticket.code}</span>
+        <span
+          className="odm-mono"
+          style={{ fontWeight: 700, fontSize: 14, color: '#475569' }}
+        >
+          {ticket.code}
+        </span>
         <button
           type="button"
           className="odm-btn"
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t.detail.close}
           style={{ padding: '2px 8px', borderRadius: '50%' }}
         >
           ✕
         </button>
       </div>
 
-      <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>{ticket.title}</div>
+      <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>
+        {ticket.title}
+      </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
         <StatusBadge tone={ticketStatusTone[ticket.status]}>
-          {ticketStatusLabel[ticket.status]}
+          {getTicketStatusLabel(ticket.status, lang)}
         </StatusBadge>
         <StatusBadge tone={ticketSeverityTone[ticket.priority]}>
-          {ticketSeverityLabel[ticket.priority]}
+          {getTicketSeverityLabel(ticket.priority, lang)}
         </StatusBadge>
       </div>
 
@@ -192,7 +291,7 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
         }}
       >
         <div>
-          <span style={{ color: '#64748b' }}>Thiết bị: </span>
+          <span style={{ color: '#64748b' }}>{t.detail.device}</span>
           <span>
             <b style={{ color: '#0f172a' }}>{ticket.droneCode}</b>
             {ticket.droneName ? ` (${ticket.droneName})` : ''}
@@ -200,58 +299,118 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
         </div>
         {ticket.issueType && (
           <div>
-            <span style={{ color: '#64748b' }}>Loại sự cố: </span>
+            <span style={{ color: '#64748b' }}>{t.detail.issueType}</span>
             <span style={{ fontWeight: 600 }}>{ticket.issueType}</span>
           </div>
         )}
         {ticket.description && (
           <div>
-            <span style={{ color: '#64748b', display: 'block', marginBottom: 4 }}>Mô tả chi tiết:</span>
-            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, whiteSpace: 'pre-wrap', border: '1px solid #e2e8f0', color: '#334155', lineHeight: 1.5 }}>
+            <span
+              style={{ color: '#64748b', display: 'block', marginBottom: 4 }}
+            >
+              {t.detail.description}
+            </span>
+            <div
+              style={{
+                background: '#f8fafc',
+                padding: 12,
+                borderRadius: 8,
+                whiteSpace: 'pre-wrap',
+                border: '1px solid #e2e8f0',
+                color: '#334155',
+                lineHeight: 1.5,
+              }}
+            >
               {ticket.description}
             </div>
           </div>
         )}
         {ticket.reportedBy && (
           <div>
-            <span style={{ color: '#64748b' }}>Người tạo ticket: </span>
+            <span style={{ color: '#64748b' }}>{t.detail.reportedBy}</span>
             <span>{ticket.reportedBy}</span>
           </div>
         )}
         <div>
-          <span style={{ color: '#64748b' }}>System Operator phụ trách: </span>
+          <span style={{ color: '#64748b' }}>{t.detail.assignedOperator}</span>
           <span>
             {ticket.assignedTo ? (
               <b style={{ color: '#059669' }}>{ticket.assignedTo}</b>
             ) : (
-              <b style={{ color: '#d97706' }}>Chưa phân công</b>
+              <b style={{ color: '#d97706' }}>{t.detail.unassigned}</b>
             )}
           </span>
         </div>
         {ticket.resolutionNotes && (
-          <div style={{ background: '#f0fdf4', padding: 14, borderRadius: 10, border: '1px solid #bbf7d0', marginTop: 4 }}>
-            <span style={{ color: '#166534', fontWeight: 700, display: 'block', marginBottom: 4 }}>Báo cáo kỹ thuật:</span>
-            <span style={{ color: '#15803d', whiteSpace: 'pre-wrap', fontSize: 13 }}>{ticket.resolutionNotes}</span>
+          <div
+            style={{
+              background: '#f0fdf4',
+              padding: 14,
+              borderRadius: 10,
+              border: '1px solid #bbf7d0',
+              marginTop: 4,
+            }}
+          >
+            <span
+              style={{
+                color: '#166534',
+                fontWeight: 700,
+                display: 'block',
+                marginBottom: 4,
+              }}
+            >
+              {t.detail.resolutionReport}
+            </span>
+            <span
+              style={{ color: '#15803d', whiteSpace: 'pre-wrap', fontSize: 13 }}
+            >
+              {ticket.resolutionNotes}
+            </span>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          marginTop: 8,
+        }}
+      >
         {(ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && (
           <button
             type="button"
             className="odm-btn odm-btn-p"
             onClick={() => onAssignClick(ticket)}
-            style={{ width: '100%', height: 42, fontWeight: 600, borderRadius: 10 }}
+            style={{
+              width: '100%',
+              height: 42,
+              fontWeight: 600,
+              borderRadius: 10,
+            }}
           >
-            {ticket.assignedTo ? 'Thay đổi System Operator' : 'Phân công System Operator'}
+            {ticket.assignedTo
+              ? t.detail.changeOperator
+              : t.detail.assignOperator}
           </button>
         )}
 
         {ticket.status === 'RESOLVED' && (
-          <div style={{ background: '#f0fdf4', padding: 12, borderRadius: 10, border: '1px solid #bbf7d0', textAlign: 'center', color: '#15803d', fontWeight: 600, fontSize: 13 }}>
-            Đã hoàn tất khắc phục
+          <div
+            style={{
+              background: '#f0fdf4',
+              padding: 12,
+              borderRadius: 10,
+              border: '1px solid #bbf7d0',
+              textAlign: 'center',
+              color: '#15803d',
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
+            {t.detail.resolvedDone}
           </div>
         )}
       </div>
@@ -268,15 +427,17 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
           marginTop: 'auto',
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 2, color: '#475569' }}>Lịch sử Ticket</div>
+        <div style={{ fontWeight: 700, marginBottom: 2, color: '#475569' }}>
+          {t.detail.history}
+        </div>
         <div>
-          <span style={{ color: '#94a3b8' }}>Thời gian tạo: </span>
-          <span>{new Date(ticket.openedAt).toLocaleString('vi-VN')}</span>
+          <span style={{ color: '#94a3b8' }}>{t.detail.createdAt}</span>
+          <span>{new Date(ticket.openedAt).toLocaleString(locale)}</span>
         </div>
         {ticket.resolvedAt && (
           <div>
-            <span style={{ color: '#94a3b8' }}>Thời gian hoàn tất: </span>
-            <span>{new Date(ticket.resolvedAt).toLocaleString('vi-VN')}</span>
+            <span style={{ color: '#94a3b8' }}>{t.detail.resolvedAt}</span>
+            <span>{new Date(ticket.resolvedAt).toLocaleString(locale)}</span>
           </div>
         )}
       </div>
@@ -286,15 +447,21 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
 
 const SEVERITIES: TicketSeverity[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
-const SYSTEM_OPERATOR_LIST = [
-  {
-    id: '00000000-0000-0000-0000-000000000003',
-    name: 'Seed Drone Operator',
-    email: 'seed.drone.operator@odms.local',
-    role: 'SYSTEM_OPERATOR (Kỹ thuật viên)',
-    status: 'Sẵn sàng',
-  },
-]
+// [PROPOSED] Not backend/mock data — hard-coded demo operator, name kept as-is.
+function systemOperatorList(lang: Language) {
+  return [
+    {
+      id: '00000000-0000-0000-0000-000000000003',
+      name: 'Seed Drone Operator',
+      email: 'seed.drone.operator@odms.local',
+      role:
+        lang === 'en'
+          ? 'SYSTEM_OPERATOR (Technician)'
+          : 'SYSTEM_OPERATOR (Kỹ thuật viên)',
+      status: lang === 'en' ? 'Available' : 'Sẵn sàng',
+    },
+  ]
+}
 
 function AssignModal({
   ticket,
@@ -305,9 +472,11 @@ function AssignModal({
   onClose: () => void
   onAssigned: (ticket: MaintenanceTicket) => void
 }) {
+  const { t, lang } = useI18n(maintenancePageMessages)
   const [techId, setTechId] = useState('00000000-0000-0000-0000-000000000003')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const operatorList = systemOperatorList(lang)
 
   async function handleAssign() {
     setSaving(true)
@@ -316,7 +485,7 @@ function AssignModal({
       const updated = await maintenanceApi.assignTechnician(ticket.id, techId)
       onAssigned(updated)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không thể gán System Operator')
+      setError(e instanceof Error ? e.message : t.assignModal.failed)
     } finally {
       setSaving(false)
     }
@@ -342,13 +511,28 @@ function AssignModal({
           padding: 24,
           width: 500,
           borderRadius: 16,
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+          boxShadow:
+            '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
-            Phân công System Operator
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 17,
+              fontWeight: 700,
+              color: '#0f172a',
+            }}
+          >
+            {t.assignModal.title}
           </h3>
           <button
             type="button"
@@ -360,27 +544,50 @@ function AssignModal({
           </button>
         </div>
 
-        <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, marginBottom: 18, border: '1px solid #e2e8f0', fontSize: 13 }}>
-          <div>Ticket: <b className="odm-mono">{ticket.code}</b> · Drone: <b>{ticket.droneCode}</b></div>
+        <div
+          style={{
+            background: '#f8fafc',
+            padding: 12,
+            borderRadius: 10,
+            marginBottom: 18,
+            border: '1px solid #e2e8f0',
+            fontSize: 13,
+          }}
+        >
+          <div>
+            {t.assignModal.ticketLabel}
+            <b className="odm-mono">{ticket.code}</b>
+            {t.assignModal.droneLabel}
+            <b>{ticket.droneCode}</b>
+          </div>
           <div style={{ color: '#64748b', marginTop: 2 }}>{ticket.title}</div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
           <label style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-            Chọn System Operator phụ trách *
+            {t.assignModal.chooseOperator}
           </label>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {SYSTEM_OPERATOR_LIST.map((t) => {
-              const selected = techId === t.id
+            {operatorList.map((op) => {
+              const selected = techId === op.id
               return (
                 <div
-                  key={t.id}
-                  onClick={() => setTechId(t.id)}
+                  key={op.id}
+                  onClick={() => setTechId(op.id)}
                   style={{
                     padding: 12,
                     borderRadius: 10,
-                    border: selected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                    border: selected
+                      ? '2px solid #2563eb'
+                      : '1px solid #e2e8f0',
                     background: selected ? '#eff6ff' : '#ffffff',
                     cursor: 'pointer',
                     display: 'flex',
@@ -389,7 +596,9 @@ function AssignModal({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+                  >
                     <div
                       style={{
                         width: 36,
@@ -404,11 +613,21 @@ function AssignModal({
                         fontSize: 14,
                       }}
                     >
-                      {t.name.charAt(0)}
+                      {op.name.charAt(0)}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13.5, color: '#0f172a' }}>{t.name}</div>
-                      <div style={{ fontSize: 12, color: '#64748b' }}>{t.role}</div>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13.5,
+                          color: '#0f172a',
+                        }}
+                      >
+                        {op.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#64748b' }}>
+                        {op.role}
+                      </div>
                     </div>
                   </div>
 
@@ -416,7 +635,7 @@ function AssignModal({
                     type="radio"
                     name="technician"
                     checked={selected}
-                    onChange={() => setTechId(t.id)}
+                    onChange={() => setTechId(op.id)}
                     style={{ width: 16, height: 16, accentColor: '#2563eb' }}
                   />
                 </div>
@@ -425,20 +644,41 @@ function AssignModal({
           </div>
         </div>
 
-        {error && <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>{error}</div>}
+        {error && (
+          <div
+            style={{
+              color: '#ef4444',
+              fontSize: 13,
+              fontWeight: 600,
+              marginBottom: 14,
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button type="button" className="odm-btn" onClick={onClose} disabled={saving}>
-            Hủy
+          <button
+            type="button"
+            className="odm-btn"
+            onClick={onClose}
+            disabled={saving}
+          >
+            {t.assignModal.cancel}
           </button>
           <button
             type="button"
             className="odm-btn odm-btn-p"
             onClick={handleAssign}
             disabled={saving}
-            style={{ fontWeight: 600, height: 38, padding: '0 18px', borderRadius: 8 }}
+            style={{
+              fontWeight: 600,
+              height: 38,
+              padding: '0 18px',
+              borderRadius: 8,
+            }}
           >
-            {saving ? 'Đang phân công...' : 'Xác nhận Phân công'}
+            {saving ? t.assignModal.assigning : t.assignModal.confirm}
           </button>
         </div>
       </div>
@@ -452,6 +692,7 @@ type CreateModalProps = {
 }
 
 function CreateModal({ onClose, onCreate }: CreateModalProps) {
+  const { t, lang } = useI18n(maintenancePageMessages)
   const [droneId, setDroneId] = useState('')
   const [title, setTitle] = useState('')
   const [issueType, setIssueType] = useState('')
@@ -473,7 +714,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
       })
       onCreate(ticket)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Lỗi không xác định')
+      setError(e instanceof Error ? e.message : t.createModal.unknownError)
     } finally {
       setSaving(false)
     }
@@ -495,10 +736,17 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
     >
       <div
         className="odm-card"
-        style={{ padding: 24, width: 460, borderRadius: 16, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+        style={{
+          padding: 24,
+          width: 460,
+          borderRadius: 16,
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 700 }}>Tạo Ticket Bảo trì mới</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 700 }}>
+          {t.createModal.title}
+        </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
@@ -512,14 +760,14 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 marginBottom: 4,
               }}
             >
-              Mã/ID Drone *
+              {t.createModal.droneId}
             </label>
             <input
               id="ct-drone"
               className="odm-input"
               value={droneId}
               onChange={(e) => setDroneId(e.target.value)}
-              placeholder="VD: d0000000-0000-0000-0000-000000000001"
+              placeholder={t.createModal.droneIdPlaceholder}
               style={{ width: '100%', borderRadius: 8 }}
             />
           </div>
@@ -534,14 +782,14 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 marginBottom: 4,
               }}
             >
-              Tiêu đề sự cố *
+              {t.createModal.issueTitle}
             </label>
             <input
               id="ct-title"
               className="odm-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Mô tả ngắn gọn sự cố..."
+              placeholder={t.createModal.issueTitlePlaceholder}
               style={{ width: '100%', borderRadius: 8 }}
             />
           </div>
@@ -556,7 +804,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 marginBottom: 4,
               }}
             >
-              Mức độ ưu tiên
+              {t.createModal.priority}
             </label>
             <select
               id="ct-priority"
@@ -567,7 +815,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
             >
               {SEVERITIES.map((s) => (
                 <option key={s} value={s}>
-                  {ticketSeverityLabel[s]}
+                  {getTicketSeverityLabel(s, lang)}
                 </option>
               ))}
             </select>
@@ -583,14 +831,14 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 marginBottom: 4,
               }}
             >
-              Loại sự cố
+              {t.createModal.issueType}
             </label>
             <input
               id="ct-issue"
               className="odm-input"
               value={issueType}
               onChange={(e) => setIssueType(e.target.value)}
-              placeholder="VD: MOTOR_VIBRATION / BATTERY_DEGRADED"
+              placeholder={t.createModal.issueTypePlaceholder}
               style={{ width: '100%', borderRadius: 8 }}
             />
           </div>
@@ -605,7 +853,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 marginBottom: 4,
               }}
             >
-              Mô tả chi tiết
+              {t.createModal.description}
             </label>
             <textarea
               id="ct-desc"
@@ -613,23 +861,32 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Chi tiết dấu hiệu hoặc lý do tạo ticket..."
+              placeholder={t.createModal.descriptionPlaceholder}
               style={{ width: '100%', resize: 'vertical', borderRadius: 8 }}
             />
           </div>
 
           {error && (
-            <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600 }}>{error}</div>
+            <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600 }}>
+              {error}
+            </div>
           )}
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              justifyContent: 'flex-end',
+              marginTop: 8,
+            }}
+          >
             <button
               type="button"
               className="odm-btn"
               onClick={onClose}
               disabled={saving}
             >
-              Hủy
+              {t.createModal.cancel}
             </button>
             <button
               type="button"
@@ -638,7 +895,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
               disabled={saving}
               style={{ fontWeight: 600, borderRadius: 8 }}
             >
-              {saving ? 'Đang tạo...' : 'Tạo Ticket'}
+              {saving ? t.createModal.creating : t.createModal.create}
             </button>
           </div>
         </div>
@@ -648,10 +905,14 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
 }
 
 export function MaintenancePage() {
+  const { t, lang } = useI18n(maintenancePageMessages)
   const [tickets, setTickets] = useState<MaintenanceTicket[] | null>(null)
-  const [selectedTicket, setSelectedTicket] = useState<MaintenanceTicket | null>(null)
+  const [selectedTicket, setSelectedTicket] =
+    useState<MaintenanceTicket | null>(null)
   const [showCreate, setShowCreate] = useState(false)
-  const [assignTicket, setAssignTicket] = useState<MaintenanceTicket | null>(null)
+  const [assignTicket, setAssignTicket] = useState<MaintenanceTicket | null>(
+    null,
+  )
 
   // Manager Search & Filter controls state
   const [searchQuery, setSearchQuery] = useState('')
@@ -678,7 +939,8 @@ export function MaintenancePage() {
         (t.assignedTo && t.assignedTo.toLowerCase().includes(q))
 
       // Priority check
-      const matchPriority = priorityFilter === 'ALL' || t.priority === priorityFilter
+      const matchPriority =
+        priorityFilter === 'ALL' || t.priority === priorityFilter
 
       // Assigned check
       const matchAssigned =
@@ -703,13 +965,17 @@ export function MaintenancePage() {
     return map
   }, [filteredTickets])
 
-  const unassignedCount = allTickets.filter((t) => (t.status === 'OPEN' || t.status === 'IN_PROGRESS') && !t.assignedTo).length
+  const unassignedCount = allTickets.filter(
+    (t) => (t.status === 'OPEN' || t.status === 'IN_PROGRESS') && !t.assignedTo,
+  ).length
   const urgentCount = allTickets.filter(
     (t) =>
       (t.status === 'OPEN' || t.status === 'IN_PROGRESS') &&
       (t.priority === 'CRITICAL' || t.priority === 'HIGH'),
   ).length
-  const resolvedCount = allTickets.filter((t) => t.status === 'RESOLVED' || t.status === 'CLOSED').length
+  const resolvedCount = allTickets.filter(
+    (t) => t.status === 'RESOLVED' || t.status === 'CLOSED',
+  ).length
 
   function handleTicketUpdated(updated: MaintenanceTicket) {
     const base = tickets ?? query.data?.items ?? []
@@ -727,7 +993,14 @@ export function MaintenancePage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 4px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        padding: '0 4px',
+      }}
+    >
       {/* Header Banner & Stats */}
       <div
         style={{
@@ -743,11 +1016,18 @@ export function MaintenancePage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#f8fafc' }}>
-            Quản lý Ticket & Phân công Bảo trì
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#f8fafc',
+            }}
+          >
+            {t.page.title}
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94a3b8' }}>
-            Bảng điều phối ticket sự cố, tìm kiếm và phân công System Operator phụ trách.
+            {t.page.subtitle}
           </p>
         </div>
 
@@ -761,8 +1041,18 @@ export function MaintenancePage() {
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 11, color: '#94a3b8' }}>Chưa phân công</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: unassignedCount > 0 ? '#f87171' : '#f8fafc' }}>{unassignedCount}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+              {t.page.unassignedStat}
+            </div>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: unassignedCount > 0 ? '#f87171' : '#f8fafc',
+              }}
+            >
+              {unassignedCount}
+            </div>
           </div>
 
           <div
@@ -774,8 +1064,12 @@ export function MaintenancePage() {
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 11, color: '#94a3b8' }}>Khẩn cấp</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#fbbf24' }}>{urgentCount}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+              {t.page.urgentStat}
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fbbf24' }}>
+              {urgentCount}
+            </div>
           </div>
 
           <div
@@ -787,17 +1081,26 @@ export function MaintenancePage() {
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 11, color: '#94a3b8' }}>Đã hoàn tất</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#34d399' }}>{resolvedCount}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+              {t.page.resolvedStat}
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#34d399' }}>
+              {resolvedCount}
+            </div>
           </div>
 
           <button
             type="button"
             className="odm-btn odm-btn-p"
             onClick={() => setShowCreate(true)}
-            style={{ fontWeight: 600, padding: '9px 16px', borderRadius: 10, height: 40 }}
+            style={{
+              fontWeight: 600,
+              padding: '9px 16px',
+              borderRadius: 10,
+              height: 40,
+            }}
           >
-            + Tạo ticket
+            {t.page.createButton}
           </button>
         </div>
       </div>
@@ -820,36 +1123,46 @@ export function MaintenancePage() {
             className="odm-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo Mã Ticket, Mã Drone, Tiêu đề hoặc Operator..."
-            style={{ width: '100%', height: 38, borderRadius: 8, paddingLeft: 12, fontSize: 13 }}
+            placeholder={t.page.searchPlaceholder}
+            style={{
+              width: '100%',
+              height: 38,
+              borderRadius: 8,
+              paddingLeft: 12,
+              fontSize: 13,
+            }}
           />
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: '#64748b' }}>Mức độ:</span>
+          <span style={{ fontSize: 13, color: '#64748b' }}>
+            {t.page.priorityLabel}
+          </span>
           <select
             className="odm-input"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
             style={{ height: 38, borderRadius: 8, fontSize: 13 }}
           >
-            <option value="ALL">Tất cả mức độ</option>
+            <option value="ALL">{t.page.priorityAll}</option>
             <option value="CRITICAL">Critical</option>
             <option value="HIGH">High</option>
             <option value="MEDIUM">Medium</option>
             <option value="LOW">Low</option>
           </select>
 
-          <span style={{ fontSize: 13, color: '#64748b' }}>Phân công:</span>
+          <span style={{ fontSize: 13, color: '#64748b' }}>
+            {t.page.assignedLabel}
+          </span>
           <select
             className="odm-input"
             value={assignedFilter}
             onChange={(e) => setAssignedFilter(e.target.value)}
             style={{ height: 38, borderRadius: 8, fontSize: 13 }}
           >
-            <option value="ALL">Tất cả trạng thái gán</option>
-            <option value="UNASSIGNED">Chưa phân công</option>
-            <option value="ASSIGNED">Đã phân công</option>
+            <option value="ALL">{t.page.assignedAll}</option>
+            <option value="UNASSIGNED">{t.page.assignedUnassigned}</option>
+            <option value="ASSIGNED">{t.page.assignedAssigned}</option>
           </select>
         </div>
       </div>
@@ -865,7 +1178,7 @@ export function MaintenancePage() {
         <div style={{ padding: 24 }}>
           <StateView
             state="error"
-            title="Không tải được danh sách ticket"
+            title={t.page.loadError}
             error={query.error}
             onRetry={query.reload}
           />
@@ -921,7 +1234,7 @@ export function MaintenancePage() {
                   }}
                 >
                   <StatusBadge tone={ticketStatusTone[col]}>
-                    {ticketStatusLabel[col]}
+                    {getTicketStatusLabel(col, lang)}
                   </StatusBadge>
                   <span
                     style={{
@@ -958,7 +1271,7 @@ export function MaintenancePage() {
                         border: '1px dashed #cbd5e1',
                       }}
                     >
-                      Không có ticket
+                      {t.page.noTickets}
                     </div>
                   )}
                   {byColumn[col].map((ticket) => (

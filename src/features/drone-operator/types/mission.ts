@@ -118,10 +118,7 @@ export type PreflightRecord = {
 export type MediaFileType = 'PHOTO' | 'VIDEO'
 
 export type MediaFileStatus =
-  | 'UPLOADED'
-  | 'UPLOADING'
-  | 'FAILED'
-  | 'PENDING_UPLOAD'
+  'UPLOADED' | 'UPLOADING' | 'FAILED' | 'PENDING_UPLOAD'
 
 export type MediaFile = {
   id: string
@@ -133,6 +130,7 @@ export type MediaFile = {
   maxAttempts: number
   status: MediaFileStatus
   manualTaskCreated?: boolean
+  validationPending?: boolean
 }
 
 export type PostflightItemKey =

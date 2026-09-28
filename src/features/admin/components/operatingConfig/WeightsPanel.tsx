@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { DispatchWeight } from '../../types/operatingConfig'
+import { weightsPanelMessages } from './WeightsPanel.messages'
 
 function WeightGroup({
   group,
@@ -16,6 +21,7 @@ function WeightGroup({
   items: DispatchWeight[]
   onSave: (weights: Array<{ key: string; value: number }>) => Promise<void>
 }) {
+  const { t } = useI18n(weightsPanelMessages)
   const [values, setValues] = useState<Record<string, number>>(
     Object.fromEntries(items.map((w) => [w.key, w.value])),
   )
@@ -35,34 +41,59 @@ function WeightGroup({
   }
 
   async function handleSave() {
-    if (!isValid) { setError(`Tổng trọng số phải bằng 100%, hiện tại: ${sum}%.`); return }
+    if (!isValid) {
+      setError(t.sumInvalid(sum))
+      return
+    }
     setSaving(true)
     setError(null)
     try {
-      const weights = Object.entries(values).map(([key, value]) => ({ key, value }))
+      const weights = Object.entries(values).map(([key, value]) => ({
+        key,
+        value,
+      }))
       await onSave(weights)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi lưu trọng số.')
+      setError(err instanceof Error ? err.message : t.genericError)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 10, padding: 16 }}>
+    <div
+      style={{
+        background: 'var(--sf)',
+        border: '1px solid var(--bd)',
+        borderRadius: 10,
+        padding: 16,
+      }}
+    >
       <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
-        Trọng số {label} ({group === 'DRONE' ? 'Drone' : 'Phi công'})
+        {t.groupTitle(label, group === 'DRONE' ? t.droneGroup : t.pilotGroup)}
       </h3>
       {items.map((w) => (
-        <div key={w.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-          <span style={{ fontSize: 13, minWidth: 160, color: 'var(--tx)' }}>{w.label}</span>
+        <div
+          key={w.key}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 10,
+          }}
+        >
+          <span style={{ fontSize: 13, minWidth: 160, color: 'var(--tx)' }}>
+            {w.label}
+          </span>
           <input
             type="range"
             min={0}
             max={100}
             step={5}
             value={values[w.key] ?? w.value}
-            onChange={(e) => setValues({ ...values, [w.key]: Number(e.target.value) })}
+            onChange={(e) =>
+              setValues({ ...values, [w.key]: Number(e.target.value) })
+            }
             style={{ flex: 1 }}
           />
           <span
@@ -78,13 +109,30 @@ function WeightGroup({
           </span>
         </div>
       ))}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-        <span style={{ fontSize: 13, color: isValid ? 'var(--green-solid)' : 'var(--red-solid)', fontWeight: 600 }}>
-          Tổng: {sum}%{isValid ? ' (hợp lệ)' : ' (phải bằng 100%)'}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 12,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            color: isValid ? 'var(--green-solid)' : 'var(--red-solid)',
+            fontWeight: 600,
+          }}
+        >
+          {t.total(sum, isValid)}
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="odm-btn odm-btn-gh" onClick={handleReset}>
-            Đặt lại mặc định
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={handleReset}
+          >
+            {t.resetDefault}
           </button>
           <button
             type="button"
@@ -92,29 +140,40 @@ function WeightGroup({
             disabled={!isValid || saving}
             onClick={handleSave}
           >
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? t.saving : t.save}
           </button>
         </div>
       </div>
-      {error && <p style={{ color: 'var(--red-solid)', fontSize: 12, margin: '8px 0 0' }}>{error}</p>}
+      {error && (
+        <p
+          style={{ color: 'var(--red-solid)', fontSize: 12, margin: '8px 0 0' }}
+        >
+          {error}
+        </p>
+      )}
     </div>
   )
 }
 
 export function WeightsPanel() {
+  const { t } = useI18n(weightsPanelMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => adminApi.listWeights(signal),
     [],
   )
 
   if (loading) return <LoadingState />
-  if (!loading && (error || !data)) return <ErrorState error={error} onRetry={reload} />
+  if (!loading && (error || !data))
+    return <ErrorState error={error} onRetry={reload} />
   if (!data) return null
 
   const droneWeights = data.items.filter((w) => w.group === 'DRONE')
   const operatorWeights = data.items.filter((w) => w.group === 'OPERATOR')
 
-  async function saveGroup(group: 'DRONE' | 'OPERATOR', weights: Array<{ key: string; value: number }>) {
+  async function saveGroup(
+    group: 'DRONE' | 'OPERATOR',
+    weights: Array<{ key: string; value: number }>,
+  ) {
     await adminApi.updateWeights({ group, weights })
     reload()
   }
@@ -123,13 +182,13 @@ export function WeightsPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <WeightGroup
         group="DRONE"
-        label="gợi ý drone"
+        label={t.droneSuggestion}
         items={droneWeights}
         onSave={(w) => saveGroup('DRONE', w)}
       />
       <WeightGroup
         group="OPERATOR"
-        label="gợi ý phi công"
+        label={t.pilotSuggestion}
         items={operatorWeights}
         onSave={(w) => saveGroup('OPERATOR', w)}
       />

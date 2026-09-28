@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
 import { SERVICE_MAX_ALTITUDE_M, NO_FLY_CEILING_M } from '../lib/missionPolicy'
@@ -12,6 +13,7 @@ import { generateWaypoints, type Waypoint } from '../lib/waypoints'
 import { managerHref } from '../routes'
 import type { OrderMissionBrief } from '../types/orders'
 import type { PlanType } from '../types/missions'
+import { createMissionPageMessages } from './CreateMissionPage.messages'
 import '../manager.css'
 
 /**
@@ -50,6 +52,7 @@ export function CreateMissionPage({
 }
 
 function CreateMissionSkeleton() {
+  const { t } = useI18n(createMissionPageMessages)
   return (
     <div className="odm-mgr-dash" aria-busy="true" aria-live="polite">
       <span className="odm-sk" style={{ width: '100%', height: 100 }} />
@@ -61,12 +64,13 @@ function CreateMissionSkeleton() {
         className="odm-sk"
         style={{ width: '100%', height: 300, marginTop: 14 }}
       />
-      <span className="odm-visually-hidden">Đang tải…</span>
+      <span className="odm-visually-hidden">{t.loading}</span>
     </div>
   )
 }
 
 function CreateMissionErrorState({ error }: { error: unknown }) {
+  const { t } = useI18n(createMissionPageMessages)
   const debugLine =
     error instanceof ApiError
       ? `${error.method} ${error.path}${error.status ? ` · ${error.status}` : ''}`
@@ -78,9 +82,7 @@ function CreateMissionErrorState({ error }: { error: unknown }) {
           <div className="odm-mgr-review-error-icon" aria-hidden="true">
             !
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>
-            Không tải được đơn để tạo mission
-          </div>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{t.loadError}</div>
           <div
             className="odm-mono"
             style={{ fontSize: 11.5, color: 'var(--tx3)' }}
@@ -91,7 +93,7 @@ function CreateMissionErrorState({ error }: { error: unknown }) {
             className="odm-btn odm-btn-p"
             href={managerHref({ screen: 'orderQueue' })}
           >
-            Về hàng đợi
+            {t.backToQueue}
           </a>
         </div>
       </div>
@@ -114,6 +116,7 @@ function CreateMissionForm({
   brief: OrderMissionBrief
   now: Date
 }) {
+  const { t } = useI18n(createMissionPageMessages)
   const center = brief.center ?? { lat: 0, lon: 0 }
   const prefill = useMemo(
     () =>
@@ -183,7 +186,7 @@ function CreateMissionForm({
     if (!scheduledStart || !scheduledEnd) {
       setSubmit({
         kind: 'validationFailed',
-        message: 'Thời gian bắt đầu/kết thúc là bắt buộc.',
+        message: t.validationRequired,
       })
       return
     }
@@ -211,18 +214,13 @@ function CreateMissionForm({
       if (err instanceof ApiError && err.status === 422) {
         setSubmit({
           kind: 'planFailed',
-          message:
-            err.message ||
-            'Dịch vụ tạo đường bay báo lỗi cho khu vực này. Bạn có thể nhập waypoint thủ công.',
+          message: err.message || t.planGenerationFailed,
         })
         return
       }
       setSubmit({
         kind: 'validationFailed',
-        message:
-          err instanceof ApiError
-            ? err.message
-            : 'Tạo mission thất bại, thử lại.',
+        message: err instanceof ApiError ? err.message : t.createFailed,
       })
     }
   }
@@ -236,13 +234,12 @@ function CreateMissionForm({
               !
             </div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>
-              Không sinh được flight plan
+              {t.planFailedTitle}
             </div>
             <div
               style={{ color: 'var(--tx3)', maxWidth: 420, lineHeight: 1.5 }}
             >
-              Dịch vụ tạo đường bay báo lỗi cho khu vực này. Bạn có thể nhập
-              waypoint thủ công.
+              {t.planFailedBody}
             </div>
             <div
               className="odm-mono"
@@ -262,7 +259,7 @@ function CreateMissionForm({
                 className="odm-btn odm-btn-p"
                 onClick={() => setSubmit({ kind: 'idle' })}
               >
-                Thử lại
+                {t.retry}
               </button>
               <button
                 type="button"
@@ -272,7 +269,7 @@ function CreateMissionForm({
                   setSubmit({ kind: 'idle' })
                 }}
               >
-                Nhập waypoint thủ công
+                {t.manualWaypointEntry}
               </button>
             </div>
           </div>
@@ -285,9 +282,9 @@ function CreateMissionForm({
     <div className="odm-mgr-dash">
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Tạo mission</h1>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
           <div className="odm-mgr-dash-date">
-            Từ đơn {brief.code} · {brief.serviceName} · {brief.customerFullName}
+            {t.fromOrder(brief.code, brief.serviceName, brief.customerFullName)}
           </div>
         </div>
       </div>
@@ -295,10 +292,10 @@ function CreateMissionForm({
       <div className="odm-mgr-mission-grid">
         <div className="odm-mgr-review-col">
           <div className="odm-card">
-            <div className="odm-card-header">Lịch bay</div>
+            <div className="odm-card-header">{t.flightSchedule}</div>
             <div className="odm-card-body odm-mgr-mission-form-row">
               <label style={{ flex: 1 }}>
-                <span className="odm-mgr-modal-label">Bắt đầu</span>
+                <span className="odm-mgr-modal-label">{t.start}</span>
                 <input
                   className="odm-inp"
                   type="datetime-local"
@@ -307,7 +304,7 @@ function CreateMissionForm({
                 />
               </label>
               <label style={{ flex: 1 }}>
-                <span className="odm-mgr-modal-label">Kết thúc</span>
+                <span className="odm-mgr-modal-label">{t.end}</span>
                 <input
                   className="odm-inp"
                   type="datetime-local"
@@ -319,13 +316,13 @@ function CreateMissionForm({
           </div>
 
           <div className="odm-card">
-            <div className="odm-card-header">Flight plan</div>
+            <div className="odm-card-header">{t.flightPlan}</div>
             <div
               className="odm-card-body"
               style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
             >
               <div>
-                <span className="odm-mgr-modal-label">Kiểu bay</span>
+                <span className="odm-mgr-modal-label">{t.planTypeLabel}</span>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['ORBIT', 'GRID', 'POINT'] as PlanType[]).map((pt) => (
                     <button
@@ -345,7 +342,7 @@ function CreateMissionForm({
               </div>
               <div className="odm-mgr-mission-form-row">
                 <label style={{ flex: 1 }}>
-                  <span className="odm-mgr-modal-label">Bán kính (m)</span>
+                  <span className="odm-mgr-modal-label">{t.radius}</span>
                   <input
                     className="odm-inp"
                     type="number"
@@ -354,7 +351,7 @@ function CreateMissionForm({
                   />
                 </label>
                 <label style={{ flex: 1 }}>
-                  <span className="odm-mgr-modal-label">Độ cao (m)</span>
+                  <span className="odm-mgr-modal-label">{t.altitude}</span>
                   <input
                     className="odm-inp"
                     type="number"
@@ -363,7 +360,7 @@ function CreateMissionForm({
                   />
                 </label>
                 <label style={{ flex: 1 }}>
-                  <span className="odm-mgr-modal-label">Tốc độ (m/s)</span>
+                  <span className="odm-mgr-modal-label">{t.speed}</span>
                   <input
                     className="odm-inp"
                     type="number"
@@ -378,10 +375,11 @@ function CreateMissionForm({
                 </div>
               ))}
               <div className="odm-mgr-review-hint">
-                Ước tính thời lượng:{' '}
-                {Math.round(duration.estimatedDurationSec / 60)} phút (T_path{' '}
-                {Math.round(duration.tPathSec)}s · T_capture{' '}
-                {Math.round(duration.tCaptureSec)}s)
+                {t.estimatedDuration(
+                  Math.round(duration.estimatedDurationSec / 60),
+                  Math.round(duration.tPathSec),
+                  Math.round(duration.tCaptureSec),
+                )}
               </div>
               <MissionPathPreview
                 center={center}
@@ -412,7 +410,7 @@ function CreateMissionForm({
           onClick={handleSubmit}
           disabled={submit.kind === 'submitting'}
         >
-          Tạo mission
+          {t.createMission}
         </button>
       </div>
     </div>
@@ -439,6 +437,7 @@ function MissionPathPreview({
   radiusM: number
   waypoints: Waypoint[]
 }) {
+  const { t } = useI18n(createMissionPageMessages)
   const size = 240
   const half = size / 2
   const pxPerMeter = radiusM > 0 ? (half - 20) / radiusM : 0.1
@@ -453,7 +452,7 @@ function MissionPathPreview({
     <svg
       viewBox={`0 0 ${size} ${size}`}
       role="img"
-      aria-label="Xem trước đường bay"
+      aria-label={t.pathPreviewAria}
       className="odm-mgr-mission-preview"
     >
       <rect width={size} height={size} className="odm-mgr-map-bg" />
@@ -485,6 +484,7 @@ function WaypointTable({
   editable: boolean
   onChange: (next: Waypoint[]) => void
 }) {
+  const { t } = useI18n(createMissionPageMessages)
   function updateRow(index: number, patch: Partial<Waypoint>) {
     onChange(waypoints.map((wp, i) => (i === index ? { ...wp, ...patch } : wp)))
   }
@@ -508,10 +508,10 @@ function WaypointTable({
   return (
     <div className="odm-card">
       <div className="odm-card-header">
-        <span>Waypoint ({waypoints.length})</span>
+        <span>{t.waypoint(waypoints.length)}</span>
         {editable ? (
           <button type="button" className="odm-btn odm-btn-sm" onClick={addRow}>
-            Thêm waypoint
+            {t.addWaypoint}
           </button>
         ) : null}
       </div>
@@ -594,7 +594,7 @@ function WaypointTable({
                       type="button"
                       className="odm-btn odm-btn-sm odm-btn-gh"
                       onClick={() => removeRow(i)}
-                      aria-label={`Xoá waypoint ${wp.seq}`}
+                      aria-label={t.removeWaypointAria(wp.seq)}
                     >
                       ×
                     </button>

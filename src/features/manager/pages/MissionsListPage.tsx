@@ -6,37 +6,34 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
-import {
-  missionStatusLabel,
-  missionStatusTone,
-} from '../../../shared/lib/statusTone'
+import { useI18n } from '../../../shared/i18n'
+import { missionStatusTone } from '../../../shared/lib/statusTone'
 import type { MissionStatus } from '../../../shared/types/domain'
 import { missionsApi } from '../api/missionsApi'
 import { managerHref } from '../routes'
+import { missionsListPageMessages } from './MissionsListPage.messages'
 import type { MissionCalendarItem } from '../types/missions'
 import '../manager.css'
 
 type StatusChip = 'ALL' | MissionStatus
 
-const STATUS_CHIPS: Array<{ value: StatusChip; label: string }> = [
-  { value: 'ALL', label: 'Tất cả' },
-  { value: 'IN_FLIGHT', label: 'Đang chạy' },
-  { value: 'COMPLETED', label: 'Hoàn thành' },
-  { value: 'FAILED', label: 'Thất bại' },
-  { value: 'CREATED', label: 'Mới tạo' },
-]
+type PageMessages = (typeof missionsListPageMessages)['vi']
 
-function formatScheduled(start: string | null, end: string | null): string {
+function formatScheduled(
+  start: string | null,
+  end: string | null,
+  locale: 'vi-VN' | 'en-US',
+): string {
   if (!start) return '—'
   const d = new Date(start)
   const dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
-  const startTime = d.toLocaleTimeString('vi-VN', {
+  const startTime = d.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   })
   if (!end) return `${dateStr} ${startTime}`
   const endD = new Date(end)
-  const endTime = endD.toLocaleTimeString('vi-VN', {
+  const endTime = endD.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -47,9 +44,17 @@ type DetailPanelProps = {
   mission: MissionCalendarItem
   onClose: () => void
   onRetried: (newId: string) => void
+  t: PageMessages
+  locale: 'vi-VN' | 'en-US'
 }
 
-function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
+function DetailPanel({
+  mission,
+  onClose,
+  onRetried,
+  t,
+  locale,
+}: DetailPanelProps) {
   const [retrying, setRetrying] = useState(false)
   const [retryError, setRetryError] = useState<string | null>(null)
 
@@ -60,7 +65,7 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
       const result = await missionsApi.retryMission(mission.id)
       onRetried(result.newMissionId)
     } catch (e) {
-      setRetryError(e instanceof Error ? e.message : 'Lỗi không xác định')
+      setRetryError(e instanceof Error ? e.message : t.retryError)
     } finally {
       setRetrying(false)
     }
@@ -92,22 +97,35 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
           type="button"
           className="odm-btn"
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t.close}
         >
           ✕
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <StatusBadge tone={missionStatusTone[mission.status]}>
-          {missionStatusLabel[mission.status]}
-        </StatusBadge>
-        {(mission.status === 'CREATED' || mission.status === 'RESOURCE_ASSIGNING') && (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
+        <StatusBadge
+          kind="mission"
+          status={mission.status}
+          tone={missionStatusTone[mission.status]}
+        />
+        {(mission.status === 'CREATED' ||
+          mission.status === 'RESOURCE_ASSIGNING') && (
           <a
-            href={managerHref({ screen: 'missionDispatch', missionId: mission.id })}
+            href={managerHref({
+              screen: 'missionDispatch',
+              missionId: mission.id,
+            })}
             className="odm-btn odm-btn-p odm-btn-sm"
           >
-            Phân công →
+            {t.dispatch}
           </a>
         )}
       </div>
@@ -122,29 +140,33 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
       >
         {mission.orderCode && (
           <div>
-            <span style={{ color: 'var(--tx3)' }}>Đơn hàng: </span>
+            <span style={{ color: 'var(--tx3)' }}>{t.fields.order} </span>
             <span>{mission.orderCode}</span>
           </div>
         )}
         {mission.serviceLabel && (
           <div>
-            <span style={{ color: 'var(--tx3)' }}>Dịch vụ: </span>
+            <span style={{ color: 'var(--tx3)' }}>{t.fields.service} </span>
             <span>{mission.serviceLabel}</span>
           </div>
         )}
         <div>
-          <span style={{ color: 'var(--tx3)' }}>Lần bay: </span>
+          <span style={{ color: 'var(--tx3)' }}>{t.fields.attempt} </span>
           <span>#{mission.attemptNumber ?? 1}</span>
         </div>
         <div>
-          <span style={{ color: 'var(--tx3)' }}>Lịch bay: </span>
+          <span style={{ color: 'var(--tx3)' }}>{t.fields.schedule} </span>
           <span>
-            {formatScheduled(mission.scheduledStartAt, mission.scheduledEndAt)}
+            {formatScheduled(
+              mission.scheduledStartAt,
+              mission.scheduledEndAt,
+              locale,
+            )}
           </span>
         </div>
         {mission.droneCode && (
           <div>
-            <span style={{ color: 'var(--tx3)' }}>Drone: </span>
+            <span style={{ color: 'var(--tx3)' }}>{t.fields.drone} </span>
             <span>
               {mission.droneCode}
               {mission.droneName ? ` ${mission.droneName}` : ''}
@@ -153,13 +175,13 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
         )}
         {mission.operatorName && (
           <div>
-            <span style={{ color: 'var(--tx3)' }}>Phi công: </span>
+            <span style={{ color: 'var(--tx3)' }}>{t.fields.operator} </span>
             <span>{mission.operatorName}</span>
           </div>
         )}
         {mission.addressText && (
           <div>
-            <span style={{ color: 'var(--tx3)' }}>Địa chỉ: </span>
+            <span style={{ color: 'var(--tx3)' }}>{t.fields.address} </span>
             <span>{mission.addressText}</span>
           </div>
         )}
@@ -183,11 +205,17 @@ function DetailPanel({ mission, onClose, onRetried }: DetailPanelProps) {
           <button
             type="button"
             className="odm-btn odm-btn-p"
-            disabled={retrying || (!env.useMockApi && import.meta.env.MODE !== 'test')}
-            title={!env.useMockApi && import.meta.env.MODE !== 'test' ? 'Backend chưa hỗ trợ tạo lại mission' : undefined}
+            disabled={
+              retrying || (!env.useMockApi && import.meta.env.MODE !== 'test')
+            }
+            title={
+              !env.useMockApi && import.meta.env.MODE !== 'test'
+                ? t.backendNotSupported
+                : undefined
+            }
             onClick={handleRetry}
           >
-            {retrying ? 'Đang tạo lại...' : 'Tạo lại mission'}
+            {retrying ? t.retrying : t.retry}
           </button>
         </div>
       )}
@@ -200,9 +228,18 @@ type MissionsListPageProps = {
 }
 
 export function MissionsListPage({ missionId }: MissionsListPageProps) {
+  const { t, locale } = useI18n(missionsListPageMessages)
   const [statusFilter, setStatusFilter] = useState<StatusChip>('ALL')
   const [selectedMission, setSelectedMission] =
     useState<MissionCalendarItem | null>(null)
+
+  const statusChips: Array<{ value: StatusChip; label: string }> = [
+    { value: 'ALL', label: t.statusChips.ALL },
+    { value: 'IN_FLIGHT', label: t.statusChips.IN_FLIGHT },
+    { value: 'COMPLETED', label: t.statusChips.COMPLETED },
+    { value: 'FAILED', label: t.statusChips.FAILED },
+    { value: 'CREATED', label: t.statusChips.CREATED },
+  ]
 
   const query = useApiQuery(
     (signal) =>
@@ -224,7 +261,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
 
   function handleRetried(newId: string) {
     query.reload()
-    alert(`Đã tạo lại mission: ${newId}`)
+    alert(t.retriedAlert(newId))
   }
 
   return (
@@ -232,11 +269,11 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
       {/* Header */}
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Mission</h1>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
           <div className="odm-mgr-dash-date">
             {!query.loading && !query.error
-              ? `${missions.length} mission`
-              : ' '}
+              ? t.missionCount(missions.length)
+              : ' '}
           </div>
         </div>
       </div>
@@ -245,7 +282,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
       <div
         style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}
       >
-        {STATUS_CHIPS.map((chip) => (
+        {statusChips.map((chip) => (
           <button
             key={chip.value}
             type="button"
@@ -277,7 +314,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
             <div style={{ padding: 24 }}>
               <StateView
                 state="error"
-                title="Không tải được danh sách mission"
+                title={t.loadError}
                 error={query.error}
                 onRetry={query.reload}
               />
@@ -300,8 +337,8 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
           {!query.loading && !query.error && missions.length === 0 && (
             <StateView
               state="empty"
-              title="Không có mission nào"
-              description="Chưa có mission nào trong bộ lọc này."
+              title={t.emptyTitle}
+              description={t.emptyDescription}
             />
           )}
 
@@ -322,23 +359,25 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                   }}
                 >
                   <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                    Mission
+                    {t.columns.mission}
                   </th>
                   <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                    Đơn hàng
-                  </th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>Lần</th>
-                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                    Lịch bay
+                    {t.columns.order}
                   </th>
                   <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                    Drone
+                    {t.columns.attempt}
                   </th>
                   <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                    Phi công
+                    {t.columns.schedule}
                   </th>
                   <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                    Trạng thái
+                    {t.columns.drone}
+                  </th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    {t.columns.operator}
+                  </th>
+                  <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+                    {t.columns.status}
                   </th>
                 </tr>
               </thead>
@@ -368,7 +407,11 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                       #{m.attemptNumber ?? 1}
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-                      {formatScheduled(m.scheduledStartAt, m.scheduledEndAt)}
+                      {formatScheduled(
+                        m.scheduledStartAt,
+                        m.scheduledEndAt,
+                        locale,
+                      )}
                     </td>
                     <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
                       {m.droneCode
@@ -379,9 +422,11 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                       {m.operatorName ?? '—'}
                     </td>
                     <td style={{ padding: '8px 12px' }}>
-                      <StatusBadge tone={missionStatusTone[m.status]}>
-                        {missionStatusLabel[m.status]}
-                      </StatusBadge>
+                      <StatusBadge
+                        kind="mission"
+                        status={m.status}
+                        tone={missionStatusTone[m.status]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -397,6 +442,8 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
             mission={selectedMission}
             onClose={() => setSelectedMission(null)}
             onRetried={handleRetried}
+            t={t}
+            locale={locale}
           />
         )}
       </div>

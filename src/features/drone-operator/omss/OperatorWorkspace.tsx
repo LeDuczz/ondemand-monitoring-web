@@ -1,15 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { authSession } from '../../auth/api/authApi'
-import type {
-  Screen,
-  Mission,
-  Drone,
-  FlightToken,
-  NavId,
-} from './types'
+import { useI18n } from '../../../shared/i18n'
+import type { Screen, Mission, Drone, FlightToken, NavId } from './types'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from './api/flightControlApi'
 import type { FlightControlStatus } from './api/flightControlApi'
+import { operatorWorkspaceMessages } from './i18n/operatorWorkspace'
 
 import Sidebar from './components/Sidebar'
 
@@ -105,7 +101,10 @@ function perpendicularDistance(
   )
 }
 
-function simplifySegment(points: RoutePoint[], toleranceM: number): RoutePoint[] {
+function simplifySegment(
+  points: RoutePoint[],
+  toleranceM: number,
+): RoutePoint[] {
   if (points.length <= 2) return points
 
   let maxDistance = 0
@@ -153,7 +152,8 @@ function simplifyRoutePoints(points: RoutePoint[]) {
       ? simplified
       : simplified.filter((point, index) => {
           if (index === 0 || index === simplified.length - 1) return true
-          if (IMPORTANT_ROUTE_REASONS.has(point.reason.toUpperCase())) return true
+          if (IMPORTANT_ROUTE_REASONS.has(point.reason.toUpperCase()))
+            return true
           const keepEvery = Math.ceil(simplified.length / 30)
           return index % keepEvery === 0
         })
@@ -167,27 +167,29 @@ function simplifyRoutePoints(points: RoutePoint[]) {
 
 function adaptBackendMission(mission: BackendMission): Mission {
   const plan = mission.plan
-  const routePoints = simplifyRoutePoints((plan?.waypoints ?? [])
-    .filter(
-      (point) =>
-        typeof point.sequence === 'number' &&
-        typeof point.simX === 'number' &&
-        typeof point.simY === 'number' &&
-        typeof point.altitudeM === 'number',
-    )
-    .sort((a, b) => Number(a.sequence) - Number(b.sequence))
-    .map((point) => ({
-      id: point.id ?? `wp-${point.sequence}`,
-      sequence: Number(point.sequence),
-      simX: Number(point.simX),
-      simY: Number(point.simY),
-      altitudeM: Number(point.altitudeM),
-      speedMps:
-        typeof point.plannedSpeedMps === 'number'
-          ? point.plannedSpeedMps
-          : undefined,
-      reason: point.reason ?? 'CRUISE',
-    })))
+  const routePoints = simplifyRoutePoints(
+    (plan?.waypoints ?? [])
+      .filter(
+        (point) =>
+          typeof point.sequence === 'number' &&
+          typeof point.simX === 'number' &&
+          typeof point.simY === 'number' &&
+          typeof point.altitudeM === 'number',
+      )
+      .sort((a, b) => Number(a.sequence) - Number(b.sequence))
+      .map((point) => ({
+        id: point.id ?? `wp-${point.sequence}`,
+        sequence: Number(point.sequence),
+        simX: Number(point.simX),
+        simY: Number(point.simY),
+        altitudeM: Number(point.altitudeM),
+        speedMps:
+          typeof point.plannedSpeedMps === 'number'
+            ? point.plannedSpeedMps
+            : undefined,
+        reason: point.reason ?? 'CRUISE',
+      })),
+  )
   const routeTargetPoint =
     routePoints.find((point) => point.reason?.toUpperCase() === 'TARGET') ??
     routePoints.find((point) => point.reason?.toUpperCase() === 'ORDER') ??
@@ -271,6 +273,7 @@ function createAssignedDrone(mission: Mission): Drone {
 }
 
 export default function OperatorWorkspace() {
+  const { t } = useI18n(operatorWorkspaceMessages)
   const acceptInFlight = useRef(false)
   const authenticatedUser = authSession.getUser()
   const [screen, setScreen] = useState<Screen>('mission-list')
@@ -281,11 +284,13 @@ export default function OperatorWorkspace() {
   const [missionsError, setMissionsError] = useState<string | null>(null)
   const [drone, setDrone] = useState<Drone | null>(null)
   const [token, setToken] = useState<FlightToken | null>(null)
-  const [failReason, setFailReason] = useState('Pre-flight hardware failure')
+  const [failReason, setFailReason] = useState(t.failReasons.preflightHardware)
   const [autoStartPlanRequested, setAutoStartPlanRequested] = useState(false)
   const [flightSessionStarted, setFlightSessionStarted] = useState(false)
-  const [mediaReturnScreen, setMediaReturnScreen] = useState<Screen>('mission-list')
-  const [postflightTelemetry, setPostflightTelemetry] = useState<FlightControlStatus | null>(null)
+  const [mediaReturnScreen, setMediaReturnScreen] =
+    useState<Screen>('mission-list')
+  const [postflightTelemetry, setPostflightTelemetry] =
+    useState<FlightControlStatus | null>(null)
 
   // Load only missions assigned to the authenticated operator.
   useEffect(() => {
@@ -298,13 +303,18 @@ export default function OperatorWorkspace() {
       try {
         const data = await missionApi.getMyMissions()
         if (cancelled) return
-        const adapted = (data as unknown as BackendMission[])
-          .map(adaptBackendMission)
+        const adapted = (data as unknown as BackendMission[]).map(
+          adaptBackendMission,
+        )
         setAllMissions(adapted)
       } catch (cause) {
         if (!cancelled) {
           setAllMissions([])
-          setMissionsError(cause instanceof Error ? cause.message : 'Cannot load assigned missions')
+          setMissionsError(
+            cause instanceof Error
+              ? cause.message
+              : t.errors.cannotLoadMissions,
+          )
         }
       } finally {
         if (!cancelled) setMissionsLoading(false)
@@ -364,7 +374,9 @@ export default function OperatorWorkspace() {
 
     try {
       const detail = await missionApi.getMissionById(m.backendId ?? m.id)
-      const detailedMission = adaptBackendMission(detail as unknown as BackendMission)
+      const detailedMission = adaptBackendMission(
+        detail as unknown as BackendMission,
+      )
       const visibleMission = detailedMission
       setMission(visibleMission)
       setDrone(createAssignedDrone(visibleMission))
@@ -374,7 +386,11 @@ export default function OperatorWorkspace() {
         ),
       )
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Cannot load mission details')
+      setMissionsError(
+        cause instanceof Error
+          ? cause.message
+          : t.errors.cannotLoadMissionDetails,
+      )
     }
   }
 
@@ -382,13 +398,23 @@ export default function OperatorWorkspace() {
     if (!mission || acceptInFlight.current) return
     acceptInFlight.current = true
     try {
-      const updated = await missionApi.acceptMyMission(mission.backendId ?? mission.id)
+      const updated = await missionApi.acceptMyMission(
+        mission.backendId ?? mission.id,
+      )
       const accepted = adaptBackendMission(updated as unknown as BackendMission)
       setMission(accepted)
-      setAllMissions((items) => items.map((item) => item.backendId === accepted.backendId ? accepted : item))
+      setAllMissions((items) =>
+        items.map((item) =>
+          item.backendId === accepted.backendId ? accepted : item,
+        ),
+      )
       setScreen('gcs-connect')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Mission acceptance failed')
+      setMissionsError(
+        cause instanceof Error
+          ? cause.message
+          : t.errors.missionAcceptanceFailed,
+      )
     } finally {
       acceptInFlight.current = false
     }
@@ -400,10 +426,16 @@ export default function OperatorWorkspace() {
       await missionApi.rejectMyMission(mission.backendId ?? mission.id, reason)
       setMission(null)
       setDrone(null)
-      setAllMissions((items) => items.filter((item) => item.backendId !== mission.backendId))
+      setAllMissions((items) =>
+        items.filter((item) => item.backendId !== mission.backendId),
+      )
       setScreen('mission-list')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Mission rejection failed')
+      setMissionsError(
+        cause instanceof Error
+          ? cause.message
+          : t.errors.missionRejectionFailed,
+      )
     }
   }
 
@@ -418,23 +450,30 @@ export default function OperatorWorkspace() {
         return
       }
       if (mission.state === 'SCHEDULED') {
-        const updated = await missionApi.connectGcs(mission.backendId ?? mission.id)
+        const updated = await missionApi.connectGcs(
+          mission.backendId ?? mission.id,
+        )
         setMission(adaptBackendMission(updated as unknown as BackendMission))
       }
       setScreen('preflight')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'GCS connection registration failed')
+      setMissionsError(
+        cause instanceof Error ? cause.message : t.errors.gcsConnectionFailed,
+      )
     }
   }
   async function handleStartMission() {
     if (!mission || !drone) return
     if (!token || Date.now() >= token.expiresAt) {
-      setMissionsError('Flight token is missing or expired. Run preflight again.')
+      setMissionsError(t.errors.flightTokenExpired)
       setScreen('preflight')
       return
     }
     try {
-      await flightControlApi.bindSession(mission.backendId ?? mission.id, drone.id)
+      await flightControlApi.bindSession(
+        mission.backendId ?? mission.id,
+        drone.id,
+      )
       const updated = await missionApi.startMission(
         mission.backendId ?? mission.id,
         token.token,
@@ -445,7 +484,9 @@ export default function OperatorWorkspace() {
       setScreen('in-flight')
       setNavId('mission-control')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Mission start failed')
+      setMissionsError(
+        cause instanceof Error ? cause.message : t.errors.missionStartFailed,
+      )
     }
   }
 
@@ -454,7 +495,10 @@ export default function OperatorWorkspace() {
     const missionId = mission.backendId ?? mission.id
     try {
       const controlStatus = await flightControlApi.status()
-      if (controlStatus.missionId !== missionId || controlStatus.deviceCode !== drone.id) {
+      if (
+        controlStatus.missionId !== missionId ||
+        controlStatus.deviceCode !== drone.id
+      ) {
         await flightControlApi.bindSession(missionId, drone.id)
       }
 
@@ -462,39 +506,49 @@ export default function OperatorWorkspace() {
       while (true) {
         const telemetry = await missionApi.getTelemetryReadiness(missionId)
         if (telemetry.droneCode !== drone.id) {
-          throw new Error('Mission drone assignment changed. Reconnect GCS before preflight.')
+          throw new Error(t.errors.missionDroneChanged)
         }
         if (telemetry.ready) break
         if (Date.now() >= deadline) {
-          throw new Error('Waiting for fresh drone telemetry timed out. Check Telemetry Sender and retry preflight.')
+          throw new Error(t.errors.telemetryTimeout)
         }
         await new Promise((resolve) => window.setTimeout(resolve, 1000))
       }
 
-      const storedToken = window.sessionStorage.getItem(`omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`)
+      const storedToken = window.sessionStorage.getItem(
+        `omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`,
+      )
       const check = storedToken
         ? null
-        : await missionApi.runPreflightCheck(
-            missionId,
-            drone.id,
-          )
+        : await missionApi.runPreflightCheck(missionId, drone.id)
       const tokenValue = storedToken ?? check?.flightToken?.tokenValue
       if (!tokenValue) {
-        throw new Error(check?.failureReason || 'Backend preflight did not pass')
+        throw new Error(check?.failureReason || t.errors.backendPreflightFailed)
       }
       await missionApi.handoverMyMission(mission.backendId ?? mission.id)
       setToken({
         token: tokenValue,
-        issuedAt: check?.flightToken ? Date.parse(check.flightToken.issuedAt) : Date.now(),
-        expiresAt: check?.flightToken ? Date.parse(check.flightToken.expiresAt) : Date.now() + 15 * 60_000,
+        issuedAt: check?.flightToken
+          ? Date.parse(check.flightToken.issuedAt)
+          : Date.now(),
+        expiresAt: check?.flightToken
+          ? Date.parse(check.flightToken.expiresAt)
+          : Date.now() + 15 * 60_000,
         missionId: mission.backendId ?? mission.id,
         droneId: drone.id,
       })
-      window.sessionStorage.removeItem(`omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`)
-      setMission((current) => current ? { ...current, state: 'READY_TO_FLY' } : current)
+      window.sessionStorage.removeItem(
+        `omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`,
+      )
+      setMission((current) =>
+        current ? { ...current, state: 'READY_TO_FLY' } : current,
+      )
       setScreen('ready-to-fly')
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'Preflight registration failed'
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : t.errors.preflightRegistrationFailed
       setMissionsError(message)
       throw new Error(message, { cause })
     }
@@ -503,41 +557,61 @@ export default function OperatorWorkspace() {
   async function handleRTB() {
     if (!mission) return
     try {
-      const updated = await missionApi.markReturning(mission.backendId ?? mission.id)
+      const updated = await missionApi.markReturning(
+        mission.backendId ?? mission.id,
+      )
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setScreen('return-to-base')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Return-to-base update failed')
+      setMissionsError(
+        cause instanceof Error ? cause.message : t.errors.rtbUpdateFailed,
+      )
     }
   }
 
   async function handleEmergency() {
     if (!mission) return
-    const reason = 'Emergency stop — operator abort'
+    const reason = t.failReasons.emergencyStop
     try {
-      const updated = await missionApi.failMission(mission.backendId ?? mission.id, reason)
+      const updated = await missionApi.failMission(
+        mission.backendId ?? mission.id,
+        reason,
+      )
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setFailReason(reason)
       setScreen('mission-failed')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Mission failure update failed')
+      setMissionsError(
+        cause instanceof Error
+          ? cause.message
+          : t.errors.missionFailureUpdateFailed,
+      )
     }
   }
 
   async function handleLanded() {
     if (!mission) return
     try {
-      const telemetrySnapshot = await flightControlApi.status().catch(() => null)
+      const telemetrySnapshot = await flightControlApi
+        .status()
+        .catch(() => null)
       setPostflightTelemetry(telemetrySnapshot)
-      const updated = await missionApi.startPostflight(mission.backendId ?? mission.id)
+      const updated = await missionApi.startPostflight(
+        mission.backendId ?? mission.id,
+      )
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setScreen('postflight')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Postflight start failed')
+      setMissionsError(
+        cause instanceof Error ? cause.message : t.errors.postflightStartFailed,
+      )
     }
   }
 
-  async function handlePostflightComplete(results: Record<string, InspectionResult>, notes: string) {
+  async function handlePostflightComplete(
+    results: Record<string, InspectionResult>,
+    notes: string,
+  ) {
     if (!mission || !drone) return
     try {
       const updated = await missionApi.postFlightStatus(
@@ -551,11 +625,18 @@ export default function OperatorWorkspace() {
       setMission(adaptBackendMission(updated as unknown as BackendMission))
       setScreen('mission-completed')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Postflight completion failed')
+      setMissionsError(
+        cause instanceof Error
+          ? cause.message
+          : t.errors.postflightCompletionFailed,
+      )
     }
   }
 
-  async function handlePostflightFault(results: Record<string, InspectionResult>, notes: string) {
+  async function handlePostflightFault(
+    results: Record<string, InspectionResult>,
+    notes: string,
+  ) {
     if (!mission || !drone) return
     try {
       const updated = await missionApi.postFlightStatus(
@@ -567,21 +648,21 @@ export default function OperatorWorkspace() {
         postflightTelemetry,
       )
       setMission(adaptBackendMission(updated as unknown as BackendMission))
-      setDrone((current) => current ? { ...current, state: 'MAINTENANCE' } : current)
+      setDrone((current) =>
+        current ? { ...current, state: 'MAINTENANCE' } : current,
+      )
       setScreen('mission-completed')
     } catch (cause) {
-      setMissionsError(cause instanceof Error ? cause.message : 'Postflight fault reporting failed')
+      setMissionsError(
+        cause instanceof Error ? cause.message : t.errors.postflightFaultFailed,
+      )
     }
   }
 
   const isDark = screen === 'in-flight'
 
-
   return (
-    <div
-      className="portal-shell"
-      style={{ fontFamily: 'var(--font-ui)' }}
-    >
+    <div className="portal-shell" style={{ fontFamily: 'var(--font-ui)' }}>
       <Sidebar
         role="operator"
         active={navId}
@@ -615,8 +696,10 @@ export default function OperatorWorkspace() {
           {screen === 'operator-overview' && (
             <OperatorOverview
               allMissions={allMissions}
-              operatorName={authenticatedUser?.fullName ?? 'Drone operator'}
-              operatorId={authenticatedUser?.id ?? 'Unknown'}
+              operatorName={
+                authenticatedUser?.fullName ?? t.fallback.operatorName
+              }
+              operatorId={authenticatedUser?.id ?? t.fallback.operatorId}
               onGoMissions={() => {
                 setScreen('mission-list')
                 setNavId('my-missions')
@@ -627,7 +710,10 @@ export default function OperatorWorkspace() {
 
           {/* Operator flow */}
           {missionsError && (
-            <div role="alert" style={{ margin: '12px 36px 0', color: 'var(--red-text)' }}>
+            <div
+              role="alert"
+              style={{ margin: '12px 36px 0', color: 'var(--red-text)' }}
+            >
               {missionsError}
             </div>
           )}
@@ -675,15 +761,18 @@ export default function OperatorWorkspace() {
               onPreflightReady={handleRuntimePreflightReady}
             />
           )}
-          {screen === 'ready-to-fly' && token && displayMission && displayDrone && (
-            <ReadyToFly
-              mission={displayMission}
-              drone={displayDrone}
-              token={token}
-              onStart={handleStartMission}
-              onAbort={() => setScreen('preflight')}
-            />
-          )}
+          {screen === 'ready-to-fly' &&
+            token &&
+            displayMission &&
+            displayDrone && (
+              <ReadyToFly
+                mission={displayMission}
+                drone={displayDrone}
+                token={token}
+                onStart={handleStartMission}
+                onAbort={() => setScreen('preflight')}
+              />
+            )}
           {screen === 'in-flight' && displayMission && displayDrone && (
             <InFlightControl
               mission={displayMission}
@@ -748,12 +837,7 @@ export default function OperatorWorkspace() {
           )}
           {screen === 'simulation-zones' && <SimulationZones />}
         </div>
-
       </main>
     </div>
   )
 }
-
-
-
-

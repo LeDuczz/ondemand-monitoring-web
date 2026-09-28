@@ -6,10 +6,12 @@ import {
   LoadingState,
 } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
 import { fmtDateTime } from '../lib/accountStatus'
 import type { AuditAction, AuditEntry } from '../types/auditLog'
 import type { StatusTone } from '../../../shared/types/domain'
+import { auditLogPageMessages } from './AuditLogPage.messages'
 
 const ACTION_TONE: Record<AuditAction, StatusTone> = {
   CREATE: 'green',
@@ -19,14 +21,6 @@ const ACTION_TONE: Record<AuditAction, StatusTone> = {
   STATUS_CHANGE: 'yellow',
 }
 
-const ACTION_LABEL: Record<AuditAction, string> = {
-  CREATE: 'Tạo mới',
-  UPDATE: 'Cập nhật',
-  DELETE: 'Xóa',
-  APPROVE: 'Phê duyệt',
-  STATUS_CHANGE: 'Đổi trạng thái',
-}
-
 function DiffPanel({
   entry,
   onClose,
@@ -34,8 +28,9 @@ function DiffPanel({
   entry: AuditEntry
   onClose: () => void
 }) {
+  const { t, lang } = useI18n(auditLogPageMessages)
   const formatJSON = (obj: Record<string, unknown> | null) => {
-    if (!obj) return '(không có)'
+    if (!obj) return t.none
     return JSON.stringify(obj, null, 2)
   }
 
@@ -66,14 +61,14 @@ function DiffPanel({
       >
         <div>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
-            Chi tiết thay đổi
+            {t.diffDetails}
           </p>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--tx3)' }}>
             {entry.entityType} / {entry.entityId}
           </p>
         </div>
         <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
-          Đóng
+          {t.close}
         </button>
       </div>
       <div
@@ -87,10 +82,10 @@ function DiffPanel({
         }}
       >
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
-          <strong>Thời gian:</strong> {fmtDateTime(entry.createdAt)}
+          <strong>{t.time}</strong> {fmtDateTime(entry.createdAt, lang)}
         </div>
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
-          <strong>Người thực hiện:</strong> {entry.actorName}
+          <strong>{t.actor}</strong> {entry.actorName}
         </div>
         <div style={{ fontSize: 12, color: 'var(--tx2)' }}>
           <strong>IP:</strong> {entry.ip}
@@ -104,7 +99,7 @@ function DiffPanel({
               color: 'var(--red-solid)',
             }}
           >
-            Trước
+            {t.before}
           </p>
           <pre
             style={{
@@ -132,7 +127,7 @@ function DiffPanel({
               color: 'var(--green-solid)',
             }}
           >
-            Sau
+            {t.after}
           </p>
           <pre
             style={{
@@ -157,6 +152,7 @@ function DiffPanel({
 }
 
 export function AuditLogPage() {
+  const { t, lang } = useI18n(auditLogPageMessages)
   const [actionFilter, setActionFilter] = useState('')
   const [entityTypeFilter, setEntityTypeFilter] = useState('')
   const [fromDate, setFromDate] = useState('')
@@ -181,7 +177,7 @@ export function AuditLogPage() {
   )
 
   function handleExport() {
-    alert('Đã xuất CSV thành công. (Placeholder — sẽ kết nối API xuất file)')
+    alert(t.exportSuccess)
   }
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 1
@@ -198,10 +194,10 @@ export function AuditLogPage() {
       >
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
-            Nhật ký hệ thống
+            {t.title}
           </h1>
           <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-            audit_log — chỉ đọc
+            {t.subtitle}
           </p>
         </div>
         <button
@@ -209,7 +205,7 @@ export function AuditLogPage() {
           className="odm-btn odm-btn-gh"
           onClick={handleExport}
         >
-          Xuất CSV
+          {t.exportCsv}
         </button>
       </div>
 
@@ -225,16 +221,16 @@ export function AuditLogPage() {
           }}
           style={{ width: 160 }}
         >
-          <option value="">Tất cả hành động</option>
-          <option value="CREATE">Tạo mới</option>
-          <option value="UPDATE">Cập nhật</option>
-          <option value="DELETE">Xóa</option>
-          <option value="APPROVE">Phê duyệt</option>
-          <option value="STATUS_CHANGE">Đổi trạng thái</option>
+          <option value="">{t.allActions}</option>
+          <option value="CREATE">{t.action.CREATE}</option>
+          <option value="UPDATE">{t.action.UPDATE}</option>
+          <option value="DELETE">{t.action.DELETE}</option>
+          <option value="APPROVE">{t.action.APPROVE}</option>
+          <option value="STATUS_CHANGE">{t.action.STATUS_CHANGE}</option>
         </select>
         <input
           className="odm-input"
-          placeholder="Loại thực thể..."
+          placeholder={t.entityTypePlaceholder}
           value={entityTypeFilter}
           onChange={(e) => {
             setEntityTypeFilter(e.target.value)
@@ -288,7 +284,7 @@ export function AuditLogPage() {
                   <th>entity_type</th>
                   <th>entity_id</th>
                   <th>ip</th>
-                  <th>Thao tác</th>
+                  <th>{t.columnActions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,7 +297,7 @@ export function AuditLogPage() {
                         color: 'var(--tx3)',
                       }}
                     >
-                      {fmtDateTime(entry.createdAt)}
+                      {fmtDateTime(entry.createdAt, lang)}
                     </td>
                     <td>
                       <div
@@ -338,7 +334,7 @@ export function AuditLogPage() {
                     </td>
                     <td>
                       <StatusBadge tone={ACTION_TONE[entry.action]}>
-                        {ACTION_LABEL[entry.action]}
+                        {t.action[entry.action]}
                       </StatusBadge>
                     </td>
                     <td style={{ fontSize: 12, color: 'var(--tx2)' }}>
@@ -366,7 +362,7 @@ export function AuditLogPage() {
                         style={{ fontSize: 11, padding: '3px 8px' }}
                         onClick={() => setSelectedEntry(entry)}
                       >
-                        Xem diff
+                        {t.viewDiff}
                       </button>
                     </td>
                   </tr>
@@ -391,7 +387,7 @@ export function AuditLogPage() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Trang trước
+                {t.prevPage}
               </button>
               <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
                 {page} / {totalPages}
@@ -402,7 +398,7 @@ export function AuditLogPage() {
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Trang sau
+                {t.nextPage}
               </button>
             </div>
           )}

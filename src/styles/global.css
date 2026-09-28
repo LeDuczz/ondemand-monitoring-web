@@ -624,11 +624,17 @@ h2 span {
    src/features/auth/auth.css (scoped under .odm-auth); these rules remain
    because SocialCallbackPage and AdminAccountCreatePage still use them. */
 .auth-callback-page {
+  position: relative;
   display: grid;
   min-height: 100vh;
   place-items: center;
   padding: 24px;
   background: var(--color-background);
+}
+.auth-callback-lang-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 .auth-callback-card {
   width: min(460px, 100%);
@@ -2336,5 +2342,49 @@ h2 span {
 
   .request-summary-map-preview {
     height: auto;
+  }
+}
+
+/*
+ * Language toggle (VI | EN) — shared across every layout (admin/manager/
+ * customer/operator/auth `.odm` shells, the FIELDWISE portal shell, the
+ * landing header). Uses the app-wide `--color-*` tokens (defined above,
+ * with a dark-theme override under `:root[data-theme='dark']`) so it looks
+ * correct in both themes regardless of which layout it's dropped into.
+ */
+.odm-lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.odm-lang-toggle button {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font: 700 11px/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.03em;
+  color: var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.odm-lang-toggle button[aria-pressed='true'] {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.odm-lang-toggle button:hover:not([aria-pressed='true']) {
+  color: var(--color-foreground);
+}
+
+@media (max-width: 480px) {
+  .odm-lang-toggle button {
+    padding: 5px 8px;
   }
 }

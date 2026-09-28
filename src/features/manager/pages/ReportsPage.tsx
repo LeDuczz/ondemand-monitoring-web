@@ -2,10 +2,14 @@
 
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { exportCsv } from '../lib/exportCsv'
 import { reportsApi } from '../api/reportsApi'
+import { reportsPageMessages } from './ReportsPage.messages'
 import type { ReportSummary } from '../types/reports'
 import '../manager.css'
+
+type PageMessages = (typeof reportsPageMessages)['vi']
 
 // ── chart helpers ───────────────────────────────────────────────────────────
 
@@ -245,9 +249,11 @@ function BarRow({
 type DonutProps = {
   items: { label: string; count: number }[]
   total: number
+  ariaLabel: string
+  unit: string
 }
 
-function DonutChart({ items, total }: DonutProps) {
+function DonutChart({ items, total, ariaLabel, unit }: DonutProps) {
   const R = 64
   const CIRC = 2 * Math.PI * R
   const opacities = [1, 0.78, 0.58, 0.42, 0.3, 0.2]
@@ -280,7 +286,7 @@ function DonutChart({ items, total }: DonutProps) {
           viewBox="0 0 150 150"
           style={{ transform: 'rotate(-90deg)' }}
           role="img"
-          aria-label="Phân bổ đơn theo dịch vụ"
+          aria-label={ariaLabel}
         >
           {segments.map((seg, i) => (
             <circle
@@ -312,7 +318,7 @@ function DonutChart({ items, total }: DonutProps) {
           >
             {total}
           </span>
-          <span style={{ fontSize: 11, color: 'var(--tx3)' }}>đơn</span>
+          <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{unit}</span>
         </span>
       </span>
       <div
@@ -349,9 +355,15 @@ function DonutChart({ items, total }: DonutProps) {
 
 // ── main data view ──────────────────────────────────────────────────────────
 
-function ReportsData({ summary }: { summary: ReportSummary }) {
+function ReportsData({
+  summary,
+  t,
+}: {
+  summary: ReportSummary
+  t: PageMessages
+}) {
   function handleExportCsv() {
-    const headers = ['Tuần', 'Tỉ lệ thành công (%)', 'TB duyệt đơn (h)']
+    const headers = t.csvHeaders
     const rows = summary.weeklySuccessRate.map((w, i) => [
       w.week,
       String(w.rate),
@@ -360,7 +372,7 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
     exportCsv(
       headers,
       rows,
-      `bao-cao-van-hanh-W${summary.weeklySuccessRate[0]?.week?.replace('W', '')}-W${summary.weeklySuccessRate[summary.weeklySuccessRate.length - 1]?.week?.replace('W', '')}`,
+      `${t.csvFilenamePrefix}-W${summary.weeklySuccessRate[0]?.week?.replace('W', '')}-W${summary.weeklySuccessRate[summary.weeklySuccessRate.length - 1]?.week?.replace('W', '')}`,
     )
   }
 
@@ -393,13 +405,12 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               marginBottom: 4,
             }}
           >
-            Khoảng thời gian
+            {t.filters.period}
           </span>
           <select className="odm-inp">
-            <option>8 tuần gần nhất</option>
-            <option>30 ngày qua</option>
-            <option>Quý 3/2026</option>
-            <option>Tuỳ chọn...</option>
+            {t.filters.periodOptions.map((opt) => (
+              <option key={opt}>{opt}</option>
+            ))}
           </select>
         </label>
         <label style={{ display: 'block', width: 250 }}>
@@ -412,10 +423,16 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               marginBottom: 4,
             }}
           >
-            Dịch vụ
+            {t.filters.service}
           </span>
+          {/* Service names below are the app's service catalog (same
+              proper-noun catalog values shown elsewhere in the app) — kept
+              as-is rather than machine-translated, same treatment as the
+              drone/pilot names below. This filter row is decorative (no
+              onChange handler yet — filtering isn't wired to the API in
+              this phase). */}
           <select className="odm-inp">
-            <option>Tất cả dịch vụ</option>
+            <option>{t.filters.allServices}</option>
             <option>Giám sát tiến độ công trình</option>
             <option>Kiểm tra nhiệt mái và tấm pin</option>
             <option>Tuần tra an ninh khu vực</option>
@@ -434,10 +451,10 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               marginBottom: 4,
             }}
           >
-            Drone
+            {t.filters.drone}
           </span>
           <select className="odm-inp">
-            <option>Tất cả drone</option>
+            <option>{t.filters.allDrones}</option>
             <option>DRN-01 Đại Bàng</option>
             <option>DRN-02 Hải Âu</option>
             <option>DRN-03 Chim Én</option>
@@ -459,10 +476,10 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               marginBottom: 4,
             }}
           >
-            Phi công
+            {t.filters.pilot}
           </span>
           <select className="odm-inp">
-            <option>Tất cả phi công</option>
+            <option>{t.filters.allPilots}</option>
             <option>Hoàng Đức Thắng</option>
             <option>Bùi Anh Tuấn</option>
             <option>Ngô Thị Lan Phương</option>
@@ -473,14 +490,14 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
         </label>
         <span style={{ flex: 1 }} />
         <button type="button" className="odm-btn">
-          Đặt lại
+          {t.filters.reset}
         </button>
         <button
           type="button"
           className="odm-btn odm-btn-p"
           onClick={handleExportCsv}
         >
-          Xuất CSV
+          {t.filters.exportCsv}
         </button>
       </div>
 
@@ -494,22 +511,28 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
         }}
       >
         <StatCard
-          label="Tỉ lệ mission thành công"
+          label={t.kpis.successRate}
           value={`${summary.successRate}%`}
-          sub={`+${summary.successRateDelta} điểm so với kỳ trước`}
+          sub={t.kpis.successRateSub(summary.successRateDelta)}
         />
         <StatCard
-          label="Mission đã bay"
+          label={t.kpis.missionsFlown}
           value={String(summary.totalMissionsFlown)}
-          sub={`${summary.completedMissions} COMPLETED · ${summary.failedMissions} FAILED`}
+          sub={t.kpis.missionsFlownSub(
+            summary.completedMissions,
+            summary.failedMissions,
+          )}
         />
         <StatCard
-          label="Thời gian duyệt đơn TB"
-          value={`${summary.avgApprovalTimeHours} giờ`}
-          sub={`${summary.avgApprovalTimeDeltaHours} giờ so với ${summary.avgApprovalTimeDeltaWeekLabel}`}
+          label={t.kpis.avgApprovalTime}
+          value={t.kpis.avgApprovalTimeValue(summary.avgApprovalTimeHours)}
+          sub={t.kpis.avgApprovalTimeSub(
+            summary.avgApprovalTimeDeltaHours,
+            summary.avgApprovalTimeDeltaWeekLabel,
+          )}
         />
         <StatCard
-          label="Utilization TB toàn đội"
+          label={t.kpis.avgFleetUtilization}
           value={`${summary.avgFleetUtilizationPct}%`}
         />
       </div>
@@ -524,9 +547,7 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
         }}
       >
         <div className="odm-card">
-          <div className="odm-card-header">
-            Tỉ lệ mission thành công theo tuần
-          </div>
+          <div className="odm-card-header">{t.charts.successRateByWeek}</div>
           <div className="odm-card-body">
             <LineChart
               width={680}
@@ -541,15 +562,15 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               yLabels={['100%', '93%', '85%', '78%', '70%']}
               yValues={[100, 93, 85, 78, 70]}
               bottomPadding={22}
-              ariaLabel="Tỉ lệ mission thành công theo tuần"
+              ariaLabel={t.charts.successRateByWeek}
             />
             <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-              COMPLETED / (COMPLETED + FAILED) theo mission.scheduled_start
+              {t.charts.successRateFootnote}
             </div>
           </div>
         </div>
         <div className="odm-card">
-          <div className="odm-card-header">Phân bổ đơn theo dịch vụ</div>
+          <div className="odm-card-header">{t.charts.serviceDistribution}</div>
           <div className="odm-card-body">
             <DonutChart
               items={summary.serviceDistribution.map((s) => ({
@@ -557,6 +578,8 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
                 count: s.count,
               }))}
               total={summary.totalOrders}
+              ariaLabel={t.charts.serviceDistribution}
+              unit={t.charts.donutUnit}
             />
           </div>
         </div>
@@ -572,7 +595,7 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
       >
         {/* Drone utilization */}
         <div className="odm-card">
-          <div className="odm-card-header">Utilization từng drone</div>
+          <div className="odm-card-header">{t.charts.droneUtilization}</div>
           <div className="odm-card-body">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {summary.droneUtilization.map((d) => (
@@ -590,14 +613,14 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               ))}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-              Giờ bay / giờ khả dụng trong kỳ
+              {t.charts.droneUtilizationFootnote}
             </div>
           </div>
         </div>
 
         {/* Avg approval time */}
         <div className="odm-card">
-          <div className="odm-card-header">Thời gian duyệt đơn trung bình</div>
+          <div className="odm-card-header">{t.charts.avgApprovalTime}</div>
           <div className="odm-card-body">
             <LineChart
               width={330}
@@ -612,17 +635,17 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               yLabels={['16h', '12h', '8h', '4h', '0h']}
               yValues={[16, 12, 8, 4, 0]}
               bottomPadding={16}
-              ariaLabel="Thời gian duyệt đơn trung bình"
+              ariaLabel={t.charts.avgApprovalTime}
             />
             <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-              order_approval.decided_at − order.submitted_at (giờ)
+              {t.charts.avgApprovalTimeFootnote}
             </div>
           </div>
         </div>
 
         {/* Top failure reasons */}
         <div className="odm-card">
-          <div className="odm-card-header">Top lý do thất bại</div>
+          <div className="odm-card-header">{t.charts.topFailureReasons}</div>
           <div className="odm-card-body">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {summary.topFailureReasons.map((r) => (
@@ -672,8 +695,7 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
               ))}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 4 }}>
-              mission.failure_reason · {summary.failedMissions} mission FAILED
-              trong kỳ
+              {t.charts.topFailureReasonsFootnote(summary.failedMissions)}
             </div>
           </div>
         </div>
@@ -685,6 +707,7 @@ function ReportsData({ summary }: { summary: ReportSummary }) {
 // ── main page ──────────────────────────────────────────────────────────────
 
 export function ReportsPage() {
+  const { t } = useI18n(reportsPageMessages)
   const query = useApiQuery((signal) => reportsApi.getSummary({}, signal), [])
 
   if (query.loading && !query.data) {
@@ -698,7 +721,7 @@ export function ReportsPage() {
             letterSpacing: '-.01em',
           }}
         >
-          Báo cáo vận hành
+          {t.pageTitle}
         </h1>
         <div
           style={{
@@ -759,11 +782,11 @@ export function ReportsPage() {
             letterSpacing: '-.01em',
           }}
         >
-          Báo cáo vận hành
+          {t.pageTitle}
         </h1>
         <StateView
           state="error"
-          title="Không tạo được báo cáo"
+          title={t.loadError}
           error={query.error}
           onRetry={query.reload}
         />
@@ -782,12 +805,12 @@ export function ReportsPage() {
             letterSpacing: '-.01em',
           }}
         >
-          Báo cáo vận hành
+          {t.pageTitle}
         </h1>
         <StateView
           state="empty"
-          title="Không có dữ liệu trong khoảng đã chọn"
-          description="Hãy mở rộng khoảng thời gian hoặc bỏ bớt bộ lọc dịch vụ, drone, phi công."
+          title={t.emptyTitle}
+          description={t.emptyDescription}
         />
       </div>
     )
@@ -814,14 +837,14 @@ export function ReportsPage() {
               lineHeight: 1.25,
             }}
           >
-            Báo cáo vận hành
+            {t.pageTitle}
           </h1>
           <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-            Số liệu tổng hợp từ mission, đơn hàng và đội drone
+            {t.pageSubtitle}
           </div>
         </div>
       </div>
-      <ReportsData summary={query.data} />
+      <ReportsData summary={query.data} t={t} />
     </div>
   )
 }

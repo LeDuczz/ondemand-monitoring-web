@@ -141,3 +141,50 @@ describe('formatFlightProgress', () => {
     )
   })
 })
+
+describe('bilingual (lang="en")', () => {
+  it('formatOrderAge', () => {
+    expect(formatOrderAge(NOW, '2026-09-18T07:32:00+07:00', 24, 'en')).toBe(
+      '31h · over 24h',
+    )
+    expect(formatOrderAge(NOW, '2026-09-19T09:32:00+07:00', 24, 'en')).toBe(
+      '5h',
+    )
+  })
+
+  it('formatMissionCountdown', () => {
+    expect(formatMissionCountdown(NOW, '2026-09-19T17:00:00+07:00', 'en')).toBe(
+      'In 2h 28m',
+    )
+    expect(formatMissionCountdown(NOW, '2026-09-19T14:02:00+07:00', 'en')).toBe(
+      '30m late',
+    )
+  })
+
+  it('formatTicketAge', () => {
+    expect(formatTicketAge(NOW, '2026-09-13T14:32:00+07:00', 'en')).toBe(
+      'Open 6 days',
+    )
+  })
+
+  it('formatMinutesAgo', () => {
+    expect(formatMinutesAgo(NOW, '2026-09-19T13:50:00+07:00', 'en')).toBe(
+      '42 min ago',
+    )
+    expect(formatMinutesAgo(NOW, '2026-09-19T13:32:00+07:00', 'en')).toBe(
+      '1h ago',
+    )
+    expect(formatMinutesAgo(NOW, '2026-09-18T14:32:00+07:00', 'en')).toBe(
+      '1d ago',
+    )
+  })
+
+  it('formatFlightMinutes', () => {
+    expect(formatFlightMinutes(NOW, '2026-09-19T13:34:00+07:00', 'en')).toBe(
+      'Flying 58 min',
+    )
+    expect(formatFlightMinutes(NOW, '2026-09-19T12:27:00+07:00', 'en')).toBe(
+      'Flying 2h 5m',
+    )
+  })
+})

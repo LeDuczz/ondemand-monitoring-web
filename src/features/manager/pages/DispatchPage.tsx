@@ -4,8 +4,9 @@ import { LiveDispatchPage } from './LiveDispatchPage'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import {
-  missionStatusLabel,
+  getMissionStatusLabel,
   missionStatusTone,
 } from '../../../shared/lib/statusTone'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
@@ -17,6 +18,7 @@ import type {
   OperatorCandidate,
   ResourceSuggestions,
 } from '../types/missions'
+import { dispatchPageMessages } from './DispatchPage.messages'
 import '../manager.css'
 
 /**
@@ -30,9 +32,11 @@ import '../manager.css'
  * the design, only DRN-04's conflict) — see evd/P5-manager-mission-dispatch.md.
  */
 export function DispatchPage({ missionId }: { missionId: string }) {
-  return env.useMockApi || import.meta.env.MODE === 'test'
-    ? <MockDispatchPage missionId={missionId} />
-    : <LiveDispatchPage missionId={missionId} />
+  return env.useMockApi || import.meta.env.MODE === 'test' ? (
+    <MockDispatchPage missionId={missionId} />
+  ) : (
+    <LiveDispatchPage missionId={missionId} />
+  )
 }
 
 function MockDispatchPage({ missionId }: { missionId: string }) {
@@ -79,6 +83,7 @@ function MockDispatchPage({ missionId }: { missionId: string }) {
 }
 
 function DispatchLoading() {
+  const { t } = useI18n(dispatchPageMessages)
   return (
     <div className="odm-mgr-dash" aria-busy="true" aria-live="polite">
       <span className="odm-sk" style={{ width: '100%', height: 90 }} />
@@ -86,7 +91,7 @@ function DispatchLoading() {
         <span className="odm-sk" style={{ width: '100%', height: 400 }} />
         <span className="odm-sk" style={{ width: '100%', height: 400 }} />
       </div>
-      <span className="odm-visually-hidden">Đang tính điểm…</span>
+      <span className="odm-visually-hidden">{t.scoringLoading}</span>
     </div>
   )
 }
@@ -98,6 +103,7 @@ function DispatchErrorState({
   error: unknown
   onRetry: () => void
 }) {
+  const { t } = useI18n(dispatchPageMessages)
   const debugLine =
     error instanceof ApiError
       ? `${error.method} ${error.path}${error.status ? ` · ${error.status}` : ''}`
@@ -110,7 +116,7 @@ function DispatchErrorState({
             !
           </div>
           <div style={{ fontSize: 15, fontWeight: 600 }}>
-            Không tải được mission
+            {t.loadMissionError}
           </div>
           <div
             className="odm-mono"
@@ -119,7 +125,7 @@ function DispatchErrorState({
             {debugLine}
           </div>
           <button type="button" className="odm-btn odm-btn-p" onClick={onRetry}>
-            Thử lại
+            {t.retry}
           </button>
         </div>
       </div>
@@ -134,6 +140,7 @@ function SuggestionsErrorState({
   error: unknown
   onRetry: () => void
 }) {
+  const { t } = useI18n(dispatchPageMessages)
   const debugLine =
     error instanceof ApiError
       ? `${error.method} ${error.path}${error.status ? ` · ${error.status}` : ''}`
@@ -146,11 +153,10 @@ function SuggestionsErrorState({
             !
           </div>
           <div style={{ fontSize: 15, fontWeight: 600 }}>
-            Không lấy được gợi ý nguồn lực
+            {t.suggestionsErrorTitle}
           </div>
           <div style={{ color: 'var(--tx3)', maxWidth: 420, lineHeight: 1.5 }}>
-            Dịch vụ diễn giải AI phản hồi chậm. Bạn vẫn có thể xem hạng do hệ
-            thống tính (không có phần "Vì sao gợi ý").
+            {t.suggestionsErrorBody}
           </div>
           <div
             className="odm-mono"
@@ -159,7 +165,7 @@ function SuggestionsErrorState({
             {debugLine}
           </div>
           <button type="button" className="odm-btn odm-btn-p" onClick={onRetry}>
-            Thử lại
+            {t.retry}
           </button>
         </div>
       </div>
@@ -168,6 +174,7 @@ function SuggestionsErrorState({
 }
 
 function ScoreRing({ score }: { score: number }) {
+  const { t } = useI18n(dispatchPageMessages)
   const size = 44
   const r = 18
   const circumference = 2 * Math.PI * r
@@ -179,7 +186,7 @@ function ScoreRing({ score }: { score: number }) {
       viewBox={`0 0 ${size} ${size}`}
       className="odm-mgr-score-ring"
       role="img"
-      aria-label={`Điểm ${score}/100`}
+      aria-label={t.scoreAria(score)}
     >
       <circle
         cx={size / 2}
@@ -230,10 +237,12 @@ function DispatchBody({
   suggestions: ResourceSuggestions
   onMissionChanged: () => void
 }) {
+  const { t, lang } = useI18n(dispatchPageMessages)
   const [mission, setMission] = useState(initialMission)
   // Phase 1: null = drone not yet locked; set = drone locked via API
   const [lockedDrone, setLockedDrone] = useState<LockedDrone | null>(() => {
-    if (!initialMission.droneId || !initialMission.droneAssignmentId) return null
+    if (!initialMission.droneId || !initialMission.droneAssignmentId)
+      return null
     const candidate =
       suggestions.topDrones.find((d) => d.code === initialMission.droneId) ??
       null
@@ -280,9 +289,7 @@ function DispatchBody({
         assignmentId: updated.droneAssignmentId ?? '',
       })
     } catch (err) {
-      setDroneError(
-        err instanceof ApiError ? err.message : 'Không thể chọn drone này.',
-      )
+      setDroneError(err instanceof ApiError ? err.message : t.cannotSelectDrone)
     } finally {
       setLockingDrone(false)
     }
@@ -299,16 +306,12 @@ function DispatchBody({
       )
       setMission(updated)
       const name = selectedOperatorCandidate?.fullName ?? selectedOperator
-      setToast(
-        `Đã phân công thành công. Phi công ${name} đã được gán. Thông báo đã gửi tới phi công (chờ phản hồi).`,
-      )
+      setToast(t.assignSuccess(name))
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SCHEDULE_CONFLICT') {
         setAssignError(err.message)
       } else {
-        setAssignError(
-          err instanceof ApiError ? err.message : 'Phân công thất bại.',
-        )
+        setAssignError(err instanceof ApiError ? err.message : t.assignFailed)
       }
     } finally {
       setAssigning(false)
@@ -333,9 +336,7 @@ function DispatchBody({
         assignmentId: updated.droneAssignmentId ?? '',
       })
     } catch (err) {
-      setDroneError(
-        err instanceof ApiError ? err.message : 'Không thể chọn drone này.',
-      )
+      setDroneError(err instanceof ApiError ? err.message : t.cannotSelectDrone)
       setLockingDrone(false)
       return
     }
@@ -350,16 +351,12 @@ function DispatchBody({
       )
       setMission(afterOp)
       setSelectedOperator(topOperator.code)
-      setToast(
-        `Đã phân công tự động thành công. Drone ${topDrone.name} + phi công ${topOperator.fullName} đã được gán. Thông báo đã gửi tới phi công.`,
-      )
+      setToast(t.autoAssignSuccess(topDrone.name, topOperator.fullName))
     } catch (err) {
       if (err instanceof ApiError && err.code === 'SCHEDULE_CONFLICT') {
         setAssignError(err.message)
       } else {
-        setAssignError(
-          err instanceof ApiError ? err.message : 'Phân công thất bại.',
-        )
+        setAssignError(err instanceof ApiError ? err.message : t.assignFailed)
       }
     } finally {
       setAssigning(false)
@@ -418,63 +415,61 @@ function DispatchBody({
 
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">Phân công nguồn lực</h1>
-          <div className="odm-mgr-dash-date">
-            Gợi ý xếp hạng theo hard filter + điểm số · Người duyệt quyết định
-          </div>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
+          <div className="odm-mgr-dash-date">{t.subtitle}</div>
         </div>
         <StatusBadge tone={missionStatusTone[mission.status]} size="lg">
-          {missionStatusLabel[mission.status]}
+          {getMissionStatusLabel(mission.status, lang)}
         </StatusBadge>
       </div>
 
       <div className="odm-card" style={{ marginBottom: 14 }}>
-        <div className="odm-card-header">Mission {mission.missionCode}</div>
+        <div className="odm-card-header">
+          {t.missionHeader(mission.missionCode)}
+        </div>
         <div className="odm-card-body odm-mgr-review-location-grid">
           <div>
-            <div className="odm-mgr-review-hint">Order</div>
+            <div className="odm-mgr-review-hint">{t.order}</div>
             <div style={{ fontWeight: 600 }}>
-              {mission.orderCode} · Lần thử {mission.attemptNumber}
+              {mission.orderCode} · {t.attempt(mission.attemptNumber ?? 1)}
             </div>
           </div>
           <div>
-            <div className="odm-mgr-review-hint">Thời gian</div>
+            <div className="odm-mgr-review-hint">{t.time}</div>
             <div className="odm-mono" style={{ fontWeight: 600 }}>
               {suggestions.scheduledStart} → {suggestions.scheduledEnd}
             </div>
           </div>
           <div>
-            <div className="odm-mgr-review-hint">Địa điểm</div>
+            <div className="odm-mgr-review-hint">{t.location}</div>
             <div style={{ fontWeight: 600 }}>
               {suggestions.addressText ?? '—'}
               {suggestions.centerLat != null && suggestions.centerLon != null
                 ? ` · ${suggestions.centerLat}, ${suggestions.centerLon}`
                 : ''}
-              {suggestions.radiusM != null
-                ? ` · r ${suggestions.radiusM} m`
-                : ''}
+              {suggestions.radiusM != null ? t.radius(suggestions.radiusM) : ''}
             </div>
           </div>
           <div>
-            <div className="odm-mgr-review-hint">Yêu cầu media</div>
+            <div className="odm-mgr-review-hint">{t.mediaRequirement}</div>
             <div style={{ fontWeight: 600 }}>
               {suggestions.mediaSummary ?? '—'}
             </div>
           </div>
           <div>
-            <div className="odm-mgr-review-hint">Thời lượng yêu cầu</div>
+            <div className="odm-mgr-review-hint">{t.requiredDuration}</div>
             <div style={{ fontWeight: 600 }}>
               {suggestions.requiredDurationLabel ?? '—'}
             </div>
           </div>
           <div>
-            <div className="odm-mgr-review-hint">Cảm biến bắt buộc</div>
+            <div className="odm-mgr-review-hint">{t.requiredSensor}</div>
             <div style={{ fontWeight: 600 }}>
               {suggestions.requiredSensor ?? '—'}
             </div>
           </div>
           <div>
-            <div className="odm-mgr-review-hint">Trạm phục vụ</div>
+            <div className="odm-mgr-review-hint">{t.servingStation}</div>
             <div style={{ fontWeight: 600 }}>
               {suggestions.nearestBase ?? '—'}
             </div>
@@ -486,7 +481,7 @@ function DispatchBody({
         <div className="odm-card" style={{ marginBottom: 14 }}>
           <div className="odm-card-body">
             <div style={{ fontWeight: 700, marginBottom: 4 }}>
-              Không có drone đủ điều kiện
+              {t.noEligibleDrones}
             </div>
             <div style={{ color: 'var(--tx3)', marginBottom: 10 }}>
               {suggestions.explanation}
@@ -497,7 +492,7 @@ function DispatchBody({
                   className="odm-mgr-review-hint"
                   style={{ fontWeight: 700 }}
                 >
-                  Ngày thay thế
+                  {t.alternativeDays}
                 </div>
                 {suggestions.alternatives.map((alt) => (
                   <div key={alt.priority} className="odm-mgr-rejected-row">
@@ -506,10 +501,10 @@ function DispatchBody({
                       {alt.dateLabel} · {alt.windowLabel}
                     </span>
                     <span className="odm-tn">
-                      {alt.eligibleDroneCount} drone rảnh
+                      {t.dronesFree(alt.eligibleDroneCount)}
                     </span>
                     <span className="odm-tn">
-                      {alt.eligibleOperatorCount} phi công rảnh
+                      {t.operatorsFree(alt.eligibleOperatorCount)}
                     </span>
                   </div>
                 ))}
@@ -535,12 +530,14 @@ function DispatchBody({
       {!lockedDrone ? (
         <div className="odm-card" style={{ marginBottom: 14 }}>
           <div className="odm-card-header">
-            Bước 1 — Chọn drone
+            {t.step1Choose}
             <span
               style={{ fontWeight: 500, color: 'var(--tx3)', fontSize: 11.5 }}
             >
-              top {suggestions.topDrones.length} /{' '}
-              {suggestions.eligibleDroneCount} đủ điều kiện
+              {t.topOf(
+                suggestions.topDrones.length,
+                suggestions.eligibleDroneCount,
+              )}
             </span>
           </div>
           {suggestions.topDrones.map((d, i) => (
@@ -563,8 +560,11 @@ function DispatchBody({
               borderLeft: '3px solid var(--blue-solid)',
             }}
           >
-            <div className="odm-card-header" style={{ color: 'var(--blue-solid)' }}>
-              Bước 1 hoàn tất — Drone đã khóa
+            <div
+              className="odm-card-header"
+              style={{ color: 'var(--blue-solid)' }}
+            >
+              {t.step1Done}
             </div>
             {lockedDrone.candidate ? (
               <LockedDroneCard drone={lockedDrone.candidate} />
@@ -578,7 +578,7 @@ function DispatchBody({
           {/* ── Bước 2: chọn phi công ──────────────────────────────────────── */}
           <div className="odm-card" style={{ marginBottom: 14 }}>
             <div className="odm-card-header">
-              Bước 2 — Chọn phi công
+              {t.step2Choose}
               <span
                 style={{
                   fontWeight: 500,
@@ -586,8 +586,10 @@ function DispatchBody({
                   fontSize: 11.5,
                 }}
               >
-                top {suggestions.topOperators.length} /{' '}
-                {suggestions.eligibleOperatorCount} đủ điều kiện
+                {t.topOf(
+                  suggestions.topOperators.length,
+                  suggestions.eligibleOperatorCount,
+                )}
               </span>
             </div>
             {suggestions.topOperators.map((o, i) => (
@@ -617,15 +619,17 @@ function DispatchBody({
           aria-expanded={rejectedOpen}
         >
           <span>
-            Đã bị loại ở hard filter · {suggestions.rejected.drones.length}{' '}
-            drone · {suggestions.rejected.operators.length} phi công
+            {t.rejectedSummary(
+              suggestions.rejected.drones.length,
+              suggestions.rejected.operators.length,
+            )}
           </span>
-          <span>{rejectedOpen ? 'Thu gọn' : 'Mở ra'}</span>
+          <span>{rejectedOpen ? t.collapse : t.expand}</span>
         </button>
         {rejectedOpen ? (
           <div className="odm-card-body">
             <div style={{ fontWeight: 700, marginBottom: 6 }}>
-              Drone bị loại ({suggestions.rejected.drones.length})
+              {t.rejectedDrones(suggestions.rejected.drones.length)}
             </div>
             {suggestions.rejected.drones.map((d) => (
               <div key={d.code} className="odm-mgr-rejected-row">
@@ -636,7 +640,7 @@ function DispatchBody({
               </div>
             ))}
             <div style={{ fontWeight: 700, margin: '10px 0 6px' }}>
-              Phi công bị loại ({suggestions.rejected.operators.length})
+              {t.rejectedOperators(suggestions.rejected.operators.length)}
             </div>
             {suggestions.rejected.operators.map((o) => (
               <div key={o.name} className="odm-mgr-rejected-row">
@@ -658,7 +662,7 @@ function DispatchBody({
           onClick={() => setReleaseModal(true)}
           disabled={!bothAssigned}
         >
-          Thu hồi phân công
+          {t.releaseAssignment}
         </button>
         {!lockedDrone ? (
           <button
@@ -667,7 +671,7 @@ function DispatchBody({
             onClick={handleAutoAssign}
             disabled={lockingDrone || assigning || !suggestions.feasible}
           >
-            Phân công tự động (hạng 1)
+            {t.autoAssignRank1}
           </button>
         ) : (
           <button
@@ -676,7 +680,7 @@ function DispatchBody({
             onClick={handleAssignOperator}
             disabled={!selectedOperator || assigning}
           >
-            {assigning ? 'Đang phân công…' : 'Phân công'}
+            {assigning ? t.assigning : t.assign}
           </button>
         )}
       </div>
@@ -692,6 +696,7 @@ function DispatchBody({
 }
 
 function LockedDroneCard({ drone }: { drone: DroneCandidate }) {
+  const { t } = useI18n(dispatchPageMessages)
   return (
     <div className="odm-mgr-candidate-card selected">
       <div className="odm-mgr-candidate-head">
@@ -707,19 +712,21 @@ function LockedDroneCard({ drone }: { drone: DroneCandidate }) {
       </div>
       <div className="odm-mgr-candidate-metrics">
         <span>
-          Pin <b className="odm-tn">{drone.batteryPct}%</b>
+          {t.candidate.battery} <b className="odm-tn">{drone.batteryPct}%</b>
         </span>
         <span>
-          Cách trạm <b className="odm-tn">{drone.distanceKm} km</b>
+          {t.candidate.distanceToStation}{' '}
+          <b className="odm-tn">{drone.distanceKm} km</b>
         </span>
         <span>
-          Thời gian bay dư <b className="odm-tn">{drone.enduranceMarginPct}%</b>
+          {t.candidate.enduranceMargin}{' '}
+          <b className="odm-tn">{drone.enduranceMarginPct}%</b>
         </span>
         <span>
-          Payload <b>{drone.payload}</b>
+          {t.candidate.payload} <b>{drone.payload}</b>
         </span>
         <span>
-          Giờ bay từ lần bảo trì{' '}
+          {t.candidate.hoursSinceMaintenance}{' '}
           <b className="odm-tn">{drone.hoursSinceMaintenance}h</b>
         </span>
       </div>
@@ -727,7 +734,7 @@ function LockedDroneCard({ drone }: { drone: DroneCandidate }) {
         href={managerHref({ screen: 'drones' })}
         className="odm-btn odm-btn-sm"
       >
-        Đổi drone → Đội drone
+        {t.candidate.changeDrone}
       </a>
     </div>
   )
@@ -744,6 +751,7 @@ function DroneCard({
   locking: boolean
   onLock: () => void
 }) {
+  const { t } = useI18n(dispatchPageMessages)
   return (
     <div className="odm-mgr-candidate-card">
       <div className="odm-mgr-candidate-head">
@@ -765,27 +773,31 @@ function DroneCard({
       </div>
       <div className="odm-mgr-candidate-metrics">
         <span>
-          Pin <b className="odm-tn">{drone.batteryPct}%</b>
+          {t.candidate.battery} <b className="odm-tn">{drone.batteryPct}%</b>
         </span>
         <span>
-          Cách trạm <b className="odm-tn">{drone.distanceKm} km</b>
+          {t.candidate.distanceToStation}{' '}
+          <b className="odm-tn">{drone.distanceKm} km</b>
         </span>
         <span>
-          Thời gian bay dư <b className="odm-tn">{drone.enduranceMarginPct}%</b>
+          {t.candidate.enduranceMargin}{' '}
+          <b className="odm-tn">{drone.enduranceMarginPct}%</b>
         </span>
         <span>
-          Payload <b>{drone.payload}</b>
+          {t.candidate.payload} <b>{drone.payload}</b>
         </span>
         <span>
-          Giờ bay từ lần bảo trì{' '}
+          {t.candidate.hoursSinceMaintenance}{' '}
           <b className="odm-tn">{drone.hoursSinceMaintenance}h</b>
         </span>
       </div>
       <div className="odm-mgr-candidate-reason">
-        <div style={{ fontWeight: 700, marginBottom: 2 }}>Vì sao gợi ý</div>
+        <div style={{ fontWeight: 700, marginBottom: 2 }}>
+          {t.candidate.whySuggested}
+        </div>
         {drone.reason}
         <div style={{ color: 'var(--tx3)', fontSize: 11, marginTop: 4 }}>
-          (AI diễn giải, điểm số do hệ thống tính)
+          {t.candidate.aiNote}
         </div>
       </div>
       <button
@@ -794,7 +806,7 @@ function DroneCard({
         onClick={onLock}
         disabled={locking}
       >
-        {locking ? 'Đang khóa…' : 'Chọn drone này'}
+        {locking ? t.candidate.locking : t.candidate.selectThisDrone}
       </button>
     </div>
   )
@@ -811,6 +823,7 @@ function OperatorCard({
   selected: boolean
   onSelect: () => void
 }) {
+  const { t } = useI18n(dispatchPageMessages)
   return (
     <div className={`odm-mgr-candidate-card${selected ? ' selected' : ''}`}>
       <div className="odm-mgr-candidate-head">
@@ -824,30 +837,34 @@ function OperatorCard({
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700 }}>{operator.fullName}</div>
           <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
-            {operator.licenseClass} · còn hạn đến {operator.licenseExpiry} ·{' '}
+            {operator.licenseClass} ·{' '}
+            {t.candidate.validUntil(operator.licenseExpiry)} ·{' '}
             {operator.licenseNumber}
           </div>
         </div>
       </div>
       <div className="odm-mgr-candidate-metrics">
         <span>
-          Mission với model này{' '}
+          {t.candidate.missionsWithModel}{' '}
           <b className="odm-tn">{operator.missionsWithModel}</b>
         </span>
         <span>
-          Tỉ lệ thành công <b className="odm-tn">{operator.successRatePct}%</b>
+          {t.candidate.successRate}{' '}
+          <b className="odm-tn">{operator.successRatePct}%</b>
         </span>
         <span>
-          Tỉ lệ nhận việc{' '}
+          {t.candidate.acceptanceRate}{' '}
           <b className="odm-tn">{operator.acceptanceRatePct}%</b>
         </span>
         <span>
-          Mission trong tuần{' '}
+          {t.candidate.missionsThisWeek}{' '}
           <b className="odm-tn">{operator.missionsThisWeek}</b>
         </span>
       </div>
       <div className="odm-mgr-candidate-reason">
-        <div style={{ fontWeight: 700, marginBottom: 2 }}>Vì sao gợi ý</div>
+        <div style={{ fontWeight: 700, marginBottom: 2 }}>
+          {t.candidate.whySuggested}
+        </div>
         {operator.reason}
       </div>
       <button
@@ -857,7 +874,7 @@ function OperatorCard({
         }
         onClick={onSelect}
       >
-        {selected ? 'Đã chọn' : 'Chọn phi công này'}
+        {selected ? t.candidate.selected : t.candidate.selectThisOperator}
       </button>
     </div>
   )
@@ -868,12 +885,16 @@ function TimelineCard({
 }: {
   timeline: ResourceSuggestions['timeline']
 }) {
+  const { t } = useI18n(dispatchPageMessages)
   if (timeline.resources.length === 0) return null
   return (
     <div className="odm-card" style={{ marginTop: 14 }}>
       <div className="odm-card-header">
-        Timeline ngày {timeline.date} · Khung mission này (
-        {timeline.windowStart}–{timeline.windowEnd})
+        {t.timelineHeader(
+          timeline.date,
+          timeline.windowStart,
+          timeline.windowEnd,
+        )}
       </div>
       <div className="odm-card-body">
         {timeline.resources.map((r) => (
@@ -894,7 +915,7 @@ function TimelineCard({
                 {b.start && b.end
                   ? ` · ${b.start.slice(11, 16)}–${b.end.slice(11, 16)}`
                   : ''}
-                {b.conflict ? ' · trùng' : ''}
+                {b.conflict ? t.conflict : ''}
               </span>
             ))}
           </div>
@@ -911,12 +932,13 @@ function ReleaseModal({
   onClose: () => void
   onConfirm: (reason: string) => void
 }) {
+  const { t } = useI18n(dispatchPageMessages)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   function handleConfirm() {
     if (!reason.trim()) {
-      setError('Lý do là bắt buộc')
+      setError(t.releaseModal.reasonRequired)
       return
     }
     onConfirm(reason)
@@ -932,13 +954,13 @@ function ReleaseModal({
       >
         <div className="odm-mgr-modal-head">
           <div id="odm-mgr-release-title" className="odm-mgr-modal-title">
-            Thu hồi phân công
+            {t.releaseModal.title}
           </div>
           <button
             type="button"
             className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={t.releaseModal.close}
           >
             ×
           </button>
@@ -946,7 +968,8 @@ function ReleaseModal({
         <div className="odm-mgr-modal-body">
           <label>
             <span className="odm-mgr-modal-label">
-              Lý do (bắt buộc) <span style={{ color: 'var(--red-fg)' }}>*</span>
+              {t.releaseModal.reasonLabel}{' '}
+              <span style={{ color: 'var(--red-fg)' }}>*</span>
             </span>
             <textarea
               className="odm-inp"
@@ -962,14 +985,14 @@ function ReleaseModal({
         </div>
         <div className="odm-mgr-modal-footer">
           <button type="button" className="odm-btn" onClick={onClose}>
-            Huỷ
+            {t.releaseModal.cancel}
           </button>
           <button
             type="button"
             className="odm-btn odm-btn-rd"
             onClick={handleConfirm}
           >
-            Thu hồi
+            {t.releaseModal.confirm}
           </button>
         </div>
       </div>

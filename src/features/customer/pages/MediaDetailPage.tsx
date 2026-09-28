@@ -1,8 +1,13 @@
-import { ErrorState, LoadingState } from '../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { customerApi } from '../api/customerApi'
 import { fmtDateTime } from '../lib/orderStatus'
 import { customerHref } from '../routes'
+import { mediaDetailPageMessages } from './MediaDetailPage.messages'
 
 function fmtBytes(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} MB`
@@ -11,6 +16,7 @@ function fmtBytes(n: number): string {
 }
 
 export function MediaDetailPage({ mediaId }: { mediaId: string }) {
+  const { t, locale } = useI18n(mediaDetailPageMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => customerApi.getMediaDetail(mediaId, signal),
     [mediaId],
@@ -30,7 +36,7 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
           href={customerHref({ screen: 'mediaLibrary' })}
           style={{ color: 'var(--tx3)', textDecoration: 'none' }}
         >
-          ← Thư viện kết quả
+          {t.backToLibrary}
         </a>
       </div>
 
@@ -62,26 +68,40 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
             {urlExpired ? (
               <div style={{ textAlign: 'center', fontSize: 14 }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
-                <div style={{ fontWeight: 600 }}>URL đã hết hạn</div>
-                <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
-                  Liên hệ hỗ trợ để cấp lại đường dẫn.
+                <div style={{ fontWeight: 600 }}>{t.urlExpiredTitle}</div>
+                <div
+                  style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}
+                >
+                  {t.urlExpiredHint}
                 </div>
               </div>
             ) : asset.mediaType === 'VIDEO' ? (
               <div style={{ textAlign: 'center' }}>
                 <div>🎬</div>
-                <div style={{ fontSize: 13, marginTop: 8 }}>Video preview</div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>
+                <div style={{ fontSize: 13, marginTop: 8 }}>
+                  {t.videoPreview}
+                </div>
+                <div
+                  style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}
+                >
                   {asset.durationSec ? `${asset.durationSec}s` : ''}{' '}
-                  {asset.widthPx && asset.heightPx ? `${asset.widthPx}×${asset.heightPx}` : ''}
+                  {asset.widthPx && asset.heightPx
+                    ? `${asset.widthPx}×${asset.heightPx}`
+                    : ''}
                 </div>
               </div>
             ) : (
               <div style={{ textAlign: 'center' }}>
                 <div>📷</div>
-                <div style={{ fontSize: 13, marginTop: 8 }}>Photo preview</div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>
-                  {asset.widthPx && asset.heightPx ? `${asset.widthPx}×${asset.heightPx} px` : ''}
+                <div style={{ fontSize: 13, marginTop: 8 }}>
+                  {t.photoPreview}
+                </div>
+                <div
+                  style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}
+                >
+                  {asset.widthPx && asset.heightPx
+                    ? `${asset.widthPx}×${asset.heightPx} px`
+                    : ''}
                 </div>
               </div>
             )}
@@ -91,26 +111,32 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
             {prevMediaId ? (
               <a
-                href={customerHref({ screen: 'mediaDetail', mediaId: prevMediaId })}
+                href={customerHref({
+                  screen: 'mediaDetail',
+                  mediaId: prevMediaId,
+                })}
                 className="odm-btn odm-btn-gh"
               >
-                ← Trước
+                {t.prev}
               </a>
             ) : (
               <button type="button" className="odm-btn odm-btn-gh" disabled>
-                ← Trước
+                {t.prev}
               </button>
             )}
             {nextMediaId ? (
               <a
-                href={customerHref({ screen: 'mediaDetail', mediaId: nextMediaId })}
+                href={customerHref({
+                  screen: 'mediaDetail',
+                  mediaId: nextMediaId,
+                })}
                 className="odm-btn odm-btn-gh"
               >
-                Sau →
+                {t.next}
               </a>
             ) : (
               <button type="button" className="odm-btn odm-btn-gh" disabled>
-                Sau →
+                {t.next}
               </button>
             )}
           </div>
@@ -127,20 +153,43 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
             flexShrink: 0,
           }}
         >
-          <h2 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>Thông tin file</h2>
+          <h2 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
+            {t.fileInfo}
+          </h2>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              fontSize: 13,
+            }}
+          >
             <div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Loại</div>
-              <div>{asset.mediaType === 'PHOTO' ? 'Ảnh' : 'Video'}</div>
+              <div
+                style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+              >
+                {t.type}
+              </div>
+              <div>
+                {asset.mediaType === 'PHOTO' ? t.typePhoto : t.typeVideo}
+              </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Kích thước</div>
+              <div
+                style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+              >
+                {t.size}
+              </div>
               <div>{fmtBytes(asset.fileSizeBytes)}</div>
             </div>
             {asset.widthPx && asset.heightPx && (
               <div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Độ phân giải</div>
+                <div
+                  style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+                >
+                  {t.resolution}
+                </div>
                 <div style={{ fontFamily: 'var(--font-mono)' }}>
                   {asset.widthPx} × {asset.heightPx}
                 </div>
@@ -148,21 +197,45 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
             )}
             {asset.durationSec && (
               <div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Thời lượng</div>
-                <div style={{ fontFamily: 'var(--font-mono)' }}>{asset.durationSec}s</div>
+                <div
+                  style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+                >
+                  {t.duration}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)' }}>
+                  {asset.durationSec}s
+                </div>
               </div>
             )}
             <div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Chụp lúc</div>
-              <div style={{ fontSize: 12 }}>{fmtDateTime(asset.capturedAt)}</div>
+              <div
+                style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+              >
+                {t.capturedAt}
+              </div>
+              <div style={{ fontSize: 12 }}>
+                {fmtDateTime(asset.capturedAt, locale)}
+              </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Lần bay</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{asset.missionCode}</div>
+              <div
+                style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+              >
+                {t.mission}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                {asset.missionCode}
+              </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}>Đơn hàng</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{asset.orderCode}</div>
+              <div
+                style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 2 }}
+              >
+                {t.order}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                {asset.orderCode}
+              </div>
             </div>
           </div>
 
@@ -170,7 +243,9 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
           <div style={{ marginTop: 16 }}>
             {urlExpired ? (
               <div style={{ fontSize: 12, color: 'var(--red-solid)' }}>
-                🔒 URL hết hạn lúc {urlExpiredAt ? fmtDateTime(urlExpiredAt) : ''}
+                {t.urlExpiredAt(
+                  urlExpiredAt ? fmtDateTime(urlExpiredAt, locale) : '',
+                )}
               </div>
             ) : downloadUrl ? (
               <a
@@ -178,9 +253,13 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="odm-btn odm-btn-p"
-                style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+                style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                }}
               >
-                Tải xuống
+                {t.download}
               </a>
             ) : null}
           </div>

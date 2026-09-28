@@ -1,4 +1,7 @@
+import { LanguageToggle } from '../../shared/components/LanguageToggle'
+import { useI18n } from '../../shared/i18n'
 import { operatorHref } from './routes'
+import { operatorTopbarMessages } from './OperatorTopbar.messages'
 
 export function OperatorTopbar({
   breadcrumb,
@@ -13,10 +16,15 @@ export function OperatorTopbar({
   searchQuery: string
   onSearchChange: (value: string) => void
 }) {
+  const { t } = useI18n(operatorTopbarMessages)
   return (
     <header className="odm-opr-topbar">
       <a className="odm-opr-brand" href={operatorHref({ screen: 'missions' })}>
-        <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-opr-brand-mark" />
+        <img
+          src="/images/logo-new.png"
+          alt="OnDemand Monitor"
+          className="odm-opr-brand-mark"
+        />
         <span className="odm-opr-brand-name">
           <span className="odm-opr-brand-primary">OnDemand</span>
           <span className="odm-opr-brand-accent">Monitor</span>
@@ -24,7 +32,7 @@ export function OperatorTopbar({
       </a>
 
       <div className="odm-opr-breadcrumb">
-        <span>Phi công</span>
+        <span>{t.pilotLabel}</span>
         <span aria-hidden="true">›</span>
         <strong>{breadcrumb}</strong>
       </div>
@@ -41,7 +49,7 @@ export function OperatorTopbar({
             textDecoration: 'none',
           }}
         >
-          Bảo trì & Sự cố
+          {t.maintenanceLink}
         </a>
 
         <div className="odm-opr-search">
@@ -62,16 +70,17 @@ export function OperatorTopbar({
           </span>
           <input
             className="odm-inp"
-            aria-label="Tìm kiếm"
-            placeholder="Tìm mã đơn, mission, drone..."
+            aria-label={t.search}
+            placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
+        <LanguageToggle />
         <button
           type="button"
           className="odm-btn odm-btn-gh odm-btn-ic1"
-          aria-label="Đổi giao diện sáng / tối"
+          aria-label={t.toggleTheme}
           onClick={onToggleDark}
         >
           {dark ? '☀' : '☾'}

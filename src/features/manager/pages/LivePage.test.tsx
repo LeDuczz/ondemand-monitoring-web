@@ -1,3 +1,4 @@
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
@@ -7,6 +8,7 @@ import {
 } from '../../../shared/api/httpClient'
 import { resetMockDb } from '../../../mocks/db'
 import { mockFetch } from '../../../mocks'
+import { setLanguage } from '../../../shared/i18n'
 import { LivePage } from './LivePage'
 
 beforeEach(() => {
@@ -51,5 +53,14 @@ describe('LivePage', () => {
   it('renders livestream block with LIVE badge for MSN-2609-0142-1', async () => {
     render(<LivePage missionId="msn-2609-0142-1" />)
     await waitFor(() => expect(screen.queryByText('LIVE')).toBeTruthy())
+  })
+
+  it('shows English incident/cancel buttons when language is switched', async () => {
+    render(<LivePage missionId="msn-2609-0142-1" />)
+    act(() => setLanguage('en'))
+    await waitFor(() =>
+      expect(screen.queryByText('Report incident')).toBeTruthy(),
+    )
+    expect(screen.getByText('Emergency cancel')).toBeTruthy()
   })
 })

@@ -1,8 +1,10 @@
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
 import { resetMockDb } from '../../../mocks/db'
 import '../../../mocks/index'
+import { setLanguage } from '../../../shared/i18n'
 import { ReportsPage } from './ReportsPage'
 
 beforeEach(() => resetMockDb())
@@ -45,5 +47,18 @@ describe('ReportsPage', () => {
     expect(screen.getByText('Phân bổ đơn theo dịch vụ')).toBeTruthy()
     expect(screen.getByText('Utilization từng drone')).toBeTruthy()
     expect(screen.getByText('Top lý do thất bại')).toBeTruthy()
+  })
+
+  it('renders English headings after switching language', async () => {
+    render(<ReportsPage />)
+    await waitFor(() => {
+      expect(screen.getByText('Xuất CSV')).toBeTruthy()
+    })
+
+    act(() => setLanguage('en'))
+
+    expect(screen.getByText('Operations reports')).toBeTruthy()
+    expect(screen.getByText('Export CSV')).toBeTruthy()
+    expect(screen.getByText('Mission success rate by week')).toBeTruthy()
   })
 })

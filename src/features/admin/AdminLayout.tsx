@@ -3,31 +3,37 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
 import { Icon } from '../../shared/components/Icon'
+import { LanguageToggle } from '../../shared/components/LanguageToggle'
+import { useI18n } from '../../shared/i18n'
 import { adminHref, type AdminRoute, type AdminScreen } from './routes'
+import { adminLayoutMessages } from './AdminLayout.messages'
 import './admin.css'
 
-type NavItem = { label: string; icon: string; route: AdminRoute; pendingBadge?: boolean }
+type NavItemKey = keyof typeof adminLayoutMessages.vi.navItems
+
+type NavItem = { key: NavItemKey; icon: string; route: AdminRoute }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Người dùng', icon: '◉', route: { screen: 'accounts' } },
-  { label: 'Vai trò', icon: '◈', route: { screen: 'roles' } },
-  { label: 'Danh mục', icon: '▦', route: { screen: 'catalog' } },
-  { label: 'Cấu hình vận hành', icon: '⚙', route: { screen: 'operatingConfig' } },
-  { label: 'Tri thức AI và luật', icon: '◆', route: { screen: 'aiKnowledge' } },
-  { label: 'Nhật ký hệ thống', icon: '◎', route: { screen: 'auditLog' } },
+  { key: 'accounts', icon: '◉', route: { screen: 'accounts' } },
+  { key: 'roles', icon: '◈', route: { screen: 'roles' } },
+  { key: 'catalog', icon: '▦', route: { screen: 'catalog' } },
+  { key: 'operatingConfig', icon: '⚙', route: { screen: 'operatingConfig' } },
+  { key: 'aiKnowledge', icon: '◆', route: { screen: 'aiKnowledge' } },
+  { key: 'auditLog', icon: '◎', route: { screen: 'auditLog' } },
 ]
 
-const activeScreen: Record<AdminScreen, string> = {
-  dashboard: 'Tổng quan',
-  accounts: 'Người dùng',
-  createAccount: 'Người dùng',
-  accountDetail: 'Người dùng',
-  roles: 'Vai trò',
-  catalog: 'Danh mục',
-  operatingConfig: 'Cấu hình vận hành',
-  aiKnowledge: 'Tri thức AI và luật',
-  auditLog: 'Nhật ký hệ thống',
-  notFound: '',
+// Which nav item highlights as active for each parsed screen.
+const activeNavKey: Record<AdminScreen, NavItemKey | null> = {
+  dashboard: null,
+  accounts: 'accounts',
+  createAccount: 'accounts',
+  accountDetail: 'accounts',
+  roles: 'roles',
+  catalog: 'catalog',
+  operatingConfig: 'operatingConfig',
+  aiKnowledge: 'aiKnowledge',
+  auditLog: 'auditLog',
+  notFound: null,
 }
 
 function initialsOf(name: string | undefined): string {
@@ -53,22 +59,27 @@ export function AdminLayout({
   )
   const [menuOpen, setMenuOpen] = useState(false)
   const user = authSession.getUser()
+  const { t } = useI18n(adminLayoutMessages)
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
 
-  const active = activeScreen[route.screen]
+  const activeKey = activeNavKey[route.screen]
 
   return (
     <div className="odm odm-adm">
       <div className="odm-adm-shell">
         <nav
-          aria-label="Điều hướng quản trị"
+          aria-label={t.nav}
           className={`odm-adm-side ${menuOpen ? 'is-open' : ''}`}
         >
           <a className="odm-adm-brand" href={adminHref({ screen: 'accounts' })}>
-            <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-adm-brand-mark" />
+            <img
+              src="/images/logo-new.png"
+              alt="OnDemand Monitor"
+              className="odm-adm-brand-mark"
+            />
             <span className="odm-adm-brand-name">
               <span className="odm-adm-brand-primary">OnDemand</span>
               <span className="odm-adm-brand-accent">Monitor</span>
@@ -76,24 +87,28 @@ export function AdminLayout({
           </a>
 
           <div className="odm-adm-nav-scroll">
-            <div className="odm-adm-navg">Menu</div>
+            <div className="odm-adm-navg">{t.menu}</div>
             {NAV_ITEMS.map((item) => {
-              const isActive = item.label === active
-              const badge = item.label === 'Người dùng' && (pendingCount ?? 0) > 0
-                ? pendingCount
-                : undefined
+              const isActive = item.key === activeKey
+              const badge =
+                item.key === 'accounts' && (pendingCount ?? 0) > 0
+                  ? pendingCount
+                  : undefined
               return (
                 <a
-                  key={item.label}
+                  key={item.key}
                   href={adminHref(item.route)}
                   className={`odm-adm-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
                 >
-                  <span aria-hidden="true" style={{ minWidth: 16, textAlign: 'center' }}>
+                  <span
+                    aria-hidden="true"
+                    style={{ minWidth: 16, textAlign: 'center' }}
+                  >
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  <span>{t.navItems[item.key]}</span>
                   {badge ? <span className="odm-adm-navc">{badge}</span> : null}
                 </a>
               )
@@ -105,7 +120,9 @@ export function AdminLayout({
               {initialsOf(user?.fullName)}
             </span>
             <span className="odm-adm-user-text">
-              <span className="odm-adm-user-name">{user?.fullName ?? 'Admin'}</span>
+              <span className="odm-adm-user-name">
+                {user?.fullName ?? t.admin}
+              </span>
               <span className="odm-adm-user-email">{user?.email ?? ''}</span>
             </span>
           </div>
@@ -116,7 +133,7 @@ export function AdminLayout({
           <button
             type="button"
             className="odm-adm-scrim"
-            aria-label="Đóng điều hướng"
+            aria-label={t.closeNav}
             onClick={() => setMenuOpen(false)}
           />
         ) : null}
@@ -126,7 +143,7 @@ export function AdminLayout({
             <button
               type="button"
               className="odm-adm-menu-toggle"
-              aria-label="Mở điều hướng"
+              aria-label={t.openNav}
               onClick={() => setMenuOpen(true)}
             >
               ☰
@@ -134,18 +151,24 @@ export function AdminLayout({
             <div className="odm-adm-breadcrumb">{breadcrumb}</div>
             <div className="odm-adm-topbar-spacer" />
             <div className="odm-adm-search">
-              <Icon name="search" width={15} height={15} className="odm-adm-search-icon" />
+              <Icon
+                name="search"
+                width={15}
+                height={15}
+                className="odm-adm-search-icon"
+              />
               <input
                 className="odm-inp odm-adm-search-input"
                 type="search"
-                aria-label="Tìm kiếm"
-                placeholder="Tìm mã đơn, mission, drone..."
+                aria-label={t.search}
+                placeholder={t.searchPlaceholder}
               />
             </div>
+            <LanguageToggle />
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1"
-              aria-label="Đổi giao diện sáng / tối"
+              aria-label={t.toggleTheme}
               onClick={() => setDark((v) => !v)}
             >
               {dark ? '☀' : '☾'}
@@ -153,7 +176,7 @@ export function AdminLayout({
             <button
               type="button"
               className="odm-btn odm-btn-gh odm-btn-ic1 odm-adm-bell"
-              aria-label="Thông báo"
+              aria-label={t.notifications}
             >
               <Icon name="bell" width={17} height={17} />
               <span className="odm-adm-bell-dot" aria-hidden="true" />

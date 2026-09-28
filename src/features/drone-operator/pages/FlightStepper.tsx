@@ -1,16 +1,10 @@
-const STEPS: { key: string; label: string }[] = [
-  { key: 'accept', label: 'Nhận' },
-  { key: 'ready', label: 'Sẵn sàng' },
-  { key: 'connect', label: 'Kết nối' },
-  { key: 'preflight', label: 'Preflight' },
-  { key: 'handover', label: 'Bàn giao' },
-  { key: 'flight', label: 'Bay' },
-  { key: 'upload', label: 'Review' },
-  { key: 'postflight', label: 'Postflight check' },
-]
+import { useI18n } from '../../../shared/i18n'
+import { flightStepperMessages } from './FlightStepper.messages'
 
 /** Stepper header shared by the flight-prep screens (OPR-04/05/06). `active` is the current step index (0-based). */
 export function FlightStepper({ active }: { active: number }) {
+  const { t } = useI18n(flightStepperMessages)
+  const STEPS = t.steps
   return (
     <ol
       style={{
@@ -52,7 +46,12 @@ export function FlightStepper({ active }: { active: number }) {
         return (
           <li
             key={step.key}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              flex: 'none',
+            }}
           >
             <span
               style={{
@@ -130,7 +129,12 @@ export function FlightStepHeader({
       }}
     >
       <div
-        style={{ minWidth: 170, flex: '0 1 260px', maxWidth: 280, lineHeight: 1.2 }}
+        style={{
+          minWidth: 170,
+          flex: '0 1 260px',
+          maxWidth: 280,
+          lineHeight: 1.2,
+        }}
       >
         <div
           style={{
@@ -159,7 +163,9 @@ export function FlightStepHeader({
         </div>
       </div>
       <FlightStepper active={active} />
-      <div style={{ flex: '0 0 auto', minWidth: 0 }}>{right ?? <span style={{ width: 1 }} />}</div>
+      <div style={{ flex: '0 0 auto', minWidth: 0 }}>
+        {right ?? <span style={{ width: 1 }} />}
+      </div>
     </header>
   )
 }

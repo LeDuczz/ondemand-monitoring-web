@@ -1,8 +1,10 @@
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 import { resetMockDb } from '../../../mocks/db'
 import '../../../mocks/index'
+import { setLanguage } from '../../../shared/i18n'
 import { MissionsListPage } from './MissionsListPage'
 
 beforeEach(() => resetMockDb())
@@ -17,5 +19,11 @@ describe('MissionsListPage', () => {
     expect(screen.getByText('Mission')).toBeTruthy()
     // Either loading indicator or data should be present
     expect(busy ?? container.querySelector('table')).toBeTruthy()
+  })
+
+  it('renders the English page title when language is switched', () => {
+    render(<MissionsListPage />)
+    act(() => setLanguage('en'))
+    expect(screen.getByText('Missions')).toBeTruthy()
   })
 })

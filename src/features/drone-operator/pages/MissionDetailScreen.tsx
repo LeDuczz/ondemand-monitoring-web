@@ -15,6 +15,7 @@ import { setActiveMissionId } from '../api/liveMission'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
 import { RejectDialog } from './RejectDialog'
+import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
 
 // ─── Status maps ────────────────────────────────────────────────────────────
 
@@ -549,6 +550,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
         onAccept={handleAccept}
         onOpenReject={() => setShowReject(true)}
       />
+      {mission.status === 'COMPLETED' ? <MissionUploadedMedia missionId={mission.id} /> : null}
+
       {showReject ? (
         <RejectDialog
           missionId={mission.id}

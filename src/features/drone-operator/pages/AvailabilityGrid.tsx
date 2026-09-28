@@ -1,8 +1,13 @@
 import { useState } from 'react'
 
-import { rangeSelect, slotKey, slotTimes, type AvailabilityStatus } from '../lib/availabilitySlots'
-
-const WEEKDAY_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+import { useI18n } from '../../../shared/i18n'
+import {
+  rangeSelect,
+  slotKey,
+  slotTimes,
+  type AvailabilityStatus,
+} from '../lib/availabilitySlots'
+import { availabilityGridMessages } from './AvailabilityGrid.messages'
 
 const STATUS_STYLE: Record<AvailabilityStatus, React.CSSProperties> = {
   AVAILABLE: { background: 'var(--green-bg)' },
@@ -31,8 +36,12 @@ export function AvailabilityGrid({
   overlays: MissionOverlay[]
   onSelectionChange: (keys: string[]) => void
 }) {
+  const { t } = useI18n(availabilityGridMessages)
+  const WEEKDAY_SHORT = t.weekdayShort
   const times = slotTimes()
-  const [anchor, setAnchor] = useState<{ day: string; time: string } | null>(null)
+  const [anchor, setAnchor] = useState<{ day: string; time: string } | null>(
+    null,
+  )
   const [dragging, setDragging] = useState(false)
 
   const overlayByKey = new Map(overlays.map((o) => [slotKey(o.day, o.time), o]))
@@ -59,10 +68,19 @@ export function AvailabilityGrid({
       onMouseUp={endDrag}
       onMouseLeave={endDrag}
     >
-      <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}>
+      <table
+        style={{ borderCollapse: 'collapse', width: '100%', minWidth: 760 }}
+      >
         <thead>
           <tr>
-            <th style={{ width: 60, fontSize: 11, color: 'var(--tx3)', padding: 6 }} />
+            <th
+              style={{
+                width: 60,
+                fontSize: 11,
+                color: 'var(--tx3)',
+                padding: 6,
+              }}
+            />
             {days.map((day) => {
               const d = new Date(`${day}T00:00:00+07:00`)
               return (
@@ -76,7 +94,9 @@ export function AvailabilityGrid({
                     textAlign: 'center',
                   }}
                 >
-                  {WEEKDAY_SHORT[d.getDay()]} {String(d.getDate()).padStart(2, '0')}/{String(d.getMonth() + 1).padStart(2, '0')}
+                  {WEEKDAY_SHORT[d.getDay()]}{' '}
+                  {String(d.getDate()).padStart(2, '0')}/
+                  {String(d.getMonth() + 1).padStart(2, '0')}
                 </th>
               )
             })}
@@ -120,7 +140,10 @@ export function AvailabilityGrid({
                         style={{
                           position: 'absolute',
                           inset: 1,
-                          background: overlay.tone === 'green' ? 'var(--green-solid)' : 'var(--sf3)',
+                          background:
+                            overlay.tone === 'green'
+                              ? 'var(--green-solid)'
+                              : 'var(--sf3)',
                           borderRadius: 2,
                           fontSize: 8,
                           color: '#fff',

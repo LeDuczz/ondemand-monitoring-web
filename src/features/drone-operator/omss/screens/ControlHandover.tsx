@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { controlHandoverMessages } from '../i18n/controlHandover'
 import type { Mission, Drone } from '../types'
 
 interface Props {
@@ -15,6 +17,7 @@ export default function ControlHandover({
   onComplete,
   onBack,
 }: Props) {
+  const { t, locale } = useI18n(controlHandoverMessages)
   const [phase, setPhase] = useState<Phase>('request')
   const [code, setCode] = useState('')
   const [confirmed, setConfirmed] = useState(false)
@@ -25,9 +28,17 @@ export default function ControlHandover({
   }
 
   const steps = [
-    { label: 'Submit request', done: phase !== 'request' },
-    { label: 'Manager approves', done: phase === 'approved' },
-    { label: 'Enter auth code', done: false },
+    {
+      key: 'submitRequest',
+      label: t.steps.submitRequest,
+      done: phase !== 'request',
+    },
+    {
+      key: 'managerApproves',
+      label: t.steps.managerApproves,
+      done: phase === 'approved',
+    },
+    { key: 'enterAuthCode', label: t.steps.enterAuthCode, done: false },
   ]
 
   return (
@@ -60,7 +71,7 @@ export default function ControlHandover({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Pre-flight check
+        {t.preflightCheck}
       </button>
 
       <div style={{ maxWidth: 520 }}>
@@ -72,18 +83,17 @@ export default function ControlHandover({
             margin: '0 0 6px',
           }}
         >
-          Control handover
+          {t.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          Request authorisation from your supervising manager before starting
-          the mission.
+          {t.description}
         </p>
 
         {/* Step tracker */}
         <div style={{ display: 'flex', gap: 0, marginBottom: 28 }}>
           {steps.map((s, i) => (
             <div
-              key={s.label}
+              key={s.key}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -159,19 +169,20 @@ export default function ControlHandover({
             style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
           >
             {[
-              ['Mission', mission.id],
-              ['Drone', drone.id],
-              ['Operator', 'J. Martinez (OPR-112)'],
+              [t.fields.mission, mission.id, true],
+              [t.fields.drone, drone.id, true],
+              [t.fields.operator, 'J. Martinez (OPR-112)', false],
               [
-                'Scheduled',
-                new Date(mission.scheduledAt).toLocaleTimeString('en-US', {
+                t.fields.scheduled,
+                new Date(mission.scheduledAt).toLocaleTimeString(locale, {
                   hour: '2-digit',
                   minute: '2-digit',
                   hour12: false,
                 }) + ' UTC',
+                false,
               ],
-            ].map(([l, v]) => (
-              <div key={l}>
+            ].map(([l, v, isData]) => (
+              <div key={l as string}>
                 <div
                   style={{
                     fontSize: 11,
@@ -186,10 +197,7 @@ export default function ControlHandover({
                     fontSize: 13,
                     fontWeight: 500,
                     color: 'var(--text)',
-                    fontFamily:
-                      l === 'Mission' || l === 'Drone'
-                        ? 'var(--font-data)'
-                        : undefined,
+                    fontFamily: isData ? 'var(--font-data)' : undefined,
                   }}
                 >
                   {v}
@@ -215,7 +223,7 @@ export default function ControlHandover({
               marginBottom: 12,
             }}
           >
-            Request handover authorisation
+            {t.requestHandover}
           </button>
         )}
 
@@ -248,7 +256,7 @@ export default function ControlHandover({
                 color: 'var(--blue-text)',
               }}
             >
-              Awaiting manager approval
+              {t.awaitingApproval}
             </div>
             <div
               style={{
@@ -258,7 +266,7 @@ export default function ControlHandover({
                 marginTop: 4,
               }}
             >
-              A notification has been sent to the supervising manager.
+              {t.notificationSent}
             </div>
           </div>
         )}
@@ -286,7 +294,7 @@ export default function ControlHandover({
                     color: 'var(--green-text)',
                   }}
                 >
-                  Handover approved by manager
+                  {t.approvedByManager}
                 </div>
                 <div
                   style={{
@@ -295,8 +303,7 @@ export default function ControlHandover({
                     opacity: 0.8,
                   }}
                 >
-                  Enter the authorisation code provided by your manager to
-                  continue.
+                  {t.enterCodePrompt}
                 </div>
               </div>
             </div>
@@ -311,13 +318,13 @@ export default function ControlHandover({
                   marginBottom: 6,
                 }}
               >
-                Authorisation code
+                {t.authCodeLabel}
               </label>
               <input
                 type="password"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="Enter 6-digit code"
+                placeholder={t.authCodePlaceholder}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -351,8 +358,7 @@ export default function ControlHandover({
               <span
                 style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}
               >
-                I confirm that control has been handed over and I accept full
-                operational responsibility for this mission.
+                {t.confirmLabel}
               </span>
             </label>
 
@@ -375,7 +381,7 @@ export default function ControlHandover({
                   code.length >= 4 && confirmed ? 'pointer' : 'not-allowed',
               }}
             >
-              Complete handover
+              {t.completeHandover}
             </button>
           </>
         )}

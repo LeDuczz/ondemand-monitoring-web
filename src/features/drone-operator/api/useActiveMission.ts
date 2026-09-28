@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { missionApi } from '../../mission/api/missionApi'
-import { clearActiveMissionId, getActiveMissionId, setActiveMissionId, type BackendMission } from './liveMission'
+import {
+  clearActiveMissionId,
+  getActiveMissionId,
+  setActiveMissionId,
+  type BackendMission,
+} from './liveMission'
 
 export function isSelectableMission(status?: string | null) {
   return (
@@ -39,15 +44,15 @@ export function mergeMissionSnapshot(
 }
 
 export function useActiveMission(paramMissionId?: string) {
-  const [selectedId, setSelectedId] = useState<string | null>(() => getActiveMissionId())
-
-  const myMissionsQuery = useApiQuery(
-    async () => {
-      const list = (await missionApi.getMyMissions()) as unknown as BackendMission[]
-      return list || []
-    },
-    [],
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    getActiveMissionId(),
   )
+
+  const myMissionsQuery = useApiQuery(async () => {
+    const list =
+      (await missionApi.getMyMissions()) as unknown as BackendMission[]
+    return list || []
+  }, [])
 
   const allMissions = myMissionsQuery.data || []
 
@@ -55,7 +60,9 @@ export function useActiveMission(paramMissionId?: string) {
   const postflightMissions = allMissions.filter(
     (m) => m.status === 'POSTFLIGHT_CHECKING' || m.status === 'RETURNING',
   )
-  const activeMissions = allMissions.filter((m) => isSelectableMission(m.status))
+  const activeMissions = allMissions.filter((m) =>
+    isSelectableMission(m.status),
+  )
   const activeMissionsWithDrone = activeMissions.filter(hasAssignedDrone)
 
   // Resolve target mission ID:
@@ -68,10 +75,16 @@ export function useActiveMission(paramMissionId?: string) {
   if (
     !targetId &&
     selectedId &&
-    allMissions.some((m) => m.id === selectedId && isSelectableMission(m.status))
+    allMissions.some(
+      (m) => m.id === selectedId && isSelectableMission(m.status),
+    )
   ) {
     targetId = selectedId
-  } else if (!paramMissionId && selectedId && allMissions.some((m) => m.id === selectedId)) {
+  } else if (
+    !paramMissionId &&
+    selectedId &&
+    allMissions.some((m) => m.id === selectedId)
+  ) {
     clearActiveMissionId(selectedId)
   }
   if (!targetId && postflightMissions.length > 0) {
@@ -88,7 +101,9 @@ export function useActiveMission(paramMissionId?: string) {
   const detailQuery = useApiQuery(
     async () =>
       targetId
-        ? ((await missionApi.getMissionById(targetId)) as unknown as BackendMission)
+        ? ((await missionApi.getMissionById(
+            targetId,
+          )) as unknown as BackendMission)
         : undefined,
     [targetId],
   )
@@ -113,7 +128,8 @@ export function useActiveMission(paramMissionId?: string) {
     loading: myMissionsQuery.loading || detailQuery.loading,
     error: detailQuery.error || myMissionsQuery.error,
     allMissions,
-    postflightMissions: postflightMissions.length > 0 ? postflightMissions : allMissions,
+    postflightMissions:
+      postflightMissions.length > 0 ? postflightMissions : allMissions,
     selectMission: handleSelectMission,
   }
 }

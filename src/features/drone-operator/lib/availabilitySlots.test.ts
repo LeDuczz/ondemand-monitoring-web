@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { mergeSlots, rangeSelect, slotKey, slotTimes } from './availabilitySlots'
+import {
+  mergeSlots,
+  rangeSelect,
+  slotKey,
+  slotTimes,
+} from './availabilitySlots'
 
 describe('slotTimes', () => {
   it('starts at 06:00 and ends before 19:00 in 30-minute steps', () => {
@@ -31,13 +36,28 @@ describe('rangeSelect', () => {
   const times = ['07:00', '07:30', '08:00']
 
   it('selects a single cell when anchor equals current', () => {
-    const keys = rangeSelect(days, times, { day: days[0], time: times[0] }, { day: days[0], time: times[0] })
+    const keys = rangeSelect(
+      days,
+      times,
+      { day: days[0], time: times[0] },
+      { day: days[0], time: times[0] },
+    )
     expect(keys).toEqual([slotKey(days[0], times[0])])
   })
 
   it('selects a rectangle spanning days and times regardless of drag direction', () => {
-    const forward = rangeSelect(days, times, { day: days[0], time: times[0] }, { day: days[1], time: times[1] })
-    const backward = rangeSelect(days, times, { day: days[1], time: times[1] }, { day: days[0], time: times[0] })
+    const forward = rangeSelect(
+      days,
+      times,
+      { day: days[0], time: times[0] },
+      { day: days[1], time: times[1] },
+    )
+    const backward = rangeSelect(
+      days,
+      times,
+      { day: days[1], time: times[1] },
+      { day: days[0], time: times[0] },
+    )
     const expected = [
       slotKey(days[0], times[0]),
       slotKey(days[0], times[1]),
@@ -49,6 +69,13 @@ describe('rangeSelect', () => {
   })
 
   it('returns an empty array for an unknown day or time', () => {
-    expect(rangeSelect(days, times, { day: 'nope', time: times[0] }, { day: days[0], time: times[0] })).toEqual([])
+    expect(
+      rangeSelect(
+        days,
+        times,
+        { day: 'nope', time: times[0] },
+        { day: days[0], time: times[0] },
+      ),
+    ).toEqual([])
   })
 })

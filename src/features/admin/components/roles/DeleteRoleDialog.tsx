@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
 import { adminApi } from '../../api/adminApi'
+import { useI18n } from '../../../../shared/i18n'
 import type { AdminRole } from '../../types/roles'
+import { deleteRoleDialogMessages } from './DeleteRoleDialog.messages'
 
 export function DeleteRoleDialog({
   role,
@@ -12,6 +14,7 @@ export function DeleteRoleDialog({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const { t } = useI18n(deleteRoleDialogMessages)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,7 +25,7 @@ export function DeleteRoleDialog({
       await adminApi.deleteRole(role.id)
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi xoá vai trò.')
+      setError(err instanceof Error ? err.message : t.genericError)
     } finally {
       setLoading(false)
     }
@@ -39,43 +42,64 @@ export function DeleteRoleDialog({
       >
         <div className="odm-dialog-header">
           <h2 className="odm-dialog-title">
-            {role.userCount > 0 ? `Không thể xoá vai trò ${role.code}` : 'Xoá vai trò'}
+            {role.userCount > 0
+              ? t.cannotDeleteTitle(role.code)
+              : t.deleteTitle}
           </h2>
           <button type="button" className="odm-dialog-close" onClick={onClose}>
             x
           </button>
         </div>
-        <div className="odm-dialog-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div
+          className="odm-dialog-body"
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
           {role.userCount > 0 ? (
             <div
               className="odm-adm-banner"
-              style={{ background: 'var(--red-bg)', color: 'var(--red-fg)', borderColor: 'var(--red-dot)', marginTop: 0 }}
+              style={{
+                background: 'var(--red-bg)',
+                color: 'var(--red-fg)',
+                borderColor: 'var(--red-dot)',
+                marginTop: 0,
+              }}
             >
               <span style={{ fontWeight: 700 }}>
-                Còn {role.userCount} người dùng đang dùng vai trò này.
+                {t.stillInUse(role.userCount)}
               </span>{' '}
-              <span>Đổi vai trò của người dùng trước, sau đó mới xoá được.</span>
+              <span>{t.changeFirst}</span>
             </div>
           ) : (
             <p style={{ margin: 0 }}>
-              Xác nhận xoá vai trò <strong>{role.name}</strong> ({role.code})?
+              {t.confirmPrefix} <strong>{role.name}</strong> ({role.code})?
             </p>
           )}
-          {error && <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>{error}</p>}
+          {error && (
+            <p style={{ color: 'var(--red-solid)', fontSize: 13, margin: 0 }}>
+              {error}
+            </p>
+          )}
         </div>
         <div className="odm-dialog-footer">
-          <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
-            Đóng
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onClose}
+          >
+            {t.close}
           </button>
           {role.userCount === 0 && (
             <button
               type="button"
               className="odm-btn odm-btn-p"
-              style={{ background: 'var(--red-solid)', borderColor: 'var(--red-solid)' }}
+              style={{
+                background: 'var(--red-solid)',
+                borderColor: 'var(--red-solid)',
+              }}
               onClick={handleDelete}
               disabled={loading}
             >
-              {loading ? 'Đang xoá...' : 'Xoá'}
+              {loading ? t.deleting : t.delete}
             </button>
           )}
         </div>

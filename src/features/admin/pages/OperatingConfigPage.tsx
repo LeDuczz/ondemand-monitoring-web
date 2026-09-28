@@ -1,14 +1,17 @@
 import { useState } from 'react'
 
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
 import { PolicyTable } from '../components/operatingConfig/PolicyTable'
 import { WeightsPanel } from '../components/operatingConfig/WeightsPanel'
 import { NoFlyZonesTable } from '../components/operatingConfig/NoFlyZonesTable'
+import { operatingConfigPageMessages } from './OperatingConfigPage.messages'
 
 type Tab = 'policy' | 'nfz'
 
 export function OperatingConfigPage() {
+  const { t } = useI18n(operatingConfigPageMessages)
   const [tab, setTab] = useState<Tab>('policy')
   const { data: policyData } = useApiQuery(
     (signal) => adminApi.listPolicies(signal),
@@ -30,11 +33,9 @@ export function OperatingConfigPage() {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
-          Cấu hình vận hành
-        </h1>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{t.title}</h1>
         <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-          Chính sách, trọng số gợi ý và vùng cấm bay
+          {t.subtitle}
         </p>
       </div>
 
@@ -46,19 +47,19 @@ export function OperatingConfigPage() {
           marginBottom: 20,
         }}
       >
-        {(['policy', 'nfz'] as Tab[]).map((t) => (
+        {(['policy', 'nfz'] as Tab[]).map((tabKey) => (
           <button
-            key={t}
+            key={tabKey}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(tabKey)}
             style={{
               padding: '8px 18px',
               fontSize: 13,
-              fontWeight: tab === t ? 600 : 400,
-              color: tab === t ? 'var(--blue-solid)' : 'var(--tx2)',
+              fontWeight: tab === tabKey ? 600 : 400,
+              color: tab === tabKey ? 'var(--blue-solid)' : 'var(--tx2)',
               background: 'none',
               border: 'none',
-              borderBottom: `2px solid ${tab === t ? 'var(--blue-solid)' : 'transparent'}`,
+              borderBottom: `2px solid ${tab === tabKey ? 'var(--blue-solid)' : 'transparent'}`,
               cursor: 'pointer',
               marginBottom: -1,
               display: 'inline-flex',
@@ -66,7 +67,7 @@ export function OperatingConfigPage() {
               gap: 6,
             }}
           >
-            {t === 'policy' ? 'Chính sách' : 'Vùng cấm bay'}
+            {tabKey === 'policy' ? t.policyTab : t.nfzTab}
             <span
               style={{
                 fontSize: 11,
@@ -76,7 +77,7 @@ export function OperatingConfigPage() {
                 color: 'var(--tx2)',
               }}
             >
-              {t === 'policy' ? policyCount : nfzCount}
+              {tabKey === 'policy' ? policyCount : nfzCount}
             </span>
           </button>
         ))}
@@ -86,14 +87,14 @@ export function OperatingConfigPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           <section>
             <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>
-              Tham số vận hành
+              {t.operatingParams}
             </h2>
             <PolicyTable />
           </section>
 
           <section>
             <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>
-              Trọng số gợi ý nguồn lực
+              {t.dispatchWeights}
             </h2>
             <WeightsPanel />
           </section>

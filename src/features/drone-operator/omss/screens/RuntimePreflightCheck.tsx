@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { runtimePreflightCheckMessages } from '../i18n/runtimePreflightCheck'
 
 type PreflightItemStatus = 'PENDING' | 'CHECKING' | 'PASS' | 'WARN' | 'FAIL'
 type PreflightOverallStatus = 'CHECKING' | 'READY' | 'FAILED'
@@ -22,32 +24,20 @@ type PreflightStatus = {
 const controlBaseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
 
-const pendingChecks: PreflightItem[] = [
-  ['GAZEBO', 'Gazebo Simulation', true],
-  ['PX4', 'PX4 Flight Controller', true],
-  ['MAVSDK', 'MAVSDK Connection', true],
-  ['PX4_CONTROL', 'PX4 Control', true],
-  ['LOCAL_POSITION', 'Local Position', true],
-  ['MAVSDK_HEALTH', 'MAVSDK Health', true],
-  ['BATTERY', 'Battery', true],
-  ['LIDAR', 'LiDAR', false],
-  ['CAMERA', 'Downward Camera', false],
-  ['BACKEND', 'Backend Connection', false],
-  ['MEDIA', 'Media Upload', false],
-  ['MODULES', 'Module Check', false],
-].map(([key, name, critical]) => ({
-  key: String(key),
-  name: String(name),
-  critical: Boolean(critical),
-  status: 'PENDING',
-  message: 'Pending',
-}))
-
-const waitingForControllerChecks = pendingChecks.map((item) => ({
-  ...item,
-  status: 'CHECKING' as const,
-  message: 'Waiting for flight controller API',
-}))
+const PENDING_CHECK_KEYS: [string, boolean][] = [
+  ['GAZEBO', true],
+  ['PX4', true],
+  ['MAVSDK', true],
+  ['PX4_CONTROL', true],
+  ['LOCAL_POSITION', true],
+  ['MAVSDK_HEALTH', true],
+  ['BATTERY', true],
+  ['LIDAR', false],
+  ['CAMERA', false],
+  ['BACKEND', false],
+  ['MEDIA', false],
+  ['MODULES', false],
+]
 
 function statusColor(status: PreflightItemStatus) {
   if (status === 'PASS') return '#4ade80'
@@ -55,14 +45,6 @@ function statusColor(status: PreflightItemStatus) {
   if (status === 'FAIL') return '#f87171'
   if (status === 'CHECKING') return '#60a5fa'
   return '#64748b'
-}
-
-function statusLabel(status: PreflightItemStatus) {
-  if (status === 'PASS') return 'OK'
-  if (status === 'WARN') return 'WARN'
-  if (status === 'FAIL') return 'FAIL'
-  if (status === 'CHECKING') return 'Checking'
-  return 'Pending'
 }
 
 function statusMark(status: PreflightItemStatus) {
@@ -78,6 +60,32 @@ export default function RuntimePreflightCheck({
 }: {
   onReady: () => void | Promise<void>
 }) {
+  const { t } = useI18n(runtimePreflightCheckMessages)
+
+  function statusLabel(status: PreflightItemStatus) {
+    if (status === 'PASS') return t.statusOk
+    if (status === 'WARN') return t.statusWarn
+    if (status === 'FAIL') return t.statusFail
+    if (status === 'CHECKING') return t.statusChecking
+    return t.statusPending
+  }
+
+  const pendingChecks: PreflightItem[] = PENDING_CHECK_KEYS.map(
+    ([key, critical]) => ({
+      key,
+      name: t.checkNames[key as keyof typeof t.checkNames],
+      critical,
+      status: 'PENDING',
+      message: t.pending,
+    }),
+  )
+
+  const waitingForControllerChecks = pendingChecks.map((item) => ({
+    ...item,
+    status: 'CHECKING' as const,
+    message: t.waitingForController,
+  }))
+
   const [checkId, setCheckId] = useState<string | null>(null)
   const [status, setStatus] = useState<PreflightStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -92,7 +100,9 @@ export default function RuntimePreflightCheck({
     try {
       await onReady()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Backend preflight failed. Please retry.')
+      setError(
+        cause instanceof Error ? cause.message : t.backendPreflightFailed,
+      )
     } finally {
       setSubmitting(false)
     }
@@ -127,15 +137,13 @@ export default function RuntimePreflightCheck({
         const response = await fetch(`${controlBaseUrl}/api/preflight/check`, {
           method: 'POST',
         })
-        if (!response.ok) throw new Error(`Preflight API ${response.status}`)
+        if (!response.ok) throw new Error(t.preflightApiError(response.status))
         const payload = await response.json()
         if (!alive) return
         setCheckId(payload.checkId)
       } catch {
         if (!alive) return
-        setError(
-          'Waiting for flight controller preflight API. Start Drone Stack can be opened anytime; this screen will continue automatically.',
-        )
+        setError(t.waitingForControllerApi)
         setStatus({
           checkId: 'connecting',
           status: 'CHECKING',
@@ -163,15 +171,14 @@ export default function RuntimePreflightCheck({
           `${controlBaseUrl}/api/preflight/${checkId}`,
           { cache: 'no-store' },
         )
-        if (!response.ok) throw new Error(`Preflight status ${response.status}`)
+        if (!response.ok)
+          throw new Error(t.preflightStatusError(response.status))
         const payload = await response.json()
         if (!alive) return
         setStatus(payload)
       } catch {
         if (!alive) return
-        setError(
-          'Preflight status is temporarily unavailable. Reconnecting automatically...',
-        )
+        setError(t.statusUnavailable)
         setCheckId(null)
         setRetrySeed((value) => value + 1)
       }
@@ -255,10 +262,10 @@ export default function RuntimePreflightCheck({
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 22, letterSpacing: 0 }}>
-              Preflight Check
+              {t.title}
             </h1>
             <p style={{ margin: '3px 0 0', color: '#9fb0c7', fontSize: 13 }}>
-              Automatically checking system readiness before flight.
+              {t.description}
             </p>
           </div>
         </div>
@@ -329,17 +336,17 @@ export default function RuntimePreflightCheck({
             }}
           >
             {visibleReady
-              ? '✓ PREFLIGHT CHECK COMPLETED'
+              ? t.completed
               : visibleFailed
-                ? '× PREFLIGHT CHECK FAILED'
-                : '◌ PREFLIGHT CHECKING'}
+                ? t.failedBanner
+                : t.checking}
           </strong>
           <div style={{ marginTop: 3, color: '#cbd5e1', fontSize: 12 }}>
             {visibleReady
-              ? 'All critical systems are ready. You can enter the Drone Operator screen.'
+              ? t.readyBody
               : visibleFailed
-                ? 'A critical system is not ready. Fix it and retry failed checks.'
-                : 'Please wait while the system checks all components.'}
+                ? t.failedBody
+                : t.checkingBody}
           </div>
         </div>
 
@@ -399,7 +406,7 @@ export default function RuntimePreflightCheck({
                     : 'rgba(14,116,144,.16)',
                 }}
               >
-                {item.critical ? 'Critical' : 'Optional'}
+                {item.critical ? t.critical : t.optional}
               </span>
             </div>
           ))}
@@ -433,7 +440,7 @@ export default function RuntimePreflightCheck({
                 cursor: 'pointer',
               }}
             >
-              Retry Failed Checks
+              {t.retryFailedChecks}
             </button>
           )}
           <button
@@ -452,7 +459,7 @@ export default function RuntimePreflightCheck({
               cursor: okEnabled ? 'pointer' : 'not-allowed',
             }}
           >
-            ✓ OK - Go to Drone Operator
+            {t.goToOperator}
           </button>
         </div>
       </section>

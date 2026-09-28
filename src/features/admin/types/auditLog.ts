@@ -1,4 +1,5 @@
-export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'STATUS_CHANGE'
+export type AuditAction =
+  'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'STATUS_CHANGE'
 
 export type AuditEntry = {
   id: string

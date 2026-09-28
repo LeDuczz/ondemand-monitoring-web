@@ -5,11 +5,14 @@ import {
 } from '../../../shared/components/odm/StateView'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useI18n } from '../../../shared/i18n'
 import { customerApi } from '../api/customerApi'
-import { fmtDate, ORDER_STATUS_META } from '../lib/orderStatus'
+import { fmtDate, getOrderStatusMeta } from '../lib/orderStatus'
 import { customerHref } from '../routes'
+import { dashboardPageMessages } from './DashboardPage.messages'
 
 export function DashboardPage() {
+  const { t, lang, locale } = useI18n(dashboardPageMessages)
   const { data, loading, error, reload } = useApiQuery(
     (signal) => customerApi.getDashboard(signal),
     [],
@@ -31,16 +34,22 @@ export function DashboardPage() {
           marginBottom: 20,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Tổng quan</h1>
-        <a className="odm-btn odm-btn-p" href={customerHref({ screen: 'createOrder' })}>
-          + Tạo yêu cầu giám sát
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{t.title}</h1>
+        <a
+          className="odm-btn odm-btn-p"
+          href={customerHref({ screen: 'createOrder' })}
+        >
+          {t.createOrder}
         </a>
       </div>
 
       {/* Live banner */}
       {data.activeLiveMission && (
         <a
-          href={customerHref({ screen: 'live', orderId: data.activeLiveMission.orderId })}
+          href={customerHref({
+            screen: 'live',
+            orderId: data.activeLiveMission.orderId,
+          })}
           className="odm-cus-live-banner"
           style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}
         >
@@ -59,7 +68,7 @@ export function DashboardPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              ● LIVE
+              {t.live}
             </span>
             <span style={{ fontWeight: 600, fontSize: 14 }}>
               {data.activeLiveMission.orderTitle}
@@ -67,8 +76,10 @@ export function DashboardPage() {
             <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
               {data.activeLiveMission.missionCode}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 'auto' }}>
-              👥 {data.activeLiveMission.viewerCount} đang xem →
+            <span
+              style={{ fontSize: 12, color: 'var(--tx3)', marginLeft: 'auto' }}
+            >
+              {t.viewersWatching(data.activeLiveMission.viewerCount)}
             </span>
           </div>
         </a>
@@ -77,22 +88,22 @@ export function DashboardPage() {
       {/* KPI cards */}
       <div className="odm-cus-kpi-row">
         <div className="odm-cus-kpi-card">
-          <div className="odm-cus-kpi-label">Chờ duyệt</div>
+          <div className="odm-cus-kpi-label">{t.kpi.pending}</div>
           <div className="odm-cus-kpi-value">{data.pendingCount}</div>
-          <div className="odm-cus-kpi-sub">đơn hàng</div>
+          <div className="odm-cus-kpi-sub">{t.kpiUnit}</div>
         </div>
         <div className="odm-cus-kpi-card">
-          <div className="odm-cus-kpi-label">Đang thực hiện</div>
+          <div className="odm-cus-kpi-label">{t.kpi.inProgress}</div>
           <div className="odm-cus-kpi-value">{data.inProgressCount}</div>
-          <div className="odm-cus-kpi-sub">đơn hàng</div>
+          <div className="odm-cus-kpi-sub">{t.kpiUnit}</div>
         </div>
         <div className="odm-cus-kpi-card">
-          <div className="odm-cus-kpi-label">Hoàn thành</div>
+          <div className="odm-cus-kpi-label">{t.kpi.completed}</div>
           <div className="odm-cus-kpi-value">{data.completedCount}</div>
-          <div className="odm-cus-kpi-sub">đơn hàng</div>
+          <div className="odm-cus-kpi-sub">{t.kpiUnit}</div>
         </div>
         <div className="odm-cus-kpi-card">
-          <div className="odm-cus-kpi-label">Media mới</div>
+          <div className="odm-cus-kpi-label">{t.kpi.newMedia}</div>
           <div
             className="odm-cus-kpi-value"
             style={{
@@ -101,7 +112,7 @@ export function DashboardPage() {
           >
             {data.newMediaCount}
           </div>
-          <div className="odm-cus-kpi-sub">chờ xem</div>
+          <div className="odm-cus-kpi-sub">{t.kpiUnitMedia}</div>
         </div>
       </div>
 
@@ -122,22 +133,31 @@ export function DashboardPage() {
             marginBottom: 12,
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Đơn hàng gần đây</h2>
+          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+            {t.recentOrders}
+          </h2>
           <a
             href={customerHref({ screen: 'orders' })}
-            style={{ fontSize: 12, color: 'var(--blue-solid)', textDecoration: 'none' }}
+            style={{
+              fontSize: 12,
+              color: 'var(--blue-solid)',
+              textDecoration: 'none',
+            }}
           >
-            Xem tất cả →
+            {t.viewAll}
           </a>
         </div>
 
         {data.recentOrders.length === 0 ? (
           <EmptyState
-            title="Chưa có đơn hàng nào"
-            description="Tạo yêu cầu giám sát đầu tiên của bạn."
+            title={t.emptyTitle}
+            description={t.emptyDescription}
             action={
-              <a className="odm-btn odm-btn-p" href={customerHref({ screen: 'createOrder' })}>
-                Tạo yêu cầu đầu tiên →
+              <a
+                className="odm-btn odm-btn-p"
+                href={customerHref({ screen: 'createOrder' })}
+              >
+                {t.emptyAction}
               </a>
             }
           />
@@ -145,21 +165,28 @@ export function DashboardPage() {
           <table className="odm-cus-orders-table">
             <thead>
               <tr>
-                <th>Tiêu đề</th>
-                <th>Địa điểm</th>
-                <th>Ngày bay</th>
-                <th>Trạng thái</th>
+                <th>{t.columns.title}</th>
+                <th>{t.columns.address}</th>
+                <th>{t.columns.flightDate}</th>
+                <th>{t.columns.status}</th>
               </tr>
             </thead>
             <tbody>
               {data.recentOrders.map((order) => {
-                const meta = ORDER_STATUS_META[order.status]
+                const meta = getOrderStatusMeta(order.status, lang)
                 return (
                   <tr key={order.id}>
                     <td>
                       <a
-                        href={customerHref({ screen: 'orderDetail', orderId: order.id })}
-                        style={{ color: 'var(--tx)', textDecoration: 'none', fontWeight: 500 }}
+                        href={customerHref({
+                          screen: 'orderDetail',
+                          orderId: order.id,
+                        })}
+                        style={{
+                          color: 'var(--tx)',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                        }}
                       >
                         {order.title}
                         {order.hasNewMedia && (
@@ -174,7 +201,7 @@ export function DashboardPage() {
                               padding: '1px 5px',
                             }}
                           >
-                            Media mới
+                            {t.newMediaBadge}
                           </span>
                         )}
                       </a>
@@ -182,8 +209,10 @@ export function DashboardPage() {
                     <td style={{ color: 'var(--tx3)', fontSize: 12 }}>
                       {order.addressText ?? '—'}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                      {fmtDate(order.preferredDate)}
+                    <td
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                    >
+                      {fmtDate(order.preferredDate, locale)}
                     </td>
                     <td>
                       <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>

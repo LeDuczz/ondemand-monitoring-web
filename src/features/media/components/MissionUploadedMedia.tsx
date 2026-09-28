@@ -173,7 +173,7 @@ function Gallery({
                   )}
                   <p style={{ overflowWrap: 'anywhere' }}>{item.fileName}</p>
                   <p>
-                    {item.droneCode} ·{' '}
+                    {item.deviceId} ·{' '}
                     {(item.fileSize / 1024 / 1024).toFixed(2)} MB
                   </p>
                   <p>

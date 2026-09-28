@@ -5,7 +5,7 @@ import type { ApiResponse } from '../../auth/types'
 export type AvailableMedia = {
   mediaId: string
   missionId: string
-  droneCode: string
+  deviceId: string
   mediaType: 'IMAGE' | 'VIDEO'
   fileName: string
   contentType: string

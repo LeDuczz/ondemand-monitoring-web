@@ -20,7 +20,7 @@ vi.mock('../api/operatorMissionMediaApi', () => ({
 const image: UploadedMissionMedia = {
   mediaId: 'image',
   missionId: 'mission',
-  droneCode: 'DRN-0050',
+  deviceId: 'device-0050',
   mediaType: 'IMAGE',
   fileName: 'capture.jpg',
   contentType: 'image/jpeg',

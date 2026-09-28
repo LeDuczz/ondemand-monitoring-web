@@ -106,6 +106,7 @@ type StoredWeatherStatus = {
 type PostflightCheckStatus = {
   id: string
   missionId?: string | null
+  deviceConnectionId?: string | null
   droneCode?: string | null
   checkedBy?: string | null
   batteryOk?: boolean | null
@@ -124,6 +125,14 @@ type PostflightCheckStatus = {
   landingHeadingDeg?: number | null
   landingTelemetryOnline?: boolean | null
   checkedAt: string
+  items?: Array<{
+    id?: string | null
+    checkType?: string | null
+    checkName?: string | null
+    status?: 'PASS' | 'WARN' | 'FAIL' | string | null
+    message?: string | null
+    checkedAt?: string | null
+  }>
 }
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
@@ -380,6 +389,13 @@ function checkLabel(status: RuntimeStatus) {
   if (status === 'FAIL') return 'Không đạt'
   if (status === 'CHECKING') return 'Đang kiểm'
   return 'Chờ kiểm'
+}
+
+function inspectionLabel(status?: string | null) {
+  if (status === 'PASS') return 'Đạt'
+  if (status === 'WARN') return 'Cảnh báo'
+  if (status === 'FAIL') return 'Không đạt'
+  return 'Chưa rõ'
 }
 
 const PREFLIGHT_NAME_LABELS: Record<string, string> = {
@@ -1905,6 +1921,7 @@ function WeatherTile({ label, value, icon }: { label: string; value: string; ico
 function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | null }) {
   const issueText = postflightFaultLabel(postflight?.faultType)
   const noteText = postflightNoteLabel(postflight?.notes)
+  const itemChecks = postflight?.items?.filter((item) => item.checkName || item.checkType) ?? []
   const checks: Array<[string, boolean | null | undefined]> = [
     ['Thân vỏ', postflight?.physicalConditionOk],
     ['Động cơ', postflight?.motorOk],
@@ -1942,35 +1959,101 @@ function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | nul
               )}
             </div>
 
-            {/* Component checks grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
-              {checks.map(([label, value]) => (
-                <div
-                  key={String(label)}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '6px 8px',
-                    borderRadius: 7,
-                    border: '1px solid var(--bd)',
-                    background: value === false ? 'var(--red-bg)' : 'var(--sf2)',
-                    fontSize: 11.5,
-                  }}
-                >
-                  <span style={{ color: 'var(--tx3)' }}>{label}</span>
-                  <span
+            {itemChecks.length > 0 ? (
+              <div
+                style={{
+                  border: '1px solid var(--bd)',
+                  borderRadius: 7,
+                  overflow: 'hidden',
+                }}
+              >
+                {itemChecks.map((item, idx) => {
+                  const isFail = item.status === 'FAIL'
+                  const isWarn = item.status === 'WARN'
+                  return (
+                    <div
+                      key={item.id ?? `${item.checkType}-${idx}`}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '18px 1fr auto',
+                        gap: 6,
+                        alignItems: 'center',
+                        padding: '7px 10px',
+                        borderBottom: idx < itemChecks.length - 1 ? '1px solid var(--bd)' : 'none',
+                        background: isFail ? 'var(--red-bg)' : '#fff',
+                        fontSize: 12,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: 800,
+                          color: isFail ? 'var(--red-fg)' : isWarn ? 'var(--yellow-fg)' : 'var(--green-fg)',
+                          fontSize: 13,
+                        }}
+                      >
+                        {isFail ? '✗' : isWarn ? '!' : '✓'}
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: isFail ? 'var(--red-fg)' : 'var(--tx)' }}>
+                          {item.checkName ?? item.checkType}
+                        </div>
+                        {item.message && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: isFail ? 'var(--red-fg)' : 'var(--tx3)',
+                              marginTop: 1,
+                              lineHeight: 1.35,
+                            }}
+                          >
+                            {item.message}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 11.5,
+                          color: isFail ? 'var(--red-fg)' : isWarn ? 'var(--yellow-fg)' : 'var(--green-fg)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {inspectionLabel(item.status)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+                {checks.map(([label, value]) => (
+                  <div
+                    key={String(label)}
                     style={{
-                      fontWeight: 700,
-                      color: value === false ? 'var(--red-fg)' : 'var(--green-fg)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '6px 8px',
+                      borderRadius: 7,
+                      border: '1px solid var(--bd)',
+                      background: value === false ? 'var(--red-bg)' : 'var(--sf2)',
+                      fontSize: 11.5,
                     }}
                   >
-                    {value === true ? '✓' : value === false ? '✗' : '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <span style={{ color: 'var(--tx3)' }}>{label}</span>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color: value === false ? 'var(--red-fg)' : 'var(--green-fg)',
+                      }}
+                    >
+                      {value === true ? '✓' : value === false ? '✗' : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {(issueText || noteText) && (
               <div

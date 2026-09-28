@@ -1,7 +1,7 @@
 export interface UploadedMissionMedia {
   mediaId: string
   missionId: string
-  droneCode: string
+  deviceId: string
   mediaType: string
   fileName: string
   contentType: string

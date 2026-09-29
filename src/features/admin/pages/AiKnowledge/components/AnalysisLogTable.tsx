@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge, type AdminTone } from '../../../components/common/StatusBadge'
+import { StatusBadge, type AdminTone } from '../../../../../shared/components/ui'
 import { fmtDateTime } from '../../../lib/accountStatus'
 import type { AnalysisLog, AnalysisVerdict } from '../../../types/aiKnowledge'
 import { analysisLogTableMessages } from './AnalysisLogTable.messages'

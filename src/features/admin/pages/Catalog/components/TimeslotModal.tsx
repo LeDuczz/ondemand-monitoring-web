@@ -6,7 +6,7 @@ import {
   catalogApi,
   type PreferredTimeCode,
 } from '../../../api/catalogApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import {
   emptyTimeslotForm,
   mapTimeslot,
@@ -16,8 +16,8 @@ import {
 } from '../../../lib/catalogMappers'
 import type { AdminTimeslot } from '../../../types/catalog'
 import { EditLoader } from './EditLoader'
-import { FormField } from '../../../components/common/FormField'
-import { FormFooter } from '../../../components/common/FormFooter'
+import { FormField } from '../../../../../shared/components/ui'
+import { FormFooter } from '../../../../../shared/components/ui'
 import { timeslotCodeMessages } from './timeslotCodes'
 import { timeslotModalMessages } from './TimeslotModal.messages'
 

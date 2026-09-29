@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { FormField } from '../../../components/common/FormField'
+import { FormField } from '../../../../../shared/components/ui'
 import type { ZoneType } from '../../../types/operatingConfig'
 import type { ZoneFormState } from './zoneForm'
 import { zoneModalMessages } from './ZoneModal.messages'

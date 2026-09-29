@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import { fmtDateTime } from '../../../lib/accountStatus'
 import type { AuditEntry } from '../../../types/auditLog'
 import { auditDetailMessages } from './AuditDetailModal.messages'

@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { Card } from '../../../components/common/Card'
+import { Card } from '../../../../../shared/components/ui'
 import { accountActionsCardMessages } from './AccountActionsCard.messages'
 
 export function AccountActionsCard({

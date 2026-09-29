@@ -10,9 +10,9 @@ import {
   adminUsersApi,
   type ManagedAccountResponse,
 } from '../../api/adminUsersApi'
-import { EmptyState } from '../../components/common/EmptyState'
-import { PageHeader } from '../../components/common/PageHeader'
-import { TableCard } from '../../components/common/TableCard'
+import { EmptyState } from '../../../../shared/components/ui'
+import { PageHeader } from '../../../../shared/components/ui'
+import { TableCard } from '../../../../shared/components/ui'
 import { mapUserSummary } from '../../lib/accountMappers'
 import { adminHref } from '../../routes'
 import type { AdminAccountItem } from '../../types/accounts'

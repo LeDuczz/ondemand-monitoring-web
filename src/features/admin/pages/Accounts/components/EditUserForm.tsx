@@ -6,7 +6,7 @@ import {
   type UserManagementDetailResponse,
 } from '../../../api/adminUsersApi'
 import { userProfileApi } from '../../../api/userProfileApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import {
   AccountSection,
   ContactSection,

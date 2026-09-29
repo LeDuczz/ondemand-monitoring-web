@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge, type AdminTone } from '../../../components/common/StatusBadge'
+import { StatusBadge, type AdminTone } from '../../../../../shared/components/ui'
 import type {
   FeasibilityRule,
   RuleCategory,

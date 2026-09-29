@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import { readApiError } from '../../../lib/catalogMappers'
 import { deleteConfirmMessages } from './DeleteConfirmModal.messages'
 

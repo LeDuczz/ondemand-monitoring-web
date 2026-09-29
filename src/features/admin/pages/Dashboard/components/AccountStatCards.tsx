@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { StatCard } from '../../../components/common/StatCard'
+import { StatCard } from '../../../../../shared/components/ui'
 import type { AccountStats } from '../accountStats'
 import { adminDashboardPageMessages } from '../AdminDashboardPage.messages'
 

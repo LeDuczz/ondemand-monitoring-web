@@ -1,6 +1,6 @@
 import { useI18n } from '../../../../shared/i18n'
 import { BE_USER_ROLES } from '../../api/adminUsersApi'
-import { PageHeader } from '../../components/common/PageHeader'
+import { PageHeader } from '../../../../shared/components/ui'
 import { rolesPageMessages } from './RolesPage.messages'
 import { RoleCard } from './components/RoleCard'
 

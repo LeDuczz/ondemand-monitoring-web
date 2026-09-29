@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 
-import { Icon, type IconName } from '../../../../shared/components/Icon'
-import { useI18n } from '../../../../shared/i18n'
+import { Icon, type IconName } from '../Icon'
+import { useI18n } from '../../i18n'
 import { modalMessages } from './Modal.messages'
 
 export type ModalTone = 'primary' | 'danger' | 'warning' | 'success'
@@ -70,10 +70,10 @@ export function Modal({
   }, [])
 
   return (
-    <div className="adm-modal-overlay" onMouseDown={onClose}>
+    <div className="ui-modal-overlay" onMouseDown={onClose}>
       <div
         ref={cardRef}
-        className="adm-modal"
+        className="ui-modal"
         style={{ maxWidth: width }}
         role="dialog"
         aria-modal="true"
@@ -81,27 +81,27 @@ export function Modal({
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="adm-modal-header">
-          <span className={`adm-modal-icon is-${tone}`} aria-hidden="true">
+        <div className="ui-modal-header">
+          <span className={`ui-modal-icon is-${tone}`} aria-hidden="true">
             <Icon name={icon} width={20} height={20} />
           </span>
-          <div className="adm-modal-heading">
-            <h2 id={titleId} className="adm-modal-title">
+          <div className="ui-modal-heading">
+            <h2 id={titleId} className="ui-modal-title">
               {title}
             </h2>
-            {subtitle ? <p className="adm-modal-subtitle">{subtitle}</p> : null}
+            {subtitle ? <p className="ui-modal-subtitle">{subtitle}</p> : null}
           </div>
           <button
             type="button"
-            className="adm-modal-close"
+            className="ui-modal-close"
             onClick={onClose}
             aria-label={t.close}
           >
             <Icon name="x" width={16} height={16} />
           </button>
         </div>
-        <div className="adm-modal-body">{children}</div>
-        {footer ? <div className="adm-modal-footer">{footer}</div> : null}
+        <div className="ui-modal-body">{children}</div>
+        {footer ? <div className="ui-modal-footer">{footer}</div> : null}
       </div>
     </div>
   )

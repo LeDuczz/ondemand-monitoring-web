@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { adminUsersApi } from '../../../api/adminUsersApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import type { AdminAccountItem } from '../../../types/accounts'
 import { lockAccountDialogMessages } from './LockAccountDialog.messages'
 

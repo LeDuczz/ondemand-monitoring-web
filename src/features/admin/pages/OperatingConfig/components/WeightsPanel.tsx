@@ -5,7 +5,7 @@ import {
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../../shared/i18n'
 import { adminApi } from '../../../api/adminApi'
-import { EmptyState } from '../../../components/common/EmptyState'
+import { EmptyState } from '../../../../../shared/components/ui'
 import { WeightGroup } from './WeightGroup'
 import { weightsPanelMessages } from './WeightsPanel.messages'
 

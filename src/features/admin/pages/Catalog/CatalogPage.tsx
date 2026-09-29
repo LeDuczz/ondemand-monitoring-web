@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { useI18n } from '../../../../shared/i18n'
-import { PageHeader } from '../../components/common/PageHeader'
+import { PageHeader } from '../../../../shared/components/ui'
 import { catalogPageMessages } from './CatalogPage.messages'
 import { ServicesTab } from './components/ServicesTab'
 import { StationsTab } from './components/StationsTab'

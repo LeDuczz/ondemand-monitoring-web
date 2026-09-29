@@ -2,7 +2,7 @@ import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../../shared/i18n'
 import { authSession } from '../../../../auth/api/authApi'
 import { adminUsersApi } from '../../../api/adminUsersApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import { EditUserForm } from './EditUserForm'
 import { editUserModalMessages } from './EditUserModal.messages'
 

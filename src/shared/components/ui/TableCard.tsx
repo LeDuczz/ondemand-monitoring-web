@@ -9,9 +9,9 @@ type Props = {
 /** Rounded card whose table scrolls horizontally instead of the page. */
 export function TableCard({ children, footer }: Props) {
   return (
-    <div className="adm-table-card">
-      <div className="adm-table-scroll">{children}</div>
-      {footer ? <div className="adm-table-footer">{footer}</div> : null}
+    <div className="ui-table-card">
+      <div className="ui-table-scroll">{children}</div>
+      {footer ? <div className="ui-table-footer">{footer}</div> : null}
     </div>
   )
 }

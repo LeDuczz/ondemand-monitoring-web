@@ -8,7 +8,7 @@ import {
   type ManagedAccountResponse,
   type ManagedUserRole,
 } from '../../../api/adminUsersApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import { RoleBadge } from '../../../components/common/RoleBadge'
 import { createUserModalMessages } from './CreateUserModal.messages'
 

@@ -1,11 +1,11 @@
 import { useI18n } from '../../../../../shared/i18n'
 import type { AdminAccountItem } from '../../../types/accounts'
-import { Card } from '../../../components/common/Card'
-import { MockDataBadge } from '../../../components/common/MockDataBadge'
+import { Card } from '../../../../../shared/components/ui'
+import { MockDataBadge } from '../../../../../shared/components/ui'
 import {
   StatusBadge,
   toAdminTone,
-} from '../../../components/common/StatusBadge'
+} from '../../../../../shared/components/ui'
 import { fmtDate, getAccountStatusMeta } from '../../../lib/accountStatus'
 import { adminHref } from '../../../routes'
 import { adminDashboardPageMessages } from '../AdminDashboardPage.messages'

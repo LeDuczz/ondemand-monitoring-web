@@ -12,10 +12,10 @@ type Props = {
 
 export function StatCard({ label, value, hint, tone = 'default' }: Props) {
   return (
-    <div className="adm-stat">
-      <div className="adm-stat-label">{label}</div>
-      <div className={`adm-stat-value is-${tone}`}>{value}</div>
-      {hint ? <div className="adm-stat-hint">{hint}</div> : null}
+    <div className="ui-stat">
+      <div className="ui-stat-label">{label}</div>
+      <div className={`ui-stat-value is-${tone}`}>{value}</div>
+      {hint ? <div className="ui-stat-hint">{hint}</div> : null}
     </div>
   )
 }

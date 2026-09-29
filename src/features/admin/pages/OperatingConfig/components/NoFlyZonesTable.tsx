@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge } from '../../../components/common/StatusBadge'
+import { StatusBadge } from '../../../../../shared/components/ui'
 import type { NoFlyZone } from '../../../types/operatingConfig'
 import { noFlyZonesTableMessages } from './NoFlyZonesTable.messages'
 import { ZONE_TYPE_TONE, zoneTypeMessages } from './zoneTypes'

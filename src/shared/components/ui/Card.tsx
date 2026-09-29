@@ -13,14 +13,14 @@ type Props = {
 export function Card({ title, actions, children, className, flush }: Props) {
   const hasHeader = Boolean(title || actions)
   return (
-    <section className={`adm-card${className ? ` ${className}` : ''}`}>
+    <section className={`ui-card${className ? ` ${className}` : ''}`}>
       {hasHeader ? (
-        <div className="adm-card-header">
-          {title ? <h2 className="adm-card-title">{title}</h2> : <span />}
-          {actions ? <div className="adm-card-actions">{actions}</div> : null}
+        <div className="ui-card-header">
+          {title ? <h2 className="ui-card-title">{title}</h2> : <span />}
+          {actions ? <div className="ui-card-actions">{actions}</div> : null}
         </div>
       ) : null}
-      <div className={flush ? 'adm-card-body is-flush' : 'adm-card-body'}>
+      <div className={flush ? 'ui-card-body is-flush' : 'ui-card-body'}>
         {children}
       </div>
     </section>

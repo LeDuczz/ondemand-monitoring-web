@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { StatusTone } from '../../../../shared/types/domain'
+import type { StatusTone } from '../../types/domain'
 
 export type AdminTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info'
 
@@ -25,8 +25,8 @@ type Props = {
 
 export function StatusBadge({ tone = 'neutral', children }: Props) {
   return (
-    <span className={`adm-badge is-${tone}`}>
-      <span className="adm-badge-dot" aria-hidden="true" />
+    <span className={`ui-badge is-${tone}`}>
+      <span className="ui-badge-dot" aria-hidden="true" />
       {children}
     </span>
   )

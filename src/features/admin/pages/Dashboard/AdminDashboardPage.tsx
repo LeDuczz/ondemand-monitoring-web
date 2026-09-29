@@ -1,7 +1,7 @@
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
-import { PageHeader } from '../../components/common/PageHeader'
+import { PageHeader } from '../../../../shared/components/ui'
 import { adminHref } from '../../routes'
 import { fetchAccountStats } from './accountStats'
 import { adminDashboardPageMessages } from './AdminDashboardPage.messages'

@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge } from '../../../components/common/StatusBadge'
+import { StatusBadge } from '../../../../../shared/components/ui'
 import { fmtDateTime } from '../../../lib/accountStatus'
 import type { AdminService } from '../../../types/catalog'
 import { RowActions } from './RowActions'

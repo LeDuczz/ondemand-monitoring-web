@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import { PageHeader } from '../../../components/common/PageHeader'
+import { PageHeader } from '../../../../../shared/components/ui'
 import {
   StatusBadge,
   toAdminTone,
-} from '../../../components/common/StatusBadge'
+} from '../../../../../shared/components/ui'
 import { getAccountStatusMeta } from '../../../lib/accountStatus'
 import type { AdminAccountDetail } from '../../../types/accounts'
 import { accountHeaderMessages } from './AccountHeader.messages'

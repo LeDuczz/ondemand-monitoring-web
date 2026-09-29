@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import type { AdminAccountItem } from '../../../types/accounts'
 import { resetPasswordDialogMessages } from './ResetPasswordDialog.messages'
 

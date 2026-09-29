@@ -4,7 +4,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import type { UserManagementDetailResponse } from '../../../api/adminUsersApi'
 import { AdminToggle } from '../../../components/common/AdminToggle'
 import { RoleBadge } from '../../../components/common/RoleBadge'
-import { StatusBadge } from '../../../components/common/StatusBadge'
+import { StatusBadge } from '../../../../../shared/components/ui'
 import { fmtDateTime } from '../../../lib/accountStatus'
 import { editUserModalMessages } from './EditUserModal.messages'
 

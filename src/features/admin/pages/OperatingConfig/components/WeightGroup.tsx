@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import { Card } from '../../../components/common/Card'
+import { Card } from '../../../../../shared/components/ui'
 import type { DispatchWeight } from '../../../types/operatingConfig'
 import { weightGroupMessages } from './WeightGroup.messages'
 

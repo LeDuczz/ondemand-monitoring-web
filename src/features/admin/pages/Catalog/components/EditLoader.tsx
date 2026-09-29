@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../../shared/i18n'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import { editLoaderMessages } from './EditLoader.messages'
 
 type Props<T> = {

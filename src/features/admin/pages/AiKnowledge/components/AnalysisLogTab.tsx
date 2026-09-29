@@ -5,8 +5,8 @@ import {
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../../shared/i18n'
 import { adminApi } from '../../../api/adminApi'
-import { EmptyState } from '../../../components/common/EmptyState'
-import { TableCard } from '../../../components/common/TableCard'
+import { EmptyState } from '../../../../../shared/components/ui'
+import { TableCard } from '../../../../../shared/components/ui'
 import { AnalysisLogTable } from './AnalysisLogTable'
 import { analysisLogTabMessages } from './AnalysisLogTab.messages'
 

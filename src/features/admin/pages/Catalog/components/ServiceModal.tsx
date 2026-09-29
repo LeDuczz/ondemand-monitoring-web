@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { catalogApi } from '../../../api/catalogApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import {
   emptyServiceForm,
   mapService,
@@ -12,8 +12,8 @@ import {
 } from '../../../lib/catalogMappers'
 import type { AdminService } from '../../../types/catalog'
 import { EditLoader } from './EditLoader'
-import { FormField } from '../../../components/common/FormField'
-import { FormFooter } from '../../../components/common/FormFooter'
+import { FormField } from '../../../../../shared/components/ui'
+import { FormFooter } from '../../../../../shared/components/ui'
 import { serviceModalMessages } from './ServiceModal.messages'
 
 type Props = {

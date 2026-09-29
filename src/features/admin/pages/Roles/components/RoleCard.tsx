@@ -4,7 +4,7 @@ import {
   adminUsersApi,
   type ManagedUserRole,
 } from '../../../api/adminUsersApi'
-import { Card } from '../../../components/common/Card'
+import { Card } from '../../../../../shared/components/ui'
 import { RoleBadge } from '../../../components/common/RoleBadge'
 import { rolesPageMessages } from '../RolesPage.messages'
 

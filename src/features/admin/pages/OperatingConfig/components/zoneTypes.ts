@@ -1,5 +1,5 @@
 import { defineMessages } from '../../../../../shared/i18n'
-import type { AdminTone } from '../../../components/common/StatusBadge'
+import type { AdminTone } from '../../../../../shared/components/ui'
 import type { ZoneType } from '../../../types/operatingConfig'
 
 export const ZONE_TYPES: ZoneType[] = [

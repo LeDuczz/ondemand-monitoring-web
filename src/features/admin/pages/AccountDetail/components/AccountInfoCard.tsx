@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import { Card } from '../../../components/common/Card'
+import { Card } from '../../../../../shared/components/ui'
 import { RoleBadge } from '../../../components/common/RoleBadge'
-import { StatusBadge } from '../../../components/common/StatusBadge'
+import { StatusBadge } from '../../../../../shared/components/ui'
 import { fmtDate, fmtDateTime } from '../../../lib/accountStatus'
 import type { AdminAccountDetail } from '../../../types/accounts'
 import { accountInfoCardMessages } from './AccountInfoCard.messages'

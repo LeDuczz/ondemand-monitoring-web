@@ -2,11 +2,11 @@ import { useState, type FormEvent } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { adminApi } from '../../../api/adminApi'
-import { Modal } from '../../../components/common/Modal'
+import { Modal } from '../../../../../shared/components/ui'
 import { readApiError } from '../../../lib/catalogMappers'
 import type { AdminStation } from '../../../types/catalog'
-import { FormField } from '../../../components/common/FormField'
-import { FormFooter } from '../../../components/common/FormFooter'
+import { FormField } from '../../../../../shared/components/ui'
+import { FormFooter } from '../../../../../shared/components/ui'
 import { stationModalMessages } from './StationModal.messages'
 
 type Props = {

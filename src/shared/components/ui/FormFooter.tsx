@@ -1,5 +1,5 @@
-import { useI18n } from '../../../../shared/i18n'
-import { defineMessages } from '../../../../shared/i18n'
+import { useI18n } from '../../i18n'
+import { defineMessages } from '../../i18n'
 
 const formFooterMessages = defineMessages({
   vi: { cancel: 'Huỷ', save: 'Lưu', saving: 'Đang lưu...' },

@@ -1,4 +1,4 @@
-import { defineMessages } from '../../../shared/i18n'
+import { defineMessages } from '../../../../shared/i18n'
 
 export const adminDashboardPageMessages = defineMessages({
   vi: {
@@ -7,12 +7,13 @@ export const adminDashboardPageMessages = defineMessages({
     totalAccounts: 'Tổng tài khoản',
     systemWide: 'toàn hệ thống',
     active: 'Đang hoạt động',
+    locked: 'Đã khoá',
     accountsUnit: 'tài khoản',
-    pendingVerification: 'Chờ xác minh',
-    inactive: 'Vô hiệu hoá',
     byRole: 'Phân bổ theo vai trò',
     latestAccounts: 'Tài khoản mới nhất',
     viewAll: 'Xem tất cả →',
+    statsError: 'Không tải được thống kê tài khoản',
+    retry: 'Thử lại',
   },
   en: {
     title: 'System overview',
@@ -20,11 +21,12 @@ export const adminDashboardPageMessages = defineMessages({
     totalAccounts: 'Total accounts',
     systemWide: 'system-wide',
     active: 'Active',
+    locked: 'Locked',
     accountsUnit: 'accounts',
-    pendingVerification: 'Pending verification',
-    inactive: 'Inactive',
     byRole: 'Breakdown by role',
     latestAccounts: 'Latest accounts',
     viewAll: 'View all →',
+    statsError: 'Could not load account statistics',
+    retry: 'Retry',
   },
 })

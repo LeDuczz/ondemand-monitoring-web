@@ -5,11 +5,6 @@ import type {
   UpdateAccountPayload,
 } from '../types/accounts'
 import type {
-  AdminRole,
-  CreateRolePayload,
-  UpdateRolePayload,
-} from '../types/roles'
-import type {
   AdminService,
   AdminStation,
   CreateStationPayload,
@@ -56,33 +51,6 @@ export const adminApi = {
       `/api/admin/accounts/${accountId}/reset-password`,
       { method: 'POST' },
     ),
-
-  // Roles
-  listRoles: (signal?: AbortSignal) =>
-    apiRequest<{ items: AdminRole[] }>('/api/admin/roles', { signal }),
-
-  createRole: (payload: CreateRolePayload) =>
-    apiRequest<AdminRole>('/api/admin/roles', {
-      method: 'POST',
-      body: payload,
-    }),
-
-  updateRole: (roleId: string, payload: UpdateRolePayload) =>
-    apiRequest<AdminRole>(`/api/admin/roles/${roleId}`, {
-      method: 'PATCH',
-      body: payload,
-    }),
-
-  deleteRole: (roleId: string) =>
-    apiRequest<{ deleted: boolean }>(`/api/admin/roles/${roleId}`, {
-      method: 'DELETE',
-    }),
-
-  toggleRoleActive: (roleId: string, isActive: boolean) =>
-    apiRequest<AdminRole>(`/api/admin/roles/${roleId}/toggle-active`, {
-      method: 'PATCH',
-      body: { isActive },
-    }),
 
   // Catalog — Services
   listServices: (signal?: AbortSignal) =>

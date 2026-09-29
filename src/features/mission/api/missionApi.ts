@@ -184,13 +184,13 @@ export const missionApi = {
     )
   },
 
-  // F3.2 Run Pre-flight check (POST /api/missions/{id}/preflight-check?deviceId=...)
+  // F3.2 Run pre-device check (POST /api/missions/{id}/pre-device-check?deviceId=...)
   runPreflightCheck: async (
     missionId: string,
     deviceId: string,
   ): Promise<PreflightCheck> => {
     return request<PreflightCheck>(
-      `${API_BASE}/missions/${missionId}/preflight-check?deviceId=${encodeURIComponent(
+      `${API_BASE}/missions/${missionId}/pre-device-check?deviceId=${encodeURIComponent(
         deviceId,
       )}`,
       { method: 'POST' },

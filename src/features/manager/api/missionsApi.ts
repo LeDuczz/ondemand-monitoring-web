@@ -286,9 +286,9 @@ export const missionsApi = {
     })
   },
 
-  /** `POST /api/missions/{id}/preflight-check?droneCode=` [BE]. */
+  /** `POST /api/missions/{id}/pre-device-check?droneCode=` [BE]. */
   preflightCheck(missionId: string, droneCode: string): Promise<PreflightCheckResponse> {
-    return apiRequest<PreflightCheckResponse>(`/api/missions/${missionId}/preflight-check`, {
+    return apiRequest<PreflightCheckResponse>(`/api/missions/${missionId}/pre-device-check`, {
       method: 'POST',
       query: { droneCode },
     })
@@ -317,21 +317,21 @@ export const missionsApi = {
     })
   },
 
-  /** `GET /api/missions/{missionId}/preflight-checks` [BE]. History. */
+  /** `GET /api/missions/{missionId}/pre-device-checks` [BE]. History. */
   getPreflightHistory(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse[]> {
-    return apiRequest<PersistedPreflightCheckResponse[]>(`/api/missions/${missionId}/preflight-checks`, { signal })
+    return apiRequest<PersistedPreflightCheckResponse[]>(`/api/missions/${missionId}/pre-device-checks`, { signal })
   },
 
-  /** `POST /api/missions/{missionId}/preflight-checks` [BE]. Start a new preflight check session. */
+  /** `POST /api/missions/{missionId}/pre-device-checks` [BE]. Start a new preflight check session. */
   startPreflightCheck(missionId: string): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/preflight-checks`, {
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/pre-device-checks`, {
       method: 'POST',
     })
   },
 
-  /** `GET /api/missions/{missionId}/preflight-checks/current` [BE]. */
+  /** `GET /api/missions/{missionId}/pre-device-checks/current` [BE]. */
   getCurrentPreflight(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/preflight-checks/current`, { signal })
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/pre-device-checks/current`, { signal })
   },
 
   /** `POST /api/missions/{id}/connect` [BE]. */
@@ -408,14 +408,14 @@ export const missionsApi = {
     })
   },
 
-  /** `GET /api/preflight-checks/{id}` [BE]. Get preflight check by ID. */
+  /** `GET /api/pre-device-checks/{id}` [BE]. Get preflight check by ID. */
   getPreflightCheckById(id: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/preflight-checks/${id}`, { signal })
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/pre-device-checks/${id}`, { signal })
   },
 
-  /** `PATCH /api/preflight-checks/{id}/items/{checkType}` [BE]. Update preflight check item. */
+  /** `PATCH /api/pre-device-checks/{id}/items/{checkType}` [BE]. Update preflight check item. */
   updatePreflightCheckItem(id: string, checkType: string, data: unknown): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/preflight-checks/${id}/items/${checkType}`, {
+    return apiRequest<PersistedPreflightCheckResponse>(`/api/pre-device-checks/${id}/items/${checkType}`, {
       method: 'PATCH',
       body: data,
     })

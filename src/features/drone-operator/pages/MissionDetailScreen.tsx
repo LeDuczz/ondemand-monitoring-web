@@ -291,7 +291,7 @@ async function fetchPersistedPreflight(missionId: string, signal?: AbortSignal) 
 
 async function fetchLatestWeatherCheck(missionId: string, signal?: AbortSignal) {
   const response = await authenticatedFetch(
-    `${env.apiBaseUrl}/api/weather/preflight-checks/latest?missionId=${encodeURIComponent(missionId)}`,
+    `${env.apiBaseUrl}/api/weather/pre-device-checks/latest?missionId=${encodeURIComponent(missionId)}`,
     { cache: 'no-store', signal },
   )
   if (!response.ok) return null
@@ -764,16 +764,28 @@ function MissionMapCard({ mission }: { mission: OperatorMission }) {
         ))
       : null
 
+  const clampMarkerPoint = (point: { x: number; y: number }) => {
+    const inset = 6
+    return {
+      x: Math.min(100 - inset, Math.max(inset, point.x)),
+      y: Math.min(100 - inset, Math.max(inset, point.y)),
+    }
+  }
+
   const project = (point: { simX: number; simY: number }) => {
     if (!bounds) return { x: 50, y: 50 }
-    if (meta) return worldToViewportPercent(point, meta, SIMULATION_MAP_DEFAULT_CROP)
+    if (meta) {
+      return clampMarkerPoint(
+        worldToViewportPercent(point, meta, SIMULATION_MAP_DEFAULT_CROP),
+      )
+    }
     const width = Math.max(1, bounds.maxX - bounds.minX)
     const height = Math.max(1, bounds.maxY - bounds.minY)
     const pad = 10
-    return {
+    return clampMarkerPoint({
       x: pad + ((point.simX - bounds.minX) / width) * (100 - pad * 2),
       y: pad + ((bounds.maxY - point.simY) / height) * (100 - pad * 2),
-    }
+    })
   }
 
   const svgRoute = route.map(project)

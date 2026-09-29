@@ -64,6 +64,7 @@ function KV({
 const MAP_WIDTH = 400
 const MAP_HEIGHT = 300
 const MAP_PADDING = 42
+const MAP_MARKER_INSET = 18
 
 type SimulationMapMeta = {
   image?: string
@@ -171,10 +172,10 @@ function mapPlanPoint(
   const offsetX = (MAP_WIDTH - routeWidth) / 2
   const offsetY = (MAP_HEIGHT - routeHeight) / 2
 
-  return {
+  return keepMarkerInMap({
     x: offsetX + (point.simX - bounds.minX) * scale,
     y: offsetY + (bounds.maxY - point.simY) * scale,
-  }
+  })
 }
 
 function mapSimulationPoint(point: MissionRoutePoint, meta: SimulationMapMeta) {
@@ -184,9 +185,22 @@ function mapSimulationPoint(point: MissionRoutePoint, meta: SimulationMapMeta) {
     SIMULATION_MAP_DEFAULT_CROP,
   )
 
-  return {
+  return keepMarkerInMap({
     x: (projected.x / 100) * MAP_WIDTH,
     y: (projected.y / 100) * MAP_HEIGHT,
+  })
+}
+
+function keepMarkerInMap(point: { x: number; y: number }) {
+  return {
+    x: Math.min(
+      MAP_WIDTH - MAP_MARKER_INSET,
+      Math.max(MAP_MARKER_INSET, point.x),
+    ),
+    y: Math.min(
+      MAP_HEIGHT - MAP_MARKER_INSET,
+      Math.max(MAP_MARKER_INSET, point.y),
+    ),
   }
 }
 

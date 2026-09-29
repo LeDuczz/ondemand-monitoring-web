@@ -19,9 +19,9 @@ import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOpe
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminApp } from '../features/admin/AdminApp'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
-import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHomePage'
-import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsListPage'
-import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetailPage'
+import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHome'
+import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsList'
+import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetail'
 
 function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) {
   const user = authSession.getUser()

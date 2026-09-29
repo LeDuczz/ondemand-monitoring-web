@@ -100,7 +100,7 @@ export function ContextAwareHelpWidget({
                     initialCategory={isOrder ? 'ORDERS' : 'MISSIONS'}
                     initialSubject={t.subject(isOrder, subjectLabel)}
                     onClose={() => setShowCreateModal(false)}
-                    onSuccess={() => setShowCreateModal(false)}
+                    onSuccess={() => undefined}
                 />
             )}
         </div>

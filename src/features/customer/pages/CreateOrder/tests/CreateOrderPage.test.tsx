@@ -2,10 +2,10 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
-import { resetMockDb } from '../../../mocks/db'
-import '../../../mocks/index'
-import { setLanguage } from '../../../shared/i18n'
-import { CreateOrderPage } from './CreateOrderPage'
+import { resetMockDb } from '../../../../../mocks/db'
+import '../../../../../mocks/index'
+import { setLanguage } from '../../../../../shared/i18n'
+import { CreateOrderPage } from '../CreateOrderPage'
 
 beforeEach(() => resetMockDb())
 afterEach(() => resetMockDb())

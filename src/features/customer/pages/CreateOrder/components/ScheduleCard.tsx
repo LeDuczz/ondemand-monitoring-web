@@ -1,0 +1,57 @@
+import { Card, FormField } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import type { PreferredTimeOption } from '../../../api/customerApi'
+import { formatTimeLabel } from '../../../lib/createOrder/format'
+import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import { scheduleCardMessages } from './ScheduleCard.messages'
+
+type Props = {
+  form: FormState
+  errors: FormErrors
+  update: UpdateField
+  preferredTimes: PreferredTimeOption[]
+}
+
+export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
+  const { t } = useI18n(scheduleCardMessages)
+  return (
+    <Card title={t.cardTitle}>
+      <p className="co-hint">{t.dateRangeHint}</p>
+      <div className="co-two co-mt">
+        <FormField id="co-from" label={t.startDate} required error={errors.preferredDateFrom}>
+          <input
+            id="co-from"
+            type="date"
+            className="co-input"
+            value={form.preferredDateFrom}
+            onChange={(e) => update('preferredDateFrom', e.target.value)}
+          />
+        </FormField>
+        <FormField id="co-to" label={t.endDate} required error={errors.preferredDateTo}>
+          <input
+            id="co-to"
+            type="date"
+            className="co-input"
+            value={form.preferredDateTo}
+            onChange={(e) => update('preferredDateTo', e.target.value)}
+          />
+        </FormField>
+      </div>
+      <FormField id="co-time" label={t.timeWindow} required error={errors.preferredTimeId}>
+        <select
+          id="co-time"
+          className="co-input"
+          value={form.preferredTimeId}
+          onChange={(e) => update('preferredTimeId', e.target.value)}
+        >
+          <option value="">{preferredTimes.length ? t.selectTimeWindow : t.noTimes}</option>
+          {preferredTimes.map((time) => (
+            <option key={time.id} value={time.id}>
+              {formatTimeLabel(time)}
+            </option>
+          ))}
+        </select>
+      </FormField>
+    </Card>
+  )
+}

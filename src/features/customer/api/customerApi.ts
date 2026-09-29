@@ -8,6 +8,7 @@ import type {
   MediaDetail,
   MediaLibrary,
 } from '../types/orders'
+import type { OrderCreateResponse } from './orderApi'
 
 export type CreateOrderPayload = {
   title: string
@@ -47,6 +48,8 @@ export type ServiceOption = {
   name: string
   description?: string
   isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type PreferredTimeOption = {
@@ -301,8 +304,9 @@ export const customerApi = {
       },
     ),
 
+  /** `POST /api/orders` [BE] `OrderCreateRequest` -> `OrderCreateResponse`. */
   createOrder: (payload: CreateOrderPayload) =>
-    apiRequest<CustomerOrderDetail>('/api/orders', {
+    apiRequest<OrderCreateResponse>('/api/orders', {
       method: 'POST',
       body: payload,
     }),

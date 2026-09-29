@@ -69,6 +69,14 @@ export type PreferredTime = {
   endTime?: string
 }
 
+/**
+ * Legacy request shape used only by CustomerCreateRequestPage (point /
+ * preferredDate / mediaType). It does NOT match the backend `OrderCreateRequest`
+ * (see `CreateOrderPayload` in customerApi.ts, which does). Remove together
+ * with that page.
+ *
+ * @deprecated use `customerApi.createOrder` with `CreateOrderPayload`.
+ */
 export type OrderCreatePayload = {
   title: string
   purpose?: string
@@ -86,13 +94,39 @@ export type OrderCreatePayload = {
   numberOfPhoto?: number
 }
 
-export type OrderCreateResponse = OrderCreatePayload & {
+/** Deliverable line of the backend `OrderDeliverableResponse`. */
+export type OrderDeliverableResponse = {
+  id: string
+  deliverableTypeId: string
+  deliverableTypeName?: string
+  defaultFormat?: string
+  requirement?: Record<string, unknown>
+}
+
+/** Backend `OrderCreateResponse` (POST /api/orders, GET /api/orders/pending). */
+export type OrderCreateResponse = {
   id: string
   customerId: string
   customerName?: string
+  title?: string
+  serviceId?: string
   serviceName?: string
+  description?: string
+  address?: string
+  longitude?: number
+  latitude?: number
+  radiusM?: number
+  coverageArea?: Record<string, unknown>
+  preferredDateFrom?: string
+  preferredDateTo?: string
+  preferredTimeId?: string
   preferredTimeName?: string
   orderStatus?: string
+  rejectReason?: string
+  reviewById?: string
+  reviewByName?: string
+  reviewAt?: string
+  deliverables?: OrderDeliverableResponse[]
   createdAt?: string
   updatedAt?: string
 }

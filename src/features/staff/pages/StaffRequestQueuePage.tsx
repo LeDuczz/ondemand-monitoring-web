@@ -103,7 +103,9 @@ export function StaffRequestQueuePage() {
                     {order.customerName || order.customerId}
                   </td>
                   <td style={{ padding: '12px 8px', fontSize: 13 }}>
-                    {order.preferredDate}
+                    {[order.preferredDateFrom, order.preferredDateTo]
+                      .filter(Boolean)
+                      .join(' → ')}
                     <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
                       {order.preferredTimeName}
                     </div>

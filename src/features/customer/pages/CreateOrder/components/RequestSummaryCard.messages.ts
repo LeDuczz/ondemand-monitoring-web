@@ -1,0 +1,38 @@
+import { defineMessages } from '../../../../../shared/i18n'
+
+export const requestSummaryCardMessages = defineMessages({
+  vi: {
+    cardTitle: 'Xác nhận yêu cầu',
+    title: 'Tiêu đề',
+    address: 'Địa chỉ',
+    coordinates: 'Tọa độ mô phỏng',
+    radius: 'Bán kính',
+    service: 'Dịch vụ',
+    addOns: 'Yêu cầu bổ sung',
+    aiAnalysis: 'AI phân tích hình ảnh',
+    none: 'Không có',
+    dates: 'Ngày',
+    timeWindow: 'Khung giờ',
+    deliverable: 'Kết quả bàn giao',
+    aiConsultation: 'AI tư vấn',
+    consulted: 'Đã tư vấn',
+    notUsed: 'Không dùng',
+  },
+  en: {
+    cardTitle: 'Confirm request',
+    title: 'Title',
+    address: 'Address',
+    coordinates: 'Simulation coordinates',
+    radius: 'Radius',
+    service: 'Service',
+    addOns: 'Additional requirements',
+    aiAnalysis: 'AI image analysis',
+    none: 'None',
+    dates: 'Dates',
+    timeWindow: 'Time window',
+    deliverable: 'Deliverable',
+    aiConsultation: 'AI consultation',
+    consulted: 'Consulted',
+    notUsed: 'Not used',
+  },
+})

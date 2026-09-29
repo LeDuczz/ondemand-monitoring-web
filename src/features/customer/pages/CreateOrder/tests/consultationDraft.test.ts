@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildDraftFromConsultation, findRecommendedService } from './CreateOrderPage'
+import {
+  buildDraftFromConsultation,
+  findRecommendedService,
+} from '../../../lib/createOrder/consultation'
 import type {
   ConsultationMessage,
   CustomerConsultation,
   ServiceOption,
-} from '../api/customerApi'
+} from '../../../api/customerApi'
 
 const service: ServiceOption = {
   id: 'svc-building',

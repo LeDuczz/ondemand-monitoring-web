@@ -1,0 +1,56 @@
+import { todayPlus } from './format'
+import type { FormState, Step, StoredCreateOrderDraft } from './types'
+
+export const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
+
+export function createDefaultForm(): FormState {
+  return {
+    title: '',
+    description: '',
+    address: '',
+    latitude: '10.6402',
+    longitude: '106.6912',
+    radiusM: 300,
+    serviceId: '',
+    preferredDateFrom: todayPlus(1),
+    preferredDateTo: todayPlus(1),
+    preferredTimeId: '',
+    deliverableTypeId: '',
+    mediaType: 'IMAGE',
+    quantity: 10,
+    resolution: '4K',
+  }
+}
+
+export function isStep(value: unknown): value is Step {
+  return value === 1 || value === 2 || value === 3 || value === 4
+}
+
+export function readStoredDraft(): StoredCreateOrderDraft | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as StoredCreateOrderDraft) : null
+  } catch {
+    return null
+  }
+}
+
+export function writeStoredDraft(draft: StoredCreateOrderDraft) {
+  try {
+    window.localStorage.setItem(
+      CREATE_ORDER_DRAFT_STORAGE_KEY,
+      JSON.stringify(draft),
+    )
+  } catch {
+    // Storage may be full or blocked; the draft is a convenience only.
+  }
+}
+
+export function clearStoredDraft() {
+  try {
+    window.localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
+  } catch {
+    // ignore
+  }
+}

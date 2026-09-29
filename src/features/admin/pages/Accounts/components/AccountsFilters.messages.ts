@@ -1,4 +1,4 @@
-import { defineMessages } from '../../../shared/i18n'
+import { defineMessages } from '../../../../../shared/i18n'
 
 export const accountsFiltersMessages = defineMessages({
   vi: {

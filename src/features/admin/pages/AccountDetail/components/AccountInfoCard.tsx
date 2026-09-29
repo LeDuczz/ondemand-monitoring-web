@@ -2,8 +2,9 @@ import type { ReactNode } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { Card } from '../../../components/common/Card'
+import { RoleBadge } from '../../../components/common/RoleBadge'
 import { StatusBadge } from '../../../components/common/StatusBadge'
-import { fmtDate, fmtDateTime, getRoleLabel } from '../../../lib/accountStatus'
+import { fmtDate, fmtDateTime } from '../../../lib/accountStatus'
 import type { AdminAccountDetail } from '../../../types/accounts'
 import { accountInfoCardMessages } from './AccountInfoCard.messages'
 
@@ -26,7 +27,7 @@ export function AccountInfoCard({ account }: { account: AdminAccountDetail }) {
           <div className="adm-mono">{account.id}</div>
         </Field>
         <Field label={t.roleLabel}>
-          <div>{getRoleLabel(account.role, lang) ?? account.role}</div>
+          <RoleBadge role={account.role} />
         </Field>
         <Field label={t.emailVerification}>
           <StatusBadge tone={account.emailVerified ? 'success' : 'warning'}>

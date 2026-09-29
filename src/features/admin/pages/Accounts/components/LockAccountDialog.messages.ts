@@ -1,10 +1,9 @@
-import { defineMessages } from '../../../shared/i18n'
+import { defineMessages } from '../../../../../shared/i18n'
 
 export const lockAccountDialogMessages = defineMessages({
   vi: {
     unlockTitle: 'Mở khoá tài khoản',
     lockTitle: 'Khoá tài khoản',
-    close: 'Đóng',
     unlockConfirmPrefix: 'Mở khoá tài khoản',
     unlockConfirmSuffix: '? Tài khoản sẽ được đăng nhập lại.',
     lockConfirmPrefix: 'Khoá tài khoản',
@@ -14,13 +13,12 @@ export const lockAccountDialogMessages = defineMessages({
     cancel: 'Huỷ',
     processing: 'Đang xử lý...',
     unlockAction: 'Mở khoá',
-    lockAction: 'Khoá',
+    lockAction: 'Khoá tài khoản',
     genericError: 'Lỗi khi thay đổi trạng thái.',
   },
   en: {
     unlockTitle: 'Unlock account',
     lockTitle: 'Lock account',
-    close: 'Close',
     unlockConfirmPrefix: 'Unlock account',
     unlockConfirmSuffix: '? The account will be able to log in again.',
     lockConfirmPrefix: 'Lock account',
@@ -30,7 +28,7 @@ export const lockAccountDialogMessages = defineMessages({
     cancel: 'Cancel',
     processing: 'Processing...',
     unlockAction: 'Unlock',
-    lockAction: 'Lock',
+    lockAction: 'Lock account',
     genericError: 'Failed to change status.',
   },
 })

@@ -1,14 +1,14 @@
-import { defineMessages } from '../../../shared/i18n'
+import { defineMessages } from '../../../../../shared/i18n'
 
 export const accountActionsMessages = defineMessages({
   vi: {
-    changeRole: 'Đổi vai trò',
+    edit: 'Xem / sửa thông tin',
     unlock: 'Mở khoá tài khoản',
     lock: 'Khoá tài khoản',
     resetPassword: 'Reset mật khẩu',
   },
   en: {
-    changeRole: 'Change role',
+    edit: 'View / edit details',
     unlock: 'Unlock account',
     lock: 'Lock account',
     resetPassword: 'Reset password',

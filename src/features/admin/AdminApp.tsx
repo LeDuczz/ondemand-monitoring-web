@@ -17,8 +17,7 @@ import { adminApi } from './api/adminApi'
 import { AdminLayout } from './AdminLayout'
 import { parseAdminRoute } from './routes'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
-import { AccountsPage } from './pages/AccountsPage'
-import { CreateAccountPage } from './pages/CreateAccountPage'
+import { AccountsPage } from './pages/Accounts'
 import { AccountDetailPage } from './pages/AccountDetail'
 import { RolesPage } from './pages/RolesPage'
 import { CatalogPage } from './pages/CatalogPage'
@@ -34,7 +33,7 @@ function renderScreen(route: AdminRoute, notFoundText: string) {
     case 'accounts':
       return <AccountsPage />
     case 'createAccount':
-      return <CreateAccountPage />
+      return <AccountsPage openCreate />
     case 'accountDetail':
       return <AccountDetailPage accountId={route.accountId} />
     case 'roles':

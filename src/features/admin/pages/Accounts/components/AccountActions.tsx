@@ -1,50 +1,51 @@
-import { Icon } from '../../../shared/components/Icon'
-import { useI18n } from '../../../shared/i18n'
-import type { AdminAccountItem } from '../types/accounts'
+import { Icon } from '../../../../../shared/components/Icon'
+import { useI18n } from '../../../../../shared/i18n'
+import type { AdminAccountItem } from '../../../types/accounts'
 import { accountActionsMessages } from './AccountActions.messages'
 
 export function AccountActions({
   account,
-  onChangeRole,
+  onEdit,
   onLock,
   onResetPassword,
 }: {
   account: AdminAccountItem
-  onChangeRole: () => void
+  onEdit: () => void
   onLock: () => void
   onResetPassword: () => void
 }) {
   const { t } = useI18n(accountActionsMessages)
-  const lockLabel = account.status === 'INACTIVE' ? t.unlock : t.lock
+  const locked = account.status === 'INACTIVE'
+  const lockLabel = locked ? t.unlock : t.lock
 
   return (
     <div className="odm-adm-account-actions">
       <button
         type="button"
-        className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
-        onClick={onChangeRole}
-        aria-label={t.changeRole}
-        title={t.changeRole}
+        className="adm-action-btn"
+        onClick={onEdit}
+        aria-label={t.edit}
+        title={t.edit}
       >
-        <Icon name="shield" width={15} height={15} />
+        <Icon name="eye" width={16} height={16} />
       </button>
       <button
         type="button"
-        className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
+        className={`adm-action-btn ${locked ? 'is-success' : 'is-danger'}`}
         onClick={onLock}
         aria-label={lockLabel}
         title={lockLabel}
       >
-        <Icon name="lock" width={15} height={15} />
+        <Icon name="lock" width={16} height={16} />
       </button>
       <button
         type="button"
-        className="odm-btn odm-btn-gh odm-btn-sm odm-btn-ic1"
+        className="adm-action-btn is-warning"
         onClick={onResetPassword}
         aria-label={t.resetPassword}
         title={t.resetPassword}
       >
-        <Icon name="key" width={15} height={15} />
+        <Icon name="key" width={16} height={16} />
       </button>
     </div>
   )

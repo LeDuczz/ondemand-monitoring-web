@@ -1,12 +1,17 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 
 // DTOs mirror the backend OpenAPI schemas (http://localhost:8080/v3/api-docs).
-export type ManagedUserRole =
-  | 'CUSTOMER'
-  | 'STAFF'
-  | 'DRONE_OPERATOR'
-  | 'SYSTEM_OPERATOR'
-  | 'ADMIN'
+// Single source of truth for role lists (filters, create form, badges). The
+// backend has no roles endpoint: this mirrors the enum in its OpenAPI schema.
+export const BE_USER_ROLES = [
+  'CUSTOMER',
+  'STAFF',
+  'DRONE_OPERATOR',
+  'SYSTEM_OPERATOR',
+  'ADMIN',
+] as const
+
+export type ManagedUserRole = (typeof BE_USER_ROLES)[number]
 
 export type UserManagementSummaryResponse = {
   id: string
@@ -19,7 +24,11 @@ export type UserManagementSummaryResponse = {
   lastLoginAt?: string
 }
 
-export type CustomerProfileResponse = Record<string, unknown>
+export type CustomerProfileResponse = {
+  phoneNumber?: string
+  address?: string
+  companyName?: string
+}
 
 export type UserManagementDetailResponse = UserManagementSummaryResponse & {
   updatedAt?: string

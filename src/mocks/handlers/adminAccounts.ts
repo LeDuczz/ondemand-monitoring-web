@@ -4,6 +4,7 @@
 //   GET   /api/admin/users/:id        [BE shape]
 //   PATCH /api/admin/users/:id/status [BE shape]
 //   POST  /api/admin/accounts         [BE shape]
+//   GET/PATCH /api/users/me           [BE shape]
 //   PATCH /api/admin/accounts/:id     [mock only]
 //   POST  /api/admin/accounts/:id/reset-password [mock only]
 import type { UserRole } from '../../features/auth/types'
@@ -63,11 +64,24 @@ function toSummaryDto(a: SeedAccount) {
   }
 }
 
+function toCustomerProfile(a: SeedAccount) {
+  return a.role === 'CUSTOMER'
+    ? {
+        customerProfile: {
+          phoneNumber: '0901 234 567',
+          address: '12 Nguyễn Huệ, Quận 1, TP.HCM',
+          companyName: 'Công ty ' + a.fullName,
+        },
+      }
+    : {}
+}
+
 function toDetailDto(a: SeedAccount) {
   return {
     ...toSummaryDto(a),
     updatedAt: a.createdAt,
     linkedProviders: a.linkedProviders,
+    ...toCustomerProfile(a),
   }
 }
 
@@ -205,6 +219,46 @@ registerMockRoutes([
         role: payload.role,
         invitationSent: true,
         passwordChangeRequired: true,
+      })
+    },
+  },
+
+  // [BE] GET /api/users/me (mock: first seeded account = signed-in admin)
+  {
+    method: 'GET',
+    path: '/api/users/me',
+    handler: () => {
+      const me = accounts[0]
+      return ok({
+        id: me.id,
+        fullName: me.fullName,
+        email: me.email,
+        role: me.role,
+        ...toCustomerProfile(me),
+      })
+    },
+  },
+
+  // [BE] PATCH /api/users/me
+  {
+    method: 'PATCH',
+    path: '/api/users/me',
+    handler: ({ body }) => {
+      const me = accounts[0]
+      const payload = (body ?? {}) as { fullName?: string }
+      if (payload.fullName !== undefined) {
+        if (!payload.fullName.trim())
+          return fail(400, 'VALIDATION_ERROR', 'Họ tên là bắt buộc.', {
+            fullName: 'Bắt buộc',
+          })
+        me.fullName = payload.fullName.trim()
+      }
+      return ok({
+        id: me.id,
+        fullName: me.fullName,
+        email: me.email,
+        role: me.role,
+        ...toCustomerProfile(me),
       })
     },
   },

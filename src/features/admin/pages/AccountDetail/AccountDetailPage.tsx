@@ -7,7 +7,6 @@ import {
 } from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
-import { adminApi } from '../../api/adminApi'
 import { adminUsersApi } from '../../api/adminUsersApi'
 import { mapUserDetail } from '../../lib/accountMappers'
 import { adminHref } from '../../routes'
@@ -17,11 +16,6 @@ import { AccountActionsCard } from './components/AccountActionsCard'
 import { AccountHeader } from './components/AccountHeader'
 import { AccountInfoCard } from './components/AccountInfoCard'
 import { EditNameModal } from './components/EditNameModal'
-import {
-  EMPLOYEE_ROLES,
-  RoleChanger,
-  type EmployeeRole,
-} from './components/RoleChanger'
 
 function setActive(id: string, active: boolean) {
   return adminUsersApi.updateUserStatus(id, { active }).then(mapUserDetail)
@@ -44,8 +38,6 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
   if (loading) return <LoadingState />
   if (error || !display) return <ErrorState error={error} onRetry={reload} />
 
-  const canChangeRole = EMPLOYEE_ROLES.includes(display.role as EmployeeRole)
-
   async function runAction(action: () => Promise<AdminAccountDetail>) {
     setActionLoading(true)
     setActionError(null)
@@ -56,14 +48,6 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
     } finally {
       setActionLoading(false)
     }
-  }
-
-  function handleRoleChange(newRole: EmployeeRole) {
-    if (newRole === display!.role) return
-    // TODO(BE): endpoint not available
-    return runAction(() =>
-      adminApi.updateAccount(display!.id, { role: newRole }),
-    )
   }
 
   if (!display) return <EmptyState title={t.notFound} />
@@ -89,13 +73,6 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
         onEditName={() => setEditingName(true)}
       />
       <AccountInfoCard account={display} />
-      {canChangeRole && (
-        <RoleChanger
-          currentRole={display.role}
-          disabled={actionLoading}
-          onChange={handleRoleChange}
-        />
-      )}
       <AccountActionsCard
         inactive={display.status === 'INACTIVE'}
         loading={actionLoading}

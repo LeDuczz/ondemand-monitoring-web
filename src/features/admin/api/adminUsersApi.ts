@@ -1,48 +1,95 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 
-export type AdminUserResponse = {
+// DTOs mirror the backend OpenAPI schemas (http://localhost:8080/v3/api-docs).
+export type ManagedUserRole =
+  | 'CUSTOMER'
+  | 'STAFF'
+  | 'DRONE_OPERATOR'
+  | 'SYSTEM_OPERATOR'
+  | 'ADMIN'
+
+export type UserManagementSummaryResponse = {
   id: string
-  email: string
   fullName: string
-  role: string
-  status: string
+  email: string
+  role: ManagedUserRole
+  active: boolean
+  emailVerified: boolean
   createdAt: string
-  updatedAt: string
+  lastLoginAt?: string
 }
 
-export type CreateAccountRequest = {
+export type CustomerProfileResponse = Record<string, unknown>
+
+export type UserManagementDetailResponse = UserManagementSummaryResponse & {
+  updatedAt?: string
+  linkedProviders?: Array<'LOCAL' | 'GOOGLE'>
+  customerProfile?: CustomerProfileResponse
+}
+
+export type PageResponse<T> = {
+  items: T[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+  first: boolean
+  last: boolean
+}
+
+export type UserStatusUpdateRequest = { active: boolean }
+
+export type CreateManagedAccountRequest = {
   email: string
   fullName: string
-  role: string
-  password: string
+  role: ManagedUserRole
+}
+
+export type ManagedAccountResponse = {
+  email: string
+  role: ManagedUserRole
+  invitationSent: boolean
+  passwordChangeRequired: boolean
+}
+
+export type ListUsersParams = {
+  page?: number
+  size?: number
+  sort?: string
+  search?: string
+  role?: ManagedUserRole
+  active?: boolean
+  emailVerified?: boolean
+  signal?: AbortSignal
 }
 
 export const adminUsersApi = {
-  /** `GET /api/v1/admin/users` [BE]. */
-  listUsers(signal?: AbortSignal): Promise<AdminUserResponse[]> {
-    return apiRequest<AdminUserResponse[]>('/api/v1/admin/users', { signal })
-  },
-  /** `GET /api/v1/admin/users/{userId}` [BE]. */
-  getUser(userId: string, signal?: AbortSignal): Promise<AdminUserResponse> {
-    return apiRequest<AdminUserResponse>(`/api/v1/admin/users/${userId}`, {
-      signal,
-    })
-  },
-  /** `PATCH /api/v1/admin/users/{userId}/status` [BE]. */
-  updateUserStatus(userId: string, status: string): Promise<AdminUserResponse> {
-    return apiRequest<AdminUserResponse>(
-      `/api/v1/admin/users/${userId}/status`,
-      {
-        method: 'PATCH',
-        body: { status },
-      },
+  /** `GET /api/admin/users` [BE]. */
+  listUsers({ signal, ...query }: ListUsersParams = {}) {
+    return apiRequest<PageResponse<UserManagementSummaryResponse>>(
+      '/api/admin/users',
+      { query, signal },
     )
   },
-  /** `POST /api/v1/admin/accounts` [BE]. */
-  createAccount(data: CreateAccountRequest): Promise<AdminUserResponse> {
-    return apiRequest<AdminUserResponse>('/api/v1/admin/accounts', {
+  /** `GET /api/admin/users/{userId}` [BE]. */
+  getUser(userId: string, signal?: AbortSignal) {
+    return apiRequest<UserManagementDetailResponse>(
+      `/api/admin/users/${encodeURIComponent(userId)}`,
+      { signal },
+    )
+  },
+  /** `PATCH /api/admin/users/{userId}/status` [BE]. */
+  updateUserStatus(userId: string, body: UserStatusUpdateRequest) {
+    return apiRequest<UserManagementDetailResponse>(
+      `/api/admin/users/${encodeURIComponent(userId)}/status`,
+      { method: 'PATCH', body },
+    )
+  },
+  /** `POST /api/admin/accounts` [BE]. */
+  createAccount(body: CreateManagedAccountRequest) {
+    return apiRequest<ManagedAccountResponse>('/api/admin/accounts', {
       method: 'POST',
-      body: data,
+      body,
     })
   },
 }

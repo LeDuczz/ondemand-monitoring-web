@@ -1,3 +1,5 @@
+import { parseRealApiRoutes } from '../shared/api/realApiRoutes'
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const cognitoDomain = import.meta.env.VITE_AWS_COGNITO_DOMAIN
 const cognitoClientId = import.meta.env.VITE_AWS_COGNITO_CLIENT_ID
@@ -18,6 +20,10 @@ const useMockApi =
 // tests so vitest runs stay fast and deterministic.
 const mockLatencyMs = import.meta.env.MODE === 'test' ? 0 : 250
 
+// VITE_REAL_API_ROUTES: comma-separated "METHOD /path" patterns that are sent
+// to the real backend even while the mock API is on (hybrid mode).
+const realApiRoutes = parseRealApiRoutes(import.meta.env.VITE_REAL_API_ROUTES)
+
 export const env = {
   apiBaseUrl: apiBaseUrl ?? 'http://localhost:8080',
   cognitoDomain,
@@ -25,4 +31,5 @@ export const env = {
   cognitoRedirectSignIn,
   useMockApi,
   mockLatencyMs,
+  realApiRoutes,
 } as const

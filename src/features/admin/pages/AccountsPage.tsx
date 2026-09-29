@@ -8,7 +8,8 @@ import {
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
-import { adminApi } from '../api/adminApi'
+import { adminUsersApi } from '../api/adminUsersApi'
+import { mapUserSummary } from '../lib/accountMappers'
 import {
   getAccountStatusMeta,
   accountsSubtitle,
@@ -34,6 +35,8 @@ import { RoleCodeBadge } from '../components/RoleCodeBadge'
 import type { AdminAccountItem } from '../types/accounts'
 import { accountsPageMessages } from './AccountsPage.messages'
 
+const ACCOUNTS_PAGE_SIZE = 50
+
 type DialogState =
   | { type: 'changeRole'; account: AdminAccountItem }
   | { type: 'lock'; account: AdminAccountItem }
@@ -47,8 +50,13 @@ export function AccountsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
   const [dialog, setDialog] = useState<DialogState>(null)
 
+  // The UI has no pager yet: fetch the first page (size 50) and filter
+  // role/status/search client-side.
   const { data, loading, error, reload } = useApiQuery(
-    (signal) => adminApi.listAccounts({ signal }),
+    (signal) =>
+      adminUsersApi
+        .listUsers({ page: 0, size: ACCOUNTS_PAGE_SIZE, sort: 'createdAt,desc', signal })
+        .then((page) => ({ items: page.items.map(mapUserSummary) })),
     [],
   )
 

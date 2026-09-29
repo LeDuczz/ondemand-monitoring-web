@@ -8,6 +8,8 @@ import {
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
+import { adminUsersApi } from '../../api/adminUsersApi'
+import { mapUserDetail } from '../../lib/accountMappers'
 import { adminHref } from '../../routes'
 import type { AdminAccountDetail } from '../../types/accounts'
 import { accountDetailPageMessages } from './AccountDetailPage.messages'
@@ -21,10 +23,14 @@ import {
   type EmployeeRole,
 } from './components/RoleChanger'
 
+function setActive(id: string, active: boolean) {
+  return adminUsersApi.updateUserStatus(id, { active }).then(mapUserDetail)
+}
+
 export function AccountDetailPage({ accountId }: { accountId: string }) {
   const { t } = useI18n(accountDetailPageMessages)
   const { data, loading, error, reload } = useApiQuery(
-    (signal) => adminApi.getAccount(accountId, signal),
+    (signal) => adminUsersApi.getUser(accountId, signal).then(mapUserDetail),
     [accountId],
   )
 
@@ -54,6 +60,7 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
 
   function handleRoleChange(newRole: EmployeeRole) {
     if (newRole === display!.role) return
+    // TODO(BE): endpoint not available
     return runAction(() =>
       adminApi.updateAccount(display!.id, { role: newRole }),
     )
@@ -100,9 +107,9 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
         loading={actionLoading}
         error={actionError}
         onDeactivate={() =>
-          runAction(() => adminApi.deactivateAccount(display.id))
+          runAction(() => setActive(display.id, false))
         }
-        onActivate={() => runAction(() => adminApi.activateAccount(display.id))}
+        onActivate={() => runAction(() => setActive(display.id, true))}
       />
     </div>
   )

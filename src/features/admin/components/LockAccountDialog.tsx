@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { adminApi } from '../api/adminApi'
+import { adminUsersApi } from '../api/adminUsersApi'
 import { useI18n } from '../../../shared/i18n'
 import type { AdminAccountItem } from '../types/accounts'
 import { lockAccountDialogMessages } from './LockAccountDialog.messages'
@@ -21,11 +21,7 @@ export function LockAccountDialog({ account, onClose, onSuccess }: Props) {
     setLoading(true)
     setError(null)
     try {
-      if (isLocked) {
-        await adminApi.activateAccount(account.id)
-      } else {
-        await adminApi.deactivateAccount(account.id)
-      }
+      await adminUsersApi.updateUserStatus(account.id, { active: isLocked })
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : t.genericError)

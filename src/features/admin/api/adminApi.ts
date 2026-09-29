@@ -1,9 +1,7 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 import type {
   AdminAccountDetail,
-  AdminAccountItem,
   AdminDashboard,
-  CreateAdminAccountPayload,
   UpdateAccountPayload,
 } from '../types/accounts'
 import type {
@@ -44,56 +42,15 @@ export const adminApi = {
     apiRequest<AdminDashboard>('/api/admin/dashboard', { signal }),
 
   // Accounts
-  listAccounts: (params: {
-    role?: string
-    status?: string
-    signal?: AbortSignal
-  }) => {
-    const qs = new URLSearchParams()
-    if (params.role) qs.set('role', params.role)
-    if (params.status) qs.set('status', params.status)
-    const query = qs.toString() ? `?${qs.toString()}` : ''
-    return apiRequest<{ items: AdminAccountItem[] }>(
-      `/api/admin/accounts${query}`,
-      {
-        signal: params.signal,
-      },
-    )
-  },
-
-  getAccount: (accountId: string, signal?: AbortSignal) =>
-    apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}`, {
-      signal,
-    }),
-
-  createAccount: (payload: CreateAdminAccountPayload) =>
-    apiRequest<AdminAccountDetail>('/api/admin/accounts', {
-      method: 'POST',
-      body: payload,
-    }),
-
+  // Account list/detail/create/status use `adminUsersApi` (real BE endpoints).
+  // TODO(BE): endpoint not available
   updateAccount: (accountId: string, payload: UpdateAccountPayload) =>
     apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}`, {
       method: 'PATCH',
       body: payload,
     }),
 
-  deactivateAccount: (accountId: string) =>
-    apiRequest<AdminAccountDetail>(
-      `/api/admin/accounts/${accountId}/deactivate`,
-      {
-        method: 'POST',
-      },
-    ),
-
-  activateAccount: (accountId: string) =>
-    apiRequest<AdminAccountDetail>(
-      `/api/admin/accounts/${accountId}/activate`,
-      {
-        method: 'POST',
-      },
-    ),
-
+  // TODO(BE): endpoint not available
   resetPassword: (accountId: string) =>
     apiRequest<{ sent: boolean; email: string }>(
       `/api/admin/accounts/${accountId}/reset-password`,

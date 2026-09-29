@@ -1,13 +1,12 @@
 import { useState } from 'react'
 
-import { adminApi } from '../api/adminApi'
+import { adminUsersApi, type ManagedUserRole } from '../api/adminUsersApi'
 import { getRoleLabel } from '../lib/accountStatus'
 import { useI18n } from '../../../shared/i18n'
 import { adminHref } from '../routes'
-import type { UserRole } from '../../auth/types'
 import { createAccountPageMessages } from './CreateAccountPage.messages'
 
-type EmployeeRole = Exclude<UserRole, 'CUSTOMER' | 'ADMIN'>
+type EmployeeRole = Exclude<ManagedUserRole, 'CUSTOMER' | 'ADMIN'>
 
 const EMPLOYEE_ROLE_VALUES = [
   'STAFF',
@@ -50,7 +49,7 @@ export function CreateAccountPage() {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await adminApi.createAccount({
+      await adminUsersApi.createAccount({
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         role,

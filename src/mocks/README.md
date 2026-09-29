@@ -49,3 +49,17 @@ Route không khớp handler nào sẽ đi thẳng ra `fetch` thật (pass-throug
 ## Envelope
 
 Mọi response mock đều đúng format `ApiResponse` của backend: `{ success, code, message, data, errors, timestamp }`. Dùng `ok()`, `created()`, `fail()` trong `mockServer.ts` để dựng envelope, không tự viết tay.
+
+## Hybrid mode: vài route gọi backend thật
+
+Khi `VITE_USE_MOCK_API=true`, có thể cho một số endpoint đã có ở backend đi thẳng tới API thật (kèm token qua `authenticatedFetch`), phần còn lại vẫn dùng mock. Khai báo trong `.env`:
+
+```
+VITE_USE_MOCK_API=true
+VITE_REAL_API_ROUTES=GET /api/admin/users*,PATCH /api/admin/users/*/status,POST /api/admin/accounts
+```
+
+- Danh sách phân tách bằng dấu phẩy, mỗi mục là `METHOD /path`.
+- `*` ở giữa khớp đúng một segment (`/api/admin/users/*/status`); `*` ở cuối khớp mọi phần đuôi (`/api/admin/users*` gồm cả `/api/admin/users/123` và query).
+- Route không khớp → mock. Bỏ trống → toàn bộ đi mock.
+- Logic khớp nằm ở `src/shared/api/realApiRoutes.ts`; các route trên vẫn có handler mock (dạng DTO của BE) để test chạy offline.

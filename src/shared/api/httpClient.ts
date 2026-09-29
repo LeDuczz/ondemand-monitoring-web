@@ -1,6 +1,8 @@
 import { env } from '../../config/env'
 import { authenticatedFetch } from '../../features/auth/api/authApi'
 
+import { matchesRealApiRoute } from './realApiRoutes'
+
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export type ApiRequestOptions = {
@@ -75,6 +77,11 @@ async function defaultTransport(
   init?: RequestInit,
 ): Promise<Response> {
   if (env.useMockApi) {
+    const method = init?.method ?? 'GET'
+    const { pathname } = new URL(input, env.apiBaseUrl)
+    if (matchesRealApiRoute(env.realApiRoutes, method, pathname)) {
+      return authenticatedFetch(input, init)
+    }
     const { mockFetch } = await import('../../mocks')
     return mockFetch(input, init)
   }

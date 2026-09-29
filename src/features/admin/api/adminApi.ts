@@ -5,12 +5,8 @@ import type {
   UpdateAccountPayload,
 } from '../types/accounts'
 import type {
-  AdminService,
   AdminStation,
   CreateStationPayload,
-  CreateTimeslotPayload,
-  TimeslotVersion,
-  UpdateServicePayload,
   UpdateStationPayload,
 } from '../types/catalog'
 import type {
@@ -51,36 +47,6 @@ export const adminApi = {
       `/api/admin/accounts/${accountId}/reset-password`,
       { method: 'POST' },
     ),
-
-  // Catalog — Services
-  listServices: (signal?: AbortSignal) =>
-    apiRequest<{ items: AdminService[] }>('/api/admin/catalog/services', {
-      signal,
-    }),
-
-  updateService: (serviceId: string, payload: UpdateServicePayload) =>
-    apiRequest<AdminService>(`/api/admin/catalog/services/${serviceId}`, {
-      method: 'PATCH',
-      body: payload,
-    }),
-
-  toggleServiceActive: (serviceId: string, isActive: boolean) =>
-    apiRequest<AdminService>(`/api/admin/catalog/services/${serviceId}`, {
-      method: 'PATCH',
-      body: { isActive },
-    }),
-
-  // Catalog — Timeslots
-  listTimeslots: (signal?: AbortSignal) =>
-    apiRequest<{ items: TimeslotVersion[] }>('/api/admin/catalog/timeslots', {
-      signal,
-    }),
-
-  createTimeslot: (payload: CreateTimeslotPayload) =>
-    apiRequest<TimeslotVersion>('/api/admin/catalog/timeslots', {
-      method: 'POST',
-      body: payload,
-    }),
 
   // Catalog — Stations
   listStations: (signal?: AbortSignal) =>

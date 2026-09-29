@@ -1,31 +1,22 @@
-export type SensorType = 'RGB' | 'THERMAL' | 'ZOOM' | 'MULTISPECTRAL'
-
-export type ServiceSensor = {
-  sensor: SensorType
-  isMandatory: boolean
-}
+import type { PreferredTimeCode } from '../api/catalogApi'
 
 export type AdminService = {
   id: string
-  code: string
   name: string
   description: string
-  defaultDurationMin: number
-  minAltitudeM: number
-  maxAltitudeM: number
-  sensors: ServiceSensor[]
   isActive: boolean
+  createdAt: string | null
+  updatedAt: string | null
 }
 
-export type TimeslotVersion = {
+export type AdminTimeslot = {
   id: string
-  code: string
+  code: PreferredTimeCode
   name: string
-  version: string
+  /** "HH:mm" */
   startTime: string
+  /** "HH:mm" */
   endTime: string
-  effectiveFrom: string
-  effectiveTo: string | null
 }
 
 export type AdminStation = {
@@ -37,24 +28,6 @@ export type AdminStation = {
   lon: number
   maxServiceRadiusM: number
   isActive: boolean
-}
-
-export type UpdateServicePayload = {
-  name?: string
-  description?: string
-  defaultDurationMin?: number
-  minAltitudeM?: number
-  maxAltitudeM?: number
-  sensors?: ServiceSensor[]
-  isActive?: boolean
-}
-
-export type CreateTimeslotPayload = {
-  code: string
-  name: string
-  startTime: string
-  endTime: string
-  effectiveFrom: string
 }
 
 export type CreateStationPayload = {

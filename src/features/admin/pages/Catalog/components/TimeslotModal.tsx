@@ -1,0 +1,148 @@
+import { useState, type FormEvent } from 'react'
+
+import { useI18n } from '../../../../../shared/i18n'
+import {
+  PREFERRED_TIME_CODES,
+  catalogApi,
+  type PreferredTimeCode,
+} from '../../../api/catalogApi'
+import { Modal } from '../../../components/common/Modal'
+import {
+  emptyTimeslotForm,
+  mapTimeslot,
+  readApiError,
+  timeslotToForm,
+  toTimeslotRequest,
+} from '../../../lib/catalogMappers'
+import type { AdminTimeslot } from '../../../types/catalog'
+import { EditLoader } from './EditLoader'
+import { FormField } from './FormField'
+import { FormFooter } from './FormFooter'
+import { timeslotCodeMessages } from './timeslotCodes'
+import { timeslotModalMessages } from './TimeslotModal.messages'
+
+type Props = {
+  timeslot?: AdminTimeslot
+  onClose: () => void
+  onSaved: () => void
+}
+
+function TimeslotForm({ timeslot, onClose, onSaved }: Props) {
+  const { t } = useI18n(timeslotModalMessages)
+  const { t: codes } = useI18n(timeslotCodeMessages)
+  const [values, setValues] = useState(
+    timeslot ? timeslotToForm(timeslot) : emptyTimeslotForm(),
+  )
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    const next: Record<string, string> = {}
+    if (!values.name.trim()) next.name = t.required
+    if (!values.startTime) next.startTime = t.required
+    if (!values.endTime) next.endTime = t.required
+    setErrors(next)
+    if (Object.keys(next).length > 0) return
+    setBusy(true)
+    setSubmitError(null)
+    try {
+      const body = toTimeslotRequest(values)
+      if (timeslot) await catalogApi.updatePreferredTime(timeslot.id, body)
+      else await catalogApi.createPreferredTime(body)
+      onSaved()
+    } catch (err) {
+      const { message, fields } = readApiError(err, t.genericError)
+      setErrors(fields)
+      setSubmitError(message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal
+      width={540}
+      icon="clock"
+      title={timeslot ? t.editTitle : t.createTitle}
+      subtitle={timeslot ? t.editSubtitle : t.createSubtitle}
+      onClose={onClose}
+      footer={<FormFooter formId="adm-timeslot-form" busy={busy} onClose={onClose} />}
+    >
+      <form id="adm-timeslot-form" onSubmit={handleSubmit} noValidate>
+        <FormField id="adm-ts-code" label={t.code} required error={errors.code}>
+          <select
+            id="adm-ts-code"
+            className="odm-inp"
+            value={values.code}
+            onChange={(e) =>
+              setValues({ ...values, code: e.target.value as PreferredTimeCode })
+            }
+          >
+            {PREFERRED_TIME_CODES.map((c) => (
+              <option key={c} value={c}>
+                {c} · {codes[c]}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <FormField id="adm-ts-name" label={t.name} required error={errors.name}>
+          <input
+            id="adm-ts-name"
+            className="odm-inp"
+            value={values.name}
+            placeholder={t.namePlaceholder}
+            aria-invalid={!!errors.name}
+            onChange={(e) => setValues({ ...values, name: e.target.value })}
+          />
+        </FormField>
+        <div className="adm-form-pair">
+          <FormField id="adm-ts-start" label={t.startTime} required error={errors.startTime}>
+            <input
+              id="adm-ts-start"
+              className="odm-inp"
+              type="time"
+              value={values.startTime}
+              onChange={(e) => setValues({ ...values, startTime: e.target.value })}
+            />
+          </FormField>
+          <FormField id="adm-ts-end" label={t.endTime} required error={errors.endTime}>
+            <input
+              id="adm-ts-end"
+              className="odm-inp"
+              type="time"
+              value={values.endTime}
+              onChange={(e) => setValues({ ...values, endTime: e.target.value })}
+            />
+          </FormField>
+        </div>
+        {submitError && (
+          <div role="alert" className="adm-alert is-danger">
+            {submitError}
+          </div>
+        )}
+      </form>
+    </Modal>
+  )
+}
+
+export function TimeslotModal({ timeslot, onClose, onSaved }: Props) {
+  const { t } = useI18n(timeslotModalMessages)
+  return (
+    <EditLoader
+      title={t.editTitle}
+      onClose={onClose}
+      load={
+        timeslot
+          ? (signal) =>
+              catalogApi.getPreferredTime(timeslot.id, signal).then(mapTimeslot)
+          : undefined
+      }
+    >
+      {(fresh) => (
+        <TimeslotForm timeslot={fresh ?? timeslot} onClose={onClose} onSaved={onSaved} />
+      )}
+    </EditLoader>
+  )
+}

@@ -56,7 +56,7 @@ Khi `VITE_USE_MOCK_API=true`, có thể cho một số endpoint đã có ở bac
 
 ```
 VITE_USE_MOCK_API=true
-VITE_REAL_API_ROUTES=GET /api/admin/users*,PATCH /api/admin/users/*/status,POST /api/admin/accounts
+VITE_REAL_API_ROUTES=GET /api/admin/users*,PATCH /api/admin/users/*/status,POST /api/admin/accounts,GET /api/services*,POST /api/services,PUT /api/services/*,DELETE /api/services/*,GET /api/preferred-times*,POST /api/preferred-times,PUT /api/preferred-times/*,DELETE /api/preferred-times/*
 ```
 
 - Danh sách phân tách bằng dấu phẩy, mỗi mục là `METHOD /path`.

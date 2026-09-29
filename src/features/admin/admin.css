@@ -1666,3 +1666,21 @@
   font-weight: 700;
   line-height: 1.2;
 }
+
+/* ---------- Catalog page helpers ---------- */
+
+.adm-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--adm-space-3);
+  margin-bottom: var(--adm-space-4);
+}
+.adm-row-actions { display: flex; flex-wrap: wrap; gap: var(--adm-space-2); justify-content: flex-end; }
+.adm-wrap { overflow-wrap: anywhere; min-width: 0; margin: 0; }
+.adm-strong { font-weight: 600; font-size: 13px; }
+.adm-form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--adm-space-3); }
+@media (max-width: 480px) { .adm-form-pair { grid-template-columns: 1fr; } }
+.adm-check { display: flex; align-items: flex-start; gap: var(--adm-space-2); cursor: pointer; margin-bottom: var(--adm-space-3); }
+.adm-check small { display: block; color: var(--adm-text-3); overflow-wrap: anywhere; }

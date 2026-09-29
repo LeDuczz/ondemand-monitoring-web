@@ -1,4 +1,4 @@
-import { AdminToggle } from '../AdminToggle'
+import { AdminToggle } from '../common/AdminToggle'
 import { useI18n } from '../../../../shared/i18n'
 import type { AdminRole } from '../../types/roles'
 import { rolesTableMessages } from './RolesTable.messages'

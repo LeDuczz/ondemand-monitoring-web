@@ -7,7 +7,7 @@ import {
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
-import { AdminToggle } from '../AdminToggle'
+import { AdminToggle } from '../common/AdminToggle'
 import { EditServiceDialog } from './EditServiceDialog'
 import type { AdminService } from '../../types/catalog'
 import { servicesTabMessages } from './ServicesTab.messages'

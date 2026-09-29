@@ -1,11 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { resetHttpTransport, setHttpTransport } from '../../shared/api/httpClient'
 import { resetMockDb } from '../db'
+import { mockFetch } from '../mockServer'
 import '../index'
 import { reportsApi } from '../../features/manager/api/reportsApi'
 
-beforeEach(() => resetMockDb())
-afterEach(() => resetMockDb())
+beforeEach(() => {
+  resetMockDb()
+  setHttpTransport(mockFetch)
+})
+afterEach(() => {
+  resetMockDb()
+  resetHttpTransport()
+})
 
 describe('GET /api/reports/summary', () => {
   it('returns summary with correct mission counts from design [TK MNG-12]', async () => {

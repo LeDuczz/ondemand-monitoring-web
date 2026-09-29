@@ -1,11 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { resetHttpTransport, setHttpTransport } from '../../shared/api/httpClient'
 import { resetMockDb } from '../db'
+import { mockFetch } from '../mockServer'
 import '../index'
 import { mediaApi } from '../../features/manager/api/mediaApi'
 
-beforeEach(() => resetMockDb())
-afterEach(() => resetMockDb())
+beforeEach(() => {
+  resetMockDb()
+  setHttpTransport(mockFetch)
+})
+afterEach(() => {
+  resetMockDb()
+  resetHttpTransport()
+})
 
 describe('GET /api/media?needs_action=true', () => {
   it('returns manualUploadTasks, badMediaItems, and waitingDeliveryMissions', async () => {

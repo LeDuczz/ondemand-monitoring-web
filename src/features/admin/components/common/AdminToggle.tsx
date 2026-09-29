@@ -1,4 +1,4 @@
-import { useI18n } from '../../../shared/i18n'
+import { useI18n } from '../../../../shared/i18n'
 import { adminToggleMessages } from './AdminToggle.messages'
 
 export function AdminToggle({

@@ -11,6 +11,8 @@ import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
 import { CustomerApp } from '../features/customer/CustomerApp'
 import { CustomerLayout } from '../features/customer/CustomerLayout'
+import { customerLayoutMessages } from '../features/customer/CustomerLayout.messages'
+import { useI18n } from '../shared/i18n'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequest'
 import { ManagerApp } from '../features/manager/ManagerApp'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
@@ -32,6 +34,21 @@ function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) 
     return null
   }
   return children
+}
+
+function SupportShell({
+  crumb,
+  children,
+}: {
+  crumb: 'help' | 'tickets' | 'ticketDetail'
+  children: ReactNode
+}) {
+  const { t } = useI18n(customerLayoutMessages)
+  return (
+    <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb={t.supportCrumbs[crumb]}>
+      {children}
+    </CustomerLayout>
+  )
 }
 
 function AuthRoute({ children }: { children: ReactNode }) {
@@ -61,26 +78,26 @@ export function Router() {
     const ticketId = hash.replace('#help/tickets/', '')
     return (
       <AuthRoute>
-        <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb="Chi tiết yêu cầu hỗ trợ">
+        <SupportShell crumb="ticketDetail">
           <CustomerTicketDetailPage ticketId={ticketId} />
-        </CustomerLayout>
+        </SupportShell>
       </AuthRoute>
     )
   }
   if (hash === '#help/tickets')
     return (
       <AuthRoute>
-        <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb="Yêu cầu hỗ trợ của tôi">
+        <SupportShell crumb="tickets">
           <CustomerTicketsListPage />
-        </CustomerLayout>
+        </SupportShell>
       </AuthRoute>
     )
   if (hash === '#help' || hash.startsWith('#help/'))
     return (
       <AuthRoute>
-        <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb="Trung tâm Hỗ trợ">
+        <SupportShell crumb="help">
           <HelpCenterHomePage />
-        </CustomerLayout>
+        </SupportShell>
       </AuthRoute>
     )
 

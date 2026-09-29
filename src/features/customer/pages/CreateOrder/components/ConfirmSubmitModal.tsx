@@ -17,7 +17,7 @@ type Props = {
 
 /** Prominent final confirmation before `POST /api/orders`. */
 export function ConfirmSubmitModal(p: Props) {
-  const { t } = useI18n(confirmSubmitModalMessages)
+  const { t, locale } = useI18n(confirmSubmitModalMessages)
   const { form } = p
 
   const footer = (
@@ -53,7 +53,7 @@ export function ConfirmSubmitModal(p: Props) {
       <div className="co-confirm-total co-row-between">
         <span>{t.total}</span>
         <span>
-          {p.pricingEstimate ? formatMoney(p.pricingEstimate.totalPrice) : t.totalUnknown}
+          {p.pricingEstimate ? formatMoney(p.pricingEstimate.totalPrice, locale) : t.totalUnknown}
         </span>
       </div>
       <p className="co-hint co-mt">{t.note}</p>

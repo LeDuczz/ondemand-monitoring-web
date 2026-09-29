@@ -40,8 +40,8 @@ describe('getMissionStatusMeta', () => {
 })
 
 describe('fmtDate / fmtDateTime', () => {
-  it('formats using vi-VN by default', () => {
-    expect(fmtDate('2026-03-05T00:00:00.000Z')).toMatch(
+  it('formats dates for vi-VN as dd/mm/yyyy', () => {
+    expect(fmtDate('2026-03-05T00:00:00.000Z', 'vi-VN')).toMatch(
       /05\/03\/2026|04\/03\/2026/,
     )
   })

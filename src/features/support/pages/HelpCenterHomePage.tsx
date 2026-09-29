@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { authSession } from '../../auth/api/authApi'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { CreateTicketModal } from '../components/CreateTicketModal'
-import { FAQ_ARTICLES, POPULAR_TOPICS, searchHelpArticles } from '../data/helpArticles'
+import { getFaqArticles, getPopularTopics, searchHelpArticles } from '../data/helpArticles'
 import { recordArticleVote } from '../utils/faqAnalytics'
 import { supportApi } from '../api/supportApi'
 
@@ -31,7 +31,7 @@ export function HelpCenterHomePage() {
             }))
         }
 
-        let result = searchHelpArticles(searchQuery)
+        let result = searchHelpArticles(searchQuery, 'vi')
         if (selectedCategory !== 'ALL') {
             result = result.filter((a) => a.category === selectedCategory)
         }
@@ -45,7 +45,7 @@ export function HelpCenterHomePage() {
             [articleId]: helpful ? 'YES' : 'NO',
         }))
 
-        const targetArt = FAQ_ARTICLES.find((a) => a.id === articleId)
+        const targetArt = getFaqArticles('vi').find((a) => a.id === articleId)
         const currentUser = authSession.getUser()
 
         supportApi.recordFaqFeedback({
@@ -182,7 +182,7 @@ export function HelpCenterHomePage() {
                         Chủ đề phổ biến
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                        {POPULAR_TOPICS.map((topic) => {
+                        {getPopularTopics('vi').map((topic) => {
                             const isSelected = selectedCategory === topic.id
                             return (
                                 <div

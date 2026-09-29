@@ -19,10 +19,10 @@ const KB: [RegExp, ReplyKey][] = [
   [/duy[eệ]t|tr[aạ]ng th[aá]i/i, 'status'],
 ]
 
-type ChatMessage = {
-  text: string
-  from: 'user' | 'bot'
-}
+/** Bot messages keep a key (not text) so they re-render when the language changes. */
+type ChatMessage =
+  | { from: 'user'; text: string }
+  | { from: 'bot'; key: 'greeting' | ReplyKey }
 
 function getReplyKey(text: string): ReplyKey {
   for (const [pattern, key] of KB) {
@@ -36,7 +36,7 @@ export function CustomerChatbot() {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { from: 'bot', text: t.greeting },
+    { from: 'bot', key: 'greeting' },
   ])
   const messagesRef = useRef<HTMLDivElement>(null)
 
@@ -45,14 +45,15 @@ export function CustomerChatbot() {
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [messages, open])
 
-  function ask(text: string) {
+  /** `replyKey` lets a chip answer directly, regardless of the UI language. */
+  function ask(text: string, replyKey?: ReplyKey) {
     const trimmed = text.trim()
     if (!trimmed) return
     setMessages((current) => [...current, { from: 'user', text: trimmed }])
     setTimeout(() => {
       setMessages((current) => [
         ...current,
-        { from: 'bot', text: t.replies[getReplyKey(trimmed)] },
+        { from: 'bot', key: replyKey ?? getReplyKey(trimmed) },
       ])
     }, 350)
   }
@@ -91,14 +92,18 @@ export function CustomerChatbot() {
                 key={`${message.from}-${index}`}
                 className={`odm-cus-chatbot-msg is-${message.from}`}
               >
-                {message.text}
+                {message.from === 'user'
+                  ? message.text
+                  : message.key === 'greeting'
+                    ? t.greeting
+                    : t.replies[message.key]}
               </div>
             ))}
           </div>
 
           <div className="odm-cus-chatbot-chips">
             {CHIP_KEYS.map((key) => (
-              <button key={key} type="button" onClick={() => ask(t.chips[key])}>
+              <button key={key} type="button" onClick={() => ask(t.chips[key], key)}>
                 {t.chips[key]}
               </button>
             ))}

@@ -1,4 +1,4 @@
-import { FAQ_ARTICLES } from '../data/helpArticles'
+import { getFaqArticles } from '../data/helpArticles'
 
 const STORAGE_KEY = 'omss_faq_helpful_votes_v2'
 
@@ -36,7 +36,7 @@ export function getTotalHelpfulVotes(): number {
 
 export function getTopHelpfulArticles(limit = 3) {
     const votes = getArticleVotes()
-    const articlesWithVotes = FAQ_ARTICLES.map((article) => ({
+    const articlesWithVotes = getFaqArticles('vi').map((article) => ({
         ...article,
         votesCount: votes[article.id] || 0,
     }))

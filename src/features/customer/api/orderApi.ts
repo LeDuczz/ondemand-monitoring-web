@@ -1,5 +1,17 @@
 import { env } from '../../../config/env'
+import { getLanguage } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
+
+const errorText = {
+  vi: {
+    unreachable: 'Không thể kết nối tới dịch vụ đơn hàng.',
+    requestFailed: 'Yêu cầu thất bại. Vui lòng thử lại.',
+  },
+  en: {
+    unreachable: 'Unable to reach the order service.',
+    requestFailed: 'Request failed. Please try again.',
+  },
+} as const
 
 type ApiResponse<T> = {
   success?: boolean
@@ -38,7 +50,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
       headers,
     })
   } catch {
-    throw new OrderApiError('Unable to reach the order service.')
+    throw new OrderApiError(errorText[getLanguage()].unreachable)
   }
 
   const payload = (await response.json().catch(() => undefined)) as
@@ -46,7 +58,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
 
   if (!response.ok || payload?.success === false) {
     throw new OrderApiError(
-      payload?.message ?? 'Request failed. Please try again.',
+      payload?.message ?? errorText[getLanguage()].requestFailed,
       payload?.code,
       payload?.errors,
     )

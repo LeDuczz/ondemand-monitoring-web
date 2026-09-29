@@ -129,7 +129,7 @@ function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
   return {
     id: order.id,
     orderCode: order.id,
-    title: order.title ?? 'Đơn giám sát',
+    title: order.title ?? order.id,
     addressText: order.address ?? null,
     preferredDate: getPreferredDate(order),
     preferredTimeLabel: order.preferredTimeName ?? null,

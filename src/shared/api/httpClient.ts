@@ -1,7 +1,22 @@
 import { env } from '../../config/env'
 import { authenticatedFetch } from '../../features/auth/api/authApi'
 
+import { getLanguage } from '../i18n'
 import { matchesRealApiRoute } from './realApiRoutes'
+
+const errorText = {
+  vi: {
+    unreachable: 'Không thể kết nối tới máy chủ. Vui lòng thử lại.',
+    sessionExpired:
+      'Phiên đăng nhập đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.',
+    requestFailed: 'Yêu cầu thất bại. Vui lòng thử lại.',
+  },
+  en: {
+    unreachable: 'Unable to reach the server. Please try again.',
+    sessionExpired: 'Your session has expired or the token is invalid. Please sign in again.',
+    requestFailed: 'Request failed. Please try again.',
+  },
+} as const
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -132,7 +147,7 @@ export async function apiRequest<T>(
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw error
     }
-    throw new ApiError('Unable to reach the server. Please try again.', {
+    throw new ApiError(errorText[getLanguage()].unreachable, {
       method,
       path,
     })
@@ -148,8 +163,8 @@ export async function apiRequest<T>(
         : undefined
     throw new ApiError(
       response.status === 401
-        ? 'Phiên đăng nhập đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.'
-        : payload?.message ?? 'Request failed. Please try again.',
+        ? errorText[getLanguage()].sessionExpired
+        : payload?.message ?? errorText[getLanguage()].requestFailed,
       {
         status: response.status,
         code: payload?.code,

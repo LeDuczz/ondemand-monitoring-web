@@ -131,7 +131,7 @@ export function getMissionStatusMeta(
 
 export function fmtDate(
   iso: string,
-  locale: 'vi-VN' | 'en-US' = 'vi-VN',
+  locale: 'vi-VN' | 'en-US',
 ): string {
   return new Date(iso).toLocaleDateString(locale, {
     day: '2-digit',
@@ -142,7 +142,7 @@ export function fmtDate(
 
 export function fmtDateTime(
   iso: string,
-  locale: 'vi-VN' | 'en-US' = 'vi-VN',
+  locale: 'vi-VN' | 'en-US',
 ): string {
   return new Date(iso).toLocaleString(locale, {
     day: '2-digit',

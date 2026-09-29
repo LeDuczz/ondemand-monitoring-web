@@ -19,6 +19,11 @@ export const customerLayoutMessages = defineMessages({
     toggleTheme: 'Đổi giao diện sáng / tối',
     customer: 'Khách hàng',
     helpLink: 'Trợ giúp & Hỗ trợ',
+    supportCrumbs: {
+      help: 'Trung tâm Hỗ trợ',
+      tickets: 'Yêu cầu hỗ trợ của tôi',
+      ticketDetail: 'Chi tiết yêu cầu hỗ trợ',
+    },
   },
   en: {
     nav: 'Customer navigation',
@@ -38,5 +43,10 @@ export const customerLayoutMessages = defineMessages({
     toggleTheme: 'Switch to light / dark theme',
     customer: 'Customer',
     helpLink: 'Help & Support',
+    supportCrumbs: {
+      help: 'Help Center',
+      tickets: 'My support tickets',
+      ticketDetail: 'Support ticket details',
+    },
   },
 })

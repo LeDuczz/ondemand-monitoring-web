@@ -16,8 +16,11 @@ export function todayPlus(days: number) {
   return d.toISOString().slice(0, 10)
 }
 
-export function formatMoney(value?: number | null) {
-  return new Intl.NumberFormat('vi-VN', {
+export function formatMoney(
+  value: number | null | undefined,
+  locale: 'vi-VN' | 'en-US',
+) {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'VND',
     maximumFractionDigits: 0,

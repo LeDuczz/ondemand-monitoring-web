@@ -145,7 +145,7 @@ export function normalizeZones(items: ZonePayload[]): SimulationZone[] {
     .map((zone) => ({
       id: String(zone.id ?? zone.code ?? zone.name ?? 'zone'),
       code: String(zone.code ?? ''),
-      name: String(zone.name ?? zone.code ?? 'Monitoring zone'),
+      name: String(zone.name ?? zone.code ?? zone.id ?? ''),
       zoneType: String(zone.zoneType ?? ''),
       restricted: Boolean(zone.restricted),
       coordinates: normalizeRing(zone.coordinates),

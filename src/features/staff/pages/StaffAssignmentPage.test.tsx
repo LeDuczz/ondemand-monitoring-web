@@ -26,7 +26,7 @@ describe('StaffAssignmentPage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Phân công drone và operator cho các mission vừa được duyệt.',
+        'Phân công thiết bị và staff cho các mission vừa được duyệt.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Mission chờ phân công')).toBeInTheDocument()
@@ -41,7 +41,7 @@ describe('StaffAssignmentPage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Assign drones and operators to newly approved missions.',
+        'Assign devices and staff to newly approved missions.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Pending Assignments')).toBeInTheDocument()

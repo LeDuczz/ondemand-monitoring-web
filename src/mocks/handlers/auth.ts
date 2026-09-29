@@ -7,7 +7,13 @@
 // auth-users.json; email khác → backend thật").
 
 import { createCollection } from '../db'
-import { fail, ok, passThrough, registerMockRoutes } from '../mockServer'
+import {
+  fail,
+  ok,
+  passThrough,
+  registerMockRoutes,
+  type MockRoute,
+} from '../mockServer'
 import seed from '../data/auth-users.json'
 
 type MockUser = {
@@ -71,7 +77,7 @@ function bearerToken(headers: Headers) {
   return header.slice('Bearer '.length)
 }
 
-registerMockRoutes([
+const authRoutes: MockRoute[] = [
   {
     method: 'POST',
     path: '/api/v1/auth/login',
@@ -128,4 +134,14 @@ registerMockRoutes([
       return ok(toAuthResponse(user))
     },
   },
+]
+
+// The frontend calls `/api/auth/*` (current BE contract); `/api/v1/auth/*` is
+// the legacy prefix these handlers were first written for. Serve both.
+registerMockRoutes([
+  ...authRoutes,
+  ...authRoutes.map((route) => ({
+    ...route,
+    path: route.path.replace('/api/v1/auth/', '/api/auth/'),
+  })),
 ])

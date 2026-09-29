@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { EmptyState, LoadingState } from '../../../shared/components/odm/StateView'
+import { useI18n } from '../../../shared/i18n'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import {
   SIMULATION_MAP_DEFAULT_CROP,
@@ -15,6 +16,7 @@ import { setActiveMissionId } from '../api/liveMission'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
 import { RejectDialog } from './RejectDialog'
+import { missionDetailScreenMessages } from './MissionDetailScreen.messages'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
 
 // ─── Status maps ────────────────────────────────────────────────────────────
@@ -490,6 +492,7 @@ function formatCheckedAt(value?: string) {
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export function MissionDetailScreen({ missionId }: { missionId: string }) {
+  const { t } = useI18n(missionDetailScreenMessages)
   const query = useApiQuery((signal) => operatorApi.getMission(missionId, signal), [missionId])
   const [showReject, setShowReject] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -501,11 +504,11 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   if (query.error || !query.data) {
     return (
       <EmptyState
-        title="Không tải được mission"
-        description="Mission có thể không tồn tại hoặc đã bị xoá."
+        title={t.errorTitle}
+        description={t.errorDescription}
         action={
           <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'missions' })}>
-            Về danh sách
+            {t.backToList}
           </a>
         }
       />

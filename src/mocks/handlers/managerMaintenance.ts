@@ -2,6 +2,8 @@
 //   GET    /api/maintenance-tickets?status=&droneId=&priority=   [TK]
 //   POST   /api/maintenance-tickets                              [ĐỀ XUẤT]
 //   PATCH  /api/maintenance-tickets/:id/status                  [ĐỀ XUẤT]
+//   PATCH  /api/maintenance-tickets/:id/assign                  [BE]
+//   PATCH  /api/maintenance-tickets/:id/resolve                 [BE]
 import type { TicketSeverity, TicketStatus } from '../../shared/types/domain'
 import { createCollection } from '../db'
 import { created, fail, ok, registerMockRoutes } from '../mockServer'
@@ -140,6 +142,52 @@ registerMockRoutes([
       }
 
       return ok(ticket, 'Đã cập nhật trạng thái ticket')
+    },
+  },
+  // ── BE: assign technician (also carries legacy `{ status }` patches) ──
+  {
+    method: 'PATCH',
+    path: '/api/maintenance-tickets/:id/assign',
+    handler: ({ params, body }) => {
+      const ticket = tickets.find(
+        (t) => t.id === params.id || t.code === params.id,
+      )
+      if (!ticket) return fail(404, 'NOT_FOUND', 'Không tìm thấy ticket')
+
+      const req = (body ?? {}) as { technicianId?: string; status?: TicketStatus }
+      if (req.status) {
+        const validNext = VALID_TICKET_TRANSITIONS[ticket.status] ?? []
+        if (!validNext.includes(req.status)) {
+          return fail(
+            422,
+            'INVALID_TRANSITION',
+            `Không thể chuyển từ ${ticket.status} sang ${req.status}`,
+          )
+        }
+        ticket.status = req.status
+      }
+      if (req.technicianId) {
+        ticket.assignedTo = req.technicianId
+        if (ticket.status === 'OPEN') ticket.status = 'IN_PROGRESS'
+      }
+      return ok(ticket, 'Đã cập nhật ticket')
+    },
+  },
+
+  // ── BE: resolve ticket ────────────────────────────────────────────────
+  {
+    method: 'PATCH',
+    path: '/api/maintenance-tickets/:id/resolve',
+    handler: ({ params, body }) => {
+      const ticket = tickets.find(
+        (t) => t.id === params.id || t.code === params.id,
+      )
+      if (!ticket) return fail(404, 'NOT_FOUND', 'Không tìm thấy ticket')
+      const req = (body ?? {}) as { resolutionNotes?: string }
+      ticket.status = 'RESOLVED'
+      ticket.resolutionNotes = req.resolutionNotes ?? ticket.resolutionNotes
+      ticket.resolvedAt = ticket.resolvedAt ?? new Date().toISOString()
+      return ok(ticket, 'Đã xử lý ticket')
     },
   },
 ])

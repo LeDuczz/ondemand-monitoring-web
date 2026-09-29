@@ -5,6 +5,7 @@ import type { MaintenanceTicket } from '../types/maintenance'
 export type BackendMaintenanceTicket = {
   id: string
   ticketCode?: string | null
+  title?: string | null
   deviceId?: string | null
   deviceCode?: string | null
   assignedTechnicianId?: string | null
@@ -24,7 +25,7 @@ function mapToTicket(item: BackendMaintenanceTicket): MaintenanceTicket {
   return {
     id: item.id,
     code: item.ticketCode ?? item.id,
-    title: item.description ?? item.issueType ?? item.ticketCode ?? item.id,
+    title: item.title ?? item.description ?? item.issueType ?? item.ticketCode ?? item.id,
     status: (item.status || 'OPEN') as TicketStatus,
     priority: (item.severity || 'MEDIUM') as TicketSeverity,
     droneId: item.deviceId ?? '',

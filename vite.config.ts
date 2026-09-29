@@ -13,5 +13,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     exclude: ['**/node_modules/**', '.claude/**'],
+    env: {
+      VITE_USE_MOCK_API: 'true',
+      VITE_REAL_API_ROUTES: '',
+    },
   },
 })

@@ -15,15 +15,15 @@ import { OperatorMaintenanceScreen } from './OperatorMaintenanceScreen'
 describe('OperatorMaintenanceScreen', () => {
   it('renders vietnamese chrome text', async () => {
     render(<OperatorMaintenanceScreen />)
-    expect(await screen.findByText('Bảo trì & Khôi phục Drone')).toBeTruthy()
+    expect(await screen.findByText('Bảo trì & Khôi phục thiết bị')).toBeTruthy()
     expect(screen.getByText(/Đã gán cho tôi/)).toBeTruthy()
   })
 
   it('renders english chrome text when language is switched', async () => {
     render(<OperatorMaintenanceScreen />)
-    await screen.findByText('Bảo trì & Khôi phục Drone')
+    await screen.findByText('Bảo trì & Khôi phục thiết bị')
     act(() => setLanguage('en'))
-    expect(await screen.findByText('Maintenance & Drone Recovery')).toBeTruthy()
+    expect(await screen.findByText('Maintenance & Device Recovery')).toBeTruthy()
     expect(screen.getByText(/Assigned to me/)).toBeTruthy()
   })
 })

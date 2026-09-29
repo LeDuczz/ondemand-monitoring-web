@@ -32,7 +32,7 @@ describe('SchedulePage', () => {
       expect(document.querySelector('[aria-busy="true"]')).toBeNull(),
     )
     const grid = document.querySelector('[aria-label="Lịch mission theo tuần"]')
-    const empty = screen.queryByText('Không có mission nào trong khoảng này')
+    const empty = screen.queryByText('Chưa có mission được lên lịch trong tuần này')
     expect(grid ?? empty).toBeTruthy()
   })
 

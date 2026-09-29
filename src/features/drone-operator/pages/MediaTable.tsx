@@ -1,18 +1,13 @@
+import { useI18n } from '../../../shared/i18n'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import type { MediaFile, MediaFileStatus } from '../types/mission'
+import { mediaTableMessages } from './MediaTable.messages'
 
 const STATUS_TONE: Record<MediaFileStatus, 'gray' | 'blue' | 'green' | 'red'> = {
   UPLOADED: 'green',
   UPLOADING: 'blue',
   FAILED: 'red',
   PENDING_UPLOAD: 'gray',
-}
-
-const STATUS_LABEL: Record<MediaFileStatus, string> = {
-  UPLOADED: 'Đã upload',
-  UPLOADING: 'Đang upload',
-  FAILED: 'Thất bại',
-  PENDING_UPLOAD: 'Chờ upload',
 }
 
 function formatSize(bytes: number): string {
@@ -30,13 +25,14 @@ export function MediaTable({
   retryingId: string | null
   onRetry: (fileId: string) => void
 }) {
+  const { t } = useI18n(mediaTableMessages)
   if (files.length === 0) {
     return (
       <div className="odm-card" style={{ borderTop: 0, borderRadius: '0 0 8px 8px' }}>
         <div className="odm-card-body" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>Chưa có media để upload</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>{t.emptyTitle}</div>
           <div style={{ color: 'var(--tx3)' }}>
-            Không có tệp nào ở trạng thái PENDING_UPLOAD trên thiết bị.
+            {t.emptyBody}
           </div>
         </div>
       </div>
@@ -48,12 +44,12 @@ export function MediaTable({
       <table className="odm-table">
         <thead>
           <tr>
-            <th>Tên tệp</th>
-            <th style={{ width: 90 }}>Loại</th>
-            <th style={{ width: 100 }}>Dung lượng</th>
-            <th style={{ width: 160 }}>Tiến trình</th>
-            <th style={{ width: 90 }}>Lần thử</th>
-            <th style={{ width: 190 }}>Trạng thái</th>
+            <th>{t.columns.name}</th>
+            <th style={{ width: 90 }}>{t.columns.type}</th>
+            <th style={{ width: 100 }}>{t.columns.size}</th>
+            <th style={{ width: 160 }}>{t.columns.progress}</th>
+            <th style={{ width: 90 }}>{t.columns.attempt}</th>
+            <th style={{ width: 190 }}>{t.columns.status}</th>
           </tr>
         </thead>
         <tbody>
@@ -101,11 +97,11 @@ export function MediaTable({
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <StatusBadge tone={STATUS_TONE[file.status]}>
-                    {file.validationPending ? 'Đang xác thực' : STATUS_LABEL[file.status]}
+                    {file.validationPending ? t.validating : t.statusLabel[file.status]}
                   </StatusBadge>
                   {file.manualTaskCreated ? (
                     <span style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                      Đã tạo yêu cầu xử lý thủ công
+                      {t.manualTaskCreated}
                     </span>
                   ) : null}
                   {file.status === 'FAILED' && file.attempt < file.maxAttempts ? (
@@ -115,7 +111,7 @@ export function MediaTable({
                       disabled={retryingId === file.id}
                       onClick={() => onRetry(file.id)}
                     >
-                      {retryingId === file.id ? 'Đang thử...' : 'Thử lại'}
+                      {retryingId === file.id ? t.retrying : t.retry}
                     </button>
                   ) : null}
                 </div>

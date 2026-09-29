@@ -31,7 +31,7 @@ describe('logout', () => {
     await logout()
 
     expect(logoutSpy).toHaveBeenCalledWith('token-123')
-    expect(authSession.getAccessToken()).toBeNull()
+    expect(authSession.getAccessToken()).toBeUndefined()
     expect(authSession.getUser()).toBeUndefined()
     expect(window.location.hash).toBe('#auth/login')
   })
@@ -42,7 +42,7 @@ describe('logout', () => {
 
     await logout()
 
-    expect(authSession.getAccessToken()).toBeNull()
+    expect(authSession.getAccessToken()).toBeUndefined()
     expect(window.location.hash).toBe('#auth/login')
   })
 

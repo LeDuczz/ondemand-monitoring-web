@@ -21,6 +21,7 @@ export const mediaTableMessages = defineMessages({
     manualTaskCreated: 'Đã tạo yêu cầu xử lý thủ công',
     retrying: 'Đang thử...',
     retry: 'Thử lại',
+    validating: 'Đang xác thực',
   },
   en: {
     emptyTitle: 'No media to upload yet',
@@ -42,5 +43,6 @@ export const mediaTableMessages = defineMessages({
     manualTaskCreated: 'A manual review task was created',
     retrying: 'Retrying...',
     retry: 'Retry',
+    validating: 'Validating',
   },
 })

@@ -32,10 +32,10 @@ describe('LiveDispatchPage', () => {
 
     render(<LiveDispatchPage missionId="mission-1" />)
     await waitFor(() => screen.getByRole('button', { name: 'Phân công' }))
-    fireEvent.change(screen.getByLabelText('Chọn drone'), {
+    fireEvent.change(screen.getByLabelText('Chọn thiết bị'), {
       target: { value: 'drone-db-id' },
     })
-    fireEvent.change(screen.getByLabelText('Chọn operator'), {
+    fireEvent.change(screen.getByLabelText('Chọn staff'), {
       target: { value: 'operator-db-id' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))

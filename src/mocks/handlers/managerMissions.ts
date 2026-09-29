@@ -18,7 +18,13 @@ import type { MissionStatus } from '../../shared/types/domain'
 import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
 import { hasScheduleConflict } from '../../features/manager/lib/schedule'
 import { createCollection } from '../db'
-import { fail, ok, created, registerMockRoutes } from '../mockServer'
+import {
+  fail,
+  ok,
+  created,
+  registerMockRoutes,
+  type MockContext,
+} from '../mockServer'
 import resourceSuggestionsSeed from '../data/resource-suggestions.json'
 import dronesSeed from '../data/drones.json'
 import operatorsSeed from '../data/operators.json'
@@ -617,13 +623,17 @@ registerMockRoutes([
       return ok(response)
     },
   },
-  {
-    method: 'POST',
-    path: '/api/missions/:id/assign-drone',
-    handler: ({ params, query }) => {
+  // `/assign-device` is the current BE contract (JSON body); `/assign-drone`
+  // is the legacy query-string form kept for older callers.
+  ...['/api/missions/:id/assign-device', '/api/missions/:id/assign-drone'].map(
+    (path) => ({
+    method: 'POST' as const,
+    path,
+    handler: ({ params, query, body }: MockContext) => {
       const mission = findMissionById(params.id)
       if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
-      const droneId = query.get('droneId')
+      const droneId =
+        query.get('droneId') ?? (body as { deviceId?: string } | null)?.deviceId
       if (!droneId) {
         return fail(400, 'VALIDATION_ERROR', 'Thiếu droneId', {
           droneId: 'droneId là bắt buộc',
@@ -653,14 +663,18 @@ registerMockRoutes([
         : 'RESOURCE_ASSIGNING'
       return ok(toMissionDto(mission), 'Đã gán Drone thành công')
     },
-  },
-  {
-    method: 'POST',
-    path: '/api/missions/:id/assign-operator',
-    handler: ({ params, query }) => {
+    }),
+  ),
+  // `/assign-staff` is the current BE contract; `/assign-operator` is legacy.
+  ...['/api/missions/:id/assign-staff', '/api/missions/:id/assign-operator'].map(
+    (path) => ({
+    method: 'POST' as const,
+    path,
+    handler: ({ params, query, body }: MockContext) => {
       const mission = findMissionById(params.id)
       if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
-      const operatorId = query.get('operatorId')
+      const operatorId =
+        query.get('operatorId') ?? (body as { staffId?: string } | null)?.staffId
       if (!operatorId) {
         return fail(400, 'VALIDATION_ERROR', 'Thiếu operatorId', {
           operatorId: 'operatorId là bắt buộc',
@@ -678,7 +692,8 @@ registerMockRoutes([
         : 'RESOURCE_ASSIGNING'
       return ok(toMissionDto(mission), 'Đã gán Operator thành công')
     },
-  },
+    }),
+  ),
   {
     method: 'POST',
     path: '/api/missions/:id/assignments/:aid/release',

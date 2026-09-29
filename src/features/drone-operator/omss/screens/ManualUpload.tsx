@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
 import { operatorMediaApi, type LocalMedia } from '../../../media/api/operatorMediaApi'
 import { PcBackupPicker } from '../../../media/components/PcBackupPicker'
+
+import { manualUploadMessages } from './ManualUpload.messages'
 
 interface Props {
   missionId: string
@@ -9,6 +12,7 @@ interface Props {
 }
 
 export default function ManualUpload({ missionId, onComplete, onBack }: Props) {
+  const { t } = useI18n(manualUploadMessages)
   const [items, setItems] = useState<LocalMedia[]>([])
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -25,9 +29,9 @@ export default function ManualUpload({ missionId, onComplete, onBack }: Props) {
         ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING', 'VALIDATING'].includes(statuses[index]?.status ?? item.status)))
       setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Cannot load manual upload tasks')
+      setError(cause instanceof Error ? cause.message : t.loadFailed)
     }
-  }, [missionId])
+  }, [missionId, t])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -37,7 +41,7 @@ export default function ManualUpload({ missionId, onComplete, onBack }: Props) {
       await operatorMediaApi.upload(item, true)
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Manual upload failed')
+      setError(cause instanceof Error ? cause.message : t.retryFailed)
     } finally {
       setBusy(null)
     }
@@ -50,7 +54,7 @@ export default function ManualUpload({ missionId, onComplete, onBack }: Props) {
       await operatorMediaApi.uploadPcBackup(item, file)
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'PC backup upload failed')
+      setError(cause instanceof Error ? cause.message : t.pcBackupFailed)
     } finally {
       setBusy(null)
     }
@@ -58,21 +62,21 @@ export default function ManualUpload({ missionId, onComplete, onBack }: Props) {
 
   return (
     <section className="fade-in" style={{ flex: 1, padding: '32px 36px', overflowY: 'auto' }}>
-      <h1>Manual media upload</h1>
-      <p>These files require manual recovery. Retry the Flight Controller original or select an exact backup from PC.</p>
+      <h1>{t.title}</h1>
+      <p>{t.description}</p>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => void refresh()}>Refresh</button>
-        <button onClick={onBack}>Back to review</button>
-        <button onClick={onComplete}>Back to missions</button>
+        <button onClick={() => void refresh()}>{t.refresh}</button>
+        <button onClick={onBack}>{t.backToReview}</button>
+        <button onClick={onComplete}>{t.backToMissions}</button>
       </div>
       {error && <p role="alert" style={{ color: 'var(--red-text)' }}>{error}</p>}
-      {items.length === 0 && <p>No manual upload task for this mission.</p>}
+      {items.length === 0 && <p>{t.empty}</p>}
       {items.map((item) => (
         <article key={item.localMediaId} style={{ padding: 16, marginTop: 12, border: '1px solid var(--border)', borderRadius: 8 }}>
           <strong>{item.fileName}</strong>
-          <p>{item.mediaType} · {(item.fileSize / 1024 / 1024).toFixed(2)} MB · local ID {item.localMediaId}</p>
+          <p>{item.mediaType} · {(item.fileSize / 1024 / 1024).toFixed(2)} MB · {t.localId} {item.localMediaId}</p>
           <button disabled={!!busy || item.localAvailable === false || item.status === 'VALIDATING'} onClick={() => void retry(item)}>
-            {busy === item.localMediaId ? 'Uploading…' : 'Start manual retry'}
+            {busy === item.localMediaId ? t.uploading : t.startRetry}
           </button>
           {item.reason && <p>{item.reason}</p>}
           {item.status !== 'VALIDATING' && <PcBackupPicker contentType={item.contentType} disabled={!!busy}

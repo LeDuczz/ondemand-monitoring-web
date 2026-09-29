@@ -3,6 +3,7 @@
 // fetched, so it is not modeled as a mock endpoint per evd/AGENT-RULES.md
 // rule 3/5 (mock data is only for resources the app actually fetches).
 import { defineMessages } from '../../shared/i18n'
+import { enText, overlay } from './content.en'
 import type {
   FaqItem,
   FeasibilityCheck,
@@ -336,7 +337,46 @@ const _viContent = {
   navLinks,
 }
 
+const merge = <T extends object>(base: T, text: Partial<T>): T => ({
+  ...base,
+  ...text,
+})
+
+const _enContent: typeof _viContent = {
+  ..._viContent,
+  heroChip: enText.heroChip,
+  heroTitleLines: enText.heroTitleLines,
+  heroLede: enText.heroLede,
+  heroChecklist: enText.heroChecklist,
+  heroAiCard: merge(heroAiCard, enText.heroAiCard),
+  heroMissionCard: merge(heroMissionCard, enText.heroMissionCard),
+  heroStats: overlay(heroStats, enText.heroStats),
+  workflowSection: enText.workflowSection,
+  workflowSteps: overlay(workflowSteps, enText.workflowSteps),
+  aiFeatureSection: enText.aiFeatureSection,
+  aiFeatureHighlights: overlay(aiFeatureHighlights, enText.aiFeatureHighlights),
+  aiResultPanel: merge(aiResultPanel, enText.aiResultPanel),
+  aiFeasibilityChecks: overlay(aiFeasibilityChecks, enText.aiFeasibilityChecks),
+  liveFeatureSection: enText.liveFeatureSection,
+  liveFeatureHighlights: overlay(
+    liveFeatureHighlights,
+    enText.liveFeatureHighlights,
+  ),
+  livePanel: merge(livePanel, enText.livePanel),
+  industriesSection: enText.industriesSection,
+  industries: overlay(industries, enText.industries),
+  faqSection: enText.faqSection,
+  faqItems: enText.faqItems,
+  ctaSection: enText.ctaSection,
+  footerTagline: enText.footerTagline,
+  footerLinkGroups: overlay(footerLinkGroups, enText.footerLinkGroups),
+  footerCopyright: enText.footerCopyright,
+  footerLegal: enText.footerLegal,
+  footerBrandDescription: enText.footerBrandDescription,
+  navLinks: overlay(navLinks, enText.navLinks),
+}
+
 export const landingMessages = defineMessages({
   vi: _viContent,
-  en: _viContent,
+  en: _enContent,
 })

@@ -13,11 +13,11 @@ import { accountHeaderMessages } from './AccountHeader.messages'
 export function AccountHeader({
   account,
   back,
-  onEditName,
+  onEdit,
 }: {
   account: AdminAccountDetail
   back?: ReactNode
-  onEditName: () => void
+  onEdit: () => void
 }) {
   const { t, lang } = useI18n(accountHeaderMessages)
   const statusMeta = getAccountStatusMeta(account.status, lang)
@@ -35,9 +35,9 @@ export function AccountHeader({
             <button
               type="button"
               className="odm-btn odm-btn-sm"
-              onClick={onEditName}
+              onClick={onEdit}
             >
-              {t.changeName}
+              {t.edit}
             </button>
           </>
         }

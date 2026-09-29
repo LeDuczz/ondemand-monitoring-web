@@ -5,12 +5,9 @@
 //   PATCH /api/admin/users/:id/status [BE shape]
 //   POST  /api/admin/accounts         [BE shape]
 //   GET/PATCH /api/users/me           [BE shape]
-//   PATCH /api/admin/accounts/:id     [mock only]
-//   POST  /api/admin/accounts/:id/reset-password [mock only]
 import type { UserRole } from '../../features/auth/types'
 import type {
   AccountStatus,
-  AdminAccountDetail,
   AdminAccountItem,
   AdminDashboard,
 } from '../../features/admin/types/accounts'
@@ -34,15 +31,6 @@ function toItem(a: SeedAccount): AdminAccountItem {
     emailVerified: a.emailVerified,
     createdAt: a.createdAt,
     lastLoginAt: a.lastLoginAt,
-    certExpiry: (a as unknown as { certExpiry?: string | null }).certExpiry ?? null,
-  }
-}
-
-function toDetail(a: SeedAccount): AdminAccountDetail {
-  return {
-    ...toItem(a),
-    linkedProviders: a.linkedProviders,
-    avatarUrl: a.avatarUrl,
   }
 }
 
@@ -260,31 +248,6 @@ registerMockRoutes([
         role: me.role,
         ...toCustomerProfile(me),
       })
-    },
-  },
-
-  // ADM-04 update account
-  {
-    method: 'PATCH',
-    path: '/api/admin/accounts/:id',
-    handler: ({ params, body }) => {
-      const acc = accounts.find((a) => a.id === params.id)
-      if (!acc) return fail(404, 'NOT_FOUND', 'Không tìm thấy tài khoản.')
-      const payload = body as { fullName?: string; role?: string }
-      if (payload.fullName !== undefined) acc.fullName = payload.fullName.trim()
-      if (payload.role !== undefined) acc.role = payload.role
-      return ok(toDetail(acc))
-    },
-  },
-
-  // Reset password (sends email, returns success)
-  {
-    method: 'POST',
-    path: '/api/admin/accounts/:id/reset-password',
-    handler: ({ params }) => {
-      const acc = accounts.find((a) => a.id === params.id)
-      if (!acc) return fail(404, 'NOT_FOUND', 'Không tìm thấy tài khoản.')
-      return ok({ sent: true, email: acc.email })
     },
   },
 ])

@@ -1,6 +1,6 @@
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import {
   resetHttpTransport,
@@ -36,5 +36,14 @@ describe('AccountDetailPage', () => {
     )
     act(() => setLanguage('en'))
     expect(screen.getByText('Account information')).toBeTruthy()
+  })
+
+  it('opens the shared user modal from the edit button', async () => {
+    render(<AccountDetailPage accountId="mock-admin-truong" />)
+    fireEvent.click(await screen.findByText('Chỉnh sửa'))
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+    expect(
+      (await screen.findAllByText('long.truong@odms.vn')).length,
+    ).toBeGreaterThan(0)
   })
 })

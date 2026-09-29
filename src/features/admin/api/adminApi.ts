@@ -1,9 +1,5 @@
 import { apiRequest } from '../../../shared/api/httpClient'
-import type {
-  AdminAccountDetail,
-  AdminDashboard,
-  UpdateAccountPayload,
-} from '../types/accounts'
+import type { AdminDashboard } from '../types/accounts'
 import type {
   AdminStation,
   CreateStationPayload,
@@ -33,21 +29,7 @@ export const adminApi = {
     apiRequest<AdminDashboard>('/api/admin/dashboard', { signal }),
 
   // Accounts
-  // Account list/detail/create/status use `adminUsersApi` (real BE endpoints).
-  // TODO(BE): endpoint not available
-  updateAccount: (accountId: string, payload: UpdateAccountPayload) =>
-    apiRequest<AdminAccountDetail>(`/api/admin/accounts/${accountId}`, {
-      method: 'PATCH',
-      body: payload,
-    }),
-
-  // TODO(BE): endpoint not available
-  resetPassword: (accountId: string) =>
-    apiRequest<{ sent: boolean; email: string }>(
-      `/api/admin/accounts/${accountId}/reset-password`,
-      { method: 'POST' },
-    ),
-
+  // Account list/detail/create/status/update use `adminUsersApi` (real BE endpoints).
   // Catalog — Stations
   listStations: (signal?: AbortSignal) =>
     apiRequest<{ items: AdminStation[] }>('/api/admin/catalog/stations', {

@@ -26,8 +26,6 @@ export function mapUserSummary(
     emailVerified: dto.emailVerified,
     createdAt: dto.createdAt,
     lastLoginAt: dto.lastLoginAt ?? null,
-    // TODO(BE): certificate expiry is not provided by the backend.
-    certExpiry: null,
   }
 }
 

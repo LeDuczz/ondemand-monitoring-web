@@ -11,7 +11,6 @@ export type AdminAccountItem = {
   emailVerified: boolean
   createdAt: string
   lastLoginAt: string | null
-  certExpiry?: string | null
 }
 
 export type AdminAccountDetail = AdminAccountItem & {
@@ -26,16 +25,4 @@ export type AdminDashboard = {
   inactiveAccounts: number
   byRole: Record<string, number>
   recentAccounts: AdminAccountItem[]
-}
-
-export type CreateAdminAccountPayload = {
-  fullName: string
-  email: string
-  role: Exclude<UserRole, 'CUSTOMER' | 'ADMIN'>
-}
-
-export type UpdateAccountPayload = {
-  fullName?: string
-  role?: UserRole
-  reason?: string
 }

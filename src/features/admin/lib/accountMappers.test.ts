@@ -28,7 +28,6 @@ describe('accountMappers', () => {
       emailVerified: false,
       createdAt: '2026-01-01T00:00:00Z',
       lastLoginAt: null,
-      certExpiry: null,
     })
   })
 

@@ -173,31 +173,3 @@ describe('POST /api/admin/accounts', () => {
     expect(found.emailVerified).toBe(false)
   })
 })
-
-describe('PATCH /api/admin/accounts/:id', () => {
-  it('updates fullName', async () => {
-    const listRes = await call('GET', '/api/admin/users')
-    const id = listRes.payload.data.items[0].id
-    const { status, payload } = await call('PATCH', `/api/admin/accounts/${id}`, {
-      fullName: 'Tên Mới Nhất',
-    })
-    expect(status).toBe(200)
-    expect(payload.data.fullName).toBe('Tên Mới Nhất')
-  })
-
-  it('updates role', async () => {
-    const listRes = await call('GET', '/api/admin/users?role=STAFF')
-    const id = listRes.payload.data.items[0].id
-    const { status, payload } = await call('PATCH', `/api/admin/accounts/${id}`, {
-      role: 'DRONE_OPERATOR',
-    })
-    expect(status).toBe(200)
-    expect(payload.data.role).toBe('DRONE_OPERATOR')
-  })
-
-  it('returns 404 for unknown id', async () => {
-    const { status } = await call('PATCH', '/api/admin/accounts/nope', { fullName: 'X' })
-    expect(status).toBe(404)
-  })
-})
-

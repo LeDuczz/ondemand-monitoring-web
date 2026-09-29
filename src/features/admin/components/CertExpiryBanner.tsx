@@ -23,22 +23,8 @@ export function CertExpiryBanner({ accounts }: Props) {
     .join(', ')
 
   return (
-    <div
-      role="alert"
-      style={{
-        background: 'var(--yellow-solid)',
-        color: '#7a4f00',
-        border: '1px solid #d97706',
-        borderRadius: 8,
-        padding: '10px 16px',
-        marginBottom: 16,
-        fontSize: 13,
-        display: 'flex',
-        gap: 8,
-        alignItems: 'flex-start',
-      }}
-    >
-      <span style={{ fontWeight: 700, flexShrink: 0 }}>{t.warning}</span>
+    <div role="alert" className="adm-alert is-warning">
+      <strong>{t.warning}</strong>
       <span>
         {t.summary(expiring.length)} {names}
       </span>

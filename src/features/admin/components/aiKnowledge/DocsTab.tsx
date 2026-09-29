@@ -11,6 +11,7 @@ import { adminApi } from '../../api/adminApi'
 import type { DocStatus } from '../../types/aiKnowledge'
 import type { StatusTone } from '../../../../shared/types/domain'
 import { docsTabMessages } from './DocsTab.messages'
+import { TableCard } from '../common/TableCard'
 
 const DOC_STATUS_TONE: Record<DocStatus, StatusTone> = {
   INDEXED: 'green',
@@ -56,14 +57,7 @@ export function DocsTab() {
         <ErrorState error={error} onRetry={reload} />
       )}
       {!loading && data && (
-        <div
-          style={{
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
-            borderRadius: 10,
-            overflow: 'hidden',
-          }}
-        >
+        <TableCard>
           <table className="odm-adm-table">
             <thead>
               <tr>
@@ -116,7 +110,7 @@ export function DocsTab() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableCard>
       )}
     </div>
   )

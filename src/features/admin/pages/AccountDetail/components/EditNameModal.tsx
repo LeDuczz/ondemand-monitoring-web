@@ -38,56 +38,34 @@ export function EditNameModal({
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-      }}
-      onClick={onClose}
-    >
+    <div className="odm-dialog-backdrop" onClick={onClose}>
       <div
-        style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--bd)',
-          borderRadius: 12,
-          padding: 24,
-          width: 360,
-          maxWidth: '90vw',
-        }}
+        className="odm-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.editNameTitle}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>{t.editNameTitle}</h3>
-        <input
-          className="odm-input"
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value)
-            setErr('')
-          }}
-          autoFocus
-          style={{ marginBottom: 4 }}
-        />
-        {err && (
-          <div
-            style={{ fontSize: 12, color: 'var(--red-solid)', marginBottom: 8 }}
-          >
-            {err}
-          </div>
-        )}
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            marginTop: 12,
-            justifyContent: 'flex-end',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div className="odm-dialog-header">
+          <h2 className="odm-dialog-title">{t.editNameTitle}</h2>
+        </div>
+        <div className="odm-dialog-body">
+          <input
+            className="odm-inp"
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value)
+              setErr('')
+            }}
+            autoFocus
+          />
+          {err && (
+            <div className="adm-alert is-danger" role="alert">
+              {err}
+            </div>
+          )}
+        </div>
+        <div className="odm-dialog-footer">
           <button
             type="button"
             className="odm-btn odm-btn-gh"

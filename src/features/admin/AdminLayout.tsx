@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
-import { Icon } from '../../shared/components/Icon'
+import { Icon, type IconName } from '../../shared/components/Icon'
 import { LanguageToggle } from '../../shared/components/LanguageToggle'
 import { useI18n } from '../../shared/i18n'
 import { adminHref, type AdminRoute, type AdminScreen } from './routes'
@@ -11,15 +11,15 @@ import './admin.css'
 
 type NavItemKey = keyof typeof adminLayoutMessages.vi.navItems
 
-type NavItem = { key: NavItemKey; icon: string; route: AdminRoute }
+type NavItem = { key: NavItemKey; icon: IconName; route: AdminRoute }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'accounts', icon: '◉', route: { screen: 'accounts' } },
-  { key: 'roles', icon: '◈', route: { screen: 'roles' } },
-  { key: 'catalog', icon: '▦', route: { screen: 'catalog' } },
-  { key: 'operatingConfig', icon: '⚙', route: { screen: 'operatingConfig' } },
-  { key: 'aiKnowledge', icon: '◆', route: { screen: 'aiKnowledge' } },
-  { key: 'auditLog', icon: '◎', route: { screen: 'auditLog' } },
+  { key: 'accounts', icon: 'users', route: { screen: 'accounts' } },
+  { key: 'roles', icon: 'shield', route: { screen: 'roles' } },
+  { key: 'catalog', icon: 'clipboard', route: { screen: 'catalog' } },
+  { key: 'operatingConfig', icon: 'cpu', route: { screen: 'operatingConfig' } },
+  { key: 'aiKnowledge', icon: 'sparkle', route: { screen: 'aiKnowledge' } },
+  { key: 'auditLog', icon: 'file-text', route: { screen: 'auditLog' } },
 ]
 
 // Which nav item highlights as active for each parsed screen.
@@ -102,12 +102,12 @@ export function AdminLayout({
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
                 >
-                  <span
+                  <Icon
+                    name={item.icon}
+                    width={18}
+                    height={18}
                     aria-hidden="true"
-                    style={{ minWidth: 16, textAlign: 'center' }}
-                  >
-                    {item.icon}
-                  </span>
+                  />
                   <span>{t.navItems[item.key]}</span>
                   {badge ? <span className="odm-adm-navc">{badge}</span> : null}
                 </a>
@@ -182,7 +182,9 @@ export function AdminLayout({
               <span className="odm-adm-bell-dot" aria-hidden="true" />
             </button>
           </header>
-          <main className="odm-adm-content">{children}</main>
+          <main className="odm-adm-content">
+            <div className="odm-adm-content-inner">{children}</div>
+          </main>
         </div>
       </div>
     </div>

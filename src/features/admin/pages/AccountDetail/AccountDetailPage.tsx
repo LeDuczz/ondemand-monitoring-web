@@ -69,7 +69,7 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
   if (!display) return <EmptyState title={t.notFound} />
 
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div className="adm-narrow">
       {editingName && (
         <EditNameModal
           account={display}
@@ -81,17 +81,11 @@ export function AccountDetailPage({ accountId }: { accountId: string }) {
         />
       )}
 
-      <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--tx3)' }}>
-        <a
-          href={adminHref({ screen: 'accounts' })}
-          style={{ color: 'var(--tx3)', textDecoration: 'none' }}
-        >
-          {t.backToAccounts}
-        </a>
-      </div>
-
       <AccountHeader
         account={display}
+        back={
+          <a href={adminHref({ screen: 'accounts' })}>{t.backToAccounts}</a>
+        }
         onEditName={() => setEditingName(true)}
       />
       <AccountInfoCard account={display} />

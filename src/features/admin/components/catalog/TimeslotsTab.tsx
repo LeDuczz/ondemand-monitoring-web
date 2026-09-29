@@ -10,6 +10,7 @@ import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { StatusTone } from '../../../../shared/types/domain'
 import { timeslotsTabMessages } from './TimeslotsTab.messages'
+import { TableCard } from '../common/TableCard'
 
 function timeslotStatus(
   effectiveFrom: string,
@@ -214,15 +215,15 @@ export function TimeslotsTab({ createSignal }: { createSignal: number }) {
         <ErrorState error={fetchError} onRetry={reload} />
       )}
       {!fetching && data && (
-        <div className="odm-card" style={{ overflow: 'hidden' }}>
+        <TableCard>
           <table className="odm-adm-table">
             <thead>
               <tr>
-                <th style={{ width: 150 }}>code</th>
-                <th style={{ width: 130 }}>{t.timeslot}</th>
-                <th style={{ width: 90 }}>version</th>
-                <th style={{ width: 130 }}>effective_from</th>
-                <th style={{ width: 130 }}>effective_to</th>
+                <th>code</th>
+                <th>{t.timeslot}</th>
+                <th>version</th>
+                <th>effective_from</th>
+                <th>effective_to</th>
                 <th>{t.status}</th>
               </tr>
             </thead>
@@ -250,7 +251,7 @@ export function TimeslotsTab({ createSignal }: { createSignal: number }) {
               })}
             </tbody>
           </table>
-        </div>
+        </TableCard>
       )}
     </div>
   )

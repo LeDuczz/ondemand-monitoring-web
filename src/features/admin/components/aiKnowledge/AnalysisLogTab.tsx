@@ -10,6 +10,7 @@ import { fmtDateTime } from '../../lib/accountStatus'
 import type { AnalysisVerdict } from '../../types/aiKnowledge'
 import type { StatusTone } from '../../../../shared/types/domain'
 import { analysisLogTabMessages } from './AnalysisLogTab.messages'
+import { TableCard } from '../common/TableCard'
 
 const VERDICT_TONE: Record<AnalysisVerdict, StatusTone> = {
   FEASIBLE: 'green',
@@ -30,14 +31,7 @@ export function AnalysisLogTab() {
   if (!data) return null
 
   return (
-    <div
-      style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
-        borderRadius: 10,
-        overflow: 'hidden',
-      }}
-    >
+    <TableCard>
       <table className="odm-adm-table">
         <thead>
           <tr>
@@ -104,6 +98,6 @@ export function AnalysisLogTab() {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableCard>
   )
 }

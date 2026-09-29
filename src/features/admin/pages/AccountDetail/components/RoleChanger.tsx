@@ -1,4 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
+import { Card } from '../../../components/common/Card'
 import { getRoleLabel } from '../../../lib/accountStatus'
 import type { UserRole } from '../../../../auth/types'
 import { roleChangerMessages } from './RoleChanger.messages'
@@ -23,25 +24,13 @@ export function RoleChanger({
   const { t, lang } = useI18n(roleChangerMessages)
 
   return (
-    <div
-      style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
-        borderRadius: 10,
-        padding: '16px 20px',
-        marginBottom: 16,
-      }}
-    >
-      <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
-        {t.changeRole}
-      </h2>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    <Card title={t.changeRole}>
+      <div className="adm-row">
         {EMPLOYEE_ROLES.map((r) => (
           <button
             key={r}
             type="button"
-            className={`odm-btn ${currentRole === r ? 'odm-btn-p' : 'odm-btn-gh'}`}
-            style={{ whiteSpace: 'normal', overflowWrap: 'anywhere' }}
+            className={`odm-btn ${currentRole === r ? 'odm-btn-p' : ''}`}
             disabled={disabled || currentRole === r}
             onClick={() => onChange(r)}
           >
@@ -49,6 +38,6 @@ export function RoleChanger({
           </button>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

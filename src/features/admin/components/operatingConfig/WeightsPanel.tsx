@@ -9,6 +9,7 @@ import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { DispatchWeight } from '../../types/operatingConfig'
 import { weightsPanelMessages } from './WeightsPanel.messages'
+import { Card } from '../common/Card'
 
 function WeightGroup({
   group,
@@ -61,17 +62,9 @@ function WeightGroup({
   }
 
   return (
-    <div
-      style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
-        borderRadius: 10,
-        padding: 16,
-      }}
+    <Card
+      title={t.groupTitle(label, group === 'DRONE' ? t.droneGroup : t.pilotGroup)}
     >
-      <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600 }}>
-        {t.groupTitle(label, group === 'DRONE' ? t.droneGroup : t.pilotGroup)}
-      </h3>
       {items.map((w) => (
         <div
           key={w.key}
@@ -151,7 +144,7 @@ function WeightGroup({
           {error}
         </p>
       )}
-    </div>
+    </Card>
   )
 }
 

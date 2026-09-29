@@ -11,6 +11,7 @@ import { adminApi } from '../../api/adminApi'
 import type { RuleSeverity, RuleCategory } from '../../types/aiKnowledge'
 import type { StatusTone } from '../../../../shared/types/domain'
 import { rulesTabMessages } from './RulesTab.messages'
+import { TableCard } from '../common/TableCard'
 
 const CATEGORY_TONE: Record<RuleCategory, StatusTone> = {
   SCHEDULE: 'blue',
@@ -56,14 +57,7 @@ export function RulesTab() {
   if (!data) return null
 
   return (
-    <div
-      style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
-        borderRadius: 10,
-        overflow: 'hidden',
-      }}
-    >
+    <TableCard>
       <table className="odm-adm-table">
         <thead>
           <tr>
@@ -162,6 +156,6 @@ export function RulesTab() {
           })}
         </tbody>
       </table>
-    </div>
+    </TableCard>
   )
 }

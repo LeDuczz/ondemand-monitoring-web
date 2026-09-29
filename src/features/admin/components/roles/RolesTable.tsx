@@ -2,6 +2,7 @@ import { AdminToggle } from '../common/AdminToggle'
 import { useI18n } from '../../../../shared/i18n'
 import type { AdminRole } from '../../types/roles'
 import { rolesTableMessages } from './RolesTable.messages'
+import { TableCard } from '../common/TableCard'
 
 const LockIcon = () => (
   <svg
@@ -37,16 +38,16 @@ export function RolesTable({
 
   return (
     <>
-      <div className="odm-card" style={{ overflow: 'hidden' }}>
+      <TableCard>
         <table className="odm-adm-table">
           <thead>
             <tr>
-              <th style={{ width: 210 }}>{t.role}</th>
+              <th>{t.role}</th>
               <th>{t.description}</th>
-              <th style={{ width: 120 }}>{t.type}</th>
-              <th style={{ width: 90 }}>is_active</th>
-              <th style={{ width: 80, textAlign: 'right' }}>{t.userCount}</th>
-              <th style={{ width: 100 }} />
+              <th>{t.type}</th>
+              <th>is_active</th>
+              <th className="adm-text-right">{t.userCount}</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -167,7 +168,7 @@ export function RolesTable({
             ))}
           </tbody>
         </table>
-      </div>
+      </TableCard>
 
       {systemCodes.length > 0 && (
         <div className="odm-adm-banner">

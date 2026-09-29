@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
 
 import {
-  EmptyState,
   ErrorState,
   LoadingState,
 } from '../../../shared/components/odm/StateView'
-import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
 import { adminUsersApi } from '../api/adminUsersApi'
@@ -27,6 +25,10 @@ import {
   type RoleFilter,
   type StatusFilter,
 } from '../components/AccountsFilters'
+import { EmptyState } from '../components/common/EmptyState'
+import { PageHeader } from '../components/common/PageHeader'
+import { StatusBadge, toAdminTone } from '../components/common/StatusBadge'
+import { TableCard } from '../components/common/TableCard'
 import { CertExpiryBanner } from '../components/CertExpiryBanner'
 import { ChangeRoleDialog } from '../components/ChangeRoleDialog'
 import { LockAccountDialog } from '../components/LockAccountDialog'
@@ -79,38 +81,22 @@ export function AccountsPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 12,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 20,
-              fontWeight: 700,
-              lineHeight: 1.3,
-            }}
+      <PageHeader
+        title={t.title}
+        subtitle={
+          data
+            ? accountsSubtitle(computeAccountCounts(data.items), lang)
+            : undefined
+        }
+        actions={
+          <a
+            className="odm-btn odm-btn-p"
+            href={adminHref({ screen: 'createAccount' })}
           >
-            {t.title}
-          </h1>
-          {data && (
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-              {accountsSubtitle(computeAccountCounts(data.items), lang)}
-            </p>
-          )}
-        </div>
-        <a
-          className="odm-btn odm-btn-p"
-          href={adminHref({ screen: 'createAccount' })}
-        >
-          {t.createInternal}
-        </a>
-      </div>
+            {t.createInternal}
+          </a>
+        }
+      />
 
       {data && <CertExpiryBanner accounts={data.items} />}
 
@@ -145,13 +131,8 @@ export function AccountsPage() {
       )}
 
       {!loading && data && filtered.length > 0 && (
-        <div
-          style={{
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
-            borderRadius: 10,
-            overflow: 'hidden',
-          }}
+        <TableCard
+          footer={pageRangeLabel(filtered.length, filtered.length, lang)}
         >
           <table className="odm-adm-table">
             <thead>
@@ -161,7 +142,7 @@ export function AccountsPage() {
                 <th>{t.columnStatus}</th>
                 <th>{t.columnCertExpiry}</th>
                 <th>{t.columnLastLogin}</th>
-                <th style={{ textAlign: 'right' }}>{t.columnActions}</th>
+                <th className="adm-text-right">{t.columnActions}</th>
               </tr>
             </thead>
             <tbody>
@@ -173,30 +154,8 @@ export function AccountsPage() {
                 return (
                   <tr key={acc.id}>
                     <td>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            background: 'var(--sf3)',
-                            border: '1px solid var(--bd)',
-                            color: 'var(--tx2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            flexShrink: 0,
-                          }}
-                          aria-hidden="true"
-                        >
+                      <div className="adm-cell-user">
+                        <span className="odm-adm-avatar" aria-hidden="true">
                           {acc.fullName
                             .split(' ')
                             .slice(-2)
@@ -206,22 +165,15 @@ export function AccountsPage() {
                         </span>
                         <div>
                           <a
+                            className="adm-list-link"
                             href={adminHref({
                               screen: 'accountDetail',
                               accountId: acc.id,
                             })}
-                            style={{
-                              color: 'var(--tx)',
-                              textDecoration: 'none',
-                              fontWeight: 500,
-                              fontSize: 13,
-                            }}
                           >
                             {acc.fullName}
                           </a>
-                          <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                            {acc.email}
-                          </div>
+                          <div className="adm-cell-email">{acc.email}</div>
                         </div>
                       </div>
                     </td>
@@ -229,7 +181,7 @@ export function AccountsPage() {
                       <RoleCodeBadge role={acc.role} />
                     </td>
                     <td>
-                      <StatusBadge tone={statusMeta.tone}>
+                      <StatusBadge tone={toAdminTone(statusMeta.tone)}>
                         {statusMeta.label}
                       </StatusBadge>
                       {!acc.emailVerified && (
@@ -238,12 +190,7 @@ export function AccountsPage() {
                         </div>
                       )}
                     </td>
-                    <td
-                      style={{
-                        fontSize: 12,
-                        color: acc.certExpiry ? 'var(--tx2)' : 'var(--tx3)',
-                      }}
-                    >
+                    <td className={acc.certExpiry ? undefined : 'adm-muted'}>
                       {acc.certExpiry ? (
                         <>
                           {fmtDate(acc.certExpiry, lang)}
@@ -257,13 +204,7 @@ export function AccountsPage() {
                         '—'
                       )}
                     </td>
-                    <td
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 11,
-                        color: 'var(--tx3)',
-                      }}
-                    >
+                    <td className="adm-cell-mono">
                       {acc.lastLoginAt
                         ? fmtDateTime(acc.lastLoginAt, lang)
                         : '—'}
@@ -285,17 +226,7 @@ export function AccountsPage() {
               })}
             </tbody>
           </table>
-          <div
-            style={{
-              padding: '10px 14px',
-              fontSize: 12,
-              color: 'var(--tx3)',
-              borderTop: '1px solid var(--bd)',
-            }}
-          >
-            {pageRangeLabel(filtered.length, filtered.length, lang)}
-          </div>
-        </div>
+        </TableCard>
       )}
 
       {dialog?.type === 'changeRole' && (

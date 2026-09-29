@@ -5,6 +5,8 @@ import { getRoleLabel } from '../lib/accountStatus'
 import { useI18n } from '../../../shared/i18n'
 import { adminHref } from '../routes'
 import { createAccountPageMessages } from './CreateAccountPage.messages'
+import { Card } from '../components/common/Card'
+import { PageHeader } from '../components/common/PageHeader'
 
 type EmployeeRole = Exclude<ManagedUserRole, 'CUSTOMER' | 'ADMIN'>
 
@@ -98,52 +100,22 @@ export function CreateAccountPage() {
   }
 
   return (
-    <div style={{ maxWidth: 640 }}>
-      <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--tx3)' }}>
-        <a
-          href={adminHref({ screen: 'accounts' })}
-          style={{ color: 'var(--tx3)', textDecoration: 'none' }}
-        >
-          {t.backToAccounts}
-        </a>
-      </div>
-
-      <h1 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 700 }}>
-        {t.pageTitle}
-      </h1>
-      <p style={{ margin: '0 0 24px', color: 'var(--tx3)', fontSize: 13 }}>
-        {t.pageSubtitle}
-      </p>
+    <div className="adm-narrow">
+      <PageHeader
+        back={<a href={adminHref({ screen: 'accounts' })}>{t.backToAccounts}</a>}
+        title={t.pageTitle}
+        subtitle={t.pageSubtitle}
+      />
 
       <form onSubmit={handleSubmit} noValidate>
-        <div
-          style={{
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
-            borderRadius: 10,
-            padding: '20px 24px',
-            marginBottom: 16,
-          }}
-        >
-          <h2 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600 }}>
-            {t.personalInfo}
-          </h2>
-
-          <div style={{ marginBottom: 14 }}>
-            <label
-              htmlFor="adm-fullname"
-              style={{
-                display: 'block',
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 4,
-              }}
-            >
-              {t.fullName} <span style={{ color: 'var(--red-solid)' }}>*</span>
+        <Card title={t.personalInfo}>
+          <div className="adm-form-field">
+            <label htmlFor="adm-fullname" className="adm-label">
+              {t.fullName} <span className="adm-required">*</span>
             </label>
             <input
               id="adm-fullname"
-              className="odm-input"
+              className="odm-inp"
               type="text"
               placeholder={t.fullNamePlaceholder}
               value={fullName}
@@ -154,33 +126,17 @@ export function CreateAccountPage() {
               aria-invalid={!!errors.fullName}
             />
             {errors.fullName && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: 'var(--red-solid)',
-                  marginTop: 4,
-                }}
-              >
-                {errors.fullName}
-              </div>
+              <div className="adm-field-error">{errors.fullName}</div>
             )}
           </div>
 
-          <div>
-            <label
-              htmlFor="adm-email"
-              style={{
-                display: 'block',
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 4,
-              }}
-            >
-              {t.workEmail} <span style={{ color: 'var(--red-solid)' }}>*</span>
+          <div className="adm-form-field">
+            <label htmlFor="adm-email" className="adm-label">
+              {t.workEmail} <span className="adm-required">*</span>
             </label>
             <input
               id="adm-email"
-              className="odm-input"
+              className="odm-inp"
               type="email"
               placeholder="name@company.vn"
               value={email}
@@ -191,110 +147,40 @@ export function CreateAccountPage() {
               aria-invalid={!!errors.email}
             />
             {errors.email && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: 'var(--red-solid)',
-                  marginTop: 4,
-                }}
-              >
-                {errors.email}
-              </div>
+              <div className="adm-field-error">{errors.email}</div>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Role selection */}
-        <div
-          style={{
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
-            borderRadius: 10,
-            padding: '20px 24px',
-            marginBottom: 16,
-          }}
-        >
-          <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>
-            {t.role}
-          </h2>
-          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--tx3)' }}>
-            {t.roleHint}
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <Card title={t.role}>
+          <p className="adm-card-hint">{t.roleHint}</p>
+          <div className="adm-choice-list">
             {EMPLOYEE_ROLES.map((r) => (
               <button
                 key={r.value}
                 type="button"
                 onClick={() => setRole(r.value)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 10,
-                  padding: '10px 14px',
-                  border: `2px solid ${role === r.value ? 'var(--ink)' : 'var(--bd)'}`,
-                  borderRadius: 8,
-                  background: role === r.value ? 'var(--sf2)' : 'transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%',
-                }}
+                className={`adm-choice${role === r.value ? ' is-selected' : ''}`}
                 aria-pressed={role === r.value}
               >
-                <span
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    border: `2px solid ${role === r.value ? 'var(--ink)' : 'var(--bd)'}`,
-                    marginTop: 2,
-                    flex: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {role === r.value && (
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: 'var(--ink)',
-                      }}
-                    />
-                  )}
-                </span>
-                <span>
-                  <strong style={{ display: 'block', fontSize: 13 }}>
-                    {getRoleLabel(r.value, lang)}
-                  </strong>
-                  <small style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                    {r.description}
-                  </small>
+                <span className="adm-choice-radio" aria-hidden="true" />
+                <span className="adm-choice-text">
+                  <strong>{getRoleLabel(r.value, lang)}</strong>
+                  <small>{r.description}</small>
                 </span>
               </button>
             ))}
           </div>
-        </div>
+        </Card>
 
         {submitError && (
-          <div
-            role="alert"
-            style={{
-              background: 'var(--red-muted, #fee2e2)',
-              border: '1px solid var(--red-solid)',
-              borderRadius: 8,
-              padding: '10px 14px',
-              marginBottom: 14,
-              fontSize: 13,
-              color: 'var(--red-solid)',
-            }}
-          >
+          <div role="alert" className="adm-alert is-danger">
             {submitError}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="adm-row">
           <button
             type="submit"
             className="odm-btn odm-btn-p"

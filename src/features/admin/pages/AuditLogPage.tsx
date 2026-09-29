@@ -12,6 +12,8 @@ import { fmtDateTime } from '../lib/accountStatus'
 import type { AuditAction, AuditEntry } from '../types/auditLog'
 import type { StatusTone } from '../../../shared/types/domain'
 import { auditLogPageMessages } from './AuditLogPage.messages'
+import { PageHeader } from '../components/common/PageHeader'
+import { TableCard } from '../components/common/TableCard'
 
 const ACTION_TONE: Record<AuditAction, StatusTone> = {
   CREATE: 'green',
@@ -42,6 +44,7 @@ function DiffPanel({
         top: 0,
         bottom: 0,
         width: 420,
+        maxWidth: '100vw',
         background: 'var(--sf)',
         borderLeft: '1px solid var(--bd)',
         zIndex: 300,
@@ -184,30 +187,15 @@ export function AuditLogPage() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
-            {t.title}
-          </h1>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-            {t.subtitle}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="odm-btn odm-btn-gh"
-          onClick={handleExport}
-        >
-          {t.exportCsv}
-        </button>
-      </div>
+      <PageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+        actions={
+          <button type="button" className="odm-btn" onClick={handleExport}>
+            {t.exportCsv}
+          </button>
+        }
+      />
 
       <div
         style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}
@@ -219,7 +207,7 @@ export function AuditLogPage() {
             setActionFilter(e.target.value)
             setPage(1)
           }}
-          style={{ width: 160 }}
+          style={{ flex: '1 1 140px', minWidth: 0, maxWidth: 200 }}
         >
           <option value="">{t.allActions}</option>
           <option value="CREATE">{t.action.CREATE}</option>
@@ -236,7 +224,7 @@ export function AuditLogPage() {
             setEntityTypeFilter(e.target.value)
             setPage(1)
           }}
-          style={{ width: 160 }}
+          style={{ flex: '1 1 140px', minWidth: 0, maxWidth: 200 }}
         />
         <input
           className="odm-input"
@@ -246,7 +234,7 @@ export function AuditLogPage() {
             setFromDate(e.target.value)
             setPage(1)
           }}
-          style={{ width: 140 }}
+          style={{ flex: '1 1 120px', minWidth: 0, maxWidth: 180 }}
         />
         <input
           className="odm-input"
@@ -256,7 +244,7 @@ export function AuditLogPage() {
             setToDate(e.target.value)
             setPage(1)
           }}
-          style={{ width: 140 }}
+          style={{ flex: '1 1 120px', minWidth: 0, maxWidth: 180 }}
         />
       </div>
 
@@ -267,14 +255,7 @@ export function AuditLogPage() {
 
       {!loading && data && (
         <>
-          <div
-            style={{
-              background: 'var(--sf)',
-              border: '1px solid var(--bd)',
-              borderRadius: 10,
-              overflow: 'hidden',
-            }}
-          >
+          <TableCard>
             <table className="odm-adm-table">
               <thead>
                 <tr>
@@ -369,7 +350,7 @@ export function AuditLogPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableCard>
 
           {totalPages > 1 && (
             <div

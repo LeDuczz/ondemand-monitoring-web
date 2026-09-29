@@ -11,6 +11,7 @@ import { adminApi } from '../../api/adminApi'
 import type { NoFlyZone, ZoneType } from '../../types/operatingConfig'
 import type { StatusTone } from '../../../../shared/types/domain'
 import { noFlyZonesTableMessages } from './NoFlyZonesTable.messages'
+import { TableCard } from '../common/TableCard'
 
 const ZONE_TYPE_TONE: Record<ZoneType, StatusTone> = {
   AIRPORT: 'red',
@@ -338,14 +339,7 @@ export function NoFlyZonesTable() {
         <ErrorState error={error} onRetry={reload} />
       )}
       {!loading && data && (
-        <div
-          style={{
-            background: 'var(--sf)',
-            border: '1px solid var(--bd)',
-            borderRadius: 10,
-            overflow: 'hidden',
-          }}
-        >
+        <TableCard>
           <table className="odm-adm-table">
             <thead>
               <tr>
@@ -407,7 +401,7 @@ export function NoFlyZonesTable() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableCard>
       )}
       {dialog !== null && (
         <ZoneDialog

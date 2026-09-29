@@ -11,6 +11,7 @@ import { AdminToggle } from '../common/AdminToggle'
 import { EditServiceDialog } from './EditServiceDialog'
 import type { AdminService } from '../../types/catalog'
 import { servicesTabMessages } from './ServicesTab.messages'
+import { TableCard } from '../common/TableCard'
 
 export function ServicesTab() {
   const { t } = useI18n(servicesTabMessages)
@@ -38,16 +39,16 @@ export function ServicesTab() {
         <ErrorState error={error} onRetry={reload} />
       )}
       {!loading && data && (
-        <div className="odm-card" style={{ overflow: 'hidden' }}>
+        <TableCard>
           <table className="odm-adm-table">
             <thead>
               <tr>
                 <th>{t.service}</th>
-                <th style={{ width: 150 }}>default_duration_min</th>
-                <th style={{ width: 130 }}>{t.altRange}</th>
-                <th style={{ width: 250 }}>{t.sensorsRequired}</th>
-                <th style={{ width: 80 }}>is_active</th>
-                <th style={{ width: 70 }} />
+                <th>default_duration_min</th>
+                <th>{t.altRange}</th>
+                <th>{t.sensorsRequired}</th>
+                <th>is_active</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -120,7 +121,7 @@ export function ServicesTab() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableCard>
       )}
       {editing && (
         <EditServiceDialog

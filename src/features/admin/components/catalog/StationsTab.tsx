@@ -11,6 +11,7 @@ import { AdminToggle } from '../common/AdminToggle'
 import { StationDialog } from './StationDialog'
 import type { AdminStation } from '../../types/catalog'
 import { stationsTabMessages } from './StationsTab.messages'
+import { TableCard } from '../common/TableCard'
 
 export function StationsTab({ createSignal }: { createSignal: number }) {
   const { t } = useI18n(stationsTabMessages)
@@ -42,15 +43,15 @@ export function StationsTab({ createSignal }: { createSignal: number }) {
         <ErrorState error={error} onRetry={reload} />
       )}
       {!loading && data && (
-        <div className="odm-card" style={{ overflow: 'hidden' }}>
+        <TableCard>
           <table className="odm-adm-table">
             <thead>
               <tr>
                 <th>{t.station}</th>
-                <th style={{ width: 170 }}>lat, lon</th>
-                <th style={{ width: 150 }}>max_service_radius_m</th>
-                <th style={{ width: 80 }}>is_active</th>
-                <th style={{ width: 50 }} />
+                <th>lat, lon</th>
+                <th>max_service_radius_m</th>
+                <th>is_active</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -104,7 +105,7 @@ export function StationsTab({ createSignal }: { createSignal: number }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableCard>
       )}
       {dialog !== null && (
         <StationDialog

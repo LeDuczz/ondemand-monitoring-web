@@ -14,6 +14,7 @@ import { RolesTable } from '../components/roles/RolesTable'
 import { rolesSubtitle } from '../lib/rolesSubtitle'
 import type { AdminRole } from '../types/roles'
 import { rolesPageMessages } from './RolesPage.messages'
+import { PageHeader } from '../components/common/PageHeader'
 
 type DialogState =
   | { type: 'create' }
@@ -47,33 +48,19 @@ export function RolesPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
-            {t.title}
-          </h1>
-          {data && (
-            <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-              {rolesSubtitle(data.items, lang)}
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className="odm-btn odm-btn-p"
-          onClick={() => setDialog({ type: 'create' })}
-        >
-          {t.createRole}
-        </button>
-      </div>
+      <PageHeader
+        title={t.title}
+        subtitle={data ? rolesSubtitle(data.items, lang) : undefined}
+        actions={
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={() => setDialog({ type: 'create' })}
+          >
+            {t.createRole}
+          </button>
+        }
+      />
 
       {loading && <LoadingState />}
       {!loading && (error || !data) && (

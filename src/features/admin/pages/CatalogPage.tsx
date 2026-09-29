@@ -7,6 +7,7 @@ import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
 import { adminApi } from '../api/adminApi'
 import { catalogPageMessages } from './CatalogPage.messages'
+import { PageHeader } from '../components/common/PageHeader'
 
 type Tab = 'services' | 'timeslots' | 'stations'
 
@@ -39,33 +40,21 @@ export function CatalogPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
-            {t.title}
-          </h1>
-          <div style={{ color: 'var(--tx3)', fontSize: 12.5, marginTop: 3 }}>
-            {t.subtitle}
-          </div>
-        </div>
-        {tab !== 'services' && (
-          <button
-            type="button"
-            className="odm-btn odm-btn-p"
-            onClick={() => setCreateSignal((v) => v + 1)}
-          >
-            {t.addNew}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+        actions={
+          tab !== 'services' ? (
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={() => setCreateSignal((v) => v + 1)}
+            >
+              {t.addNew}
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className="odm-adm-tabs" role="tablist">
         {tabs.map((t) => (

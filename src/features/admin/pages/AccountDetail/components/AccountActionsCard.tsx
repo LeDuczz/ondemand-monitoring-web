@@ -1,4 +1,5 @@
 import { useI18n } from '../../../../../shared/i18n'
+import { Card } from '../../../components/common/Card'
 import { accountActionsCardMessages } from './AccountActionsCard.messages'
 
 export function AccountActionsCard({
@@ -17,49 +18,20 @@ export function AccountActionsCard({
   const { t } = useI18n(accountActionsCardMessages)
 
   return (
-    <div
-      style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
-        borderRadius: 10,
-        padding: '16px 20px',
-        marginBottom: 16,
-      }}
-    >
-      <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>
-        {t.actions}
-      </h2>
-      <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--tx3)' }}>
-        {t.deactivateHint}
-      </p>
+    <Card title={t.actions}>
+      <p className="adm-card-hint">{t.deactivateHint}</p>
 
       {error && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--red-muted, #fee2e2)',
-            border: '1px solid var(--red-solid)',
-            borderRadius: 8,
-            padding: '8px 12px',
-            marginBottom: 12,
-            fontSize: 13,
-            color: 'var(--red-solid)',
-          }}
-        >
+        <div role="alert" className="adm-alert is-danger">
           {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className="adm-row">
         {!inactive && (
           <button
             type="button"
-            className="odm-btn odm-btn-gh"
-            style={{
-              borderColor: 'var(--red-solid)',
-              color: 'var(--red-solid)',
-              whiteSpace: 'normal',
-            }}
+            className="odm-btn is-danger"
             disabled={loading}
             onClick={onDeactivate}
           >
@@ -70,7 +42,6 @@ export function AccountActionsCard({
           <button
             type="button"
             className="odm-btn odm-btn-p"
-            style={{ whiteSpace: 'normal' }}
             disabled={loading}
             onClick={onActivate}
           >
@@ -78,6 +49,6 @@ export function AccountActionsCard({
           </button>
         )}
       </div>
-    </div>
+    </Card>
   )
 }

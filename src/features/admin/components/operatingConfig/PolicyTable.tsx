@@ -9,6 +9,7 @@ import { useI18n } from '../../../../shared/i18n'
 import { adminApi } from '../../api/adminApi'
 import type { OperatingPolicy } from '../../types/operatingConfig'
 import { policyTableMessages } from './PolicyTable.messages'
+import { TableCard } from '../common/TableCard'
 
 export function PolicyTable() {
   const { t } = useI18n(policyTableMessages)
@@ -45,14 +46,7 @@ export function PolicyTable() {
   if (!data) return null
 
   return (
-    <div
-      style={{
-        background: 'var(--sf)',
-        border: '1px solid var(--bd)',
-        borderRadius: 10,
-        overflow: 'hidden',
-      }}
-    >
+    <TableCard>
       <table className="odm-adm-table">
         <thead>
           <tr>
@@ -118,6 +112,6 @@ export function PolicyTable() {
           })}
         </tbody>
       </table>
-    </div>
+    </TableCard>
   )
 }

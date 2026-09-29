@@ -7,6 +7,7 @@ import { PolicyTable } from '../components/operatingConfig/PolicyTable'
 import { WeightsPanel } from '../components/operatingConfig/WeightsPanel'
 import { NoFlyZonesTable } from '../components/operatingConfig/NoFlyZonesTable'
 import { operatingConfigPageMessages } from './OperatingConfigPage.messages'
+import { PageHeader } from '../components/common/PageHeader'
 
 type Tab = 'policy' | 'nfz'
 
@@ -32,70 +33,33 @@ export function OperatingConfigPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{t.title}</h1>
-        <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tx3)' }}>
-          {t.subtitle}
-        </p>
-      </div>
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 2,
-          borderBottom: '1px solid var(--bd)',
-          marginBottom: 20,
-        }}
-      >
+      <div className="odm-adm-tabs" role="tablist">
         {(['policy', 'nfz'] as Tab[]).map((tabKey) => (
           <button
             key={tabKey}
             type="button"
+            role="tab"
+            aria-selected={tab === tabKey}
             onClick={() => setTab(tabKey)}
-            style={{
-              padding: '8px 18px',
-              fontSize: 13,
-              fontWeight: tab === tabKey ? 600 : 400,
-              color: tab === tabKey ? 'var(--blue-solid)' : 'var(--tx2)',
-              background: 'none',
-              border: 'none',
-              borderBottom: `2px solid ${tab === tabKey ? 'var(--blue-solid)' : 'transparent'}`,
-              cursor: 'pointer',
-              marginBottom: -1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            className={`odm-adm-tab${tab === tabKey ? ' is-active' : ''}`}
           >
             {tabKey === 'policy' ? t.policyTab : t.nfzTab}
-            <span
-              style={{
-                fontSize: 11,
-                padding: '1px 6px',
-                borderRadius: 9,
-                background: 'var(--sf3)',
-                color: 'var(--tx2)',
-              }}
-            >
-              {tabKey === 'policy' ? policyCount : nfzCount}
-            </span>
+            <span className="odm-adm-tab-count odm-mono">{tabKey === 'policy' ? policyCount : nfzCount}</span>
           </button>
         ))}
       </div>
 
       {tab === 'policy' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        <div className="adm-stack">
           <section>
-            <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>
-              {t.operatingParams}
-            </h2>
+            <h2 className="adm-section-title">{t.operatingParams}</h2>
             <PolicyTable />
           </section>
 
           <section>
-            <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>
-              {t.dispatchWeights}
-            </h2>
+            <h2 className="adm-section-title">{t.dispatchWeights}</h2>
             <WeightsPanel />
           </section>
         </div>

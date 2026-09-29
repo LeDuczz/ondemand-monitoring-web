@@ -12,8 +12,8 @@ import {
 } from '../../../lib/catalogMappers'
 import type { AdminService } from '../../../types/catalog'
 import { EditLoader } from './EditLoader'
-import { FormField } from './FormField'
-import { FormFooter } from './FormFooter'
+import { FormField } from '../../../components/common/FormField'
+import { FormFooter } from '../../../components/common/FormFooter'
 import { serviceModalMessages } from './ServiceModal.messages'
 
 type Props = {

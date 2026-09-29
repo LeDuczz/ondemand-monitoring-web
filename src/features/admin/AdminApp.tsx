@@ -21,9 +21,9 @@ import { AccountsPage } from './pages/Accounts'
 import { AccountDetailPage } from './pages/AccountDetail'
 import { RolesPage } from './pages/Roles'
 import { CatalogPage } from './pages/Catalog'
-import { OperatingConfigPage } from './pages/OperatingConfigPage'
-import { AiKnowledgePage } from './pages/AiKnowledgePage'
-import { AuditLogPage } from './pages/AuditLogPage'
+import { OperatingConfigPage } from './pages/OperatingConfig'
+import { AiKnowledgePage } from './pages/AiKnowledge'
+import { AuditLogPage } from './pages/AuditLog'
 import type { AdminRoute } from './routes'
 
 function renderScreen(route: AdminRoute, notFoundText: string) {

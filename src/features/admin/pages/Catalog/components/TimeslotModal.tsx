@@ -16,8 +16,8 @@ import {
 } from '../../../lib/catalogMappers'
 import type { AdminTimeslot } from '../../../types/catalog'
 import { EditLoader } from './EditLoader'
-import { FormField } from './FormField'
-import { FormFooter } from './FormFooter'
+import { FormField } from '../../../components/common/FormField'
+import { FormFooter } from '../../../components/common/FormFooter'
 import { timeslotCodeMessages } from './timeslotCodes'
 import { timeslotModalMessages } from './TimeslotModal.messages'
 

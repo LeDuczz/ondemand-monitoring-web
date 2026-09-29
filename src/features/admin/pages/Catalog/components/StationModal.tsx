@@ -5,8 +5,8 @@ import { adminApi } from '../../../api/adminApi'
 import { Modal } from '../../../components/common/Modal'
 import { readApiError } from '../../../lib/catalogMappers'
 import type { AdminStation } from '../../../types/catalog'
-import { FormField } from './FormField'
-import { FormFooter } from './FormFooter'
+import { FormField } from '../../../components/common/FormField'
+import { FormFooter } from '../../../components/common/FormFooter'
 import { stationModalMessages } from './StationModal.messages'
 
 type Props = {

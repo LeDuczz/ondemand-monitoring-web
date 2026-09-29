@@ -24,9 +24,9 @@ async function fillForm() {
     target: { value: 'KCN Long Hậu' },
   })
   fireEvent.change(screen.getByLabelText(/Tiêu đề yêu cầu/), { target: { value: 'Đơn nhanh' } })
-  fireEvent.click(await screen.findByRole('button', { name: /Giám sát công trình/ }))
+  fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
   const deliverable = (await screen.findByLabelText(/Loại kết quả/)) as HTMLSelectElement
-  await waitFor(() => expect(deliverable.value).toBe('dt-photo'))
+  await waitFor(() => expect(deliverable.value).toBe('dt-progress'))
 }
 
 describe('CustomerCreateRequestPage', () => {
@@ -45,7 +45,7 @@ describe('CustomerCreateRequestPage', () => {
 
   it('lists BE services (not the legacy category list) and price estimate', async () => {
     render(<CustomerCreateRequestPage />)
-    expect(await screen.findByRole('button', { name: /Giám sát công trình/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ })).toBeInTheDocument()
     expect(screen.queryByText('Hạ tầng')).not.toBeInTheDocument()
   })
 
@@ -81,7 +81,7 @@ describe('CustomerCreateRequestPage', () => {
     expect(payload.coverageArea.type).toBe('Polygon')
     expect(typeof payload.longitude).toBe('number')
     expect(typeof payload.latitude).toBe('number')
-    expect(payload.deliverables[0]).toMatchObject({ deliverableTypeId: 'dt-photo' })
+    expect(payload.deliverables[0]).toMatchObject({ deliverableTypeId: 'dt-progress' })
     expect(payload.deliverables[0].requirement).toMatchObject({ mediaType: 'IMAGE' })
     // Legacy orderApi.OrderCreatePayload fields must be gone.
     for (const legacy of ['point', 'preferredDate', 'mediaType', 'purpose']) {

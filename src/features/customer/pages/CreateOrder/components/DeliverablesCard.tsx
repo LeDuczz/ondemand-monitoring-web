@@ -2,6 +2,7 @@ import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceDeliverableOption } from '../../../api/customerApi'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import { localizeDeliverableName } from '../../../lib/i18n/catalogNames'
 import { deliverablesCardMessages } from './DeliverablesCard.messages'
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
 }
 
 export function DeliverablesCard({ form, errors, update, deliverables, loading }: Props) {
-  const { t } = useI18n(deliverablesCardMessages)
+  const { t, lang } = useI18n(deliverablesCardMessages)
   return (
     <Card title={t.cardTitle}>
       <FormField id="co-deliv" label={t.deliverableType} required error={errors.deliverableTypeId}>
@@ -26,7 +27,7 @@ export function DeliverablesCard({ form, errors, update, deliverables, loading }
           <option value="">{t.selectDeliverable}</option>
           {deliverables.map((item) => (
             <option key={item.id} value={item.deliverableTypeId}>
-              {item.deliverableTypeName || item.deliverableTypeId}
+              {localizeDeliverableName(item.deliverableTypeName, lang) || item.deliverableTypeId}
             </option>
           ))}
         </select>

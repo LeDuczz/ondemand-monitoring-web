@@ -9,8 +9,8 @@ useMockTransport()
 describe('ServicesTab', () => {
   it('lists services from the BE-shaped mock', async () => {
     render(<ServicesTab />)
-    expect(await screen.findByText('Kiểm tra mái nhà')).toBeTruthy()
-    expect(screen.getByText('Khảo sát nông nghiệp')).toBeTruthy()
+    expect(await screen.findByText('Kiểm tra Tháp viễn thông')).toBeTruthy()
+    expect(screen.getByText('Giám sát Nông nghiệp / Cây trồng')).toBeTruthy()
   })
 
   it('shows an error state when the request fails', async () => {
@@ -22,7 +22,7 @@ describe('ServicesTab', () => {
 
   it('creates a service through the modal', async () => {
     render(<ServicesTab />)
-    await screen.findByText('Kiểm tra mái nhà')
+    await screen.findByText('Kiểm tra Tháp viễn thông')
     fireEvent.click(screen.getByText('+ Thêm dịch vụ'))
     fireEvent.change(screen.getByLabelText(/Tên dịch vụ/), {
       target: { value: 'Dịch vụ thử' },
@@ -33,7 +33,7 @@ describe('ServicesTab', () => {
 
   it('validates the required name and shows BE errors inline', async () => {
     render(<ServicesTab />)
-    await screen.findByText('Kiểm tra mái nhà')
+    await screen.findByText('Kiểm tra Tháp viễn thông')
     fireEvent.click(screen.getByText('+ Thêm dịch vụ'))
     fireEvent.click(screen.getByText('Lưu'))
     expect(screen.getByText('Bắt buộc')).toBeTruthy()
@@ -41,13 +41,13 @@ describe('ServicesTab', () => {
 
   it('prefills the edit modal from the BE and saves', async () => {
     render(<ServicesTab />)
-    await screen.findByText('Kiểm tra mái nhà')
-    fireEvent.click(screen.getByLabelText('Sửa Kiểm tra mái nhà'))
+    await screen.findByText('Kiểm tra Tháp viễn thông')
+    fireEvent.click(screen.getByLabelText('Sửa Kiểm tra Tháp viễn thông'))
     const name = (await screen.findByLabelText(/Tên dịch vụ/)) as HTMLInputElement
-    expect(name.value).toBe('Kiểm tra mái nhà')
+    expect(name.value).toBe('Kiểm tra Tháp viễn thông')
     expect(
       (screen.getByLabelText(/Mô tả/) as HTMLTextAreaElement).value,
-    ).toContain('tấm pin')
+    ).toContain('anten')
     fireEvent.change(name, { target: { value: 'Tên mới' } })
     fireEvent.click(screen.getByText('Lưu'))
     expect(await screen.findByText('Tên mới')).toBeTruthy()
@@ -55,12 +55,12 @@ describe('ServicesTab', () => {
 
   it('deletes after a danger confirmation', async () => {
     render(<ServicesTab />)
-    await screen.findByText('Giám sát công trình')
-    fireEvent.click(screen.getByLabelText('Xoá Giám sát công trình'))
+    await screen.findByText('Giám sát Tiến độ Xây dựng')
+    fireEvent.click(screen.getByLabelText('Xoá Giám sát Tiến độ Xây dựng'))
     expect(screen.getByText(/Bạn có chắc muốn xoá/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Xoá' }))
     await waitFor(() =>
-      expect(screen.queryByText('Giám sát công trình')).toBeNull(),
+      expect(screen.queryByText('Giám sát Tiến độ Xây dựng')).toBeNull(),
     )
   })
 })

@@ -7,6 +7,7 @@ import type {
   ServiceOption,
 } from '../../../api/customerApi'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
+import { localizeDeliverableName } from '../../../lib/i18n/catalogNames'
 import { localizeTimeslot } from '../../../lib/i18n/timeslots'
 import { calcArea } from '../../../lib/createOrder/payload'
 import type { FormState } from '../../../lib/createOrder/types'
@@ -36,7 +37,7 @@ export function RequestSummaryCard(p: Props) {
     [t.addOns, p.aiAnalysisRequested ? t.aiAnalysis : t.none],
     [t.dates, `${form.preferredDateFrom} → ${form.preferredDateTo}`, true],
     [t.timeWindow, p.time ? localizeTimeslot(p.time, lang) : DASH],
-    [t.deliverable, p.deliverable?.deliverableTypeName || DASH],
+    [t.deliverable, localizeDeliverableName(p.deliverable?.deliverableTypeName, lang) || DASH],
     [t.aiConsultation, p.consultation?.id ? t.consulted : t.notUsed],
   ]
   return (

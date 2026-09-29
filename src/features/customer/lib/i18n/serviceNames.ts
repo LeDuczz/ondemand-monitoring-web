@@ -8,9 +8,9 @@ type Names = { vi: string; en: string }
  * same entry is reachable by id (mock / seed ids) and by normalized name.
  */
 const SERVICES: Array<{ ids: string[]; names: Names }> = [
-  { ids: ['svc-1'], names: { vi: 'Kiểm tra mái nhà', en: 'Roof inspection' } },
-  { ids: ['svc-2'], names: { vi: 'Giám sát công trình', en: 'Construction site monitoring' } },
-  { ids: ['svc-3'], names: { vi: 'Khảo sát nông nghiệp', en: 'Agricultural survey' } },
+  { ids: [], names: { vi: 'Kiểm tra mái nhà', en: 'Roof inspection' } },
+  { ids: [], names: { vi: 'Giám sát công trình', en: 'Construction site monitoring' } },
+  { ids: [], names: { vi: 'Khảo sát nông nghiệp', en: 'Agricultural survey' } },
   {
     ids: ['svc-construction'],
     names: { vi: 'Giám sát tiến độ công trình', en: 'Construction progress monitoring' },
@@ -31,6 +31,23 @@ const SERVICES: Array<{ ids: string[]; names: Names }> = [
       en: 'Factory roof thermal inspection, Hiep Phuoc Industrial Park',
     },
   },
+  // Real BE services (ServiceCatalogSeedDataInitializer.seedServices). BE ids are
+  // random UUIDs, so these are matched by normalized name only.
+  { ids: [], names: { vi: 'Giám sát Kho bãi / Logistics', en: 'Warehouse / logistics monitoring' } },
+  { ids: [], names: { vi: 'Giám sát Đập nước / Hồ chứa', en: 'Dam / reservoir monitoring' } },
+  { ids: [], names: { vi: 'Giám sát Rừng / Điểm nhiệt', en: 'Forest / thermal hotspot monitoring' } },
+  { ids: [], names: { vi: 'Giám sát Nông nghiệp / Cây trồng', en: 'Agricultural / crop monitoring' } },
+  { ids: [], names: { vi: 'Kiểm tra Sân bay / Đường băng', en: 'Airport / runway inspection' } },
+  { ids: [], names: { vi: 'Giám sát Kho công nghiệp / Nhà xưởng', en: 'Industrial warehouse / factory monitoring' } },
+  { ids: [], names: { vi: 'Giám sát Mặt nước / Dòng chảy', en: 'Water surface / flow monitoring' } },
+  { ids: [], names: { vi: 'Đo nhiệt độ / Điểm nhiệt', en: 'Temperature / thermal hotspot measurement' } },
+  { ids: [], names: { vi: 'Đo nhiệt độ / Áp suất', en: 'Temperature / pressure measurement' } },
+  { ids: [], names: { vi: 'Kiểm tra Công trình thủy lợi', en: 'Irrigation structure inspection' } },
+  { ids: [], names: { vi: 'Giám sát Tiến độ Xây dựng', en: 'Construction progress monitoring' } },
+  { ids: [], names: { vi: 'Giám sát Sạt lở / Ngập lụt', en: 'Landslide / flood monitoring' } },
+  { ids: [], names: { vi: 'Kiểm tra Tháp viễn thông', en: 'Telecom tower inspection' } },
+  { ids: [], names: { vi: 'Giám sát Mục tiêu xa', en: 'Remote target monitoring' } },
+  { ids: [], names: { vi: 'Giám sát Bãi đáp / Trạm drone', en: 'Landing pad / drone station monitoring' } },
 ]
 
 const BY_ID = new Map<string, Names>()
@@ -54,6 +71,15 @@ export function localizeServiceName(
   const shown = fallback ?? input
   if (!input) return shown
   if (lang !== 'en') return shown
-  const hit = BY_ID.get(input) ?? BY_NAME.get(normalizeKey(input))
+  // Real BE ids are random UUIDs, so also try the BE name passed as `fallback`.
+  const hit =
+    BY_ID.get(input) ??
+    BY_NAME.get(normalizeKey(input)) ??
+    (fallback ? BY_NAME.get(normalizeKey(fallback)) : undefined)
   return hit ? hit.en : shown
+}
+
+/** Every Vietnamese service name that has an English translation. */
+export function translatedServiceNames(): string[] {
+  return SERVICES.map((entry) => entry.names.vi)
 }

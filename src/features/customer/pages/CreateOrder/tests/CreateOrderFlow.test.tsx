@@ -45,7 +45,7 @@ describe('CreateOrderPage wizard', () => {
   it('lists BE services on step 2 and requires a service and title', async () => {
     render(<CreateOrderPage />)
     await fillLocation()
-    expect(await screen.findByText('Giám sát công trình')).toBeInTheDocument()
+    expect(await screen.findByText('Giám sát Tiến độ Xây dựng')).toBeInTheDocument()
     next('Thời gian và kết quả')
     expect(await screen.findByText('Chọn dịch vụ giám sát.')).toBeInTheDocument()
     expect(screen.getByText('Nhập tiêu đề yêu cầu.')).toBeInTheDocument()
@@ -54,7 +54,7 @@ describe('CreateOrderPage wizard', () => {
   it('shows the pricing estimate for the chosen service', async () => {
     render(<CreateOrderPage />)
     await fillLocation()
-    fireEvent.click(await screen.findByRole('button', { name: /Giám sát công trình/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
     expect((await screen.findAllByText(/3\.200\.000/)).length).toBe(2)
     fireEvent.click(screen.getByLabelText(/AI phân tích hình ảnh/))
     expect(await screen.findByText(/^\+.*500\.000/)).toBeInTheDocument()
@@ -64,12 +64,12 @@ describe('CreateOrderPage wizard', () => {
   it('walks through all steps and submits via the confirm dialog', async () => {
     render(<CreateOrderPage />)
     await fillLocation()
-    fireEvent.click(await screen.findByRole('button', { name: /Giám sát công trình/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
     fireEvent.change(screen.getByLabelText(/Tiêu đề/), { target: { value: 'Đơn kiểm thử' } })
     next('Thời gian và kết quả')
 
     const deliverable = (await screen.findByLabelText(/Loại kết quả/)) as HTMLSelectElement
-    await waitFor(() => expect(deliverable.value).toBe('dt-photo'))
+    await waitFor(() => expect(deliverable.value).toBe('dt-progress'))
     next('Xác nhận & gửi yêu cầu')
 
     expect(await screen.findByText('Xác nhận yêu cầu')).toBeInTheDocument()
@@ -87,11 +87,11 @@ describe('CreateOrderPage wizard', () => {
   it('closes the confirm dialog with Escape without submitting', async () => {
     render(<CreateOrderPage />)
     await fillLocation()
-    fireEvent.click(await screen.findByRole('button', { name: /Giám sát công trình/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
     fireEvent.change(screen.getByLabelText(/Tiêu đề/), { target: { value: 'T' } })
     next('Thời gian và kết quả')
     await waitFor(() =>
-      expect((screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value).toBe('dt-photo'),
+      expect((screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value).toBe('dt-progress'),
     )
     next('Xác nhận & gửi yêu cầu')
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))

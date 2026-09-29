@@ -39,7 +39,7 @@ describe('/api/services/pricing-estimate (BE shape)', () => {
 describe('reference lists', () => {
   it('filters service deliverables by service', async () => {
     const { payload } = await call('GET', '/api/service-deliverables?serviceId=svc-2')
-    expect(payload.data.map((d: any) => d.deliverableTypeId)).toEqual(['dt-photo', 'dt-video'])
+    expect(payload.data.map((d: any) => d.deliverableTypeId)).toEqual(['dt-progress', 'dt-photo', 'dt-video'])
   })
 
   it('lists requirement suggestions and category services', async () => {
@@ -88,7 +88,7 @@ describe('consultations', () => {
   it('starts a session, replies and recommends a service', async () => {
     const started = await call('POST', '/api/customer/consultations')
     const id = started.payload.data.id
-    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, { message: 'Giám sát công trình' })
+    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, { message: 'Giám sát Tiến độ Xây dựng' })
     expect(reply.payload.data).toMatchObject({ recommendedServiceId: 'svc-2', status: 'READY_FOR_CONFIRMATION' })
     expect((await call('GET', `/api/customer/consultations/${id}`)).status).toBe(200)
   })

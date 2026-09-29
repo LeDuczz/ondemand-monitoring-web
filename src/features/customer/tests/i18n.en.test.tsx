@@ -7,6 +7,11 @@ import '../../../mocks/index'
 import { setLanguage } from '../../../shared/i18n'
 import customerSeed from '../../../mocks/data/customer-orders.json'
 import { customerApi } from '../api/customerApi'
+import {
+  translatedCategoryNames,
+  translatedDeliverableNames,
+} from '../lib/i18n/catalogNames'
+import { translatedServiceNames } from '../lib/i18n/serviceNames'
 import { Router } from '../../../app/router'
 import { supportApi, type SupportTicketDto } from '../../support/api/supportApi'
 import { CustomerApp } from '../CustomerApp'
@@ -63,7 +68,7 @@ function translatedCatalogNames(): Set<string> {
     for (const s of (order.serviceNames as string[] | undefined) ?? []) names.add(s)
     if (typeof order.preferredTimeName === 'string') names.add(order.preferredTimeName)
   }
-  for (const s of ['Kiểm tra mái nhà', 'Giám sát công trình', 'Khảo sát nông nghiệp']) names.add(s)
+  for (const s of [...translatedServiceNames(), ...translatedDeliverableNames(), ...translatedCategoryNames()]) names.add(s)
   for (const s of ['Buổi sáng', 'Buổi chiều', 'Buổi tối']) names.add(s)
   return names
 }
@@ -288,14 +293,14 @@ describe('Customer portal i18n (vi -> en)', () => {
       target: { value: 'KCN Long Hậu' },
     })
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
-    await screen.findByRole('button', { name: /Construction site monitoring/ })
+    await screen.findByRole('button', { name: /Construction progress monitoring/ })
 
     // Step 2 validation errors, then a valid service and title.
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
     await settled()
     expect(viLines()).toEqual([])
 
-    fireEvent.click(screen.getByRole('button', { name: /Construction site monitoring/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Construction progress monitoring/ }))
     fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Đơn kiểm thử' } })
     await settled()
     expect(viLines()).toEqual([])

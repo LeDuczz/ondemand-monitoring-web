@@ -55,45 +55,6 @@ async function request<T>(path: string, options: RequestOptions = {}) {
   return payload?.data as T
 }
 
-export type CategoryService = {
-  id: string
-  name: string
-  description?: string
-}
-
-export type PreferredTime = {
-  id: string
-  code?: string
-  name: string
-  startTime?: string
-  endTime?: string
-}
-
-/**
- * Legacy request shape used only by CustomerCreateRequestPage (point /
- * preferredDate / mediaType). It does NOT match the backend `OrderCreateRequest`
- * (see `CreateOrderPayload` in customerApi.ts, which does). Remove together
- * with that page.
- *
- * @deprecated use `customerApi.createOrder` with `CreateOrderPayload`.
- */
-export type OrderCreatePayload = {
-  title: string
-  purpose?: string
-  serviceId: string
-  description?: string
-  address?: string
-  point: {
-    type: 'Point'
-    coordinates: [number, number]
-  }
-  preferredDate: string
-  preferredTimeId: string
-  mediaType: 'IMAGE' | 'VIDEO'
-  durationOfVideo?: number
-  numberOfPhoto?: number
-}
-
 /** Deliverable line of the backend `OrderDeliverableResponse`. */
 export type OrderDeliverableResponse = {
   id: string
@@ -132,11 +93,6 @@ export type OrderCreateResponse = {
 }
 
 export const orderApi = {
-  getCategoryServices: () =>
-    request<CategoryService[]>('/api/category-services'),
-  getPreferredTimes: () => request<PreferredTime[]>('/api/preferred-times'),
-  createOrder: (body: OrderCreatePayload) =>
-    request<OrderCreateResponse>('/api/orders', { method: 'POST', body }),
   getPendingOrders: () =>
     request<OrderCreateResponse[]>('/api/orders/pending', { method: 'GET' }),
   approveOrder: (orderId: string) =>

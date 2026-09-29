@@ -9,7 +9,9 @@ export type OrderRow = {
   address: string | null
   dateFrom: string | null
   dateTo: string | null
+  timeId: string | null
   timeName: string | null
+  serviceId: string | null
   serviceName: string | null
   status: OrderStatus
   radiusM: number | null

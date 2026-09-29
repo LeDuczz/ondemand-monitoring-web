@@ -3,6 +3,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import type { CustomerConsultation, ServiceOption } from '../../../api/customerApi'
 import { consultationStatusKey } from '../../../lib/createOrder/consultation'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { Metric } from './Metric'
 import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
 
@@ -16,7 +17,7 @@ type Props = {
 }
 
 export function RequestInfoPanel({ form, errors, update, consultation, recommended, selected }: Props) {
-  const { t } = useI18n(requestInfoPanelMessages)
+  const { t, lang } = useI18n(requestInfoPanelMessages)
   const waiting = consultation?.status === 'READY_FOR_CONFIRMATION' && !selected
   const status = waiting
     ? t.waitingForService
@@ -38,9 +39,15 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
       <div className="co-two co-mt">
         <Metric
           label={t.aiSuggested}
-          value={recommended?.name || consultation?.recommendedServiceName || t.noSuggestion}
+          value={
+            recommended
+              ? localizeServiceName(recommended.id, lang, recommended.name)
+              : localizeServiceName(consultation?.recommendedServiceName, lang) || t.noSuggestion
+          }
         />
-        <Metric label={t.selectedService} value={selected?.name || t.notSelected} />
+        <Metric label={t.selectedService} value={
+            selected ? localizeServiceName(selected.id, lang, selected.name) : t.notSelected
+          } />
       </div>
       <div className="co-mt">
         <Metric label={t.consultationStatus} value={status} />

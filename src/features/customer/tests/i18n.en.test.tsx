@@ -25,6 +25,9 @@ const VI_CHARS =
  * string value of the mock customer seed (order titles, addresses, notes...)
  * plus the mock catalog names. UI copy is never added here.
  */
+/** Seed fields the FE localizes (service and timeslot names): never allowlisted. */
+const TRANSLATED_SEED_KEYS = new Set(['serviceNames', 'serviceName', 'preferredTimeName'])
+
 function collectSeedStrings(value: unknown, out: Set<string>) {
   if (typeof value === 'string') {
     if (VI_CHARS.test(value)) out.add(value)
@@ -33,6 +36,7 @@ function collectSeedStrings(value: unknown, out: Set<string>) {
   } else if (value && typeof value === 'object') {
     // Object keys are data too (e.g. AI finding evidence labels).
     for (const [key, v] of Object.entries(value)) {
+      if (TRANSLATED_SEED_KEYS.has(key)) continue
       if (VI_CHARS.test(key)) out.add(key)
       collectSeedStrings(v, out)
     }
@@ -51,6 +55,18 @@ function collectHandlerStrings(out: Set<string>) {
     }
   }
 }
+/** Service and preferred-time names from the seed orders and the mock catalog. */
+function translatedCatalogNames(): Set<string> {
+  const names = new Set<string>()
+  const orders = (customerSeed as { orders?: Array<Record<string, unknown>> }).orders ?? []
+  for (const order of orders) {
+    for (const s of (order.serviceNames as string[] | undefined) ?? []) names.add(s)
+    if (typeof order.preferredTimeName === 'string') names.add(order.preferredTimeName)
+  }
+  for (const s of ['Kiểm tra mái nhà', 'Giám sát công trình', 'Khảo sát nông nghiệp']) names.add(s)
+  for (const s of ['Buổi sáng', 'Buổi chiều', 'Buổi tối']) names.add(s)
+  return names
+}
 let seedCache: string[] | undefined
 function seedStrings(): string[] {
   if (seedCache) return seedCache
@@ -59,7 +75,12 @@ function seedStrings(): string[] {
   const set = new Set<string>(['KCN Long Hậu', 'Đơn kiểm thử'])
   collectSeedStrings(customerSeed, set)
   collectSeedStrings(TICKET, set)
-  collectHandlerStrings(set)
+  // Service and timeslot names are translated by the FE, so they must NOT be
+  // allowlisted: seeing one in English mode is a failure.
+  const handlerStrings = new Set<string>()
+  collectHandlerStrings(handlerStrings)
+  for (const name of translatedCatalogNames()) handlerStrings.delete(name)
+  handlerStrings.forEach((v) => set.add(v))
   return [...set].sort((x, y) => y.length - x.length)
   })()
   return seedCache
@@ -267,14 +288,14 @@ describe('Customer portal i18n (vi -> en)', () => {
       target: { value: 'KCN Long Hậu' },
     })
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
-    await screen.findByRole('button', { name: /Giám sát công trình/ })
+    await screen.findByRole('button', { name: /Construction site monitoring/ })
 
     // Step 2 validation errors, then a valid service and title.
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
     await settled()
     expect(viLines()).toEqual([])
 
-    fireEvent.click(screen.getByRole('button', { name: /Giám sát công trình/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Construction site monitoring/ }))
     fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Đơn kiểm thử' } })
     await settled()
     expect(viLines()).toEqual([])

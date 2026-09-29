@@ -1,7 +1,7 @@
 import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { PreferredTimeOption } from '../../../api/customerApi'
-import { formatTimeLabel } from '../../../lib/createOrder/format'
+import { localizeTimeslot } from '../../../lib/i18n/timeslots'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
 import { scheduleCardMessages } from './ScheduleCard.messages'
 
@@ -13,7 +13,7 @@ type Props = {
 }
 
 export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
-  const { t } = useI18n(scheduleCardMessages)
+  const { t, lang } = useI18n(scheduleCardMessages)
   return (
     <Card title={t.cardTitle}>
       <p className="co-hint">{t.dateRangeHint}</p>
@@ -47,7 +47,7 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
           <option value="">{preferredTimes.length ? t.selectTimeWindow : t.noTimes}</option>
           {preferredTimes.map((time) => (
             <option key={time.id} value={time.id}>
-              {formatTimeLabel(time)}
+              {localizeTimeslot(time, lang)}
             </option>
           ))}
         </select>

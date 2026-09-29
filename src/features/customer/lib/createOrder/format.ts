@@ -1,5 +1,3 @@
-import type { PreferredTimeOption } from '../../api/customerApi'
-
 export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
@@ -25,11 +23,6 @@ export function formatMoney(
     currency: 'VND',
     maximumFractionDigits: 0,
   }).format(Number(value ?? 0))
-}
-
-export function formatTimeLabel(time: PreferredTimeOption) {
-  const range = [time.startTime, time.endTime].filter(Boolean).join(' - ')
-  return range ? `${time.name} (${range})` : time.name
 }
 
 export function truncateText(value: string, maxLength: number) {

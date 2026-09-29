@@ -2,6 +2,7 @@ import { Modal } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption, ServicePricingEstimate } from '../../../api/customerApi'
 import { formatMoney } from '../../../lib/createOrder/format'
+import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import type { FormState } from '../../../lib/createOrder/types'
 import { confirmSubmitModalMessages } from './ConfirmSubmitModal.messages'
 
@@ -17,7 +18,7 @@ type Props = {
 
 /** Prominent final confirmation before `POST /api/orders`. */
 export function ConfirmSubmitModal(p: Props) {
-  const { t, locale } = useI18n(confirmSubmitModalMessages)
+  const { t, locale, lang } = useI18n(confirmSubmitModalMessages)
   const { form } = p
 
   const footer = (
@@ -44,7 +45,7 @@ export function ConfirmSubmitModal(p: Props) {
       <p className="co-hint"><strong>{form.title}</strong></p>
       <dl className="co-rows co-mt">
         <dt>{t.service}</dt>
-        <dd>{p.service?.name || '—'}</dd>
+        <dd>{p.service ? localizeServiceName(p.service.id, lang, p.service.name) : '—'}</dd>
         <dt>{t.location}</dt>
         <dd>{form.address || '—'}</dd>
         <dt>{t.dates}</dt>

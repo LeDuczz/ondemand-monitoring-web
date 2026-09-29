@@ -2,13 +2,16 @@ import { useI18n } from '../../../../../shared/i18n'
 import { OrderStatusBadge } from '../../../components/common/OrderStatusBadge'
 import { formatDateRange } from '../../../lib/orders/format'
 import type { OrderRow } from '../../../lib/orders/types'
+import { useTimeslotLabel } from '../../../hooks/usePreferredTimes'
+import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { customerHref } from '../../../routes'
 import { ordersTableMessages } from './OrdersTable.messages'
 
 const DASH = '—'
 
 export function OrdersTable({ rows }: { rows: OrderRow[] }) {
-  const { t, locale } = useI18n(ordersTableMessages)
+  const { t, locale, lang } = useI18n(ordersTableMessages)
+  const timeLabel = useTimeslotLabel()
   const c = t.columns
 
   return (
@@ -37,9 +40,17 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
               <td className="ord-muted">{row.address ?? DASH}</td>
               <td className="ord-nowrap">
                 {formatDateRange(row.dateFrom, row.dateTo, locale) ?? DASH}
-                {row.timeName ? <div className="ord-muted">{row.timeName}</div> : null}
+                {row.timeName || row.timeId ? (
+                  <div className="ord-muted">
+                    {timeLabel({ id: row.timeId, name: row.timeName })}
+                  </div>
+                ) : null}
               </td>
-              <td>{row.serviceName ?? DASH}</td>
+              <td>
+                {row.serviceName
+                  ? localizeServiceName(row.serviceId ?? row.serviceName, lang, row.serviceName)
+                  : DASH}
+              </td>
               <td>
                 <OrderStatusBadge status={row.status} />
               </td>

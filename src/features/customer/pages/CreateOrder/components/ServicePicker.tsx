@@ -1,6 +1,7 @@
 import { Card, EmptyState } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption } from '../../../api/customerApi'
+import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { servicePickerMessages } from './ServicePicker.messages'
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
 }
 
 export function ServicePicker({ services, loading, selectedId, suggested, error, onSelect }: Props) {
-  const { t } = useI18n(servicePickerMessages)
+  const { t, lang } = useI18n(servicePickerMessages)
 
   return (
     <Card title={t.cardTitle}>
@@ -22,7 +23,7 @@ export function ServicePicker({ services, loading, selectedId, suggested, error,
           <strong>{t.aiSuggested}</strong>
           <div className="co-hint">{t.aiSuggestedHint}</div>
           <div className="co-service">
-            <div className="co-service-name">{suggested.name}</div>
+            <div className="co-service-name">{localizeServiceName(suggested.id, lang, suggested.name)}</div>
             <div className="co-service-desc">
               {suggested.description || t.defaultDescription}
             </div>
@@ -59,7 +60,7 @@ export function ServicePicker({ services, loading, selectedId, suggested, error,
               aria-pressed={selectedId === service.id}
               onClick={() => onSelect(service.id)}
             >
-              <span className="co-service-name">{service.name}</span>
+              <span className="co-service-name">{localizeServiceName(service.id, lang, service.name)}</span>
               <span className="co-service-desc">
                 {service.description || t.defaultDescription}
               </span>

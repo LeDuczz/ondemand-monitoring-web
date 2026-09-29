@@ -1,6 +1,7 @@
 import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { CustomerConsultation, ServiceOption } from '../../../api/customerApi'
+import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import type { FormState } from '../../../lib/createOrder/types'
 import { consultationSummaryCardMessages } from './ConsultationSummaryCard.messages'
 import { Metric } from './Metric'
@@ -12,7 +13,7 @@ type Props = {
 }
 
 export function ConsultationSummaryCard({ form, consultation, service }: Props) {
-  const { t } = useI18n(consultationSummaryCardMessages)
+  const { t, lang } = useI18n(consultationSummaryCardMessages)
   const recommended =
     consultation?.recommendedServiceName || consultation?.recommendedServiceId
   return (
@@ -20,7 +21,10 @@ export function ConsultationSummaryCard({ form, consultation, service }: Props) 
       {recommended ? (
         <div className="co-notice is-success">
           <strong className="co-notice-title">{t.recommendedService}</strong>
-          {consultation?.recommendedServiceName || service?.name || recommended}
+          {localizeServiceName(
+            consultation?.recommendedServiceName || service?.name || recommended,
+            lang,
+          )}
         </div>
       ) : (
         <p className="co-hint">{t.noConsultation}</p>

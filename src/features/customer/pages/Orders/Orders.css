@@ -1,0 +1,143 @@
+/* Customer order list. Tokens come from shared/components/ui/ui.css. */
+
+.ord-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.ord-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+
+.ord-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.ord-chip {
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text-2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: normal;
+  text-align: center;
+}
+
+.ord-chip:hover {
+  background: var(--ui-surface-2);
+}
+
+.ord-chip.is-active {
+  background: var(--ui-primary-soft);
+  border-color: var(--ui-primary);
+  color: var(--ui-primary-text);
+  font-weight: 600;
+}
+
+.ord-search {
+  flex: 1 1 260px;
+  max-width: 380px;
+  min-width: 0;
+  border: 1px solid var(--ui-border-strong);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border-radius: var(--ui-radius-sm);
+  padding: 8px 12px;
+  font-size: 13.5px;
+}
+
+.ord-search:focus {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 1px;
+}
+
+.ord-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.ord-table th {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-text-3);
+  border-bottom: 1px solid var(--ui-border);
+  white-space: normal;
+}
+
+.ord-table td {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  min-width: 120px;
+}
+
+.ord-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ord-table tbody tr:hover td {
+  background: var(--ui-surface-2);
+}
+
+.ord-title {
+  font-weight: 600;
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+.ord-title:hover,
+.ord-link:hover {
+  text-decoration: underline;
+}
+
+.ord-link {
+  color: var(--ui-primary-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.ord-code {
+  margin-top: 2px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--ui-text-3);
+}
+
+.ord-muted {
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+}
+
+.ord-nowrap {
+  white-space: nowrap;
+}
+
+.ord-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+
+.ord-pager-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}

@@ -20,14 +20,12 @@ import type {
   MediaDetail,
   MediaLibrary,
 } from '../../features/customer/types/orders'
-import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import seed from '../data/customer-orders.json'
+import { createdOrders, orders, type SeedOrder } from './customerOrdersStore'
 
-type SeedOrder = (typeof seed.orders)[number]
 type SeedMedia = (typeof seed.media)['msn-006-1'][number]
 
-const orders = createCollection(seed.orders as SeedOrder[]) as unknown as SeedOrder[]
 
 // Flatten all media from all missions
 const allMedia: SeedMedia[] = Object.values(seed.media).flat() as SeedMedia[]
@@ -269,8 +267,24 @@ registerMockRoutes([
     handler: ({ params }) => {
       const { id } = params
       const order = orders.find((o) => o.id === id)
-      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng.')
-      const cancellable: OrderStatus[] = ['SUBMITTED', 'PENDING', 'APPROVED', 'SCHEDULED']
+      if (!order) {
+        // Orders made through POST /api/orders live in the BE-shape store.
+        const made = createdOrders.find((o) => o.id === id)
+        if (!made) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng.')
+        if (made.orderStatus !== 'PENDING' && made.orderStatus !== 'APPROVED')
+          return fail(409, 'CANNOT_CANCEL', 'Không thể huỷ đơn ở trạng thái này.')
+        made.orderStatus = 'CANCELLED'
+        made.updatedAt = new Date().toISOString()
+        return ok(made)
+      }
+      const cancellable: OrderStatus[] = [
+        'DRAFT',
+        'AI_ANALYZED',
+        'SUBMITTED',
+        'PENDING',
+        'APPROVED',
+        'SCHEDULED',
+      ]
       if (!cancellable.includes(order.status as OrderStatus))
         return fail(409, 'CANNOT_CANCEL', 'Không thể huỷ đơn ở trạng thái này.')
       const now = new Date().toISOString()

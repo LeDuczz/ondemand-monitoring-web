@@ -16,12 +16,12 @@ import type {
   ServiceDeliverableOption,
   ServiceRequirementSuggestion,
 } from '../../features/customer/api/customerApi'
-import type {
-  CategoryService,
-  OrderCreateResponse,
-} from '../../features/customer/api/orderApi'
+import type { OrderCreateResponse } from '../../features/customer/api/orderApi'
 import { createCollection } from '../db'
 import { created, fail, ok, registerMockRoutes } from '../mockServer'
+import { createdOrders } from './customerOrdersStore'
+
+type CategoryService = { id: string; name: string; description?: string }
 
 const SERVICE_PRICES: Record<string, number> = {
   'svc-1': 1_500_000,
@@ -62,8 +62,14 @@ const zones = [
   { id: 'zone-nofly', code: 'NOFLY-1', name: 'Vùng cấm sân bay', zoneType: 'RESTRICTED', restricted: true, coordinates: square(500, 600) },
 ]
 
-const createdOrders = createCollection<OrderCreateResponse[]>([])
 const consultations = createCollection<CustomerConsultation[]>([])
+
+/** The wizard stores the picked radius in the first deliverable requirement. */
+function radiusOf(deliverables: unknown): number | undefined {
+  const first = Array.isArray(deliverables) ? deliverables[0] : undefined
+  const radius = Number(first?.requirement?.radiusM)
+  return Number.isFinite(radius) && radius > 0 ? radius : undefined
+}
 
 let seq = 0
 const nextId = (prefix: string) => `${prefix}-${++seq}`
@@ -163,6 +169,7 @@ registerMockRoutes([
         address: b.address as string | undefined,
         longitude: Number(b.longitude),
         latitude: Number(b.latitude),
+        radiusM: radiusOf(b.deliverables),
         coverageArea: b.coverageArea as Record<string, unknown>,
         preferredDateFrom: String(b.preferredDateFrom),
         preferredDateTo: String(b.preferredDateTo),

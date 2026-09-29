@@ -4,6 +4,8 @@
 
 import './handlers/auth'
 import './handlers/managerDashboard'
+import './handlers/customerOrdersBe'
+import './handlers/customerMissionHistoryBe'
 import './handlers/managerOrders'
 import './handlers/managerMissions'
 import './handlers/managerDrones'

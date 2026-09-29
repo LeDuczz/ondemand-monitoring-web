@@ -8,6 +8,7 @@ import type {
   MediaDetail,
   MediaLibrary,
 } from '../types/orders'
+import { normalizeStatus } from '../lib/orders/mapOrder'
 import type { OrderCreateResponse } from './orderApi'
 
 export type CreateOrderPayload = {
@@ -106,26 +107,6 @@ type SendConsultationMessageOptions = {
   requestContext?: string
 }
 
-type BackendOrderResponse = {
-  id: string
-  title?: string | null
-  serviceName?: string | null
-  description?: string | null
-  address?: string | null
-  longitude?: number | null
-  latitude?: number | null
-  radiusM?: number | null
-  preferredDateFrom?: string | null
-  preferredDateTo?: string | null
-  preferredTimeName?: string | null
-  orderStatus?: OrderStatus | null
-  rejectReason?: string | null
-  reviewByName?: string | null
-  reviewAt?: string | null
-  createdAt?: string | null
-  updatedAt?: string | null
-}
-
 const BACKEND_ORDER_STATUSES = new Set<OrderStatus>([
   'PENDING',
   'APPROVED',
@@ -135,7 +116,7 @@ const BACKEND_ORDER_STATUSES = new Set<OrderStatus>([
   'CANCELLED',
 ])
 
-function getPreferredDate(order: BackendOrderResponse) {
+function getPreferredDate(order: OrderCreateResponse) {
   return (
     order.preferredDateFrom ??
     order.preferredDateTo ??
@@ -144,8 +125,8 @@ function getPreferredDate(order: BackendOrderResponse) {
   )
 }
 
-function toCustomerOrderItem(order: BackendOrderResponse): CustomerOrderItem {
-  const status = order.orderStatus ?? 'PENDING'
+function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
+  const status = normalizeStatus(order.orderStatus)
   return {
     id: order.id,
     orderCode: order.id,
@@ -168,54 +149,25 @@ function toCustomerOrderItem(order: BackendOrderResponse): CustomerOrderItem {
   }
 }
 
-function toCustomerOrderDetail(
-  order: BackendOrderResponse,
-): CustomerOrderDetail {
-  const status = order.orderStatus ?? 'PENDING'
-  const statusAt =
-    order.updatedAt ?? order.createdAt ?? new Date().toISOString()
-  return {
-    id: order.id,
-    orderCode: order.id,
-    title: order.title ?? 'Đơn giám sát',
-    purpose: null,
-    description: order.description ?? null,
-    addressText: order.address ?? null,
-    centerLat: order.latitude ?? null,
-    centerLon: order.longitude ?? null,
-    radiusM: order.radiusM ?? null,
-    preferredDate: getPreferredDate(order),
-    preferredTimeName: order.preferredTimeName ?? null,
-    status,
-    serviceNames: order.serviceName ? [order.serviceName] : [],
-    submittedAt: order.createdAt ?? null,
-    approvalDecision:
-      status === 'APPROVED'
-        ? 'APPROVED'
-        : status === 'REJECTED'
-          ? 'REJECTED'
-          : null,
-    approvalReason: order.rejectReason ?? null,
-    approvalAt: order.reviewAt ?? null,
-    approvalActorName: order.reviewByName ?? null,
-    statusHistory: [
-      {
-        status,
-        at: statusAt,
-        actorName: order.reviewByName ?? null,
-        note: order.rejectReason ?? null,
-      },
-    ],
-    missions: [],
-    aiSummary: null,
-    canCancel: status === 'PENDING',
-  }
-}
-
 export const customerApi = {
   getDashboard: (signal?: AbortSignal) =>
     apiRequest<CustomerDashboard>('/api/customer/dashboard', { signal }),
 
+  /** `GET /api/orders/mine[?status]` [BE]: the whole list, no paging. */
+  listMyOrders: (params: { status?: OrderStatus; signal?: AbortSignal } = {}) =>
+    apiRequest<OrderCreateResponse[]>('/api/orders/mine', {
+      query: { status: params.status },
+      signal: params.signal,
+    }),
+
+  /** `GET /api/orders/{id}` [BE] `OrderCreateResponse`. */
+  getOrderById: (orderId: string, signal?: AbortSignal) =>
+    apiRequest<OrderCreateResponse>(
+      `/api/orders/${encodeURIComponent(orderId)}`,
+      { signal },
+    ),
+
+  /** Legacy list shape, still used by the support ticket dialog. */
   listOrders: (params: {
     status?: string
     serviceId?: string
@@ -223,21 +175,12 @@ export const customerApi = {
   }) => {
     const status = params.status as OrderStatus | undefined
     if (status && !BACKEND_ORDER_STATUSES.has(status)) {
-      return Promise.resolve({ items: [] })
+      return Promise.resolve({ items: [] as CustomerOrderItem[] })
     }
-
-    return apiRequest<BackendOrderResponse[]>('/api/orders/mine', {
-      query: { status },
-      signal: params.signal,
-    }).then((orders) => ({
-      items: orders.map(toCustomerOrderItem),
-    }))
+    return customerApi
+      .listMyOrders({ status, signal: params.signal })
+      .then((orders) => ({ items: orders.map(toCustomerOrderItem) }))
   },
-
-  getOrder: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<BackendOrderResponse>(`/api/orders/${orderId}`, { signal }).then(
-      toCustomerOrderDetail,
-    ),
 
   listServices: (signal?: AbortSignal) =>
     apiRequest<ServiceOption[]>('/api/services', {

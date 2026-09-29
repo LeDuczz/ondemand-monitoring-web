@@ -20,6 +20,7 @@ import type {
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import analysesSeed from '../data/order-analyses.json'
+import { findBeOrder } from './customerOrdersStore'
 import { missions } from './missionsStore'
 import { findOrder, orders, type SeedOrder } from './ordersStore'
 
@@ -160,6 +161,9 @@ registerMockRoutes([
     method: 'GET',
     path: '/api/orders/:id',
     handler: ({ params }) => {
+      // The signed-in customer's own orders (BE OrderCreateResponse shape).
+      const mine = findBeOrder(params.id)
+      if (mine) return ok(mine)
       const order = findOrder(params.id)
       if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
       if (order.status !== 'PENDING') {

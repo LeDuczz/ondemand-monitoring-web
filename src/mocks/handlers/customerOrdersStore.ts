@@ -13,6 +13,17 @@ import seed from '../data/customer-orders.json'
 export type SeedOrder = (typeof seed.orders)[number]
 
 export const orders = createCollection(seed.orders as SeedOrder[]) as unknown as SeedOrder[]
+/** Latest AI analysis per customer order (seed shape, findings carry ids). */
+export type CustomerAnalysis = {
+  orderId: string
+  verdict: string
+  findings: Array<{ id: string; suggestionState: string | null }>
+} & Record<string, unknown>
+
+export const customerAnalyses = createCollection(
+  seed.aiAnalyses,
+) as unknown as Record<string, CustomerAnalysis>
+
 export const createdOrders = createCollection<OrderCreateResponse[]>([])
 
 export const BE_ORDER_STATUSES = [
@@ -69,6 +80,16 @@ export function listBeOrders(): OrderCreateResponse[] {
   return [...createdOrders, ...orders.map(toBeOrder)].sort((a, b) =>
     String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')),
   )
+}
+
+/**
+ * `GET /api/orders/{id}/analysis/latest` for the customer's own orders:
+ * the analysis, `null` when the order has none, `undefined` when the order
+ * is not the customer's.
+ */
+export function findCustomerAnalysis(id: string): CustomerAnalysis | null | undefined {
+  if (!findBeOrder(id)) return undefined
+  return customerAnalyses[id] ?? null
 }
 
 export function findBeOrder(id: string): OrderCreateResponse | undefined {

@@ -1,0 +1,49 @@
+import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import { PageHeader } from '../../../../shared/components/ui'
+import { useI18n } from '../../../../shared/i18n'
+import { MissionStatusBadge } from '../../components/common/MissionStatusBadge'
+import { customerHref } from '../../routes'
+import { MissionInfoCard } from './components/MissionInfoCard'
+import { MissionResults } from './components/MissionResults'
+import { useMissionDetail } from './hooks/useMissionDetail'
+import './MissionHistoryDetail.css'
+import { missionHistoryDetailPageMessages } from './MissionHistoryDetailPage.messages'
+
+/** One finished mission: `mission-history/{id}` plus its media and result counts. */
+export function MissionHistoryDetailPage({ missionId }: { missionId: string }) {
+  return <Detail key={missionId} missionId={missionId} />
+}
+
+function Detail({ missionId }: { missionId: string }) {
+  const { t } = useI18n(missionHistoryDetailPageMessages)
+  const detail = useMissionDetail(missionId)
+  const mission = detail.mission.data
+
+  if (detail.mission.loading && !mission) return <LoadingState />
+  if (!mission) {
+    return (
+      <ErrorState
+        title={t.errorTitle}
+        error={detail.mission.error}
+        onRetry={detail.mission.reload}
+      />
+    )
+  }
+
+  return (
+    <div className="mhd-page">
+      <PageHeader
+        back={<a href={customerHref({ screen: 'missionHistory' })}>{t.backToHistory}</a>}
+        title={
+          <span className="mhd-title">
+            <span>{mission.orderTitle}</span>
+            <MissionStatusBadge status={mission.status} />
+          </span>
+        }
+        subtitle={mission.code}
+      />
+      <MissionInfoCard mission={mission} />
+      <MissionResults detail={detail} missionCode={mission.code} />
+    </div>
+  )
+}

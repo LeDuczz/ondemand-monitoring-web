@@ -3,10 +3,8 @@ import {
   resetHttpTransport,
   setHttpTransport,
 } from '../../../shared/api/httpClient'
-import {
-  customerMissionHistoryApi,
-  customerMissionMediaApi,
-} from './customerMissionHistoryApi'
+import { customerMediaApi } from './customerMediaApi'
+import { customerMissionHistoryApi } from './customerMissionHistoryApi'
 
 afterEach(resetHttpTransport)
 describe('customer history API', () => {
@@ -27,7 +25,7 @@ describe('customer history API', () => {
       '/api/customer/mission-history?page=2&size=20',
     )
     expect(transport.mock.calls[0]?.[1]?.signal).toBe(signal)
-    await customerMissionMediaApi.get('mission/a', 'media/b', signal)
+    await customerMediaApi.getMissionMedia('mission/a', 'media/b', signal)
     expect(String(transport.mock.calls[1]?.[0])).toContain(
       '/api/customer/missions/mission%2Fa/media/media%2Fb',
     )

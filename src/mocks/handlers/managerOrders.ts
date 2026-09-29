@@ -20,7 +20,7 @@ import type {
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import analysesSeed from '../data/order-analyses.json'
-import { findBeOrder } from './customerOrdersStore'
+import { findBeOrder, findCustomerAnalysis } from './customerOrdersStore'
 import { missions } from './missionsStore'
 import { findOrder, orders, type SeedOrder } from './ordersStore'
 
@@ -181,7 +181,11 @@ registerMockRoutes([
     path: '/api/orders/:id/analysis/latest',
     handler: ({ params }) => {
       const order = findOrder(params.id)
-      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (!order) {
+        // The customer's own orders: BE returns `data: null` when none yet.
+        const own = findCustomerAnalysis(params.id)
+        return own === undefined ? fail(404, 'NOT_FOUND', 'Không tìm thấy đơn') : ok(own)
+      }
       const found = analyses[order.code]
       if (found) return ok(found)
       // No design-sourced analysis for this order — verdict/counts are

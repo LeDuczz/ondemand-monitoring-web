@@ -1,8 +1,5 @@
 import { apiRequest } from '../../../shared/api/httpClient'
-import type {
-  UploadedMissionMedia,
-  UploadedMissionMediaPage,
-} from '../../media/types/missionMedia'
+import type { MissionStatus } from '../../../shared/types/domain'
 
 export interface CustomerMissionHistory {
   id: string
@@ -10,7 +7,8 @@ export interface CustomerMissionHistory {
   orderId: string
   orderTitle: string
   address: string | null
-  status: 'COMPLETED' | 'FAILED' | 'CANCELLED'
+  /** Swagger lists the full mission enum; the BE only returns finished ones. */
+  status: MissionStatus
   scheduledStartAt: string | null
   startedAt: string | null
   completedAt: string | null
@@ -19,6 +17,7 @@ export interface CustomerMissionHistory {
 export interface CustomerMissionHistoryPage {
   items: CustomerMissionHistory[]
   page: number
+  size?: number
   totalItems: number
   totalPages: number
   first: boolean
@@ -38,6 +37,16 @@ export const customerMissionHistoryApi = {
       query: { page, size: 20 },
       signal,
     }),
+  /** Every page of the history (size 20), for lookups by order or mission. */
+  listAll: async (signal?: AbortSignal, maxPages = 10) => {
+    const all: CustomerMissionHistory[] = []
+    for (let page = 0; page < maxPages; page += 1) {
+      const result = await customerMissionHistoryApi.list(page, signal)
+      all.push(...result.items)
+      if (result.last || result.totalPages === 0) break
+    }
+    return all
+  },
   get: (id: string, signal?: AbortSignal) =>
     apiRequest<CustomerMissionHistory>(
       `/api/customer/mission-history/${encodeURIComponent(id)}`,
@@ -47,16 +56,4 @@ export const customerMissionHistoryApi = {
     apiRequest<CustomerMissionMediaStatus>(`${missionPath(id)}/media-status`, {
       signal,
     }),
-}
-export const customerMissionMediaApi = {
-  list: (id: string, page: number, signal?: AbortSignal) =>
-    apiRequest<UploadedMissionMediaPage>(`${missionPath(id)}/media`, {
-      query: { page, size: 12 },
-      signal,
-    }),
-  get: (id: string, mediaId: string, signal?: AbortSignal) =>
-    apiRequest<UploadedMissionMedia>(
-      `${missionPath(id)}/media/${encodeURIComponent(mediaId)}`,
-      { signal },
-    ),
 }

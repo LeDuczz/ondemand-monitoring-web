@@ -1,24 +1,23 @@
 import { useEffect, useState } from 'react'
 
 import { EmptyState } from '../../shared/components/odm/StateView'
-import { useApiQuery } from '../../shared/hooks/useApiQuery'
 import { useI18n } from '../../shared/i18n'
-import { customerApi } from './api/customerApi'
 import { customerAppMessages } from './CustomerApp.messages'
 import { CustomerLayout } from './CustomerLayout'
-import { AnalysisPage } from './pages/AnalysisPage'
+import { useNewMediaCount } from './hooks/useNewMediaCount'
+import { AnalysisPage } from './pages/Analysis'
 import { CreateOrderPage } from './pages/CreateOrder'
 import { DashboardPage } from './pages/Dashboard'
-import { LivePage } from './pages/LivePage'
-import { LiveHubPage } from './pages/LiveHubPage'
-import { MediaDetailPage } from './pages/MediaDetailPage'
-import { MediaLibraryPage } from './pages/MediaLibraryPage'
-import { MediaPage } from './pages/MediaPage'
-import { NotificationsPage } from './pages/NotificationsPage'
+import { LivePage } from './pages/Live'
+import { LiveHubPage } from './pages/LiveHub'
+import { MediaDetailPage } from './pages/MediaDetail'
+import { MediaLibraryPage } from './pages/MediaLibrary'
+import { MediaPage } from './pages/Media'
+import { NotificationsPage } from './pages/Notifications'
 import { OrderDetailPage } from './pages/OrderDetail'
 import { OrdersPage } from './pages/Orders'
-import { MissionHistoryPage } from './pages/MissionHistoryPage'
-import { MissionHistoryDetailPage } from './pages/MissionHistoryDetailPage'
+import { MissionHistoryPage } from './pages/MissionHistory'
+import { MissionHistoryDetailPage } from './pages/MissionHistoryDetail'
 import { customerHref, parseCustomerRoute, type CustomerRoute } from './routes'
 
 function useHash(): string {
@@ -37,11 +36,7 @@ export function CustomerApp() {
   const route = parseCustomerRoute(hash)
   const { t } = useI18n(customerAppMessages)
 
-  const dashboard = useApiQuery(
-    (signal) => customerApi.getDashboard(signal),
-    [],
-  )
-  const newMediaCount = dashboard.data?.newMediaCount
+  const newMediaCount = useNewMediaCount()
 
   return (
     <CustomerLayout

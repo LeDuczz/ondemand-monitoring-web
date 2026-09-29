@@ -1,0 +1,66 @@
+/* Customer live hub. Tokens come from shared/components/ui/ui.css. */
+
+.lh-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.lh-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lh-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+
+.lh-card-main {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.lh-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.lh-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ui-danger-text);
+  text-transform: uppercase;
+}
+
+.lh-live::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ui-danger);
+}
+
+.lh-title {
+  overflow-wrap: anywhere;
+}
+
+.lh-sub {
+  margin-top: var(--ui-space-1);
+  font-size: 12.5px;
+  color: var(--ui-text-3);
+  overflow-wrap: anywhere;
+}

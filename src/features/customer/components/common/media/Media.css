@@ -1,0 +1,139 @@
+/* Shared customer media UI (cards, viewer, info, preview). Tokens: ui.css. */
+
+.md-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.md-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  text-align: left;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+}
+
+.md-card:hover {
+  border-color: var(--ui-border-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.md-card:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+.md-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+  overflow: hidden;
+}
+
+.md-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.md-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-3);
+  min-width: 0;
+}
+
+.md-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.md-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-1) var(--ui-space-2);
+  font-size: 12px;
+  color: var(--ui-text-3);
+}
+
+.md-viewer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  max-height: 60vh;
+  background: var(--ui-surface-2);
+  border-radius: var(--ui-radius-lg);
+  overflow: hidden;
+  color: var(--ui-text-3);
+  text-align: center;
+  padding: var(--ui-space-3);
+}
+
+.md-viewer img,
+.md-viewer video {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.md-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3) var(--ui-space-4);
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .md-info {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.md-info dt {
+  font-size: 12px;
+  color: var(--ui-text-3);
+}
+
+.md-info dd {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.md-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.md-preview-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-3);
+  color: var(--ui-danger-text);
+  font-size: 13.5px;
+}
+
+.md-footer-spacer {
+  flex: 1 1 auto;
+}

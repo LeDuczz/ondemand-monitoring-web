@@ -1,0 +1,45 @@
+/* Customer media detail. Tokens come from shared/components/ui/ui.css. */
+
+.mdp-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.mdp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--ui-space-4);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .mdp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.mdp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.mdp-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ui-space-2);
+}
+
+.mdp-download {
+  align-self: flex-start;
+}
+
+.mdp-expired {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ui-danger-text);
+}

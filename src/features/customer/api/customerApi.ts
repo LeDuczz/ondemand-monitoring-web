@@ -1,15 +1,14 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 import type { OrderStatus } from '../../../shared/types/domain'
-import type {
-  AiAnalysisResult,
-  CustomerDashboard,
-  CustomerOrderDetail,
-  CustomerOrderItem,
-  MediaDetail,
-  MediaLibrary,
-} from '../types/orders'
+import type { RawAnalysis } from '../lib/analysis/types'
+import type { CustomerOrderItem } from '../types/orders'
 import { normalizeStatus } from '../lib/orders/mapOrder'
 import type { OrderCreateResponse } from './orderApi'
+
+export type FindingDecision = {
+  findingId: string
+  state: 'ACCEPTED' | 'IGNORED'
+}
 
 export type CreateOrderPayload = {
   title: string
@@ -150,9 +149,6 @@ function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
 }
 
 export const customerApi = {
-  getDashboard: (signal?: AbortSignal) =>
-    apiRequest<CustomerDashboard>('/api/customer/dashboard', { signal }),
-
   /** `GET /api/orders/mine[?status]` [BE]: the whole list, no paging. */
   listMyOrders: (params: { status?: OrderStatus; signal?: AbortSignal } = {}) =>
     apiRequest<OrderCreateResponse[]>('/api/orders/mine', {
@@ -254,42 +250,31 @@ export const customerApi = {
       body: payload,
     }),
 
-  saveDraft: (orderId: string, payload: Partial<CreateOrderPayload>) =>
-    apiRequest<CustomerOrderDetail>(`/api/customer/orders/${orderId}/draft`, {
-      method: 'PATCH',
-      body: payload,
-    }),
-
+  /** Mock only: the BE has no cancel endpoint. Returns the order in BE shape. */
   cancelOrder: (orderId: string) =>
-    apiRequest<CustomerOrderDetail>(`/api/customer/orders/${orderId}/cancel`, {
-      method: 'POST',
-    }),
+    apiRequest<OrderCreateResponse>(
+      `/api/customer/orders/${encodeURIComponent(orderId)}/cancel`,
+      { method: 'POST' },
+    ),
 
-  getAnalysis: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<AiAnalysisResult>(`/api/customer/orders/${orderId}/analysis`, {
-      signal,
-    }),
+  /** `GET /api/orders/{orderId}/analysis/latest` [BE]: `null` until analysed. */
+  getLatestAnalysis: (orderId: string, signal?: AbortSignal) =>
+    apiRequest<RawAnalysis | null>(
+      `/api/orders/${encodeURIComponent(orderId)}/analysis/latest`,
+      { signal },
+    ),
 
+  /** Mock only: the BE has no endpoint to accept a finding suggestion. */
   applyFindingSuggestion: (orderId: string, findingId: string) =>
-    apiRequest<AiAnalysisResult>(
-      `/api/customer/orders/${orderId}/analysis/findings/${findingId}/apply`,
+    apiRequest<FindingDecision>(
+      `/api/customer/orders/${encodeURIComponent(orderId)}/analysis/findings/${encodeURIComponent(findingId)}/apply`,
       { method: 'POST' },
     ),
 
+  /** Mock only: the BE has no endpoint to ignore a finding suggestion. */
   ignoreFinding: (orderId: string, findingId: string) =>
-    apiRequest<AiAnalysisResult>(
-      `/api/customer/orders/${orderId}/analysis/findings/${findingId}/ignore`,
+    apiRequest<FindingDecision>(
+      `/api/customer/orders/${encodeURIComponent(orderId)}/analysis/findings/${encodeURIComponent(findingId)}/ignore`,
       { method: 'POST' },
     ),
-
-  submitOrder: (orderId: string) =>
-    apiRequest<CustomerOrderDetail>(`/api/customer/orders/${orderId}/submit`, {
-      method: 'POST',
-    }),
-
-  getMediaLibrary: (params: { signal?: AbortSignal }) =>
-    apiRequest<MediaLibrary>('/api/customer/media', { signal: params.signal }),
-
-  getMediaDetail: (mediaId: string, signal?: AbortSignal) =>
-    apiRequest<MediaDetail>(`/api/customer/media/${mediaId}`, { signal }),
 }

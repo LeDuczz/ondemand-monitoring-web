@@ -1,0 +1,1 @@
+export { MediaDetailPage } from './MediaDetailPage'

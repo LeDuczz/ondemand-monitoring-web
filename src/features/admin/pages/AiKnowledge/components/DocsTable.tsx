@@ -1,9 +1,9 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge, type AdminTone } from '../../../../../shared/components/ui'
+import { StatusBadge, type UiTone } from '../../../../../shared/components/ui'
 import type { DocStatus, KnowledgeDoc } from '../../../types/aiKnowledge'
 import { docsTableMessages } from './DocsTable.messages'
 
-const DOC_STATUS_TONE: Record<DocStatus, AdminTone> = {
+const DOC_STATUS_TONE: Record<DocStatus, UiTone> = {
   INDEXED: 'success',
   PENDING: 'warning',
   FAILED: 'danger',

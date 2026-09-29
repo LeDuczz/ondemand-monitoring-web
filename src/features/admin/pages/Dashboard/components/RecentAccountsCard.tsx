@@ -4,7 +4,7 @@ import { Card } from '../../../../../shared/components/ui'
 import { MockDataBadge } from '../../../../../shared/components/ui'
 import {
   StatusBadge,
-  toAdminTone,
+  toUiTone,
 } from '../../../../../shared/components/ui'
 import { fmtDate, getAccountStatusMeta } from '../../../lib/accountStatus'
 import { adminHref } from '../../../routes'
@@ -46,7 +46,7 @@ export function RecentAccountsCard({
                 </a>
                 <div className="adm-list-sub">{fmtDate(acc.createdAt, lang)}</div>
               </div>
-              <StatusBadge tone={toAdminTone(meta.tone)}>{meta.label}</StatusBadge>
+              <StatusBadge tone={toUiTone(meta.tone)}>{meta.label}</StatusBadge>
             </div>
           )
         })}

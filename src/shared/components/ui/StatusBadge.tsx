@@ -2,9 +2,9 @@ import type { ReactNode } from 'react'
 
 import type { StatusTone } from '../../types/domain'
 
-export type AdminTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info'
+export type UiTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info'
 
-const FROM_STATUS_TONE: Record<StatusTone, AdminTone> = {
+const FROM_STATUS_TONE: Record<StatusTone, UiTone> = {
   green: 'success',
   yellow: 'warning',
   orange: 'warning',
@@ -13,13 +13,13 @@ const FROM_STATUS_TONE: Record<StatusTone, AdminTone> = {
   gray: 'neutral',
 }
 
-/** Maps the shared `StatusTone` colours onto the admin badge tones. */
-export function toAdminTone(tone: StatusTone): AdminTone {
+/** Maps the shared `StatusTone` colours onto the UI badge tones. */
+export function toUiTone(tone: StatusTone): UiTone {
   return FROM_STATUS_TONE[tone]
 }
 
 type Props = {
-  tone?: AdminTone
+  tone?: UiTone
   children: ReactNode
 }
 

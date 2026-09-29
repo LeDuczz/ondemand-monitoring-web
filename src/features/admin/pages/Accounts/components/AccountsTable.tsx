@@ -1,6 +1,6 @@
 import { useI18n } from '../../../../../shared/i18n'
 import { RoleBadge } from '../../../components/common/RoleBadge'
-import { StatusBadge, toAdminTone } from '../../../../../shared/components/ui'
+import { StatusBadge, toUiTone } from '../../../../../shared/components/ui'
 import { fmtDateTime, getAccountStatusMeta } from '../../../lib/accountStatus'
 import type { AdminAccountItem } from '../../../types/accounts'
 import { AccountActions } from './AccountActions'
@@ -65,7 +65,7 @@ export function AccountsTable({
                 <RoleBadge role={acc.role} />
               </td>
               <td>
-                <StatusBadge tone={toAdminTone(meta.tone)}>
+                <StatusBadge tone={toUiTone(meta.tone)}>
                   {meta.label}
                 </StatusBadge>
                 {!acc.emailVerified && (

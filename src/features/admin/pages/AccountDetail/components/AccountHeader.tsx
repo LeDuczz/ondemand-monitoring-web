@@ -4,7 +4,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import { PageHeader } from '../../../../../shared/components/ui'
 import {
   StatusBadge,
-  toAdminTone,
+  toUiTone,
 } from '../../../../../shared/components/ui'
 import { getAccountStatusMeta } from '../../../lib/accountStatus'
 import type { AdminAccountDetail } from '../../../types/accounts'
@@ -29,7 +29,7 @@ export function AccountHeader({
         subtitle={account.email}
         actions={
           <>
-            <StatusBadge tone={toAdminTone(statusMeta.tone)}>
+            <StatusBadge tone={toUiTone(statusMeta.tone)}>
               {statusMeta.label}
             </StatusBadge>
             <button

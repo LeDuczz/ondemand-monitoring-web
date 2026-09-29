@@ -1,10 +1,10 @@
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge, type AdminTone } from '../../../../../shared/components/ui'
+import { StatusBadge, type UiTone } from '../../../../../shared/components/ui'
 import { fmtDateTime } from '../../../lib/accountStatus'
 import type { AnalysisLog, AnalysisVerdict } from '../../../types/aiKnowledge'
 import { analysisLogTableMessages } from './AnalysisLogTable.messages'
 
-const VERDICT_TONE: Record<AnalysisVerdict, AdminTone> = {
+const VERDICT_TONE: Record<AnalysisVerdict, UiTone> = {
   FEASIBLE: 'success',
   RISKY: 'warning',
   INFEASIBLE: 'danger',

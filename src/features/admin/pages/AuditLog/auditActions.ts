@@ -1,5 +1,5 @@
 import { defineMessages } from '../../../../shared/i18n'
-import type { AdminTone } from '../../../../shared/components/ui'
+import type { UiTone } from '../../../../shared/components/ui'
 import type { AuditAction } from '../../types/auditLog'
 
 export const AUDIT_ACTIONS: AuditAction[] = [
@@ -10,7 +10,7 @@ export const AUDIT_ACTIONS: AuditAction[] = [
   'STATUS_CHANGE',
 ]
 
-export const ACTION_TONE: Record<AuditAction, AdminTone> = {
+export const ACTION_TONE: Record<AuditAction, UiTone> = {
   CREATE: 'success',
   UPDATE: 'info',
   DELETE: 'danger',

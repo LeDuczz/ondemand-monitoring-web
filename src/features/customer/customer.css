@@ -1,13 +1,23 @@
 /*
  * Customer portal shell (sidebar + top bar), scoped under `.odm-cus`.
- * Mirrors the .odm-mgr layout pattern from manager.css; token names are
- * identical so both portals share the same design language.
+ * Mirrors the admin shell (240px sidebar, active left bar, 1280px content)
+ * and uses the shared --ui-* tokens from src/shared/components/ui/ui.css.
  */
 
 .odm-cus {
+  --cus-sidebar-w: 240px;
   height: 100vh;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+/* Long English / Vietnamese labels must wrap instead of clipping. */
+.odm-cus .odm-btn,
+.odm-cus th,
+.odm-cus .odm-cus-navi {
+  white-space: normal;
+  min-width: 0;
 }
 
 .odm-cus-shell {
@@ -19,29 +29,27 @@
 /* ---------- Sidebar ---------- */
 
 .odm-cus-side {
-  width: 220px;
+  width: var(--cus-sidebar-w);
   flex: none;
-  background: var(--sf);
-  border-right: 1px solid var(--bd);
+  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
-  padding: 12px 10px;
+  padding: var(--ui-space-4) var(--ui-space-3);
 }
 
 .odm-cus-brand {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 10px;
-  padding: 6px 6px 16px;
+  padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-5);
   text-decoration: none;
-  color: var(--tx);
+  color: var(--ui-text);
 }
 
 .odm-cus-brand-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 0;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   object-position: left center;
   flex: none;
@@ -50,90 +58,112 @@
 .odm-cus-brand-name {
   display: flex;
   flex-direction: column;
-  color: var(--brand-primary);
-  font-size: 20px;
+  min-width: 0;
+  font-size: 18px;
   font-weight: 900;
   line-height: 0.95;
 }
 
 .odm-cus-brand-primary {
-  color: var(--brand-primary);
+  color: var(--brand-primary, var(--ui-text));
 }
 
 .odm-cus-brand-accent {
-  color: var(--brand-accent);
-  -webkit-text-fill-color: var(--brand-accent);
+  color: var(--brand-accent, var(--ui-primary));
+  -webkit-text-fill-color: var(--brand-accent, var(--ui-primary));
   font-size: 1.22em;
 }
 
 .odm-cus-nav-scroll {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--ui-space-1);
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .odm-cus-navg {
   font-size: 11px;
   font-weight: 600;
-  color: var(--tx3);
-  padding: 12px 10px 4px;
-  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ui-text-3);
+  padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-1);
 }
 
 .odm-cus-navi {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 7px 10px;
-  border-radius: 7px;
-  font-size: 13px;
+  gap: 10px;
+  padding: 9px var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  font-size: 13.5px;
   font-weight: 500;
-  color: var(--tx2);
+  color: var(--ui-text-2);
   text-decoration: none;
-  cursor: pointer;
+  overflow-wrap: anywhere;
   transition: background 0.1s;
 }
 
+.odm-cus-navi > span:not(.odm-cus-navc) {
+  min-width: 0;
+}
+
+.odm-cus-navi svg {
+  flex: none;
+}
+
 .odm-cus-navi:hover {
-  background: var(--sf2);
+  background: var(--ui-surface-2);
 }
 
 .odm-cus-navi.is-active {
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-active-tx);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
   font-weight: 600;
-  border-left: 3px solid var(--sidebar-active-border);
-  padding-left: 7px;
+}
+
+.odm-cus-navi.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ui-primary);
 }
 
 .odm-cus-navc {
   margin-left: auto;
-  background: var(--red-solid);
-  color: #fff;
+  flex: none;
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
   font-size: 11px;
   font-weight: 700;
-  border-radius: 99px;
-  padding: 1px 6px;
-  min-width: 18px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  min-width: 20px;
   text-align: center;
 }
 
 .odm-cus-user {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 6px;
-  border-top: 1px solid var(--bd);
-  margin-top: 4px;
+  gap: 10px;
+  padding: var(--ui-space-3) var(--ui-space-2);
+  border-top: 1px solid var(--ui-border);
+  margin-top: var(--ui-space-2);
 }
 
 .odm-cus-avatar {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--sf3);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,28 +175,24 @@
 .odm-cus-user-text {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-width: 0;
 }
 
 .odm-cus-user-name {
   font-size: 12.5px;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .odm-cus-user-email {
   font-size: 11px;
-  color: var(--tx3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--ui-text-3);
+  overflow-wrap: anywhere;
 }
 
 .odm-cus-logout {
   width: 100%;
-  margin-top: 4px;
+  margin-top: var(--ui-space-1);
 }
 
 /* ---------- Main area ---------- */
@@ -180,30 +206,48 @@
 }
 
 .odm-cus-topbar {
-  height: 48px;
+  min-height: 56px;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--bd);
-  background: var(--bg);
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-8);
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface);
 }
 
 .odm-cus-breadcrumb {
-  font-size: 13px;
+  min-width: 0;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--tx2);
+  color: var(--ui-text-2);
+  overflow-wrap: anywhere;
 }
 
 .odm-cus-topbar-spacer {
   flex: 1;
 }
 
+.odm-cus-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
 .odm-cus-content {
   flex: 1;
-  overflow: auto;
-  padding: 20px 24px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--ui-space-8);
+}
+
+.odm-cus-content-inner {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-width: 0;
 }
 
 /* ---------- Dashboard KPI cards ---------- */
@@ -584,26 +628,23 @@
   }
 }
 
-/* ---------- Sidebar mobile scrim ---------- */
+/* ---------- Sidebar drawer (below 900px) ---------- */
 
-@media (min-width: 768px) {
-  .odm-cus-menu-toggle {
-    display: none;
-  }
+@media (min-width: 900px) {
+  .odm-cus-menu-toggle,
   .odm-cus-scrim {
     display: none;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 899px) {
   .odm-cus-side {
     position: fixed;
     top: 0;
-    left: -240px;
+    left: calc(-1 * var(--cus-sidebar-w) - 24px);
     bottom: 0;
     z-index: 200;
     transition: left 0.2s;
-    width: 220px;
   }
 
   .odm-cus-side.is-open {
@@ -624,10 +665,18 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px;
-    color: var(--tx2);
+    padding: var(--ui-space-1);
+    color: var(--ui-text-2);
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .odm-cus-topbar {
+    padding: var(--ui-space-2) var(--ui-space-4);
+  }
+
+  .odm-cus-content {
+    padding: var(--ui-space-5) var(--ui-space-4);
   }
 }

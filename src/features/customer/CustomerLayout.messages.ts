@@ -18,6 +18,7 @@ export const customerLayoutMessages = defineMessages({
     openNav: 'Mở điều hướng',
     toggleTheme: 'Đổi giao diện sáng / tối',
     customer: 'Khách hàng',
+    helpLink: 'Trợ giúp & Hỗ trợ',
   },
   en: {
     nav: 'Customer navigation',
@@ -36,5 +37,6 @@ export const customerLayoutMessages = defineMessages({
     openNav: 'Open navigation',
     toggleTheme: 'Switch to light / dark theme',
     customer: 'Customer',
+    helpLink: 'Help & Support',
   },
 })

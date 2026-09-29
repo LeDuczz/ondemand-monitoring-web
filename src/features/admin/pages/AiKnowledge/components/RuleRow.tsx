@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import { StatusBadge, type AdminTone } from '../../../../../shared/components/ui'
+import { StatusBadge, type UiTone } from '../../../../../shared/components/ui'
 import type {
   FeasibilityRule,
   RuleCategory,
@@ -10,7 +10,7 @@ import type {
 } from '../../../types/aiKnowledge'
 import { rulesTableMessages } from './RulesTable.messages'
 
-const CATEGORY_TONE: Record<RuleCategory, AdminTone> = {
+const CATEGORY_TONE: Record<RuleCategory, UiTone> = {
   SCHEDULE: 'info',
   GEO: 'warning',
   CAPABILITY: 'warning',

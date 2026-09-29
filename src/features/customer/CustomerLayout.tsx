@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
+import { Icon, type IconName } from '../../shared/components/Icon'
 import { LanguageToggle } from '../../shared/components/LanguageToggle'
 import { useI18n } from '../../shared/i18n'
 import { CustomerChatbot } from './components/CustomerChatbot'
@@ -13,26 +14,26 @@ type NavItemKey = keyof typeof customerLayoutMessages.vi.navItems
 
 type NavItem = {
   key: NavItemKey
-  icon: string
+  icon: IconName
   route?: CustomerRoute
   href?: string
   newMediaBadge?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'missionHistory', icon: '◷', route: { screen: 'missionHistory' } },
-  { key: 'dashboard', icon: '⊞', route: { screen: 'dashboard' } },
-  { key: 'orders', icon: '≡', route: { screen: 'orders' } },
-  { key: 'createOrder', icon: '+', route: { screen: 'createOrder' } },
+  { key: 'missionHistory', icon: 'clock', route: { screen: 'missionHistory' } },
+  { key: 'dashboard', icon: 'home', route: { screen: 'dashboard' } },
+  { key: 'orders', icon: 'clipboard', route: { screen: 'orders' } },
+  { key: 'createOrder', icon: 'plus', route: { screen: 'createOrder' } },
   {
     key: 'mediaLibrary',
-    icon: '⊟',
+    icon: 'camera',
     route: { screen: 'mediaLibrary' },
     newMediaBadge: true,
   },
-  { key: 'help', icon: '❓', href: '#help' },
-  { key: 'support', icon: '🎫', href: '#help/tickets' },
-  { key: 'notifications', icon: '🔔', route: { screen: 'notifications' } },
+  { key: 'help', icon: 'file-text', href: '#help' },
+  { key: 'support', icon: 'ticket', href: '#help/tickets' },
+  { key: 'notifications', icon: 'bell', route: { screen: 'notifications' } },
 ]
 
 const activeNavKey: Record<CustomerScreen, NavItemKey | null> = {
@@ -121,16 +122,12 @@ export function CustomerLayout({
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
                 >
-                  <span
+                  <Icon
+                    name={item.icon}
+                    width={18}
+                    height={18}
                     aria-hidden="true"
-                    style={{
-                      fontStyle: 'normal',
-                      minWidth: 16,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {item.icon}
-                  </span>
+                  />
                   <span>{t.navItems[item.key]}</span>
                   {badge ? <span className="odm-cus-navc">{badge}</span> : null}
                 </a>
@@ -169,16 +166,13 @@ export function CustomerLayout({
               aria-label={t.openNav}
               onClick={() => setMenuOpen(true)}
             >
-              ☰
+              <Icon name="menu" width={20} height={20} aria-hidden="true" />
             </button>
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
-            <a
-              href="#help"
-              className="odm-btn odm-btn-gh"
-              style={{ fontSize: 13, textDecoration: 'none', padding: '6px 12px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 8 }}
-            >
-              ❓ Trợ giúp & Hỗ trợ
+            <a href="#help" className="odm-btn odm-btn-gh odm-cus-help-link">
+              <Icon name="file-text" width={15} height={15} aria-hidden="true" />
+              {t.helpLink}
             </a>
             <LanguageToggle />
             <button
@@ -187,10 +181,12 @@ export function CustomerLayout({
               aria-label={t.toggleTheme}
               onClick={() => setDark((v) => !v)}
             >
-              {dark ? '☀' : '☾'}
+              <Icon name={dark ? 'sun' : 'moon'} width={17} height={17} />
             </button>
           </header>
-          <main className="odm-cus-content">{children}</main>
+          <main className="odm-cus-content">
+            <div className="odm-cus-content-inner">{children}</div>
+          </main>
           <CustomerChatbot />
         </div>
       </div>

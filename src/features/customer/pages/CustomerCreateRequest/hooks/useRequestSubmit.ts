@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
+import { displayOrderCode } from '../../../../../shared/lib/orderCode'
 import { customerApi, type CreateOrderPayload } from '../../../api/customerApi'
 import { submitOrderHookMessages } from '../../CreateOrder/hooks/useSubmitOrder.messages'
 
@@ -20,6 +21,7 @@ export function useRequestSubmit({ validate, buildPayload, onError }: Options) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [createdId, setCreatedId] = useState<string | null>(null)
+  const [createdCode, setCreatedCode] = useState<string | null>(null)
 
   async function submit() {
     if (!validate()) {
@@ -32,6 +34,7 @@ export function useRequestSubmit({ validate, buildPayload, onError }: Options) {
       const result = await customerApi.createOrder(buildPayload())
       setConfirmOpen(false)
       setCreatedId(result.id)
+      setCreatedCode(displayOrderCode(result.orderCode, result.id))
     } catch (error: unknown) {
       onError(error instanceof Error && error.message ? error.message : t.submitFailed)
     } finally {
@@ -43,6 +46,7 @@ export function useRequestSubmit({ validate, buildPayload, onError }: Options) {
     confirmOpen,
     submitting,
     createdId,
+    createdCode,
     submit,
     openConfirm: () => validate() && setConfirmOpen(true),
     closeConfirm: () => !submitting && setConfirmOpen(false),

@@ -3,7 +3,13 @@ import { useI18n } from '../../../../../shared/i18n'
 import { customerHref } from '../../../routes'
 import { createdSuccessMessages } from './CreatedSuccess.messages'
 
-export function CreatedSuccess({ orderId }: { orderId: string }) {
+export function CreatedSuccess({
+  orderId,
+  orderCode,
+}: {
+  orderId: string
+  orderCode?: string | null
+}) {
   const { t } = useI18n(createdSuccessMessages)
   return (
     <div className="co-success">
@@ -13,7 +19,7 @@ export function CreatedSuccess({ orderId }: { orderId: string }) {
       <h2>{t.title}</h2>
       <p className="co-hint">{t.description}</p>
       <p className="co-hint">
-        {t.orderCode}: <span className="co-mono">{orderId}</span>
+        {t.orderCode}: <span className="co-mono">{orderCode ?? orderId}</span>
       </p>
       <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-p">
         {t.viewMyOrders}

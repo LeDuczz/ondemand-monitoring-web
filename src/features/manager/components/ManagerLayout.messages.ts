@@ -10,9 +10,9 @@ export const managerLayoutMessages = defineMessages({
     },
     navItems: {
       dashboard: 'Dashboard',
-      orderQueue: 'Duyệt đơn',
-      missions: 'Mission',
-      schedule: 'Lịch mission',
+      orderQueue: 'Đơn hàng & Nhiệm vụ',
+      missions: 'Đơn hàng & Nhiệm vụ',
+      schedule: 'Lịch nhiệm vụ',
       live: 'Giám sát realtime',
       drones: 'Đội drone',
       maintenance: 'Bảo trì',

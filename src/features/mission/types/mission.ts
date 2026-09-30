@@ -1,6 +1,7 @@
 export type MissionStatus =
   | 'CREATED'
   | 'RESOURCE_ASSIGNING'
+  | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
   | 'SCHEDULED'
   | 'CONNECTED'
@@ -68,19 +69,27 @@ export interface MissionPlan {
 export interface Mission {
   id: string
   orderId?: string
+  orderCode?: string | null
   orderTitle?: string
+  orderPreferredDateFrom?: string | null
+  orderPreferredDateTo?: string | null
+  orderPreferredTimeName?: string | null
+  serviceName?: string | null
   customerName?: string
   missionCode: string
   status: MissionStatus
   operatorId?: string
+  staffAssignments?: MissionStaffAssignment[]
   deviceId?: string
   deviceCode?: string
   droneId?: string
   droneCode?: string
   latitude?: number
   longitude?: number
+  radiusM?: number | null
   address?: string
   scheduledStartAt?: string
+  scheduledEndAt?: string
   startedAt?: string
   completedAt?: string
   description?: string
@@ -88,6 +97,21 @@ export interface Mission {
   rejectionReason?: string
   mediaType?: MediaType
   plan?: MissionPlan | null
+}
+
+export type MissionStaffRole = 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'
+export type StaffResponseStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED'
+
+export interface MissionStaffAssignment {
+  id: string
+  staffId: string
+  staffName?: string | null
+  staffEmail?: string | null
+  assignedRole: MissionStaffRole
+  responseStatus: StaffResponseStatus
+  assignedAt?: string | null
+  respondedAt?: string | null
+  declineReason?: string | null
 }
 
 export interface PreflightCheck {

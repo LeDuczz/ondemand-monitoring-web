@@ -63,8 +63,12 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a className="odm-btn" href={managerHref({ screen: 'missions' })}>
-            {t.missionsToAssign}
+          <a
+            className="odm-btn odm-btn-p"
+            href={managerHref({ screen: 'missions' })}
+            style={{ textDecoration: 'none' }}
+          >
+            {t.viewMissions}
           </a>
           <button type="button" className="odm-btn" onClick={query.reload}>
             {t.refresh}
@@ -77,6 +81,15 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
           state="empty"
           title={t.emptyTitle}
           description={t.emptyDescription}
+          action={
+            <a
+              className="odm-btn odm-btn-p"
+              href={managerHref({ screen: 'missions' })}
+              style={{ textDecoration: 'none' }}
+            >
+              {t.viewMissions}
+            </a>
+          }
         />
       ) : (
         <>

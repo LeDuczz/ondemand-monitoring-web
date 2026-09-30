@@ -27,7 +27,7 @@ export function CustomerCreateRequestPage() {
   return (
     <PortalLayout role="CUSTOMER" title={t.pageTitle} subtitle={t.pageSubtitle}>
       {submit.createdId ? (
-        <CreatedSuccess orderId={submit.createdId} />
+        <CreatedSuccess orderId={submit.createdId} orderCode={submit.createdCode} />
       ) : (
         <div className="co-page">
           {meta.loading && !meta.services.length && <LoadingState />}

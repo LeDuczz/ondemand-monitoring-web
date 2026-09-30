@@ -105,6 +105,7 @@ export function buildConsultationRequestContext(input: {
     `- Diện tích ước tính: ${calcArea(form.radiusM)} ha.`,
     `- Điểm chọn trên bản đồ mô phỏng: x=${mapPoint.x.toFixed(1)}%, y=${mapPoint.y.toFixed(1)}%.`,
     `- Vùng map nhận diện: ${form.address || 'chưa xác định zone'}.`,
+    '- Khách đã chấm vùng này ở Step 1; không hỏi lại vị trí/khu vực nếu không cần làm rõ mục tiêu chuyên môn.',
     '',
     'Thông tin request hiện tại:',
     `- Tin nhắn mới nhất của khách: ${input.latestMessage || 'chưa nhập'}.`,
@@ -113,4 +114,14 @@ export function buildConsultationRequestContext(input: {
     `- Service customer đang chọn: ${input.serviceName || 'chưa chọn'}.`,
     '- Khung giờ, loại kết quả và media do biểu mẫu bên ngoài quản lý; AI không hỏi lại các thông tin này.',
   ].join('\n')
+}
+
+export function buildInitialConsultationMessage(input: {
+  form: FormState
+  mapPoint: MapPoint
+}) {
+  const place = input.form.address?.trim()
+  return place
+    ? `Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực ${place}.`
+    : 'Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực đã chọn trên bản đồ.'
 }

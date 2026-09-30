@@ -24,6 +24,7 @@ export type OrderStatus =
 export type MissionStatus =
   | 'CREATED'
   | 'RESOURCE_ASSIGNING'
+  | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
   | 'SCHEDULED'
   | 'CONNECTED'

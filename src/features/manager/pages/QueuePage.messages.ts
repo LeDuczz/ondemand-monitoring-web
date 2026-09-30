@@ -10,11 +10,12 @@ export const queuePageMessages = defineMessages({
     summary: (count: number, overdueCount: number) =>
       `${count} đơn đang chờ · ${overdueCount} đơn quá 24 giờ`,
     missionsToAssign: 'Mission chờ phân công',
+    viewMissions: 'Xem nhiệm vụ đã tạo',
     refresh: 'Làm mới',
     loadError: 'Không tải được hàng đợi',
     emptyTitle: 'Không còn đơn chờ duyệt',
     emptyDescription:
-      'Tuyệt vời. Khi khách gửi đơn mới, đơn sẽ xuất hiện ở đây.',
+      'Tuyệt vời. Khi khách gửi đơn mới, đơn sẽ xuất hiện ở đây. Các nhiệm vụ đã tạo có thể xem ở danh sách nhiệm vụ.',
     sort: 'Sắp xếp',
     columns: {
       orderCode: 'Mã đơn',
@@ -35,6 +36,7 @@ export const queuePageMessages = defineMessages({
     summary: (count: number, overdueCount: number) =>
       `${count} orders pending · ${overdueCount} orders over 24h`,
     missionsToAssign: 'Missions to assign',
+    viewMissions: 'View created missions',
     refresh: 'Refresh',
     loadError: 'Could not load the queue',
     emptyTitle: 'No orders pending review',

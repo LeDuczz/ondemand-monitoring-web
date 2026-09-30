@@ -109,6 +109,7 @@ function localDateAndTime(iso?: string | null) {
 }
 
 function operatorStatus(status: string): OperatorMissionStatus {
+  if (status === 'WAITING_CREW_CONFIRMATION') return 'PENDING'
   if (status === 'WAITING_OPERATOR_ACCEPTANCE') return 'PENDING'
   if (
     status === 'IN_FLIGHT' ||

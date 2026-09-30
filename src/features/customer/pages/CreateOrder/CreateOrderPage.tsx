@@ -21,7 +21,9 @@ export function CreateOrderPage() {
     useCreateOrderWizard()
   const { form, step } = f
 
-  if (submit.createdId) return <CreatedSuccess orderId={submit.createdId} />
+  if (submit.createdId) {
+    return <CreatedSuccess orderId={submit.createdId} orderCode={submit.createdCode} />
+  }
 
   return (
     <div className="co-page">

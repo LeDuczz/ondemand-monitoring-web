@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/httpClient'
+import { displayOrderCode } from '../../../shared/lib/orderCode'
 import type { OrderStatus } from '../../../shared/types/domain'
 import type { RawAnalysis } from '../lib/analysis/types'
 import type { CustomerOrderItem } from '../types/orders'
@@ -126,10 +127,11 @@ function getPreferredDate(order: OrderCreateResponse) {
 
 function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
   const status = normalizeStatus(order.orderStatus)
+  const orderCode = displayOrderCode(order.orderCode, order.id)
   return {
     id: order.id,
-    orderCode: order.id,
-    title: order.title ?? order.id,
+    orderCode,
+    title: order.title ?? orderCode,
     addressText: order.address ?? null,
     preferredDate: getPreferredDate(order),
     preferredTimeLabel: order.preferredTimeName ?? null,

@@ -80,9 +80,9 @@ describe('ManagerApp', () => {
       expect(screen.getByRole('link', { name: /Bảo trì/ })).toHaveTextContent(
         '3',
       )
-      expect(screen.getByRole('link', { name: /Duyệt đơn/ })).toHaveTextContent(
-        '6',
-      )
+      expect(
+        screen.getByRole('link', { name: /Đơn hàng & Nhiệm vụ/ }),
+      ).toHaveTextContent('6')
       expect(
         screen.getByRole('link', { name: /Media và giao kết quả/ }),
       ).toHaveTextContent('6')

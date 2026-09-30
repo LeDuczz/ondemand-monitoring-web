@@ -13,10 +13,13 @@ export function MissionStatusBadge({ status }: MissionStatusBadgeProps) {
   const getBadgeConfig = () => {
     switch (status) {
       case 'WAITING_OPERATOR_ACCEPTANCE':
+      case 'WAITING_CREW_CONFIRMATION':
         return {
           bg: '#fef3c7',
           color: '#92400e',
-          label: t.mission.WAITING_OPERATOR_ACCEPTANCE,
+          label: status === 'WAITING_CREW_CONFIRMATION'
+            ? t.mission.WAITING_CREW_CONFIRMATION
+            : t.mission.WAITING_OPERATOR_ACCEPTANCE,
           icon: 'clock' as const,
         }
       case 'SCHEDULED':

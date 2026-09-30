@@ -40,6 +40,7 @@ export const missionStatusTone: Record<MissionStatus, StatusTone> = {
   // mapping by meaning: system is still matching drone/operator, nothing to
   // act on yet — closer to "waiting" than "in progress".
   RESOURCE_ASSIGNING: 'yellow',
+  WAITING_CREW_CONFIRMATION: 'yellow',
   WAITING_OPERATOR_ACCEPTANCE: 'yellow', // brief: ASSIGNED-like → yellow
   // mapping by meaning: operator accepted, mission is waiting for its
   // scheduled window — still "waiting", not yet active.
@@ -139,6 +140,7 @@ export const orderStatusLabel: Record<OrderStatus, string> = {
 export const missionStatusLabel: Record<MissionStatus, string> = {
   CREATED: 'Mới tạo',
   RESOURCE_ASSIGNING: 'Đang gán nguồn lực',
+  WAITING_CREW_CONFIRMATION: 'Chờ crew xác nhận',
   WAITING_OPERATOR_ACCEPTANCE: 'Chờ operator nhận',
   SCHEDULED: 'Đã lên lịch',
   CONNECTED: 'Đã kết nối',
@@ -240,6 +242,7 @@ export const orderStatusLabelEn: Record<OrderStatus, string> = {
 export const missionStatusLabelEn: Record<MissionStatus, string> = {
   CREATED: 'Created',
   RESOURCE_ASSIGNING: 'Assigning resources',
+  WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
   WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',
   SCHEDULED: 'Scheduled',
   CONNECTED: 'Connected',

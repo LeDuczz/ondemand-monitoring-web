@@ -309,11 +309,17 @@ export type PlanWaypointResponse = {
 export type MissionResponse = {
   id: string
   orderId: string
+  orderCode?: string | null
   orderTitle: string
+  orderPreferredDateFrom?: string | null
+  orderPreferredDateTo?: string | null
+  orderPreferredTimeName?: string | null
+  serviceName?: string | null
   customerName: string
   missionCode: string
   status: MissionStatus
   operatorId: string | null
+  staffAssignments?: MissionStaffAssignmentResponse[]
   droneId: string | null
   droneCode: string | null
   latitude: number | null
@@ -332,6 +338,18 @@ export type MissionResponse = {
   preflightFaultType: string | null
   preflightFailureReason: string | null
   preflightCheckedAt: string | null
+}
+
+export type MissionStaffAssignmentResponse = {
+  id: string
+  staffId: string
+  staffName: string | null
+  staffEmail: string | null
+  assignedRole: 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'
+  responseStatus: 'PENDING' | 'ACCEPTED' | 'REJECTED'
+  assignedAt: string | null
+  respondedAt: string | null
+  declineReason: string | null
 }
 
 export type FlightTokenResponse = {

@@ -51,6 +51,15 @@ describe('buildOrderPayload', () => {
     serviceId: 'svc-1',
     preferredTimeId: 'pt-1',
     deliverableTypeId: 'dt-1',
+    attachments: [
+      {
+        id: 'att-1',
+        fileName: 'site.jpg',
+        contentType: 'image/jpeg',
+        sizeBytes: 123,
+        dataUrl: 'data:image/jpeg;base64,abc',
+      },
+    ],
   }
   const score = { score: 90, level: 'good' as const, notes: [] }
 
@@ -74,6 +83,15 @@ describe('buildOrderPayload', () => {
     expect(payload.deliverables[0].requirement).toMatchObject({
       consultationId: 'c-1',
       readinessScore: 90,
+      customerAttachments: [
+        {
+          id: 'att-1',
+          fileName: 'site.jpg',
+          contentType: 'image/jpeg',
+          sizeBytes: 123,
+          dataUrl: 'data:image/jpeg;base64,abc',
+        },
+      ],
       additionalRequirements: [],
     })
   })

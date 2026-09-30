@@ -1,0 +1,96 @@
+/* Shared bits of the customer-facing support pages. Tokens: shared/components/ui/ui.css. */
+
+.sp-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.sp-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--ui-space-3);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 13.5px;
+  box-sizing: border-box;
+}
+
+textarea.sp-input {
+  padding: var(--ui-space-2) var(--ui-space-3);
+  resize: vertical;
+}
+
+.sp-input:focus {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 1px;
+}
+
+.sp-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  color: var(--ui-primary-text);
+}
+
+.sp-muted {
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+}
+
+.sp-chip {
+  display: inline-block;
+  padding: 2px var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+  color: var(--ui-text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.sp-link-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--ui-space-2);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sp-link-chip.is-green {
+  background: var(--ui-success-soft);
+  color: var(--ui-success-text);
+}
+
+.sp-notice {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.sp-notice.is-danger {
+  background: var(--ui-danger-soft);
+  border-color: var(--ui-danger);
+  color: var(--ui-danger-text);
+}
+
+.sp-notice.is-success {
+  background: var(--ui-success-soft);
+  border-color: var(--ui-success);
+  color: var(--ui-success-text);
+}
+
+.sp-field-error {
+  color: var(--ui-danger-text);
+  font-size: 13px;
+  font-weight: 600;
+}

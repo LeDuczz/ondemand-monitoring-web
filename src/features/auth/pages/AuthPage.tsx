@@ -1,268 +1,40 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type FormEvent } from 'react'
 
-import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
 import {
   AuthApiError,
   authApi,
   authSession,
   getGoogleAuthorizationUrl,
 } from '../api/authApi'
+import { AuthAside } from '../components/AuthAside'
+import { AuthLogo } from '../components/AuthLogo'
+import { AuthNotice } from '../components/AuthNotice'
+import { FirstLoginForm } from '../components/FirstLoginForm'
+import { ForgotForm } from '../components/ForgotForm'
+import { LoginForm } from '../components/LoginForm'
+import { ModeSwitch } from '../components/ModeSwitch'
+import { RegisterForm } from '../components/RegisterForm'
+import { ResetForm } from '../components/ResetForm'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { VerifyForm } from '../components/VerifyForm'
 import { redirectToRoleHome } from '../routing'
-
-type AuthMode =
-  'login' | 'register' | 'verify' | 'forgot' | 'reset' | 'first-login'
-type Notice = { type: 'info' | 'error' | 'success'; message: string }
-
-function BrandMark() {
-  return (
-    <span className="brand-mark" aria-hidden="true">
-      <span />
-    </span>
-  )
-}
-
-function AuthLogo() {
-  return (
-    <a
-      className="auth-logo"
-      href="#top"
-      aria-label="Return to Fieldwise landing page"
-    >
-      <BrandMark />
-      <span>FIELDWISE</span>
-    </a>
-  )
-}
-
-function Field({
-  label,
-  htmlFor,
-  hint,
-  error,
-  children,
-}: {
-  label: string
-  htmlFor: string
-  hint?: string
-  error?: string
-  children: ReactNode
-}) {
-  return (
-    <div className="auth-field">
-      <div className="auth-label-row">
-        <label htmlFor={htmlFor}>{label}</label>
-        {hint ? <span>{hint}</span> : null}
-      </div>
-      {children}
-      {error ? (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function PasswordField({
-  id,
-  value,
-  onChange,
-  label = 'Password',
-  error,
-}: {
-  id: string
-  value: string
-  onChange: (value: string) => void
-  label?: string
-  error?: string
-}) {
-  const [visible, setVisible] = useState(false)
-  return (
-    <Field
-      label={label}
-      htmlFor={id}
-      hint={id === 'password' ? 'At least 8 characters' : undefined}
-      error={error}
-    >
-      <div className="input-with-icon">
-        <Icon name="lock" />
-        <input
-          id={id}
-          name={id}
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          autoComplete={id === 'password' ? 'current-password' : 'new-password'}
-          minLength={8}
-          required
-        />
-        <button
-          type="button"
-          className="input-action"
-          aria-label={visible ? 'Hide password' : 'Show password'}
-          onClick={() => setVisible(!visible)}
-        >
-          <Icon name={visible ? 'eye-off' : 'eye'} />
-        </button>
-      </div>
-    </Field>
-  )
-}
-
-function EmailField({
-  value,
-  onChange,
-  error,
-}: {
-  value: string
-  onChange: (value: string) => void
-  error?: string
-}) {
-  return (
-    <Field label="Work email" htmlFor="email" error={error}>
-      <div className="input-with-icon">
-        <Icon name="mail" />
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="you@company.com"
-          autoComplete="email"
-          required
-        />
-      </div>
-    </Field>
-  )
-}
-
-function AuthAside({ mode }: { mode: AuthMode }) {
-  return (
-    <aside className={`auth-aside auth-aside--${mode}`}>
-      <div className="auth-aside-art" aria-hidden="true">
-        <span className="art-ring art-ring--one" />
-        <span className="art-ring art-ring--two" />
-        <span className="art-grid" />
-        <div className="art-ticket">
-          <div>
-            <Icon name="ticket" />
-            <span>TICKET #MON-2481</span>
-          </div>
-          <strong>Inspection in progress</strong>
-          <small>East site · Cooling tower B</small>
-          <span className="art-progress">
-            <i />
-          </span>
-        </div>
-        <div className="art-report">
-          <Icon name="file-text" />
-          <span>
-            <strong>Report ready</strong>
-            <small>3 findings · 18 evidence items</small>
-          </span>
-        </div>
-      </div>
-      <div className="auth-aside-copy">
-        <p className="eyebrow">Customer-first inspection services</p>
-        <h2>
-          Keep the work moving.
-          <br />
-          <span>Keep the risk away.</span>
-        </h2>
-        <p>
-          One place to submit requests, follow progress, and make confident
-          decisions from the results.
-        </p>
-        <div className="auth-aside-points">
-          <span>
-            <Icon name="shield" /> Safer access to difficult areas
-          </span>
-          <span>
-            <Icon name="ticket" /> Transparent request tracking
-          </span>
-          <span>
-            <Icon name="file-text" /> Action-ready inspection reports
-          </span>
-        </div>
-      </div>
-      <div className="auth-aside-footer">
-        <span>Fieldwise</span>
-        <span>Remote monitoring & inspection</span>
-      </div>
-    </aside>
-  )
-}
-
-function ModeSwitch({
-  mode,
-  onChange,
-}: {
-  mode: AuthMode
-  onChange: (mode: 'login' | 'register') => void
-}) {
-  if (
-    mode === 'verify' ||
-    mode === 'forgot' ||
-    mode === 'reset' ||
-    mode === 'first-login'
-  )
-    return null
-  return (
-    <p className="mode-switch">
-      {mode === 'login' ? 'New to Fieldwise?' : 'Already have an account?'}{' '}
-      <button
-        type="button"
-        onClick={() => onChange(mode === 'login' ? 'register' : 'login')}
-      >
-        {mode === 'login' ? 'Create an account' : 'Sign in'}
-      </button>
-    </p>
-  )
-}
-
-function getAuthTitle(mode: AuthMode) {
-  const titles: Record<AuthMode, string> = {
-    login: 'Welcome back',
-    register: 'Create your account',
-    verify: 'Verify your email',
-    forgot: 'Reset your password',
-    reset: 'Set a new password',
-    'first-login': 'Set your password',
-  }
-  return titles[mode]
-}
-
-function getAuthSubtitle(mode: AuthMode) {
-  const subtitles: Record<AuthMode, string> = {
-    login: 'Sign in to follow requests, tickets, and reports.',
-    register:
-      'Start managing monitoring requests with a clear customer workspace.',
-    verify: 'One more step before your Fieldwise workspace is ready.',
-    forgot: 'Enter your work email and we’ll help you get back in.',
-    reset: 'Use a new password with at least 8 characters.',
-    'first-login':
-      'Your administrator created this account. Set a personal password to continue.',
-  }
-  return subtitles[mode]
-}
-
-function getNoticeIcon(type: Notice['type']) {
-  if (type === 'success') return 'check' as const
-  if (type === 'error') return 'x' as const
-  return 'activity' as const
-}
+import type { AuthMode, Notice } from '../types/authMode'
+import { authPageMessages } from './AuthPage.messages'
+import '../auth.css'
 
 export function AuthPage({
   initialMode = 'login',
 }: {
   initialMode?: 'login' | 'register'
 }) {
+  const { t } = useI18n(authPageMessages)
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [challengeSession, setChallengeSession] = useState('')
@@ -275,16 +47,33 @@ export function AuthPage({
     if (error instanceof AuthApiError) {
       setFieldErrors(error.errors ?? {})
       if (error.code === 'USER_NOT_CONFIRMED') setMode('verify')
+      if (error.code === 'ACCOUNT_DISABLED') {
+        // Design state "Tài khoản khoá" (SYS-01). No backend "remaining
+        // attempts" field exists, so we do not render the design's
+        // "Còn 3 lần thử trước khi tạm khoá." line — see evd report.
+        setNotice({
+          type: 'error',
+          message: t.accountLocked,
+          detail: t.accountLockedDetail,
+        })
+        return
+      }
+      if (error.code === 'INVALID_CREDENTIALS') {
+        // Design state "Sai thông tin" (SYS-01).
+        setNotice({ type: 'error', message: t.invalidCredentials })
+        return
+      }
       setNotice({ type: 'error', message: error.message })
       return
     }
-    setNotice({
-      type: 'error',
-      message: 'Something went wrong. Please try again.',
-    })
+    setNotice({ type: 'error', message: t.genericError })
   }
 
   const submitRegister = async () => {
+    if (password !== confirmPassword) {
+      setFieldErrors({ confirmPassword: t.passwordMismatch })
+      return
+    }
     const response = await authApi.register({
       email,
       password,
@@ -295,14 +84,14 @@ export function AuthPage({
       setMode('verify')
       setNotice({
         type: 'success',
-        message: `We sent a 6-digit verification code to ${email}.`,
+        message: t.otpSent(email),
       })
       return
     }
     setMode('login')
     setNotice({
       type: 'success',
-      message: 'Registration complete. You can sign in now.',
+      message: t.registerSuccess,
     })
   }
 
@@ -311,7 +100,7 @@ export function AuthPage({
     setMode('login')
     setNotice({
       type: 'success',
-      message: 'Email verified. You can sign in to your workspace.',
+      message: t.verifySuccess,
     })
   }
 
@@ -320,7 +109,7 @@ export function AuthPage({
     setMode('reset')
     setNotice({
       type: 'success',
-      message: 'A password reset code has been sent to your email.',
+      message: t.forgotSuccess,
     })
   }
 
@@ -329,8 +118,7 @@ export function AuthPage({
     setMode('login')
     setNotice({
       type: 'success',
-      message:
-        'Password reset complete. You can sign in with your new password.',
+      message: t.resetSuccess,
     })
   }
 
@@ -341,15 +129,13 @@ export function AuthPage({
       setMode('first-login')
       setNotice({
         type: 'info',
-        message: 'Set a new password to activate your account.',
+        message: t.firstLoginRequired,
       })
       return
     }
     authSession.save(response, rememberMe)
-    const suffix = response.user?.fullName
-      ? ` as ${response.user.fullName}`
-      : ''
-    setNotice({ type: 'success', message: `Signed in${suffix}.` })
+    const suffix = response.user?.fullName ? `, ${response.user.fullName}` : ''
+    setNotice({ type: 'success', message: t.loginSuccess(suffix) })
     redirectToRoleHome(response.user?.role)
   }
 
@@ -362,7 +148,7 @@ export function AuthPage({
     authSession.save(response, rememberMe)
     setNotice({
       type: 'success',
-      message: 'Password set. Welcome to Fieldwise.',
+      message: t.firstLoginSuccess,
     })
     redirectToRoleHome(response.user?.role)
   }
@@ -396,7 +182,7 @@ export function AuthPage({
       await authApi.resendOtp({ email })
       setNotice({
         type: 'success',
-        message: `A new verification code was sent to ${email}.`,
+        message: t.otpResent(email),
       })
     } catch (error) {
       handleApiError(error)
@@ -420,315 +206,133 @@ export function AuthPage({
     setNotice(undefined)
     setFieldErrors({})
   }
-  const title = getAuthTitle(mode)
-  const subtitle = getAuthSubtitle(mode)
+  const title = t.titles[mode]
+  const subtitle = t.subtitles[mode]
 
   return (
-    <div className="auth-page">
+    <div className="odm odm-auth">
       <a className="skip-link" href="#auth-form">
-        Skip to authentication form
+        {t.skipLink}
       </a>
-      <AuthAside mode={mode} />
-      <main className="auth-main">
-        <div className="auth-topbar">
-          <AuthLogo />
-          <a className="back-landing" href="#top">
-            Back to site <Icon name="arrow-up-right" />
-          </a>
+      <AuthAside />
+      <main className="odm-auth-main">
+        <div className="odm-auth-topbar">
+          <ThemeToggle />
         </div>
-        <div className="auth-content">
-          <div className="auth-heading">
-            <p className="eyebrow">
-              {mode === 'register'
-                ? 'Join Fieldwise'
-                : 'Secure workspace access'}
-            </p>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
-          </div>
-          {notice ? (
-            <output
-              className={`auth-notice auth-notice--${notice.type}`}
-              aria-live="polite"
+        <div className="odm-auth-content">
+          <div className="odm-auth-card">
+            <AuthLogo />
+            <div className="odm-auth-heading">
+              <p className="odm-auth-eyebrow">
+                {mode === 'register' ? t.eyebrowRegister : t.eyebrowOther}
+              </p>
+              <h1>{title}</h1>
+              <p>{subtitle}</p>
+            </div>
+            {notice ? <AuthNotice notice={notice} /> : null}
+            <form
+              id="auth-form"
+              className="odm-auth-form"
+              key={mode}
+              onSubmit={handleSubmit}
             >
-              <Icon name={getNoticeIcon(notice.type)} />
-              <span>{notice.message}</span>
-            </output>
-          ) : null}
-          <form id="auth-form" className="auth-form" onSubmit={handleSubmit}>
-            {mode === 'login' ? (
-              <>
-                <button
-                  type="button"
-                  className="auth-google-button"
-                  onClick={handleGoogleSignIn}
-                >
-                  <Icon name="google" />
-                  Continue with Google
-                </button>
-                <div className="auth-divider" aria-hidden="true">
-                  <span>or use your work email</span>
-                </div>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
+              {mode === 'login' ? (
+                <LoginForm
+                  email={email}
+                  onEmailChange={setEmail}
+                  password={password}
+                  onPasswordChange={setPassword}
+                  rememberMe={rememberMe}
+                  onRememberMeChange={setRememberMe}
+                  fieldErrors={fieldErrors}
+                  isSubmitting={isSubmitting}
+                  onGoogleSignIn={handleGoogleSignIn}
+                  onForgotPassword={() => {
+                    setMode('forgot')
+                    setNotice(undefined)
+                  }}
                 />
-                <PasswordField
-                  id="password"
-                  value={password}
-                  onChange={setPassword}
-                  error={fieldErrors.password}
+              ) : null}
+              {mode === 'register' ? (
+                <RegisterForm
+                  fullName={fullName}
+                  onFullNameChange={setFullName}
+                  email={email}
+                  onEmailChange={setEmail}
+                  password={password}
+                  onPasswordChange={setPassword}
+                  confirmPassword={confirmPassword}
+                  onConfirmPasswordChange={setConfirmPassword}
+                  fieldErrors={fieldErrors}
+                  isSubmitting={isSubmitting}
                 />
-                <div className="form-row-inline">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(event) => setRememberMe(event.target.checked)}
-                    />{' '}
-                    <span>Remember me</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="inline-link"
-                    onClick={() => {
-                      setMode('forgot')
-                      setNotice(undefined)
-                    }}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Signing in…' : 'Sign in'}
-                </Button>
-              </>
-            ) : null}
-            {mode === 'register' ? (
-              <>
-                <Field
-                  label="Full name"
-                  htmlFor="fullName"
-                  hint="Max 100 characters"
-                  error={fieldErrors.fullName}
-                >
-                  <div className="input-with-icon">
-                    <Icon name="users" />
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      placeholder="Alex Morgan"
-                      maxLength={100}
-                      autoComplete="name"
-                      required
-                    />
-                  </div>
-                </Field>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
+              ) : null}
+              {mode === 'verify' ? (
+                <VerifyForm
+                  email={email}
+                  onEmailChange={setEmail}
+                  otpCode={otpCode}
+                  onOtpCodeChange={setOtpCode}
+                  fieldErrors={fieldErrors}
+                  isSubmitting={isSubmitting}
+                  onResendOtp={handleResendOtp}
                 />
-                <PasswordField
-                  id="password"
-                  value={password}
-                  onChange={setPassword}
-                  error={fieldErrors.password}
+              ) : null}
+              {mode === 'forgot' ? (
+                <ForgotForm
+                  email={email}
+                  onEmailChange={setEmail}
+                  fieldErrors={fieldErrors}
+                  isSubmitting={isSubmitting}
+                  onBackToLogin={backToLogin}
                 />
-                <label className="checkbox-label terms-label">
-                  <input type="checkbox" required />{' '}
-                  <span>
-                    I agree to the Fieldwise terms and privacy policy.
-                  </span>
-                </label>
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating account…' : 'Create account'}
-                </Button>
-              </>
-            ) : null}
+              ) : null}
+              {mode === 'reset' ? (
+                <ResetForm
+                  email={email}
+                  onEmailChange={setEmail}
+                  otpCode={otpCode}
+                  onOtpCodeChange={setOtpCode}
+                  newPassword={newPassword}
+                  onNewPasswordChange={setNewPassword}
+                  fieldErrors={fieldErrors}
+                  isSubmitting={isSubmitting}
+                  onBackToLogin={backToLogin}
+                />
+              ) : null}
+              {mode === 'first-login' ? (
+                <FirstLoginForm
+                  email={email}
+                  onEmailChange={setEmail}
+                  newPassword={newPassword}
+                  onNewPasswordChange={setNewPassword}
+                  fieldErrors={fieldErrors}
+                  isSubmitting={isSubmitting}
+                  challengeSession={challengeSession}
+                />
+              ) : null}
+            </form>
+            <ModeSwitch
+              mode={mode}
+              onChange={(nextMode) => {
+                setMode(nextMode)
+                setNotice(undefined)
+                // Keep the URL in sync with the visible form so the back
+                // button and a copy-pasted link both land on the right mode.
+                window.location.hash =
+                  nextMode === 'register' ? '#auth/register' : '#auth/login'
+              }}
+            />
             {mode === 'verify' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <Field
-                  label="Verification code"
-                  htmlFor="otpCode"
-                  hint="6 digits"
-                >
-                  <div className="input-with-icon">
-                    <Icon name="ticket" />
-                    <input
-                      id="otpCode"
-                      name="otpCode"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{6}"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(event) =>
-                        setOtpCode(event.target.value.replace(/\D/g, ''))
-                      }
-                      placeholder="000000"
-                      autoComplete="one-time-code"
-                      required
-                    />
-                  </div>
-                </Field>
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Verifying…' : 'Verify email'}
-                </Button>
-                <button
-                  type="button"
-                  className="resend-button"
-                  onClick={handleResendOtp}
-                  disabled={isSubmitting}
-                >
-                  Didn’t receive a code? <strong>Resend code</strong>
-                </button>
-              </>
+              <button
+                type="button"
+                className="odm-auth-back odm-auth-bottom-back"
+                onClick={backToLogin}
+              >
+                <Icon name="arrow-left" /> {t.useAnotherEmail}
+              </button>
             ) : null}
-            {mode === 'forgot' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Sending…' : 'Send reset code'}
-                </Button>
-                <button
-                  type="button"
-                  className="text-back"
-                  onClick={backToLogin}
-                >
-                  <Icon name="arrow-left" /> Back to sign in
-                </button>
-              </>
-            ) : null}
-            {mode === 'reset' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <Field
-                  label="Reset code"
-                  htmlFor="otpCode"
-                  hint="6 digits"
-                  error={fieldErrors.otpCode}
-                >
-                  <div className="input-with-icon">
-                    <Icon name="ticket" />
-                    <input
-                      id="otpCode"
-                      name="otpCode"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{6}"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(event) =>
-                        setOtpCode(event.target.value.replace(/\D/g, ''))
-                      }
-                      placeholder="000000"
-                      required
-                    />
-                  </div>
-                </Field>
-                <PasswordField
-                  id="newPassword"
-                  label="New password"
-                  value={newPassword}
-                  onChange={setNewPassword}
-                  error={fieldErrors.newPassword}
-                />
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Resetting…' : 'Reset password'}
-                </Button>
-                <button
-                  type="button"
-                  className="text-back"
-                  onClick={backToLogin}
-                >
-                  <Icon name="arrow-left" /> Back to sign in
-                </button>
-              </>
-            ) : null}
-            {mode === 'first-login' ? (
-              <>
-                <EmailField
-                  value={email}
-                  onChange={setEmail}
-                  error={fieldErrors.email}
-                />
-                <PasswordField
-                  id="newPassword"
-                  label="New password"
-                  value={newPassword}
-                  onChange={setNewPassword}
-                  error={fieldErrors.newPassword}
-                />
-                <Button
-                  type="submit"
-                  className="auth-submit"
-                  icon="arrow-right"
-                  disabled={isSubmitting || !challengeSession}
-                >
-                  {isSubmitting ? 'Saving password…' : 'Continue to workspace'}
-                </Button>
-              </>
-            ) : null}
-          </form>
-          <ModeSwitch
-            mode={mode}
-            onChange={(nextMode) => {
-              setMode(nextMode)
-              setNotice(undefined)
-            }}
-          />
-          {mode === 'verify' ? (
-            <button
-              type="button"
-              className="text-back auth-bottom-back"
-              onClick={backToLogin}
-            >
-              <Icon name="arrow-left" /> Use a different email
-            </button>
-          ) : null}
+          </div>
         </div>
       </main>
     </div>

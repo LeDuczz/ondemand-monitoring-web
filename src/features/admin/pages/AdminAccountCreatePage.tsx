@@ -34,6 +34,7 @@ const roleLabels: Record<EmployeeRole, string> = {
   STAFF: 'Staff',
   DRONE_OPERATOR: 'Drone operator',
   SYSTEM_OPERATOR: 'System operator',
+  AUDITOR: 'Auditor',
 }
 
 type FormErrors = Partial<Record<'email' | 'fullName' | 'role', string>>

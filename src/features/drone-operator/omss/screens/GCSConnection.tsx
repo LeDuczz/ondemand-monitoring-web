@@ -1,33 +1,17 @@
 import { useState } from 'react'
 import type { Mission, Drone } from '../types'
+import { flightControlApi } from '../api/flightControlApi'
+import { useI18n } from '../../../../shared/i18n'
+import { gcsConnectionMessages } from '../i18n/gcsConnection'
 
 interface Props {
   mission: Mission
   drone: Drone
-  onConnected: () => void
+  onConnected: () => void | Promise<void>
   onBack: () => void
 }
 
 type Phase = 'idle' | 'discover' | 'handshake' | 'sync' | 'done' | 'fail'
-
-const STEPS = [
-  {
-    id: 'discover',
-    label: 'Discover drone',
-    detail: 'Scanning MAVLink endpoints',
-  },
-  {
-    id: 'handshake',
-    label: 'Establish link',
-    detail: 'Negotiating heartbeat protocol',
-  },
-  {
-    id: 'sync',
-    label: 'Sync parameters',
-    detail: 'Downloading flight parameters',
-  },
-  { id: 'done', label: 'Connection ready', detail: 'GCS link established' },
-]
 
 interface LogEntry {
   t: string
@@ -41,6 +25,13 @@ export default function GCSConnection({
   onConnected,
   onBack,
 }: Props) {
+  const { t } = useI18n(gcsConnectionMessages)
+  const STEPS = [
+    { id: 'discover', ...t.steps.discover },
+    { id: 'handshake', ...t.steps.handshake },
+    { id: 'sync', ...t.steps.sync },
+    { id: 'done', ...t.steps.done },
+  ]
   const [phase, setPhase] = useState<Phase>('idle')
   const [log, setLog] = useState<LogEntry[]>([])
 
@@ -51,27 +42,62 @@ export default function GCSConnection({
     setLog((prev) => [...prev, { t: ts(), msg, ok }])
   }
 
-  function start() {
+  async function start() {
     setPhase('discover')
-    addLog('Initiating GCS connection…')
-    setTimeout(() => {
-      addLog(
-        `Drone ${drone.id} found at 192.168.1.${Math.floor(Math.random() * 200 + 50)}`,
-      )
+    addLog(t.log.initiating)
+    try {
+      const status = await flightControlApi.status()
+      if (!status.online) throw new Error(t.errors.offline)
+      if (
+        !status.connection?.grpcConnected ||
+        !status.connection?.px4Connected
+      ) {
+        throw new Error(t.errors.mavsdkNotConnected)
+      }
+      addLog(t.log.controllerOnline(drone.id))
       setPhase('handshake')
-    }, 1200)
-    setTimeout(() => {
-      addLog('MAVLink heartbeat established')
+      const missionId = mission.backendId ?? mission.id
+      let bound: Awaited<ReturnType<typeof flightControlApi.bindSession>>
+      try {
+        bound = await flightControlApi.bindSession(missionId, drone.id)
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : ''
+        if (
+          !message.includes(
+            'Cannot switch control session while recording or in flight',
+          )
+        ) {
+          throw cause
+        }
+        addLog(t.log.staleSession, false)
+        await flightControlApi.releaseSession()
+        bound = await flightControlApi.bindSession(missionId, drone.id)
+      }
+      addLog(t.log.sessionBound(bound.missionId))
       setPhase('sync')
-    }, 2400)
-    setTimeout(() => {
-      addLog('Downloading 247 parameters')
-    }, 3000)
-    setTimeout(() => {
-      addLog('Parameter sync complete — 247/247')
+      const verified = await flightControlApi.status()
+      if (
+        verified.missionId !== missionId ||
+        verified.deviceId !== drone.id
+      ) {
+        throw new Error(t.errors.sessionVerificationFailed)
+      }
+      if (
+        !verified.connection?.grpcConnected ||
+        !verified.connection?.px4Connected
+      ) {
+        throw new Error(t.errors.mavsdkDisconnected)
+      }
+      addLog(t.log.statusVerified)
       setPhase('done')
-      addLog('GCS link ready ✓')
-    }, 4200)
+      addLog(t.log.linkReady)
+    } catch (cause) {
+      setPhase('fail')
+      addLog(
+        cause instanceof Error ? cause.message : t.errors.genericFailed,
+        false,
+      )
+    }
   }
 
   const stepsDone = {
@@ -113,7 +139,7 @@ export default function GCSConnection({
         >
           <path d="M9 2L4 7l5 5" />
         </svg>
-        Mission detail
+        {t.missionDetail}
       </button>
 
       <div style={{ maxWidth: 560 }}>
@@ -125,11 +151,11 @@ export default function GCSConnection({
             margin: '0 0 6px',
           }}
         >
-          GCS connection
+          {t.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          Connecting to <strong>{drone.name}</strong> ({drone.id}) for mission{' '}
-          <strong>{mission.id}</strong>.
+          {t.connectingTo} <strong>{drone.name}</strong> ({drone.id}){' '}
+          {t.forMission} <strong>{mission.id}</strong>.
         </p>
 
         {/* Steps */}
@@ -312,7 +338,7 @@ export default function GCSConnection({
               cursor: 'pointer',
             }}
           >
-            Connect to drone
+            {t.connectToDrone}
           </button>
         )}
         {(phase === 'discover' ||
@@ -332,7 +358,7 @@ export default function GCSConnection({
               cursor: 'not-allowed',
             }}
           >
-            Connecting…
+            {t.connecting}
           </button>
         )}
         {phase === 'done' && (
@@ -350,7 +376,25 @@ export default function GCSConnection({
               cursor: 'pointer',
             }}
           >
-            Continue to pre-flight check
+            {mission.state === 'IN_FLIGHT'
+              ? t.returnToMissionControl
+              : t.continueToPreflight}
+          </button>
+        )}
+        {phase === 'fail' && (
+          <button
+            onClick={() => void start()}
+            style={{
+              width: '100%',
+              padding: 11,
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--red)',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            {t.retryConnection}
           </button>
         )}
       </div>

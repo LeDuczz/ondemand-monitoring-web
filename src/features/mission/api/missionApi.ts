@@ -1,11 +1,15 @@
 import type {
   Mission,
+  MissionStaffRole,
   PreflightCheck,
   DeviceImage,
   DeviceStatus,
 } from '../types/mission'
+import type { FlightControlStatus } from '../../drone-operator/omss/api/flightControlApi'
 
-const API_BASE = 'http://localhost:8080/api'
+import { env } from '../../../config/env'
+
+const API_BASE = `${env.apiBaseUrl}/api`
 
 interface ApiResponse<T> {
   success: boolean
@@ -13,14 +17,15 @@ interface ApiResponse<T> {
   data: T
 }
 
+import { authenticatedFetch } from '../../auth/api/authApi'
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Operator-Id': 'OP-001',
-      ...options?.headers,
-    },
+  const headers = new Headers(options?.headers)
+  headers.set('Content-Type', 'application/json')
+
+  const res = await authenticatedFetch(url, {
     ...options,
+    headers,
   })
 
   if (!res.ok) {
@@ -35,33 +40,137 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const missionApi = {
+  // GET /api/missions?operatorId={id} – list all missions for an operator
+  getMissionsByOperator: async (operatorId: string): Promise<Mission[]> => {
+    return request<Mission[]>(
+      `${API_BASE}/missions?operatorId=${encodeURIComponent(operatorId)}`,
+    )
+  },
+
   // Query Mission Details
   getMissionById: async (missionId: string): Promise<Mission> => {
     return request<Mission>(`${API_BASE}/missions/${missionId}`)
   },
 
+  getPendingAssignmentMissions: async (): Promise<Mission[]> => {
+    return request<Mission[]>(`${API_BASE}/missions/pending-assignment`)
+  },
+
+  getMyMissions: async (): Promise<Mission[]> => {
+    return request<Mission[]>(`${API_BASE}/missions/mine`)
+  },
+
+  assignResources: async (
+    missionId: string,
+    deviceIds: string | string[],
+    staffAssignments: Partial<Record<MissionStaffRole, string | string[]>> | string,
+  ): Promise<Mission> => {
+    const resolvedDeviceIds = Array.isArray(deviceIds) ? deviceIds : [deviceIds]
+    let latest: Mission | null = null
+    for (const [index, deviceId] of resolvedDeviceIds.entries()) {
+      latest = await request<Mission>(
+        `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-device`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ deviceId, deviceRole: index === 0 ? 'MAIN' : 'SUPPORT' }),
+        },
+      )
+    }
+    const assignments =
+      typeof staffAssignments === 'string'
+        ? ({ PILOT: [staffAssignments] } as Partial<Record<MissionStaffRole, string[]>>)
+        : staffAssignments
+
+    for (const assignedRole of ['PILOT', 'OPERATOR', 'MAINTAINER', 'INSPECTOR'] as MissionStaffRole[]) {
+      const roleStaff = assignments[assignedRole]
+      const staffIds = Array.isArray(roleStaff) ? roleStaff : roleStaff ? [roleStaff] : []
+      for (const staffId of staffIds) {
+        latest = await request<Mission>(
+          `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-staff`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ staffId, assignedRole }),
+          },
+        )
+      }
+    }
+    if (!latest) throw new Error('Please assign at least one staff member.')
+    return latest
+  },
+
+  acceptMyMission: async (missionId: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/accept-current`,
+      { method: 'PATCH' },
+    )
+  },
+
+  rejectMyMission: async (
+    missionId: string,
+    reason: string,
+  ): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/reject-current`,
+      { method: 'PATCH', body: JSON.stringify({ reason }) },
+    )
+  },
+
+  handoverMyMission: async (missionId: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/handover-current`,
+      { method: 'POST' },
+    )
+  },
+
+  assignDrone: async (missionId: string, droneId: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/assign-device`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ deviceId: droneId, deviceRole: 'MAIN' }),
+      },
+    )
+  },
+
+  assignOperator: async (
+    missionId: string,
+    operatorId: string,
+  ): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/assign-staff`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ staffId: operatorId, assignedRole: 'OPERATOR' }),
+      },
+    )
+  },
+
   // F3.1 Accept mission (PATCH /api/missions/{id}/accept)
   acceptMission: async (
     missionId: string,
-    operatorId = 'OP-001',
+    _operatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/accept`, {
-      method: 'PATCH',
-      headers: { 'X-Operator-Id': operatorId },
-    })
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/accept-current`,
+      {
+        method: 'PATCH',
+      },
+    )
   },
 
   // F3.1 Reject mission (PATCH /api/missions/{id}/reject)
   rejectMission: async (
     missionId: string,
     reason: string,
-    operatorId = 'OP-001',
+    _operatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/reject`, {
-      method: 'PATCH',
-      headers: { 'X-Operator-Id': operatorId },
-      body: JSON.stringify({ reason }),
-    })
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/reject-current`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ reason }),
+      },
+    )
   },
 
   // F3.2 Connect GCS (POST /api/missions/{id}/connect)
@@ -71,14 +180,36 @@ export const missionApi = {
     })
   },
 
-  // F3.2 Run Pre-flight check (POST /api/missions/{id}/preflight-check?deviceCode=DRONE-01)
+  disconnectGcs: async (
+    missionId: string,
+    reason = 'MISSION_COMPLETED',
+  ): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/disconnect?reason=${encodeURIComponent(reason)}`,
+      { method: 'POST' },
+    )
+  },
+
+  getTelemetryReadiness: async (
+    missionId: string,
+  ): Promise<{
+    deviceId: string
+    ready: boolean
+    lastTelemetryAt: string | null
+  }> => {
+    return request(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/telemetry-readiness`,
+    )
+  },
+
+  // F3.2 Run pre-device check (POST /api/missions/{id}/pre-device-check?deviceId=...)
   runPreflightCheck: async (
     missionId: string,
-    deviceCode: string,
+    deviceId: string,
   ): Promise<PreflightCheck> => {
     return request<PreflightCheck>(
-      `${API_BASE}/missions/${missionId}/preflight-check?deviceCode=${encodeURIComponent(
-        deviceCode,
+      `${API_BASE}/missions/${missionId}/pre-device-check?deviceId=${encodeURIComponent(
+        deviceId,
       )}`,
       { method: 'POST' },
     )
@@ -98,12 +229,14 @@ export const missionApi = {
   // F3.2 Handover Control (POST /api/missions/{id}/handover)
   handoverControl: async (
     missionId: string,
-    newOperatorId = 'OP-001',
+    _newOperatorId?: string,
   ): Promise<Mission> => {
-    return request<Mission>(`${API_BASE}/missions/${missionId}/handover`, {
-      method: 'POST',
-      headers: { 'X-Operator-Id': newOperatorId },
-    })
+    return request<Mission>(
+      `${API_BASE}/missions/${missionId}/handover-current`,
+      {
+        method: 'POST',
+      },
+    )
   },
 
   // F3.3 Start Mission / Takeoff (POST /api/missions/{id}/start)
@@ -122,17 +255,20 @@ export const missionApi = {
   // F3.3 Upload Mission Image / Media (POST /api/missions/{id}/media)
   uploadMedia: async (
     missionId: string,
-    deviceCode: string,
+    deviceId: string,
     file: File,
   ): Promise<DeviceImage> => {
     const formData = new FormData()
-    formData.append('deviceCode', deviceCode)
+    formData.append('deviceId', deviceId)
     formData.append('file', file)
 
-    const res = await fetch(`${API_BASE}/missions/${missionId}/media`, {
-      method: 'POST',
-      body: formData,
-    })
+    const res = await authenticatedFetch(
+      `${API_BASE}/missions/${missionId}/media`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+    )
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
@@ -157,20 +293,27 @@ export const missionApi = {
     })
   },
 
-  // F3.5 Update Post-flight Status & Complete (PATCH /api/missions/{id}/postflight-status?deviceCode=...)
+  // F3.5 Update Post-flight Status & Complete (PATCH /api/missions/{id}/postflight-status?deviceId=...)
   postFlightStatus: async (
     missionId: string,
-    deviceCode: string,
+    deviceId: string,
     newDeviceStatus: DeviceStatus,
     notes: string,
+    inspectionResults?: Record<string, 'PASS' | 'WARN' | 'FAIL'>,
+    telemetrySnapshot?: FlightControlStatus | null,
   ): Promise<Mission> => {
     return request<Mission>(
-      `${API_BASE}/missions/${missionId}/postflight-status?deviceCode=${encodeURIComponent(
-        deviceCode,
+      `${API_BASE}/missions/${missionId}/postflight-status?deviceId=${encodeURIComponent(
+        deviceId,
       )}`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ newDeviceStatus, notes }),
+        body: JSON.stringify({
+          newDeviceStatus,
+          notes,
+          inspectionResults,
+          telemetrySnapshot,
+        }),
       },
     )
   },
@@ -179,6 +322,13 @@ export const missionApi = {
   completeMission: async (missionId: string): Promise<Mission> => {
     return request<Mission>(`${API_BASE}/missions/${missionId}/complete`, {
       method: 'POST',
+    })
+  },
+
+  failMission: async (missionId: string, reason: string): Promise<Mission> => {
+    return request<Mission>(`${API_BASE}/missions/${missionId}/fail`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     })
   },
 }

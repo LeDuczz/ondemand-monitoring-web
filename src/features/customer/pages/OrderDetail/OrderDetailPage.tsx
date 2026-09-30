@@ -1,0 +1,57 @@
+import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import { useI18n } from '../../../../shared/i18n'
+import { ContextAwareHelpWidget } from '../../../support/components/ContextAwareHelpWidget'
+import { CancelOrderModal } from './components/CancelOrderModal'
+import { DeliverablesCard } from './components/DeliverablesCard'
+import { OrderActions } from './components/OrderActions'
+import { OrderHeader } from './components/OrderHeader'
+import { OrderInfoCard } from './components/OrderInfoCard'
+import { OrderTimeline } from './components/OrderTimeline'
+import { ReviewNotice } from './components/ReviewNotice'
+import { useOrderDetail } from './hooks/useOrderDetail'
+import './OrderDetail.css'
+import { orderDetailPageMessages } from './OrderDetailPage.messages'
+
+/** Customer order detail backed by `GET /api/orders/{id}`. */
+export function OrderDetailPage({ orderId }: { orderId: string }) {
+  const { t } = useI18n(orderDetailPageMessages)
+  const detail = useOrderDetail(orderId)
+  const { order } = detail
+
+  if (detail.loading && !order) return <LoadingState />
+  if (!order) {
+    return <ErrorState title={t.errorTitle} error={detail.error} onRetry={detail.reload} />
+  }
+
+  return (
+    <div className="od-page">
+      <OrderHeader order={order} />
+      <ReviewNotice order={order} />
+      <OrderActions order={order} onCancel={detail.openCancel} />
+      <div className="od-grid">
+        <div className="od-stack">
+          <OrderInfoCard order={order} />
+          <DeliverablesCard order={order} />
+        </div>
+        <div className="od-stack">
+          <OrderTimeline events={order.timeline} />
+          <ContextAwareHelpWidget
+            type="ORDER"
+            id={order.code}
+            status={order.status}
+            orderId={order.id}
+          />
+        </div>
+      </div>
+      {detail.confirmOpen && (
+        <CancelOrderModal
+          orderTitle={order.title}
+          cancelling={detail.cancelling}
+          error={detail.cancelError}
+          onConfirm={() => void detail.cancel()}
+          onClose={detail.closeCancel}
+        />
+      )}
+    </div>
+  )
+}

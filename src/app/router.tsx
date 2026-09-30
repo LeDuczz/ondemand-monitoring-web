@@ -1,4 +1,5 @@
 import '../styles/global.css'
+import '../styles/odm.css'
 
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -8,22 +9,21 @@ import { SocialCallbackPage } from '../features/auth/pages/SocialCallbackPage'
 import { authSession } from '../features/auth/api/authApi'
 import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
-import { CustomerHomePage } from '../features/customer/pages/CustomerHomePage'
-import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequestPage'
-import { StaffHomePage } from '../features/staff/pages/StaffHomePage'
+import { CustomerApp } from '../features/customer/CustomerApp'
+import { CustomerLayout } from '../features/customer/CustomerLayout'
+import { customerLayoutMessages } from '../features/customer/CustomerLayout.messages'
+import { useI18n } from '../shared/i18n'
+import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequest'
+import { ManagerApp } from '../features/manager/ManagerApp'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
 import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
-import { AdminHomePage } from '../features/admin/pages/AdminHomePage'
-import { AdminAccountCreatePage } from '../features/admin/pages/AdminAccountCreatePage'
+import { AdminApp } from '../features/admin/AdminApp'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
+import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHome'
+import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsList'
+import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetail'
 
-function RoleRoute({
-  role,
-  children,
-}: {
-  role: UserRole
-  children: ReactNode
-}) {
+function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) {
   const user = authSession.getUser()
   if (!authSession.getAccessToken() || !user) {
     window.location.hash = '#auth/login'
@@ -31,6 +31,29 @@ function RoleRoute({
   }
   if (user.role !== role) {
     window.location.hash = getRoleHomePath(user.role)
+    return null
+  }
+  return children
+}
+
+function SupportShell({
+  crumb,
+  children,
+}: {
+  crumb: 'help' | 'tickets' | 'ticketDetail'
+  children: ReactNode
+}) {
+  const { t } = useI18n(customerLayoutMessages)
+  return (
+    <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb={t.supportCrumbs[crumb]}>
+      {children}
+    </CustomerLayout>
+  )
+}
+
+function AuthRoute({ children }: { children: ReactNode }) {
+  if (!authSession.getAccessToken() || !authSession.getUser()) {
+    window.location.hash = '#auth/login'
     return null
   }
   return children
@@ -51,51 +74,72 @@ export function Router() {
     }
   }, [])
 
-  if (pathname === '/social/callback') {
-    return <SocialCallbackPage />
-  }
-  if (hash === '#auth/register') return <AuthPage initialMode="register" />
-  if (hash === '#auth/login') return <AuthPage initialMode="login" />
-  if (hash === '#portal/customer')
+  if (hash.startsWith('#help/tickets/')) {
+    const ticketId = hash.replace('#help/tickets/', '')
     return (
-      <RoleRoute role="CUSTOMER">
-        <CustomerHomePage />
-      </RoleRoute>
+      <AuthRoute>
+        <SupportShell crumb="ticketDetail">
+          <CustomerTicketDetailPage ticketId={ticketId} />
+        </SupportShell>
+      </AuthRoute>
     )
+  }
+  if (hash === '#help/tickets')
+    return (
+      <AuthRoute>
+        <SupportShell crumb="tickets">
+          <CustomerTicketsListPage />
+        </SupportShell>
+      </AuthRoute>
+    )
+  if (hash === '#help' || hash.startsWith('#help/'))
+    return (
+      <AuthRoute>
+        <SupportShell crumb="help">
+          <HelpCenterHomePage />
+        </SupportShell>
+      </AuthRoute>
+    )
+
+  if (pathname === '/social/callback') return <SocialCallbackPage />
+  if (hash === '#auth/register')
+    return <AuthPage key="register" initialMode="register" />
+  if (hash === '#auth/login')
+    return <AuthPage key="login" initialMode="login" />
   if (hash === '#portal/customer/request')
     return (
       <RoleRoute role="CUSTOMER">
         <CustomerCreateRequestPage />
       </RoleRoute>
     )
-  if (hash === '#portal/staff')
+  if (hash === '#portal/customer' || hash.startsWith('#portal/customer/'))
     return (
-      <RoleRoute role="STAFF">
-        <StaffHomePage />
+      <RoleRoute role="CUSTOMER">
+        <CustomerApp />
       </RoleRoute>
     )
-  if (hash === '#portal/drone-operator')
+  if (hash === '#portal/staff' || hash.startsWith('#portal/staff/'))
+    return (
+      <RoleRoute role="STAFF">
+        <ManagerApp />
+      </RoleRoute>
+    )
+  if (hash === '#portal/drone-operator' || hash.startsWith('#portal/drone-operator/'))
     return (
       <RoleRoute role="DRONE_OPERATOR">
         <DroneOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/system-operator')
+  if (hash === '#portal/system-operator' || hash.startsWith('#portal/system-operator/'))
     return (
       <RoleRoute role="SYSTEM_OPERATOR">
         <SystemOperatorHomePage />
       </RoleRoute>
     )
-  if (hash === '#portal/admin')
+  if (hash === '#portal/admin' || hash.startsWith('#portal/admin/'))
     return (
       <RoleRoute role="ADMIN">
-        <AdminHomePage />
-      </RoleRoute>
-    )
-  if (hash === '#portal/admin/accounts/new')
-    return (
-      <RoleRoute role="ADMIN">
-        <AdminAccountCreatePage />
+        <AdminApp />
       </RoleRoute>
     )
   if (hash === '#operator') return <OperatorDashboardPage />

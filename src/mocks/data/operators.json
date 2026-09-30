@@ -1,0 +1,84 @@
+{
+  "_note": "Operator roster, copied verbatim from evd/design/MNG-05.dc.html's top-3 pilot cards + 'Phi công bị loại' list for the ORD-2609-0153 / MSN-2609-0153-1 dispatch scenario. Fields with no design source are null.",
+  "operators": [
+    {
+      "id": "op-hoang-duc-thang",
+      "code": "HT",
+      "fullName": "Hoàng Đức Thắng",
+      "licenseClass": "Hạng B",
+      "licenseNumber": "VN-UAV-0412-2024",
+      "licenseExpiry": "2026-10-11",
+      "missionsWithModel": 14,
+      "successRatePct": 96,
+      "acceptanceRatePct": 92,
+      "missionsThisWeek": 2,
+      "missionsToday": 0
+    },
+    {
+      "id": "op-bui-anh-tuan",
+      "code": "BT",
+      "fullName": "Bùi Anh Tuấn",
+      "licenseClass": "Hạng B",
+      "licenseNumber": "VN-UAV-0517-2024",
+      "licenseExpiry": "2027-08-02",
+      "missionsWithModel": 9,
+      "successRatePct": 91,
+      "acceptanceRatePct": 88,
+      "missionsThisWeek": 1,
+      "missionsToday": 0
+    },
+    {
+      "id": "op-ngo-thi-lan-phuong",
+      "code": "NP",
+      "fullName": "Ngô Thị Lan Phương",
+      "licenseClass": "Hạng B",
+      "licenseNumber": "VN-UAV-0233-2025",
+      "licenseExpiry": "2026-12-10",
+      "missionsWithModel": 6,
+      "successRatePct": 93,
+      "acceptanceRatePct": 95,
+      "missionsThisWeek": 3,
+      "missionsToday": 0
+    },
+    {
+      "id": "op-do-minh-quan",
+      "code": null,
+      "fullName": "Đỗ Minh Quân",
+      "licenseClass": null,
+      "licenseNumber": null,
+      "licenseExpiry": "2026-09-23",
+      "missionsWithModel": null,
+      "successRatePct": null,
+      "acceptanceRatePct": null,
+      "missionsThisWeek": null,
+      "missionsToday": null
+    },
+    {
+      "id": "op-vu-hai-dang",
+      "code": null,
+      "fullName": "Vũ Hải Đăng",
+      "licenseClass": null,
+      "licenseNumber": null,
+      "licenseExpiry": null,
+      "missionsWithModel": null,
+      "successRatePct": null,
+      "acceptanceRatePct": null,
+      "missionsThisWeek": null,
+      "missionsToday": 3
+    },
+    {
+      "id": "op-ly-thanh-son",
+      "code": null,
+      "fullName": "Lý Thanh Sơn",
+      "licenseClass": null,
+      "licenseNumber": null,
+      "licenseExpiry": null,
+      "missionsWithModel": null,
+      "successRatePct": null,
+      "acceptanceRatePct": null,
+      "missionsThisWeek": null,
+      "missionsToday": null,
+      "declaredAvailable": false
+    }
+  ]
+}

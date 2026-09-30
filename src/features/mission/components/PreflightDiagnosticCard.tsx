@@ -1,6 +1,8 @@
 import type { PreflightCheck, FlightToken } from '../types/mission'
 import { Button } from '../../../shared/components/Button'
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
+import { preflightDiagnosticCardMessages } from './PreflightDiagnosticCard.messages'
 
 interface PreflightDiagnosticCardProps {
   check?: PreflightCheck | null
@@ -23,6 +25,7 @@ export function PreflightDiagnosticCard({
   onConnectGcs,
   isGcsConnected,
 }: PreflightDiagnosticCardProps) {
+  const { t, locale } = useI18n(preflightDiagnosticCardMessages)
   return (
     <div
       style={{
@@ -61,7 +64,7 @@ export function PreflightDiagnosticCard({
               letterSpacing: '-0.03em',
             }}
           >
-            Kiểm tra Kỹ thuật KTS (Pre-flight Diagnostic Center)
+            {t.cardTitle}
           </h3>
         </div>
 
@@ -71,7 +74,7 @@ export function PreflightDiagnosticCard({
           onClick={onConnectGcs}
           style={{ minHeight: '40px', fontSize: '0.78rem' }}
         >
-          {isGcsConnected ? 'GCS Connected (PX4)' : 'Kết nối GCS App'}
+          {isGcsConnected ? t.gcsConnected : t.connectGcs}
         </Button>
       </div>
 
@@ -109,7 +112,7 @@ export function PreflightDiagnosticCard({
                 color: 'var(--color-muted)',
               }}
             >
-              MỨC PIN DRONE
+              {t.batteryLevelLabel}
             </span>
             <Icon
               name="activity"
@@ -137,7 +140,7 @@ export function PreflightDiagnosticCard({
               color: batteryLevel >= 80 ? '#166534' : '#991b1b',
             }}
           >
-            {batteryLevel >= 80 ? '✓ Đạt ngưỡng (≥80%)' : '✕ Quá thấp (<80%)'}
+            {batteryLevel >= 80 ? t.batteryOk : t.batteryLow}
           </span>
         </div>
 
@@ -166,7 +169,7 @@ export function PreflightDiagnosticCard({
                 color: 'var(--color-muted)',
               }}
             >
-              GPS SATELLITES
+              {t.gpsSatellitesLabel}
             </span>
             <Icon
               name="route"
@@ -185,7 +188,8 @@ export function PreflightDiagnosticCard({
               margin: '8px 0 4px',
             }}
           >
-            {gpsSatellites} <small style={{ fontSize: '0.7rem' }}>Sats</small>
+            {gpsSatellites}{' '}
+            <small style={{ fontSize: '0.7rem' }}>{t.satsUnit}</small>
           </div>
           <span
             style={{
@@ -194,9 +198,7 @@ export function PreflightDiagnosticCard({
               color: gpsSatellites >= 8 ? '#166534' : '#991b1b',
             }}
           >
-            {gpsSatellites >= 8
-              ? '✓ 3D Fix OK (≥8)'
-              : '✕ Định vị không đủ (≥8)'}
+            {gpsSatellites >= 8 ? t.gpsOk : t.gpsLow}
           </span>
         </div>
 
@@ -216,7 +218,7 @@ export function PreflightDiagnosticCard({
                 color: 'var(--color-muted)',
               }}
             >
-              CẢM BIẾN GYRO/ACCEL
+              {t.gyroLabel}
             </span>
             <Icon name="shield" style={{ width: '16px', color: '#0369a1' }} />
           </div>
@@ -229,12 +231,12 @@ export function PreflightDiagnosticCard({
               margin: '12px 0 4px',
             }}
           >
-            CALIBRATED
+            {t.calibrated}
           </div>
           <span
             style={{ fontSize: '0.62rem', fontWeight: 600, color: '#166534' }}
           >
-            ✓ IMU Normal State
+            {t.imuNormal}
           </span>
         </div>
       </div>
@@ -257,9 +259,7 @@ export function PreflightDiagnosticCard({
           disabled={isConnecting}
           style={{ minHeight: '46px', padding: '0 28px' }}
         >
-          {isConnecting
-            ? '⏳ Đang quét Diagnostic...'
-            : '⚡ Bắt đầu Kiểm tra Pre-flight'}
+          {isConnecting ? t.scanning : t.startPreflight}
         </Button>
 
         {check && (
@@ -273,8 +273,7 @@ export function PreflightDiagnosticCard({
                   gap: '6px',
                 }}
               >
-                <Icon name="check" /> Kiểm tra Pre-flight PASSED! Đã phát hành
-                mã FlightToken.
+                <Icon name="check" /> {t.preflightPassed}
               </span>
             ) : (
               <span
@@ -285,8 +284,8 @@ export function PreflightDiagnosticCard({
                   gap: '6px',
                 }}
               >
-                <Icon name="x" /> Pre-flight FAILED ({check.faultType}). Đang
-                chuyển trạng thái tự động...
+                <Icon name="x" /> {t.preflightFailedPrefix} ({check.faultType}).{' '}
+                {t.preflightFailedSuffix}
               </span>
             )}
           </div>
@@ -318,7 +317,7 @@ export function PreflightDiagnosticCard({
                 fontWeight: 700,
               }}
             >
-              🔑 FLIGHT-ACCESS TOKEN ISSUED
+              {t.tokenIssued}
             </span>
             <div
               style={{
@@ -332,8 +331,9 @@ export function PreflightDiagnosticCard({
               {token.tokenValue}
             </div>
             <span style={{ fontSize: '0.68rem', color: '#cbd5e1' }}>
-              Thời hạn hiệu lực 15 phút (Hết hạn lúc:{' '}
-              {new Date(token.expiresAt).toLocaleTimeString()})
+              {t.tokenValidityPrefix}{' '}
+              {new Date(token.expiresAt).toLocaleTimeString(locale)}
+              {t.tokenValiditySuffix}
             </span>
           </div>
 
@@ -348,7 +348,7 @@ export function PreflightDiagnosticCard({
               border: '1px solid rgba(255, 255, 255, 0.3)',
             }}
           >
-            VALID & READY FOR TAKEOFF
+            {t.validReady}
           </span>
         </div>
       )}

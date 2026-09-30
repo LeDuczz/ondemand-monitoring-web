@@ -1,5 +1,17 @@
 import { env } from '../../../config/env'
+import { getLanguage } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
+
+const errorText = {
+  vi: {
+    unreachable: 'Không thể kết nối tới dịch vụ đơn hàng.',
+    requestFailed: 'Yêu cầu thất bại. Vui lòng thử lại.',
+  },
+  en: {
+    unreachable: 'Unable to reach the order service.',
+    requestFailed: 'Request failed. Please try again.',
+  },
+} as const
 
 type ApiResponse<T> = {
   success?: boolean
@@ -38,7 +50,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
       headers,
     })
   } catch {
-    throw new OrderApiError('Unable to reach the order service.')
+    throw new OrderApiError(errorText[getLanguage()].unreachable)
   }
 
   const payload = (await response.json().catch(() => undefined)) as
@@ -46,7 +58,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
 
   if (!response.ok || payload?.success === false) {
     throw new OrderApiError(
-      payload?.message ?? 'Request failed. Please try again.',
+      payload?.message ?? errorText[getLanguage()].requestFailed,
       payload?.code,
       payload?.errors,
     )
@@ -55,52 +67,49 @@ async function request<T>(path: string, options: RequestOptions = {}) {
   return payload?.data as T
 }
 
-export type CategoryService = {
+/** Deliverable line of the backend `OrderDeliverableResponse`. */
+export type OrderDeliverableResponse = {
   id: string
-  name: string
-  description?: string
+  deliverableTypeId: string
+  deliverableTypeName?: string
+  defaultFormat?: string
+  requirement?: Record<string, unknown>
 }
 
-export type PreferredTime = {
+/** Backend `OrderCreateResponse` (POST /api/orders, GET /api/orders/pending). */
+export type OrderCreateResponse = {
   id: string
-  code?: string
-  name: string
-  startTime?: string
-  endTime?: string
-}
-
-export type OrderCreatePayload = {
-  title: string
-  purpose?: string
-  serviceId: string
-  description?: string
-  address?: string
-  point: {
-    type: 'Point'
-    coordinates: [number, number]
-  }
-  preferredDate: string
-  preferredTimeId: string
-  mediaType: 'IMAGE' | 'VIDEO'
-  durationOfVideo?: number
-  numberOfPhoto?: number
-}
-
-export type OrderCreateResponse = OrderCreatePayload & {
-  id: string
+  orderCode?: string | null
   customerId: string
   customerName?: string
+  title?: string
+  serviceId?: string
   serviceName?: string
+  description?: string
+  address?: string
+  longitude?: number
+  latitude?: number
+  radiusM?: number
+  coverageArea?: Record<string, unknown>
+  preferredDateFrom?: string
+  preferredDateTo?: string
+  preferredTimeId?: string
   preferredTimeName?: string
   orderStatus?: string
+  rejectReason?: string
+  reviewById?: string
+  reviewByName?: string
+  reviewAt?: string
+  deliverables?: OrderDeliverableResponse[]
   createdAt?: string
   updatedAt?: string
 }
 
 export const orderApi = {
-  getCategoryServices: () =>
-    request<CategoryService[]>('/api/category-services'),
-  getPreferredTimes: () => request<PreferredTime[]>('/api/preferred-times'),
-  createOrder: (body: OrderCreatePayload) =>
-    request<OrderCreateResponse>('/api/orders', { method: 'POST', body }),
+  getPendingOrders: () =>
+    request<OrderCreateResponse[]>('/api/orders/pending', { method: 'GET' }),
+  approveOrder: (orderId: string) =>
+    request<void>(`/api/orders/${encodeURIComponent(orderId)}/approve`, {
+      method: 'POST',
+    }),
 }

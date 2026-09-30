@@ -1,92 +1,109 @@
-import type { Mission, Drone } from '../types'
-import { ALL_MISSIONS, DRONE_PRIMARY } from '../mockData'
+import { useI18n } from '../../../../shared/i18n'
+import { getMissionStatusLabel } from '../../../../shared/lib/statusTone'
+import type { MissionStatus } from '../../../../shared/types/domain'
+import { operatorOverviewMessages } from '../i18n/operatorOverview'
+import type { Mission } from '../types'
 
 interface Props {
+  allMissions: Mission[]
+  operatorName: string
+  operatorId: string
   onGoMissions: () => void
   onGoMission: (m: Mission) => void
 }
 
-const STATS = [
-  { label: "Today's missions", value: '3', sub: '1 active, 2 upcoming' },
-  { label: 'Hours flown this week', value: '11.4', sub: '↑ 2.1 vs last week' },
-  { label: 'Flight hours this month', value: '47.2', sub: 'Target: 60 h' },
-  { label: 'Missions completed', value: '128', sub: 'Lifetime total' },
-]
+const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED'])
 
-const UPCOMING: {
-  id: string
-  title: string
-  time: string
-  loc: string
-  priority: string
-}[] = [
-  {
-    id: 'MSN-9011',
-    title: 'Infrastructure inspection — Section B',
-    time: '14:30',
-    loc: 'Riverside District',
-    priority: 'HIGH',
-  },
-  {
-    id: 'MSN-9012',
-    title: 'Aerial survey — Zone 4',
-    time: '16:00',
-    loc: 'North Industrial Park',
-    priority: 'NORMAL',
-  },
-]
-
-const RECENT: {
-  id: string
-  title: string
-  date: string
-  result: 'completed' | 'failed' | 'cancelled'
-}[] = [
-  {
-    id: 'MSN-9008',
-    title: 'Delivery run — West Zone',
-    date: 'Today 09:15',
-    result: 'completed',
-  },
-  {
-    id: 'MSN-9006',
-    title: 'Inspection — Power grid',
-    date: 'Yesterday 14:50',
-    result: 'completed',
-  },
-  {
-    id: 'MSN-9003',
-    title: 'Survey — East corridor',
-    date: '7 Sep 11:00',
-    result: 'failed',
-  },
-  {
-    id: 'MSN-8997',
-    title: 'Delivery — Downtown Hub',
-    date: '6 Sep 10:30',
-    result: 'completed',
-  },
-]
+function formatSchedule(value: string, notScheduledLabel: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? notScheduledLabel
+    : date.toLocaleString()
+}
 
 const RESULT_CFG = {
   completed: {
     color: 'var(--green-text)',
     dot: 'var(--green)',
-    label: 'Completed',
   },
-  failed: { color: 'var(--red-text)', dot: 'var(--red)', label: 'Failed' },
+  failed: { color: 'var(--red-text)', dot: 'var(--red)' },
   cancelled: {
     color: 'var(--text-3)',
     dot: 'var(--text-3)',
-    label: 'Cancelled',
   },
 }
 
-export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
-  const activeMission = ALL_MISSIONS.find(
-    (m) => m.state === 'WAITING_OPERATOR_ACCEPTANCE',
+export default function OperatorOverview({
+  allMissions,
+  operatorName,
+  operatorId,
+  onGoMissions,
+  onGoMission,
+}: Props) {
+  const { t, lang, locale } = useI18n(operatorOverviewMessages)
+  const activeMission = allMissions.find(
+    (m) =>
+      m.state === 'WAITING_OPERATOR_ACCEPTANCE' ||
+      m.state === 'WAITING_CREW_CONFIRMATION',
   )
-  const drone: Drone = DRONE_PRIMARY
+  const assignedMission = allMissions.find(
+    (mission) => mission.droneId && !TERMINAL_STATES.has(mission.state),
+  )
+  const droneId = assignedMission?.droneId
+  const STATS = [
+    {
+      label: t.stats.assignedMissions,
+      value: String(allMissions.length),
+      sub: t.stats.assignedMissionsSub,
+    },
+    {
+      label: t.stats.awaitingAcceptance,
+      value: String(
+        allMissions.filter(
+          (mission) =>
+            mission.state === 'WAITING_OPERATOR_ACCEPTANCE' ||
+            mission.state === 'WAITING_CREW_CONFIRMATION',
+        ).length,
+      ),
+      sub: t.stats.awaitingAcceptanceSub,
+    },
+    {
+      label: t.stats.activeFlights,
+      value: String(
+        allMissions.filter((mission) =>
+          ['IN_FLIGHT', 'RETURNING'].includes(mission.state),
+        ).length,
+      ),
+      sub: t.stats.activeFlightsSub,
+    },
+    {
+      label: t.stats.missionsCompleted,
+      value: String(
+        allMissions.filter((mission) => mission.state === 'COMPLETED').length,
+      ),
+      sub: t.stats.missionsCompletedSub,
+    },
+  ]
+  const UPCOMING = allMissions
+    .filter((mission) => !TERMINAL_STATES.has(mission.state))
+    .slice(0, 5)
+    .map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      time: formatSchedule(mission.scheduledAt, t.notScheduled),
+      loc: mission.location,
+      priority: mission.priority,
+    }))
+  const RECENT = allMissions
+    .filter((mission) => TERMINAL_STATES.has(mission.state))
+    .slice(0, 5)
+    .map((mission) => ({
+      id: mission.id,
+      title: mission.title,
+      date: formatSchedule(mission.scheduledAt, t.notScheduled),
+      result: mission.state.toLowerCase() as
+        'completed' | 'failed' | 'cancelled',
+    }))
 
   return (
     <div
@@ -104,10 +121,11 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
               margin: '0 0 4px',
             }}
           >
-            Good afternoon, J. Martinez
+            {t.welcome(operatorName)}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-            Wednesday, 9 September 2026 · Operator ID: OPR-112
+            {new Date().toLocaleDateString(locale)} · {t.operatorId}:{' '}
+            {operatorId}
           </p>
         </div>
 
@@ -186,7 +204,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                       marginBottom: 3,
                     }}
                   >
-                    Mission awaiting your acceptance
+                    {t.missionAwaiting}
                   </div>
                   <div
                     style={{
@@ -213,7 +231,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                     marginLeft: 16,
                   }}
                 >
-                  Review now
+                  {t.reviewNow}
                 </button>
               </div>
             )}
@@ -245,7 +263,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                     color: 'var(--text)',
                   }}
                 >
-                  Upcoming today
+                  {t.upcomingToday}
                 </span>
                 <button
                   onClick={onGoMissions}
@@ -258,7 +276,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                     fontWeight: 500,
                   }}
                 >
-                  View all missions
+                  {t.viewAllMissions}
                 </button>
               </div>
               {UPCOMING.map((m, i) => (
@@ -289,7 +307,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                       {m.time}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                      today
+                      {t.today}
                     </div>
                   </div>
                   <div
@@ -368,10 +386,14 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                   color: 'var(--text)',
                 }}
               >
-                Recent missions
+                {t.recentMissions}
               </div>
               {RECENT.map((m, i) => {
                 const cfg = RESULT_CFG[m.result]
+                const resultLabel = getMissionStatusLabel(
+                  m.result.toUpperCase() as MissionStatus,
+                  lang,
+                )
                 return (
                   <div
                     key={m.id}
@@ -420,7 +442,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                     <span
                       style={{ fontSize: 12, color: cfg.color, flexShrink: 0 }}
                     >
-                      {cfg.label}
+                      {resultLabel}
                     </span>
                     <span
                       style={{
@@ -459,7 +481,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                   color: 'var(--text)',
                 }}
               >
-                Assigned drone
+                {t.assignedDrone}
               </div>
               <div style={{ padding: '16px' }}>
                 <div
@@ -470,7 +492,7 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                     marginBottom: 2,
                   }}
                 >
-                  {drone.name}
+                  {droneId ?? t.noDroneAssigned}
                 </div>
                 <div
                   style={{
@@ -479,98 +501,20 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                     marginBottom: 14,
                   }}
                 >
-                  {drone.model} · {drone.id}
-                </div>
-                <div
-                  style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-                >
-                  {[
-                    {
-                      label: 'Battery',
-                      value: `${drone.battery}%`,
-                      bar: true,
-                      pct: drone.battery,
-                      color:
-                        drone.battery > 50 ? 'var(--green)' : 'var(--amber)',
-                    },
-                    {
-                      label: 'GPS satellites',
-                      value: `${drone.gpsCount} sats`,
-                    },
-                    {
-                      label: 'Storage',
-                      value: `${(drone.storageMB / 1024).toFixed(1)} GB free`,
-                    },
-                    { label: 'Signal (RSSI)', value: `${drone.rssi}%` },
-                  ].map((r) => (
-                    <div key={r.label}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          marginBottom: r.bar ? 4 : 0,
-                        }}
-                      >
-                        <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                          {r.label}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontFamily: 'var(--font-data)',
-                            fontWeight: 600,
-                            color: 'var(--text)',
-                          }}
-                        >
-                          {r.value}
-                        </span>
-                      </div>
-                      {r.bar && (
-                        <div
-                          style={{
-                            height: 4,
-                            background: 'var(--border)',
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${r.pct}%`,
-                              height: '100%',
-                              background: r.color,
-                              borderRadius: 2,
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {assignedMission
+                    ? t.missionRef(assignedMission.id)
+                    : t.selectMissionHint}
                 </div>
                 <div
                   style={{
-                    marginTop: 14,
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    background: 'var(--green-bg)',
-                    border: '1px solid var(--green-border)',
                     fontSize: 12,
-                    color: 'var(--green-text)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
+                    color: 'var(--text-2)',
+                    padding: '8px 12px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
                   }}
                 >
-                  <div
-                    style={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      background: 'var(--green)',
-                      flexShrink: 0,
-                    }}
-                  />
-                  Available — ready for assignment
+                  {t.liveTelemetryHint}
                 </div>
               </div>
             </div>
@@ -595,9 +539,9 @@ export default function OperatorOverview({ onGoMissions, onGoMission }: Props) {
                   color: 'var(--text)',
                 }}
               >
-                Quick actions
+                {t.quickActions}
               </div>
-              {[{ label: 'View all missions', action: onGoMissions }].map(
+              {[{ label: t.viewAllMissions, action: onGoMissions }].map(
                 (q, i) => (
                   <button
                     key={i}

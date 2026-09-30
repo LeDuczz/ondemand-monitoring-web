@@ -1,6 +1,7 @@
 export type MissionStatus =
   | 'CREATED'
   | 'RESOURCE_ASSIGNING'
+  | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
   | 'SCHEDULED'
   | 'CONNECTED'
@@ -26,23 +27,91 @@ export type DeviceStatus =
 
 export type MediaType = 'IMAGE' | 'VIDEO' | 'THERMAL'
 
+export type PlanningAlgorithm =
+  'DIRECT' | 'ASTAR_SHORTEST' | 'ASTAR_ENERGY_AWARE'
+
+export type FeasibilityStatus =
+  | 'FEASIBLE'
+  | 'INSUFFICIENT_BATTERY'
+  | 'BATTERY_DATA_UNAVAILABLE'
+  | 'NO_SAFE_ROUTE'
+  | 'INVALID_TARGET'
+
+export interface PlanWaypoint {
+  id: string
+  sequence: number
+  simX: number
+  simY: number
+  altitudeM: number
+  plannedSpeedMps?: number | null
+  reason: 'START' | 'CRUISE' | 'TARGET'
+}
+
+export interface MissionPlan {
+  id: string
+  planningAlgorithm: PlanningAlgorithm
+  plannedDistanceM?: number | null
+  plannedDurationSec?: number | null
+  plannedCruiseSpeedMps?: number | null
+  maxPlannedAltitudeM?: number | null
+  estimatedEnergyMah?: number | null
+  estimatedBatteryUsedPercent?: number | null
+  batteryCapacityMah?: number | null
+  availableBatteryPercentAtPlanning?: number | null
+  estimatedRemainingBatteryPercent?: number | null
+  safetyReservePercent?: number | null
+  requiredBatteryPercent?: number | null
+  feasibilityStatus: FeasibilityStatus
+  planningTimeMs?: number | null
+  waypoints: PlanWaypoint[]
+}
+
 export interface Mission {
   id: string
+  orderId?: string
+  orderCode?: string | null
+  orderTitle?: string
+  orderPreferredDateFrom?: string | null
+  orderPreferredDateTo?: string | null
+  orderPreferredTimeName?: string | null
+  serviceName?: string | null
+  customerName?: string
   missionCode: string
   status: MissionStatus
+  operatorId?: string
+  staffAssignments?: MissionStaffAssignment[]
   deviceId?: string
   deviceCode?: string
-  operatorId?: string
-  latitude: number
-  longitude: number
+  droneId?: string
+  droneCode?: string
+  latitude?: number
+  longitude?: number
+  radiusM?: number | null
   address?: string
   scheduledStartAt?: string
+  scheduledEndAt?: string
   startedAt?: string
   completedAt?: string
   description?: string
   failureReason?: string
   rejectionReason?: string
   mediaType?: MediaType
+  plan?: MissionPlan | null
+}
+
+export type MissionStaffRole = 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'
+export type StaffResponseStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED'
+
+export interface MissionStaffAssignment {
+  id: string
+  staffId: string
+  staffName?: string | null
+  staffEmail?: string | null
+  assignedRole: MissionStaffRole
+  responseStatus: StaffResponseStatus
+  assignedAt?: string | null
+  respondedAt?: string | null
+  declineReason?: string | null
 }
 
 export interface PreflightCheck {

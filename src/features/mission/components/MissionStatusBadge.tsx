@@ -1,46 +1,53 @@
 import type { MissionStatus, DeviceStatus } from '../types/mission'
 import { Icon } from '../../../shared/components/Icon'
+import { useI18n } from '../../../shared/i18n'
+import { missionStatusBadgeMessages } from './MissionStatusBadge.messages'
 
 interface MissionStatusBadgeProps {
   status: MissionStatus
 }
 
 export function MissionStatusBadge({ status }: MissionStatusBadgeProps) {
+  const { t } = useI18n(missionStatusBadgeMessages)
+
   const getBadgeConfig = () => {
     switch (status) {
       case 'WAITING_OPERATOR_ACCEPTANCE':
+      case 'WAITING_CREW_CONFIRMATION':
         return {
           bg: '#fef3c7',
           color: '#92400e',
-          label: 'Chờ Operator tiếp nhận',
+          label: status === 'WAITING_CREW_CONFIRMATION'
+            ? t.mission.WAITING_CREW_CONFIRMATION
+            : t.mission.WAITING_OPERATOR_ACCEPTANCE,
           icon: 'clock' as const,
         }
       case 'SCHEDULED':
         return {
           bg: '#e0f2fe',
           color: '#0369a1',
-          label: 'Đã lên lịch (Scheduled)',
+          label: t.mission.SCHEDULED,
           icon: 'check' as const,
         }
       case 'CONNECTED':
         return {
           bg: '#e0e7ff',
           color: '#3730a3',
-          label: 'GCS App Connected',
+          label: t.mission.CONNECTED,
           icon: 'radio' as const,
         }
       case 'PREFLIGHT_CHECKING':
         return {
           bg: '#fae8ff',
           color: '#86198f',
-          label: 'Đang kiểm tra Preflight',
+          label: t.mission.PREFLIGHT_CHECKING,
           icon: 'activity' as const,
         }
       case 'READY_TO_FLY':
         return {
           bg: '#dcfce7',
           color: '#15803d',
-          label: 'Sẵn sàng cất cánh (Ready)',
+          label: t.mission.READY_TO_FLY,
           icon: 'shield' as const,
         }
       case 'IN_FLIGHT':
@@ -48,21 +55,21 @@ export function MissionStatusBadge({ status }: MissionStatusBadgeProps) {
         return {
           bg: '#0284c7',
           color: '#ffffff',
-          label: 'Đang bay (In-Flight)',
+          label: t.mission.IN_FLIGHT,
           icon: 'route' as const,
         }
       case 'RETURNING':
         return {
           bg: '#fed7aa',
           color: '#c2410c',
-          label: 'Đang hạ cánh / về trạm',
+          label: t.mission.RETURNING,
           icon: 'route' as const,
         }
       case 'COMPLETED':
         return {
           bg: '#d1fae5',
           color: '#065f46',
-          label: 'Nhiệm vụ hoàn thành',
+          label: t.mission.COMPLETED,
           icon: 'check' as const,
         }
       case 'FAILED_PREFLIGHT':
@@ -70,7 +77,7 @@ export function MissionStatusBadge({ status }: MissionStatusBadgeProps) {
         return {
           bg: '#fee2e2',
           color: '#b91c1c',
-          label: 'Lỗi Preflight / Chờ duyệt lại',
+          label: t.mission.FAILED_PREFLIGHT,
           icon: 'x' as const,
         }
       case 'FAILED':
@@ -78,7 +85,7 @@ export function MissionStatusBadge({ status }: MissionStatusBadgeProps) {
         return {
           bg: '#f3f4f6',
           color: '#4b5563',
-          label: 'Đã hủy / Thất bại',
+          label: t.mission.CANCELLED,
           icon: 'x' as const,
         }
       default:
@@ -121,33 +128,39 @@ interface DeviceStatusBadgeProps {
 }
 
 export function DeviceStatusBadge({ status }: DeviceStatusBadgeProps) {
+  const { t } = useI18n(missionStatusBadgeMessages)
+
   const getBadgeConfig = () => {
     switch (status) {
       case 'AVAILABLE':
         return {
           bg: '#dcfce7',
           color: '#166534',
-          label: 'AVAILABLE (Sẵn sàng)',
+          label: t.device.AVAILABLE,
         }
       case 'PREFLIGHT':
         return {
           bg: '#e0f2fe',
           color: '#075985',
-          label: 'PREFLIGHT (Kiểm tra)',
+          label: t.device.PREFLIGHT,
         }
       case 'ACTIVE_MISSION':
         return {
           bg: '#0284c7',
           color: '#ffffff',
-          label: 'ACTIVE MISSION (Đang bay)',
+          label: t.device.ACTIVE_MISSION,
         }
       case 'IDLE_CHARGING':
-        return { bg: '#fef3c7', color: '#92400e', label: 'CHARGING (Sạc pin)' }
+        return {
+          bg: '#fef3c7',
+          color: '#92400e',
+          label: t.device.IDLE_CHARGING,
+        }
       case 'MAINTENANCE':
         return {
           bg: '#fee2e2',
           color: '#991b1b',
-          label: 'MAINTENANCE (Bảo trì)',
+          label: t.device.MAINTENANCE,
         }
       case 'OFFLINE':
       default:

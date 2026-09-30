@@ -1,0 +1,95 @@
+/* Customer support ticket list. Tokens: shared/components/ui/ui.css. */
+
+.tl-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+}
+
+.tl-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.tl-filter .sp-input {
+  width: auto;
+  min-height: 36px;
+}
+
+.tl-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  flex-wrap: wrap;
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow);
+}
+
+
+
+.tl-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tl-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+
+.tl-subject {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ui-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.tl-subject:hover {
+  color: var(--ui-primary-text);
+  text-decoration: underline;
+}
+
+.tl-links {
+  display: flex;
+  gap: var(--ui-space-2);
+  flex-wrap: wrap;
+}
+
+.tl-side {
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--ui-text-3);
+}
+
+.tl-view {
+  display: block;
+  margin-top: 4px;
+  color: var(--ui-primary-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tl-view:hover {
+  text-decoration: underline;
+}

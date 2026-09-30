@@ -1,0 +1,58 @@
+/* Create-ticket dialog body. Tokens: shared/components/ui/ui.css. */
+
+.ct-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+
+.ct-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2) var(--ui-space-4);
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+  font-size: 12.5px;
+  color: var(--ui-text-3);
+}
+
+.ct-context strong {
+  color: var(--ui-primary-text);
+}
+
+.ct-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+}
+
+@media (max-width: 560px) {
+  .ct-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ct-success {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  font-size: 13.5px;
+  color: var(--ui-text-2);
+}
+
+.ct-success dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--ui-space-2) var(--ui-space-4);
+  margin: 0;
+}
+
+.ct-success dt {
+  color: var(--ui-text-3);
+}
+
+.ct-success dd {
+  margin: 0;
+}

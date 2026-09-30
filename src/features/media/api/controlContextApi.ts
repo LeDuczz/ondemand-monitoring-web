@@ -16,7 +16,7 @@ export type MissionControlContext = {
 export const controlContextApi = {
   async get(missionId: string): Promise<MissionControlContext> {
     const response = await authenticatedFetch(
-      `${env.apiBaseUrl}/api/v1/missions/${encodeURIComponent(missionId)}/control-context`,
+      `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/control-context`,
     )
     const payload = (await response.json().catch(() => undefined)) as
       ApiResponse<MissionControlContext> | undefined

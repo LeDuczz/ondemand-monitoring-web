@@ -1,0 +1,1 @@
+export { AiKnowledgePage } from './AiKnowledgePage'

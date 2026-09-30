@@ -1,3 +1,5 @@
+import { useI18n } from '../../../../shared/i18n'
+import { missionCompletedMessages } from '../i18n/missionCompleted'
 import type { Mission, Drone } from '../types'
 
 interface Props {
@@ -13,15 +15,26 @@ export default function MissionCompleted({
   onMedia,
   onMissions,
 }: Props) {
+  const { t } = useI18n(missionCompletedMessages)
   const stats = [
-    { l: 'Flight time', v: '42:18', u: 'mm:ss' },
-    { l: 'Distance', v: '4.1', u: 'km' },
-    { l: 'Max altitude', v: '48.2', u: 'm AGL' },
-    { l: 'Avg speed', v: '8.4', u: 'm/s' },
-    { l: 'Battery used', v: '61%', u: 'consumed' },
-    { l: 'Photos', v: '847', u: 'files' },
-    { l: 'Video', v: '42:18', u: 'duration' },
-    { l: 'Media size', v: '4.2', u: 'GB' },
+    { key: 'flightTime', l: t.statLabels.flightTime, v: '42:18', u: 'mm:ss' },
+    { key: 'distance', l: t.statLabels.distance, v: '4.1', u: 'km' },
+    { key: 'maxAltitude', l: t.statLabels.maxAltitude, v: '48.2', u: 'm AGL' },
+    { key: 'avgSpeed', l: t.statLabels.avgSpeed, v: '8.4', u: 'm/s' },
+    {
+      key: 'batteryUsed',
+      l: t.statLabels.batteryUsed,
+      v: '61%',
+      u: t.statUnits.consumed,
+    },
+    { key: 'photos', l: t.statLabels.photos, v: '847', u: t.statUnits.files },
+    {
+      key: 'video',
+      l: t.statLabels.video,
+      v: '42:18',
+      u: t.statUnits.duration,
+    },
+    { key: 'mediaSize', l: t.statLabels.mediaSize, v: '4.2', u: 'GB' },
   ]
 
   return (
@@ -73,7 +86,7 @@ export default function MissionCompleted({
                 color: 'var(--green-text)',
               }}
             >
-              Mission completed
+              {t.missionCompleted}
             </div>
             <div
               style={{
@@ -107,7 +120,7 @@ export default function MissionCompleted({
               marginBottom: 16,
             }}
           >
-            Mission statistics
+            {t.missionStatistics}
           </div>
           <div
             style={{
@@ -117,7 +130,7 @@ export default function MissionCompleted({
             }}
           >
             {stats.map((s) => (
-              <div key={s.l}>
+              <div key={s.key}>
                 <div
                   style={{
                     fontSize: 22,
@@ -163,18 +176,22 @@ export default function MissionCompleted({
               marginBottom: 12,
             }}
           >
-            Mission record
+            {t.missionRecord}
           </div>
           {[
-            ['Mission', mission.id],
-            ['Customer', mission.customer],
-            ['Drone', `${drone.name} (${drone.id})`],
-            ['Operator', 'J. Martinez (OPR-112)'],
-            ['Post-flight', 'All 8 items passed'],
-            ['Media', '847 files · 4.2 GB · pending upload'],
-          ].map(([l, v]) => (
+            ['mission', t.fields.mission, mission.id],
+            ['customer', t.fields.customer, mission.customer],
+            ['drone', t.fields.drone, `${drone.name} (${drone.id})`],
+            [
+              'operator',
+              t.fields.operator,
+              mission.operatorId || t.currentOperator,
+            ],
+            ['postflight', t.fields.postflight, t.inspectionCompleted],
+            ['media', t.fields.media, t.openMediaReview],
+          ].map(([key, l, v]) => (
             <div
-              key={l}
+              key={key}
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -188,7 +205,8 @@ export default function MissionCompleted({
                   fontSize: 13,
                   fontWeight: 500,
                   color: 'var(--text)',
-                  fontFamily: l === 'Mission' ? 'var(--font-data)' : undefined,
+                  fontFamily:
+                    key === 'mission' ? 'var(--font-data)' : undefined,
                 }}
               >
                 {v}
@@ -209,8 +227,7 @@ export default function MissionCompleted({
             color: 'var(--blue-text)',
           }}
         >
-          <strong>Next step:</strong> Upload 847 files (4.2 GB) to finalise the
-          mission record. Automatic upload will begin on the next screen.
+          <strong>{t.nextStep}</strong> {t.nextStepBody(847, '4.2')}
         </div>
 
         <div style={{ display: 'flex', gap: 12 }}>
@@ -227,7 +244,7 @@ export default function MissionCompleted({
               cursor: 'pointer',
             }}
           >
-            Back to missions
+            {t.backToMissions}
           </button>
           <button
             onClick={onMedia}
@@ -243,7 +260,7 @@ export default function MissionCompleted({
               cursor: 'pointer',
             }}
           >
-            Upload mission media
+            {t.uploadMissionMedia}
           </button>
         </div>
       </div>

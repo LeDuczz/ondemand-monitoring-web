@@ -1,14 +1,30 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { env } from '../../../../config/env'
-import type { Drone, Mission } from '../types'
-import RuntimePreflightCheck from './RuntimePreflightCheck'
+import type { Drone, Mission, MissionRoutePoint } from '../types'
+import { PreflightChecklistPanel } from '../../pages/PreflightScreen'
+import { operatorHref } from '../../routes'
+import { markActiveMissionFlowStep } from '../../api/liveMission'
+import { getLanguage, useI18n } from '../../../../shared/i18n'
+import { inFlightControlMessages } from '../i18n/inFlightControl.messages'
 
 interface Props {
   mission: Mission
   drone: Drone
   onRTB: () => void
   onEmergency: () => void
+  autoStartPlan: boolean
+  onAutoStartPlanConsumed: () => void
+  onPreflightReady?: () => Promise<void>
+  onReviewMedia?: () => void
 }
 
 type FlightCommand =
@@ -25,7 +41,9 @@ type FlightCommand =
   | 'land'
   | 'return_to_base'
   | 'emergency_stop'
+  | 'auto_plan_start'
   | 'camera_switch'
+  | 'camera_front'
   | 'camera_monitor_toggle'
   | 'lidar_monitor_toggle'
   | 'telemetry_monitor_toggle'
@@ -35,7 +53,9 @@ type FlightCommand =
   | 'speed_down'
   | 'safety_toggle'
   | 'thermal_toggle'
-  | 'thermal_viewer_toggle'
+
+type WeatherPreset =
+  'CLEAR_DAY' | 'CLOUDY' | 'FOGGY' | 'WINDY' | 'LIGHT_RAIN' | 'HEAVY_RAIN'
 
 type IconName =
   | 'drone'
@@ -69,29 +89,71 @@ type IconName =
   | 'activity'
   | 'shield'
   | 'thermometer'
+  | 'check'
   | 'chevronRight'
 
 type ControlStatus = {
   online?: boolean
+  missionId?: string | null
+  deviceId?: string | null
   positionReady?: boolean
   positionGazebo?: { x: number; y: number }
   positionNed?: { northM: number; eastM: number; downM: number }
   yawDeg?: number
   altitudeM?: number
+  pressurePa?: number
+  airPressurePa?: number
   speedMps?: number
   batteryPercent?: number
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
   batteryDrainMode?:
     'LANDED' | 'IDLE' | 'HOVER' | 'CRUISE' | 'ASCEND' | 'DESCEND'
+  autoPlan?: {
+    active?: boolean
+    status?: string
+    currentIndex?: number
+    total?: number
+  }
   cameraMode?: 'FRONT' | 'DOWN'
   cameraPitchDeg?: number
   thermalEnabled?: boolean
   thermalSensorOnline?: boolean
   thermalFrameAgeMs?: number | null
+  thermalFps?: number | null
+  thermalFrameWidth?: number | null
+  thermalFrameHeight?: number | null
+  minTemperatureC?: number | null
   maxTemperatureC?: number | null
   averageTemperatureC?: number | null
+  thermalThresholdC?: number | null
   hotspotDetected?: boolean
   hotspotTemperatureC?: number | null
+  thermalMode?: string | null
+  thermalPixelFormat?: string | null
+  thermalPalette?: string | null
+  thermalIsothermEnabled?: boolean
+  thermalDebugOverlayEnabled?: boolean
+  thermalDisplayRangeMode?: string | null
+  thermalDisplayMinC?: number | null
+  thermalDisplayMaxC?: number | null
+  thermalSourceError?: string | null
+  lidar?: {
+    enabled?: boolean
+    available?: boolean
+    status?: string
+    direction?: string
+    rangeMaxM?: number
+    frontM?: number
+    frontLeftM?: number
+    frontRightM?: number
+    leftM?: number
+    rightM?: number
+    backM?: number
+    nearestM?: number
+    nearestAngleDeg?: number
+    nearestDirection?: string
+    scanAgeS?: number | null
+  }
 }
 
 type MapMeta = {
@@ -142,59 +204,93 @@ const px4HomeSimX = Number(import.meta.env.VITE_GEOFENCE_PX4_HOME_SIM_X_M ?? 0)
 const px4HomeSimY = Number(
   import.meta.env.VITE_GEOFENCE_PX4_HOME_SIM_Y_M ?? -280,
 )
+const standardPressurePa = 101_325
+const standardTemperatureK = 288.15
+const standardLapseRateKPerM = 0.0065
+const barometricExponent = 5.255877
+
+type ControlsText = (typeof inFlightControlMessages)['vi']['controls']
+type WeatherText = (typeof inFlightControlMessages)['vi']['weather']
 
 const flightControls: {
   command: FlightCommand
-  label: string
+  labelKey: keyof ControlsText
   icon: IconName
   tone?: 'danger' | 'amber'
 }[] = [
-  { command: 'takeoff', label: 'Take off', icon: 'takeoff' },
-  { command: 'land', label: 'Land', icon: 'land' },
-  { command: 'emergency_stop', label: 'E-Stop', icon: 'alert', tone: 'danger' },
+  { command: 'takeoff', labelKey: 'takeoff', icon: 'takeoff' },
+  {
+    command: 'auto_plan_start',
+    labelKey: 'autoPlan',
+    icon: 'map',
+    tone: 'amber',
+  },
+  { command: 'land', labelKey: 'land', icon: 'land' },
+  {
+    command: 'emergency_stop',
+    labelKey: 'eStop',
+    icon: 'alert',
+    tone: 'danger',
+  },
 ]
 
 const movementControls: {
   command: FlightCommand
-  label: string
+  labelKey: keyof ControlsText
   icon: IconName
 }[] = [
-  { command: 'up', label: 'Ascend', icon: 'altitudeUp' },
-  { command: 'forward', label: 'Forward', icon: 'moveForward' },
-  { command: 'down', label: 'Descend', icon: 'altitudeDown' },
-  { command: 'left', label: 'Left', icon: 'moveLeft' },
-  { command: 'back', label: 'Back', icon: 'moveBack' },
-  { command: 'right', label: 'Right', icon: 'moveRight' },
+  { command: 'up', labelKey: 'ascend', icon: 'altitudeUp' },
+  { command: 'forward', labelKey: 'forward', icon: 'moveForward' },
+  { command: 'down', labelKey: 'descend', icon: 'altitudeDown' },
+  { command: 'left', labelKey: 'left', icon: 'moveLeft' },
+  { command: 'back', labelKey: 'back', icon: 'moveBack' },
+  { command: 'right', labelKey: 'right', icon: 'moveRight' },
 ]
 
 const rotationControls: {
   command: FlightCommand
-  label: string
+  labelKey: keyof ControlsText
   icon: IconName
 }[] = [
-  { command: 'yaw_left', label: 'Yaw L', icon: 'rotateLeft' },
-  { command: 'yaw_right', label: 'Yaw R', icon: 'rotateRight' },
-  { command: 'speed_down', label: 'Speed -', icon: 'minus' },
-  { command: 'speed_up', label: 'Speed +', icon: 'plus' },
+  { command: 'yaw_left', labelKey: 'yawLeft', icon: 'rotateLeft' },
+  { command: 'yaw_right', labelKey: 'yawRight', icon: 'rotateRight' },
+  { command: 'speed_down', labelKey: 'speedDown', icon: 'minus' },
+  { command: 'speed_up', labelKey: 'speedUp', icon: 'plus' },
 ]
 
 const moreToolControls: {
   command: FlightCommand
-  label: string
+  labelKey: keyof ControlsText
   icon: IconName
 }[] = [
-  { command: 'camera_switch', label: 'Camera', icon: 'camera' },
-  { command: 'photo', label: 'Photo', icon: 'photo' },
-  { command: 'video_toggle', label: 'Video', icon: 'video' },
-  { command: 'lidar_monitor_toggle', label: 'LiDAR', icon: 'radar' },
-  { command: 'telemetry_monitor_toggle', label: 'Telemetry', icon: 'activity' },
+  { command: 'camera_front', labelKey: 'camera', icon: 'camera' },
+  { command: 'photo', labelKey: 'photo', icon: 'photo' },
+  { command: 'video_toggle', labelKey: 'video', icon: 'video' },
+  { command: 'lidar_monitor_toggle', labelKey: 'lidar', icon: 'radar' },
   {
-    command: 'thermal_viewer_toggle',
-    label: 'Thermal View',
-    icon: 'thermometer',
+    command: 'telemetry_monitor_toggle',
+    labelKey: 'telemetry',
+    icon: 'activity',
   },
-  { command: 'safety_toggle', label: 'Safety', icon: 'shield' },
+  { command: 'safety_toggle', labelKey: 'safety', icon: 'shield' },
 ]
+
+const weatherControls: {
+  preset: WeatherPreset
+  labelKey: keyof WeatherText
+  tone?: 'danger' | 'amber'
+}[] = [
+  { preset: 'CLEAR_DAY', labelKey: 'clear' },
+  { preset: 'CLOUDY', labelKey: 'cloud' },
+  { preset: 'FOGGY', labelKey: 'fog', tone: 'amber' },
+  { preset: 'WINDY', labelKey: 'wind', tone: 'amber' },
+  { preset: 'LIGHT_RAIN', labelKey: 'rain', tone: 'amber' },
+  { preset: 'HEAVY_RAIN', labelKey: 'heavy', tone: 'danger' },
+]
+
+function navigateOperator(hash: string) {
+  window.location.hash = hash
+}
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   const common = {
@@ -374,6 +470,7 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
           <path {...common} d="M12 7v7" />
         </>
       )}
+      {name === 'check' && <path {...common} d="m5 12 4 4 10-10" />}
       {name === 'chevronRight' && <path {...common} d="m9 6 6 6-6 6" />}
     </svg>
   )
@@ -448,11 +545,12 @@ const CameraFeed = memo(function CameraFeed({
   onOffline: () => void
 }) {
   useRenderDiagnostics('CameraFeed')
+  const { t } = useI18n(inFlightControlMessages)
   return (
     <>
       <img
         src={streamUrl}
-        alt="Live drone camera"
+        alt={t.cameraFeed.alt}
         onLoad={onOnline}
         onError={onOffline}
         style={{
@@ -483,10 +581,10 @@ const CameraFeed = memo(function CameraFeed({
                 marginBottom: 7,
               }}
             >
-              Live controller offline
+              {t.cameraFeed.offlineTitle}
             </div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              Start the flight controller terminal to show the camera stream.
+              {t.cameraFeed.offlineBody}
             </div>
           </GlassPanel>
         </div>
@@ -501,6 +599,7 @@ const MissionProgress = memo(function MissionProgress({
   progress: number
 }) {
   useRenderDiagnostics('MissionProgress')
+  const { t } = useI18n(inFlightControlMessages)
   return (
     <>
       <div>
@@ -521,7 +620,7 @@ const MissionProgress = memo(function MissionProgress({
               textTransform: 'uppercase',
             }}
           >
-            Mission Progress
+            {t.missionProgress}
           </span>
           <span
             style={{
@@ -693,7 +792,12 @@ function useRestrictedZones() {
           .map((zone) => ({
             id: String(zone.id ?? zone.code ?? zone.name ?? 'restricted-zone'),
             code: String(zone.code ?? ''),
-            name: String(zone.name ?? zone.code ?? 'Restricted zone'),
+            name: String(
+              zone.name ??
+                zone.code ??
+                inFlightControlMessages[getLanguage()].geofence
+                  .restrictedZoneName,
+            ),
             coordinates: normalizeRing(zone.coordinates),
           }))
           .filter((zone) => zone.coordinates.length >= 4)
@@ -712,6 +816,17 @@ function useRestrictedZones() {
   }, [])
 
   return zones
+}
+
+function formatNumber(value: number | null | undefined, digits = 1) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(digits)
+    : '--'
+}
+
+function formatTemperature(value: number | null | undefined) {
+  const formatted = formatNumber(value)
+  return formatted === '--' ? '--' : `${formatted} °C`
 }
 
 function evaluateGeofence(
@@ -759,10 +874,13 @@ function statusToSimulationPoint(
 
 const RealMiniMap = memo(function RealMiniMap({
   status,
+  mission,
 }: {
   status: ControlStatus | null
+  mission: Mission
 }) {
   useRenderDiagnostics('MiniMap')
+  const { t } = useI18n(inFlightControlMessages)
   const { meta } = useSimulationMap()
   const [zoom, setZoom] = useState(1)
   const [follow, setFollow] = useState(false)
@@ -781,6 +899,27 @@ const RealMiniMap = memo(function RealMiniMap({
     ? { x: simPoint[0], y: simPoint[1] }
     : { x: 0, y: 0 }
   const [droneX, droneY] = worldToMinimap(droneWorld.x, droneWorld.y)
+  const routePoints = mission.routePoints ?? []
+  const routeScreenPoints = routePoints.map((point) => {
+    const [x, y] = worldToMinimap(point.simX, point.simY)
+    return { ...point, x, y }
+  })
+  const routePath = routeScreenPoints
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
+    .join(' ')
+  const routeTargetPoint =
+    routeScreenPoints.find(
+      (point) => point.reason?.toUpperCase() === 'TARGET',
+    ) ?? routeScreenPoints[routeScreenPoints.length - 1]
+  const orderTargetPoint =
+    typeof mission.targetSimX === 'number' &&
+    typeof mission.targetSimY === 'number'
+      ? (() => {
+          const [x, y] = worldToMinimap(mission.targetSimX, mission.targetSimY)
+          return { x, y }
+        })()
+      : null
+  const missionTargetPoint = routeTargetPoint ?? orderTargetPoint
   const viewWidth = width / zoom
   const viewHeight = height / zoom
   const viewX = follow
@@ -826,7 +965,7 @@ const RealMiniMap = memo(function RealMiniMap({
             cursor: 'pointer',
           }}
         >
-          <Icon name="map" size={14} /> Mission Map
+          <Icon name="map" size={14} /> {t.map.title}
         </button>
         <span style={{ display: 'flex', gap: 5 }}>
           <button
@@ -841,7 +980,7 @@ const RealMiniMap = memo(function RealMiniMap({
               display: 'grid',
               placeItems: 'center',
             }}
-            title="Zoom out"
+            title={t.map.zoomOut}
           >
             <Icon name="minus" size={12} />
           </button>
@@ -857,7 +996,7 @@ const RealMiniMap = memo(function RealMiniMap({
               display: 'grid',
               placeItems: 'center',
             }}
-            title="Zoom in"
+            title={t.map.zoomIn}
           >
             <Icon name="plus" size={12} />
           </button>
@@ -893,6 +1032,64 @@ const RealMiniMap = memo(function RealMiniMap({
           height={height}
           fill="rgba(2,6,23,.14)"
         />
+        {routeScreenPoints.length > 1 && (
+          <path
+            d={routePath}
+            fill="none"
+            stroke="rgba(34,211,238,.92)"
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="5 3"
+          />
+        )}
+        {routeScreenPoints.map((point) => {
+          const isTarget = point.reason?.toUpperCase() === 'TARGET'
+          return (
+            <g key={point.id} transform={`translate(${point.x} ${point.y})`}>
+              <circle
+                r={isTarget ? 5 : 4}
+                fill={isTarget ? '#ef4444' : '#fbbf24'}
+                stroke="#fff7ed"
+                strokeWidth="1"
+              />
+              <text x={7} y={3} fill="#fef3c7" fontSize="7" fontWeight="900">
+                {point.sequence}
+              </text>
+            </g>
+          )
+        })}
+        {missionTargetPoint && (
+          <g
+            transform={`translate(${missionTargetPoint.x} ${missionTargetPoint.y})`}
+          >
+            <circle
+              r="13"
+              fill="rgba(239,68,68,.22)"
+              stroke="rgba(254,202,202,.85)"
+              strokeWidth="1.5"
+            />
+            <circle r="6" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+            <path
+              d="M0 -19 L4 -10 L-4 -10 Z"
+              fill="#ef4444"
+              stroke="#ffffff"
+              strokeWidth="1"
+            />
+            <text
+              x="10"
+              y="-10"
+              fill="#fee2e2"
+              fontSize="8"
+              fontWeight="900"
+              paintOrder="stroke"
+              stroke="rgba(15,23,42,.9)"
+              strokeWidth="2"
+            >
+              {t.map.order}
+            </text>
+          </g>
+        )}
         <g transform={`translate(${droneX} ${droneY}) rotate(${yaw})`}>
           <circle
             cx="0"
@@ -916,7 +1113,7 @@ const RealMiniMap = memo(function RealMiniMap({
           fontSize={9 / zoom}
           fontWeight="800"
         >
-          N
+          {t.map.north}
         </text>
         <path
           d={`M${viewX + 10 / zoom} ${viewY + 24 / zoom}v-8`}
@@ -935,6 +1132,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
   status: ControlStatus | null
 }) {
   useRenderDiagnostics('TelemetryPanel')
+  const { t } = useI18n(inFlightControlMessages)
   const telemetryBattery =
     typeof status?.batteryPercent === 'number' &&
     Number.isFinite(status.batteryPercent)
@@ -945,7 +1143,9 @@ const TelemetryPanel = memo(function TelemetryPanel({
   const batteryState = status?.batteryState ?? 'NORMAL'
   const batteryMode = status?.batteryDrainMode ?? 'LANDED'
   const droneState =
-    batteryMode === 'LANDED' || batteryMode === 'IDLE' ? 'LANDED' : 'IN FLIGHT'
+    batteryMode === 'LANDED' || batteryMode === 'IDLE'
+      ? t.telemetry.landed
+      : t.telemetry.inFlight
   const batteryTone =
     batteryState === 'EMERGENCY'
       ? '#ef4444'
@@ -954,7 +1154,6 @@ const TelemetryPanel = memo(function TelemetryPanel({
         : batteryState === 'LOW'
           ? '#fbbf24'
           : '#22c55e'
-
   return (
     <GlassPanel
       style={{
@@ -963,7 +1162,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
         minHeight: 'fit-content',
         flexShrink: 0,
         overflow: 'hidden',
-        padding: 12,
+        padding: 10,
       }}
     >
       <div
@@ -971,7 +1170,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 10,
+          marginBottom: 8,
         }}
       >
         <div
@@ -983,7 +1182,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
             textTransform: 'uppercase',
           }}
         >
-          Live Telemetry
+          {t.telemetry.title}
         </div>
         <span
           style={{
@@ -1003,27 +1202,27 @@ const TelemetryPanel = memo(function TelemetryPanel({
               background: status?.online === false ? '#ef4444' : '#38bdf8',
             }}
           />
-          {status?.online === false ? 'Offline' : 'MAVLink Live'}
+          {status?.online === false ? t.telemetry.offline : t.telemetry.live}
         </span>
       </div>
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 7,
+          gap: 6,
         }}
       >
         {[
-          ['Altitude', telemetryValue(status?.altitudeM, 'm')],
-          ['Speed', telemetryValue(status?.speedMps, 'm/s')],
-          ['Battery', batteryDisplay],
-          ['State', droneState],
+          [t.telemetry.altitude, telemetryValue(status?.altitudeM, 'm')],
+          [t.telemetry.speed, telemetryValue(status?.speedMps, 'm/s')],
+          [t.telemetry.battery, batteryDisplay],
+          [t.telemetry.state, droneState],
         ].map(([label, value]) => (
           <div
             key={label}
             style={{
               minWidth: 0,
-              padding: '8px 10px',
+              padding: '7px 9px',
               borderRadius: 8,
               background: 'rgba(15,23,42,.54)',
               border: '1px solid rgba(148,163,184,.14)',
@@ -1037,7 +1236,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
                 display: 'block',
                 marginTop: 4,
                 fontFamily: 'var(--font-data)',
-                fontSize: 17,
+                fontSize: 16,
                 lineHeight: 1,
                 color: '#e5edf8',
                 overflow: 'hidden',
@@ -1049,10 +1248,13 @@ const TelemetryPanel = memo(function TelemetryPanel({
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 10, display: 'grid', gap: 5 }}>
+      <div style={{ marginTop: 8, display: 'grid', gap: 4 }}>
         {[
-          ['Drain mode', batteryMode],
-          ['Position', status?.positionReady ? 'Ready' : 'Waiting'],
+          [t.telemetry.drainMode, batteryMode],
+          [
+            t.telemetry.position,
+            status?.positionReady ? t.telemetry.ready : t.telemetry.waiting,
+          ],
         ].map(([label, value]) => (
           <div
             key={label}
@@ -1079,7 +1281,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
       </div>
       <div
         style={{
-          marginTop: 9,
+          marginTop: 7,
           height: 5,
           borderRadius: 999,
           background: 'rgba(30,41,59,.95)',
@@ -1100,6 +1302,834 @@ const TelemetryPanel = memo(function TelemetryPanel({
   )
 })
 
+const AirPressurePanel = memo(function AirPressurePanel({
+  status,
+}: {
+  status: ControlStatus | null
+}) {
+  useRenderDiagnostics('AirPressurePanel')
+  const { t } = useI18n(inFlightControlMessages)
+  const altitudeM =
+    typeof status?.altitudeM === 'number' && Number.isFinite(status.altitudeM)
+      ? Math.max(0, status.altitudeM)
+      : null
+  const directPressure =
+    typeof status?.airPressurePa === 'number' &&
+    Number.isFinite(status.airPressurePa)
+      ? status.airPressurePa
+      : typeof status?.pressurePa === 'number' &&
+          Number.isFinite(status.pressurePa)
+        ? status.pressurePa
+        : null
+  const pressurePa =
+    directPressure ??
+    (altitudeM === null ? null : pressureFromAltitude(altitudeM))
+  const pressureDisplay =
+    pressurePa === null ? '--' : `${Math.round(pressurePa).toLocaleString()} Pa`
+  const pressureKpa =
+    pressurePa === null ? '--' : `${(pressurePa / 1000).toFixed(2)} kPa`
+  const altitudeDisplay =
+    altitudeM === null ? '--' : `${altitudeM.toFixed(1)} m`
+  const deltaDisplay =
+    pressurePa === null
+      ? '--'
+      : `${Math.round(pressurePa - standardPressurePa).toLocaleString()} Pa`
+  const trend =
+    pressurePa !== null && pressurePa < standardPressurePa
+      ? t.airPressure.decreasing
+      : t.airPressure.seaLevel
+
+  return (
+    <GlassPanel
+      style={{
+        width: '100%',
+        padding: 9,
+        border: '1px solid rgba(56,189,248,.28)',
+        background:
+          'linear-gradient(180deg, rgba(8,18,33,.88), rgba(8,13,24,.76))',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          marginBottom: 7,
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            color: '#67e8f9',
+            fontSize: 10,
+            fontWeight: 950,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Icon name="gauge" size={13} />
+          {t.airPressure.title}
+        </span>
+        <strong
+          style={{
+            borderRadius: 999,
+            padding: '3px 8px',
+            color: status?.online === false ? '#fecaca' : '#bbf7d0',
+            background:
+              status?.online === false
+                ? 'rgba(127,29,29,.36)'
+                : 'rgba(20,83,45,.34)',
+            border:
+              status?.online === false
+                ? '1px solid rgba(248,113,113,.36)'
+                : '1px solid rgba(34,197,94,.32)',
+            fontSize: 10,
+            fontWeight: 950,
+          }}
+        >
+          {status?.online === false
+            ? t.airPressure.offline
+            : t.airPressure.live}
+        </strong>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1.25fr .75fr',
+          gap: 7,
+          alignItems: 'stretch',
+        }}
+      >
+        <div
+          style={{
+            borderRadius: 9,
+            padding: '8px 10px',
+            background: 'rgba(15,23,42,.62)',
+            border: '1px solid rgba(56,189,248,.2)',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ color: '#94a3b8', fontSize: 10, fontWeight: 800 }}>
+            {t.airPressure.pressure}
+          </div>
+          <strong
+            style={{
+              display: 'block',
+              marginTop: 4,
+              color: '#e0f2fe',
+              fontFamily: 'var(--font-data)',
+              fontSize: 16,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {pressureDisplay}
+          </strong>
+          <div
+            style={{
+              marginTop: 5,
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 8,
+              color: '#93c5fd',
+              fontFamily: 'var(--font-data)',
+              fontSize: 10,
+            }}
+          >
+            <span>{pressureKpa}</span>
+            <span>{deltaDisplay}</span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            borderRadius: 9,
+            padding: '8px 9px',
+            background: 'rgba(15,23,42,.5)',
+            border: '1px solid rgba(148,163,184,.14)',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ color: '#94a3b8', fontSize: 10, fontWeight: 800 }}>
+            {t.airPressure.altitude}
+          </div>
+          <strong
+            style={{
+              display: 'block',
+              marginTop: 4,
+              color: '#f8fafc',
+              fontFamily: 'var(--font-data)',
+              fontSize: 15,
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {altitudeDisplay}
+          </strong>
+          <div
+            style={{
+              marginTop: 5,
+              color: '#cbd5e1',
+              fontSize: 9,
+              lineHeight: 1.15,
+            }}
+          >
+            {trend}
+          </div>
+        </div>
+      </div>
+    </GlassPanel>
+  )
+})
+
+function pressureFromAltitude(altitudeM: number) {
+  const ratio = 1 - (standardLapseRateKPerM * altitudeM) / standardTemperatureK
+  if (ratio <= 0) return null
+  return standardPressurePa * Math.pow(ratio, barometricExponent)
+}
+
+function getLidarFresh(lidar: ControlStatus['lidar']) {
+  return (
+    typeof lidar?.scanAgeS === 'number' &&
+    Number.isFinite(lidar.scanAgeS) &&
+    lidar.scanAgeS < 3
+  )
+}
+
+function getLidarMetric(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value.toFixed(1)} m`
+    : '--'
+}
+
+type LidarDirection = 'FRONT' | 'LEFT' | 'RIGHT' | 'BACK'
+type LidarSeverity = 'CLEAR' | 'CAUTION' | 'DANGER' | 'UNKNOWN'
+
+type LidarDirectionState = {
+  direction: LidarDirection
+  value: number | null
+  severity: LidarSeverity
+  display: string
+}
+
+const lidarSectorPaths: Record<LidarDirection, string> = {
+  FRONT: 'M0 0 L-44 -66 A79 79 0 0 1 44 -66 Z',
+  RIGHT: 'M0 0 L66 -44 A79 79 0 0 1 66 44 Z',
+  BACK: 'M0 0 L44 66 A79 79 0 0 1 -44 66 Z',
+  LEFT: 'M0 0 L-66 44 A79 79 0 0 1 -66 -44 Z',
+}
+
+const lidarSectorLabels: Record<
+  LidarDirection,
+  { x: number; y: number; anchor: 'start' | 'middle' | 'end' }
+> = {
+  FRONT: { x: 0, y: -92, anchor: 'middle' },
+  LEFT: { x: -95, y: -4, anchor: 'end' },
+  RIGHT: { x: 95, y: -4, anchor: 'start' },
+  BACK: { x: 0, y: 92, anchor: 'middle' },
+}
+
+function getValidLidarDistance(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : null
+}
+
+function getMinValidDistance(values: Array<number | null | undefined>) {
+  const valid = values
+    .map(getValidLidarDistance)
+    .filter((value): value is number => value !== null)
+  return valid.length > 0 ? Math.min(...valid) : null
+}
+
+function getLidarSeverity(
+  distance: number | null,
+  fresh: boolean,
+  maxRange: number,
+): LidarSeverity {
+  if (!fresh || distance === null) return 'UNKNOWN'
+  if (distance >= maxRange * 0.995) return 'CLEAR'
+  if (distance <= dangerDistanceM) return 'DANGER'
+  if (distance <= cautionDistanceM) return 'CAUTION'
+  return 'CLEAR'
+}
+
+function formatLidarDistance(distance: number | null, maxRange: number) {
+  if (distance === null) return '--'
+  if (distance >= maxRange * 0.995) return `> ${Math.round(maxRange)} m`
+  return `${distance.toFixed(1)} m`
+}
+
+function getLidarSeverityStyle(severity: LidarSeverity) {
+  if (severity === 'DANGER') {
+    return {
+      fill: 'rgba(239,68,68,.34)',
+      stroke: '#ef4444',
+      text: '#fecaca',
+      badgeBg: 'rgba(239,68,68,.22)',
+      badgeBorder: 'rgba(248,113,113,.42)',
+      icon: '#f87171',
+    }
+  }
+  if (severity === 'CAUTION') {
+    return {
+      fill: 'rgba(245,158,11,.28)',
+      stroke: '#f59e0b',
+      text: '#fde68a',
+      badgeBg: 'rgba(245,158,11,.2)',
+      badgeBorder: 'rgba(251,191,36,.42)',
+      icon: '#fbbf24',
+    }
+  }
+  if (severity === 'CLEAR') {
+    return {
+      fill: 'rgba(34,197,94,.25)',
+      stroke: '#22c55e',
+      text: '#bbf7d0',
+      badgeBg: 'rgba(34,197,94,.18)',
+      badgeBorder: 'rgba(74,222,128,.32)',
+      icon: '#22c55e',
+    }
+  }
+  return {
+    fill: 'rgba(148,163,184,.18)',
+    stroke: '#94a3b8',
+    text: '#cbd5e1',
+    badgeBg: 'rgba(148,163,184,.14)',
+    badgeBorder: 'rgba(148,163,184,.26)',
+    icon: '#94a3b8',
+  }
+}
+
+const LidarRadarOverlay = memo(function LidarRadarOverlay({
+  status,
+}: {
+  status: ControlStatus | null
+}) {
+  useRenderDiagnostics('LidarRadarOverlay')
+  const { t } = useI18n(inFlightControlMessages)
+  const directionLabel: Record<LidarDirection, string> = {
+    FRONT: t.lidarRadar.direction.front,
+    LEFT: t.lidarRadar.direction.left,
+    RIGHT: t.lidarRadar.direction.right,
+    BACK: t.lidarRadar.direction.back,
+  }
+  const severityLabel: Record<LidarSeverity, string> = {
+    DANGER: t.lidarRadar.status.danger,
+    CAUTION: t.lidarRadar.status.caution,
+    CLEAR: t.lidarRadar.status.clear,
+    UNKNOWN: t.lidarRadar.status.unknown,
+  }
+  const lidar = status?.lidar
+  const fresh = getLidarFresh(lidar)
+  const maxRange =
+    typeof lidar?.rangeMaxM === 'number' && Number.isFinite(lidar.rangeMaxM)
+      ? lidar.rangeMaxM
+      : 60
+  const rawDirectionStates: Array<
+    Omit<LidarDirectionState, 'severity' | 'display'>
+  > = [
+    {
+      direction: 'FRONT',
+      value: getMinValidDistance([
+        lidar?.frontM,
+        lidar?.frontLeftM,
+        lidar?.frontRightM,
+      ]),
+    },
+    {
+      direction: 'LEFT',
+      value: getMinValidDistance([lidar?.leftM]),
+    },
+    {
+      direction: 'RIGHT',
+      value: getMinValidDistance([lidar?.rightM]),
+    },
+    {
+      direction: 'BACK',
+      value: getMinValidDistance([lidar?.backM]),
+    },
+  ]
+  const directionStates: LidarDirectionState[] = rawDirectionStates.map(
+    (item) => {
+      const severity = getLidarSeverity(item.value, fresh, maxRange)
+      return {
+        ...item,
+        severity,
+        display: formatLidarDistance(item.value, maxRange),
+      }
+    },
+  )
+  const orderedSeverities: LidarSeverity[] = [
+    'DANGER',
+    'CAUTION',
+    'UNKNOWN',
+    'CLEAR',
+  ]
+  const panelSeverity = fresh
+    ? (orderedSeverities.find((severity) =>
+        directionStates.some((item) => item.severity === severity),
+      ) ?? 'UNKNOWN')
+    : 'UNKNOWN'
+  const statusLabel = fresh
+    ? panelSeverity === 'DANGER'
+      ? t.lidarRadar.status.danger
+      : panelSeverity === 'CAUTION'
+        ? t.lidarRadar.status.caution
+        : panelSeverity === 'CLEAR'
+          ? t.lidarRadar.status.active
+          : t.lidarRadar.status.unknown
+    : t.lidarRadar.status.stale
+  const nearestObstacle = directionStates
+    .filter(
+      (item) =>
+        item.value !== null &&
+        item.severity !== 'UNKNOWN' &&
+        item.value < maxRange * 0.995,
+    )
+    .sort((a, b) => Number(a.value) - Number(b.value))[0]
+  const alertStyle = getLidarSeverityStyle(
+    !fresh ? 'UNKNOWN' : (nearestObstacle?.severity ?? 'CLEAR'),
+  )
+  const panelBorder = getLidarSeverityStyle(panelSeverity)
+
+  return (
+    <GlassPanel
+      style={{
+        width: '100%',
+        minWidth: 0,
+        alignSelf: 'start',
+        padding: 0,
+        overflow: 'hidden',
+        border: `1px solid ${panelBorder.badgeBorder}`,
+        background:
+          'linear-gradient(180deg, rgba(8,18,33,.9), rgba(8,13,24,.78))',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          height: 36,
+          padding: '0 9px',
+          borderBottom: '1px solid rgba(148,163,184,.16)',
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            color: '#67e8f9',
+            fontSize: 10,
+            fontWeight: 950,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Icon name="radar" size={15} />
+          {t.lidarRadar.title}
+        </span>
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+          }}
+        >
+          <strong
+            style={{
+              borderRadius: 999,
+              padding: '3px 8px',
+              background: panelBorder.badgeBg,
+              border: `1px solid ${panelBorder.badgeBorder}`,
+              color: panelBorder.text,
+              fontSize: 11,
+              fontWeight: 950,
+            }}
+          >
+            {statusLabel}
+          </strong>
+          <span style={{ color: '#cbd5e1', fontSize: 9 }}>
+            {t.lidarRadar.range}
+          </span>
+          <strong
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              borderRadius: 8,
+              padding: '5px 7px',
+              color: '#e5edf8',
+              background: 'rgba(15,23,42,.58)',
+              border: '1px solid rgba(148,163,184,.14)',
+              fontFamily: 'var(--font-data)',
+              fontSize: 12,
+              fontWeight: 950,
+            }}
+          >
+            {maxRange.toFixed(0)} m
+            <Icon name="chevronRight" size={12} />
+          </strong>
+        </div>
+      </div>
+      <div
+        style={{
+          position: 'relative',
+          display: 'grid',
+          placeItems: 'center',
+          padding: '4px 8px 2px',
+        }}
+      >
+        <svg
+          viewBox="-128 -118 256 236"
+          width="100%"
+          height="clamp(124px, 17vh, 152px)"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ maxWidth: 204 }}
+        >
+          <circle r="89" fill="rgba(2,6,23,.36)" />
+          {[29, 55, 82].map((r) => (
+            <circle
+              key={r}
+              r={r}
+              fill="none"
+              stroke="rgba(203,213,225,.16)"
+              strokeWidth="1"
+            />
+          ))}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+            const a = ((deg - 90) * Math.PI) / 180
+            return (
+              <line
+                key={deg}
+                x1={Math.cos(a) * 18}
+                y1={Math.sin(a) * 18}
+                x2={Math.cos(a) * 88}
+                y2={Math.sin(a) * 88}
+                stroke="rgba(203,213,225,.12)"
+              />
+            )
+          })}
+          {directionStates.map((item) => {
+            const style = getLidarSeverityStyle(item.severity)
+            const label = lidarSectorLabels[item.direction]
+            return (
+              <g key={item.direction}>
+                <path
+                  d={lidarSectorPaths[item.direction]}
+                  fill={style.fill}
+                  stroke={style.stroke}
+                  strokeWidth={item.severity === 'UNKNOWN' ? 1 : 1.6}
+                />
+                <text
+                  x={label.x}
+                  y={label.y}
+                  textAnchor={label.anchor}
+                  fill="#e5edf8"
+                  fontSize="9"
+                  fontWeight="950"
+                >
+                  {directionLabel[item.direction]}
+                </text>
+                <text
+                  x={label.x}
+                  y={label.y + 16}
+                  textAnchor={label.anchor}
+                  fill="#f8fafc"
+                  fontSize="12"
+                  fontWeight="950"
+                  fontFamily="var(--font-data)"
+                >
+                  {item.display}
+                </text>
+                <text
+                  x={label.x}
+                  y={label.y + 31}
+                  textAnchor={label.anchor}
+                  fill={style.text}
+                  fontSize="8"
+                  fontWeight="950"
+                >
+                  {severityLabel[item.severity]}
+                </text>
+              </g>
+            )
+          })}
+          <circle r="20" fill="rgba(15,23,42,.88)" stroke="#334155" />
+          <circle r="10" fill="rgba(96,165,250,.2)" stroke="#bfdbfe" />
+          <path
+            d="M0 -18 L10 9 L0 4 L-10 9 Z"
+            fill="#60a5fa"
+            stroke="#eff6ff"
+            strokeWidth="1.2"
+          />
+          <g opacity=".85">
+            <circle cx="-14" cy="-2" r="3" fill="#e2e8f0" />
+            <circle cx="14" cy="-2" r="3" fill="#e2e8f0" />
+            <circle cx="-8" cy="9" r="3" fill="#e2e8f0" />
+            <circle cx="8" cy="9" r="3" fill="#e2e8f0" />
+            <path
+              d="M-14 -2H14M-8 9H8"
+              stroke="#e2e8f0"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </g>
+        </svg>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 5,
+          padding: '0 8px 6px',
+        }}
+      >
+        {directionStates.map((item) => {
+          const style = getLidarSeverityStyle(item.severity)
+          return (
+            <div
+              key={item.direction}
+              style={{
+                borderRadius: 9,
+                padding: '6px 6px',
+                background: 'rgba(15,23,42,.62)',
+                border: `1px solid ${style.badgeBorder}`,
+              }}
+            >
+              <div
+                style={{
+                  color: '#dbeafe',
+                  fontSize: 8,
+                  fontWeight: 950,
+                  marginBottom: 2,
+                }}
+              >
+                {directionLabel[item.direction]}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 4,
+                }}
+              >
+                <strong
+                  style={{
+                    color: '#e5edf8',
+                    fontFamily: 'var(--font-data)',
+                    fontSize: 10,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {item.display}
+                </strong>
+                <span
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 999,
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: style.icon,
+                    background: style.badgeBg,
+                    border: `1px solid ${style.badgeBorder}`,
+                  }}
+                  title={severityLabel[item.severity]}
+                >
+                  {item.severity === 'CLEAR' ? (
+                    <Icon name="shield" size={11} />
+                  ) : item.severity === 'UNKNOWN' ? (
+                    <Icon name="minus" size={10} />
+                  ) : (
+                    <Icon name="alert" size={11} />
+                  )}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ padding: '0 9px 9px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            borderRadius: 10,
+            padding: '8px 9px',
+            background: alertStyle.badgeBg,
+            border: `1px solid ${alertStyle.badgeBorder}`,
+          }}
+        >
+          <span
+            style={{
+              width: 23,
+              height: 23,
+              borderRadius: 999,
+              display: 'grid',
+              placeItems: 'center',
+              color: alertStyle.icon,
+              background: 'rgba(2,6,23,.26)',
+            }}
+          >
+            {!fresh || !lidar?.available ? (
+              <Icon name="minus" size={14} />
+            ) : nearestObstacle ? (
+              <Icon
+                name={nearestObstacle.severity === 'CLEAR' ? 'shield' : 'alert'}
+                size={15}
+              />
+            ) : (
+              <Icon name="shield" size={15} />
+            )}
+          </span>
+          <div
+            style={{
+              display: 'grid',
+              gap: 2,
+              minWidth: 0,
+            }}
+          >
+            <strong
+              style={{ color: '#f8fafc', fontSize: 10, lineHeight: 1.15 }}
+            >
+              {!fresh || !lidar?.available
+                ? fresh
+                  ? t.lidarRadar.unavailable
+                  : t.lidarRadar.stale
+                : nearestObstacle
+                  ? t.lidarRadar.nearestObstacle(
+                      nearestObstacle.display,
+                      directionLabel[nearestObstacle.direction],
+                    )
+                  : t.lidarRadar.noObstacle}
+            </strong>
+            <span style={{ color: '#cbd5e1', fontSize: 8, lineHeight: 1.15 }}>
+              {nearestObstacle?.severity === 'DANGER'
+                ? t.lidarRadar.holdPosition
+                : nearestObstacle?.severity === 'CAUTION'
+                  ? t.lidarRadar.proceedCaution
+                  : t.lidarRadar.sectorsClear}
+            </span>
+          </div>
+        </div>
+      </div>
+    </GlassPanel>
+  )
+})
+
+const LidarDetailPanel = memo(function LidarDetailPanel({
+  status,
+}: {
+  status: ControlStatus | null
+}) {
+  useRenderDiagnostics('LidarDetailPanel')
+  const { t } = useI18n(inFlightControlMessages)
+  const lidar = status?.lidar
+  const fresh = getLidarFresh(lidar)
+  const rows = [
+    [
+      t.lidarDetail.rows.status,
+      fresh
+        ? (lidar?.status ?? t.lidarDetail.statusClear)
+        : t.lidarDetail.statusWaiting,
+    ],
+    [
+      t.lidarDetail.rows.action,
+      lidar?.status === 'OBSTACLE'
+        ? t.lidarDetail.actionAvoid
+        : t.lidarDetail.actionContinue,
+    ],
+    [t.lidarDetail.rows.front, getLidarMetric(lidar?.frontM)],
+    [t.lidarDetail.rows.frontLeft, getLidarMetric(lidar?.frontLeftM)],
+    [t.lidarDetail.rows.frontRight, getLidarMetric(lidar?.frontRightM)],
+    [t.lidarDetail.rows.left, getLidarMetric(lidar?.leftM)],
+    [t.lidarDetail.rows.right, getLidarMetric(lidar?.rightM)],
+    [t.lidarDetail.rows.back, getLidarMetric(lidar?.backM)],
+    [t.lidarDetail.rows.nearest, getLidarMetric(lidar?.nearestM)],
+    [
+      t.lidarDetail.rows.direction,
+      lidar?.nearestDirection ?? lidar?.direction ?? '--',
+    ],
+    [t.lidarDetail.rows.range, getLidarMetric(lidar?.rangeMaxM)],
+    [
+      t.lidarDetail.rows.scanAge,
+      lidar?.scanAgeS != null ? `${lidar.scanAgeS.toFixed(1)}s` : '--',
+    ],
+  ]
+
+  return (
+    <GlassPanel
+      style={{
+        width: '100%',
+        padding: 12,
+        border: fresh
+          ? '1px solid rgba(34,211,238,.28)'
+          : '1px solid rgba(251,191,36,.35)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            color: fresh ? '#67e8f9' : '#fbbf24',
+            fontSize: 12,
+            fontWeight: 950,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Icon name="radar" size={14} />
+          {t.lidarDetail.title}
+        </span>
+        <strong style={{ color: fresh ? '#bbf7d0' : '#fde68a', fontSize: 10 }}>
+          {lidar?.enabled ? t.lidarDetail.on : t.lidarDetail.off}
+        </strong>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 7 }}>
+        {rows.map(([label, value]) => (
+          <Fragment key={label}>
+            <span style={{ color: '#94a3b8', fontSize: 11 }}>{label}</span>
+            <strong
+              style={{
+                color: '#e5edf8',
+                fontSize: 11,
+                fontFamily: 'var(--font-data)',
+                textAlign: 'right',
+              }}
+            >
+              {value}
+            </strong>
+          </Fragment>
+        ))}
+      </div>
+    </GlassPanel>
+  )
+})
+
 const MissionInfoPanel = memo(function MissionInfoPanel({
   status,
   progress,
@@ -1110,6 +2140,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
   mission: Mission
 }) {
   useRenderDiagnostics('MissionInfo')
+  const { t } = useI18n(inFlightControlMessages)
   const yaw =
     typeof status?.yawDeg === 'number' && Number.isFinite(status.yawDeg)
       ? `${Math.round(status.yawDeg)}°`
@@ -1119,6 +2150,10 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
     Number.isFinite(mission.distanceKm)
       ? `${mission.distanceKm.toFixed(1)} km`
       : '--'
+  const routePointCount = mission.routePoints?.length ?? 0
+  const routePoints = (mission.routePoints ?? [])
+    .slice()
+    .sort((a, b) => a.sequence - b.sequence)
 
   return (
     <GlassPanel
@@ -1128,7 +2163,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
         minHeight: 'fit-content',
         flexShrink: 0,
         overflow: 'hidden',
-        padding: 12,
+        padding: 10,
       }}
     >
       <div
@@ -1136,27 +2171,78 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
           fontSize: 12,
           fontWeight: 950,
           color: '#cbd5e1',
-          marginBottom: 10,
+          marginBottom: 8,
           letterSpacing: '.08em',
           textTransform: 'uppercase',
         }}
       >
-        Mission Info
+        {t.missionInfo.title}
       </div>
-      {[
-        ['Mission', mission.id],
-        ['Progress', `${progress.toFixed(1)}%`],
-        ['Distance', distance],
-        ['Heading', yaw],
-      ].map(([label, value]) => (
+      {(
+        [
+          {
+            id: 'mission',
+            label: t.missionInfo.mission,
+            value: mission.id,
+            mono: false,
+          },
+          {
+            id: 'order',
+            label: t.missionInfo.order,
+            value: mission.orderRef,
+            mono: false,
+          },
+          {
+            id: 'progress',
+            label: t.missionInfo.progress,
+            value: `${progress.toFixed(1)}%`,
+            mono: true,
+          },
+          {
+            id: 'distance',
+            label: t.missionInfo.distance,
+            value: distance,
+            mono: true,
+          },
+          {
+            id: 'points',
+            label: t.missionInfo.points,
+            value: routePointCount > 0 ? `${routePointCount}` : '--',
+            mono: false,
+          },
+          {
+            id: 'maxAlt',
+            label: t.missionInfo.maxAlt,
+            value: `${mission.maxAltitudeM.toFixed(0)} m`,
+            mono: false,
+          },
+          {
+            id: 'heading',
+            label: t.missionInfo.heading,
+            value: yaw,
+            mono: true,
+          },
+          {
+            id: 'auto',
+            label: t.missionInfo.auto,
+            value: status?.autoPlan?.active
+              ? t.missionInfo.waypointCount(
+                  status.autoPlan.currentIndex ?? 0,
+                  status.autoPlan.total ?? routePointCount,
+                )
+              : (status?.autoPlan?.status ?? t.missionInfo.manual),
+            mono: false,
+          },
+        ] as const
+      ).map(({ id, label, value, mono }) => (
         <div
-          key={label}
+          key={id}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 12,
-            marginBottom: 6,
+            marginBottom: 4,
           }}
         >
           <span style={{ color: '#94a3b8', fontSize: 11 }}>{label}</span>
@@ -1165,12 +2251,7 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
               minWidth: 0,
               color: '#e5edf8',
               fontSize: 12,
-              fontFamily:
-                label === 'Progress' ||
-                label === 'Distance' ||
-                label === 'Heading'
-                  ? 'var(--font-data)'
-                  : 'var(--font-ui)',
+              fontFamily: mono ? 'var(--font-data)' : 'var(--font-ui)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -1181,9 +2262,145 @@ const MissionInfoPanel = memo(function MissionInfoPanel({
           </strong>
         </div>
       ))}
+      <FlightPlanGuide routePoints={routePoints} />
     </GlassPanel>
   )
 })
+
+function planReasonLabel(
+  point: MissionRoutePoint,
+  t: (typeof inFlightControlMessages)['vi'],
+) {
+  const reason = point.reason.toUpperCase()
+  if (reason === 'START') return t.planReason.start
+  if (reason === 'TARGET') return t.planReason.order
+  if (reason === 'TARGET_APPROACH') return t.planReason.approach
+  if (reason === 'TERRAIN_CLEARANCE') return t.planReason.clear
+  if (reason === 'RETURN') return t.planReason.return
+  return t.planReason.cruise
+}
+
+function planSpeedLabel(point: MissionRoutePoint) {
+  return typeof point.speedMps === 'number' && Number.isFinite(point.speedMps)
+    ? `${point.speedMps.toFixed(1)} m/s`
+    : '--'
+}
+
+function planHeadingLabel(
+  point: MissionRoutePoint,
+  nextPoint: MissionRoutePoint | undefined,
+  hold: string,
+) {
+  if (!nextPoint) return hold
+  const dx = nextPoint.simX - point.simX
+  const dy = nextPoint.simY - point.simY
+  if (Math.hypot(dx, dy) < 0.001) return hold
+  const headingDeg = (Math.atan2(dx, dy) * 180) / Math.PI
+  return `${Math.round((headingDeg + 360) % 360)}°`
+}
+
+function FlightPlanGuide({
+  routePoints,
+}: {
+  routePoints: MissionRoutePoint[]
+}) {
+  const { t } = useI18n(inFlightControlMessages)
+  if (routePoints.length === 0) return null
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        paddingTop: 9,
+        borderTop: '1px solid rgba(148,163,184,.18)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          marginBottom: 7,
+        }}
+      >
+        <span
+          style={{
+            color: '#cbd5e1',
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {t.flightPlanGuide}
+        </span>
+        <strong
+          style={{
+            color: '#67e8f9',
+            fontSize: 10,
+            fontFamily: 'var(--font-data)',
+          }}
+        >
+          HDG / ALT / SPD
+        </strong>
+      </div>
+      <div style={{ display: 'grid', gap: 5 }}>
+        {routePoints.map((point, index) => (
+          <div
+            key={point.id}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '28px 1fr auto',
+              alignItems: 'center',
+              gap: 7,
+              minHeight: 28,
+              padding: '5px 7px',
+              border: '1px solid rgba(148,163,184,.16)',
+              borderRadius: 7,
+              background: 'rgba(15,23,42,.42)',
+            }}
+          >
+            <strong
+              style={{
+                color: '#f8fafc',
+                fontSize: 11,
+                fontFamily: 'var(--font-data)',
+              }}
+            >
+              {point.sequence}
+            </strong>
+            <span
+              style={{
+                minWidth: 0,
+                color: '#cbd5e1',
+                fontSize: 11,
+                fontWeight: 800,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {planReasonLabel(point, t)}
+            </span>
+            <span
+              style={{
+                color: '#e5edf8',
+                fontSize: 10,
+                fontFamily: 'var(--font-data)',
+                textAlign: 'right',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {planHeadingLabel(point, routePoints[index + 1], t.hold)} /{' '}
+              {point.altitudeM.toFixed(0)}m / {planSpeedLabel(point)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const CameraStatusPanel = memo(function CameraStatusPanel({
   status,
@@ -1191,6 +2408,7 @@ const CameraStatusPanel = memo(function CameraStatusPanel({
   status: ControlStatus | null
 }) {
   useRenderDiagnostics('CameraStatusPanel')
+  const { t } = useI18n(inFlightControlMessages)
   const thermalEnabled = status?.thermalEnabled === true
   const cameraMode = status?.cameraMode === 'DOWN' ? 'DOWN' : 'FRONT'
   const cameraPitch = Number.isFinite(status?.cameraPitchDeg)
@@ -1199,15 +2417,15 @@ const CameraStatusPanel = memo(function CameraStatusPanel({
       ? -90
       : 0
   const cameraLabel = thermalEnabled
-    ? 'Thermal'
+    ? t.cameraStatus.thermal
     : cameraPitch <= -89.5
-      ? 'Downward'
+      ? t.cameraStatus.downward
       : cameraPitch >= -0.5
-        ? 'FPV'
-        : 'Gimbal'
+        ? t.cameraStatus.fpv
+        : t.cameraStatus.gimbal
   const viewLabel = thermalEnabled
-    ? 'Heat Map'
-    : `${cameraPitch.toFixed(0)}° pitch`
+    ? t.cameraStatus.heatMap
+    : t.cameraStatus.pitch(Number(cameraPitch.toFixed(0)))
 
   return (
     <GlassPanel
@@ -1219,19 +2437,36 @@ const CameraStatusPanel = memo(function CameraStatusPanel({
         padding: 14,
       }}
     >
-      {[
-        ['camera', 'Camera', cameraLabel],
-        ['eye', 'View', viewLabel],
-        ['joystick', 'Mode', 'Manual'],
-      ].map(([icon, label, value]) => (
+      {(
+        [
+          {
+            id: 'camera',
+            icon: 'camera',
+            label: t.cameraStatus.camera,
+            value: cameraLabel,
+          },
+          {
+            id: 'view',
+            icon: 'eye',
+            label: t.cameraStatus.view,
+            value: viewLabel,
+          },
+          {
+            id: 'mode',
+            icon: 'joystick',
+            label: t.cameraStatus.mode,
+            value: t.cameraStatus.manual,
+          },
+        ] as const
+      ).map(({ id, icon, label, value }) => (
         <div
-          key={label}
+          key={id}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,
-            marginBottom: label === 'Mode' ? 0 : 12,
+            marginBottom: id === 'mode' ? 0 : 12,
           }}
         >
           <span
@@ -1293,42 +2528,60 @@ const toolbarGroupStyle: CSSProperties = {
 
 const FlightControls = memo(function FlightControls({
   busyCommand,
+  lidarDetailsOpen,
   moreOpen,
   status,
   onCommand,
+  onWeatherPreset,
   onToggleMore,
+  onReviewMedia,
 }: {
   busyCommand: FlightCommand | null
+  lidarDetailsOpen: boolean
   moreOpen: boolean
   status: ControlStatus | null
   onCommand: (command: FlightCommand) => void
+  onWeatherPreset: (preset: WeatherPreset) => void
   onToggleMore: () => void
+  onReviewMedia?: () => void
 }) {
   useRenderDiagnostics('FlightControls')
+  const { t } = useI18n(inFlightControlMessages)
   const thermalEnabled = status?.thermalEnabled === true
-  const thermalLabel = `Thermal ${thermalEnabled ? 'ON' : 'OFF'}`
+  const thermalLabel = thermalEnabled
+    ? t.toolbar.thermalOn
+    : t.toolbar.thermalOff
   const controlButton = (item: {
     command: FlightCommand
-    label: string
+    labelKey: keyof ControlsText
     icon: IconName
     tone?: 'danger' | 'amber'
   }) => {
     const isThermal = item.command === 'thermal_toggle'
+    const isLidar = item.command === 'lidar_monitor_toggle'
     const label = isThermal
-      ? `Thermal ${thermalEnabled ? 'ON' : 'OFF'}`
-      : item.label
+      ? thermalEnabled
+        ? t.toolbar.thermalOn
+        : t.toolbar.thermalOff
+      : isLidar
+        ? `${t.controls.lidar} ${lidarDetailsOpen ? 'VIEW' : 'UI'}`
+        : t.controls[item.labelKey]
     return (
       <button
-        key={`${item.command}-${item.label}`}
+        key={`${item.command}-${item.labelKey}`}
         onClick={() => onCommand(item.command)}
         disabled={busyCommand !== null}
         style={{
-          ...buttonStyle(isThermal && thermalEnabled ? 'amber' : item.tone),
+          ...buttonStyle(
+            (isThermal && thermalEnabled) || (isLidar && lidarDetailsOpen)
+              ? 'amber'
+              : item.tone,
+          ),
         }}
         title={label}
       >
         <Icon name={item.icon} size={14} />
-        <span>{busyCommand === item.command ? 'Sending' : label}</span>
+        <span>{busyCommand === item.command ? t.toolbar.sending : label}</span>
       </button>
     )
   }
@@ -1336,44 +2589,76 @@ const FlightControls = memo(function FlightControls({
   return (
     <GlassPanel
       style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 5,
-        padding: 6,
+        display: 'grid',
+        gridTemplateColumns:
+          'minmax(220px, .8fr) minmax(340px, 1.25fr) minmax(280px, 1fr)',
+        alignItems: 'stretch',
+        gap: 8,
+        padding: 8,
         width: '100%',
         overflow: 'visible',
       }}
     >
-      <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
-        {flightControls.map(controlButton)}
-        <button
-          onClick={() => onCommand('stop')}
-          disabled={busyCommand !== null}
+      <div style={{ ...toolbarGroupStyle, alignContent: 'center' }}>
+        <div
           style={{
-            ...buttonStyle(),
-            background: 'rgba(20,83,45,.82)',
-            color: '#86efac',
+            width: '100%',
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 850,
+            marginBottom: 2,
           }}
-          title="Hover"
         >
-          <Icon name="joystick" size={14} />
-          <span>Hover</span>
-        </button>
+          {t.toolbar.quickActions}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 4,
+          }}
+        >
+          {flightControls.map(controlButton)}
+          <button
+            onClick={() => onCommand('stop')}
+            disabled={busyCommand !== null}
+            style={{
+              ...buttonStyle(),
+              background: 'rgba(20,83,45,.82)',
+              color: '#86efac',
+            }}
+            title={t.toolbar.hover}
+          >
+            <Icon name="joystick" size={14} />
+            <span>{t.toolbar.hover}</span>
+          </button>
+        </div>
       </div>
 
       <div
         style={{
           ...toolbarGroupStyle,
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 46px)',
-          gap: 3,
+          gridTemplateColumns: 'repeat(6, 46px)',
+          alignContent: 'center',
+          gap: 4,
         }}
       >
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 850,
+            marginBottom: 1,
+          }}
+        >
+          {t.toolbar.manualControl}
+        </div>
         {movementControls.map((item) => (
           <button
-            key={item.label}
+            key={item.labelKey}
             onClick={() => onCommand(item.command)}
             disabled={busyCommand !== null}
             style={{
@@ -1393,25 +2678,64 @@ const FlightControls = memo(function FlightControls({
               fontWeight: 850,
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,.05)',
             }}
-            title={item.label}
+            title={t.controls[item.labelKey]}
           >
             <Icon name={item.icon} size={12} />
-            <span>{item.label}</span>
+            <span>{t.controls[item.labelKey]}</span>
+          </button>
+        ))}
+        {rotationControls.map((item) => (
+          <button
+            key={item.labelKey}
+            onClick={() => onCommand(item.command)}
+            disabled={busyCommand !== null}
+            style={{
+              ...buttonStyle(),
+              width: 46,
+              height: 29,
+              fontSize: 7,
+            }}
+            title={t.controls[item.labelKey]}
+          >
+            <Icon name={item.icon} size={12} />
+            <span>
+              {busyCommand === item.command
+                ? t.toolbar.sending
+                : t.controls[item.labelKey]}
+            </span>
           </button>
         ))}
       </div>
 
-      <div style={{ ...toolbarGroupStyle, maxWidth: 210 }}>
-        {rotationControls.map(controlButton)}
-      </div>
       <div
         style={{
           ...toolbarGroupStyle,
-          maxWidth: 128,
-          flexWrap: 'nowrap',
+          alignContent: 'center',
           position: 'relative',
         }}
       >
+        <div
+          style={{
+            width: '100%',
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 850,
+            marginBottom: 2,
+          }}
+        >
+          {t.toolbar.cameraTools}
+        </div>
+        {onReviewMedia && (
+          <button
+            onClick={onReviewMedia}
+            disabled={busyCommand !== null}
+            style={{ ...buttonStyle(), width: 62 }}
+            title={t.toolbar.reviewMedia}
+          >
+            <Icon name="photo" size={14} />
+            <span>{t.toolbar.review}</span>
+          </button>
+        )}
         <button
           onClick={() => onCommand('thermal_toggle')}
           disabled={busyCommand !== null}
@@ -1423,17 +2747,19 @@ const FlightControls = memo(function FlightControls({
         >
           <Icon name="thermometer" size={14} />
           <span>
-            {busyCommand === 'thermal_toggle' ? 'Sending' : thermalLabel}
+            {busyCommand === 'thermal_toggle'
+              ? t.toolbar.sending
+              : thermalLabel}
           </span>
         </button>
         <button
           onClick={onToggleMore}
           disabled={busyCommand !== null}
           style={buttonStyle()}
-          title="More controls"
+          title={t.toolbar.moreControls}
         >
           <Icon name="chevronRight" size={14} />
-          <span>More</span>
+          <span>{t.toolbar.more}</span>
         </button>
         {moreOpen && (
           <GlassPanel
@@ -1442,7 +2768,7 @@ const FlightControls = memo(function FlightControls({
               right: 0,
               bottom: 46,
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 46px)',
+              gridTemplateColumns: 'repeat(3, 48px)',
               gap: 5,
               padding: 6,
               zIndex: 10,
@@ -1451,6 +2777,34 @@ const FlightControls = memo(function FlightControls({
             {moreToolControls.map(controlButton)}
           </GlassPanel>
         )}
+        <div
+          style={{
+            width: '100%',
+            marginTop: 6,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, minmax(42px, 1fr))',
+            gap: 4,
+          }}
+        >
+          {weatherControls.map((item) => (
+            <button
+              key={item.preset}
+              onClick={() => onWeatherPreset(item.preset)}
+              disabled={busyCommand !== null}
+              style={{
+                ...buttonStyle(item.tone),
+                width: 'auto',
+                height: 28,
+                minWidth: 0,
+                fontSize: 7,
+              }}
+              title={t.toolbar.weatherTitle(t.weather[item.labelKey])}
+            >
+              <Icon name="thermometer" size={11} />
+              <span>{t.weather[item.labelKey]}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </GlassPanel>
   )
@@ -1461,17 +2815,26 @@ export default function InFlightControl({
   drone,
   onRTB,
   onEmergency,
+  autoStartPlan,
+  onAutoStartPlanConsumed,
+  onPreflightReady,
+  onReviewMedia,
 }: Props) {
+  const { t } = useI18n(inFlightControlMessages)
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
+  const requiresBackendPreflight = Boolean(onPreflightReady)
   const [elapsed, setElapsed] = useState(5)
   const [progress, setProgress] = useState(18.2)
   const [isOnline, setIsOnline] = useState(false)
-  const [lastCommand, setLastCommand] = useState('Waiting for controller')
+  const [lastCommand, setLastCommand] = useState(t.status.waitingController)
   const [busyCommand, setBusyCommand] = useState<FlightCommand | null>(null)
   const [streamRevision, setStreamRevision] = useState(0)
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [lidarDetailsOpen, setLidarDetailsOpen] = useState(false)
+  const cameraDefaultAppliedRef = useRef(false)
   const [preflightReady, setPreflightReady] = useState(() => {
+    if (requiresBackendPreflight) return false
     try {
       return window.localStorage.getItem(preflightStorageKey) === 'true'
     } catch {
@@ -1501,15 +2864,23 @@ export default function InFlightControl({
       ? 'danger'
       : 'amber'
   const geofenceZoneName =
-    geofenceStatus.zone?.name ?? geofenceStatus.zone?.code ?? 'restricted zone'
+    geofenceStatus.zone?.name ??
+    geofenceStatus.zone?.code ??
+    t.geofence.restrictedZoneFallback
   const geofenceMessage =
     geofenceStatus.level === 'VIOLATION'
-      ? `Restricted zone breach: ${geofenceZoneName}`
+      ? t.geofence.breach(geofenceZoneName)
       : geofenceStatus.level === 'DANGER'
-        ? `Restricted zone danger: ${Math.round(geofenceStatus.distanceM ?? 0)} m from ${geofenceZoneName}`
+        ? t.geofence.danger(
+            Math.round(geofenceStatus.distanceM ?? 0),
+            geofenceZoneName,
+          )
         : geofenceStatus.level === 'CAUTION'
-          ? `Restricted zone caution: ${Math.round(geofenceStatus.distanceM ?? 0)} m from ${geofenceZoneName}`
-          : 'All Systems Nominal'
+          ? t.geofence.caution(
+              Math.round(geofenceStatus.distanceM ?? 0),
+              geofenceZoneName,
+            )
+          : t.geofence.allNominal
   const footerStatusColor = geofenceAlertActive
     ? geofenceTone === 'danger'
       ? '#fecaca'
@@ -1522,6 +2893,10 @@ export default function InFlightControl({
     : '#22c55e'
 
   useEffect(() => {
+    if (requiresBackendPreflight) {
+      setPreflightReady(false)
+      return
+    }
     try {
       setPreflightReady(
         window.localStorage.getItem(preflightStorageKey) === 'true',
@@ -1529,16 +2904,7 @@ export default function InFlightControl({
     } catch {
       setPreflightReady(false)
     }
-  }, [preflightStorageKey])
-
-  const clearPreflightReady = useCallback(() => {
-    try {
-      window.localStorage.removeItem(preflightStorageKey)
-    } catch {
-      // Ignore storage failures; the in-memory state still resets for this page.
-    }
-    setPreflightReady(false)
-  }, [preflightStorageKey])
+  }, [preflightStorageKey, requiresBackendPreflight])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -1556,7 +2922,10 @@ export default function InFlightControl({
         const response = await fetch(`${controlBaseUrl}/api/control/status`, {
           cache: 'no-store',
         })
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        if (!response.ok) {
+          const failure = await response.json().catch(() => null)
+          throw new Error(failure?.error ?? `HTTP ${response.status}`)
+        }
         const status = await response
           .json()
           .catch(() => ({ online: response.ok }))
@@ -1572,7 +2941,6 @@ export default function InFlightControl({
         if (alive) {
           setControlStatus(null)
           setIsOnline(false)
-          clearPreflightReady()
         }
       }
     }
@@ -1583,12 +2951,27 @@ export default function InFlightControl({
       alive = false
       window.clearInterval(timer)
     }
-  }, [clearPreflightReady])
+  }, [])
 
   const sendCommand = useCallback(
     async (command: FlightCommand) => {
       if (!preflightReady) {
-        setLastCommand('Preflight required')
+        setLastCommand(t.status.preflightRequired)
+        return
+      }
+      if (
+        (command === 'photo' || command === 'video_toggle') &&
+        (controlStatus?.missionId !== (mission.backendId ?? mission.id) ||
+          controlStatus?.deviceId !== drone.id)
+      ) {
+        setLastCommand(t.status.controllerNotBound)
+        return
+      }
+      const routePoints = (mission.routePoints ?? [])
+        .slice()
+        .sort((a, b) => a.sequence - b.sequence)
+      if (command === 'auto_plan_start' && routePoints.length === 0) {
+        setLastCommand(t.status.noWaypoints)
         return
       }
       setBusyCommand(command)
@@ -1596,24 +2979,83 @@ export default function InFlightControl({
         const response = await fetch(`${controlBaseUrl}/api/control/command`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command }),
+          body: JSON.stringify({
+            command,
+            ...(command === 'auto_plan_start'
+              ? {
+                  missionId: mission.backendId ?? mission.id,
+                  waypoints: routePoints.map((point) => ({
+                    sequence: point.sequence,
+                    simX: point.simX,
+                    simY: point.simY,
+                    altitudeM: point.altitudeM,
+                    speedMps: point.speedMps,
+                    reason: point.reason,
+                  })),
+                }
+              : {}),
+          }),
         })
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        setLastCommand(`${command.replaceAll('_', ' ')} sent`)
+        setLastCommand(
+          command === 'auto_plan_start'
+            ? t.status.autoPlanStarted(routePoints.length)
+            : command === 'camera_front'
+              ? t.status.cameraReset
+              : t.status.commandSent(command.replaceAll('_', ' ')),
+        )
         setIsOnline(true)
 
         if (command === 'return_to_base') onRTB()
         if (command === 'emergency_stop') onEmergency()
-      } catch {
-        setLastCommand('Controller offline or command rejected')
-        setIsOnline(false)
+      } catch (cause) {
+        setLastCommand(
+          cause instanceof Error ? cause.message : t.status.controllerOffline,
+        )
+        if (cause instanceof TypeError) setIsOnline(false)
       } finally {
         setBusyCommand(null)
       }
     },
-    [onEmergency, onRTB, preflightReady],
+    [
+      controlStatus?.deviceId,
+      controlStatus?.missionId,
+      drone.id,
+      mission.backendId,
+      mission.id,
+      mission.routePoints,
+      onEmergency,
+      onRTB,
+      preflightReady,
+      t,
+    ],
   )
+
+  useEffect(() => {
+    if (!preflightReady || cameraDefaultAppliedRef.current) return
+    cameraDefaultAppliedRef.current = true
+    void sendCommand('camera_front')
+  }, [preflightReady, sendCommand])
+
+  useEffect(() => {
+    if (!autoStartPlan) return
+    if (!preflightReady) return
+    if ((mission.routePoints?.length ?? 0) === 0) {
+      setLastCommand(t.status.noWaypoints)
+      onAutoStartPlanConsumed()
+      return
+    }
+    onAutoStartPlanConsumed()
+    void sendCommand('auto_plan_start')
+  }, [
+    autoStartPlan,
+    mission.routePoints,
+    onAutoStartPlanConsumed,
+    preflightReady,
+    sendCommand,
+    t,
+  ])
 
   const telemetryBattery =
     typeof controlStatus?.batteryPercent === 'number' &&
@@ -1625,40 +3067,126 @@ export default function InFlightControl({
   const batteryState = controlStatus?.batteryState ?? 'NORMAL'
   const showBatteryWarning =
     telemetryBattery !== null && batteryState !== 'NORMAL'
-  const thermalMax =
-    typeof controlStatus?.maxTemperatureC === 'number' &&
-    Number.isFinite(controlStatus.maxTemperatureC)
-      ? `${controlStatus.maxTemperatureC.toFixed(1)} °C`
-      : '--'
+  const thermalMax = formatTemperature(controlStatus?.maxTemperatureC)
+  const thermalRows = [
+    [
+      t.thermalPanel.rows.resolution,
+      controlStatus?.thermalFrameWidth && controlStatus?.thermalFrameHeight
+        ? `${controlStatus.thermalFrameWidth}x${controlStatus.thermalFrameHeight}`
+        : '--',
+    ],
+    [t.thermalPanel.rows.fps, formatNumber(controlStatus?.thermalFps)],
+    [
+      t.thermalPanel.rows.mode,
+      controlStatus?.thermalMode?.replaceAll('_', ' ') ?? '--',
+    ],
+    [
+      t.thermalPanel.rows.frameAge,
+      typeof controlStatus?.thermalFrameAgeMs === 'number'
+        ? `${controlStatus.thermalFrameAgeMs} ms`
+        : '--',
+    ],
+    [
+      t.thermalPanel.rows.min,
+      formatTemperature(controlStatus?.minTemperatureC),
+    ],
+    [
+      t.thermalPanel.rows.avg,
+      formatTemperature(controlStatus?.averageTemperatureC),
+    ],
+    [t.thermalPanel.rows.max, thermalMax],
+    [
+      t.thermalPanel.rows.threshold,
+      formatTemperature(controlStatus?.thermalThresholdC),
+    ],
+    [t.thermalPanel.rows.palette, controlStatus?.thermalPalette ?? '--'],
+    [t.thermalPanel.rows.range, controlStatus?.thermalDisplayRangeMode ?? '--'],
+    [
+      t.thermalPanel.rows.scale,
+      controlStatus?.thermalDisplayMinC != null &&
+      controlStatus?.thermalDisplayMaxC != null
+        ? `${formatNumber(controlStatus.thermalDisplayMinC)}-${formatNumber(controlStatus.thermalDisplayMaxC)} °C`
+        : '--',
+    ],
+    [
+      t.thermalPanel.rows.iso,
+      `${controlStatus?.thermalIsothermEnabled ? 'ON' : 'OFF'} / DBG ${controlStatus?.thermalDebugOverlayEnabled ? 'ON' : 'OFF'}`,
+    ],
+  ]
   const handleOnline = useCallback(() => setIsOnline(true), [])
   const handleOffline = useCallback(() => setIsOnline(false), [])
   const handleToggleMore = useCallback(() => setMoreOpen((value) => !value), [])
+  const handleReviewMedia = useCallback(() => {
+    markActiveMissionFlowStep(mission.backendId ?? mission.id, 5)
+    onReviewMedia?.()
+  }, [mission.backendId, mission.id, onReviewMedia])
   const handleCommand = useCallback(
     (command: FlightCommand) => {
+      if (command === 'lidar_monitor_toggle') {
+        setLidarDetailsOpen((value) => !value)
+        if (controlStatus?.lidar?.enabled === true) {
+          setLastCommand(t.status.lidarToggled)
+          return
+        }
+      }
       void sendCommand(command)
     },
-    [sendCommand],
+    [controlStatus?.lidar?.enabled, sendCommand, t],
   )
-  const handlePreflightReady = useCallback(() => {
+  const handleWeatherPreset = useCallback(
+    async (preset: WeatherPreset) => {
+      setLastCommand(
+        t.status.settingWeather(preset.replaceAll('_', ' ').toLowerCase()),
+      )
+      try {
+        const response = await fetch(`${controlBaseUrl}/api/control/command`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: 'weather_set', preset }),
+        })
+        const payload = await response.json()
+        const weather = payload.weather as
+          { status?: string; weatherLabel?: string } | undefined
+        if (!response.ok || !weather) throw new Error(`HTTP ${response.status}`)
+        const label = weather?.weatherLabel ?? preset.replaceAll('_', ' ')
+        const status = weather?.status ?? 'UPDATED'
+        setLastCommand(
+          payload.ok === false
+            ? t.status.weatherPending(label, status)
+            : t.status.weatherUpdated(label, status),
+        )
+        setIsOnline(true)
+      } catch {
+        setLastCommand(t.status.weatherOffline)
+        setIsOnline(false)
+      }
+    },
+    [t],
+  )
+  const handlePreflightReady = useCallback(async () => {
+    await onPreflightReady?.()
     try {
       window.localStorage.setItem(preflightStorageKey, 'true')
     } catch {
       // Ignore storage failures; the current screen can still continue.
     }
     setPreflightReady(true)
-    setLastCommand('Preflight completed')
-  }, [preflightStorageKey])
+    setLastCommand(t.status.preflightCompleted)
+  }, [onPreflightReady, preflightStorageKey, t])
 
   return (
     <div
+      className="mission-control-root"
       style={{
         flex: 1,
-        minHeight: 0,
+        minHeight: '100vh',
+        height: '100vh',
         display: 'grid',
-        gridTemplateRows: '76px minmax(0,1fr) 42px',
+        gridTemplateRows: '76px 1fr 42px',
         background: '#020617',
         color: '#e5edf8',
         overflow: 'hidden',
+        colorScheme: 'dark',
       }}
     >
       <header
@@ -1714,11 +3242,11 @@ export default function InFlightControl({
                     background: isOnline ? '#22c55e' : '#ef4444',
                   }}
                 />
-                {isOnline ? 'LIVE' : 'OFFLINE'}
+                {isOnline ? t.header.live : t.header.offline}
               </span>
             </div>
             <div style={{ marginTop: 2, fontSize: 12, color: '#94a3b8' }}>
-              Drone Operator
+              {t.header.droneOperator}
             </div>
           </div>
         </div>
@@ -1754,16 +3282,53 @@ export default function InFlightControl({
               placeItems: 'center',
               cursor: 'pointer',
             }}
-            title="Settings"
+            title={t.header.settings}
           >
             <Icon name="settings" size={18} />
           </button>
         </div>
       </header>
 
-      <main className="mission-control-workspace">
-        <section className="mission-control-primary">
-          <div className="mission-control-camera-card">
+      <main
+        className="mission-control-workspace"
+        style={{
+          minHeight: 0,
+          height: '100%',
+          overflow: 'hidden',
+          display: 'grid',
+          gridTemplateColumns:
+            'minmax(0, 1.45fr) minmax(360px, 0.74fr) minmax(280px, 0.62fr)',
+          gridTemplateRows: 'minmax(350px, 1fr) auto',
+          alignItems: 'stretch',
+          gap: 12,
+          padding: '10px 14px 10px',
+          background:
+            'radial-gradient(circle at 28% 10%, rgba(37, 99, 235, 0.12), transparent 34%), #020617',
+        }}
+      >
+        <section
+          className="mission-control-primary"
+          style={{
+            minWidth: 0,
+            minHeight: 0,
+            height: '100%',
+            display: 'grid',
+          }}
+        >
+          <div
+            className="mission-control-camera-card"
+            style={{
+              position: 'relative',
+              minWidth: 0,
+              minHeight: 350,
+              height: '100%',
+              overflow: 'hidden',
+              borderRadius: 10,
+              border: '1px solid rgba(59, 130, 246, 0.32)',
+              background: '#020617',
+              boxShadow: '0 18px 45px rgba(0, 0, 0, 0.24)',
+            }}
+          >
             <CameraFeed
               streamUrl={streamUrl}
               preflightReady={preflightReady}
@@ -1803,9 +3368,9 @@ export default function InFlightControl({
                 style={{
                   position: 'absolute',
                   right: 16,
-                  top: 16,
-                  width: 210,
-                  padding: '10px 12px',
+                  top: 178,
+                  width: 260,
+                  padding: '12px 14px',
                   border: controlStatus?.hotspotDetected
                     ? '1px solid rgba(251,146,60,.78)'
                     : '1px solid rgba(56,189,248,.35)',
@@ -1828,7 +3393,7 @@ export default function InFlightControl({
                       color: '#e5edf8',
                     }}
                   >
-                    Thermal
+                    {t.thermalPanel.title}
                   </strong>
                   <span
                     style={{
@@ -1841,29 +3406,14 @@ export default function InFlightControl({
                     }}
                   >
                     {controlStatus?.thermalSensorOnline === false
-                      ? 'OFFLINE'
-                      : 'SENSOR ONLINE'}
+                      ? t.thermalPanel.sensorOffline
+                      : t.thermalPanel.sensorOnline}
                   </span>
                 </div>
                 <div
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    color: '#cbd5e1',
-                    fontSize: 11,
-                  }}
-                >
-                  <span>MAX</span>
-                  <strong
-                    style={{ fontFamily: 'var(--font-data)', color: '#fff7ed' }}
-                  >
-                    {thermalMax}
-                  </strong>
-                </div>
-                <div
-                  style={{
-                    marginTop: 5,
-                    fontSize: 11,
+                    marginBottom: 8,
+                    fontSize: 12,
                     fontWeight: 900,
                     color: controlStatus?.hotspotDetected
                       ? '#fed7aa'
@@ -1871,9 +3421,51 @@ export default function InFlightControl({
                   }}
                 >
                   {controlStatus?.hotspotDetected
-                    ? 'HOTSPOT DETECTED'
-                    : 'No hotspot'}
+                    ? t.thermalPanel.hotspotDetected
+                    : t.thermalPanel.noHotspot}
                 </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr auto',
+                    rowGap: 5,
+                    columnGap: 12,
+                    fontSize: 11,
+                    color: '#cbd5e1',
+                  }}
+                >
+                  {thermalRows.map(([label, value]) => (
+                    <Fragment key={label}>
+                      <span>{label}</span>
+                      <strong
+                        style={{
+                          color:
+                            label === t.thermalPanel.rows.max &&
+                            controlStatus?.hotspotDetected
+                              ? '#fed7aa'
+                              : '#f8fafc',
+                          fontFamily: 'var(--font-data)',
+                          textAlign: 'right',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {value}
+                      </strong>
+                    </Fragment>
+                  ))}
+                </div>
+                {controlStatus?.thermalSourceError && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      color: '#fca5a5',
+                      fontSize: 10,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {t.thermalPanel.error(controlStatus.thermalSourceError)}
+                  </div>
+                )}
               </GlassPanel>
             )}
 
@@ -1906,10 +3498,10 @@ export default function InFlightControl({
                       }}
                     >
                       {batteryState === 'LOW'
-                        ? 'Low battery'
+                        ? t.batteryWarning.low
                         : batteryState === 'CRITICAL'
-                          ? 'Critical battery'
-                          : 'Emergency battery'}{' '}
+                          ? t.batteryWarning.critical
+                          : t.batteryWarning.emergency}{' '}
                       - {batteryDisplay}
                     </div>
                     <div
@@ -1920,8 +3512,7 @@ export default function InFlightControl({
                         fontWeight: 750,
                       }}
                     >
-                      Manual control remains available. No automatic flight
-                      action was triggered.
+                      {t.batteryWarning.note}
                     </div>
                   </div>
                 </div>
@@ -1974,8 +3565,8 @@ export default function InFlightControl({
                       }}
                     >
                       {geofenceStatus.level === 'VIOLATION'
-                        ? 'No-fly zone breach'
-                        : 'No-fly zone warning'}
+                        ? t.geofence.breachTitle
+                        : t.geofence.warningTitle}
                     </div>
                     <div
                       style={{
@@ -1993,24 +3584,75 @@ export default function InFlightControl({
               </GlassPanel>
             )}
           </div>
+        </section>
 
+        <section
+          className="mission-control-lidar"
+          style={{
+            minWidth: 0,
+            minHeight: 0,
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: 8,
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            paddingRight: 2,
+            scrollbarGutter: 'stable',
+          }}
+        >
+          <LidarRadarOverlay status={controlStatus} />
+          <AirPressurePanel status={controlStatus} />
+        </section>
+
+        <section
+          className="mission-control-controls"
+          style={{
+            gridColumn: '1 / 3',
+            minWidth: 0,
+            overflow: 'visible',
+          }}
+        >
           <FlightControls
             busyCommand={busyCommand}
+            lidarDetailsOpen={lidarDetailsOpen}
             moreOpen={moreOpen}
             status={controlStatus}
             onCommand={handleCommand}
+            onWeatherPreset={handleWeatherPreset}
             onToggleMore={handleToggleMore}
+            onReviewMedia={onReviewMedia ? handleReviewMedia : undefined}
           />
         </section>
 
-        <aside className="mission-control-side">
+        <aside
+          className="mission-control-side"
+          style={{
+            gridColumn: 3,
+            gridRow: '1 / 3',
+            minWidth: 0,
+            minHeight: 0,
+            height: '100%',
+            maxHeight: '100%',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            paddingRight: 4,
+            scrollbarGutter: 'stable',
+          }}
+        >
           <TelemetryPanel status={controlStatus} />
+          {lidarDetailsOpen && <LidarDetailPanel status={controlStatus} />}
           <MissionInfoPanel
             status={controlStatus}
             progress={progress}
             mission={mission}
           />
-          <RealMiniMap status={controlStatus} />
+          <RealMiniMap status={controlStatus} mission={mission} />
         </aside>
 
         {!preflightReady && (
@@ -2019,11 +3661,19 @@ export default function InFlightControl({
               position: 'absolute',
               inset: 0,
               zIndex: 20,
-              background: 'rgba(2,6,23,.82)',
+              background: '#f1f5f9',
               overflow: 'auto',
+              padding: 22,
             }}
           >
-            <RuntimePreflightCheck onReady={handlePreflightReady} />
+            <PreflightChecklistPanel
+              missionId={mission.backendId ?? mission.id}
+              missionLabel={mission.id}
+              droneLabel={drone.id}
+              missionStatus={mission.state}
+              onReady={handlePreflightReady}
+              embedded
+            />
           </div>
         )}
       </main>
@@ -2038,23 +3688,76 @@ export default function InFlightControl({
           borderTop: '1px solid rgba(59,130,246,.24)',
         }}
       >
-        {['Overview', 'Missions', 'Detail', 'GCS Connect'].map((label) => (
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back()
+              return
+            }
+            navigateOperator(operatorHref({ screen: 'missions' }))
+          }}
+          style={{
+            height: 28,
+            padding: '0 12px',
+            borderRadius: 9,
+            border: '1px solid rgba(148,163,184,.2)',
+            background: 'rgba(15,23,42,.72)',
+            color: '#dbeafe',
+            fontSize: 12,
+            fontWeight: 850,
+            cursor: 'pointer',
+          }}
+          title={t.footer.back}
+        >
+          {t.footer.backLabel}
+        </button>
+        {[
+          {
+            id: 'overview',
+            label: t.footer.overview,
+            href: operatorHref({ screen: 'missions' }),
+          },
+          {
+            id: 'missions',
+            label: t.footer.missions,
+            href: operatorHref({ screen: 'missions' }),
+          },
+          {
+            id: 'detail',
+            label: t.footer.detail,
+            href: operatorHref({
+              screen: 'missionDetail',
+              missionId: mission.id,
+            }),
+          },
+          {
+            id: 'gcsConnect',
+            label: t.footer.gcsConnect,
+            href: operatorHref({
+              screen: 'connect',
+              missionId: mission.backendId ?? mission.id,
+            }),
+            active: true,
+          },
+        ].map((item) => (
           <button
-            key={label}
+            key={item.id}
+            type="button"
+            onClick={() => navigateOperator(item.href)}
             style={{
               height: 28,
               padding: '0 12px',
               borderRadius: 9,
               border: '1px solid transparent',
-              background:
-                label === 'GCS Connect' ? 'rgba(37,99,235,.2)' : 'transparent',
-              color: label === 'GCS Connect' ? '#bfdbfe' : '#94a3b8',
+              background: item.active ? 'rgba(37,99,235,.2)' : 'transparent',
+              color: item.active ? '#bfdbfe' : '#94a3b8',
               fontSize: 12,
               fontWeight: 800,
               cursor: 'pointer',
             }}
           >
-            {label}
+            {item.label}
           </button>
         ))}
         <div
@@ -2097,7 +3800,7 @@ export default function InFlightControl({
               fontWeight: 900,
             }}
           >
-            In Flight
+            {t.footer.inFlight}
           </span>
         </div>
       </footer>

@@ -184,6 +184,41 @@ input[type='checkbox'] {
   --text-3: #4e5670;
   background: var(--bg);
   color: var(--text);
+  min-height: 0;
+  height: 100%;
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #020617;
+}
+
+.dark-ws * {
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #020617;
+}
+
+.dark-ws::-webkit-scrollbar,
+.dark-ws *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-ws::-webkit-scrollbar-track,
+.dark-ws *::-webkit-scrollbar-track {
+  background: #020617;
+  border-radius: 999px;
+}
+
+.dark-ws::-webkit-scrollbar-thumb,
+.dark-ws *::-webkit-scrollbar-thumb {
+  background: #475569;
+  border: 2px solid #020617;
+  border-radius: 999px;
+}
+
+.dark-ws::-webkit-scrollbar-thumb:hover,
+.dark-ws *::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* dark-ws inputs */
@@ -204,9 +239,15 @@ input[type='checkbox'] {
 .mission-control-workspace {
   position: relative;
   min-height: 0;
-  overflow: auto;
+  height: 100%;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr);
+  grid-template-columns:
+    minmax(0, 1.45fr)
+    minmax(360px, 0.74fr)
+    minmax(280px, 0.62fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
   gap: 12px;
   padding: 12px 16px;
   background:
@@ -221,15 +262,55 @@ input[type='checkbox'] {
 .mission-control-primary {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: grid;
-  grid-template-rows: minmax(240px, min(48vw, calc(100vh - 285px))) auto;
-  gap: 10px;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.mission-control-lidar {
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.45) transparent;
+}
+
+.mission-control-lidar > * {
+  flex-shrink: 0;
+}
+
+.mission-control-lidar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.mission-control-lidar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mission-control-lidar::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.42);
+  border-radius: 999px;
+}
+
+.mission-control-controls {
+  grid-column: 1 / 3;
+  min-width: 0;
+  overflow: visible;
 }
 
 .mission-control-camera-card {
   position: relative;
   min-width: 0;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
   border-radius: 10px;
   border: 1px solid rgba(59, 130, 246, 0.22);
@@ -242,6 +323,8 @@ input[type='checkbox'] {
 }
 
 .mission-control-side {
+  grid-column: 3;
+  grid-row: 1 / 3;
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -250,12 +333,13 @@ input[type='checkbox'] {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   padding-right: 4px;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
+  color-scheme: dark;
   scrollbar-width: thin;
-  scrollbar-color: rgba(96, 165, 250, 0.5) transparent;
+  scrollbar-color: #475569 #020617;
 }
 
 .mission-control-side > * {
@@ -263,55 +347,90 @@ input[type='checkbox'] {
 }
 
 .mission-control-side::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .mission-control-side::-webkit-scrollbar-track {
-  background: transparent;
+  background: #020617;
+  border-radius: 999px;
 }
 
 .mission-control-side::-webkit-scrollbar-thumb {
-  background: rgba(96, 165, 250, 0.45);
+  background: #475569;
+  border: 2px solid #020617;
   border-radius: 999px;
 }
 
 .mission-control-side::-webkit-scrollbar-thumb:hover {
-  background: rgba(96, 165, 250, 0.7);
+  background: #64748b;
 }
 
 .mission-control-map {
-  height: clamp(220px, 28vh, 320px);
-  min-height: 220px;
+  height: clamp(190px, 27vh, 300px);
+  min-height: 190px;
 }
 
 @media (max-width: 1199px) {
   .mission-control-workspace {
-    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.95fr);
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.72fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
     gap: 10px;
     padding: 10px;
   }
 
   .mission-control-primary {
-    grid-template-rows: minmax(220px, min(46vw, calc(100vh - 285px))) auto;
+    grid-template-rows: minmax(320px, 1fr);
+  }
+
+  .mission-control-lidar {
+    grid-column: 2;
+    grid-row: 1;
+    max-height: 100%;
+  }
+
+  .mission-control-controls {
+    grid-column: 1 / 3;
+    grid-row: 2;
+  }
+
+  .mission-control-side {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    min-height: 0;
+    max-height: 300px;
   }
 
   .mission-control-map {
-    height: clamp(220px, 26vh, 300px);
-    min-height: 220px;
+    height: clamp(170px, 24vh, 250px);
+    min-height: 170px;
   }
 }
 
 @media (max-width: 900px) {
   .mission-control-workspace {
     grid-template-columns: minmax(0, 1fr);
-    overflow-x: hidden;
+    overflow: auto;
   }
 
   .mission-control-primary {
     grid-template-rows: minmax(220px, 52vw) auto;
   }
 
+  .mission-control-lidar {
+    grid-column: auto;
+    grid-row: auto;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .mission-control-controls {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .mission-control-side {
+    grid-column: auto;
+    grid-row: auto;
     height: auto;
     max-height: none;
     overflow: visible;

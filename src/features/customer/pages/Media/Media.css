@@ -1,0 +1,14 @@
+/* Media of one order. Tokens come from shared/components/ui/ui.css. */
+
+.om-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+
+.om-empty {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ui-text-3);
+}

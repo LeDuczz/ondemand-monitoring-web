@@ -1,0 +1,491 @@
+/*
+ * Customer portal shell (sidebar + top bar), scoped under `.odm-cus`.
+ * Mirrors the admin shell (240px sidebar, active left bar, 1280px content)
+ * and uses the shared --ui-* tokens from src/shared/components/ui/ui.css.
+ */
+
+.odm-cus {
+  --cus-sidebar-w: 240px;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+/* Long English / Vietnamese labels must wrap instead of clipping. */
+.odm-cus .odm-btn,
+.odm-cus th,
+.odm-cus .odm-cus-navi {
+  white-space: normal;
+  min-width: 0;
+}
+
+.odm-cus-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Sidebar ---------- */
+
+.odm-cus-side {
+  width: var(--cus-sidebar-w);
+  flex: none;
+  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--ui-space-4) var(--ui-space-3);
+}
+
+.odm-cus-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-5);
+  text-decoration: none;
+  color: var(--ui-text);
+}
+
+.odm-cus-brand-mark {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  object-position: left center;
+  flex: none;
+}
+
+.odm-cus-brand-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 0.95;
+}
+
+.odm-cus-brand-primary {
+  color: var(--brand-primary, var(--ui-text));
+}
+
+.odm-cus-brand-accent {
+  color: var(--brand-accent, var(--ui-primary));
+  -webkit-text-fill-color: var(--brand-accent, var(--ui-primary));
+  font-size: 1.22em;
+}
+
+.odm-cus-nav-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.odm-cus-navg {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ui-text-3);
+  padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-1);
+}
+
+.odm-cus-navi {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ui-text-2);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: background 0.1s;
+}
+
+.odm-cus-navi > span:not(.odm-cus-navc) {
+  min-width: 0;
+}
+
+.odm-cus-navi svg {
+  flex: none;
+}
+
+.odm-cus-navi:hover {
+  background: var(--ui-surface-2);
+}
+
+.odm-cus-navi.is-active {
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-weight: 600;
+}
+
+.odm-cus-navi.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ui-primary);
+}
+
+.odm-cus-navc {
+  margin-left: auto;
+  flex: none;
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.odm-cus-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--ui-space-3) var(--ui-space-2);
+  border-top: 1px solid var(--ui-border);
+  margin-top: var(--ui-space-2);
+}
+
+.odm-cus-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex: none;
+}
+
+.odm-cus-user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.odm-cus-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.odm-cus-user-email {
+  font-size: 11px;
+  color: var(--ui-text-3);
+  overflow-wrap: anywhere;
+}
+
+.odm-cus-logout {
+  width: 100%;
+  margin-top: var(--ui-space-1);
+}
+
+/* ---------- Main area ---------- */
+
+.odm-cus-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.odm-cus-topbar {
+  min-height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-8);
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+
+.odm-cus-breadcrumb {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ui-text-2);
+  overflow-wrap: anywhere;
+}
+
+.odm-cus-topbar-spacer {
+  flex: 1;
+}
+
+.odm-cus-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.odm-cus-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--ui-space-8);
+}
+
+.odm-cus-content-inner {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+/* ---------- Floating chatbot ---------- */
+
+.odm-cus-chatbot {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 240;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.odm-cus-chatbot * {
+  pointer-events: auto;
+}
+
+.odm-cus-chatbot-fab {
+  width: 86px;
+  height: 86px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  filter: drop-shadow(0 18px 24px rgba(15, 23, 42, 0.24));
+  animation: odm-cus-chatbot-float 2.8s ease-in-out infinite;
+}
+
+.odm-cus-chatbot-fab img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.odm-cus-chatbot-bubble {
+  margin-bottom: 16px;
+  max-width: 150px;
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  background: var(--sf);
+  box-shadow: var(--shadow);
+  color: var(--tx);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 13px;
+  animation: odm-cus-chatbot-float 2.8s ease-in-out infinite;
+}
+
+.odm-cus-chatbot-panel {
+  width: min(360px, calc(100vw - 28px));
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--sf);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+}
+
+.odm-cus-chatbot-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(135deg, #e0f2fe, #dcfce7);
+}
+
+.odm-cus-chatbot-head img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  flex: none;
+}
+
+.odm-cus-chatbot-head span {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.odm-cus-chatbot-head b {
+  font-size: 15px;
+}
+
+.odm-cus-chatbot-head small {
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.odm-cus-chatbot-head button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.odm-cus-chatbot-msgs {
+  height: 250px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg);
+}
+
+.odm-cus-chatbot-msg {
+  max-width: 82%;
+  border-radius: 14px;
+  padding: 9px 11px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.odm-cus-chatbot-msg.is-bot {
+  align-self: flex-start;
+  background: var(--sf);
+  border: 1px solid var(--bd);
+}
+
+.odm-cus-chatbot-msg.is-user {
+  align-self: flex-end;
+  background: var(--blue-solid);
+  color: #fff;
+}
+
+.odm-cus-chatbot-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 12px 0;
+  background: var(--sf);
+}
+
+.odm-cus-chatbot-chips button {
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  background: var(--sf2);
+  color: var(--tx2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 9px;
+}
+
+.odm-cus-chatbot-form {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--sf);
+}
+
+.odm-cus-chatbot-form input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font: inherit;
+}
+
+.odm-cus-chatbot-form button {
+  border: 0;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--inkfg);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+@keyframes odm-cus-chatbot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+/* ---------- Sidebar drawer (below 900px) ---------- */
+
+@media (min-width: 900px) {
+  .odm-cus-menu-toggle,
+  .odm-cus-scrim {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .odm-cus-side {
+    position: fixed;
+    top: 0;
+    left: calc(-1 * var(--cus-sidebar-w) - 24px);
+    bottom: 0;
+    z-index: 200;
+    transition: left 0.2s;
+  }
+
+  .odm-cus-side.is-open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .odm-cus-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 199;
+    border: 0;
+    cursor: default;
+  }
+
+  .odm-cus-menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--ui-space-1);
+    color: var(--ui-text-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .odm-cus-topbar {
+    padding: var(--ui-space-2) var(--ui-space-4);
+  }
+
+  .odm-cus-content {
+    padding: var(--ui-space-5) var(--ui-space-4);
+  }
+}

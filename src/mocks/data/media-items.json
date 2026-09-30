@@ -1,0 +1,106 @@
+{
+  "manualUploadTasks": [
+    {
+      "id": "mut-001",
+      "mediaId": "med-001",
+      "fileName": "DJI_0284.MP4",
+      "mediaType": "VIDEO",
+      "fileSizeBytes": 1932735283,
+      "fileSizeLabel": "1,8 GB",
+      "mediaStatus": "MANUAL_REQUIRED",
+      "missionId": "msn-2609-0133-1",
+      "missionCode": "MSN-2609-0133-1",
+      "reason": "Upload thất bại 3 lần: ERR_NETWORK_TIMEOUT (sóng 4G yếu tại hiện trường)",
+      "assignedOperatorId": "op-ngo-thi-lan-phuong",
+      "assignedOperatorName": "Ngô Thị Lan Phương",
+      "taskStatus": "OPEN",
+      "createdAt": "2026-09-20T07:18:00Z"
+    },
+    {
+      "id": "mut-002",
+      "mediaId": "med-002",
+      "fileName": "DJI_0291.JPG",
+      "mediaType": "PHOTO",
+      "fileSizeBytes": 9855590,
+      "fileSizeLabel": "9,4 MB",
+      "mediaStatus": "MANUAL_REQUIRED",
+      "missionId": "msn-2609-0133-1",
+      "missionCode": "MSN-2609-0133-1",
+      "reason": "Upload thất bại 3 lần: checksum_sha256 không khớp sau khi tải lên",
+      "assignedOperatorId": "op-ngo-thi-lan-phuong",
+      "assignedOperatorName": "Ngô Thị Lan Phương",
+      "taskStatus": "OPEN",
+      "createdAt": "2026-09-20T07:22:00Z"
+    }
+  ],
+  "badMediaItems": [
+    {
+      "id": "med-003",
+      "fileName": "IMG_0414.JPG",
+      "mediaType": "PHOTO",
+      "fileSizeBytes": 0,
+      "fileSizeLabel": "0 B",
+      "mediaStatus": "VALIDATION_FAILED",
+      "missionId": "msn-2609-0136-1",
+      "missionCode": "MSN-2609-0136-1",
+      "validationError": "File rỗng (0 byte), checksum_sha256 không khớp với bản gốc trên thiết bị",
+      "operatorId": "op-vu-hai-dang",
+      "operatorName": "Vũ Hải Đăng"
+    },
+    {
+      "id": "med-004",
+      "fileName": "VID_0031.MP4",
+      "mediaType": "VIDEO",
+      "fileSizeBytes": 432013312,
+      "fileSizeLabel": "412 MB",
+      "mediaStatus": "VALIDATION_FAILED",
+      "missionId": "msn-2609-0136-1",
+      "missionCode": "MSN-2609-0136-1",
+      "validationError": "Không đọc được metadata video: thiếu moov atom, duration_sec = NULL",
+      "operatorId": "op-vu-hai-dang",
+      "operatorName": "Vũ Hải Đăng"
+    }
+  ],
+  "waitingDeliveryMissions": [
+    {
+      "missionId": "msn-2609-0132-1",
+      "missionCode": "MSN-2609-0132-1",
+      "missionStatus": "COMPLETED",
+      "missionTitle": "Giám sát cây trồng xã Phú Mỹ Hưng",
+      "orderId": "ord-2609-0132",
+      "orderCode": "ORD-2609-0132",
+      "customerName": "Phạm Ngọc Anh",
+      "companyName": "HTX Nông nghiệp Phú Mỹ Hưng",
+      "serviceType": "GS cây trồng",
+      "totalFiles": 24,
+      "photoCount": 22,
+      "videoCount": 2,
+      "allValidated": true,
+      "validatedAt": "2026-09-16T11:02:00Z"
+    },
+    {
+      "missionId": "msn-2609-0135-1",
+      "missionCode": "MSN-2609-0135-1",
+      "missionStatus": "COMPLETED",
+      "missionTitle": "Kiểm tra nhiệt tủ điện KCN Vĩnh Lộc",
+      "orderId": "ord-2609-0135",
+      "orderCode": "ORD-2609-0135",
+      "customerName": "Võ Thanh Tùng",
+      "companyName": "Công ty CP Đầu tư Sóng Thần",
+      "serviceType": "Kiểm tra nhiệt mái và tấm pin",
+      "totalFiles": 18,
+      "photoCount": 17,
+      "videoCount": 1,
+      "allValidated": true,
+      "validatedAt": "2026-09-18T15:20:00Z"
+    }
+  ],
+  "operators": [
+    { "id": "op-ngo-thi-lan-phuong", "name": "Ngô Thị Lan Phương" },
+    { "id": "op-bui-anh-tuan", "name": "Bùi Anh Tuấn" },
+    { "id": "op-hoang-duc-thang", "name": "Hoàng Đức Thắng" },
+    { "id": "op-vu-hai-dang", "name": "Vũ Hải Đăng" },
+    { "id": "op-do-minh-quan", "name": "Đỗ Minh Quân" },
+    { "id": "op-ly-thanh-son", "name": "Lý Thanh Sơn" }
+  ]
+}

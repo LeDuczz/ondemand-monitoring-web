@@ -1,0 +1,63 @@
+{
+  "summary": {
+    "successRate": 91,
+    "successRateDelta": 2,
+    "totalMissionsFlown": 96,
+    "completedMissions": 87,
+    "failedMissions": 9,
+    "avgApprovalTimeHours": 9.4,
+    "avgApprovalTimeDeltaHours": -4.8,
+    "avgApprovalTimeDeltaWeekLabel": "W29",
+    "avgFleetUtilizationPct": 58,
+    "weeklySuccessRate": [
+      { "week": "W29", "rate": 82 },
+      { "week": "W30", "rate": 85 },
+      { "week": "W31", "rate": 84 },
+      { "week": "W32", "rate": 87 },
+      { "week": "W33", "rate": 88 },
+      { "week": "W34", "rate": 87 },
+      { "week": "W35", "rate": 90 },
+      { "week": "W36", "rate": 91 }
+    ],
+    "weeklyApprovalTimeHours": [
+      { "week": "W29", "avgHours": 15.1 },
+      { "week": "W30", "avgHours": 13.7 },
+      { "week": "W31", "avgHours": 12.4 },
+      { "week": "W32", "avgHours": 11.8 },
+      { "week": "W33", "avgHours": 11.2 },
+      { "week": "W34", "avgHours": 10.9 },
+      { "week": "W35", "avgHours": 10.6 },
+      { "week": "W36", "avgHours": 9.4 }
+    ],
+    "serviceDistribution": [
+      { "service": "Giám sát tiến độ công trình", "count": 14 },
+      { "service": "Tuần tra an ninh khu vực", "count": 11 },
+      { "service": "Kiểm tra nhiệt mái và tấm pin", "count": 8 },
+      { "service": "Giám sát cây trồng", "count": 6 },
+      { "service": "Bản đồ 2D/3D", "count": 5 },
+      { "service": "Giám sát giao thông và sự kiện", "count": 4 }
+    ],
+    "totalOrders": 48,
+    "droneUtilization": [
+      { "droneCode": "DRN-01", "droneName": "Đại Bàng", "utilizationPct": 72 },
+      { "droneCode": "DRN-02", "droneName": "Hải Âu", "utilizationPct": 68 },
+      { "droneCode": "DRN-05", "droneName": "Diều Hâu", "utilizationPct": 64 },
+      { "droneCode": "DRN-08", "droneName": "Cò Trắng", "utilizationPct": 61 },
+      { "droneCode": "DRN-06", "droneName": "Cú Mèo", "utilizationPct": 55 },
+      {
+        "droneCode": "DRN-04",
+        "droneName": "Sếu Đầu Đỏ",
+        "utilizationPct": 47
+      },
+      { "droneCode": "DRN-03", "droneName": "Chim Én", "utilizationPct": 38 },
+      { "droneCode": "DRN-07", "droneName": "Vạc", "utilizationPct": 12 }
+    ],
+    "topFailureReasons": [
+      { "reason": "Mất telemetry / gió mạnh", "count": 4 },
+      { "reason": "Pin xuống thấp", "count": 2 },
+      { "reason": "Vùng cấm bay tạm thời", "count": 2 },
+      { "reason": "Lỗi payload", "count": 1 },
+      { "reason": "Hư hỏng cơ khí", "count": 1 }
+    ]
+  }
+}

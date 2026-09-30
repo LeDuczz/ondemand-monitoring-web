@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { getDroneStatusLabel } from '../../../../shared/lib/statusTone'
+import type { DroneStatus } from '../../../../shared/types/domain'
+import { missionFailedMessages } from '../i18n/missionFailed'
 import type { Mission, Drone } from '../types'
 
 interface Props {
   mission: Mission
   drone: Drone
   reason: string
-  onSubmit: () => void
   onMissions: () => void
 }
 
@@ -13,17 +15,9 @@ export default function MissionFailed({
   mission,
   drone,
   reason,
-  onSubmit,
   onMissions,
 }: Props) {
-  const [narrative, setNarrative] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-
-  function submit() {
-    setSubmitted(true)
-    setTimeout(onSubmit, 1000)
-  }
-
+  const { t, lang } = useI18n(missionFailedMessages)
   return (
     <div
       className="fade-in"
@@ -84,7 +78,7 @@ export default function MissionFailed({
                 color: 'var(--red-text)',
               }}
             >
-              Mission failed
+              {t.missionFailed}
             </div>
             <div
               style={{
@@ -118,21 +112,30 @@ export default function MissionFailed({
               marginBottom: 12,
             }}
           >
-            Incident record
+            {t.incidentRecord}
           </div>
           {[
-            ['Mission', mission.id],
-            ['Failure reason', reason],
-            ['Drone', `${drone.name} (${drone.id})`],
-            ['Drone status', drone.state],
-            ['Operator', 'J. Martinez (OPR-112)'],
+            ['mission', t.fields.mission, mission.id],
+            ['failureReason', t.fields.failureReason, reason],
+            ['drone', t.fields.drone, `${drone.name} (${drone.id})`],
             [
-              'Timestamp',
+              'droneStatus',
+              t.fields.droneStatus,
+              getDroneStatusLabel(drone.state as DroneStatus, lang),
+            ],
+            [
+              'operator',
+              t.fields.operator,
+              mission.operatorId || t.currentOperator,
+            ],
+            [
+              'timestamp',
+              t.fields.timestamp,
               new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
             ],
-          ].map(([l, v]) => (
+          ].map(([key, l, v]) => (
             <div
-              key={l}
+              key={key}
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -146,7 +149,8 @@ export default function MissionFailed({
                   fontSize: 13,
                   fontWeight: 500,
                   color: 'var(--text)',
-                  fontFamily: l === 'Mission' ? 'var(--font-data)' : undefined,
+                  fontFamily:
+                    key === 'mission' ? 'var(--font-data)' : undefined,
                 }}
               >
                 {v}
@@ -173,14 +177,9 @@ export default function MissionFailed({
               marginBottom: 10,
             }}
           >
-            Required actions
+            {t.requiredActions}
           </div>
-          {[
-            'Submit incident report to supervising manager',
-            'Confirm drone physical condition and safety',
-            'Upload any available mission media',
-            'Await manager review and re-assignment decision',
-          ].map((a, i) => (
+          {t.actions.map((a, i) => (
             <div
               key={i}
               style={{
@@ -207,7 +206,6 @@ export default function MissionFailed({
           ))}
         </div>
 
-        {/* Narrative */}
         <div
           style={{
             background: 'var(--surface)',
@@ -226,13 +224,13 @@ export default function MissionFailed({
               marginBottom: 8,
             }}
           >
-            Incident narrative
+            {t.incidentNarrative}
           </div>
           <textarea
-            value={narrative}
-            onChange={(e) => setNarrative(e.target.value)}
+            value={reason}
+            readOnly
             rows={4}
-            placeholder="Describe the sequence of events, any safety actions taken, and current drone status…"
+            aria-label={t.incidentNarrativeAria}
             style={{ width: '100%', padding: '10px 12px', fontSize: 13 }}
           />
         </div>
@@ -251,24 +249,22 @@ export default function MissionFailed({
               cursor: 'pointer',
             }}
           >
-            Back to missions
+            {t.backToMissions}
           </button>
           <button
-            onClick={submit}
-            disabled={submitted}
+            disabled
             style={{
               flex: 1,
               padding: '11px',
               borderRadius: 8,
               border: 'none',
-              background: submitted ? 'var(--surface-2)' : 'var(--red)',
+              background: 'var(--surface-2)',
               fontSize: 14,
               fontWeight: 600,
-              color: submitted ? 'var(--text-3)' : '#fff',
-              cursor: submitted ? 'not-allowed' : 'pointer',
+              color: 'var(--text-3)',
             }}
           >
-            {submitted ? 'Submitting…' : 'Submit incident report'}
+            {t.incidentRecorded}
           </button>
         </div>
       </div>

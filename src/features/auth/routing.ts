@@ -7,6 +7,7 @@ export const roleHomePaths: Record<UserRole, string> = {
   DRONE_OPERATOR: '#portal/drone-operator',
   SYSTEM_OPERATOR: '#portal/system-operator',
   ADMIN: '#portal/admin',
+  AUDITOR: '#portal/admin',
 }
 
 export function getRoleHomePath(role?: UserRole) {

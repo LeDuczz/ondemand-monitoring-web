@@ -1,0 +1,116 @@
+/* Contextual help card shown on order and mission pages. Tokens: shared/components/ui/ui.css. */
+
+.hw-card {
+  margin: var(--ui-space-4) 0;
+  padding: var(--ui-space-5);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-shadow);
+}
+
+.hw-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--ui-space-3);
+}
+
+.hw-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ui-text);
+}
+
+.hw-ref {
+  padding: 2px var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+  color: var(--ui-primary-text);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.hw-banner {
+  margin-bottom: var(--ui-space-3);
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-danger);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-text);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.hw-hint {
+  margin-bottom: var(--ui-space-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ui-text-3);
+}
+
+.hw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 var(--ui-space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.hw-item {
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+}
+
+.hw-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  width: 100%;
+  padding: 9px var(--ui-space-3);
+  border: none;
+  background: none;
+  color: var(--ui-primary-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hw-chevron {
+  flex: none;
+  font-size: 11px;
+  color: var(--ui-text-3);
+}
+
+.hw-answer {
+  padding: var(--ui-space-3) 14px 14px;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text-2);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.hw-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  flex-wrap: wrap;
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-border);
+}
+
+.hw-foot-text {
+  font-size: 12.5px;
+  color: var(--ui-text-3);
+}

@@ -1,4 +1,8 @@
+import { useI18n } from '../../../../shared/i18n'
+import { simulationZonesMessages } from '../i18n/simulationZones'
+
 export default function SimulationZones() {
+  const { t } = useI18n(simulationZonesMessages)
   return (
     <div
       className="fade-in"
@@ -27,15 +31,14 @@ export default function SimulationZones() {
             fontWeight: 700,
           }}
         >
-          Zone map
+          {t.title}
         </h1>
         <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 13 }}>
-          Simulation zones and thermal areas can be adjusted and saved to the
-          database.
+          {t.description}
         </p>
       </div>
       <iframe
-        title="Simulation zone map"
+        title={t.iframeTitle}
         src="http://localhost:8080/simulation-viewer/index.html"
         style={{
           flex: 1,

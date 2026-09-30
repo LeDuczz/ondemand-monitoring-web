@@ -1,4 +1,5 @@
 export type MissionState =
+  | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
   | 'RESOURCE_ASSIGNING'
   | 'SCHEDULED'
@@ -57,7 +58,9 @@ export interface Drone {
 
 export interface Mission {
   id: string
+  backendId?: string
   orderRef: string
+  orderTitle?: string
   title: string
   state: MissionState
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
@@ -74,6 +77,33 @@ export interface Mission {
   maxAltitudeM: number
   notes: string
   rejectionReason?: string
+  targetSimX?: number
+  targetSimY?: number
+  routePoints?: MissionRoutePoint[]
+  planSummary?: MissionPlanSummary
+}
+
+export interface MissionPlanSummary {
+  planningAlgorithm?: string
+  plannedDistanceM?: number | null
+  estimatedEnergyMah?: number | null
+  estimatedBatteryUsedPercent?: number | null
+  batteryCapacityMah?: number | null
+  availableBatteryPercentAtPlanning?: number | null
+  estimatedRemainingBatteryPercent?: number | null
+  safetyReservePercent?: number | null
+  requiredBatteryPercent?: number | null
+  feasibilityStatus?: string
+}
+
+export interface MissionRoutePoint {
+  id: string
+  sequence: number
+  simX: number
+  simY: number
+  altitudeM: number
+  speedMps?: number
+  reason: string
 }
 
 export interface FlightToken {

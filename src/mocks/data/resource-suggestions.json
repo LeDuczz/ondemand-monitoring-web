@@ -1,0 +1,322 @@
+{
+  "_note": "GET /api/missions/{id}/resource-suggestions [BRIEF C4] response content for msn-2609-0153-1, copied verbatim from evd/design/MNG-05.dc.html: top-3 drone/operator ranking + scores + 'Vì sao gợi ý' text, the 6 rejected drones / 3 rejected operators with their exact reasons, and the day timeline entries. `default` is the design's default state (feasible). `insufficient` is the same mission's 'không đủ nguồn lực' state (also design-sourced, same artboard) — reached in the mock via `GET .../resource-suggestions?scenario=insufficient` [PROPOSED query flag, no dedicated second seeded mission — documented in evd/P5 report]; it is feasible:false with all drones/operators rejected and the 3 alternative-date slots from the design's 'Ngày thay thế' block.",
+  "byMission": {
+    "msn-2609-0153-1": {
+      "default": {
+        "feasible": true,
+        "eligibleDroneCount": 3,
+        "eligibleOperatorCount": 3,
+        "topDrones": [
+          {
+            "code": "DRN-01",
+            "name": "Đại Bàng",
+            "serialNumber": "1ZNBJ4K00C3A21",
+            "droneModelName": "DJI Matrice 350 RTK",
+            "score": 91,
+            "batteryPct": 96,
+            "distanceKm": 2.2,
+            "enduranceMarginPct": 62,
+            "payload": "THERMAL · Zenmuse H20T",
+            "hoursSinceMaintenance": 38,
+            "reason": "Gần vị trí nhất (2,2 km), pin 96%, gắn sẵn H20T nên không cần đổi payload; mới 38 giờ bay kể từ lần bảo trì."
+          },
+          {
+            "code": "DRN-05",
+            "name": "Diều Hâu",
+            "serialNumber": "1ZNCE7M00A1F41",
+            "droneModelName": "DJI Matrice 30T",
+            "score": 84,
+            "batteryPct": 88,
+            "distanceKm": 2.4,
+            "enduranceMarginPct": 51,
+            "payload": "THERMAL · M30T tích hợp",
+            "hoursSinceMaintenance": 27,
+            "reason": "Cùng trạm Nhà Bè, camera nhiệt tích hợp đạt yêu cầu, thời gian bay dư 51% — hơi thấp hơn DRN-01 vì pin nhỏ hơn."
+          },
+          {
+            "code": "DRN-08",
+            "name": "Cò Trắng",
+            "serialNumber": "2AEV4T0025KQ08",
+            "droneModelName": "Autel EVO Max 4T",
+            "score": 77,
+            "batteryPct": 92,
+            "distanceKm": 2.6,
+            "enduranceMarginPct": 55,
+            "payload": "THERMAL · EVO Max 4T tích hợp",
+            "hoursSinceMaintenance": 19,
+            "reason": "Pin 92% và mới bảo trì (19 giờ bay), camera nhiệt tích hợp đạt yêu cầu; điểm thấp hơn vì thời gian bay tối đa ngắn hơn hai drone đầu."
+          }
+        ],
+        "topOperators": [
+          {
+            "code": "HT",
+            "fullName": "Hoàng Đức Thắng",
+            "licenseClass": "Hạng B",
+            "licenseNumber": "VN-UAV-0412-2024",
+            "licenseExpiry": "2026-10-11",
+            "score": 88,
+            "missionsWithModel": 14,
+            "successRatePct": 96,
+            "acceptanceRatePct": 92,
+            "missionsThisWeek": 2,
+            "reason": "Đã bay 14 mission với Matrice 350, tỉ lệ thành công 96%, chỉ mới nhận 2 mission tuần này."
+          },
+          {
+            "code": "BT",
+            "fullName": "Bùi Anh Tuấn",
+            "licenseClass": "Hạng B",
+            "licenseNumber": "VN-UAV-0517-2024",
+            "licenseExpiry": "2027-08-02",
+            "score": 81,
+            "missionsWithModel": 9,
+            "successRatePct": 91,
+            "acceptanceRatePct": 88,
+            "missionsThisWeek": 1,
+            "reason": "Kinh nghiệm tốt với dòng M350 và đang rảnh nhất tuần này; tỉ lệ nhận việc 88%."
+          },
+          {
+            "code": "NP",
+            "fullName": "Ngô Thị Lan Phương",
+            "licenseClass": "Hạng B",
+            "licenseNumber": "VN-UAV-0233-2025",
+            "licenseExpiry": "2026-12-10",
+            "score": 76,
+            "missionsWithModel": 6,
+            "successRatePct": 93,
+            "acceptanceRatePct": 95,
+            "missionsThisWeek": 3,
+            "reason": "Tỉ lệ nhận việc cao nhất (95%) nhưng đã có 3 mission trong tuần."
+          }
+        ],
+        "rejected": {
+          "drones": [
+            {
+              "code": "DRN-02",
+              "reason": "Pin 71% < ngưỡng 80%; thiếu cảm biến THERMAL đang gắn"
+            },
+            {
+              "code": "DRN-03",
+              "reason": "Pin 62% < ngưỡng 80% (MIN_BATTERY_PCT_FOR_ASSIGN)"
+            },
+            {
+              "code": "DRN-04",
+              "reason": "Trùng lịch với mission MSN-2609-0150-1 (07:30–09:00)"
+            },
+            {
+              "code": "DRN-06",
+              "reason": "Thiếu cảm biến THERMAL (chỉ có RGB)"
+            },
+            {
+              "code": "DRN-07",
+              "reason": "Không sẵn sàng (MAINTENANCE) · có ticket CRITICAL đang mở"
+            },
+            { "code": "DRN-09", "reason": "Không sẵn sàng (RETIRED)" }
+          ],
+          "operators": [
+            {
+              "name": "Đỗ Minh Quân",
+              "reason": "Chứng chỉ hết hạn 23/09/2026, trước giờ bay"
+            },
+            {
+              "name": "Vũ Hải Đăng",
+              "reason": "Vượt giới hạn 3 mission/ngày (MAX_MISSION_PER_OPERATOR_PER_DAY)"
+            },
+            {
+              "name": "Lý Thanh Sơn",
+              "reason": "Chưa khai báo rảnh trong khung 08:00–09:30"
+            }
+          ]
+        },
+        "explanation": "Gợi ý xếp hạng theo hard filter + điểm số · AI chỉ diễn giải, người duyệt quyết định",
+        "alternatives": []
+      },
+      "insufficient": {
+        "feasible": false,
+        "eligibleDroneCount": 0,
+        "eligibleOperatorCount": 0,
+        "topDrones": [],
+        "topOperators": [],
+        "rejected": {
+          "drones": [
+            {
+              "code": "DRN-02",
+              "reason": "Pin 71% < ngưỡng 80%; thiếu cảm biến THERMAL đang gắn"
+            },
+            {
+              "code": "DRN-03",
+              "reason": "Pin 62% < ngưỡng 80% (MIN_BATTERY_PCT_FOR_ASSIGN)"
+            },
+            {
+              "code": "DRN-04",
+              "reason": "Trùng lịch với mission MSN-2609-0150-1 (07:30–09:00)"
+            },
+            {
+              "code": "DRN-06",
+              "reason": "Thiếu cảm biến THERMAL (chỉ có RGB)"
+            },
+            {
+              "code": "DRN-07",
+              "reason": "Không sẵn sàng (MAINTENANCE) · có ticket CRITICAL đang mở"
+            },
+            { "code": "DRN-09", "reason": "Không sẵn sàng (RETIRED)" }
+          ],
+          "operators": [
+            {
+              "name": "Đỗ Minh Quân",
+              "reason": "Chứng chỉ hết hạn 23/09/2026, trước giờ bay"
+            },
+            {
+              "name": "Vũ Hải Đăng",
+              "reason": "Vượt giới hạn 3 mission/ngày (MAX_MISSION_PER_OPERATOR_PER_DAY)"
+            },
+            {
+              "name": "Lý Thanh Sơn",
+              "reason": "Chưa khai báo rảnh trong khung 08:00–09:30"
+            }
+          ]
+        },
+        "explanation": "Không có drone đủ điều kiện · 6 drone đều trượt hard filter. Chỉ 0 phi công đủ điều kiện · 3 phi công bị loại, trong đó chứng chỉ hết hạn trước giờ bay.",
+        "alternatives": [
+          {
+            "priority": 1,
+            "label": "Phù hợp nhất",
+            "dateLabel": "Thứ Hai, 22/09/2026",
+            "windowLabel": "Chiều 13:00–17:00",
+            "eligibleDroneCount": 3,
+            "eligibleOperatorCount": 2
+          },
+          {
+            "priority": 2,
+            "label": "Ưu tiên 2",
+            "dateLabel": "Thứ Ba, 23/09/2026",
+            "windowLabel": "Sáng 07:00–11:00",
+            "eligibleDroneCount": 2,
+            "eligibleOperatorCount": 2
+          },
+          {
+            "priority": 3,
+            "label": "Ưu tiên 3",
+            "dateLabel": "Thứ Tư, 24/09/2026",
+            "windowLabel": "Chiều 13:00–17:00",
+            "eligibleDroneCount": 2,
+            "eligibleOperatorCount": 1
+          }
+        ]
+      }
+    }
+  },
+  "timeline": {
+    "msn-2609-0153-1": {
+      "date": "24/09/2026",
+      "windowStart": "2026-09-24T08:00:00+07:00",
+      "windowEnd": "2026-09-24T09:30:00+07:00",
+      "resources": [
+        {
+          "code": "DRN-01",
+          "name": "Đại Bàng",
+          "kind": "DRONE",
+          "rejected": false,
+          "rejectedReason": null,
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0152-1",
+              "start": null,
+              "end": null,
+              "conflict": false
+            }
+          ]
+        },
+        {
+          "code": "DRN-05",
+          "name": "Diều Hâu",
+          "kind": "DRONE",
+          "rejected": false,
+          "rejectedReason": null,
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0149-1",
+              "start": null,
+              "end": null,
+              "conflict": false
+            }
+          ]
+        },
+        {
+          "code": "DRN-08",
+          "name": "Cò Trắng",
+          "kind": "DRONE",
+          "rejected": false,
+          "rejectedReason": null,
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0151-1",
+              "start": null,
+              "end": null,
+              "conflict": false
+            }
+          ]
+        },
+        {
+          "code": "DRN-04",
+          "name": "Sếu Đầu Đỏ",
+          "kind": "DRONE",
+          "rejected": true,
+          "rejectedReason": "bị loại: trùng lịch",
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0150-1",
+              "start": "2026-09-24T07:30:00+07:00",
+              "end": "2026-09-24T09:00:00+07:00",
+              "conflict": true
+            }
+          ]
+        },
+        {
+          "code": "HT",
+          "name": "Hoàng Đức Thắng",
+          "kind": "OPERATOR",
+          "rejected": false,
+          "rejectedReason": null,
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0152-1",
+              "start": null,
+              "end": null,
+              "conflict": false
+            }
+          ]
+        },
+        {
+          "code": "BT",
+          "name": "Bùi Anh Tuấn",
+          "kind": "OPERATOR",
+          "rejected": false,
+          "rejectedReason": null,
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0149-1",
+              "start": null,
+              "end": null,
+              "conflict": false
+            }
+          ]
+        },
+        {
+          "code": "NP",
+          "name": "Ngô Thị Lan Phương",
+          "kind": "OPERATOR",
+          "rejected": false,
+          "rejectedReason": null,
+          "bookings": [
+            {
+              "missionCode": "MSN-2609-0151-1",
+              "start": null,
+              "end": null,
+              "conflict": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

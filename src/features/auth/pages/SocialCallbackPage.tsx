@@ -1,25 +1,29 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Icon } from '../../../shared/components/Icon'
+import { LanguageToggle } from '../../../shared/components/LanguageToggle'
+import { useI18n } from '../../../shared/i18n'
 import { AuthApiError, authApi, authSession } from '../api/authApi'
 import { redirectToRoleHome } from '../routing'
+import { socialCallbackPageMessages } from './SocialCallbackPage.messages'
 
 const CALLBACK_PATH = '/social/callback'
 const processedSocialCodes = new Set<string>()
 
-const getProviderErrorMessage = (value: string | null) => {
-  if (!value) return undefined
-  if (value.includes('SourceUser is already linked to DestinationUser')) {
-    return 'This Google account is already linked to another Cognito account. Ask an administrator to remove the duplicate link or make the Cognito Pre Sign-up linking step idempotent, then try again.'
-  }
-  return value
-}
-
 export function SocialCallbackPage() {
+  const { t } = useI18n(socialCallbackPageMessages)
   const [error, setError] = useState<string>()
   const [isSlow, setIsSlow] = useState(false)
   const [userName, setUserName] = useState<string>()
   const started = useRef(false)
+
+  const getProviderErrorMessage = (value: string | null) => {
+    if (!value) return undefined
+    if (value.includes('SourceUser is already linked to DestinationUser')) {
+      return t.linkedAccountError
+    }
+    return value
+  }
 
   useEffect(() => {
     if (started.current) return
@@ -35,10 +39,7 @@ export function SocialCallbackPage() {
     const slowTimer = window.setTimeout(() => setIsSlow(true), 8000)
 
     if (!code) {
-      setError(
-        providerError ??
-          'Google did not return an authorization code. Check the Cognito callback URL and code flow configuration.',
-      )
+      setError(providerError ?? t.missingCodeError)
       window.clearTimeout(slowTimer)
       return
     }
@@ -79,26 +80,28 @@ export function SocialCallbackPage() {
         setError(
           requestError instanceof AuthApiError
             ? requestError.message
-            : 'Google sign-in could not be completed. Please try again.',
+            : t.signInFailedGeneric,
         )
       })
       .finally(() => window.clearTimeout(slowTimer))
 
     return () => window.clearTimeout(slowTimer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (error) {
     return (
       <div className="auth-callback-page">
+        <LanguageToggle className="auth-callback-lang-toggle" />
         <div className="auth-callback-card">
           <div className="auth-callback-icon auth-callback-icon--error">
             <Icon name="x" />
           </div>
-          <p className="eyebrow">Secure workspace access</p>
-          <h1>Google sign-in failed</h1>
+          <p className="eyebrow">{t.secureWorkspaceAccess}</p>
+          <h1>{t.signInFailedTitle}</h1>
           <p>{error}</p>
           <a className="button button--primary" href="#auth/login">
-            <span>Back to sign in</span>
+            <span>{t.backToSignIn}</span>
             <Icon name="arrow-left" />
           </a>
         </div>
@@ -109,18 +112,16 @@ export function SocialCallbackPage() {
   if (userName) {
     return (
       <div className="auth-callback-page">
+        <LanguageToggle className="auth-callback-lang-toggle" />
         <div className="auth-callback-card">
           <div className="auth-callback-icon auth-callback-icon--success">
             <Icon name="check" />
           </div>
-          <p className="eyebrow">Google account connected</p>
-          <h1>Welcome{userName ? `, ${userName}` : ''}</h1>
-          <p>
-            Your customer account is ready. Continue to Fieldwise to manage
-            monitoring requests.
-          </p>
+          <p className="eyebrow">{t.accountConnected}</p>
+          <h1>{t.welcome(userName)}</h1>
+          <p>{t.accountReady}</p>
           <a className="button button--primary" href="#top">
-            <span>Continue to Fieldwise</span>
+            <span>{t.continueToApp}</span>
             <Icon name="arrow-right" />
           </a>
         </div>
@@ -130,19 +131,16 @@ export function SocialCallbackPage() {
 
   return (
     <div className="auth-callback-page">
+      <LanguageToggle className="auth-callback-lang-toggle" />
       <div
         className="auth-callback-card auth-callback-card--loading"
         role="status"
         aria-live="polite"
       >
         <div className="auth-callback-spinner" aria-hidden="true" />
-        <p className="eyebrow">Google account</p>
-        <h1>Finishing sign-in</h1>
-        <p>
-          {isSlow
-            ? 'This is taking longer than usual. Please keep this window open.'
-            : 'Verifying your account securely…'}
-        </p>
+        <p className="eyebrow">{t.googleAccount}</p>
+        <h1>{t.finishingSignIn}</h1>
+        <p>{isSlow ? t.takingLonger : t.verifying}</p>
       </div>
     </div>
   )

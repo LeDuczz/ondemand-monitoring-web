@@ -24,14 +24,18 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard', icon: 'dashboard', route: { screen: 'dashboard' } },
       {
-        label: 'Duyệt đơn',
+        label: 'Đơn hàng & Nhiệm vụ',
         icon: 'order-queue',
         route: { screen: 'orderQueue' },
         countKey: 'pendingOrders',
       },
-      { label: 'Mission', icon: 'mission', route: { screen: 'missions' } },
       {
-        label: 'Lịch mission',
+        label: 'Nhiệm vụ',
+        icon: 'mission',
+        route: { screen: 'missions' },
+      },
+      {
+        label: 'Lịch nhiệm vụ',
         icon: 'schedule',
         route: { screen: 'schedule' },
       },
@@ -79,13 +83,13 @@ const NAV_GROUPS: NavGroup[] = [
 // create/dispatch) highlight the item their flow started from.
 const activeNavLabel: Record<ManagerScreen, string> = {
   dashboard: 'Dashboard',
-  orderQueue: 'Duyệt đơn',
-  orderReview: 'Duyệt đơn',
-  missionCreate: 'Duyệt đơn',
-  missionDispatch: 'Mission',
-  schedule: 'Lịch mission',
+  orderQueue: 'Đơn hàng & Nhiệm vụ',
+  orderReview: 'Đơn hàng & Nhiệm vụ',
+  missionCreate: 'Đơn hàng & Nhiệm vụ',
+  missionDispatch: 'Nhiệm vụ',
+  schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
-  missions: 'Mission',
+  missions: 'Nhiệm vụ',
   drones: 'Đội drone',
   maintenance: 'Bảo trì',
   media: 'Media và giao kết quả',

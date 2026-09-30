@@ -20,6 +20,7 @@ import { useI18n } from '../../../shared/i18n'
 import { operatorDashboardPageMessages } from './OperatorDashboardPage.messages'
 
 const STEP_BY_STATUS: Record<string, number> = {
+  WAITING_CREW_CONFIRMATION: 1,
   WAITING_OPERATOR_ACCEPTANCE: 1,
   SCHEDULED: 2,
   CONNECTED: 2,
@@ -603,7 +604,8 @@ export function OperatorDashboardPage() {
         {/* ------------------------------------------------------------------ */}
         {/* PHASE 1: ACCEPTANCE GATE (F3.1) */}
         {/* ------------------------------------------------------------------ */}
-        {mission.status === 'WAITING_OPERATOR_ACCEPTANCE' && (
+        {(mission.status === 'WAITING_OPERATOR_ACCEPTANCE' ||
+          mission.status === 'WAITING_CREW_CONFIRMATION') && (
           <div
             className="card"
             style={{ padding: '32px', marginBottom: '32px' }}

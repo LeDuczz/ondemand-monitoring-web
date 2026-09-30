@@ -31,13 +31,13 @@ function useHash(): string {
 
 const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
   dashboard: 'Dashboard',
-  orderQueue: 'Duyệt đơn',
-  orderReview: 'Duyệt đơn',
-  missionCreate: 'Mission',
-  missionDispatch: 'Mission',
-  schedule: 'Lịch mission',
+  orderQueue: 'Đơn hàng & Nhiệm vụ',
+  orderReview: 'Đơn hàng & Nhiệm vụ',
+  missionCreate: 'Đơn hàng & Nhiệm vụ',
+  missionDispatch: 'Nhiệm vụ',
+  schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
-  missions: 'Mission',
+  missions: 'Nhiệm vụ',
   drones: 'Đội drone',
   maintenance: 'Bảo trì',
   media: 'Media và giao kết quả',
@@ -124,4 +124,3 @@ function renderScreen(route: ManagerRoute) {
     />
   )
 }
-

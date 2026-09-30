@@ -34,9 +34,9 @@ describe('ManagerLayout', () => {
     }
 
     for (const item of [
-      'Duyệt đơn',
-      'Mission',
-      'Lịch mission',
+      'Đơn hàng & Nhiệm vụ',
+      'Nhiệm vụ',
+      'Lịch nhiệm vụ',
       'Giám sát realtime',
       'Đội drone',
       'Bảo trì',
@@ -79,7 +79,7 @@ describe('ManagerLayout', () => {
         <div>content</div>
       </ManagerLayout>,
     )
-    const ordersLink = screen.getByRole('link', { name: /Duyệt đơn/ })
+    const ordersLink = screen.getByRole('link', { name: /Đơn hàng & Nhiệm vụ/ })
     expect(ordersLink).toHaveTextContent('6')
   })
 

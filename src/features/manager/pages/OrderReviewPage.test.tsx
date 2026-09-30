@@ -233,11 +233,11 @@ describe('OrderReviewPage', () => {
     )
   })
 
-  it('does not open dispatch even if an old backend response includes a mission id', async () => {
+  it('opens the dispatch wizard when approve returns a mission id', async () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'approve').mockResolvedValue({
-      id: 'mission-real',
-    } as Awaited<ReturnType<typeof ordersApi.approve>>)
+      missionId: 'mission-real',
+    } as unknown as Awaited<ReturnType<typeof ordersApi.approve>>)
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
@@ -245,12 +245,11 @@ describe('OrderReviewPage', () => {
       screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
     )
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Tạo mission' })).toBeInTheDocument(),
+      expect(window.location.hash).toBe(
+        '#portal/staff/missions/mission-real/dispatch',
+      ),
     )
     expect(briefSpy).not.toHaveBeenCalled()
-    expect(window.location.hash).not.toBe(
-      '#portal/staff/missions/mission-real/dispatch',
-    )
   })
 
   it('shows the 409 error state', async () => {

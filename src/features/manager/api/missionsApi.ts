@@ -27,7 +27,7 @@ export function toMissionCalendarItem(source: MissionResponse): MissionCalendarI
   return {
     id: source.id,
     orderId: source.orderId,
-    orderCode: null,
+    orderCode: source.orderCode ?? null,
     missionCode: source.missionCode,
     status: source.status,
     attemptNumber: null,
@@ -108,7 +108,7 @@ export const missionsApi = {
   assignOperator(missionId: string, operatorId: string): Promise<Mission> {
     return apiRequest<Mission>(`/api/missions/${missionId}/assign-staff`, {
       method: 'POST',
-      body: { staffId: operatorId, assignedRole: 'PILOT' },
+      body: { staffId: operatorId, assignedRole: 'OPERATOR' },
     })
   },
 

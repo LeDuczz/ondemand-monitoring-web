@@ -25,6 +25,7 @@ type Options = {
   initialConsultation: CustomerConsultation | null
   initialMessages: ConsultationMessage[]
   buildContext: (latestMessage: string) => string
+  buildInitialMessage?: () => string
   onReceive: (consultation: CustomerConsultation) => void
   onAiAnswer: (requested: boolean) => void
   onError: (message: string | null) => void
@@ -98,6 +99,19 @@ export function useConsultation(options: Options) {
       const session = await withConsultationTimeout((s) => customerApi.startConsultation(s))
       setConsultation(session)
       setMessages(session.messages ?? [])
+      const initialMessage = options.buildInitialMessage?.().trim()
+      if (initialMessage && !(session.messages?.length)) {
+        setMessages([
+          { id: `local-${Date.now()}`, senderType: 'CUSTOMER', message: initialMessage },
+        ])
+        const seeded = await withConsultationTimeout((signal) =>
+          customerApi.sendConsultationMessage(session.id, initialMessage, {
+            signal,
+            requestContext: options.buildContext(initialMessage),
+          }),
+        )
+        receive(seeded)
+      }
       options.onError(null)
     } catch (error) {
       const message = t.startFailed(describe(error))

@@ -1,3 +1,4 @@
+import { displayOrderCode } from '../../../../shared/lib/orderCode'
 import type { OrderStatus } from '../../../../shared/types/domain'
 import type {
   OrderCreateResponse,
@@ -32,10 +33,11 @@ export function shortOrderCode(id: string): string {
 const orNull = <T,>(value: T | null | undefined): T | null => value ?? null
 
 export function toOrderRow(order: OrderCreateResponse): OrderRow {
+  const code = displayOrderCode(order.orderCode, order.id)
   return {
     id: order.id,
-    code: shortOrderCode(order.id),
-    title: order.title?.trim() || shortOrderCode(order.id),
+    code,
+    title: order.title?.trim() || code,
     address: orNull(order.address),
     dateFrom: orNull(order.preferredDateFrom),
     dateTo: orNull(order.preferredDateTo),

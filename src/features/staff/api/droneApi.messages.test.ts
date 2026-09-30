@@ -4,9 +4,9 @@ import { droneApiMessages } from './droneApi.messages'
 
 describe('droneApiMessages', () => {
   it('provides Vietnamese text', () => {
-    expect(droneApiMessages.vi.unknownModel).toBe('Không rõ mẫu drone')
+    expect(droneApiMessages.vi.unknownModel).toBe('Không rõ mẫu thiết bị')
     expect(droneApiMessages.vi.loadFailed(500)).toBe(
-      'Không tải được danh sách drone khả dụng (HTTP 500)',
+      'Không tải được danh sách thiết bị khả dụng (HTTP 500)',
     )
   })
 

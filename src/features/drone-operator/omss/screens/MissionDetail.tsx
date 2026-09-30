@@ -445,7 +445,9 @@ export default function MissionDetail({
   const { t, locale } = useI18n(missionDetailMessages)
   const hasPlan = (mission.routePoints?.length ?? 0) > 0
   const planSummary = mission.planSummary
-  const isAcceptable = mission.state === 'WAITING_OPERATOR_ACCEPTANCE'
+  const isAcceptable =
+    mission.state === 'WAITING_OPERATOR_ACCEPTANCE' ||
+    mission.state === 'WAITING_CREW_CONFIRMATION'
   const canStartFlight = hasPlan && mission.state === 'READY_TO_FLY'
   const canContinueSetup = [
     'SCHEDULED',

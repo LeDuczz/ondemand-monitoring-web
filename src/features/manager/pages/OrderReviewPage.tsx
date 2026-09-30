@@ -124,6 +124,21 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   const order = orderQuery.data
   if (!order) return null
 
+  const handleApproved = (
+    result: Awaited<ReturnType<typeof ordersApi.approve>>,
+  ) => {
+    const missionId = getApprovedMissionId(result, order.id)
+    if (missionId) {
+      window.location.hash = managerHref({
+        screen: 'missionDispatch',
+        missionId,
+      })
+      return
+    }
+
+    setScheduleBrief(toMissionBrief(order))
+  }
+
   return (
     <div className="odm-mgr-dash">
       <ReviewBreadcrumbHeader orderId={order.code} t={t} />
@@ -180,7 +195,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
           <ApproveButton
             orderId={order.id}
             t={t}
-            onApproved={() => setScheduleBrief(toMissionBrief(order))}
+            onApproved={handleApproved}
           />
         </div>
       </div>
@@ -197,6 +212,37 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       ) : null}
     </div>
   )
+}
+
+function getApprovedMissionId(
+  result: Awaited<ReturnType<typeof ordersApi.approve>>,
+  orderId: string,
+): string | null {
+  if (!result || typeof result !== 'object') return null
+
+  const record = result as Record<string, unknown>
+  if (typeof record.missionId === 'string' && record.missionId.trim()) {
+    return record.missionId
+  }
+
+  const mission = record.mission
+  if (mission && typeof mission === 'object') {
+    const missionRecord = mission as Record<string, unknown>
+    if (typeof missionRecord.id === 'string' && missionRecord.id.trim()) {
+      return missionRecord.id
+    }
+  }
+
+  if (
+    typeof record.id === 'string' &&
+    record.id.trim() &&
+    record.id !== orderId &&
+    !('orderStatus' in record)
+  ) {
+    return record.id
+  }
+
+  return null
 }
 
 function toMissionBrief(order: OrderDetail): OrderMissionBrief {
@@ -897,7 +943,7 @@ function ApproveButton({
 }: {
   orderId: string
   t: PageMessages
-  onApproved: () => void
+  onApproved: (result: Awaited<ReturnType<typeof ordersApi.approve>>) => void
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -906,8 +952,8 @@ function ApproveButton({
     setBusy(true)
     setError(null)
     try {
-      await ordersApi.approve(orderId)
-      onApproved()
+      const result = await ordersApi.approve(orderId)
+      onApproved(result)
     } catch {
       setError(t.approveFailed)
       setBusy(false)

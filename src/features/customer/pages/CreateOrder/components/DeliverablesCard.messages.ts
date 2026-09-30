@@ -13,6 +13,12 @@ export const deliverablesCardMessages = defineMessages({
     quantity: 'Số lượng',
     resolution: 'Độ phân giải',
     thermal: '640x512 (nhiệt)',
+    attachments: 'Ảnh khách hàng đính kèm',
+    attachmentHint:
+      'Gắn ảnh hiện trạng, bản vẽ hoặc ảnh mẫu để staff hiểu rõ khu vực trước khi duyệt.',
+    chooseImages: 'Chọn ảnh',
+    removeAttachment: 'Xóa ảnh',
+    invalidImage: 'Chỉ nhận file hình ảnh.',
   },
   en: {
     cardTitle: 'Deliverables',
@@ -26,5 +32,11 @@ export const deliverablesCardMessages = defineMessages({
     quantity: 'Quantity',
     resolution: 'Resolution',
     thermal: '640x512 (thermal)',
+    attachments: 'Customer attached images',
+    attachmentHint:
+      'Attach current-site photos, drawings, or sample images so staff understand the area before approval.',
+    chooseImages: 'Choose images',
+    removeAttachment: 'Remove image',
+    invalidImage: 'Only image files are accepted.',
   },
 })

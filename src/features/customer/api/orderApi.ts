@@ -79,6 +79,7 @@ export type OrderDeliverableResponse = {
 /** Backend `OrderCreateResponse` (POST /api/orders, GET /api/orders/pending). */
 export type OrderCreateResponse = {
   id: string
+  orderCode?: string | null
   customerId: string
   customerName?: string
   title?: string

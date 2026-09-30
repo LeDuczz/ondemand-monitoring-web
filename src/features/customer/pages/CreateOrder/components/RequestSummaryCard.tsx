@@ -38,6 +38,7 @@ export function RequestSummaryCard(p: Props) {
     [t.dates, `${form.preferredDateFrom} → ${form.preferredDateTo}`, true],
     [t.timeWindow, p.time ? localizeTimeslot(p.time, lang) : DASH],
     [t.deliverable, localizeDeliverableName(p.deliverable?.deliverableTypeName, lang) || DASH],
+    [t.attachments, form.attachments.length ? t.attachmentCount(form.attachments.length) : t.none],
     [t.aiConsultation, p.consultation?.id ? t.consulted : t.notUsed],
   ]
   return (

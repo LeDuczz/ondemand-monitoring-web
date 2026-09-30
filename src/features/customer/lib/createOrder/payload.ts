@@ -106,6 +106,13 @@ export function buildOrderPayload(input: {
           resolution: form.resolution,
           radiusM: form.radiusM,
           estimatedAreaHa: Number(calcArea(form.radiusM)),
+          customerAttachments: form.attachments.map((attachment) => ({
+            id: attachment.id,
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+            sizeBytes: attachment.sizeBytes,
+            dataUrl: attachment.dataUrl,
+          })),
           consultationId: input.consultationId,
           readinessScore: input.score.score,
           aiAnalysisRequested,

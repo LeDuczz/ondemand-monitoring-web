@@ -1,5 +1,6 @@
 import type {
   Mission,
+  MissionStaffRole,
   PreflightCheck,
   DeviceImage,
   DeviceStatus,
@@ -61,23 +62,40 @@ export const missionApi = {
 
   assignResources: async (
     missionId: string,
-    deviceId: string,
-    staffId: string,
+    deviceIds: string | string[],
+    staffAssignments: Partial<Record<MissionStaffRole, string | string[]>> | string,
   ): Promise<Mission> => {
-    await request<Mission>(
-      `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-device`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ deviceId, deviceRole: 'MAIN' }),
-      },
-    )
-    return request<Mission>(
-      `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-staff`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ staffId, assignedRole: 'PILOT' }),
-      },
-    )
+    const resolvedDeviceIds = Array.isArray(deviceIds) ? deviceIds : [deviceIds]
+    let latest: Mission | null = null
+    for (const [index, deviceId] of resolvedDeviceIds.entries()) {
+      latest = await request<Mission>(
+        `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-device`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ deviceId, deviceRole: index === 0 ? 'MAIN' : 'SUPPORT' }),
+        },
+      )
+    }
+    const assignments =
+      typeof staffAssignments === 'string'
+        ? ({ PILOT: [staffAssignments] } as Partial<Record<MissionStaffRole, string[]>>)
+        : staffAssignments
+
+    for (const assignedRole of ['PILOT', 'OPERATOR', 'MAINTAINER', 'INSPECTOR'] as MissionStaffRole[]) {
+      const roleStaff = assignments[assignedRole]
+      const staffIds = Array.isArray(roleStaff) ? roleStaff : roleStaff ? [roleStaff] : []
+      for (const staffId of staffIds) {
+        latest = await request<Mission>(
+          `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-staff`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ staffId, assignedRole }),
+          },
+        )
+      }
+    }
+    if (!latest) throw new Error('Please assign at least one staff member.')
+    return latest
   },
 
   acceptMyMission: async (missionId: string): Promise<Mission> => {
@@ -122,7 +140,7 @@ export const missionApi = {
       `${API_BASE}/missions/${missionId}/assign-staff`,
       {
         method: 'POST',
-        body: JSON.stringify({ staffId: operatorId, assignedRole: 'PILOT' }),
+        body: JSON.stringify({ staffId: operatorId, assignedRole: 'OPERATOR' }),
       },
     )
   },

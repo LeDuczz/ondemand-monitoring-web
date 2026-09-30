@@ -60,6 +60,15 @@ export type FormState = {
   mediaType: 'IMAGE' | 'VIDEO'
   quantity: number
   resolution: string
+  attachments: CustomerOrderAttachment[]
+}
+
+export type CustomerOrderAttachment = {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  dataUrl: string
 }
 
 export type FormErrors = Partial<Record<keyof FormState, string>>

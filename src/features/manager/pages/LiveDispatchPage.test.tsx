@@ -12,7 +12,7 @@ import { LiveDispatchPage } from './LiveDispatchPage'
 afterEach(() => vi.restoreAllMocks())
 
 describe('LiveDispatchPage', () => {
-  it('assigns real drone and operator IDs to the selected mission', async () => {
+  it('assigns real device and 4 mission-role staff IDs to the selected mission', async () => {
     const mission = {
       id: 'mission-1',
       missionCode: 'MS-1',
@@ -22,28 +22,49 @@ describe('LiveDispatchPage', () => {
     vi.spyOn(missionApi, 'getMissionById').mockResolvedValue(mission)
     vi.spyOn(droneApi, 'getAvailable').mockResolvedValue([
       { id: 'drone-db-id', label: 'Drone 48' },
+      { id: 'drone-db-id-2', label: 'Drone 49' },
     ])
     vi.spyOn(operatorApi, 'getAvailable').mockResolvedValue([
-      { id: 'operator-db-id', fullName: 'Pilot A', email: 'pilot@example.com' },
+      { id: 'pilot-id', fullName: 'Pilot A', email: 'pilot@example.com' },
+      { id: 'operator-id', fullName: 'Operator B', email: 'operator@example.com' },
+      { id: 'maintainer-id', fullName: 'Maintainer C', email: 'maintainer@example.com' },
+      { id: 'inspector-id', fullName: 'Inspector D', email: 'inspector@example.com' },
     ])
     const assign = vi
       .spyOn(missionApi, 'assignResources')
-      .mockResolvedValue({ ...mission, status: 'WAITING_OPERATOR_ACCEPTANCE' })
+      .mockResolvedValue({ ...mission, status: 'WAITING_CREW_CONFIRMATION' })
 
     render(<LiveDispatchPage missionId="mission-1" />)
-    await waitFor(() => screen.getByRole('button', { name: 'Phân công' }))
-    fireEvent.change(screen.getByLabelText('Chọn thiết bị'), {
-      target: { value: 'drone-db-id' },
-    })
-    fireEvent.change(screen.getByLabelText('Chọn staff'), {
-      target: { value: 'operator-db-id' },
-    })
+    await waitFor(() => screen.getByRole('button', { name: /Nhân sự/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
+    fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Phi công'))
+    fireEvent.click(screen.getByRole('button', { name: /Pilot A/ }))
+    fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Vận hành'))
+    fireEvent.click(screen.getByRole('button', { name: /Operator B/ }))
+    fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Bảo trì'))
+    fireEvent.click(screen.getByRole('button', { name: /Maintainer C/ }))
+    fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Nghiệm thu'))
+    fireEvent.click(screen.getByRole('button', { name: /Inspector D/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Thiết bị/ }))
+    fireEvent.click(screen.getByLabelText('Chọn thiết bị'))
+    fireEvent.click(screen.getByRole('option', { name: /Drone 48/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Thêm thiết bị/ }))
+    fireEvent.click(screen.getByRole('option', { name: /Drone 49/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
     await waitFor(() =>
       expect(assign).toHaveBeenCalledWith(
         'mission-1',
-        'drone-db-id',
-        'operator-db-id',
+        ['drone-db-id', 'drone-db-id-2'],
+        {
+          PILOT: ['pilot-id'],
+          OPERATOR: ['operator-id'],
+          MAINTAINER: ['maintainer-id'],
+          INSPECTOR: ['inspector-id'],
+        },
       ),
     )
   })
@@ -65,7 +86,9 @@ describe('LiveDispatchPage', () => {
 
     render(<LiveDispatchPage missionId="mission-1" />)
     act(() => setLanguage('en'))
-    await waitFor(() => screen.getByRole('button', { name: 'Assign' }))
-    expect(screen.getByText('Resource assignment')).toBeTruthy()
+    await waitFor(() => screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Create new mission')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Order/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Confirm/ })).toBeTruthy()
   })
 })

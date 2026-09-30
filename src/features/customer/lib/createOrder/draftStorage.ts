@@ -19,6 +19,7 @@ export function createDefaultForm(): FormState {
     mediaType: 'IMAGE',
     quantity: 10,
     resolution: '4K',
+    attachments: [],
   }
 }
 

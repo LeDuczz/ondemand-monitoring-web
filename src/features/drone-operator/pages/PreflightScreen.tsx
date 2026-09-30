@@ -274,7 +274,22 @@ async function fetchCurrentPersistedPreflight(
   const payload = await response.json()
   const persisted = payload?.data ?? payload
   if (!persisted || typeof persisted.id !== 'string') return null
-  return runtimeStatusFromPersisted(persisted as PersistedPreflightCheck)
+  return persisted as PersistedPreflightCheck
+}
+
+async function fetchPersistedPreflight(
+  persistedId: string,
+  signal?: AbortSignal,
+) {
+  const response = await authenticatedFetch(
+    `${env.apiBaseUrl}/api/pre-device-checks/${encodeURIComponent(persistedId)}`,
+    { cache: 'no-store', signal },
+  )
+  if (!response.ok) return null
+  const payload = await response.json()
+  const persisted = payload?.data ?? payload
+  if (!persisted || typeof persisted.id !== 'string') return null
+  return persisted as PersistedPreflightCheck
 }
 
 async function updatePersistedPreflightItem(
@@ -433,9 +448,7 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         missionLabel={
           mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
         }
-        droneLabel={
-          mission.data?.deviceId ?? NO_DRONE_SENTINEL
-        }
+        droneLabel={mission.data?.deviceId ?? NO_DRONE_SENTINEL}
         missionStatus={mission.data?.status}
         latitude={mission.data?.latitude ?? undefined}
         longitude={mission.data?.longitude ?? undefined}
@@ -507,13 +520,20 @@ export function PreflightChecklistPanel({
   const [persistedPreflightId, setPersistedPreflightId] = useState<
     string | null
   >(null)
+  const [persistedPreflightStatus, setPersistedPreflightStatus] =
+    useState<PersistedPreflightStatus | null>(null)
+  const [persistedWeatherPassed, setPersistedWeatherPassed] = useState(false)
   const syncedPersistedItemsRef = useRef<Record<string, string>>({})
+  const syncingPersistedItemsRef = useRef(false)
 
   useEffect(() => {
     validatedStoredCheckRef.current = false
     controllerOfflineMissesRef.current = 0
     syncedPersistedItemsRef.current = {}
+    syncingPersistedItemsRef.current = false
     setPersistedPreflightId(null)
+    setPersistedPreflightStatus(null)
+    setPersistedWeatherPassed(false)
     setRuntimeSessionId(readStoredPreflightSession(storageKey))
   }, [missionId, droneLabel, storageKey])
 
@@ -528,9 +548,16 @@ export function PreflightChecklistPanel({
   const failedItems = ALL_ITEMS.filter(
     (item) => itemStates[item.key]?.result === 'fail',
   )
-  const isReady = runtimeStatus?.status === 'READY'
+  const runtimeItemsReady = nOk === nTotal && failedItems.length === 0
+  const isReady =
+    runtimeItemsReady &&
+    persistedPreflightStatus === 'PASSED' &&
+    (weatherStatus?.safeToFly === true || persistedWeatherPassed)
   const isAlreadyInFlight = isMissionInFlight(missionStatus)
-  const isFailed = runtimeStatus?.status === 'FAILED'
+  const isFailed =
+    runtimeStatus?.status === 'FAILED' ||
+    persistedPreflightStatus === 'FAILED' ||
+    weatherStatus?.safeToFly === false
   const progress = runtimeStatus?.progress ?? 0
   const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
 
@@ -543,27 +570,39 @@ export function PreflightChecklistPanel({
     status: RuntimePreflightStatus,
     persistedId: string | null,
   ) {
-    if (!persistedId || status.checkId === 'triggering') return
+    if (
+      !persistedId ||
+      status.checkId === 'triggering' ||
+      syncingPersistedItemsRef.current
+    ) {
+      return
+    }
 
-    for (const check of status.checks) {
-      const itemStatus = persistedStatusFromRuntime(check.status)
-      if (itemStatus === 'PENDING') continue
+    syncingPersistedItemsRef.current = true
 
-      const syncKey = `${check.key}:${itemStatus}:${check.message}`
-      if (syncedPersistedItemsRef.current[check.key] === syncKey) continue
+    try {
+      for (const check of status.checks) {
+        const itemStatus = persistedStatusFromRuntime(check.status)
+        if (itemStatus === 'PENDING') continue
 
-      syncedPersistedItemsRef.current[check.key] = syncKey
-      const persisted = await updatePersistedPreflightItem(
-        persistedId,
-        check.key,
-        {
-          status: itemStatus,
-          message: check.message,
-        },
-      )
-      if (persisted?.id) {
-        setRuntimeStatus(runtimeStatusFromPersisted(persisted))
+        const syncKey = `${check.key}:${itemStatus}:${check.message}`
+        if (syncedPersistedItemsRef.current[check.key] === syncKey) continue
+
+        const persisted = await updatePersistedPreflightItem(
+          persistedId,
+          check.key,
+          {
+            status: itemStatus,
+            message: check.message,
+          },
+        )
+        syncedPersistedItemsRef.current[check.key] = syncKey
+        if (persisted?.id === persistedId) {
+          setPersistedPreflightStatus(persisted.status)
+        }
       }
+    } finally {
+      syncingPersistedItemsRef.current = false
     }
   }
 
@@ -572,8 +611,17 @@ export function PreflightChecklistPanel({
     setError(null)
     setCheckId(null)
     setPersistedPreflightId(null)
+    setPersistedPreflightStatus(null)
+    setPersistedWeatherPassed(false)
     syncedPersistedItemsRef.current = {}
+    syncingPersistedItemsRef.current = false
+    backendPreflightRegisteredRef.current = false
+    window.sessionStorage.removeItem(
+      backendPreflightTokenStorageKey(missionId, droneLabel),
+    )
     clearStoredPreflightState(storageKey)
+    clearStoredWeatherState(weatherStorageKey)
+    setWeatherStatus(null)
     setRuntimeStatus({
       checkId: 'triggering',
       status: 'CHECKING',
@@ -589,6 +637,7 @@ export function PreflightChecklistPanel({
       const payload = await response.json()
       setCheckId(payload.checkId)
       setPersistedPreflightId(payload.checkId)
+      setPersistedPreflightStatus('CHECKING')
     } catch {
       setRuntimeStatus(null)
       setError(t.triggerFailed)
@@ -622,32 +671,18 @@ export function PreflightChecklistPanel({
         throw new Error('Invalid weather payload')
       setWeatherStatus(nextStatus)
       writeStoredWeatherState(weatherStorageKey, nextStatus)
-      let targetPersistedId = persistedPreflightId
-      if (!targetPersistedId && missionId !== NO_MISSION_SENTINEL) {
-        const persisted = await fetchCurrentPersistedPreflight(missionId).catch(
-          () => null,
-        )
-        if (persisted?.checkId) {
-          targetPersistedId = persisted.checkId
-          setPersistedPreflightId(persisted.checkId)
+      if (missionId !== NO_MISSION_SENTINEL) {
+        const persisted = await fetchCurrentPersistedPreflight(missionId)
+        if (persisted) {
+          setPersistedPreflightId(persisted.id)
+          setPersistedPreflightStatus(persisted.status)
+          setPersistedWeatherPassed(
+            persisted.items.some(
+              (item) =>
+                item.checkType === 'WEATHER' && item.status === 'PASSED',
+            ),
+          )
         }
-      }
-      if (targetPersistedId) {
-        const persisted = await updatePersistedPreflightItem(
-          targetPersistedId,
-          'WEATHER',
-          {
-            status: nextStatus.safeToFly ? 'PASSED' : 'FAILED',
-            message: nextStatus.summary,
-          },
-        )
-        const nextRuntimeStatus = runtimeStatusFromPersisted(persisted)
-        setRuntimeStatus(nextRuntimeStatus)
-        writeStoredPreflightState(
-          storageKey,
-          nextRuntimeStatus,
-          runtimeSessionId,
-        )
       }
     } catch {
       setWeatherError(t.weatherApiFailed)
@@ -690,7 +725,10 @@ export function PreflightChecklistPanel({
             setCheckId(null)
             setRuntimeStatus(null)
             setPersistedPreflightId(null)
+            setPersistedPreflightStatus(null)
+            setPersistedWeatherPassed(false)
             syncedPersistedItemsRef.current = {}
+            syncingPersistedItemsRef.current = false
             setWeatherStatus(null)
             setBackendPreflightMessage(null)
             setWeatherError(null)
@@ -711,7 +749,10 @@ export function PreflightChecklistPanel({
           setCheckId(null)
           setRuntimeStatus(null)
           setPersistedPreflightId(null)
+          setPersistedPreflightStatus(null)
+          setPersistedWeatherPassed(false)
           syncedPersistedItemsRef.current = {}
+          syncingPersistedItemsRef.current = false
           setWeatherStatus(null)
           setBackendPreflightMessage(null)
           setWeatherError(null)
@@ -743,9 +784,23 @@ export function PreflightChecklistPanel({
         controller.signal,
       ).catch(() => null)
       if (!alive || !persisted) return
-      setRuntimeStatus(persisted)
-      setPersistedPreflightId(persisted.checkId)
-      writeStoredPreflightState(storageKey, persisted, runtimeSessionId)
+      const persistedRuntime = runtimeStatusFromPersisted(persisted)
+      setPersistedPreflightId(persisted.id)
+      setPersistedPreflightStatus(persisted.status)
+      setPersistedWeatherPassed(
+        persisted.items.some(
+          (item) => item.checkType === 'WEATHER' && item.status === 'PASSED',
+        ),
+      )
+      setRuntimeStatus((current) => {
+        if (current?.checkId === persisted.id) return current
+        writeStoredPreflightState(
+          storageKey,
+          persistedRuntime,
+          runtimeSessionId,
+        )
+        return persistedRuntime
+      })
     }
 
     void loadMissionPreflightState()
@@ -790,6 +845,73 @@ export function PreflightChecklistPanel({
   }, [checkId, persistedPreflightId, runtimeSessionId, storageKey])
 
   useEffect(() => {
+    const weatherPassed =
+      weatherStatus?.safeToFly === true || persistedWeatherPassed
+    if (
+      !runtimeItemsReady ||
+      !weatherPassed ||
+      !persistedPreflightId ||
+      persistedPreflightStatus !== 'CHECKING'
+    ) {
+      return
+    }
+
+    const activePersistedId = persistedPreflightId
+    let alive = true
+    const controller = new AbortController()
+
+    async function refreshPersistedStatus() {
+      const persisted = await fetchPersistedPreflight(
+        activePersistedId,
+        controller.signal,
+      ).catch(() => null)
+      if (!alive || !persisted || persisted.id !== activePersistedId) return
+
+      setPersistedPreflightStatus(persisted.status)
+      setPersistedWeatherPassed(
+        persisted.items.some(
+          (item) => item.checkType === 'WEATHER' && item.status === 'PASSED',
+        ),
+      )
+
+      if (runtimeStatus) {
+        const hasBackendLag = runtimeStatus.checks.some((check) => {
+          const expected = persistedStatusFromRuntime(check.status)
+          const actual = persisted.items.find(
+            (item) => item.checkType === check.key,
+          )?.status
+          if (
+            (expected === 'PASSED' || expected === 'FAILED') &&
+            actual !== expected
+          ) {
+            delete syncedPersistedItemsRef.current[check.key]
+            return true
+          }
+          return false
+        })
+        if (hasBackendLag) {
+          void syncRuntimeStatusToBackend(runtimeStatus, activePersistedId)
+        }
+      }
+    }
+
+    void refreshPersistedStatus()
+    const timer = window.setInterval(refreshPersistedStatus, 800)
+    return () => {
+      alive = false
+      controller.abort()
+      window.clearInterval(timer)
+    }
+  }, [
+    persistedPreflightId,
+    persistedPreflightStatus,
+    persistedWeatherPassed,
+    runtimeItemsReady,
+    runtimeStatus,
+    weatherStatus?.safeToFly,
+  ])
+
+  useEffect(() => {
     if (
       validatedStoredCheckRef.current ||
       checkId ||
@@ -814,6 +936,7 @@ export function PreflightChecklistPanel({
         if (!alive) return
         setRuntimeStatus(payload)
         writeStoredPreflightState(storageKey, payload, runtimeSessionId)
+        void syncRuntimeStatusToBackend(payload, persistedPreflightId)
       } catch {
         if (!alive) return
         setCheckId(null)
@@ -829,6 +952,7 @@ export function PreflightChecklistPanel({
     missionId,
     runtimeSessionId,
     runtimeStatus,
+    persistedPreflightId,
     storageKey,
     triggering,
   ])

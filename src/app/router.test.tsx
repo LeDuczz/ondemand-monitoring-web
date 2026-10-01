@@ -147,3 +147,46 @@ describe('Router - manager routes (#portal/staff*)', () => {
     expect(screen.queryByText('FIELDWISE')).not.toBeInTheDocument()
   })
 })
+
+describe('Router - customer support navigation', () => {
+  beforeEach(() => {
+    localStorage.setItem('fieldwise.accessToken', 'mock.customer.token')
+    localStorage.setItem(
+      'fieldwise.user',
+      JSON.stringify({
+        id: 'customer-1',
+        fullName: 'Customer',
+        email: 'customer@example.com',
+        role: 'CUSTOMER',
+      }),
+    )
+  })
+
+  afterEach(() => {
+    authSession.clear()
+  })
+
+  it('marks Help & FAQ active instead of Dashboard on the help page', () => {
+    window.location.hash = '#help'
+    render(<Router />)
+
+    expect(
+      screen.getByRole('link', { name: 'Trợ giúp & FAQ' }),
+    ).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute(
+      'aria-current',
+    )
+  })
+
+  it('marks Support tickets active instead of Dashboard on the tickets page', () => {
+    window.location.hash = '#help/tickets'
+    render(<Router />)
+
+    expect(
+      screen.getByRole('link', { name: 'Yêu cầu hỗ trợ' }),
+    ).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute(
+      'aria-current',
+    )
+  })
+})

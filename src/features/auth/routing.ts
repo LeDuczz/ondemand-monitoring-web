@@ -14,6 +14,13 @@ export function getRoleHomePath(role?: UserRole) {
   return role ? roleHomePaths[role] : '#auth/login'
 }
 
+export function getRoleHomeUrl(
+  role?: UserRole,
+  origin = window.location.origin,
+) {
+  return `${origin.replace(/\/$/, '')}/${getRoleHomePath(role)}`
+}
+
 export function redirectToRoleHome(role?: UserRole) {
   window.location.hash = getRoleHomePath(role)
 }

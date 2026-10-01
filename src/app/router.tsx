@@ -10,7 +10,10 @@ import { authSession } from '../features/auth/api/authApi'
 import { getRoleHomePath } from '../features/auth/routing'
 import type { UserRole } from '../features/auth/types'
 import { CustomerApp } from '../features/customer/CustomerApp'
-import { CustomerLayout } from '../features/customer/CustomerLayout'
+import {
+  CustomerLayout,
+  type CustomerNavItemKey,
+} from '../features/customer/CustomerLayout'
 import { customerLayoutMessages } from '../features/customer/CustomerLayout.messages'
 import { useI18n } from '../shared/i18n'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequest'
@@ -44,8 +47,14 @@ function SupportShell({
   children: ReactNode
 }) {
   const { t } = useI18n(customerLayoutMessages)
+  const activeNavItem: CustomerNavItemKey =
+    crumb === 'help' ? 'help' : 'support'
   return (
-    <CustomerLayout route={{ screen: 'dashboard' }} breadcrumb={t.supportCrumbs[crumb]}>
+    <CustomerLayout
+      route={{ screen: 'dashboard' }}
+      breadcrumb={t.supportCrumbs[crumb]}
+      activeNavItem={activeNavItem}
+    >
       {children}
     </CustomerLayout>
   )

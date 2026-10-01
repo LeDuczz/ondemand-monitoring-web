@@ -10,10 +10,10 @@ import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
 import { customerLayoutMessages } from './CustomerLayout.messages'
 import './customer.css'
 
-type NavItemKey = keyof typeof customerLayoutMessages.vi.navItems
+export type CustomerNavItemKey = keyof typeof customerLayoutMessages.vi.navItems
 
 type NavItem = {
-  key: NavItemKey
+  key: CustomerNavItemKey
   icon: IconName
   route?: CustomerRoute
   href?: string
@@ -36,7 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'notifications', icon: 'bell', route: { screen: 'notifications' } },
 ]
 
-const activeNavKey: Record<CustomerScreen, NavItemKey | null> = {
+const activeNavKey: Record<CustomerScreen, CustomerNavItemKey | null> = {
   missionHistory: 'missionHistory',
   missionHistoryDetail: 'missionHistory',
   dashboard: 'dashboard',
@@ -63,11 +63,13 @@ function initialsOf(fullName: string | undefined): string {
 export function CustomerLayout({
   route,
   breadcrumb,
+  activeNavItem,
   newMediaCount,
   children,
 }: {
   route: CustomerRoute
   breadcrumb: string
+  activeNavItem?: CustomerNavItemKey
   newMediaCount?: number
   children: ReactNode
 }) {
@@ -82,7 +84,7 @@ export function CustomerLayout({
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
 
-  const activeKey = activeNavKey[route.screen]
+  const activeKey = activeNavItem ?? activeNavKey[route.screen]
 
   return (
     <div className="odm odm-cus">

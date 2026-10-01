@@ -4,7 +4,8 @@ import { Icon } from '../../../shared/components/Icon'
 import { LanguageToggle } from '../../../shared/components/LanguageToggle'
 import { useI18n } from '../../../shared/i18n'
 import { AuthApiError, authApi, authSession } from '../api/authApi'
-import { redirectToRoleHome } from '../routing'
+import { getRoleHomeUrl } from '../routing'
+import type { UserRole } from '../types'
 import { socialCallbackPageMessages } from './SocialCallbackPage.messages'
 
 const CALLBACK_PATH = '/social/callback'
@@ -15,6 +16,7 @@ export function SocialCallbackPage() {
   const [error, setError] = useState<string>()
   const [isSlow, setIsSlow] = useState(false)
   const [userName, setUserName] = useState<string>()
+  const [userRole, setUserRole] = useState<UserRole>()
   const started = useRef(false)
 
   const getProviderErrorMessage = (value: string | null) => {
@@ -54,7 +56,7 @@ export function SocialCallbackPage() {
     ) {
       window.clearTimeout(slowTimer)
       if (alreadyAuthenticated || codeState === 'done') {
-        window.location.replace(`${window.location.origin}/#top`)
+        window.location.replace(getRoleHomeUrl(authSession.getUser()?.role))
       }
       return
     }
@@ -72,7 +74,11 @@ export function SocialCallbackPage() {
         authSession.save(response, true)
         if (storageKey) sessionStorage.setItem(storageKey, 'done')
         setUserName(response.user?.fullName)
-        window.setTimeout(() => redirectToRoleHome(response.user?.role), 700)
+        setUserRole(response.user?.role)
+        window.setTimeout(
+          () => window.location.replace(getRoleHomeUrl(response.user?.role)),
+          700,
+        )
       })
       .catch((requestError: unknown) => {
         processedSocialCodes.delete(code)
@@ -86,7 +92,6 @@ export function SocialCallbackPage() {
       .finally(() => window.clearTimeout(slowTimer))
 
     return () => window.clearTimeout(slowTimer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (error) {
@@ -120,7 +125,7 @@ export function SocialCallbackPage() {
           <p className="eyebrow">{t.accountConnected}</p>
           <h1>{t.welcome(userName)}</h1>
           <p>{t.accountReady}</p>
-          <a className="button button--primary" href="#top">
+          <a className="button button--primary" href={getRoleHomeUrl(userRole)}>
             <span>{t.continueToApp}</span>
             <Icon name="arrow-right" />
           </a>

@@ -28,11 +28,14 @@ export function MediaCard({ item, onOpen }: Props) {
         ) : (
           <Icon name="camera" width={32} height={32} aria-hidden="true" />
         )}
+        <span className={`md-kind md-kind--${item.kind}`}>
+          {ui.kind[item.kind]}
+        </span>
+        <span className="md-open-label">{t.view}</span>
       </span>
       <span className="md-card-body">
         <span className="md-name">{item.fileName}</span>
         <span className="md-meta">
-          <span>{ui.kind[item.kind]}</span>
           {size && <span>{size}</span>}
           {captured && <span>{captured}</span>}
         </span>

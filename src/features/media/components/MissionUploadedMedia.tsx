@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from '../../../shared/components/Icon'
 import {
   operatorMissionMediaApi,
   type UploadedMissionMedia,
@@ -6,6 +7,23 @@ import {
 } from '../api/operatorMissionMediaApi'
 
 import type { MissionMediaReader } from '../types/missionMedia'
+import './MissionUploadedMedia.css'
+
+const formatFileSize = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB'
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+const formatCapturedAt = (value: string | null) => {
+  if (!value) return 'Chưa có thời điểm chụp'
+  const capturedAt = new Date(value)
+  if (Number.isNaN(capturedAt.getTime())) return 'Không rõ thời điểm chụp'
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(capturedAt)
+}
 
 export function MissionUploadedMedia({
   missionId,
@@ -88,33 +106,37 @@ function Gallery({
 
   return (
     <section
-      className="odm-card"
-      style={{ marginTop: 16 }}
+      className="odm-card mission-media"
       aria-label="Media đã upload của mission"
     >
-      <div className="odm-card-body" style={{ padding: 16 }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 12,
-            alignItems: 'center',
-          }}
-        >
-          <h3>Ảnh / video đã upload {data ? `(${data.totalItems})` : ''}</h3>
+      <div className="odm-card-body mission-media__body">
+        <header className="mission-media__header">
+          <div>
+            <span className="mission-media__eyebrow">Kết quả nhiệm vụ</span>
+            <div className="mission-media__title-row">
+              <h3>Thư viện ảnh &amp; video</h3>
+              {data ? (
+                <span className="mission-media__count">{data.totalItems}</span>
+              ) : null}
+            </div>
+            <p>Media đã được xác thực và lưu trữ thành công từ thiết bị bay.</p>
+          </div>
           <button
             type="button"
-            className="odm-btn"
+            className="odm-btn mission-media__refresh"
             disabled={loading}
             onClick={() => setRevision((value) => value + 1)}
           >
+            <Icon name="activity" width={16} height={16} aria-hidden="true" />
             Làm mới
           </button>
-        </div>
-        <p>Chỉ hiển thị file đã được backend xác thực và lưu thành công.</p>
+        </header>
         {error ? (
-          <p role="alert">
-            {error}{' '}
+          <div
+            className="mission-media__state mission-media__state--error"
+            role="alert"
+          >
+            <span>{error}</span>
             <button
               type="button"
               className="odm-btn"
@@ -122,104 +144,110 @@ function Gallery({
             >
               Thử lại
             </button>
+          </div>
+        ) : null}
+        {loading ? (
+          <div className="mission-media__state" role="status">
+            <span className="mission-media__spinner" aria-hidden="true" />
+            Đang tải media...
+          </div>
+        ) : null}
+        {opening ? (
+          <p className="mission-media__opening" role="status">
+            Đang chuẩn bị bản xem trước...
           </p>
         ) : null}
-        {loading ? <p role="status">Đang tải media...</p> : null}
-        {opening ? <p role="status">Đang mở media...</p> : null}
         {!loading && !error && data?.items.length === 0 ? (
-          <p>Mission chưa có ảnh/video upload thành công.</p>
+          <div className="mission-media__empty">
+            <span className="mission-media__empty-icon">
+              <Icon name="camera" width={28} height={28} aria-hidden="true" />
+            </span>
+            <strong>Chưa có media</strong>
+            <span>Mission chưa có ảnh/video upload thành công.</span>
+          </div>
         ) : null}
         {!loading && data ? (
           <>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: 12,
-              }}
-            >
+            <div className="mission-media__grid">
               {data.items.map((item) => (
-                <article
-                  key={item.mediaId}
-                  style={{
-                    border: '1px solid var(--bd)',
-                    borderRadius: 8,
-                    padding: 12,
-                    minWidth: 0,
-                  }}
-                >
-                  {item.mediaType === 'IMAGE' ? (
-                    <img
-                      src={item.downloadUrl}
-                      alt={item.fileName}
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        height: 180,
-                        objectFit: 'contain',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        height: 180,
-                        display: 'grid',
-                        placeItems: 'center',
-                        background: 'var(--sf2)',
-                      }}
-                    >
-                      VIDEO
-                    </div>
-                  )}
-                  <p style={{ overflowWrap: 'anywhere' }}>{item.fileName}</p>
-                  <p>
-                    {item.deviceId} ·{' '}
-                    {(item.fileSize / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                  <p>
-                    {item.capturedAt
-                      ? new Date(item.capturedAt).toLocaleString('vi-VN')
-                      : 'Chưa có thời điểm chụp'}
-                  </p>
+                <article key={item.mediaId} className="mission-media__card">
                   <button
                     type="button"
-                    className="odm-btn"
+                    className="mission-media__preview"
                     disabled={opening}
+                    aria-label={`Xem ${item.fileName}`}
                     onClick={() => void open(item)}
                   >
-                    Xem {item.mediaType === 'IMAGE' ? 'ảnh' : 'video'}
+                    {item.mediaType === 'IMAGE' ? (
+                      <img src={item.downloadUrl} alt="" loading="lazy" />
+                    ) : (
+                      <span className="mission-media__video-placeholder">
+                        <span
+                          className="mission-media__play"
+                          aria-hidden="true"
+                        />
+                        <span>VIDEO</span>
+                      </span>
+                    )}
+                    <span className="mission-media__type">
+                      {item.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
+                    </span>
+                    <span className="mission-media__open-label">Xem media</span>
                   </button>
+                  <div className="mission-media__card-body">
+                    <h4 title={item.fileName}>{item.fileName}</h4>
+                    <div className="mission-media__meta">
+                      <span title={item.deviceId}>
+                        <Icon
+                          name="cpu"
+                          width={14}
+                          height={14}
+                          aria-hidden="true"
+                        />
+                        {item.deviceId}
+                      </span>
+                      <span>{formatFileSize(item.fileSize)}</span>
+                    </div>
+                    <time dateTime={item.capturedAt ?? undefined}>
+                      <Icon
+                        name="clock"
+                        width={14}
+                        height={14}
+                        aria-hidden="true"
+                      />
+                      {formatCapturedAt(item.capturedAt)}
+                    </time>
+                  </div>
                 </article>
               ))}
             </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: 12,
-                alignItems: 'center',
-                marginTop: 12,
-              }}
-            >
-              <button
-                type="button"
-                className="odm-btn"
-                disabled={data.first}
-                onClick={() => setPage((value) => value - 1)}
+            {data.totalPages > 1 ? (
+              <nav
+                className="mission-media__pager"
+                aria-label="Phân trang media"
               >
-                Trang trước
-              </button>
-              <span>
-                Trang {data.totalPages ? data.page + 1 : 0} / {data.totalPages}
-              </span>
-              <button
-                type="button"
-                className="odm-btn"
-                disabled={data.last}
-                onClick={() => setPage((value) => value + 1)}
-              >
-                Trang sau
-              </button>
-            </div>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={data.first}
+                  onClick={() => setPage((value) => value - 1)}
+                >
+                  Trang trước
+                </button>
+                <span>
+                  Trang {data.totalPages ? data.page + 1 : 0} /{' '}
+                  {data.totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={data.last}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  Trang sau
+                </button>
+              </nav>
+            ) : null}
           </>
         ) : null}
         <dialog
@@ -227,43 +255,50 @@ function Gallery({
           onCancel={close}
           onClose={() => setSelected(null)}
           aria-label="Xem media"
-          style={{ maxWidth: '90vw', width: 960, borderRadius: 8 }}
+          className="mission-media__dialog"
         >
           {selected ? (
             <>
-              <button type="button" className="odm-btn" onClick={close}>
-                Đóng
-              </button>
-              <p style={{ overflowWrap: 'anywhere' }}>{selected.fileName}</p>
+              <header className="mission-media__dialog-header">
+                <div>
+                  <span>
+                    {selected.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
+                  </span>
+                  <h3>{selected.fileName}</h3>
+                </div>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  onClick={close}
+                  aria-label="Đóng"
+                >
+                  <Icon name="x" width={18} height={18} aria-hidden="true" />
+                </button>
+              </header>
               {error ? <p role="alert">{error}</p> : null}
-              {selected.mediaType === 'IMAGE' ? (
-                <img
-                  src={selected.downloadUrl}
-                  alt={selected.fileName}
-                  style={{
-                    width: '100%',
-                    maxHeight: '70vh',
-                    objectFit: 'contain',
-                  }}
-                />
-              ) : (
-                <video
-                  key={selected.downloadUrl}
-                  src={selected.downloadUrl}
-                  controls
-                  preload="metadata"
-                  style={{ width: '100%', maxHeight: '70vh' }}
-                />
-              )}
-              <p>Nếu liên kết hết hạn, bấm tải lại để lấy liên kết mới.</p>
-              <button
-                type="button"
-                className="odm-btn"
-                disabled={opening}
-                onClick={() => void open(selected)}
-              >
-                Tải lại liên kết
-              </button>
+              <div className="mission-media__dialog-stage">
+                {selected.mediaType === 'IMAGE' ? (
+                  <img src={selected.downloadUrl} alt={selected.fileName} />
+                ) : (
+                  <video
+                    key={selected.downloadUrl}
+                    src={selected.downloadUrl}
+                    controls
+                    preload="metadata"
+                  />
+                )}
+              </div>
+              <footer className="mission-media__dialog-footer">
+                <span>Nếu liên kết hết hạn, hãy lấy liên kết mới.</span>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={opening}
+                  onClick={() => void open(selected)}
+                >
+                  Tải lại liên kết
+                </button>
+              </footer>
             </>
           ) : null}
         </dialog>

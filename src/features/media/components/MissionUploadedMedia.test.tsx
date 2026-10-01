@@ -69,7 +69,7 @@ describe('uploaded mission media gallery', () => {
       0,
       expect.any(AbortSignal),
     )
-    fireEvent.click(screen.getByText('Xem video'))
+    fireEvent.click(screen.getByRole('button', { name: 'Xem clip.mp4' }))
     await waitFor(() =>
       expect(container.querySelector('video')?.getAttribute('src')).toBe(
         'https://example.test/fresh',

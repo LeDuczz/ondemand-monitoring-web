@@ -3404,3 +3404,48 @@ a.odm-or-btn-outline {
 .odm-or-table td {
   white-space: nowrap;
 }
+
+/* Mission list — fit within viewport when the detail panel is open */
+.odm-or {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.odm-or-list-layout.has-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+}
+
+.odm-or-list-layout.has-panel > * {
+  min-width: 0;
+}
+
+.odm-or-sidepanel {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.odm-or-sidepanel * {
+  min-width: 0;
+}
+
+.odm-or-list-layout.has-panel .odm-or-table th,
+.odm-or-list-layout.has-panel .odm-or-table td {
+  padding: 11px 10px;
+  font-size: 13px;
+}
+
+.odm-or-table td.odm-or-table-action {
+  padding-right: 14px;
+}
+
+@media (max-width: 1500px) {
+  .odm-or-list-layout.has-panel .odm-or-table th:nth-child(3),
+  .odm-or-list-layout.has-panel .odm-or-table td:nth-child(3),
+  .odm-or-list-layout.has-panel .odm-or-table th:nth-child(5),
+  .odm-or-list-layout.has-panel .odm-or-table td:nth-child(5) {
+    display: none;
+  }
+}

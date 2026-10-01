@@ -6,6 +6,7 @@ export type OperatorMission = {
   missionCode?: string
   backendStatus?: string
   status: OperatorMissionStatus
+  myResponseStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED'
   title: string
   description?: string
   location: string

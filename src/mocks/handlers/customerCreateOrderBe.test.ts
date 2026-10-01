@@ -14,6 +14,20 @@ async function call(method: string, path: string, body?: unknown) {
   return { status: response.status, payload: await response.json() }
 }
 
+const serviceCatalogContext = [
+  'Danh sách service active từ BE:',
+  '- svc-2 | Giám sát Tiến độ Xây dựng | Theo dõi công trình xây dựng, công trường, tiến độ thi công và hiện trạng khu vực làm việc bằng ảnh/video.',
+  '- svc-5 | Giám sát Đập nước / Hồ chứa | Giám sát khu vực đập nước, hồ chứa, cửa xả, thân đập và vùng thượng/hạ lưu.',
+].join('\n')
+
+const constructionContext = [
+  'Thông tin vị trí/phạm vi từ Step 1:',
+  '- Địa chỉ/khu vực: Công trường xây dựng.',
+  '- Vùng map nhận diện: Công trường xây dựng.',
+  '',
+  serviceCatalogContext,
+].join('\n')
+
 beforeEach(() => resetMockDb())
 afterEach(() => resetMockDb())
 
@@ -88,9 +102,81 @@ describe('consultations', () => {
   it('starts a session, replies and recommends a service', async () => {
     const started = await call('POST', '/api/customer/consultations')
     const id = started.payload.data.id
-    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, { message: 'Giám sát Tiến độ Xây dựng' })
+    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, {
+      message: 'Giám sát Tiến độ Xây dựng',
+      requestContext: serviceCatalogContext,
+    })
     expect(reply.payload.data).toMatchObject({ recommendedServiceId: 'svc-2', status: 'READY_FOR_CONFIRMATION' })
     expect((await call('GET', `/api/customer/consultations/${id}`)).status).toBe(200)
+  })
+
+  it('recommends construction monitoring for construction intent', async () => {
+    const started = await call('POST', '/api/customer/consultations')
+    const id = started.payload.data.id
+    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, {
+      message: 'Tôi muốn giám sát công trình',
+      requestContext: serviceCatalogContext,
+    })
+
+    expect(reply.payload.data).toMatchObject({
+      recommendedServiceId: 'svc-2',
+      recommendedServiceName: 'Giám sát Tiến độ Xây dựng',
+      status: 'READY_FOR_CONFIRMATION',
+    })
+    expect(reply.payload.data.messages.at(-1).message).toContain(
+      'Giám sát Tiến độ Xây dựng',
+    )
+  })
+
+  it('recommends dam monitoring only for dam and reservoir intent', async () => {
+    const started = await call('POST', '/api/customer/consultations')
+    const id = started.payload.data.id
+    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, {
+      message: 'Cần kiểm tra thân đập, hồ chứa và cửa xả lũ',
+      requestContext: serviceCatalogContext,
+    })
+
+    expect(reply.payload.data).toMatchObject({
+      recommendedServiceId: 'svc-5',
+      recommendedServiceName: 'Giám sát Đập nước / Hồ chứa',
+      status: 'READY_FOR_CONFIRMATION',
+    })
+  })
+
+  it('uses previous context when a follow-up only says progress', async () => {
+    const started = await call('POST', '/api/customer/consultations')
+    const id = started.payload.data.id
+    await call('POST', `/api/customer/consultations/${id}/messages`, {
+      message: 'Tôi muốn giám sát công trình',
+      requestContext: constructionContext,
+    })
+    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, {
+      message: 'kiểm tra là tiến độ',
+      requestContext: constructionContext,
+    })
+
+    expect(reply.payload.data).toMatchObject({
+      recommendedServiceId: 'svc-2',
+      recommendedServiceName: 'Giám sát Tiến độ Xây dựng',
+      status: 'READY_FOR_CONFIRMATION',
+    })
+    expect(reply.payload.data.messages.at(-1).message).toContain(
+      'Giám sát Tiến độ Xây dựng',
+    )
+  })
+
+  it('asks a deeper question instead of recommending for unclear input', async () => {
+    const started = await call('POST', '/api/customer/consultations')
+    const id = started.payload.data.id
+    const reply = await call('POST', `/api/customer/consultations/${id}/messages`, {
+      message: 'gggg',
+    })
+
+    expect(reply.payload.data.status).toBe('ACTIVE')
+    expect(reply.payload.data.recommendedServiceId).toBeUndefined()
+    expect(reply.payload.data.messages.at(-1).message).toContain(
+      'Mình chưa đủ thông tin',
+    )
   })
 
   it('404s for an unknown session', async () => {

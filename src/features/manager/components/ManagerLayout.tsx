@@ -24,7 +24,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard', icon: 'dashboard', route: { screen: 'dashboard' } },
       {
-        label: 'Đơn hàng & Nhiệm vụ',
+        label: 'Đơn hàng',
         icon: 'order-queue',
         route: { screen: 'orderQueue' },
         countKey: 'pendingOrders',
@@ -83,10 +83,11 @@ const NAV_GROUPS: NavGroup[] = [
 // create/dispatch) highlight the item their flow started from.
 const activeNavLabel: Record<ManagerScreen, string> = {
   dashboard: 'Dashboard',
-  orderQueue: 'Đơn hàng & Nhiệm vụ',
-  orderReview: 'Đơn hàng & Nhiệm vụ',
-  missionCreate: 'Đơn hàng & Nhiệm vụ',
+  orderQueue: 'Đơn hàng',
+  orderReview: 'Đơn hàng',
+  missionCreate: 'Đơn hàng',
   missionDispatch: 'Nhiệm vụ',
+  missionSetup: 'Nhiệm vụ',
   schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
   missions: 'Nhiệm vụ',

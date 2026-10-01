@@ -11,6 +11,7 @@ import {
 } from '../../../shared/lib/statusTone'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { missionsApi } from '../api/missionsApi'
+import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
 import { managerHref } from '../routes'
 import type {
   DroneCandidate,
@@ -31,15 +32,27 @@ import '../manager.css'
  * (no exact start/end times are sourced for most of the bookings shown in
  * the design, only DRN-04's conflict) — see evd/P5-manager-mission-dispatch.md.
  */
-export function DispatchPage({ missionId }: { missionId: string }) {
+export function DispatchPage({
+  missionId,
+  setupMode = false,
+}: {
+  missionId: string
+  setupMode?: boolean
+}) {
   return env.useMockApi || import.meta.env.MODE === 'test' ? (
-    <MockDispatchPage missionId={missionId} />
+    <MockDispatchPage missionId={missionId} setupMode={setupMode} />
   ) : (
     <LiveDispatchPage missionId={missionId} />
   )
 }
 
-function MockDispatchPage({ missionId }: { missionId: string }) {
+function MockDispatchPage({
+  missionId,
+  setupMode,
+}: {
+  missionId: string
+  setupMode: boolean
+}) {
   const missionQuery = useApiQuery(
     (signal) => missionsApi.getMission(missionId, signal),
     [missionId],
@@ -78,6 +91,7 @@ function MockDispatchPage({ missionId }: { missionId: string }) {
       mission={missionQuery.data}
       suggestions={suggestionsQuery.data}
       onMissionChanged={missionQuery.reload}
+      setupMode={setupMode}
     />
   )
 }
@@ -232,10 +246,12 @@ function DispatchBody({
   mission: initialMission,
   suggestions,
   onMissionChanged,
+  setupMode,
 }: {
   mission: Mission
   suggestions: ResourceSuggestions
   onMissionChanged: () => void
+  setupMode: boolean
 }) {
   const { t, lang } = useI18n(dispatchPageMessages)
   const [mission, setMission] = useState(initialMission)
@@ -385,6 +401,7 @@ function DispatchBody({
   }
 
   const bothAssigned = Boolean(mission.droneId && mission.operatorId)
+  const assignedStaffCount = mission.operatorId ? 1 : 0
 
   return (
     <div className="odm-mgr-dash">
@@ -415,13 +432,23 @@ function DispatchBody({
 
       <div className="odm-mgr-dash-head">
         <div>
-          <h1 className="odm-mgr-dash-title">{t.title}</h1>
-          <div className="odm-mgr-dash-date">{t.subtitle}</div>
+          <h1 className="odm-mgr-dash-title">
+            {setupMode ? 'Thiết lập nhiệm vụ' : t.title}
+          </h1>
+          <div className="odm-mgr-dash-date">
+            {setupMode
+              ? `${mission.orderCode ?? 'Đơn hàng'} → ${mission.missionCode}`
+              : t.subtitle}
+          </div>
         </div>
         <StatusBadge tone={missionStatusTone[mission.status]} size="lg">
           {getMissionStatusLabel(mission.status, lang)}
         </StatusBadge>
       </div>
+
+      {setupMode ? (
+        <OrderWorkflowStepper currentStep={bothAssigned ? 4 : 3} />
+      ) : null}
 
       <div className="odm-card" style={{ marginBottom: 14 }}>
         <div className="odm-card-header">
@@ -690,6 +717,36 @@ function DispatchBody({
           onClose={() => setReleaseModal(false)}
           onConfirm={handleRelease}
         />
+      ) : null}
+
+      {setupMode ? (
+        <div className="odm-mgr-setup-summary">
+          <div>
+            <div style={{ fontWeight: 700 }}>{mission.missionCode}</div>
+            <div className="odm-mgr-review-hint">
+              {suggestions.scheduledStart} ·{' '}
+              {mission.droneId ? '1 Drone' : 'Chưa chọn Drone'} ·{' '}
+              {assignedStaffCount}/1 vị trí nhân sự
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <a className="odm-btn" href={managerHref({ screen: 'missions' })}>
+              Quay lại
+            </a>
+            <button
+              type="button"
+              className="odm-btn odm-btn-ok"
+              disabled={!bothAssigned}
+              onClick={() =>
+                setToast(
+                  'Phân công thành công. Mission đang chờ nhân sự xác nhận.',
+                )
+              }
+            >
+              Xác nhận phân công
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   )

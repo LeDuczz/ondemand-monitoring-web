@@ -16,7 +16,7 @@ describe('MissionsListPage', () => {
     // The loading skeleton or aria-busy
     const busy = container.querySelector('[aria-busy="true"]')
     // Page title should be present
-    expect(screen.getByText('Mission')).toBeTruthy()
+    expect(screen.getByText('Nhiệm vụ')).toBeTruthy()
     // Either loading indicator or data should be present
     expect(busy ?? container.querySelector('table')).toBeTruthy()
   })

@@ -37,6 +37,7 @@ export function useCreateOrderWizard() {
       buildConsultationRequestContext({
         form,
         mapPoint: f.mapPoint,
+        services: meta.services,
         serviceName: service?.name,
         latestMessage,
       }),

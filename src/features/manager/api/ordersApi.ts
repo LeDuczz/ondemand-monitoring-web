@@ -97,6 +97,13 @@ export const ordersApi = {
     })
   },
 
+  /** `GET /api/orders/approved` [BE]. */
+  getApproved(signal?: AbortSignal): Promise<OrderCreateResponse[]> {
+    return apiRequest<OrderCreateResponse[]>('/api/orders/approved', {
+      signal,
+    })
+  },
+
   /** `GET /api/orders/{id}` [TK]. */
   getOrder(id: string, signal?: AbortSignal): Promise<OrderDetail> {
     return apiRequest<OrderCreateResponse | OrderDetail>(`/api/orders/${id}`, { signal })

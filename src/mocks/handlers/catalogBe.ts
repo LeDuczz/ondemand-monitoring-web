@@ -24,7 +24,7 @@ const services = createCollection<ServiceResponse[]>([
   {
     id: 'svc-2',
     name: 'Giám sát Tiến độ Xây dựng',
-    description: 'Theo dõi công trường xây dựng, tiến độ thi công và hiện trạng khu vực làm việc bằng ảnh/video.',
+    description: 'Theo dõi công trình xây dựng, công trường, tiến độ thi công và hiện trạng khu vực làm việc bằng ảnh/video.',
     isActive: true,
     createdAt: '2026-01-11T08:00:00Z',
     updatedAt: '2026-02-01T08:00:00Z',

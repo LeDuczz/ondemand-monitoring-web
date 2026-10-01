@@ -87,7 +87,7 @@ describe('LiveDispatchPage', () => {
     render(<LiveDispatchPage missionId="mission-1" />)
     act(() => setLanguage('en'))
     await waitFor(() => screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('Create new mission')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Assign resources' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Order/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Confirm/ })).toBeTruthy()
   })

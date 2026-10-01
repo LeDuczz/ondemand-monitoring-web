@@ -31,10 +31,11 @@ function useHash(): string {
 
 const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
   dashboard: 'Dashboard',
-  orderQueue: 'Đơn hàng & Nhiệm vụ',
-  orderReview: 'Đơn hàng & Nhiệm vụ',
-  missionCreate: 'Đơn hàng & Nhiệm vụ',
+  orderQueue: 'Đơn hàng',
+  orderReview: 'Đơn hàng',
+  missionCreate: 'Đơn hàng',
   missionDispatch: 'Nhiệm vụ',
+  missionSetup: 'Thiết lập nhiệm vụ',
   schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
   missions: 'Nhiệm vụ',
@@ -97,6 +98,8 @@ function renderScreen(route: ManagerRoute) {
     return <CreateMissionPage orderId={route.orderId} />
   if (route.screen === 'missionDispatch')
     return <DispatchPage missionId={route.missionId} />
+  if (route.screen === 'missionSetup')
+    return <DispatchPage missionId={route.missionId} setupMode />
   if (route.screen === 'schedule') return <SchedulePage />
   if (route.screen === 'live') return <LivePage missionId={route.missionId} />
   if (route.screen === 'missions')

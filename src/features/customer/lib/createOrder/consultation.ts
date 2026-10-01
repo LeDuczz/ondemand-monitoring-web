@@ -6,7 +6,10 @@ import type {
 import { calcArea } from './payload'
 import type { FormState, MapPoint } from './types'
 
-export const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
+// RAG retrieval plus the model response can take more than 18 seconds on the
+// first request after indexing. Keep one request alive long enough to receive
+// the recommendation instead of triggering a duplicate retry.
+export const CONSULTATION_REQUEST_TIMEOUT_MS = 35_000
 
 /** A consultation can be resumed only if it is a real, still-open BE session. */
 export function isReusableConsultation(
@@ -92,10 +95,17 @@ export function parseAiAnalysisAnswer(text: string): boolean | undefined {
 export function buildConsultationRequestContext(input: {
   form: FormState
   mapPoint: MapPoint
+  services?: ServiceOption[]
   serviceName?: string
   latestMessage?: string
 }) {
   const { form, mapPoint } = input
+  const serviceCatalog = (input.services ?? [])
+    .filter((service) => service.isActive !== false)
+    .map(
+      (service) =>
+        `- ${service.id} | ${service.name} | ${service.description || ''}`,
+    )
   return [
     'Thông tin vị trí/phạm vi từ Step 1:',
     `- Địa chỉ/khu vực: ${form.address || 'chưa nhập'}.`,
@@ -113,6 +123,9 @@ export function buildConsultationRequestContext(input: {
     `- Mô tả đang có: ${form.description || 'chưa nhập'}.`,
     `- Service customer đang chọn: ${input.serviceName || 'chưa chọn'}.`,
     '- Khung giờ, loại kết quả và media do biểu mẫu bên ngoài quản lý; AI không hỏi lại các thông tin này.',
+    '',
+    'Danh sách service active từ BE:',
+    serviceCatalog.length ? serviceCatalog.join('\n') : '- chưa tải được catalog',
   ].join('\n')
 }
 

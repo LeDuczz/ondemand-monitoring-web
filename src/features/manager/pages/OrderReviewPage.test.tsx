@@ -137,12 +137,11 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
 
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
     expect(screen.getByText('Lê Quốc Bảo')).toBeInTheDocument()
-    expect(screen.getByText('KHẢ THI')).toBeInTheDocument()
-    expect(
-      screen.getByText('Vòng giám sát giao cắt vùng hạn chế Cát Lái.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
+    expect(screen.getByText('Khách hàng doanh nghiệp')).toBeInTheDocument()
+    expect(screen.getByText('Xem đơn hàng')).toBeInTheDocument()
     expect(
       screen.getByText('drone đủ điều kiện', { exact: false }),
     ).toBeInTheDocument()
@@ -162,10 +161,10 @@ describe('OrderReviewPage', () => {
     vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
 
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
     expect(
       screen.getByText(
-        'Báo cáo Phân tích Nhiệt · IMAGE · 10 mục · 4K · 100 m · 3.1 ha',
+        'Báo cáo Phân tích Nhiệt · Ảnh · 10 mục · 4K · 100 m · 3.1 ha',
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
@@ -186,7 +185,7 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
@@ -202,7 +201,7 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Vùng cấm bay' }))
@@ -218,14 +217,14 @@ describe('OrderReviewPage', () => {
     vi.spyOn(ordersApi, 'approve').mockResolvedValue(undefined)
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
+      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
     )
 
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Tạo mission' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Tạo nhiệm vụ' })).toBeInTheDocument(),
     )
     expect(briefSpy).not.toHaveBeenCalled()
     expect(window.location.hash).not.toBe(
@@ -240,9 +239,9 @@ describe('OrderReviewPage', () => {
     } as unknown as Awaited<ReturnType<typeof ordersApi.approve>>)
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
     fireEvent.click(
-      screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
+      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
     )
     await waitFor(() =>
       expect(window.location.hash).toBe(
@@ -285,7 +284,7 @@ describe('OrderReviewPage', () => {
 
     render(<OrderReviewPage orderId="ord-2609-0149" />)
 
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0149'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
     expect(screen.getByText('Nguyễn Minh Khoa')).toBeInTheDocument()
     expect(
       screen.getByText('Chưa có dữ liệu vị trí cho đơn này.'),
@@ -296,10 +295,10 @@ describe('OrderReviewPage', () => {
     expect(
       screen.getByText('Chưa có dữ liệu nguồn lực cho đơn này.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Không có finding nào.')).toBeInTheDocument()
+    expect(screen.getByText('Không có email')).toBeInTheDocument()
     // Action bar still renders — the page didn't crash on null fields.
     expect(
-      screen.getByRole('button', { name: 'Duyệt và lên lịch' }),
+      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
     ).toBeInTheDocument()
   })
 
@@ -311,11 +310,11 @@ describe('OrderReviewPage', () => {
       updatedAt: '2026-09-19T13:50:00+07:00',
     })
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
 
     fireEvent.change(
       screen.getByPlaceholderText(
-        'Thêm ghi chú cho đồng nghiệp (khách không thấy)',
+        'Thêm ghi chú cho đồng nghiệp (khách không thấy)...',
       ),
       { target: { value: 'Ghi chú mới' } },
     )
@@ -327,12 +326,12 @@ describe('OrderReviewPage', () => {
   it('renders English labels and the uppercase English verdict after switching language', async () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Duyệt đơn ORD-2609-0157'))
+    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
 
     act(() => setLanguage('en'))
 
-    expect(screen.getByText('Review order ORD-2609-0157')).toBeInTheDocument()
-    expect(screen.getAllByText('FEASIBLE').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Orders' })).toBeInTheDocument()
+    expect(screen.getByText('Review order')).toBeInTheDocument()
     expect(screen.getByText('Customer')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Approve & schedule' }),

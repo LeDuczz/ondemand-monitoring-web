@@ -67,7 +67,7 @@ export const MISSION_STATUS_TONE: Record<MissionStatus, StatusTone> = {
 const MISSION_STATUS_LABEL_VI: Record<MissionStatus, string> = {
   CREATED: 'Mới tạo',
   RESOURCE_ASSIGNING: 'Phân công nguồn lực',
-  WAITING_CREW_CONFIRMATION: 'Chờ crew xác nhận',
+  WAITING_CREW_CONFIRMATION: 'Chờ đội bay xác nhận',
   WAITING_OPERATOR_ACCEPTANCE: 'Chờ phi công xác nhận',
   SCHEDULED: 'Đã lên lịch',
   CONNECTED: 'Đã kết nối',

@@ -85,6 +85,7 @@ export type MissionCalendarItem = Mission & {
   droneCode: string | null
   droneName: string | null
   operatorName: string | null
+  staffAssignments?: MissionStaffAssignmentResponse[]
 }
 
 /** Body of `PATCH /api/missions/{id}/schedule` [ĐỀ XUẤT]. */
@@ -162,8 +163,6 @@ export type CancelMissionRequest = {
 export type CreateMissionRequest = {
   scheduledStart: string
   scheduledEnd: string
-  flightPlan: FlightPlan
-  waypoints: MissionWaypoint[]
 }
 
 export type ResourceCandidateBase = {

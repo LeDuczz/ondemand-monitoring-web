@@ -133,7 +133,7 @@ describe('ManagerApp', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
+        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
     )
   })

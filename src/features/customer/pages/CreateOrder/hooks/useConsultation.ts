@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { useI18n } from '../../../../../shared/i18n'
@@ -47,6 +47,7 @@ export function useConsultation(options: Options) {
   )
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const requestInFlight = useRef(false)
 
   const notice = (message: string) =>
     setMessages((cur) => [
@@ -69,7 +70,24 @@ export function useConsultation(options: Options) {
 
   function receive(next: CustomerConsultation) {
     setConsultation(next)
-    if (next.messages?.length) setMessages(next.messages)
+    if (next.messages?.length) {
+      const seen = new Set<string>()
+      const cleaned = next.messages.filter((message) => {
+        const key = `${message.senderType}:${message.message.trim()}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      setMessages(cleaned)
+    } else {
+      const fallback = next.recommendedServiceName
+        ? `Mình gợi ý dịch vụ ${next.recommendedServiceName} vì phù hợp với nhu cầu bạn vừa mô tả. Bạn kiểm tra thông tin bên phải rồi bổ sung mục tiêu hoặc kết quả cần nhận nếu cần.`
+        : 'Mình chưa đủ thông tin để chọn đúng dịch vụ. Bạn mô tả thêm đối tượng cần giám sát và mục tiêu chính muốn kiểm tra nhé.'
+      setMessages((current) => [
+        ...current,
+        { id: `local-ai-${Date.now()}`, senderType: 'ASSISTANT', message: fallback },
+      ])
+    }
     options.onReceive(next)
   }
 
@@ -93,7 +111,9 @@ export function useConsultation(options: Options) {
   }
 
   async function start() {
+    if (requestInFlight.current) return
     if (!authSession.getAccessToken()) return notice(t.loginRequired)
+    requestInFlight.current = true
     setBusy(true)
     try {
       const session = await withConsultationTimeout((s) => customerApi.startConsultation(s))
@@ -119,13 +139,16 @@ export function useConsultation(options: Options) {
       options.onError(message)
     } finally {
       setBusy(false)
+      requestInFlight.current = false
     }
   }
 
   async function send(override?: string) {
+    if (requestInFlight.current) return
     const body = (override ?? text).trim()
     if (!body) return
     if (!authSession.getAccessToken()) return notice(t.loginRequired)
+    requestInFlight.current = true
     const current = isReusableConsultation(consultation) ? consultation : null
     let activeId = current?.id
     setBusy(true)
@@ -161,6 +184,7 @@ export function useConsultation(options: Options) {
       }
     } finally {
       setBusy(false)
+      requestInFlight.current = false
     }
   }
 
@@ -175,6 +199,7 @@ export function useConsultation(options: Options) {
     setConsultation(null)
     setMessages([])
     setText('')
+    clearStoredDraft()
     options.onReset()
   }
 

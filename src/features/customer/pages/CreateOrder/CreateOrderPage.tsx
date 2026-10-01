@@ -17,7 +17,7 @@ import { useCreateOrderWizard } from './hooks/useCreateOrderWizard'
 /** Customer wizard: location, AI consultation, schedule, then review and submit. */
 export function CreateOrderPage() {
   const { t } = useI18n(createOrderPageMessages)
-  const { f, map, meta, chat, wizard, submit, score, service, time, deliverable } =
+  const { f, map, meta, chat, wizard, submit, service, time, deliverable } =
     useCreateOrderWizard()
   const { form, step } = f
 
@@ -81,7 +81,6 @@ export function CreateOrderPage() {
       {step === 4 && (
         <ReviewStep
           form={form}
-          score={score}
           service={service}
           time={time}
           deliverable={deliverable}

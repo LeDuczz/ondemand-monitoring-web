@@ -48,7 +48,10 @@ export const operatorApi = {
   listMissions: async (tab?: OperatorMissionTab, _signal?: AbortSignal) => {
     const missions =
       (await missionApi.getMyMissions()) as unknown as BackendMission[]
-    const items = missions.map(toOperatorMission)
+    const currentUserId = authSession.getUser()?.id
+    const items = missions.map((mission) =>
+      toOperatorMission(mission, currentUserId),
+    )
     if (!tab) return { items }
     const statuses: Record<OperatorMissionTab, OperatorMission['status'][]> = {
       pending: ['PENDING'],
@@ -63,6 +66,7 @@ export const operatorApi = {
   getMission: async (missionId: string, _signal?: AbortSignal) =>
     toOperatorMission(
       (await missionApi.getMissionById(missionId)) as unknown as BackendMission,
+      authSession.getUser()?.id,
     ),
 
   acceptMission: async (missionId: string, _signal?: AbortSignal) =>
@@ -70,6 +74,7 @@ export const operatorApi = {
       (await missionApi.acceptMyMission(
         missionId,
       )) as unknown as BackendMission,
+      authSession.getUser()?.id,
     ),
 
   rejectMission: async (
@@ -82,6 +87,7 @@ export const operatorApi = {
         missionId,
         body.reason,
       )) as unknown as BackendMission,
+      authSession.getUser()?.id,
     ),
 
   getAvailability: async (week: string, signal?: AbortSignal) => {

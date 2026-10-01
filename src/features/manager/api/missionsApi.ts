@@ -49,7 +49,10 @@ export function toMissionCalendarItem(source: MissionResponse): MissionCalendarI
     serviceLabel: source.orderTitle || null,
     droneCode: source.droneCode,
     droneName: null,
-    operatorName: null,
+    operatorName:
+      source.staffAssignments?.find((item) => item.assignedRole === 'PILOT')
+        ?.staffName ?? null,
+    staffAssignments: source.staffAssignments ?? [],
   }
 }
 

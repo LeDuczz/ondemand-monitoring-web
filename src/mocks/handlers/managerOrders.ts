@@ -20,7 +20,7 @@ import type {
 import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import analysesSeed from '../data/order-analyses.json'
-import { findBeOrder, findCustomerAnalysis } from './customerOrdersStore'
+import { findBeOrder, findCustomerAnalysis, listBeOrders } from './customerOrdersStore'
 import { missions } from './missionsStore'
 import { findOrder, orders, type SeedOrder } from './ordersStore'
 
@@ -154,6 +154,18 @@ registerMockRoutes([
         .filter((o) => o.status === 'PENDING')
         .filter((o) => latestApprovalFor(o.id)?.decision !== 'NEED_INFO')
         .map(toOrderCreateResponse)
+      return ok(rows)
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/orders/approved',
+    handler: () => {
+      const seeded = orders
+        .filter((o) => o.status === 'APPROVED')
+        .map(toOrderCreateResponse)
+      const customerOrders = listBeOrders().filter((o) => o.orderStatus === 'APPROVED')
+      const rows = [...seeded, ...customerOrders]
       return ok(rows)
     },
   },
@@ -308,8 +320,32 @@ registerMockRoutes([
     path: '/api/orders/:id/mission-brief',
     handler: ({ params }) => {
       const order = findOrder(params.id)
-      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
-      if (order.status !== 'APPROVED') {
+      if (order) {
+        if (order.status !== 'APPROVED') {
+          return fail(
+            409,
+            'ORDER_NOT_APPROVED',
+            'Đơn chưa được duyệt, chưa thể tạo mission.',
+          )
+        }
+        return ok({
+          id: order.id,
+          code: order.code,
+          serviceName: order.serviceName,
+          customerFullName: order.customer.fullName,
+          preferredDate: order.preferredDate,
+          preferredTimeName: order.preferredTimeName,
+          addressText: order.addressText,
+          center: order.center,
+          radiusM: order.radiusM,
+          nearestBase: order.nearestBase,
+          mediaRequirements: order.mediaRequirements,
+        })
+      }
+
+      const beOrder = findBeOrder(params.id)
+      if (!beOrder) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (beOrder.orderStatus !== 'APPROVED') {
         return fail(
           409,
           'ORDER_NOT_APPROVED',
@@ -317,17 +353,22 @@ registerMockRoutes([
         )
       }
       return ok({
-        id: order.id,
-        code: order.code,
-        serviceName: order.serviceName,
-        customerFullName: order.customer.fullName,
-        preferredDate: order.preferredDate,
-        preferredTimeName: order.preferredTimeName,
-        addressText: order.addressText,
-        center: order.center,
-        radiusM: order.radiusM,
-        nearestBase: order.nearestBase,
-        mediaRequirements: order.mediaRequirements,
+        id: beOrder.id,
+        code: beOrder.id,
+        serviceName: beOrder.serviceName,
+        customerFullName: beOrder.customerName || beOrder.customerId,
+        preferredDate: beOrder.preferredDateFrom,
+        preferredTimeName: beOrder.preferredTimeName,
+        addressText: beOrder.address ?? null,
+        center:
+          beOrder.latitude != null && beOrder.longitude != null
+            ? { lat: beOrder.latitude, lon: beOrder.longitude }
+            : null,
+        radiusM: beOrder.radiusM ?? null,
+        nearestBase: null,
+        mediaRequirements: beOrder.deliverables?.map((item) => ({
+          label: item.deliverableTypeName,
+        })) ?? null,
       })
     },
   },

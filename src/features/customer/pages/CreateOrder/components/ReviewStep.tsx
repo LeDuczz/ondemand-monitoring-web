@@ -5,15 +5,13 @@ import type {
   ServiceOption,
   ServicePricingEstimate,
 } from '../../../api/customerApi'
-import type { AiScore, FormState } from '../../../lib/createOrder/types'
+import type { FormState } from '../../../lib/createOrder/types'
 import { ConsultationSummaryCard } from './ConsultationSummaryCard'
 import { PricingEstimateCard } from './PricingEstimateCard'
-import { ReadinessScoreCard } from './ReadinessScoreCard'
 import { RequestSummaryCard } from './RequestSummaryCard'
 
 type Props = {
   form: FormState
-  score: AiScore
   service?: ServiceOption
   time?: PreferredTimeOption
   deliverable?: ServiceDeliverableOption
@@ -42,7 +40,6 @@ export function ReviewStep(p: Props) {
           hasService={Boolean(p.service)}
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
-        <ReadinessScoreCard score={p.score} />
       </div>
       <ConsultationSummaryCard form={p.form} consultation={p.consultation} service={p.service} />
     </div>

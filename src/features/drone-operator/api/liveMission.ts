@@ -12,6 +12,10 @@ export type BackendMission = {
   operatorId?: string | null
   staffId?: string | null
   deviceId?: string | null
+  staffAssignments?: Array<{
+    staffId?: string | null
+    responseStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | string | null
+  }>
   latitude?: number | null
   longitude?: number | null
   radiusM?: number | null
@@ -123,7 +127,10 @@ function operatorStatus(status: string): OperatorMissionStatus {
   return 'ACCEPTED'
 }
 
-export function toOperatorMission(source: BackendMission): OperatorMission {
+export function toOperatorMission(
+  source: BackendMission,
+  currentUserId?: string | null,
+): OperatorMission {
   const start =
     source.scheduledStartAt ?? source.startedAt ?? source.completedAt
   const scheduled = localDateAndTime(start)
@@ -136,11 +143,23 @@ export function toOperatorMission(source: BackendMission): OperatorMission {
           ).toISOString(),
         )
       : { time: '' }
+  const myResponseStatus =
+    currentUserId
+      ? source.staffAssignments?.find(
+          (assignment) => assignment.staffId === currentUserId,
+        )?.responseStatus
+      : undefined
   return {
     id: source.id,
     missionCode: source.missionCode ?? source.id,
     backendStatus: source.status,
     status: operatorStatus(source.status),
+    myResponseStatus:
+      myResponseStatus === 'ACCEPTED' || myResponseStatus === 'REJECTED'
+        ? myResponseStatus
+        : myResponseStatus === 'PENDING'
+          ? 'PENDING'
+          : undefined,
     title: source.orderTitle ?? source.missionCode ?? source.id,
     description: source.description ?? '',
     location: source.address ?? '',

@@ -1,21 +1,22 @@
-import { useMemo, useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
-import { parseMediaLabels } from '../lib/parseMediaLabel'
-import { estimatePlanDuration } from '../lib/planDuration'
-import { generateWaypoints, type Waypoint } from '../lib/waypoints'
+import { OrderIcon, type OrderIconName } from '../components/orderReview/OrderIcon'
+import { formatOrderCode, humanizeMediaRequirement } from '../components/orderReview/format'
+import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
+import { preferredLabel } from '../lib/viLabels'
 import { managerHref } from '../routes'
 import type { OrderMissionBrief } from '../types/orders'
-import type { PlanType } from '../types/missions'
 import { createMissionPageMessages } from './CreateMissionPage.messages'
+import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import '../manager.css'
 
 /**
- * MNG-04 "Tạo mission" — create-mission form for an already-APPROVED order.
+ * MNG-04 "Tạo nhiệm vụ" — create-mission form for an already-APPROVED order.
  *
  * Deviation from evd/design/MNG-04.dc.html: that prototype's only
  * implemented states are a list of *other* orders, a loading skeleton, and
@@ -54,7 +55,7 @@ export function CreateMissionPage({
 function CreateMissionSkeleton() {
   const { t } = useI18n(createMissionPageMessages)
   return (
-    <div className="odm-mgr-dash" aria-busy="true" aria-live="polite">
+    <div className="odm-or" aria-busy="true" aria-live="polite">
       <span className="odm-sk" style={{ width: '100%', height: 100 }} />
       <span
         className="odm-sk"
@@ -117,33 +118,15 @@ function CreateMissionForm({
   now: Date
 }) {
   const { t } = useI18n(createMissionPageMessages)
-  const center = brief.center ?? { lat: 0, lon: 0 }
+  const { t: reviewT } = useI18n(orderReviewPageMessages)
+  const localizeMediaLabel = (label: string) =>
+    humanizeMediaRequirement(label, reviewT)
   void now
 
-  const planType: PlanType = 'ORBIT'
-  const altitudeM = 60
-  const speedMs = 8
-  const radiusM = brief.radiusM ?? 200
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
-  const waypoints = useMemo<Waypoint[]>(
-    () => generateWaypoints({ planType, center, radiusM, altitudeM }),
-    [planType, center, radiusM, altitudeM],
-  )
   const [submit, setSubmit] = useState<SubmitState>({ kind: 'idle' })
   const [navigateTo, setNavigateTo] = useState<string | null>(null)
-
-  const mediaReqs = useMemo(
-    () => parseMediaLabels((brief.mediaRequirements ?? []).map((r) => r.label)),
-    [brief.mediaRequirements],
-  )
-  const duration = useMemo(
-    () =>
-      estimatePlanDuration(waypoints, speedMs, mediaReqs, {
-        photoIntervalSec: 3,
-      }),
-    [waypoints, speedMs, mediaReqs],
-  )
 
   if (navigateTo) {
     window.location.hash = navigateTo
@@ -172,20 +155,9 @@ function CreateMissionForm({
       const mission = await missionsApi.createMission(orderId, {
         scheduledStart: startDate.toISOString(),
         scheduledEnd: endDate.toISOString(),
-        flightPlan: {
-          planType,
-          centerLat: center.lat,
-          centerLon: center.lon,
-          radiusM,
-          altitudeM,
-          speedMs,
-          estimatedDurationSec: Math.round(duration.estimatedDurationSec),
-          generatedBy: 'SYSTEM',
-        },
-        waypoints,
       })
       setNavigateTo(
-        managerHref({ screen: 'missionDispatch', missionId: mission.id }),
+        managerHref({ screen: 'missionSetup', missionId: mission.id }),
       )
     } catch (err) {
       if (err instanceof ApiError && err.status === 422) {
@@ -204,8 +176,9 @@ function CreateMissionForm({
 
   if (submit.kind === 'planFailed') {
     return (
-      <div className="odm-mgr-dash">
-        <div className="odm-card">
+      <div className="odm-or">
+        <OrderWorkflowStepper currentStep={2} />
+        <div className="odm-or-card">
           <div className="odm-mgr-review-error">
             <div className="odm-mgr-review-error-icon" aria-hidden="true">
               !
@@ -245,85 +218,180 @@ function CreateMissionForm({
     )
   }
 
+  const durationMinutes =
+    scheduledStart && scheduledEnd
+      ? Math.round(
+          (new Date(scheduledEnd).getTime() -
+            new Date(scheduledStart).getTime()) /
+            60000,
+        )
+      : null
+  const durationText =
+    durationMinutes != null && durationMinutes > 0
+      ? t.durationHours(Math.floor(durationMinutes / 60), durationMinutes % 60)
+      : null
+  const submitting = submit.kind === 'submitting'
+
+  const summaryRows: Array<{
+    icon: OrderIconName
+    label: string
+    value: ReactNode
+  }> = [
+    { icon: 'service', label: t.serviceLabel, value: brief.serviceName },
+    { icon: 'user', label: t.customerLabel, value: brief.customerFullName },
+    { icon: 'pin', label: t.locationLabel, value: brief.addressText ?? '—' },
+    {
+      icon: 'radius',
+      label: t.radiusLabel,
+      value: brief.radiusM != null ? `${brief.radiusM} m` : '—',
+    },
+  ]
+  if (brief.nearestBase) {
+    summaryRows.push({
+      icon: 'drone',
+      label: t.nearestBaseLabel,
+      value: brief.nearestBase,
+    })
+  }
+
   return (
-    <div className="odm-mgr-dash">
-      <div className="odm-mgr-dash-head">
-        <div>
-          <h1 className="odm-mgr-dash-title">{t.title}</h1>
-          <div className="odm-mgr-dash-date">
-            {t.fromOrder(brief.code, brief.serviceName, brief.customerFullName)}
-          </div>
-        </div>
+    <div className="odm-or">
+      <div className="odm-or-pagehead">
+        <h1 className="odm-or-title">{t.title}</h1>
+        <p className="odm-or-subtitle">
+          {t.fromOrder(
+            formatOrderCode(brief.code),
+            brief.serviceName,
+            brief.customerFullName,
+          )}
+        </p>
       </div>
 
-      <div className="odm-mgr-mission-grid">
-        <div className="odm-mgr-review-col">
-          <div className="odm-card">
-            <div className="odm-card-header">{t.customerTimeWindow}</div>
-            <div
-              className="odm-card-body"
-              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-            >
-              <div style={{ fontWeight: 700 }}>
-                {t.customerDeadlineValue(
-                  brief.preferredDate,
-                  brief.preferredTimeName,
-                )}
-              </div>
-              <div className="odm-mgr-review-hint">
-                {t.customerTimeWindowHint}
-              </div>
-            </div>
-          </div>
+      <OrderWorkflowStepper currentStep={2} />
 
-          <div className="odm-card">
-            <div className="odm-card-header">{t.flightSchedule}</div>
-            <div
-              className="odm-card-body"
-              style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-            >
-              <div className="odm-mgr-review-hint">{t.flightScheduleHint}</div>
-              <div className="odm-mgr-mission-form-row">
-                <label style={{ flex: 1 }}>
-                  <span className="odm-mgr-modal-label">{t.start}</span>
+      <div className="odm-or-grid">
+        <div className="odm-or-col">
+          <section className="odm-or-card">
+            <header className="odm-or-card-head">
+              <span className="odm-or-card-title">
+                <OrderIcon name="calendar" size={18} />
+                {t.customerTimeWindow}
+              </span>
+            </header>
+            <div className="odm-or-card-body">
+              <div className="odm-or-bigvalue">
+                {preferredLabel(brief.preferredDate, brief.preferredTimeName)}
+              </div>
+              <p className="odm-or-muted">{t.customerTimeWindowHint}</p>
+            </div>
+          </section>
+
+          <section className="odm-or-card">
+            <header className="odm-or-card-head">
+              <span className="odm-or-card-title">
+                <OrderIcon name="clock" size={18} />
+                {t.flightSchedule}
+              </span>
+              {durationText ? (
+                <span className="odm-or-pill odm-or-pill-blue">
+                  {t.durationLabel(durationText)}
+                </span>
+              ) : null}
+            </header>
+            <div className="odm-or-card-body">
+              <p className="odm-or-muted" style={{ marginTop: 0 }}>
+                {t.flightScheduleHint}
+              </p>
+              <div className="odm-or-form-row">
+                <label className="odm-or-field">
+                  <span className="odm-or-field-label">{t.start}</span>
                   <input
-                    className="odm-inp"
+                    className="odm-or-input"
                     type="datetime-local"
                     value={scheduledStart}
                     onChange={(e) => setScheduledStart(e.target.value)}
                   />
                 </label>
-                <label style={{ flex: 1 }}>
-                  <span className="odm-mgr-modal-label">{t.end}</span>
+                <label className="odm-or-field">
+                  <span className="odm-or-field-label">{t.end}</span>
                   <input
-                    className="odm-inp"
+                    className="odm-or-input"
                     type="datetime-local"
+                    min={scheduledStart || undefined}
                     value={scheduledEnd}
                     onChange={(e) => setScheduledEnd(e.target.value)}
                   />
                 </label>
               </div>
+              {submit.kind === 'validationFailed' ? (
+                <div role="alert" className="odm-or-error">
+                  {submit.message}
+                </div>
+              ) : null}
             </div>
-          </div>
+          </section>
+        </div>
 
+        <div className="odm-or-col">
+          <section className="odm-or-card">
+            <header className="odm-or-card-head">
+              <span className="odm-or-card-title">
+                <OrderIcon name="doc" size={18} />
+                {t.orderSummary}
+              </span>
+            </header>
+            <dl className="odm-or-card-body odm-or-summary-list">
+              {summaryRows.map((row) => (
+                <div key={row.label}>
+                  <dt>
+                    <OrderIcon name={row.icon} size={16} />
+                    {row.label}
+                  </dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+              {brief.mediaRequirements && brief.mediaRequirements.length > 0 ? (
+                <div>
+                  <dt>
+                    <OrderIcon name="media" size={16} />
+                    {t.mediaLabel}
+                  </dt>
+                  <dd className="odm-or-info-lines">
+                    {brief.mediaRequirements.map((req, i) => (
+                      <span key={i}>{localizeMediaLabel(req.label)}</span>
+                    ))}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          </section>
         </div>
       </div>
 
-      {submit.kind === 'validationFailed' ? (
-        <div className="odm-mgr-modal-error" style={{ marginTop: 8 }}>
-          {submit.message}
+      <div className="odm-or-actionbar">
+        <div className="odm-or-actionbar-hint">
+          <span className="odm-or-actionbar-hint-icon">
+            <OrderIcon name="info" size={18} />
+          </span>
+          <span>{t.actionHint}</span>
         </div>
-      ) : null}
-
-      <div className="odm-mgr-review-actionbar">
-        <button
-          type="button"
-          className="odm-btn odm-btn-ok odm-btn-lg"
-          onClick={handleSubmit}
-          disabled={submit.kind === 'submitting'}
-        >
-          {t.createMission}
-        </button>
+        <div className="odm-or-actionbar-actions">
+          <a
+            className="odm-or-btn odm-or-btn-ghost"
+            href={managerHref({ screen: 'orderQueue' })}
+          >
+            {t.backToOrders}
+          </a>
+          <button
+            type="button"
+            className="odm-or-btn odm-or-btn-primary"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? t.creating : t.createMission}
+            <OrderIcon name="chevron-right" size={16} />
+          </button>
+        </div>
       </div>
     </div>
   )

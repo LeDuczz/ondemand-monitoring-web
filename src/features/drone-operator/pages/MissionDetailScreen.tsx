@@ -281,7 +281,7 @@ function runtimeStatusFromPersisted(persisted: {
 
 async function fetchPersistedPreflight(missionId: string, signal?: AbortSignal) {
   const response = await authenticatedFetch(
-    `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/preflight-checks/current`,
+    `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/pre-device-checks/current`,
     { cache: 'no-store', signal },
   )
   if (!response.ok) return null
@@ -489,6 +489,10 @@ function formatCheckedAt(value?: string) {
   })
 }
 
+function actionErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export function MissionDetailScreen({ missionId }: { missionId: string }) {
@@ -523,8 +527,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     try {
       await operatorApi.acceptMission(mission.id)
       query.reload()
-    } catch {
-      setActionError('Không thể chấp nhận mission. Vui lòng thử lại.')
+    } catch (error) {
+      setActionError(actionErrorMessage(error, 'Không thể chấp nhận mission. Vui lòng thử lại.'))
     } finally {
       setSubmitting(false)
     }
@@ -537,8 +541,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
       await operatorApi.rejectMission(mission.id, { reason, notes })
       setShowReject(false)
       query.reload()
-    } catch {
-      setActionError('Không thể từ chối mission. Vui lòng thử lại.')
+    } catch (error) {
+      setActionError(actionErrorMessage(error, 'Không thể từ chối mission. Vui lòng thử lại.'))
     } finally {
       setSubmitting(false)
     }
@@ -687,6 +691,7 @@ function MissionHeader({
   onAccept: () => void
   onOpenReject: () => void
 }) {
+  const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
   return (
     <div className="mds-header">
       {/* Row 1: code + badge + actions */}
@@ -710,7 +715,9 @@ function MissionHeader({
         <div style={{ flex: 1 }} />
 
         {/* Action buttons (same logic as original Footer) */}
-        {mission.status === 'PENDING' ? (
+        {mission.status === 'PENDING' && hasAccepted ? (
+          <StatusBadge tone="green">Bạn đã chấp nhận</StatusBadge>
+        ) : mission.status === 'PENDING' ? (
           <>
             <button type="button" className="odm-btn odm-btn-rd" onClick={onOpenReject} disabled={submitting}>
               Từ chối

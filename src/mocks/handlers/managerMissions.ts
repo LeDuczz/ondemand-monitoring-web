@@ -477,16 +477,16 @@ registerMockRoutes([
         waypoints?: StoredMission['waypoints']
       }
 
-      if (!req.scheduledStart || !req.scheduledEnd || !req.flightPlan) {
+      if (!req.scheduledStart || !req.scheduledEnd) {
         return fail(
           400,
           'VALIDATION_ERROR',
-          'Thiếu thông tin lịch bay hoặc flight plan',
-          { flightPlan: 'flightPlan là bắt buộc' },
+          'Thiếu thông tin lịch bay',
+          { scheduledStart: 'Lịch bay là bắt buộc' },
         )
       }
 
-      if (req.flightPlan.altitudeM > NO_FLY_CEILING_M) {
+      if (req.flightPlan && req.flightPlan.altitudeM > NO_FLY_CEILING_M) {
         return fail(
           400,
           'VALIDATION_ERROR',
@@ -495,7 +495,7 @@ registerMockRoutes([
         )
       }
 
-      if (req.flightPlan.radiusM > FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M) {
+      if (req.flightPlan && req.flightPlan.radiusM > FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M) {
         return fail(
           422,
           'FLIGHT_PLAN_GENERATION_FAILED',
@@ -514,11 +514,13 @@ registerMockRoutes([
 
       mission.scheduledStartAt = req.scheduledStart
       mission.scheduledEndAt = req.scheduledEnd
-      mission.flightPlan = req.flightPlan
-      mission.waypoints = req.waypoints ?? []
-      mission.centerLat = req.flightPlan.centerLat
-      mission.centerLon = req.flightPlan.centerLon
-      mission.radiusM = req.flightPlan.radiusM
+      if (req.flightPlan) {
+        mission.flightPlan = req.flightPlan
+        mission.waypoints = req.waypoints ?? []
+        mission.centerLat = req.flightPlan.centerLat
+        mission.centerLon = req.flightPlan.centerLon
+        mission.radiusM = req.flightPlan.radiusM
+      }
 
       return created(toMissionDto(mission), 'Đã tạo flight plan cho mission')
     },

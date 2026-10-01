@@ -12,16 +12,18 @@
 // Must be imported BEFORE catalogBe so `/api/services/pricing-estimate` is not
 // swallowed by `GET /api/services/:id`.
 import type {
+  ConsultationMessage,
   CustomerConsultation,
-  ServiceDeliverableOption,
-  ServiceRequirementSuggestion,
 } from '../../features/customer/api/customerApi'
 import type { OrderCreateResponse } from '../../features/customer/api/orderApi'
 import { createCollection } from '../db'
 import { created, fail, ok, registerMockRoutes } from '../mockServer'
+import {
+  mockCategoryServices,
+  mockRequirementSuggestions,
+  mockServiceDeliverables,
+} from '../data/customerCreateOrderSeeds'
 import { createdOrders } from './customerOrdersStore'
-
-type CategoryService = { id: string; name: string; description?: string }
 
 const SERVICE_PRICES: Record<string, number> = {
   'svc-1': 1_500_000,
@@ -29,67 +31,6 @@ const SERVICE_PRICES: Record<string, number> = {
 }
 const DEFAULT_SERVICE_PRICE = 2_000_000
 const AI_ANALYSIS_PRICE = 500_000
-
-// Mirrors ServiceCatalogSeedDataInitializer.seedServiceDeliverables.
-const deliverables: ServiceDeliverableOption[] = [
-  { id: 'sd-1', serviceId: 'svc-4', serviceName: 'Giám sát Kho bãi / Logistics', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-2', serviceId: 'svc-4', serviceName: 'Giám sát Kho bãi / Logistics', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-3', serviceId: 'svc-4', serviceName: 'Giám sát Kho bãi / Logistics', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-4', serviceId: 'svc-5', serviceName: 'Giám sát Đập nước / Hồ chứa', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-5', serviceId: 'svc-5', serviceName: 'Giám sát Đập nước / Hồ chứa', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-6', serviceId: 'svc-5', serviceName: 'Giám sát Đập nước / Hồ chứa', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-7', serviceId: 'svc-5', serviceName: 'Giám sát Đập nước / Hồ chứa', deliverableTypeId: 'dt-thermal', deliverableTypeName: 'Báo cáo Phân tích Nhiệt' },
-  { id: 'sd-8', serviceId: 'svc-6', serviceName: 'Giám sát Rừng / Điểm nhiệt', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-9', serviceId: 'svc-6', serviceName: 'Giám sát Rừng / Điểm nhiệt', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-10', serviceId: 'svc-6', serviceName: 'Giám sát Rừng / Điểm nhiệt', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-11', serviceId: 'svc-6', serviceName: 'Giám sát Rừng / Điểm nhiệt', deliverableTypeId: 'dt-thermal', deliverableTypeName: 'Báo cáo Phân tích Nhiệt' },
-  { id: 'sd-12', serviceId: 'svc-3', serviceName: 'Giám sát Nông nghiệp / Cây trồng', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-13', serviceId: 'svc-3', serviceName: 'Giám sát Nông nghiệp / Cây trồng', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-14', serviceId: 'svc-3', serviceName: 'Giám sát Nông nghiệp / Cây trồng', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-15', serviceId: 'svc-8', serviceName: 'Giám sát Kho công nghiệp / Nhà xưởng', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-16', serviceId: 'svc-8', serviceName: 'Giám sát Kho công nghiệp / Nhà xưởng', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-17', serviceId: 'svc-8', serviceName: 'Giám sát Kho công nghiệp / Nhà xưởng', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-18', serviceId: 'svc-8', serviceName: 'Giám sát Kho công nghiệp / Nhà xưởng', deliverableTypeId: 'dt-thermal', deliverableTypeName: 'Báo cáo Phân tích Nhiệt' },
-  { id: 'sd-19', serviceId: 'svc-9', serviceName: 'Giám sát Mặt nước / Dòng chảy', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-20', serviceId: 'svc-9', serviceName: 'Giám sát Mặt nước / Dòng chảy', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-21', serviceId: 'svc-9', serviceName: 'Giám sát Mặt nước / Dòng chảy', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-22', serviceId: 'svc-10', serviceName: 'Đo nhiệt độ / Điểm nhiệt', deliverableTypeId: 'dt-thermal', deliverableTypeName: 'Báo cáo Phân tích Nhiệt' },
-  { id: 'sd-23', serviceId: 'svc-10', serviceName: 'Đo nhiệt độ / Điểm nhiệt', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-24', serviceId: 'svc-10', serviceName: 'Đo nhiệt độ / Điểm nhiệt', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-25', serviceId: 'svc-11', serviceName: 'Đo nhiệt độ / Áp suất', deliverableTypeId: 'dt-temp', deliverableTypeName: 'Báo cáo Nhiệt độ / Áp suất' },
-  { id: 'sd-26', serviceId: 'svc-11', serviceName: 'Đo nhiệt độ / Áp suất', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-27', serviceId: 'svc-11', serviceName: 'Đo nhiệt độ / Áp suất', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-28', serviceId: 'svc-12', serviceName: 'Kiểm tra Công trình thủy lợi', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-29', serviceId: 'svc-12', serviceName: 'Kiểm tra Công trình thủy lợi', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-30', serviceId: 'svc-12', serviceName: 'Kiểm tra Công trình thủy lợi', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-31', serviceId: 'svc-2', serviceName: 'Giám sát Tiến độ Xây dựng', deliverableTypeId: 'dt-progress', deliverableTypeName: 'Báo cáo Tiến độ' },
-  { id: 'sd-32', serviceId: 'svc-2', serviceName: 'Giám sát Tiến độ Xây dựng', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-33', serviceId: 'svc-2', serviceName: 'Giám sát Tiến độ Xây dựng', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-34', serviceId: 'svc-13', serviceName: 'Giám sát Sạt lở / Ngập lụt', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-35', serviceId: 'svc-13', serviceName: 'Giám sát Sạt lở / Ngập lụt', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-36', serviceId: 'svc-13', serviceName: 'Giám sát Sạt lở / Ngập lụt', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-  { id: 'sd-37', serviceId: 'svc-1', serviceName: 'Kiểm tra Tháp viễn thông', deliverableTypeId: 'dt-report', deliverableTypeName: 'Báo cáo Giám sát' },
-  { id: 'sd-38', serviceId: 'svc-1', serviceName: 'Kiểm tra Tháp viễn thông', deliverableTypeId: 'dt-photo', deliverableTypeName: 'Hình ảnh Kiểm tra' },
-  { id: 'sd-39', serviceId: 'svc-1', serviceName: 'Kiểm tra Tháp viễn thông', deliverableTypeId: 'dt-video', deliverableTypeName: 'Video Ghi hình' },
-]
-
-const suggestions: ServiceRequirementSuggestion[] = [
-  { id: 'rs-1', serviceId: 'svc-1', category: 'TARGET', label: 'Kiểm tra tháp', message: 'Kiểm tra anten và kết cấu tháp viễn thông.', sortOrder: 1, source: 'SEED' },
-  { id: 'rs-2', serviceId: 'svc-2', category: 'TARGET', label: 'Tiến độ', message: 'Chụp ảnh tiến độ thi công định kỳ.', sortOrder: 1, source: 'SEED' },
-]
-
-const categoryServices: CategoryService[] = [
-  { id: 'cat-1', name: 'Giám sát công trình', description: 'Theo dõi tiến độ, chụp định kỳ, so sánh theo tuần/tháng và phát hiện khu vực thi công chậm.' },
-  { id: 'cat-2', name: 'Giám sát nông nghiệp', description: 'Kiểm tra cây trồng, vùng thiếu nước, sâu bệnh, stress thực vật và theo dõi diện tích canh tác.' },
-  { id: 'cat-3', name: 'Giám sát khu công nghiệp / nhà máy', description: 'Kiểm tra mái nhà, bồn chứa, khu vực nguy hiểm, hàng rào và tài sản ngoài trời.' },
-  { id: 'cat-4', name: 'Giám sát an ninh khu vực', description: 'Tuần tra theo tuyến, phát hiện người/phương tiện và kiểm tra xâm nhập vùng giới hạn.' },
-  { id: 'cat-5', name: 'Giám sát giao thông', description: 'Theo dõi mật độ xe, ùn tắc, luồng di chuyển và sự cố giao thông.' },
-  { id: 'cat-6', name: 'Giám sát môi trường', description: 'Phát hiện sạt lở, ngập lụt, cháy, thay đổi mặt nước, rác thải hoặc biến động địa hình.' },
-  { id: 'cat-7', name: 'Giám sát điện / hạ tầng', description: 'Kiểm tra đường dây điện, cột điện, trạm biến áp, pin mặt trời và đường ống.' },
-  { id: 'cat-8', name: 'Giám sát kho bãi / logistics', description: 'Giám sát bãi container, bãi xe, khu tập kết vật tư và kiểm kê khu vực ngoài trời.' },
-  { id: 'cat-9', name: 'Giám sát sự kiện / khu đông người', description: 'Quan sát tổng thể khu vực, mật độ người và các điểm bất thường.' },
-  { id: 'cat-10', name: 'Giám sát theo yêu cầu định kỳ', description: 'Khách chọn khu vực và tần suất bay hằng ngày/tuần/tháng để nhận báo cáo tự động.' },
-]
 
 // Simulation-map zones: one big monitoring zone containing the wizard's default
 // point and one restricted (no-fly) zone away from it.
@@ -117,6 +58,165 @@ function radiusOf(deliverables: unknown): number | undefined {
 let seq = 0
 const nextId = (prefix: string) => `${prefix}-${++seq}`
 const notFound = (what: string) => fail(404, 'NOT_FOUND', `${what} not found`)
+
+type ConsultationService = {
+  id: string
+  name: string
+  description: string
+}
+
+const STOP_WORDS = new Set([
+  'ai',
+  'anh',
+  'bang',
+  'ban',
+  'bao',
+  'can',
+  'cho',
+  'co',
+  'cua',
+  'de',
+  'dich',
+  'duoc',
+  'giup',
+  'giam',
+  'hang',
+  'hay',
+  'ho',
+  'khach',
+  'khu',
+  'la',
+  'minh',
+  'mot',
+  'muon',
+  'nhu',
+  'phu',
+  'sat',
+  'service',
+  'the',
+  'toi',
+  'tu',
+  'van',
+  'va',
+  've',
+  'voi',
+  'yeu',
+])
+
+function normalizeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+}
+
+function tokenize(value: string) {
+  return normalizeText(value)
+    .replace(/[^a-z0-9\s/]/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !STOP_WORDS.has(token))
+}
+
+function parseServicesFromContext(requestContext?: string) {
+  if (!requestContext) return []
+  return requestContext
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('- svc-') && line.includes('|'))
+    .map((line) => {
+      const [id, name, description] = line
+        .replace(/^- /, '')
+        .split('|')
+        .map((part) => part.trim())
+      return id && name
+        ? { id, name, description: description ?? '' }
+        : null
+    })
+    .filter((item): item is ConsultationService => Boolean(item))
+}
+
+function consultationServices(requestContext?: string) {
+  const fromContext = parseServicesFromContext(requestContext)
+  return fromContext
+}
+
+function extractCustomerEvidence(requestContext?: string) {
+  if (!requestContext) return ''
+  const lines: string[] = []
+  let insideServiceCatalog = false
+  for (const rawLine of requestContext.split('\n')) {
+    const line = rawLine.trim()
+    if (line.includes('Danh sách service active từ BE:')) {
+      insideServiceCatalog = true
+      continue
+    }
+    if (insideServiceCatalog) continue
+    lines.push(line)
+  }
+  return lines.join('\n')
+}
+
+function recommendService(
+  message: string,
+  requestContext?: string,
+  history: ConsultationMessage[] = [],
+) {
+  const evidence = [
+    extractCustomerEvidence(requestContext),
+    ...history
+      .filter((item) => item.senderType === 'CUSTOMER')
+      .map((item) => item.message),
+    message,
+  ].join('\n')
+  const messageText = normalizeText(evidence)
+  const messageTokens = new Set(tokenize(evidence))
+  const ranked = consultationServices(requestContext)
+    .map((service) => {
+      const serviceText = normalizeText(`${service.name} ${service.description}`)
+      const serviceTokens = new Set(tokenize(serviceText))
+      let score = 0
+      for (const token of messageTokens) {
+        if (serviceTokens.has(token)) score += token.length
+      }
+      if (serviceText.includes(messageText) || messageText.includes(serviceText)) {
+        score += 20
+      }
+      return { service, score }
+    })
+    .sort((a, b) => b.score - a.score)
+
+  const [best, second] = ranked
+  if (!best || best.score < 3) return null
+  if (second && second.score === best.score) return null
+  return best.service
+}
+
+function buildClarifyingReply(requestContext?: string) {
+  const serviceExamples = consultationServices(requestContext)
+    .slice(0, 5)
+    .map((service) => service.name)
+    .join(', ')
+  const focusQuestion = serviceExamples
+    ? `Bạn mô tả thêm giúp mình đối tượng cần giám sát thuộc nhóm nào: ${serviceExamples}, hoặc service khác trong danh mục?`
+    : 'Bạn mô tả thêm giúp mình đối tượng cần giám sát là gì?'
+
+  return [
+    'Mình chưa đủ thông tin để đề xuất service chính xác.',
+    focusQuestion,
+    'Bạn có thể nói rõ mục tiêu ưu tiên, phạm vi khu vực và loại kết quả cần nhận như ảnh, video, báo cáo tiến độ hoặc phân tích nhiệt.',
+  ].join('\n\n')
+}
+
+function buildRecommendationReply(service: ConsultationService) {
+  return [
+    `Mình hiểu nhu cầu của bạn phù hợp nhất với service ${service.name}.`,
+    `Mình gợi ý dịch vụ ${service.name}.`,
+    'Nếu đúng, bạn có thể tiếp tục chọn kết quả cần nhận; nếu chưa đúng, hãy nói thêm mục tiêu hoặc rủi ro muốn kiểm tra để mình chỉnh gợi ý.',
+  ].join('\n\n')
+}
 
 const REQUIRED = [
   'title',
@@ -165,7 +265,7 @@ registerMockRoutes([
     path: '/api/services/requirement-suggestions',
     handler: ({ query }) => {
       const serviceId = query.get('serviceId')
-      return ok(serviceId ? suggestions.filter((s) => s.serviceId === serviceId) : suggestions)
+      return ok(serviceId ? mockRequirementSuggestions.filter((s) => s.serviceId === serviceId) : mockRequirementSuggestions)
     },
   },
   {
@@ -175,7 +275,7 @@ registerMockRoutes([
       const serviceId = query.get('serviceId')
       const typeId = query.get('deliverableTypeId')
       return ok(
-        deliverables.filter(
+        mockServiceDeliverables.filter(
           (d) =>
             (!serviceId || d.serviceId === serviceId) &&
             (!typeId || d.deliverableTypeId === typeId),
@@ -184,7 +284,7 @@ registerMockRoutes([
     },
   },
   { method: 'GET', path: '/api/zones', handler: () => ok([...zones]) },
-  { method: 'GET', path: '/api/category-services', handler: () => ok([...categoryServices]) },
+  { method: 'GET', path: '/api/category-services', handler: () => ok([...mockCategoryServices]) },
   {
     method: 'POST',
     path: '/api/orders',
@@ -264,20 +364,25 @@ registerMockRoutes([
     handler: ({ params, body }) => {
       const found = consultations.find((c) => c.id === params.id)
       if (!found) return notFound('Consultation')
-      const text = String((body as { message?: string } | undefined)?.message ?? '').trim()
+      const request = body as { message?: string; requestContext?: string } | undefined
+      const text = String(request?.message ?? '').trim()
       if (!text) {
         return fail(400, 'VALIDATION_ERROR', 'Validation failed', { message: 'message is required' })
       }
+      const recommendation = recommendService(text, request?.requestContext, found.messages)
+      const assistantMessage = recommendation
+        ? buildRecommendationReply(recommendation)
+        : buildClarifyingReply(request?.requestContext)
       found.messages = [
         ...(found.messages ?? []),
         { id: nextId('msg'), senderType: 'CUSTOMER', message: text },
-        { id: nextId('msg'), senderType: 'ASSISTANT', message: 'Mình gợi ý dịch vụ Giám sát Tiến độ Xây dựng.' },
+        { id: nextId('msg'), senderType: 'ASSISTANT', message: assistantMessage },
       ]
-      found.status = 'READY_FOR_CONFIRMATION'
-      found.recommendedServiceId = 'svc-2'
-      found.recommendedServiceName = 'Giám sát Tiến độ Xây dựng'
+      found.status = recommendation ? 'READY_FOR_CONFIRMATION' : 'ACTIVE'
+      found.recommendedServiceId = recommendation?.id
+      found.recommendedServiceName = recommendation?.name
       found.requirementSummary = text
-      found.requestTitle = 'Giám sát Tiến độ Xây dựng'
+      found.requestTitle = recommendation?.name
       found.requestSummary = text
       return ok(found)
     },

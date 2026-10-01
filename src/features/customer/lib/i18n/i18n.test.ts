@@ -107,7 +107,8 @@ describe('localizeTimeslot', () => {
   it('infers the code from the name and keeps a range written in it', () => {
     expect(localizeTimeslot({ name: 'Chiều tối 17:00–19:00' }, 'en')).toBe('Evening 17:00–19:00')
     expect(localizeTimeslot({ name: 'Sáng 07:00–11:00' }, 'en')).toBe('Morning 07:00–11:00')
-    expect(localizeTimeslot({ name: 'Sáng 07:00–11:00' }, 'vi')).toBe('Sáng 07:00–11:00')
+    expect(localizeTimeslot({ name: 'Sáng 07:00–11:00' }, 'vi')).toBe('Buổi sáng 07:00–11:00')
+    expect(localizeTimeslot({ name: 'Morning 07:00–11:00' }, 'vi')).toBe('Buổi sáng 07:00–11:00')
     expect(timeslotCodeFromName('Đêm')).toBe('NIGHT')
   })
   it('falls back to the BE name', () => {

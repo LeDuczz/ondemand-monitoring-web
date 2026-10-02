@@ -1,5 +1,6 @@
 // MNG-10: Maintenance ticket kanban board with Manager Search, Filter & System Operator Assignment Workflow
 import { useMemo, useState } from 'react'
+import { formatTicketDescription, formatTicketTitle } from '../lib/ticketText'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
@@ -96,9 +97,10 @@ function TicketCard({
           fontSize: 14,
           lineHeight: 1.35,
           color: '#0f172a',
+          overflowWrap: 'anywhere',
         }}
       >
-        {ticket.title}
+        {formatTicketTitle(ticket.title)}
       </div>
 
       <div
@@ -270,7 +272,7 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
       </div>
 
       <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>
-        {ticket.title}
+        {formatTicketTitle(ticket.title)}
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
@@ -321,7 +323,7 @@ function DetailPanel({ ticket, onClose, onAssignClick }: DetailPanelProps) {
                 lineHeight: 1.5,
               }}
             >
-              {ticket.description}
+              {formatTicketDescription(ticket.description)}
             </div>
           </div>
         )}
@@ -451,9 +453,9 @@ const SEVERITIES: TicketSeverity[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 function systemOperatorList(lang: Language) {
   return [
     {
-      id: '00000000-0000-0000-0000-000000000003',
-      name: 'Seed Drone Operator',
-      email: 'seed.drone.operator@odms.local',
+      id: '00000000-0000-0000-0000-000000000004',
+      name: 'Seed System Operator',
+      email: 'seed.system.operator@odms.local',
       role:
         lang === 'en'
           ? 'SYSTEM_OPERATOR (Technician)'
@@ -473,7 +475,7 @@ function AssignModal({
   onAssigned: (ticket: MaintenanceTicket) => void
 }) {
   const { t, lang } = useI18n(maintenancePageMessages)
-  const [techId, setTechId] = useState('00000000-0000-0000-0000-000000000003')
+  const [techId, setTechId] = useState('00000000-0000-0000-0000-000000000004')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const operatorList = systemOperatorList(lang)
@@ -560,7 +562,7 @@ function AssignModal({
             {t.assignModal.droneLabel}
             <b>{ticket.droneCode}</b>
           </div>
-          <div style={{ color: '#64748b', marginTop: 2 }}>{ticket.title}</div>
+          <div style={{ color: '#64748b', marginTop: 2 }}>{formatTicketTitle(ticket.title)}</div>
         </div>
 
         <div

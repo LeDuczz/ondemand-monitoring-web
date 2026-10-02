@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { formatTicketDescription, formatTicketTitle } from '../../manager/lib/ticketText'
 
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
@@ -379,7 +380,7 @@ export function OperatorMaintenanceScreen() {
                     color: '#0f172a',
                   }}
                 >
-                  {ticket.description || ticket.issueType || t.defaultIssue}
+                  {formatTicketTitle(ticket.description || ticket.issueType || t.defaultIssue)}
                 </h3>
 
                 <div
@@ -547,8 +548,8 @@ export function OperatorMaintenanceScreen() {
                 {t.modalDronePrefix}{' '}
                 <b>{maintenanceDeviceLabel(selectedTicket)}</b>
               </div>
-              <div style={{ color: '#64748b', marginTop: 2 }}>
-                {selectedTicket.description}
+              <div style={{ color: '#64748b', marginTop: 2, whiteSpace: 'pre-line' }}>
+                {formatTicketDescription(selectedTicket.description ?? '')}
               </div>
             </div>
 

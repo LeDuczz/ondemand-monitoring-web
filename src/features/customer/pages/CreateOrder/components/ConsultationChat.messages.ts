@@ -15,6 +15,8 @@ export const consultationChatMessages = defineMessages({
       'VD: Tôi có một khu đất trồng cà phê, cây phát triển không đồng đều...',
     inputLabel: 'Tin nhắn cho AI tư vấn',
     send: 'Gửi',
+    recentTitle: 'Gửi lại nhanh',
+    recentAria: (text: string) => `Gửi lại: ${text}`,
   },
   en: {
     cardTitle: 'AI needs consultation',
@@ -30,5 +32,7 @@ export const consultationChatMessages = defineMessages({
       'E.g. I have a coffee plantation and the plants are growing unevenly...',
     inputLabel: 'Message to the AI consultant',
     send: 'Send',
+    recentTitle: 'Quick resend',
+    recentAria: (text: string) => `Send again: ${text}`,
   },
 })

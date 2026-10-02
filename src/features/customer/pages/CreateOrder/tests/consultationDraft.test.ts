@@ -82,6 +82,32 @@ describe('buildDraftFromConsultation', () => {
       'Giám sát mặt ngoài công trình bằng drone, tập trung phát hiện vết nứt, bong tróc và khu vực hư hỏng.',
     )
   })
+
+  it('rewrites backend service suggestion text into a customer-facing description', () => {
+    const readyConsultation: CustomerConsultation = {
+      ...consultation,
+      status: 'READY_FOR_CONFIRMATION',
+      requestTitle: 'Tư vấn giám sát khu vực đập nước',
+      recommendedServiceName: 'Giám sát Đập nước / Hồ chứa',
+      requestSummary:
+        'Gợi ý service Giám sát Đập nước / Hồ chứa dựa trên nhu cầu: Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực Đập nước.. Ghi nhận dữ liệu khu vực giám sát và bàn giao theo các deliverable đã chọn.',
+    }
+
+    const draft = buildDraftFromConsultation(readyConsultation, [], {
+      id: 'svc-dam',
+      name: 'Giám sát Đập nước / Hồ chứa',
+      description: '',
+    })
+
+    expect(draft.title).toBe('Giám sát Đập nước / Hồ chứa')
+    expect(draft.description).toBe(
+      [
+        'Nhu cầu giám sát: Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực Đập nước.',
+        'Dịch vụ phù hợp: Giám sát Đập nước / Hồ chứa.',
+        'Mục tiêu: ghi nhận dữ liệu khu vực giám sát và bàn giao kết quả theo loại đã chọn.',
+      ].join('\n'),
+    )
+  })
 })
 
 describe('findRecommendedService', () => {

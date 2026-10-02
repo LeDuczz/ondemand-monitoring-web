@@ -408,6 +408,40 @@ textarea.co-input {
   gap: var(--ui-space-2);
 }
 
+.co-chat-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-2);
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.co-chat-history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+
+.co-chat-history-chip {
+  max-width: 260px;
+  padding: 6px 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-surface-2);
+  color: var(--ui-text);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.co-chat-history-chip:hover:not(:disabled) {
+  border-color: var(--ui-primary);
+  color: var(--ui-primary);
+}
+
 /* ---------- Services ---------- */
 
 .co-service-grid {

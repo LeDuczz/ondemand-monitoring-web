@@ -2,7 +2,7 @@ import { defineMessages } from '../../../shared/i18n'
 
 export const liveDispatchPageMessages = defineMessages({
   vi: {
-    selectDroneAndOperator: 'Chọn đủ 4 nhân sự theo vai trò và ít nhất 1 thiết bị trước khi phân công.',
+    selectDroneAndOperator: 'Cần ít nhất 1 phi công và 1 thiết bị trước khi phân công.',
     assignFailed: 'Không phân công được nguồn lực',
     loadingResources: 'Đang tải nguồn lực khả dụng…',
     loadError: 'Không tải được dữ liệu phân công',
@@ -43,7 +43,7 @@ export const liveDispatchPageMessages = defineMessages({
     alreadyAssigned: (drone: string, operator: string) =>
       `Nhiệm vụ đã được gán: thiết bị ${drone}, nhân sự ${operator}.`,
     step1: 'Phân công nhân sự',
-    roleHelp: 'Chọn đủ 4 vai trò: phi công điều khiển bay, nhân sự vận hành kết nối và kiểm tra trước bay, nhân sự bảo trì kiểm tra sau bay, nhân sự nghiệm thu kết quả.',
+    roleHelp: 'Bắt buộc có phi công. Thiếu vai trò vận hành hoặc bảo trì thì bước kiểm tra trước bay hoặc sau bay tương ứng sẽ được bỏ qua khi thực hiện nhiệm vụ.',
     roles: {
       PILOT: 'Phi công',
       OPERATOR: 'Vận hành',
@@ -103,8 +103,8 @@ export const liveDispatchPageMessages = defineMessages({
     deviceSelectedCount: (n: number) => `Đã chọn ${n} thiết bị`,
     deviceMissing: 'Chưa chọn thiết bị',
     rolesComplete: 'Đã chọn đủ 4 vai trò',
-    rolesMissing: (n: number) => `Còn thiếu ${n} vai trò`,
-    staffFooterHint: 'Chọn đủ 4 vai trò nhân sự rồi sang bước Thiết bị.',
+    rolesMissing: (n: number) => `Thiếu ${n} vai trò (bước tương ứng sẽ bỏ qua)`,
+    staffFooterHint: 'Chọn ít nhất 1 phi công rồi sang bước Thiết bị.',
     deviceFooterHint: 'Chọn ít nhất một thiết bị khả dụng rồi sang bước Xác nhận.',
     missionFooterHint: 'Kiểm tra lịch bay đã tạo rồi sang bước Nhân sự.',
     checklist: 'Kiểm tra trước khi phân công',

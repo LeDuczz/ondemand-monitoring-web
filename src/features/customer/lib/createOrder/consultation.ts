@@ -36,7 +36,7 @@ export function findRecommendedService(
 export function buildDraftFromConsultation(
   consultation: CustomerConsultation,
   _messages: ConsultationMessage[],
-  _service?: ServiceOption,
+  service?: ServiceOption,
 ) {
   /* eslint-enable @typescript-eslint/no-unused-vars */
   if (
@@ -46,9 +46,86 @@ export function buildDraftFromConsultation(
     return { title: '', description: '' }
   }
   return {
-    title: consultation.requestTitle?.trim() || '',
-    description: consultation.requestSummary?.trim() || '',
+    title: buildReadableRequestTitle(consultation, service),
+    description: buildReadableRequestDescription(consultation, service),
   }
+}
+
+function buildReadableRequestTitle(
+  consultation: CustomerConsultation,
+  service?: ServiceOption,
+) {
+  const rawTitle = consultation.requestTitle?.trim() || ''
+  const serviceName =
+    service?.name?.trim() || consultation.recommendedServiceName?.trim()
+  if (
+    rawTitle &&
+    rawTitle.length <= 80 &&
+    !isSystemDraftSummary(rawTitle) &&
+    !/^tôi muốn\b/i.test(rawTitle) &&
+    !/^tư vấn\b/i.test(rawTitle)
+  ) {
+    return rawTitle
+  }
+  if (serviceName) {
+    return /^giám sát\b/i.test(serviceName) ? serviceName : `Giám sát ${serviceName}`
+  }
+
+  const need = extractNeed(consultation.requestSummary?.trim() || '').trim()
+  return shortenTitle(cleanupSentence(need).replace(/[.!?]$/, ''))
+}
+
+function buildReadableRequestDescription(
+  consultation: CustomerConsultation,
+  service?: ServiceOption,
+) {
+  const raw = consultation.requestSummary?.trim() || ''
+  if (!raw) return ''
+
+  const serviceName =
+    service?.name?.trim() || consultation.recommendedServiceName?.trim()
+  const need = extractNeed(raw).trim() || consultation.requirementSummary?.trim()
+
+  if (!isSystemDraftSummary(raw)) return cleanupSentence(raw)
+
+  return [
+    need ? `Nhu cầu giám sát: ${cleanupSentence(need)}` : '',
+    serviceName ? `Dịch vụ phù hợp: ${serviceName}.` : '',
+    'Mục tiêu: ghi nhận dữ liệu khu vực giám sát và bàn giao kết quả theo loại đã chọn.',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+function shortenTitle(text: string) {
+  if (!text) return ''
+  return text.length <= 80 ? text : `${text.slice(0, 77).trim()}...`
+}
+
+function isSystemDraftSummary(text: string) {
+  const normalized = text.toLowerCase()
+  return (
+    normalized.includes('gợi ý service') ||
+    normalized.includes('deliverable') ||
+    normalized.includes('dựa trên nhu cầu:')
+  )
+}
+
+function extractNeed(text: string) {
+  const afterNeed = text.match(/dựa trên nhu cầu:\s*(.*?)(?:\.\s*Ghi nhận|\.\s*Dữ liệu|\s*$)/i)
+  if (afterNeed?.[1]) return afterNeed[1]
+  return text
+}
+
+function cleanupSentence(text: string) {
+  const cleaned = text
+    .replace(/\s+/g, ' ')
+    .replace(/\.\.+/g, '.')
+    .replace(/\s+([,.])/g, '$1')
+    .trim()
+
+  if (!cleaned) return ''
+  return /[.!?]$/.test(cleaned) ? cleaned : `${cleaned}.`
 }
 
 const KNOWN_STATUSES = [

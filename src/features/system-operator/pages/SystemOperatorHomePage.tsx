@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 
 import { useI18n } from '../../../shared/i18n'
-import { RolePortalPage } from '../../portal/pages/RolePortalPage'
-import { PortalLayout } from '../../../shared/components/portal/PortalLayout'
+import { SystemOperatorLayout } from '../SystemOperatorLayout'
+import { SystemOperatorOverview } from '../SystemOperatorOverview'
+import { rolePortalPageMessages } from '../../portal/pages/RolePortalPage.messages'
 import { OperatorMaintenanceScreen } from '../../drone-operator/pages/OperatorMaintenanceScreen'
 import { SystemOperatorDevicesScreen } from './SystemOperatorDevicesScreen'
-import { systemOperatorHomePageMessages } from './SystemOperatorHomePage.messages'
 
 export function SystemOperatorHomePage() {
   const [hash, setHash] = useState(() => window.location.hash)
-  const { t } = useI18n(systemOperatorHomePageMessages)
+  const { t: portal } = useI18n(rolePortalPageMessages)
+  const overview = portal.roleContent.SYSTEM_OPERATOR
 
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash)
@@ -19,27 +20,23 @@ export function SystemOperatorHomePage() {
 
   if (hash === '#portal/system-operator/maintenance') {
     return (
-      <PortalLayout
-        role="SYSTEM_OPERATOR"
-        title={t.maintenanceTitle}
-        subtitle={t.maintenanceSubtitle}
-      >
+      <SystemOperatorLayout>
         <OperatorMaintenanceScreen />
-      </PortalLayout>
+      </SystemOperatorLayout>
     )
   }
 
   if (hash === '#portal/system-operator/devices') {
     return (
-      <PortalLayout
-        role="SYSTEM_OPERATOR"
-        title={t.devicesTitle}
-        subtitle={t.devicesSubtitle}
-      >
+      <SystemOperatorLayout>
         <SystemOperatorDevicesScreen />
-      </PortalLayout>
+      </SystemOperatorLayout>
     )
   }
 
-  return <RolePortalPage role="SYSTEM_OPERATOR" />
+  return (
+    <SystemOperatorLayout title={overview.title} subtitle={overview.subtitle}>
+      <SystemOperatorOverview />
+    </SystemOperatorLayout>
+  )
 }

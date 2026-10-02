@@ -38,6 +38,9 @@ export function mergeMissionSnapshot(
     ...listItem,
     ...detail,
     deviceId: detail.deviceId ?? listItem.deviceId ?? null,
+    deviceCode: detail.deviceCode ?? listItem.deviceCode ?? null,
+    droneCode: detail.droneCode ?? listItem.droneCode ?? null,
+    droneName: detail.droneName ?? listItem.droneName ?? null,
     plan: detail.plan ?? listItem.plan ?? null,
   }
 }

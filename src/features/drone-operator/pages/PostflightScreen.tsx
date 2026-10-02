@@ -13,6 +13,7 @@ import {
   flightControlApi,
   type FlightControlStatus,
 } from '../omss/api/flightControlApi'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -159,6 +160,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   const missionLabel =
     activeData?.missionCode || effectiveMissionId || t.defaultMissionLabel
   const deviceId = activeData?.deviceId ?? 'DEVICE'
+  const deviceLabel = activeData ? formatDeviceLabel(activeData) ?? deviceId : deviceId
   const categories = useMemo(() => postflightCategories(lang), [lang])
 
   const [error, setError] = useState<string | null>(null)
@@ -363,7 +365,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   style={{ fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}
                 >
                   {t.missionCodeLabel} <b>{missionLabel}</b> · {t.deviceLabel}{' '}
-                  <b>{deviceId}</b>
+                  <b>{deviceLabel}</b>
                 </div>
               </div>
             </div>
@@ -390,7 +392,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 }
               />
               <Row
-                label={t.droneStatusLabel(deviceId)}
+                label={t.droneStatusLabel(deviceLabel)}
                 value={
                   completed.overallOk
                     ? t.droneStatusAvailable
@@ -474,7 +476,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   {postflightMissions.map((m) => (
                     <option key={m.id} value={m.id}>
                       🎯 {m.missionCode || m.id} (
-                      {m.deviceId || 'DEVICE'}) —{' '}
+                      {formatDeviceLabel(m) || 'DEVICE'}) —{' '}
                       {m.status}
                     </option>
                   ))}
@@ -495,7 +497,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 border: '1px solid var(--bd, #cbd5e1)',
               }}
             >
-              🚁 {deviceId}
+              🚁 {deviceLabel}
             </span>
           </div>
         }
@@ -534,19 +536,19 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
             >
               <TelemetryMetric
                 label={t.landingBattery}
-                value={`${telemetrySnapshot.batteryPercent ?? '--'}%`}
+                value={formatMetric(telemetrySnapshot.batteryPercent, '%', 1)}
               />
               <TelemetryMetric
                 label={t.altitude}
-                value={`${telemetrySnapshot.altitudeM ?? '--'} m`}
+                value={formatMetric(telemetrySnapshot.altitudeM, ' m', 1)}
               />
               <TelemetryMetric
                 label={t.speed}
-                value={`${telemetrySnapshot.speedMps ?? '--'} m/s`}
+                value={formatMetric(telemetrySnapshot.speedMps, ' m/s', 1)}
               />
               <TelemetryMetric
                 label={t.heading}
-                value={`${telemetrySnapshot.headingDeg ?? '--'}°`}
+                value={formatMetric(telemetrySnapshot.headingDeg, '°', 0)}
               />
             </div>
           )}
@@ -829,7 +831,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 </div>
                 <div style={{ fontSize: 13, color: '#78350f', marginTop: 4 }}>
                   {t.autoTicketNotePrefix} <b>{t.autoTicketNoteBold}</b>{' '}
-                  {t.autoTicketNoteMid} <b>{deviceId}</b>{' '}
+                  {t.autoTicketNoteMid} <b>{deviceLabel}</b>{' '}
                   {t.autoTicketNoteSuffix}
                 </div>
               </div>
@@ -914,7 +916,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
 
       {showTicketDialog && (
         <MaintenanceTicketDialog
-          droneCode={deviceId}
+          droneCode={deviceLabel}
           missionId={missionLabel}
           defaultIssueType="PHYSICAL_DAMAGE"
           defaultDescription={t.failedItemsDescription(failItems.join(', '))}
@@ -946,9 +948,19 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
+/** Rounds raw telemetry (e.g. 0.0016679763793945312) to a readable value. */
+function formatMetric(
+  value: number | null | undefined,
+  unit: string,
+  digits: number,
+): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return `--${unit}`
+  return `${value.toFixed(digits)}${unit}`
+}
+
 function TelemetryMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div style={{ minWidth: 0 }}>
       <div
         style={{ fontSize: 11, color: 'var(--tx3, #64748b)', fontWeight: 800 }}
       >
@@ -960,7 +972,11 @@ function TelemetryMetric({ label, value }: { label: string; value: string }) {
           fontSize: 17,
           color: 'var(--tx, #0f172a)',
           fontWeight: 900,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
+        title={value}
       >
         {value}
       </div>

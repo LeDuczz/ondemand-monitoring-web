@@ -62,10 +62,13 @@ function Gallery({
         if (!abort.signal.aborted) setData(result)
       })
       .catch((cause: unknown) => {
-        if (!abort.signal.aborted)
-          setError(
-            cause instanceof Error ? cause.message : 'Không tải được media.',
-          )
+        if (abort.signal.aborted) return
+        const message = cause instanceof Error ? cause.message : ''
+        if (/result not found/i.test(message)) {
+          setData({ items: [], page: 0, size: 0, totalItems: 0, totalPages: 0 } as unknown as typeof data)
+          return
+        }
+        setError(message || 'Không tải được media.')
       })
       .finally(() => {
         if (!abort.signal.aborted) setLoading(false)
@@ -163,7 +166,7 @@ function Gallery({
               <Icon name="camera" width={28} height={28} aria-hidden="true" />
             </span>
             <strong>Chưa có media</strong>
-            <span>Mission chưa có ảnh/video upload thành công.</span>
+            <span>Nhiệm vụ chưa có kết quả ảnh/video. Dữ liệu sẽ hiển thị sau khi thiết bị bay tải lên.</span>
           </div>
         ) : null}
         {!loading && data ? (

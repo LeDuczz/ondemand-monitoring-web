@@ -175,7 +175,7 @@ export default function MissionHeader({ mission, drone }: Props) {
                 color: '#4e5670',
               }}
             >
-              {drone.id}
+              {drone.name || drone.id}
             </span>
             <DroneBadge state={drone.state} />
           </div>

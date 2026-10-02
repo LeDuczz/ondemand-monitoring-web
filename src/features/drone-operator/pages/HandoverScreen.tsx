@@ -7,6 +7,7 @@ import {
   backendPreflightTokenStorageKey,
   preflightReadyStorageKey,
 } from '../lib/flightWorkflowStorage'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { operatorHref } from '../routes'
 import { FlightStepHeader } from './FlightStepper'
@@ -20,6 +21,9 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
   const COMMITMENTS = t.commitments
   const missionLabel =
     mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
+  const deviceLabel = mission.data
+    ? formatDeviceLabel(mission.data)
+    : null
   const [revoked, setRevoked] = useState(false)
   const [checked, setChecked] = useState<boolean[]>([
     false,
@@ -110,9 +114,7 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
           )}
           <DroneStrip
             missionLabel={missionLabel}
-            droneLabel={
-              mission.data?.deviceId ?? t.noDroneAssigned
-            }
+            droneLabel={deviceLabel ?? t.noDroneAssigned}
           />
 
           {revoked ? (

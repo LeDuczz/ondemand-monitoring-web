@@ -181,7 +181,7 @@ export default function MissionCompleted({
           {[
             ['mission', t.fields.mission, mission.id],
             ['customer', t.fields.customer, mission.customer],
-            ['drone', t.fields.drone, `${drone.name} (${drone.id})`],
+            ['drone', t.fields.drone, drone.name || drone.id],
             [
               'operator',
               t.fields.operator,

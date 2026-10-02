@@ -1,39 +1,17 @@
-import { useMemo, useState } from 'react'
-
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
+import { displayOrderCode } from '../../../shared/lib/orderCode'
 import type { OrderCreateResponse } from '../types/orders'
 import { ordersApi } from '../api/ordersApi'
-import {
-  formatWaitLabel,
-  isOverdue,
-  sortQueue,
-  type QueueSortMode,
-} from '../lib/queue'
+import { localizeTimeslot } from '../lib/viLabels'
 import { managerHref } from '../routes'
 import { queuePageMessages } from './QueuePage.messages'
 import '../manager.css'
 
-export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
-  const { t, lang, locale } = useI18n(queuePageMessages)
-  const [now] = useState(() => nowProp ?? new Date())
-  const [sortMode, setSortMode] = useState<QueueSortMode>('longestWait')
+export function QueuePage() {
+  const { t, locale } = useI18n(queuePageMessages)
   const query = useApiQuery((signal) => ordersApi.getQueue(signal), [])
-
-  const sortOptions: Array<{ value: QueueSortMode; label: string }> = [
-    { value: 'longestWait', label: t.sortOptions.longestWait },
-    { value: 'preferredDateAsc', label: t.sortOptions.preferredDateAsc },
-  ]
-
-  const overdueCount = useMemo(
-    () => (query.data ?? []).filter((row) => isOverdue(now, row)).length,
-    [query.data, now],
-  )
-  const visibleRows = useMemo(() => {
-    const rows = query.data ?? []
-    return sortQueue(rows, sortMode, now)
-  }, [query.data, sortMode, now])
 
   if (query.loading) return <QueueSkeleton />
 
@@ -58,9 +36,7 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
       <div className="odm-mgr-dash-head">
         <div>
           <h1 className="odm-mgr-dash-title">{t.title}</h1>
-          <div className="odm-mgr-dash-date">
-            {t.summary(data.length, overdueCount)}
-          </div>
+          <div className="odm-mgr-dash-date">{t.summary(data.length)}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <a
@@ -92,86 +68,53 @@ export function QueuePage({ now: nowProp }: { now?: Date } = {}) {
           }
         />
       ) : (
-        <>
-          <div className="odm-mgr-queue-toolbar">
-            <label className="odm-mgr-queue-sort">
-              <span className="odm-visually-hidden">{t.sort}</span>
-              <select
-                className="odm-inp"
-                value={sortMode}
-                onChange={(e) => setSortMode(e.target.value as QueueSortMode)}
-              >
-                {sortOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="odm-card odm-mgr-queue-table-wrap">
-            <table className="odm-table">
-              <thead>
-                <tr>
-                  <th>{t.columns.orderCode}</th>
-                  <th>{t.columns.customer}</th>
-                  <th>{t.columns.service}</th>
-                  <th>{t.columns.preferredDate}</th>
-                  <th>{t.columns.waitTime}</th>
-                  <th />
+        <div className="odm-card odm-mgr-queue-table-wrap">
+          <table className="odm-table">
+            <thead>
+              <tr>
+                <th>{t.columns.orderCode}</th>
+                <th>{t.columns.customer}</th>
+                <th>{t.columns.service}</th>
+                <th>{t.columns.preferredDate}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row: OrderCreateResponse) => (
+                <tr key={row.id}>
+                  <td>
+                    <span className="odm-mono" style={{ fontWeight: 600 }}>
+                      {displayOrderCode(row.orderCode, row.id)}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{row.customerName}</div>
+                  </td>
+                  <td>{row.serviceName}</td>
+                  <td>
+                    <span className="odm-tn">
+                      {new Date(row.preferredDateFrom).toLocaleDateString(
+                        locale,
+                      )}{' '}
+                      · {localizeTimeslot(row.preferredTimeName)}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <a
+                      className="odm-btn odm-btn-p odm-btn-sm"
+                      href={managerHref({
+                        screen: 'orderReview',
+                        orderId: row.id,
+                      })}
+                    >
+                      {t.review}
+                    </a>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {visibleRows.map((row: OrderCreateResponse) => (
-                  <tr key={row.id}>
-                    <td>
-                      <span className="odm-mono" style={{ fontWeight: 600 }}>
-                        {row.id}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{row.customerName}</div>
-                    </td>
-                    <td>{row.serviceName}</td>
-                    <td>
-                      <span className="odm-tn">
-                        {new Date(row.preferredDateFrom).toLocaleDateString(
-                          locale,
-                        )}{' '}
-                        · {row.preferredTimeName}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className="odm-tn"
-                        style={{
-                          fontWeight: 600,
-                          color: isOverdue(now, row)
-                            ? 'var(--red-fg)'
-                            : 'var(--tx2)',
-                        }}
-                      >
-                        {formatWaitLabel(now, row, lang)}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <a
-                        className="odm-btn odm-btn-p odm-btn-sm"
-                        href={managerHref({
-                          screen: 'orderReview',
-                          orderId: row.id,
-                        })}
-                      >
-                        {t.review}
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

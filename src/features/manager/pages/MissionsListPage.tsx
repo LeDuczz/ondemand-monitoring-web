@@ -1,5 +1,5 @@
 // MNG-08: Mission list + detail panel
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { env } from '../../../config/env'
 
 import { ApiError } from '../../../shared/api/httpClient'
@@ -12,18 +12,26 @@ import type { MissionStatus } from '../../../shared/types/domain'
 import { missionsApi } from '../api/missionsApi'
 import { ordersApi } from '../api/ordersApi'
 import { formatOrderCode } from '../components/orderReview/format'
+import {
+  STAFF_RESPONSE_LABELS,
+  STAFF_ROLE_LABELS,
+  assignmentTone,
+  initialsOf,
+} from '../components/missionDetail/missionDetailParts'
 import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { localizeTimeslot } from '../lib/viLabels'
 import { managerHref } from '../routes'
 import { missionsListPageMessages } from './MissionsListPage.messages'
 import type {
   MissionCalendarItem,
+  MissionResultApprovalStatus,
   MissionStaffAssignmentResponse,
 } from '../types/missions'
 import type { OrderCreateResponse } from '../types/orders'
 import '../manager.css'
 
 type StatusChip = 'ALL' | MissionStatus
+type DeliveryStatus = MissionResultApprovalStatus | 'NO_RESULT' | 'NOT_READY' | 'LOADING'
 
 type PageMessages = (typeof missionsListPageMessages)['vi']
 
@@ -55,43 +63,47 @@ function formatOrderPreferredDate(order: OrderCreateResponse) {
   return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`
 }
 
-const STAFF_ROLE_LABELS: Record<
-  MissionStaffAssignmentResponse['assignedRole'],
-  string
-> = {
-  PILOT: 'Phi công',
-  OPERATOR: 'Vận hành',
-  MAINTAINER: 'Bảo trì',
-  INSPECTOR: 'Nghiệm thu',
-}
-
-const STAFF_RESPONSE_LABELS: Record<
-  MissionStaffAssignmentResponse['responseStatus'],
-  string
-> = {
-  PENDING: 'Chờ phản hồi',
-  ACCEPTED: 'Đã chấp nhận',
-  REJECTED: 'Đã từ chối',
-}
-
-function assignmentTone(status: MissionStaffAssignmentResponse['responseStatus']) {
-  if (status === 'ACCEPTED') return 'green'
-  if (status === 'REJECTED') return 'red'
-  return 'amber'
-}
-
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase()
-}
-
 function formatStaffSummary(assignments?: MissionStaffAssignmentResponse[]) {
   const active = assignments ?? []
   if (active.length === 0) return '—'
   const accepted = active.filter((item) => item.responseStatus === 'ACCEPTED').length
   return `${accepted}/${active.length} đã nhận`
+}
+
+function deliveryTone(status: DeliveryStatus): 'gray' | 'blue' | 'green' | 'red' {
+  if (status === 'APPROVED') return 'green'
+  if (status === 'PENDING_MANAGER_APPROVAL') return 'blue'
+  if (status === 'REJECTED') return 'red'
+  return 'gray'
+}
+
+function deliveryLabel(status: DeliveryStatus, t: PageMessages) {
+  if (status === 'APPROVED') return t.deliveryStatus.delivered
+  if (status === 'PENDING_MANAGER_APPROVAL') return t.deliveryStatus.pending
+  if (status === 'REJECTED') return t.deliveryStatus.rejected
+  if (status === 'NO_RESULT') return t.deliveryStatus.noResult
+  if (status === 'LOADING') return t.deliveryStatus.loading
+  return t.deliveryStatus.none
+}
+
+function normalizedCode(value?: string | null) {
+  return value?.trim().replace(/^#/, '').toUpperCase() ?? ''
+}
+
+function hasMissionForOrder(
+  order: OrderCreateResponse,
+  missions: MissionCalendarItem[],
+) {
+  const orderId = normalizedCode(order.id)
+  const orderCode = normalizedCode(order.orderCode)
+  return missions.some((mission) => {
+    const missionOrderId = normalizedCode(mission.orderId)
+    const missionOrderCode = normalizedCode(mission.orderCode)
+    return (
+      (orderId && missionOrderId === orderId) ||
+      (orderCode && missionOrderCode === orderCode)
+    )
+  })
 }
 
 type ApprovedOrdersSectionProps = {
@@ -190,7 +202,6 @@ function DetailPanel({
 }: DetailPanelProps) {
   const [retrying, setRetrying] = useState(false)
   const [retryError, setRetryError] = useState<string | null>(null)
-
   async function handleRetry() {
     setRetrying(true)
     setRetryError(null)
@@ -232,7 +243,6 @@ function DetailPanel({
     rows.push({ label: t.fields.address, value: mission.addressText })
   const staffAssignments = mission.staffAssignments ?? []
   const hasAssignedResources = Boolean(mission.droneCode) || staffAssignments.length > 0
-
   return (
     <aside className="odm-or-card odm-or-sidepanel">
       <header className="odm-or-card-head">
@@ -275,6 +285,14 @@ function DetailPanel({
             </div>
           ))}
         </dl>
+
+        <a
+          className="odm-or-btn odm-or-btn-blue odm-or-view-btn"
+          href={managerHref({ screen: 'missionDetail', missionId: mission.id })}
+        >
+          {t.viewDetail}
+          <OrderIcon name="arrow-right" size={16} />
+        </a>
 
         <section className="odm-or-crew">
           <div className="odm-or-crew-head">
@@ -391,6 +409,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
   const [selectedMission, setSelectedMission] =
     useState<MissionCalendarItem | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [deliveryStatuses, setDeliveryStatuses] = useState<Record<string, DeliveryStatus>>({})
 
   const statusChips: Array<{ value: StatusChip; label: string }> = [
     { value: 'ALL', label: t.statusChips.ALL },
@@ -415,7 +434,59 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
 
   const missions = query.data?.items ?? []
   const approvedOrders = approvedOrdersQuery.data ?? []
+  const setupOrders = useMemo(
+    () => approvedOrders.filter((order) => !hasMissionForOrder(order, missions)),
+    [approvedOrders, missions],
+  )
   const showApprovedOrders = statusFilter === 'ALL' || statusFilter === 'CREATED'
+
+  useEffect(() => {
+    const completed = missions.filter((mission) => mission.status === 'COMPLETED')
+    if (completed.length === 0) {
+      setDeliveryStatuses({})
+      return
+    }
+
+    let cancelled = false
+    setDeliveryStatuses((previous) => {
+      const next = { ...previous }
+      for (const mission of completed) {
+        if (!next[mission.id]) next[mission.id] = 'LOADING'
+      }
+      return next
+    })
+
+    void Promise.allSettled(
+      completed.map(async (mission) => {
+        try {
+          const result = await missionsApi.getMissionResult(mission.id)
+          return [mission.id, result.approvalStatus] as const
+        } catch {
+          return [mission.id, 'NO_RESULT'] as const
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return
+      setDeliveryStatuses((previous) => {
+        const next: Record<string, DeliveryStatus> = {}
+        const visibleIds = new Set(missions.map((mission) => mission.id))
+        for (const [missionId, status] of Object.entries(previous)) {
+          if (visibleIds.has(missionId)) next[missionId] = status
+        }
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            const [missionId, status] = result.value
+            next[missionId] = status
+          }
+        })
+        return next
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [missions])
 
   useEffect(() => {
     if (missionId && missions.length > 0) {
@@ -437,6 +508,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
     t.columns.drone,
     t.columns.operator,
     t.columns.status,
+    t.columns.delivery,
     '',
   ]
 
@@ -447,7 +519,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
         <p className="odm-or-subtitle">
           {!query.loading && !query.error
             ? t.missionCount(
-                missions.length + (showApprovedOrders ? approvedOrders.length : 0),
+                missions.length + (showApprovedOrders ? setupOrders.length : 0),
               )
             : ' '}
         </p>
@@ -478,8 +550,8 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
         <div className="odm-or-col">
           {showApprovedOrders && !approvedOrdersQuery.error && (
             <ApprovedOrdersSection
-              orders={approvedOrders}
-              loading={approvedOrdersQuery.loading}
+              orders={setupOrders}
+              loading={query.loading || approvedOrdersQuery.loading}
               showEmpty={missions.length === 0}
               t={t}
             />
@@ -568,7 +640,22 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                             tone={missionStatusTone[m.status]}
                           />
                         </td>
+                        <td>
+                          <StatusBadge tone={deliveryTone(deliveryStatuses[m.id] ?? 'NOT_READY')}>
+                            {deliveryLabel(deliveryStatuses[m.id] ?? 'NOT_READY', t)}
+                          </StatusBadge>
+                        </td>
                         <td className="odm-or-table-action">
+                          <a
+                            className="odm-or-btn odm-or-btn-sm odm-or-btn-outline"
+                            href={managerHref({
+                              screen: 'missionDetail',
+                              missionId: m.id,
+                            })}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {t.view}
+                          </a>
                           {(m.status === 'CREATED' ||
                             m.status === 'RESOURCE_ASSIGNING') && (
                             <a

@@ -49,8 +49,31 @@ export const operatorApi = {
     const missions =
       (await missionApi.getMyMissions()) as unknown as BackendMission[]
     const currentUserId = authSession.getUser()?.id
-    const items = missions.map((mission) =>
-      toOperatorMission(mission, currentUserId),
+    const items = await Promise.all(
+      missions.map(async (mission) => {
+        const item = toOperatorMission(mission, currentUserId)
+        if (item.status !== 'COMPLETED' && item.status !== 'FAILED') {
+          return item
+        }
+
+        try {
+          const result = await missionApi.getMissionResult(mission.id)
+          return {
+            ...item,
+            managerSubmissionStatus:
+              result?.approvalStatus === 'APPROVED'
+                ? 'SENT_TO_CUSTOMER'
+                : result?.approvalStatus === 'PENDING_MANAGER_APPROVAL'
+                  ? 'PENDING_MANAGER'
+                  : 'NEEDS_SUBMIT',
+          } satisfies OperatorMission
+        } catch {
+          return {
+            ...item,
+            managerSubmissionStatus: 'NEEDS_SUBMIT',
+          } satisfies OperatorMission
+        }
+      }),
     )
     if (!tab) return { items }
     const statuses: Record<OperatorMissionTab, OperatorMission['status'][]> = {

@@ -45,6 +45,7 @@ const FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M = 800
 type SeedDrone = {
   id: string
   code: string
+  name?: string
   status: string
   existingBookings?: { missionCode: string; start: string; end: string }[]
 }
@@ -152,6 +153,12 @@ function toMissionResponse(m: StoredMission | CalendarMission) {
       preflightCheckedAt: string | null
     }>
   const calendarFields = m as Partial<CalendarMission>
+  const droneId = asStored.droneId ?? null
+  const drone = droneId
+    ? drones.find((item) => item.id === droneId || item.code === droneId)
+    : undefined
+  const droneCode = asStored.droneCode ?? calendarFields.droneCode ?? drone?.code ?? null
+  const droneName = calendarFields.droneName ?? drone?.name ?? null
   return {
     id: m.id,
     orderId: m.orderId,
@@ -161,8 +168,11 @@ function toMissionResponse(m: StoredMission | CalendarMission) {
     missionCode: m.missionCode,
     status: m.status,
     operatorId: m.operatorId,
-    droneId: m.droneId,
-    droneCode: asStored.droneCode ?? calendarFields.droneCode ?? null,
+    droneId,
+    deviceId: droneId,
+    deviceCode: droneCode,
+    droneCode,
+    droneName,
     latitude: asStored.latitude ?? m.centerLat,
     longitude: asStored.longitude ?? m.centerLon,
     address: asStored.address ?? m.addressText,

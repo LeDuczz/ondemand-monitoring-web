@@ -1,0 +1,62 @@
+import type {
+  MissionMediaReader,
+  UploadedMissionMedia,
+  UploadedMissionMediaPage,
+} from '../../media/types/missionMedia'
+import type { MediaResponse } from '../types/missions'
+import { missionsApi } from './missionsApi'
+
+const PAGE_SIZE = 12
+
+function toUploaded(item: MediaResponse): UploadedMissionMedia {
+  const isVideo =
+    item.contentType?.startsWith('video/') || item.type?.toUpperCase() === 'VIDEO'
+  const extension = item.contentType?.split('/')[1] ?? (isVideo ? 'mp4' : 'jpg')
+  const deviceId = item.deviceId ?? item.droneId
+  return {
+    mediaId: item.id,
+    missionId: item.missionId,
+    deviceId: deviceId ?? '—',
+    mediaType: isVideo ? 'VIDEO' : 'IMAGE',
+    fileName: `${isVideo ? 'video' : 'image'}-${item.id.slice(0, 8)}.${extension}`,
+    contentType: item.contentType,
+    fileSize: item.fileSize,
+    capturedAt: item.capturedAt ?? null,
+    availableAt: null,
+    downloadUrl: item.url,
+  }
+}
+
+/**
+ * Staff-side reader for the shared mission media gallery. Uses the manager
+ * `GET /api/missions/{id}/media` endpoint and paginates on the client.
+ */
+export const staffMissionMediaReader: MissionMediaReader = {
+  async list(missionId, page, signal): Promise<UploadedMissionMediaPage> {
+    let media = (await missionsApi.getMissionResult(missionId, signal))
+      .mediaFiles ?? []
+    if (media.length === 0) {
+      media = await missionsApi.getMissionMedia(missionId, signal)
+    }
+    const all = media.map(toUploaded)
+    const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE))
+    const safePage = Math.min(Math.max(0, page), totalPages - 1)
+    return {
+      items: all.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE),
+      page: safePage,
+      totalItems: all.length,
+      totalPages,
+      first: safePage === 0,
+      last: safePage >= totalPages - 1,
+    }
+  },
+  async get(missionId, mediaId, signal) {
+    let all = (await missionsApi.getMissionResult(missionId, signal)).mediaFiles ?? []
+    if (all.length === 0) {
+      all = await missionsApi.getMissionMedia(missionId, signal)
+    }
+    const found = all.find((item) => item.id === mediaId)
+    if (!found) throw new Error('Không tìm thấy media.')
+    return toUploaded(found)
+  },
+}

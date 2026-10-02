@@ -3,6 +3,7 @@ import { PortalLayout } from '../../../shared/components/portal/PortalLayout'
 import { Button } from '../../../shared/components/Button'
 import { useI18n } from '../../../shared/i18n'
 import { orderApi, type OrderCreateResponse } from '../../customer/api/orderApi'
+import { localizeTimeslot } from '../../manager/lib/viLabels'
 import { staffRequestQueuePageMessages } from './StaffRequestQueuePage.messages'
 
 export function StaffRequestQueuePage() {
@@ -107,7 +108,7 @@ export function StaffRequestQueuePage() {
                       .filter(Boolean)
                       .join(' → ')}
                     <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                      {order.preferredTimeName}
+                      {localizeTimeslot(order.preferredTimeName)}
                     </div>
                   </td>
                   <td style={{ padding: '12px 8px', fontSize: 13 }}>

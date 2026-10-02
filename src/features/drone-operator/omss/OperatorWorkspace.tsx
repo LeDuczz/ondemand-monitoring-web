@@ -34,6 +34,9 @@ type BackendMission = {
   status?: Mission['state']
   operatorId?: string
   deviceId?: string
+  deviceCode?: string
+  droneCode?: string
+  droneName?: string
   droneId?: string
   latitude?: number
   longitude?: number
@@ -203,6 +206,8 @@ function adaptBackendMission(mission: BackendMission): Mission {
     state: mission.status ?? 'RESOURCE_ASSIGNING',
     priority: 'NORMAL',
     droneId: mission.deviceId ?? mission.droneId ?? '',
+    droneCode: mission.droneCode ?? mission.deviceCode,
+    droneName: mission.droneName,
     operatorId: mission.operatorId ?? '',
     customer: mission.customerName ?? '',
     location: mission.address ?? '',
@@ -246,9 +251,11 @@ function adaptBackendMission(mission: BackendMission): Mission {
 }
 
 function createAssignedDrone(mission: Mission): Drone {
+  const code = mission.droneCode ?? mission.droneId
+  const name = mission.droneName ? `${code} ${mission.droneName}` : code
   return {
     id: mission.droneId,
-    name: mission.droneId,
+    name,
     model: 'Assigned mission drone',
     serialNumber: '',
     state: mission.state === 'IN_FLIGHT' ? 'ACTIVE_MISSION' : 'PREFLIGHT',

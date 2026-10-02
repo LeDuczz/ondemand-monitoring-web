@@ -10,13 +10,13 @@ export function OrderHeader({ order }: { order: OrderDetailView }) {
   return (
     <PageHeader
       back={<a href={customerHref({ screen: 'orders' })}>{t.backToOrders}</a>}
-      title={
-        <span className="od-title">
-          <span>{order.title}</span>
+      title={order.title}
+      subtitle={
+        <span className="od-meta">
           <OrderStatusBadge status={order.status} />
+          <span>{`${t.codeLabel}: ${order.code}`}</span>
         </span>
       }
-      subtitle={`${t.codeLabel}: ${order.code}`}
     />
   )
 }

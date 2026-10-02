@@ -11,6 +11,7 @@ import { DronesPage } from './pages/DronesPage'
 import { LivePage } from './pages/LivePage'
 import { MaintenancePage } from './pages/MaintenancePage'
 import { MediaPage } from './pages/MediaPage'
+import { MissionDetailPage } from './pages/MissionDetailPage'
 import { MissionsListPage } from './pages/MissionsListPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { OrderReviewPage } from './pages/OrderReviewPage'
@@ -36,6 +37,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
   missionCreate: 'Đơn hàng',
   missionDispatch: 'Nhiệm vụ',
   missionSetup: 'Thiết lập nhiệm vụ',
+  missionDetail: 'Chi tiết nhiệm vụ',
   schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
   missions: 'Nhiệm vụ',
@@ -100,6 +102,8 @@ function renderScreen(route: ManagerRoute) {
     return <DispatchPage missionId={route.missionId} />
   if (route.screen === 'missionSetup')
     return <DispatchPage missionId={route.missionId} setupMode />
+  if (route.screen === 'missionDetail')
+    return <MissionDetailPage missionId={route.missionId} />
   if (route.screen === 'schedule') return <SchedulePage />
   if (route.screen === 'live') return <LivePage missionId={route.missionId} />
   if (route.screen === 'missions')

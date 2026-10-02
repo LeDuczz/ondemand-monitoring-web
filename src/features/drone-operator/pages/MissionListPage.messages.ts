@@ -41,6 +41,7 @@ export const missionListPageMessages = defineMessages({
     },
     upcomingSoon: 'Sắp tới giờ',
     noUpcomingMission: 'Không có mission sắp bay.',
+    unassignedDevice: 'Không phân công',
     accepted: 'Đã nhận',
     timeLeft: (hours: number, minutes: number) =>
       `còn ${hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`}`,
@@ -87,6 +88,7 @@ export const missionListPageMessages = defineMessages({
     },
     upcomingSoon: 'Coming up soon',
     noUpcomingMission: 'No upcoming missions.',
+    unassignedDevice: 'Unassigned',
     accepted: 'Accepted',
     timeLeft: (hours: number, minutes: number) =>
       `${hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`} left`,

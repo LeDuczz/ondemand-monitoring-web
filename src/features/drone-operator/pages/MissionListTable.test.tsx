@@ -47,6 +47,25 @@ describe('MissionListTable', () => {
     expect(screen.getByText('Unassigned')).toBeTruthy()
   })
 
+  it('shows the device code instead of the internal device id', () => {
+    render(
+      <MissionListTable
+        missions={[
+          {
+            ...missions[0],
+            deviceId: '390b6b53-00a1-446c-abb2-93d8ffcd6454',
+            droneCode: 'DRN-02',
+          },
+        ]}
+        now={new Date('2026-09-20T00:00:00+07:00')}
+      />,
+    )
+    expect(screen.getByText('DRN-02')).toBeTruthy()
+    expect(
+      screen.queryByText('390b6b53-00a1-446c-abb2-93d8ffcd6454'),
+    ).toBeNull()
+  })
+
   it('renders the vietnamese empty state', () => {
     render(<MissionListTable missions={[]} now={new Date()} />)
     expect(screen.getByText('Không có mission')).toBeTruthy()

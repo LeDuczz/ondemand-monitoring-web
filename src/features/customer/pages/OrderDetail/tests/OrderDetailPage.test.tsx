@@ -21,6 +21,14 @@ describe('OrderDetailPage', () => {
     expect(screen.getByText('Tuần tra an ninh công trường Sala Riverside')).toBeInTheDocument()
   })
 
+  it('shows the public order code instead of the internal id in order information', async () => {
+    render(<OrderDetailPage orderId="cus-ord-003" />)
+    const info = (await screen.findByText('Thông tin đơn hàng')).closest('section') as HTMLElement
+
+    expect(within(info).getByText('ORD-2609-0149')).toBeInTheDocument()
+    expect(within(info).queryByText('cus-ord-003')).not.toBeInTheDocument()
+  })
+
   it('renders the English order-info heading when language is switched', async () => {
     render(<OrderDetailPage orderId="cus-ord-003" />)
     await screen.findByText('Thông tin đơn hàng')

@@ -88,6 +88,7 @@ const activeNavLabel: Record<ManagerScreen, string> = {
   missionCreate: 'Đơn hàng',
   missionDispatch: 'Nhiệm vụ',
   missionSetup: 'Nhiệm vụ',
+  missionDetail: 'Nhiệm vụ',
   schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
   missions: 'Nhiệm vụ',

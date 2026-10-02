@@ -1,47 +1,47 @@
 /*
- * Drone-operator portal shell (top header bar + vertical sidebar), scoped
- * under `.odm-opr`. Ported from evd/design OPR-xxW.
+ * Drone-operator portal shell (left sidebar + top bar), scoped under
+ * `.odm-opr`. Mirrors the Staff / Customer shell so every portal feels alike.
  */
 
 .odm-opr {
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg);
 }
 
 .odm-opr-shell {
   display: flex;
-  flex-direction: column;
   width: 100%;
   height: 100%;
 }
 
-/* ---------- Top header bar ---------- */
+/* ---------- Sidebar ---------- */
 
-.odm-opr-topbar {
-  height: 52px;
+.odm-opr-side {
+  width: 232px;
   flex: none;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  padding: 12px 10px;
   background: var(--sf);
-  border-bottom: 1px solid var(--bd);
+  border-right: 1px solid var(--bd);
+  overflow: hidden;
 }
 
 .odm-opr-brand {
-  width: 232px;
-  flex: none;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  padding: 0 12px;
+  padding: 6px 6px 16px;
   text-decoration: none;
   color: var(--tx);
 }
 
 .odm-opr-brand-mark {
-  width: 44px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   border-radius: 0;
   object-fit: contain;
   object-position: left center;
@@ -52,7 +52,7 @@
   display: flex;
   flex-direction: column;
   color: var(--brand-primary);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 900;
   line-height: 0.95;
 }
@@ -67,71 +67,13 @@
   font-size: 1.22em;
 }
 
-.odm-opr-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  min-width: 0;
-  flex: 1;
-  color: var(--tx3);
-}
-
-.odm-opr-breadcrumb strong {
-  font-weight: 600;
-  color: var(--tx);
-}
-
-.odm-opr-topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 16px;
-  flex: none;
-}
-
-.odm-opr-search {
-  position: relative;
-  width: 260px;
-}
-
-.odm-opr-search-icon {
-  position: absolute;
-  left: 9px;
-  top: 9px;
-  color: var(--tx3);
-  pointer-events: none;
-}
-
-.odm-opr-search input {
-  padding-left: 30px;
-  height: 32px;
-}
-
-/* ---------- Body: sidebar + content ---------- */
-
-.odm-opr-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
-
-.odm-opr-side {
-  width: 232px;
-  flex: none;
-  background: var(--sf);
-  border-right: 1px solid var(--bd);
-  display: flex;
-  flex-direction: column;
-  padding: 12px 10px;
-  overflow: auto;
-}
-
 .odm-opr-nav-scroll {
   display: flex;
   flex-direction: column;
   gap: 1px;
   flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .odm-opr-navg {
@@ -146,9 +88,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 34px;
+  height: 36px;
   padding: 0 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--tx2);
   font-weight: 500;
   font-size: 13px;
@@ -213,6 +155,7 @@
   overflow: hidden;
   min-width: 0;
   flex: 1;
+  line-height: 1.25;
 }
 
 .odm-opr-user-name {
@@ -233,8 +176,16 @@
 
 .odm-opr-logout {
   width: 100%;
+  justify-content: flex-start;
   margin-top: 4px;
+  border-color: transparent;
 }
+
+.odm-opr-scrim {
+  display: none;
+}
+
+/* ---------- Main column + top bar ---------- */
 
 .odm-opr-main {
   flex: 1;
@@ -244,10 +195,101 @@
   overflow: hidden;
 }
 
+.odm-opr-topbar {
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: var(--sf);
+  border-bottom: 1px solid var(--bd);
+}
+
+.odm-opr-menu-toggle {
+  display: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tx2);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.odm-opr-menu-toggle:hover {
+  background: var(--sf3);
+}
+
+.odm-opr-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  color: var(--tx3);
+  white-space: nowrap;
+}
+
+.odm-opr-breadcrumb strong {
+  font-weight: 600;
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.odm-opr-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.odm-opr-maint-link {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.odm-opr-search {
+  position: relative;
+  width: 240px;
+}
+
+.odm-opr-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--tx3);
+  pointer-events: none;
+}
+
+.odm-opr-search input {
+  width: 100%;
+  height: 34px;
+  padding-left: 32px;
+  border-radius: 8px;
+}
+
+/* ---------- Content ---------- */
+
 .odm-opr-content {
   flex: 1;
   min-height: 0;
-  padding: 20px 24px 28px;
+  min-width: 0;
+  padding: 24px 28px 32px;
   overflow: auto;
 }
 
@@ -264,6 +306,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
   height: 22px;
   padding: 0 8px;
   border-radius: 5px;
@@ -273,24 +316,123 @@
   font-weight: 500;
   border: 1px solid var(--bd);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ---------- Mobile ---------- */
+/* ---------- Mission work table ---------- */
 
-@media (max-width: 767px) {
+.odm-opr-mission-table {
+  min-width: 1340px;
+  table-layout: fixed;
+}
+
+.odm-opr-mission-code {
+  width: 130px;
+}
+
+.odm-opr-mission-job {
+  width: 230px;
+  min-width: 230px;
+}
+
+.odm-opr-mission-time {
+  width: 150px;
+}
+
+.odm-opr-mission-service {
+  width: 220px;
+}
+
+.odm-opr-mission-device {
+  width: 150px;
+  overflow-wrap: anywhere;
+}
+
+.odm-opr-mission-status {
+  width: 150px;
+}
+
+.odm-opr-mission-deadline {
+  width: 130px;
+}
+
+.odm-opr-mission-action {
+  width: 110px;
+  text-align: right;
+}
+
+.odm-opr-mission-title {
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.odm-opr-mission-location {
+  color: var(--tx3);
+  font-size: 11.5px;
+  margin-top: 2px;
+  white-space: normal;
+}
+
+/* ---------- Tablet / mobile ---------- */
+
+@media (max-width: 1100px) {
   .odm-opr-search {
-    display: none;
+    width: 180px;
   }
-  .odm-opr-brand {
-    width: auto;
-  }
+}
+
+@media (max-width: 900px) {
   .odm-opr-side {
-    width: 64px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
   }
-  .odm-opr-navi span:not(:first-child),
-  .odm-opr-navg,
-  .odm-opr-user-text {
+
+  .odm-opr-side.is-open {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(8, 22, 47, 0.25);
+  }
+
+  .odm-opr-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    background: rgba(8, 22, 47, 0.4);
+  }
+
+  .odm-opr-menu-toggle {
+    display: inline-flex;
+  }
+
+  .odm-opr-search,
+  .odm-opr-maint-link {
     display: none;
+  }
+
+  .odm-opr-topbar {
+    padding: 0 12px;
+  }
+
+  .odm-opr-content {
+    padding: 16px 16px 24px;
+  }
+
+  .odm-opr-content--fill {
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odm-opr-side {
+    transition: none;
   }
 }
 
@@ -399,3 +541,18 @@
     height: clamp(360px, 70vw, 520px);
   }
 }
+
+/* Mission detail tabs */
+.mds-tabs{display:flex;gap:4px;padding:4px;margin:0 0 16px;background:#f1f5f9;border-radius:12px;overflow-x:auto;width:fit-content;max-width:100%}
+.mds-tab{border:0;background:transparent;padding:9px 16px;border-radius:9px;font-size:14px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap}
+.mds-tab.is-active{background:#fff;color:#1767ff;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.mds-tab-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:999px){.mds-tab-grid{grid-template-columns:minmax(0,1fr)}}
+
+.mds-sticky-col{position:sticky;top:84px}
+@media (max-width:999px){.mds-sticky-col{position:static}}
+.mds-tab-grid--single{grid-template-columns:minmax(0,1fr)}
+
+.odm-opr-mission-manager{width:170px}
+.odm-opr-mission-table td,.odm-opr-mission-table th{overflow:hidden;text-overflow:ellipsis}
+.odm-opr-mission-table .odm-opr-mission-job,.odm-opr-mission-table td.odm-opr-mission-job{overflow:visible}

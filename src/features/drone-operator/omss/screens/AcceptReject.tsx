@@ -117,7 +117,7 @@ export default function AcceptReject({
               label: t.fields.duration,
               value: t.durationValue(mission.estimatedMinutes),
             },
-            { label: t.fields.drone, value: `${drone.name} (${drone.id})` },
+            { label: t.fields.drone, value: drone.name || drone.id },
           ].map((r) => (
             <div
               key={r.label}

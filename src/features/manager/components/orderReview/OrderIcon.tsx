@@ -30,6 +30,12 @@ export type OrderIconName =
   | 'ai'
   | 'file'
   | 'tag'
+  | 'trash'
+  | 'copy'
+  | 'help'
+  | 'database'
+  | 'resolution'
+  | 'stack'
 
 const paths: Record<OrderIconName, ReactNode> = {
   pin: (
@@ -169,6 +175,42 @@ const paths: Record<OrderIconName, ReactNode> = {
     <>
       <path d="M3 12V4h8l10 10-8 8z" />
       <circle cx="7.5" cy="8.5" r="1.2" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V6a2 2 0 0 1 2-2h8" />
+    </>
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17h.01" />
+    </>
+  ),
+  database: (
+    <>
+      <ellipse cx="12" cy="6" rx="7" ry="3" />
+      <path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" />
+    </>
+  ),
+  resolution: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M7 15v-6M7 12h3M10 15v-6M14 9h2.5a1.5 1.5 0 0 1 0 3H14zM14 12h2.5a1.5 1.5 0 0 1 0 3H14z" />
+    </>
+  ),
+  stack: (
+    <>
+      <path d="m12 3 9 5-9 5-9-5z" />
+      <path d="m3 13 9 5 9-5" />
     </>
   ),
 }

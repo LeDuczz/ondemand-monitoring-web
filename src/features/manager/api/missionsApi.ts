@@ -12,7 +12,9 @@ import type {
   MissionIncident,
   MissionPlanResponse,
   MissionResponse,
+  MissionResultResponse,
   PatchScheduleRequest,
+  PersistedPostDeviceCheckResponse,
   PersistedPreflightCheckResponse,
   PostFlightStatusRequest,
   PreflightCheckResponse,
@@ -31,7 +33,7 @@ export function toMissionCalendarItem(source: MissionResponse): MissionCalendarI
     missionCode: source.missionCode,
     status: source.status,
     attemptNumber: null,
-    droneId: source.droneId,
+    droneId: source.droneId ?? source.deviceId ?? null,
     operatorId: source.operatorId,
     droneAssignmentId: null,
     operatorAssignmentId: null,
@@ -47,8 +49,8 @@ export function toMissionCalendarItem(source: MissionResponse): MissionCalendarI
     flightPlan: null,
     waypoints: [],
     serviceLabel: source.orderTitle || null,
-    droneCode: source.droneCode,
-    droneName: null,
+    droneCode: source.droneCode ?? source.deviceCode ?? null,
+    droneName: source.deviceName ?? null,
     operatorName:
       source.staffAssignments?.find((item) => item.assignedRole === 'PILOT')
         ?.staffName ?? null,
@@ -78,6 +80,11 @@ export const missionsApi = {
   /** `GET /api/missions/{id}` [BE `MissionController.getById`]. */
   getMission(id: string, signal?: AbortSignal): Promise<Mission> {
     return apiRequest<Mission>(`/api/missions/${id}`, { signal })
+  },
+
+  /** `GET /api/missions/{id}` [BE `MissionResponse`]. Full manager/operator detail shape. */
+  getMissionResponse(id: string, signal?: AbortSignal): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/${id}`, { signal })
   },
 
   /**
@@ -335,6 +342,31 @@ export const missionsApi = {
   /** `GET /api/missions/{missionId}/pre-device-checks/current` [BE]. */
   getCurrentPreflight(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
     return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/pre-device-checks/current`, { signal })
+  },
+
+  /** `GET /api/missions/{missionId}/post-device-checks/current` [BE]. */
+  getCurrentPostDeviceCheck(missionId: string, signal?: AbortSignal): Promise<PersistedPostDeviceCheckResponse> {
+    return apiRequest<PersistedPostDeviceCheckResponse>(`/api/missions/${missionId}/post-device-checks/current`, { signal })
+  },
+
+  /** `GET /api/missions/{missionId}/result` [BE]. */
+  getMissionResult(missionId: string, signal?: AbortSignal): Promise<MissionResultResponse> {
+    return apiRequest<MissionResultResponse>(`/api/missions/${missionId}/result`, { signal })
+  },
+
+  /** `POST /api/manager/mission-results/{resultId}/approve` [BE]. Makes the mission result customer-deliverable. */
+  approveMissionResult(resultId: string): Promise<MissionResultResponse> {
+    return apiRequest<MissionResultResponse>(`/api/manager/mission-results/${resultId}/approve`, {
+      method: 'POST',
+      body: {},
+    })
+  },
+
+  /** `POST /api/manager/missions/{missionId}/media-approvals/{mediaId}/approve` [BE]. Makes one media asset visible to the customer. */
+  approveMissionMedia(missionId: string, mediaId: string): Promise<unknown> {
+    return apiRequest<unknown>(`/api/manager/missions/${missionId}/media-approvals/${mediaId}/approve`, {
+      method: 'POST',
+    })
   },
 
   /** `POST /api/missions/{id}/connect` [BE]. */

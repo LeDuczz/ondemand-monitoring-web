@@ -26,6 +26,7 @@ export function OperatorLayout({
   const [dark, setDark] = useState(
     () => document.documentElement.dataset.theme === 'dark',
   )
+  const [menuOpen, setMenuOpen] = useState(false)
   const { lang } = useLanguage()
 
   useEffect(() => {
@@ -35,29 +36,38 @@ export function OperatorLayout({
   return (
     <div className="odm odm-opr">
       <div className="odm-opr-shell">
-        <OperatorTopbar
-          breadcrumb={operatorActiveLabel(route.screen, lang)}
-          dark={dark}
-          onToggleDark={() => setDark((v) => !v)}
-          searchQuery={searchQuery}
-          onSearchChange={onSearchChange}
+        <OperatorSidebar
+          route={route}
+          pendingCount={pendingCount}
+          notificationCount={notificationCount}
+          open={menuOpen}
+          onNavigate={() => setMenuOpen(false)}
         />
-        <div className="odm-opr-body">
-          <OperatorSidebar
-            route={route}
-            pendingCount={pendingCount}
-            notificationCount={notificationCount}
+        {menuOpen ? (
+          <button
+            type="button"
+            className="odm-opr-scrim"
+            aria-label="Close navigation"
+            onClick={() => setMenuOpen(false)}
           />
-          <main className="odm-opr-main">
-            <div
-              className={
-                fillContent
-                  ? 'odm-opr-content odm-opr-content--fill'
-                  : 'odm-opr-content'
-              }
-            >
-              {children}
-            </div>
+        ) : null}
+        <div className="odm-opr-main">
+          <OperatorTopbar
+            breadcrumb={operatorActiveLabel(route.screen, lang)}
+            dark={dark}
+            onToggleDark={() => setDark((v) => !v)}
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            onOpenMenu={() => setMenuOpen(true)}
+          />
+          <main
+            className={
+              fillContent
+                ? 'odm-opr-content odm-opr-content--fill'
+                : 'odm-opr-content'
+            }
+          >
+            {children}
           </main>
         </div>
       </div>

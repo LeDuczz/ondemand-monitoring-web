@@ -22,4 +22,18 @@ describe('active mission selection', () => {
       )?.deviceId,
     ).toBe('device-0052')
   })
+
+  it('keeps the device code from the list when detail temporarily omits it', () => {
+    expect(
+      mergeMissionSnapshot(
+        { id: 'm-1', status: 'READY_TO_FLY', deviceId: null, droneCode: null },
+        {
+          id: 'm-1',
+          status: 'CONNECTED',
+          deviceId: '390b6b53-00a1-446c-abb2-93d8ffcd6454',
+          droneCode: 'DRN-02',
+        },
+      )?.droneCode,
+    ).toBe('DRN-02')
+  })
 })

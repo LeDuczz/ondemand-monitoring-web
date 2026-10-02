@@ -175,6 +175,7 @@ export type OrderDeliverableResponse = {
 /** BE actual response for `GET /api/orders/pending` and related order-detail endpoints. */
 export type OrderCreateResponse = {
   id: string
+  orderCode?: string | null
   customerId: string
   customerName: string
   title: string

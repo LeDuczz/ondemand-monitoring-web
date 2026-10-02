@@ -1,6 +1,7 @@
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { useI18n } from '../../../shared/i18n'
 import { setActiveMissionId } from '../api/liveMission'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { formatDeadline } from '../lib/formatDeadline'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
@@ -13,6 +14,12 @@ const STATUS_TONE = {
   COMPLETED: 'green',
   REJECTED: 'red',
   FAILED: 'red',
+} as const
+
+const MANAGER_SUBMISSION_TONE = {
+  NEEDS_SUBMIT: 'yellow',
+  PENDING_MANAGER: 'blue',
+  SENT_TO_CUSTOMER: 'green',
 } as const
 
 type Messages = (typeof missionListTableMessages)['vi']
@@ -149,24 +156,26 @@ export function MissionListTable({
   return (
     <div
       className="odm-card"
-      style={{ borderTop: 0, borderRadius: '0 0 8px 8px' }}
+      style={{ borderTop: 0, borderRadius: '0 0 8px 8px', overflowX: 'auto' }}
     >
-      <table className="odm-table">
+      <table className="odm-table odm-opr-mission-table">
         <thead>
           <tr>
-            <th style={{ width: 150 }}>{t.columns.code}</th>
-            <th>{t.columns.job}</th>
-            <th style={{ width: 170 }}>{t.columns.time}</th>
-            <th style={{ width: 130 }}>{t.columns.service}</th>
-            <th style={{ width: 140 }}>{t.columns.drone}</th>
-            <th style={{ width: 130 }}>{t.columns.status}</th>
-            <th style={{ width: 160 }}>{t.columns.deadline}</th>
-            <th style={{ width: 110, textAlign: 'right' }} />
+            <th className="odm-opr-mission-code">{t.columns.code}</th>
+            <th className="odm-opr-mission-job">{t.columns.job}</th>
+            <th className="odm-opr-mission-time">{t.columns.time}</th>
+            <th className="odm-opr-mission-service">{t.columns.service}</th>
+            <th className="odm-opr-mission-device">{t.columns.drone}</th>
+            <th className="odm-opr-mission-status">{t.columns.status}</th>
+            <th className="odm-opr-mission-manager">{t.columns.managerSubmission}</th>
+            <th className="odm-opr-mission-deadline">{t.columns.deadline}</th>
+            <th className="odm-opr-mission-action" />
           </tr>
         </thead>
         <tbody>
           {missions.map((mission) => {
             const action = actionFor(mission, t)
+            const deviceLabel = formatDeviceLabel(mission)
             return (
               <tr key={mission.id}>
                 <td>
@@ -186,14 +195,10 @@ export function MissionListTable({
                     {mission.missionCode ?? mission.id}
                   </a>
                 </td>
-                <td>
-                  <div style={{ fontWeight: 600 }}>{mission.title}</div>
+                <td className="odm-opr-mission-job">
+                  <div className="odm-opr-mission-title">{mission.title}</div>
                   <div
-                    style={{
-                      color: 'var(--tx3)',
-                      fontSize: 11.5,
-                      marginTop: 2,
-                    }}
+                    className="odm-opr-mission-location"
                   >
                     {mission.location}
                   </div>
@@ -214,14 +219,9 @@ export function MissionListTable({
                 <td>
                   <span className="odm-opr-chip">{mission.serviceLabel}</span>
                 </td>
-                <td>
-                  {mission.deviceId ? (
-                    <>
-                      {mission.droneName &&
-                      mission.droneName !== mission.deviceId
-                        ? `${mission.deviceId} ${mission.droneName}`
-                        : mission.deviceId}
-                    </>
+                <td className="odm-opr-mission-device">
+                  {deviceLabel ? (
+                    deviceLabel
                   ) : (
                     <span style={{ color: 'var(--tx3)' }}>{t.unassigned}</span>
                   )}
@@ -230,6 +230,25 @@ export function MissionListTable({
                   <StatusBadge tone={STATUS_TONE[mission.status]}>
                     {t.statusLabel[mission.status]}
                   </StatusBadge>
+                </td>
+                <td>
+                  {mission.status === 'COMPLETED' || mission.status === 'FAILED' ? (
+                    <StatusBadge
+                      tone={
+                        MANAGER_SUBMISSION_TONE[
+                          mission.managerSubmissionStatus ?? 'NEEDS_SUBMIT'
+                        ]
+                      }
+                    >
+                      {
+                        t.managerSubmissionLabel[
+                          mission.managerSubmissionStatus ?? 'NEEDS_SUBMIT'
+                        ]
+                      }
+                    </StatusBadge>
+                  ) : (
+                    <span style={{ color: 'var(--tx3)' }}>—</span>
+                  )}
                 </td>
                 <td>
                   <span className="odm-tn" style={{ fontWeight: 500 }}>

@@ -15,11 +15,14 @@ const MEDIA_TYPE_VI: Record<string, string> = {
   THERMAL: 'Ảnh nhiệt',
 }
 
-/** `Morning` → `Buổi sáng`; any other (already localized) text is kept. */
+/** `Morning` / `Morning 07:00–11:00` → `Buổi sáng` / `Buổi sáng 07:00–11:00`. */
 export function localizeTimeslot(name: string | null | undefined): string {
   const raw = name?.trim()
   if (!raw) return ''
-  return TIMESLOT_VI[raw.toUpperCase()] ?? raw
+  return raw.replace(
+    /^(morning|afternoon|evening|night)\b/i,
+    (match) => TIMESLOT_VI[match.toUpperCase()] ?? match,
+  )
 }
 
 /** `IMAGE` → `Ảnh`; unknown tokens are kept. */
@@ -42,7 +45,7 @@ export function preferredLabel(
   window?: string | null,
 ): string {
   const win = window?.trim()
-  if (win && win !== timeName?.trim()) return win
+  if (win && win !== timeName?.trim()) return localizeTimeslot(win)
   return [formatDateVi(date), localizeTimeslot(timeName)]
     .filter(Boolean)
     .join(' · ')

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   operatorMediaApi,
   type LocalMedia,
@@ -13,6 +13,9 @@ interface Props {
   onManual: () => void
 }
 
+const finishedUploadStatuses = new Set(['PENDING_MANAGER_APPROVAL', 'AVAILABLE'])
+const visibleAfterControllerDropStatuses = new Set(['UPLOADING', 'VALIDATING', 'PENDING_MANAGER_APPROVAL', 'AVAILABLE'])
+
 export default function MediaUpload({ mission, onDone, onManual }: Props) {
   const { t } = useI18n(mediaUploadMessages)
   const operationalMissionId = mission.backendId ?? mission.id
@@ -21,26 +24,37 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
   const [status, setStatus] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const itemsRef = useRef<LocalMedia[]>([])
 
   const refresh = useCallback(async () => {
     try {
       const local = await operatorMediaApi.list(operationalMissionId)
-      setItems(local)
       setError(null)
-      const ids = local
+      const previous = itemsRef.current
+      const ids = [...new Set([...local, ...previous]
         .filter((item) => item.backendMediaId)
-        .map((item) => item.backendMediaId!)
+        .map((item) => item.backendMediaId!))]
       const results = await Promise.allSettled(
         ids.map((id) => operatorMediaApi.status(id)),
       )
-      setStatus((previous) => {
-        const next = { ...previous }
-        results.forEach((result, index) => {
-          if (result.status === 'fulfilled')
-            next[ids[index]] = result.value.status
-        })
-        return next
+      const refreshedStatuses: Record<string, string> = {}
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') refreshedStatuses[ids[index]] = result.value.status
       })
+      setStatus((previous) => {
+        return { ...previous, ...refreshedStatuses }
+      })
+      const merged = new Map(local.map((item) => [item.localMediaId, item]))
+      for (const item of previous) {
+        if (merged.has(item.localMediaId) || !item.backendMediaId) continue
+        const backendStatus = refreshedStatuses[item.backendMediaId] ?? item.status
+        if (visibleAfterControllerDropStatuses.has(backendStatus)) {
+          merged.set(item.localMediaId, { ...item, status: backendStatus as LocalMedia['status'], localAvailable: false })
+        }
+      }
+      const nextItems = [...merged.values()]
+      itemsRef.current = nextItems
+      setItems(nextItems)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.cannotLoad)
     } finally {
@@ -73,6 +87,13 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
     try {
       const mediaId = await operatorMediaApi.upload(item)
       setStatus((previous) => ({ ...previous, [mediaId]: 'VALIDATING' }))
+      setItems((previous) => {
+        const next = previous.map((entry) => entry.localMediaId === item.localMediaId
+          ? { ...entry, backendMediaId: mediaId, status: 'VALIDATING' as const }
+          : entry)
+        itemsRef.current = next
+        return next
+      })
       await refresh()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.uploadFailed)
@@ -190,12 +211,12 @@ export default function MediaUpload({ mission, onDone, onManual }: Props) {
                         !(
                           ['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(
                             item.status,
-                          ) || backendStatus === 'AVAILABLE'
+                          ) || (backendStatus ? finishedUploadStatuses.has(backendStatus) : false)
                         )
                       }
                       onClick={() => void discard(item)}
                     >
-                      {backendStatus === 'AVAILABLE'
+                      {backendStatus && finishedUploadStatuses.has(backendStatus)
                         ? t.removeLocalCopy
                         : t.discard}
                     </button>

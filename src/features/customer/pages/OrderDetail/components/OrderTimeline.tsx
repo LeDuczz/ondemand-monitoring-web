@@ -2,6 +2,7 @@ import { Card } from '../../../../../shared/components/ui'
 import { useI18n, useLanguage } from '../../../../../shared/i18n'
 import { fmtDateTime, getOrderStatusMeta } from '../../../lib/orderStatus'
 import type { OrderTimelineEvent } from '../../../lib/orders/types'
+import { CardTitle } from './CardTitle'
 import { orderTimelineMessages } from './OrderTimeline.messages'
 
 /** Timeline derived from the few dates the BE returns (it keeps no history). */
@@ -18,7 +19,7 @@ export function OrderTimeline({ events }: { events: OrderTimelineEvent[] }) {
   }
 
   return (
-    <Card title={t.title}>
+    <Card title={<CardTitle icon="clock">{t.title}</CardTitle>}>
       <ol className="od-timeline">
         {events.map((event) => (
           <li key={`${event.kind}-${event.at}`} className={`od-timeline-item is-${event.kind}`}>

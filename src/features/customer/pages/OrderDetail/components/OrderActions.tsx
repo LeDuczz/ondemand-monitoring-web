@@ -1,4 +1,5 @@
 import { MockDataBadge } from '../../../../../shared/components/ui'
+import { OrderIcon } from '../../../../manager/components/orderReview/OrderIcon'
 import { useI18n } from '../../../../../shared/i18n'
 import type { OrderDetailView } from '../../../lib/orders/types'
 import { customerHref } from '../../../routes'
@@ -15,24 +16,28 @@ export function OrderActions({ order, onCancel }: Props) {
   return (
     <div className="od-actions">
       <a
-        className="odm-btn odm-btn-gh"
+        className="odm-btn odm-btn-gh od-btn od-btn-primary-outline"
         href={customerHref({ screen: 'analysis', orderId: order.id })}
       >
+        <OrderIcon name="ai" size={16} />
         {t.analysis}
       </a>
       {active && (
-        <a className="odm-btn odm-btn-gh" href={customerHref({ screen: 'live', orderId: order.id })}>
+        <a className="odm-btn odm-btn-gh od-btn" href={customerHref({ screen: 'live', orderId: order.id })}>
+          <OrderIcon name="locate" size={16} />
           {t.live}
         </a>
       )}
       {hasMedia && (
-        <a className="odm-btn odm-btn-gh" href={customerHref({ screen: 'media', orderId: order.id })}>
+        <a className="odm-btn odm-btn-gh od-btn" href={customerHref({ screen: 'media', orderId: order.id })}>
+          <OrderIcon name="media" size={16} />
           {t.media}
         </a>
       )}
       {order.canCancel && (
         <span className="od-cancel">
-          <button type="button" className="odm-btn odm-btn-de" onClick={onCancel}>
+          <button type="button" className="odm-btn odm-btn-de od-btn od-btn-cancel" onClick={onCancel}>
+            <OrderIcon name="trash" size={16} />
             {t.cancelOrder}
           </button>
           <MockDataBadge />

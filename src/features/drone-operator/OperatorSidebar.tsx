@@ -115,10 +115,14 @@ export function OperatorSidebar({
   route,
   pendingCount = 0,
   notificationCount = 0,
+  open = false,
+  onNavigate,
 }: {
   route: OperatorRoute
   pendingCount?: number
   notificationCount?: number
+  open?: boolean
+  onNavigate?: () => void
 }) {
   const user = authSession.getUser()
   const { t } = useI18n(operatorSidebarMessages)
@@ -126,7 +130,26 @@ export function OperatorSidebar({
   const groups = buildGroups(pendingCount, notificationCount)
 
   return (
-    <nav aria-label={t.ariaNav} className="odm-opr-side">
+    <nav
+      aria-label={t.ariaNav}
+      className={`odm-opr-side${open ? ' is-open' : ''}`}
+    >
+      <a
+        className="odm-opr-brand"
+        href={operatorHref({ screen: 'missions' })}
+        onClick={onNavigate}
+      >
+        <img
+          src="/images/logo-new.png"
+          alt="OnDemand Monitor"
+          className="odm-opr-brand-mark"
+        />
+        <span className="odm-opr-brand-name">
+          <span className="odm-opr-brand-primary">OnDemand</span>
+          <span className="odm-opr-brand-accent">Monitor</span>
+        </span>
+      </a>
+
       <div className="odm-opr-nav-scroll">
         {groups.map((group) => (
           <div key={group.labelKey}>
@@ -139,6 +162,7 @@ export function OperatorSidebar({
                   href={operatorHref(item.route)}
                   className={`odm-opr-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
+                  onClick={onNavigate}
                 >
                   <span
                     aria-hidden="true"

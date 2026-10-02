@@ -11,6 +11,7 @@ import { operatorApi } from '../api/operatorApi'
 import { setActiveMissionId } from '../api/liveMission'
 import { computeKpis } from '../lib/computeKpis'
 import { demoNow } from '../lib/demoNow'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { filterMissions, missionsByTab } from '../lib/filterMissions'
 import { operatorHref } from '../routes'
 import type { OperatorMission, OperatorMissionTab } from '../types/mission'
@@ -341,6 +342,7 @@ function NextFlightCard({
   const minutes = totalMinutes % 60
   const dayLabel =
     mission.date === today ? t.today2 : start.toLocaleDateString(locale)
+  const deviceLabel = formatDeviceLabel(mission)
 
   return (
     <div>
@@ -373,9 +375,7 @@ function NextFlightCard({
         {mission.location}
       </div>
       <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 12 }}>
-        {mission.droneName && mission.droneName !== mission.deviceId
-          ? `${mission.deviceId} ${mission.droneName}`
-          : mission.deviceId}
+        {deviceLabel ?? t.unassignedDevice}
       </div>
       <a
         className="odm-btn odm-btn-ok"

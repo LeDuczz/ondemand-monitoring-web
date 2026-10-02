@@ -7,6 +7,7 @@ export const operatorTopbarMessages = defineMessages({
     search: 'Tìm kiếm',
     searchPlaceholder: 'Tìm mã đơn, mission, thiết bị...',
     toggleTheme: 'Đổi giao diện sáng / tối',
+    openMenu: 'Mở điều hướng',
   },
   en: {
     pilotLabel: 'Pilot',
@@ -14,5 +15,6 @@ export const operatorTopbarMessages = defineMessages({
     search: 'Search',
     searchPlaceholder: 'Search order, mission, device id...',
     toggleTheme: 'Switch to light / dark theme',
+    openMenu: 'Open navigation',
   },
 })

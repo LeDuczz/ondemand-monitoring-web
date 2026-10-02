@@ -15,6 +15,11 @@ import { operatorHref } from '../../routes'
 import { markActiveMissionFlowStep } from '../../api/liveMission'
 import { getLanguage, useI18n } from '../../../../shared/i18n'
 import { inFlightControlMessages } from '../i18n/inFlightControl.messages'
+import { flightControlApi } from '../api/flightControlApi'
+import {
+  SIMULATION_MAP_DEFAULT_CROP,
+  worldToViewportPercent,
+} from '../../../../shared/lib/simulationMapProjection'
 
 interface Props {
   mission: Mission
@@ -889,8 +894,13 @@ const RealMiniMap = memo(function RealMiniMap({
 
   const worldToMinimap = (x: number, y: number) => {
     if (!meta) return [width / 2, height / 2] as const
-    const px = ((x - meta.minX) / (meta.maxX - meta.minX)) * width
-    const py = height - ((y - meta.minY) / (meta.maxY - meta.minY)) * height
+    const point = worldToViewportPercent(
+      { simX: x, simY: y },
+      meta,
+      SIMULATION_MAP_DEFAULT_CROP,
+    )
+    const px = (point.x / 100) * width
+    const py = (point.y / 100) * height
     return [px, py] as const
   }
 
@@ -909,7 +919,7 @@ const RealMiniMap = memo(function RealMiniMap({
     .join(' ')
   const routeTargetPoint =
     routeScreenPoints.find(
-      (point) => point.reason?.toUpperCase() === 'TARGET',
+      (point) => ['TARGET', 'ORDER'].includes(point.reason?.toUpperCase()),
     ) ?? routeScreenPoints[routeScreenPoints.length - 1]
   const orderTargetPoint =
     typeof mission.targetSimX === 'number' &&
@@ -935,6 +945,13 @@ const RealMiniMap = memo(function RealMiniMap({
     ? `?v=${encodeURIComponent(meta.imageVersion)}`
     : ''
   const mapImageUrl = `${env.apiBaseUrl}${mapImagePath}${mapImageVersion}`
+  const crop = SIMULATION_MAP_DEFAULT_CROP
+  const visibleMapWidth = 100 - crop.left - crop.right
+  const visibleMapHeight = 100 - crop.top - crop.bottom
+  const mapX = -(crop.left / visibleMapWidth) * width
+  const mapY = -(crop.top / visibleMapHeight) * height
+  const mapWidth = (100 / visibleMapWidth) * width
+  const mapHeight = (100 / visibleMapHeight) * height
 
   return (
     <GlassPanel style={{ width: '100%', overflow: 'hidden', flexShrink: 0 }}>
@@ -1018,10 +1035,10 @@ const RealMiniMap = memo(function RealMiniMap({
         />
         <image
           href={mapImageUrl}
-          x="0"
-          y="0"
-          width={width}
-          height={height}
+          x={mapX}
+          y={mapY}
+          width={mapWidth}
+          height={mapHeight}
           preserveAspectRatio="xMidYMid slice"
           opacity=".92"
         />
@@ -1033,27 +1050,61 @@ const RealMiniMap = memo(function RealMiniMap({
           fill="rgba(2,6,23,.14)"
         />
         {routeScreenPoints.length > 1 && (
-          <path
-            d={routePath}
-            fill="none"
-            stroke="rgba(34,211,238,.92)"
-            strokeWidth={2.25}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="5 3"
-          />
+          <g>
+            <path
+              d={routePath}
+              fill="none"
+              stroke="rgba(2,6,23,.75)"
+              strokeWidth={5.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d={routePath}
+              fill="none"
+              stroke="rgba(34,211,238,.96)"
+              strokeWidth={2.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="6 3"
+            />
+            <text
+              x={viewX + viewWidth - 8 / zoom}
+              y={viewY + viewHeight - 10 / zoom}
+              fill="#cffafe"
+              fontSize={8 / zoom}
+              fontWeight="900"
+              textAnchor="end"
+              paintOrder="stroke"
+              stroke="rgba(15,23,42,.9)"
+              strokeWidth={2 / zoom}
+            >
+              KẾ HOẠCH BAY · {routeScreenPoints.length} WP
+            </text>
+          </g>
         )}
         {routeScreenPoints.map((point) => {
-          const isTarget = point.reason?.toUpperCase() === 'TARGET'
+          const reason = point.reason?.toUpperCase()
+          const isTarget = reason === 'TARGET' || reason === 'ORDER'
+          const isStart = reason === 'START' || point.sequence === 0
           return (
             <g key={point.id} transform={`translate(${point.x} ${point.y})`}>
               <circle
-                r={isTarget ? 5 : 4}
-                fill={isTarget ? '#ef4444' : '#fbbf24'}
+                r={isTarget ? 5.5 : isStart ? 5 : 4}
+                fill={isTarget ? '#ef4444' : isStart ? '#60a5fa' : '#fbbf24'}
                 stroke="#fff7ed"
                 strokeWidth="1"
               />
-              <text x={7} y={3} fill="#fef3c7" fontSize="7" fontWeight="900">
+              <text
+                x={7}
+                y={3}
+                fill="#fef3c7"
+                fontSize="7"
+                fontWeight="900"
+                paintOrder="stroke"
+                stroke="rgba(15,23,42,.85)"
+                strokeWidth="2"
+              >
                 {point.sequence}
               </text>
             </g>
@@ -2919,22 +2970,13 @@ export default function InFlightControl({
 
     async function checkStatus() {
       try {
-        const response = await fetch(`${controlBaseUrl}/api/control/status`, {
-          cache: 'no-store',
-        })
-        if (!response.ok) {
-          const failure = await response.json().catch(() => null)
-          throw new Error(failure?.error ?? `HTTP ${response.status}`)
-        }
-        const status = await response
-          .json()
-          .catch(() => ({ online: response.ok }))
+        const status = await flightControlApi.status()
         if (alive) {
           setControlStatus(status)
           setIsOnline((wasOnline) => {
-            if (!wasOnline && response.ok)
+            if (!wasOnline && status.online)
               setStreamRevision((value) => value + 1)
-            return response.ok
+            return status.online
           })
         }
       } catch {
@@ -3218,7 +3260,7 @@ export default function InFlightControl({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <strong style={{ fontSize: 14, letterSpacing: '.02em' }}>
-                {drone.id}
+                {drone.name || drone.id}
               </strong>
               <span
                 style={{
@@ -3669,7 +3711,8 @@ export default function InFlightControl({
             <PreflightChecklistPanel
               missionId={mission.backendId ?? mission.id}
               missionLabel={mission.id}
-              droneLabel={drone.id}
+              deviceId={drone.id}
+              deviceLabel={drone.name || drone.id}
               missionStatus={mission.state}
               onReady={handlePreflightReady}
               embedded

@@ -6,6 +6,7 @@ import { authenticatedFetch } from '../../auth/api/authApi'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { useActiveMission } from '../api/useActiveMission'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { backendPreflightTokenStorageKey } from '../lib/flightWorkflowStorage'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
@@ -448,7 +449,10 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         missionLabel={
           mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
         }
-        droneLabel={mission.data?.deviceId ?? NO_DRONE_SENTINEL}
+        deviceId={mission.data?.deviceId ?? NO_DRONE_SENTINEL}
+        deviceLabel={
+          mission.data ? formatDeviceLabel(mission.data) ?? undefined : undefined
+        }
         missionStatus={mission.data?.status}
         latitude={mission.data?.latitude ?? undefined}
         longitude={mission.data?.longitude ?? undefined}
@@ -463,7 +467,8 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
 export function PreflightChecklistPanel({
   missionId,
   missionLabel,
-  droneLabel,
+  deviceId,
+  deviceLabel,
   missionStatus,
   latitude,
   longitude,
@@ -472,7 +477,8 @@ export function PreflightChecklistPanel({
 }: {
   missionId: string
   missionLabel?: string
-  droneLabel: string
+  deviceId: string
+  deviceLabel?: string
   missionStatus?: string | null
   latitude?: number
   longitude?: number
@@ -485,12 +491,12 @@ export function PreflightChecklistPanel({
     [lang],
   )
   const storageKey = useMemo(
-    () => preflightStateStorageKey(missionId, droneLabel),
-    [droneLabel, missionId],
+    () => preflightStateStorageKey(missionId, deviceId),
+    [deviceId, missionId],
   )
   const weatherStorageKey = useMemo(
-    () => weatherStateStorageKey(missionId, droneLabel),
-    [droneLabel, missionId],
+    () => weatherStateStorageKey(missionId, deviceId),
+    [deviceId, missionId],
   )
   const [checkId, setCheckId] = useState<string | null>(null)
   const [runtimeStatus, setRuntimeStatus] =
@@ -535,7 +541,7 @@ export function PreflightChecklistPanel({
     setPersistedPreflightStatus(null)
     setPersistedWeatherPassed(false)
     setRuntimeSessionId(readStoredPreflightSession(storageKey))
-  }, [missionId, droneLabel, storageKey])
+  }, [missionId, deviceId, storageKey])
 
   const itemStates = useMemo(
     () => mapRuntimeToItems(runtimeStatus?.checks ?? []),
@@ -564,7 +570,7 @@ export function PreflightChecklistPanel({
   useEffect(() => {
     backendPreflightRegisteredRef.current = false
     setBackendPreflightMessage(null)
-  }, [missionId, droneLabel])
+  }, [missionId, deviceId])
 
   async function syncRuntimeStatusToBackend(
     status: RuntimePreflightStatus,
@@ -617,7 +623,7 @@ export function PreflightChecklistPanel({
     syncingPersistedItemsRef.current = false
     backendPreflightRegisteredRef.current = false
     window.sessionStorage.removeItem(
-      backendPreflightTokenStorageKey(missionId, droneLabel),
+      backendPreflightTokenStorageKey(missionId, deviceId),
     )
     clearStoredPreflightState(storageKey)
     clearStoredWeatherState(weatherStorageKey)
@@ -658,7 +664,7 @@ export function PreflightChecklistPanel({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             missionId,
-            deviceId: droneLabel,
+            deviceId,
             latitude,
             longitude,
           }),
@@ -706,7 +712,7 @@ export function PreflightChecklistPanel({
           payload.missionId === missionId ||
           payload.missionCode === missionLabel
         const boundToCurrentDevice =
-          !payload?.deviceId || payload.deviceId === droneLabel
+          !payload?.deviceId || payload.deviceId === deviceId
         if (!alive) return
         if (!boundToCurrentMission || !boundToCurrentDevice) {
           throw new Error('Controller bound to another mission')
@@ -770,7 +776,7 @@ export function PreflightChecklistPanel({
       alive = false
       window.clearInterval(timer)
     }
-  }, [droneLabel, missionId, missionLabel, storageKey, weatherStorageKey])
+  }, [deviceId, missionId, missionLabel, storageKey, weatherStorageKey])
 
   useEffect(() => {
     if (!controllerOnline) return
@@ -963,7 +969,7 @@ export function PreflightChecklistPanel({
       isAlreadyInFlight ||
       backendPreflightRegisteredRef.current ||
       missionId === NO_MISSION_SENTINEL ||
-      droneLabel === NO_DRONE_SENTINEL
+      deviceId === NO_DRONE_SENTINEL
     ) {
       return
     }
@@ -975,13 +981,13 @@ export function PreflightChecklistPanel({
       setBackendPreflightRegistering(true)
       setBackendPreflightMessage(t.confirmingBackendPrecheck)
       try {
-        const check = await missionApi.runPreflightCheck(missionId, droneLabel)
+        const check = await missionApi.runPreflightCheck(missionId, deviceId)
         if (!alive) return
         if (!check.overallPassed || !check.flightToken) {
           throw new Error(check.failureReason || t.backendPreflightFailed)
         }
         window.sessionStorage.setItem(
-          backendPreflightTokenStorageKey(missionId, droneLabel),
+          backendPreflightTokenStorageKey(missionId, deviceId),
           check.flightToken.tokenValue,
         )
         setBackendPreflightMessage(t.backendSwitchedReady)
@@ -1003,7 +1009,7 @@ export function PreflightChecklistPanel({
     return () => {
       alive = false
     }
-  }, [droneLabel, isAlreadyInFlight, isReady, missionId])
+  }, [deviceId, isAlreadyInFlight, isReady, missionId])
 
   return (
     <div
@@ -1039,7 +1045,9 @@ export function PreflightChecklistPanel({
               textOverflow: 'ellipsis',
             }}
           >
-            {droneLabel === NO_DRONE_SENTINEL ? t.noDroneAssigned : droneLabel}
+            {deviceId === NO_DRONE_SENTINEL
+              ? t.noDroneAssigned
+              : deviceLabel ?? deviceId}
           </span>
         }
       />

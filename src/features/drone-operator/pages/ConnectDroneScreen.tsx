@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { useActiveMission } from '../api/useActiveMission'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { ConnectStatusPanel } from './ConnectStatusPanel'
 import { FlightStepHeader } from './FlightStepper'
 import { connectDroneScreenMessages } from './ConnectDroneScreen.messages'
@@ -19,6 +20,9 @@ export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
   const [token, setToken] = useState(t.tokenPlaceholder)
   const [gcsId, setGcsId] = useState(t.gcsOptions[0])
   const [error, setError] = useState<string | null>(null)
+  const deviceLabel = mission.data
+    ? formatDeviceLabel(mission.data)
+    : null
 
   async function handleConnect() {
     setState('connecting')
@@ -50,11 +54,7 @@ export function ConnectDroneScreen({ missionId }: { missionId?: string }) {
         }
         active={2}
         right={
-          <DroneChip
-            label={
-              mission.data?.deviceId ?? t.noDroneAssigned
-            }
-          />
+          <DroneChip label={deviceLabel ?? t.noDroneAssigned} />
         }
       />
       <div style={{ padding: '18px 22px' }}>

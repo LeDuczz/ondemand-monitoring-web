@@ -1,6 +1,8 @@
 import type {
   Mission,
   MissionStaffRole,
+  MissionResult,
+  MissionResultMedia,
   PreflightCheck,
   DeviceImage,
   DeviceStatus,
@@ -50,6 +52,66 @@ export const missionApi = {
   // Query Mission Details
   getMissionById: async (missionId: string): Promise<Mission> => {
     return request<Mission>(`${API_BASE}/missions/${missionId}`)
+  },
+
+  getMissionResult: async (missionId: string, signal?: AbortSignal): Promise<MissionResult | null> => {
+    const res = await authenticatedFetch(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/result`,
+      {
+        signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (res.status === 404) return null
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(
+        errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+      )
+    }
+
+    const payload: ApiResponse<MissionResult> = await res.json()
+    return payload.data
+  },
+
+  /** GET /api/missions/{id}/media — all uploaded media of a mission (fallback when no result yet). */
+  getMissionMedia: async (missionId: string, signal?: AbortSignal): Promise<MissionResultMedia[]> => {
+    const res = await authenticatedFetch(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/media`,
+      { signal, headers: { 'Content-Type': 'application/json' } },
+    )
+    if (res.status === 404) return []
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`)
+    }
+    const payload = (await res.json()) as { data?: MissionResultMedia[] | null } | MissionResultMedia[]
+    return (Array.isArray(payload) ? payload : payload.data) ?? []
+  },
+
+  submitMissionResult: async (
+    missionId: string,
+    payload: {
+      status: 'COMPLETED' | 'COMPLETED_WITH_ISSUES' | 'FAILED' | 'REVIEW_REQUIRED'
+      startedAt?: string | null
+      endedAt?: string | null
+      completedAt?: string | null
+      summary?: string | null
+      notes?: string | null
+      reviewedBy?: string | null
+    },
+  ): Promise<unknown> => {
+    return request<unknown>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/result`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    )
   },
 
   getPendingAssignmentMissions: async (): Promise<Mission[]> => {

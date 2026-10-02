@@ -15,10 +15,12 @@ export type OperatorMission = {
   endTime: string
   serviceLabel: string
   deviceId?: string | null
+  deviceCode?: string | null
   droneCode: string | null
   droneName: string | null
   flightStartedAt?: string
   completedAt?: string
+  managerSubmissionStatus?: 'NEEDS_SUBMIT' | 'PENDING_MANAGER' | 'SENT_TO_CUSTOMER'
   rejectReason?: string
   acceptedAt?: string
   managerNote?: string

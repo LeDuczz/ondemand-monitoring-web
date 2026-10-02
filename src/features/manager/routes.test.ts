@@ -30,6 +30,10 @@ describe('parseManagerRoute', () => {
   })
 
   it('parses the dispatch route (MNG-05)', () => {
+    expect(parseManagerRoute('#portal/staff/missions/MSN-1/detail')).toEqual({
+      screen: 'missionDetail',
+      missionId: 'MSN-1',
+    })
     expect(parseManagerRoute('#portal/staff/missions/MSN-1/dispatch')).toEqual({
       screen: 'missionDispatch',
       missionId: 'MSN-1',

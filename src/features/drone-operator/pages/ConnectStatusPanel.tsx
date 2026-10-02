@@ -3,6 +3,7 @@ import { useI18n } from '../../../shared/i18n'
 import { operatorHref } from '../routes'
 import type { ConnectState } from './ConnectDroneScreen'
 import type { BackendMission } from '../api/liveMission'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { connectStatusPanelMessages } from './ConnectStatusPanel.messages'
 
 export function ConnectStatusPanel({
@@ -15,6 +16,7 @@ export function ConnectStatusPanel({
   mission?: BackendMission
 }) {
   const { t, locale } = useI18n(connectStatusPanelMessages)
+  const deviceLabel = mission ? formatDeviceLabel(mission) : null
   const TRACKER_STEPS = t.trackerSteps
   const doneCount =
     state === 'connected'
@@ -88,7 +90,7 @@ export function ConnectStatusPanel({
                 ? new Date(mission.scheduledStartAt).toLocaleString(locale)
                 : t.noSchedule}
             </span>
-            <span>{mission?.deviceId ?? t.noDroneAssigned}</span>
+            <span>{deviceLabel ?? t.noDroneAssigned}</span>
             <span>{mission?.address ?? t.noAddress}</span>
           </div>
         </div>

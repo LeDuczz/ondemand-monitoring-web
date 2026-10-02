@@ -19,6 +19,7 @@ export type ManagerRoute =
   | { screen: 'missionCreate'; orderId: string }
   | { screen: 'missionDispatch'; missionId: string }
   | { screen: 'missionSetup'; missionId: string }
+  | { screen: 'missionDetail'; missionId: string }
   | { screen: 'schedule' }
   | { screen: 'live'; missionId?: string }
   | { screen: 'missions'; missionId?: string }
@@ -39,6 +40,7 @@ export const managerScreenCode: Record<ManagerScreen, string> = {
   missionCreate: 'MNG-04',
   missionDispatch: 'MNG-05',
   missionSetup: 'MNG-05',
+  missionDetail: 'MNG-08',
   schedule: 'MNG-06',
   live: 'MNG-07',
   missions: 'MNG-08',
@@ -80,6 +82,8 @@ export function parseManagerRoute(hash: string): ManagerRoute {
       if (tail.length === 1) return { screen: 'missions', missionId: tail[0] }
       if (tail.length === 2 && tail[1] === 'setup')
         return { screen: 'missionSetup', missionId: tail[0] }
+      if (tail.length === 2 && tail[1] === 'detail')
+        return { screen: 'missionDetail', missionId: tail[0] }
       if (tail.length === 2 && tail[1] === 'dispatch')
         return { screen: 'missionDispatch', missionId: tail[0] }
       return { screen: 'notFound' }
@@ -126,6 +130,8 @@ export function managerHref(route: ManagerRoute): string {
       return `${MANAGER_ROOT}/missions/${route.missionId}/dispatch`
     case 'missionSetup':
       return `${MANAGER_ROOT}/missions/${route.missionId}/setup`
+    case 'missionDetail':
+      return `${MANAGER_ROOT}/missions/${route.missionId}/detail`
     case 'schedule':
       return `${MANAGER_ROOT}/schedule`
     case 'live':

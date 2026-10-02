@@ -11,13 +11,16 @@ import {
 } from '../../../shared/lib/simulationMapProjection'
 import { env } from '../../../config/env'
 import { authenticatedFetch } from '../../auth/api/authApi'
+import { missionApi } from '../../mission/api/missionApi'
 import { operatorApi } from '../api/operatorApi'
 import { setActiveMissionId } from '../api/liveMission'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
 import { RejectDialog } from './RejectDialog'
 import { missionDetailScreenMessages } from './MissionDetailScreen.messages'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
+import { viCheckMessage, viCheckName } from '../../../shared/lib/checkText'
 
 // ─── Status maps ────────────────────────────────────────────────────────────
 
@@ -110,8 +113,11 @@ type PostflightCheckStatus = {
   id: string
   missionId?: string | null
   deviceConnectionId?: string | null
+  deviceCode?: string | null
+  deviceName?: string | null
   droneCode?: string | null
   checkedBy?: string | null
+  status?: string | null
   batteryOk?: boolean | null
   motorOk?: boolean | null
   cameraOk?: boolean | null
@@ -128,11 +134,18 @@ type PostflightCheckStatus = {
   landingHeadingDeg?: number | null
   landingTelemetryOnline?: boolean | null
   checkedAt: string
+  startedAt?: string | null
+  completedAt?: string | null
+  totalChecks?: number | null
+  passedChecks?: number | null
+  failedChecks?: number | null
+  progressPercent?: number | null
   items?: Array<{
     id?: string | null
     checkType?: string | null
     checkName?: string | null
-    status?: 'PASS' | 'WARN' | 'FAIL' | string | null
+    status?: 'PASS' | 'WARN' | 'FAIL' | 'PASSED' | 'FAILED' | 'PENDING' | string | null
+    checkLevel?: string | null
     message?: string | null
     checkedAt?: string | null
   }>
@@ -215,6 +228,74 @@ function isPostflightStatus(value: unknown): value is PostflightCheckStatus {
     typeof candidate.overallOk === 'boolean' &&
     typeof candidate.checkedAt === 'string'
   )
+}
+
+function postflightItemFailed(item: { status?: string | null }) {
+  return item.status === 'FAIL' || item.status === 'FAILED'
+}
+
+function normalizePostflightItemStatus(status?: string | null) {
+  if (status === 'PASSED') return 'PASS'
+  if (status === 'FAILED') return 'FAIL'
+  if (status === 'PENDING') return 'WARN'
+  return status ?? null
+}
+
+function hasAnyPostflightType(
+  items: Array<{ checkType?: string | null; status?: string | null }>,
+  types: string[],
+) {
+  const relevant = items.filter((item) =>
+    types.includes(String(item.checkType ?? '').toUpperCase()),
+  )
+  if (relevant.length === 0) return null
+  return relevant.every((item) => !postflightItemFailed(item))
+}
+
+function normalizePostflightStatus(value: unknown): PostflightCheckStatus | null {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Partial<PostflightCheckStatus>
+  if (typeof candidate.id !== 'string') return null
+  const items = (candidate.items ?? []).map((item) => ({
+    ...item,
+    status: normalizePostflightItemStatus(item.status),
+  }))
+  const status = candidate.status
+  const overallOk =
+    typeof candidate.overallOk === 'boolean'
+      ? candidate.overallOk
+      : status === 'PASSED'
+        ? true
+        : status === 'FAILED'
+          ? false
+          : items.length > 0
+            ? items.every((item) => !postflightItemFailed(item))
+            : false
+  const checkedAt =
+    candidate.checkedAt ??
+    candidate.completedAt ??
+    candidate.startedAt ??
+    new Date().toISOString()
+
+  return {
+    ...candidate,
+    id: candidate.id,
+    overallOk,
+    checkedAt,
+    items,
+    batteryOk:
+      candidate.batteryOk ?? hasAnyPostflightType(items, ['BATTERY', 'E1', 'E4']),
+    motorOk:
+      candidate.motorOk ?? hasAnyPostflightType(items, ['PROPELLERS', 'MOTORS', 'P1', 'P2']),
+    cameraOk:
+      candidate.cameraOk ?? hasAnyPostflightType(items, ['CAMERA', 'E2']),
+    gpsOk:
+      candidate.gpsOk ?? hasAnyPostflightType(items, ['GPS', 'E3']),
+    communicationOk:
+      candidate.communicationOk ?? hasAnyPostflightType(items, ['COMMUNICATION', 'D1']),
+    physicalConditionOk:
+      candidate.physicalConditionOk ?? hasAnyPostflightType(items, ['AIRFRAME', 'A1', 'A2']),
+  }
 }
 
 function readStoredPreflightState(missionId: string, droneLabel?: string | null) {
@@ -310,7 +391,8 @@ async function fetchLatestPostflightCheck(missionId: string, signal?: AbortSigna
   if (!response.ok) return null
   const payload = await response.json()
   const postflight = payload?.data ?? payload
-  return isPostflightStatus(postflight) ? postflight : null
+  const normalized = normalizePostflightStatus(postflight)
+  return normalized && isPostflightStatus(normalized) ? normalized : null
 }
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
@@ -500,9 +582,40 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   const query = useApiQuery((signal) => operatorApi.getMission(missionId, signal), [missionId])
   const [showReject, setShowReject] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [resultSubmitting, setResultSubmitting] = useState(false)
+  const [resultSubmitted, setResultSubmitted] = useState(false)
+  const [persistedResultSubmitted, setPersistedResultSubmitted] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [resultMessage, setResultMessage] = useState<string | null>(null)
 
   useEffect(() => { setActiveMissionId(missionId) }, [missionId])
+
+  useEffect(() => {
+    const mission = query.data
+    if (!mission) return
+    if (mission.status !== 'COMPLETED') {
+      setPersistedResultSubmitted(false)
+      return
+    }
+
+    let active = true
+    missionApi
+      .getMissionResult(mission.id)
+      .then((result) => {
+        if (!active) return
+        setPersistedResultSubmitted(
+          result?.approvalStatus === 'PENDING_MANAGER_APPROVAL' ||
+            result?.approvalStatus === 'APPROVED',
+        )
+      })
+      .catch(() => {
+        if (active) setPersistedResultSubmitted(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [query.data])
 
   if (query.loading) return <LoadingState />
   if (query.error || !query.data) {
@@ -548,16 +661,49 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     }
   }
 
+  async function handleSubmitResult() {
+    setResultSubmitting(true)
+    setActionError(null)
+    setResultMessage(null)
+    try {
+      await missionApi.submitMissionResult(mission.id, {
+        status: 'COMPLETED',
+        startedAt: mission.flightStartedAt ?? null,
+        endedAt: mission.completedAt ?? null,
+        completedAt: mission.completedAt ?? new Date().toISOString(),
+        summary: [
+          `Mission ${mission.missionCode ?? mission.id} đã hoàn thành.`,
+          `Dịch vụ: ${mission.serviceLabel || 'Chưa rõ'}.`,
+          `Địa điểm: ${mission.location || 'Chưa rõ'}.`,
+          `Quãng đường: ${formatMeters(mission.planSummary?.plannedDistanceM)}.`,
+          `Thời lượng dự kiến: ${formatSeconds(mission.planSummary?.plannedDurationSec)}.`,
+          `Waypoint: ${mission.planSummary?.waypointCount ?? mission.planSummary?.waypoints.length ?? 0}.`,
+        ].join(' '),
+        notes: 'Kết quả mission được gửi từ phi công để manager duyệt.',
+      })
+      setResultSubmitted(true)
+      setPersistedResultSubmitted(true)
+      setResultMessage('Đã gửi kết quả mission cho manager duyệt.')
+    } catch (error) {
+      setActionError(actionErrorMessage(error, 'Không thể gửi kết quả cho manager. Vui lòng thử lại.'))
+    } finally {
+      setResultSubmitting(false)
+    }
+  }
+
   return (
     <>
       <MissionDashboard
         mission={mission}
         submitting={submitting}
         actionError={actionError}
+        resultSubmitting={resultSubmitting}
+        resultSubmitted={resultSubmitted || persistedResultSubmitted}
+        resultMessage={resultMessage}
         onAccept={handleAccept}
         onOpenReject={() => setShowReject(true)}
+        onSubmitResult={handleSubmitResult}
       />
-      {mission.status === 'COMPLETED' ? <MissionUploadedMedia missionId={mission.id} /> : null}
 
       {showReject ? (
         <RejectDialog
@@ -577,14 +723,22 @@ function MissionDashboard({
   mission,
   submitting,
   actionError,
+  resultSubmitting,
+  resultSubmitted,
+  resultMessage,
   onAccept,
   onOpenReject,
+  onSubmitResult,
 }: {
   mission: OperatorMission
   submitting: boolean
   actionError: string | null
+  resultSubmitting: boolean
+  resultSubmitted: boolean
+  resultMessage: string | null
   onAccept: () => void
   onOpenReject: () => void
+  onSubmitResult: () => void
 }) {
   const deviceId = mission.deviceId
   const [preflightStatus, setPreflightStatus] = useState<RuntimePreflightStatus | null>(() =>
@@ -594,6 +748,15 @@ function MissionDashboard({
     readStoredWeatherState(mission.id, deviceId),
   )
   const [postflightStatus, setPostflightStatus] = useState<PostflightCheckStatus | null>(null)
+  const [tab, setTab] = useState<'overview' | 'plan' | 'checks' | 'media'>('overview')
+  const tabs: Array<{ id: 'overview' | 'plan' | 'checks' | 'media'; label: string }> = [
+    { id: 'overview', label: 'Tổng quan' },
+    { id: 'plan', label: 'Kế hoạch bay' },
+    { id: 'checks', label: 'Kiểm tra' },
+    ...(mission.status === 'COMPLETED'
+      ? [{ id: 'media' as const, label: 'Ảnh & video' }]
+      : []),
+  ]
 
   useEffect(() => {
     setPreflightStatus(readStoredPreflightState(mission.id, deviceId))
@@ -630,8 +793,11 @@ function MissionDashboard({
       <MissionHeader
         mission={mission}
         submitting={submitting}
+        resultSubmitting={resultSubmitting}
+        resultSubmitted={resultSubmitted}
         onAccept={onAccept}
         onOpenReject={onOpenReject}
+        onSubmitResult={onSubmitResult}
       />
 
       {actionError ? (
@@ -650,30 +816,79 @@ function MissionDashboard({
         </div>
       ) : null}
 
-      {/* ── Independent dashboard columns ── */}
-      <div className="mds-main-grid">
-        {/* LEFT: map + waypoint table */}
-        <div className="mds-col mds-left-col">
-          <MissionMapCard mission={mission} />
-          <WaypointTableCard mission={mission} />
-          <WeatherCard weather={weatherStatus} />
+      {resultMessage ? (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: 'var(--green-bg)',
+            color: 'var(--green-fg)',
+            border: '1px solid var(--green-dot)',
+            fontSize: 13,
+          }}
+        >
+          {resultMessage}
         </div>
+      ) : null}
 
-        {/* CENTER: flight summary + planning */}
-        <div className="mds-col mds-center-col">
-          <FlightSummaryCard mission={mission} />
-          <MissionPlanningCard mission={mission} />
-        </div>
-
-        {/* RIGHT: info + device + precheck + postcheck */}
-        <div className="mds-col mds-right-col">
-          <MissionInfoCard mission={mission} />
-          <DroneDeviceCard mission={mission} />
-          <PrecheckCard preflight={preflightStatus} />
-          <PostcheckCard postflight={postflightStatus} />
-          {mission.managerNote ? <ManagerNoteCard mission={mission} /> : null}
-        </div>
+      <div className="mds-tabs" role="tablist">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`mds-tab${tab === t.id ? ' is-active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {tab === 'overview' ? (
+        <div className="mds-tab-grid">
+          <div className="mds-col">
+            <MissionMapCard mission={mission} />
+            <WaypointTableCard mission={mission} />
+          </div>
+          <div className="mds-col mds-sticky-col">
+            <MissionInfoCard mission={mission} />
+            <FlightSummaryCard mission={mission} />
+            <DroneDeviceCard mission={mission} />
+            {mission.managerNote ? <ManagerNoteCard mission={mission} /> : null}
+          </div>
+        </div>
+      ) : null}
+
+      {tab === 'plan' ? (
+        <div className="mds-tab-grid mds-tab-grid--single">
+          <div className="mds-col">
+            <MissionPlanningCard
+              mission={mission}
+              preflight={preflightStatus}
+              postflight={postflightStatus}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {tab === 'checks' ? (
+        <div className="mds-tab-grid">
+          <div className="mds-col">
+            <PrecheckCard preflight={preflightStatus} />
+            <WeatherCard weather={weatherStatus} />
+          </div>
+          <div className="mds-col">
+            <PostcheckCard postflight={postflightStatus} />
+          </div>
+        </div>
+      ) : null}
+
+      {tab === 'media' && mission.status === 'COMPLETED' ? (
+        <MissionUploadedMedia missionId={mission.id} />
+      ) : null}
     </div>
   )
 }
@@ -683,13 +898,19 @@ function MissionDashboard({
 function MissionHeader({
   mission,
   submitting,
+  resultSubmitting,
+  resultSubmitted,
   onAccept,
   onOpenReject,
+  onSubmitResult,
 }: {
   mission: OperatorMission
   submitting: boolean
+  resultSubmitting: boolean
+  resultSubmitted: boolean
   onAccept: () => void
   onOpenReject: () => void
+  onSubmitResult: () => void
 }) {
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
   return (
@@ -738,6 +959,22 @@ function MissionHeader({
             <a className="odm-btn odm-btn-p" href={operatorHref({ screen: 'flight', missionId: mission.id })}>
               Mở buồng lái
             </a>
+          </>
+        ) : mission.status === 'COMPLETED' ? (
+          <>
+            {resultSubmitted ? <StatusBadge tone="green">Đã gửi manager</StatusBadge> : null}
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={onSubmitResult}
+              disabled={resultSubmitting || resultSubmitted}
+            >
+              {resultSubmitting
+                ? 'Đang gửi...'
+                : resultSubmitted
+                  ? 'Đã gửi manager'
+                  : 'Gửi manager duyệt'}
+            </button>
           </>
         ) : null}
       </div>
@@ -1458,13 +1695,40 @@ function formatPercent(value?: number | null) {
   return `${value.toFixed(1)}%`
 }
 
+function extractBatteryPercentFromPreflight(
+  preflight?: RuntimePreflightStatus | null,
+) {
+  const batteryCheck = preflight?.checks.find((item) => {
+    const key = item.key.trim().toLowerCase()
+    const name = item.name.trim().toLowerCase()
+    return key.includes('battery') || name.includes('battery') || name.includes('pin')
+  })
+  const match = /(\d+(?:[.,]\d+)?)\s*%/.exec(batteryCheck?.message ?? '')
+  if (!match) return null
+  const value = Number(match[1].replace(',', '.'))
+  return Number.isFinite(value) ? value : null
+}
+
 function formatEnergy(value?: number | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return '—'
   return `${Math.round(value).toLocaleString('vi-VN')} mAh`
 }
 
-function MissionPlanningCard({ mission }: { mission: OperatorMission }) {
+function MissionPlanningCard({
+  mission,
+  preflight,
+  postflight,
+}: {
+  mission: OperatorMission
+  preflight: RuntimePreflightStatus | null
+  postflight: PostflightCheckStatus | null
+}) {
   const plan = mission.planSummary
+  const preflightBattery =
+    plan?.availableBatteryPercentAtPlanning ??
+    extractBatteryPercentFromPreflight(preflight)
+  const remainingBattery =
+    postflight?.landingBatteryPercent ?? plan?.estimatedRemainingBatteryPercent
 
   return (
     <div className="odm-card">
@@ -1491,9 +1755,9 @@ function MissionPlanningCard({ mission }: { mission: OperatorMission }) {
               <PlanMetric label="Năng lượng" value={formatEnergy(plan.estimatedEnergyMah)} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7 }}>
-              <PlanMetric label="Pin trước bay" value={formatPercent(plan.availableBatteryPercentAtPlanning)} compact />
+              <PlanMetric label="Pin trước bay" value={formatPercent(preflightBattery)} compact />
               <PlanMetric label="Pin dùng dự kiến" value={formatPercent(plan.estimatedBatteryUsedPercent)} compact />
-              <PlanMetric label="Pin còn lại" value={formatPercent(plan.estimatedRemainingBatteryPercent)} compact />
+              <PlanMetric label="Pin còn lại" value={formatPercent(remainingBattery)} compact />
             </div>
           </>
         ) : (
@@ -1605,11 +1869,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 // ─── Device card ──────────────────────────────────────────────────────────────
 
 function DroneDeviceCard({ mission }: { mission: OperatorMission }) {
-  const deviceId = mission.deviceId
-  const droneLabel =
-    mission.droneName && mission.droneName !== deviceId
-      ? `${deviceId} ${mission.droneName}`
-      : deviceId ?? 'Chưa gán thiết bị'
+  const droneLabel = formatDeviceLabel(mission) ?? 'Chưa gán thiết bị'
 
   return (
     <div className="odm-card">
@@ -2022,7 +2282,7 @@ function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | nul
                       </span>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 600, color: isFail ? 'var(--red-fg)' : 'var(--tx)' }}>
-                          {item.checkName ?? item.checkType}
+                          {viCheckName(item.checkName ?? item.checkType)}
                         </div>
                         {item.message && (
                           <div
@@ -2033,7 +2293,7 @@ function PostcheckCard({ postflight }: { postflight: PostflightCheckStatus | nul
                               lineHeight: 1.35,
                             }}
                           >
-                            {item.message}
+                            {viCheckMessage(item.message)}
                           </div>
                         )}
                       </div>

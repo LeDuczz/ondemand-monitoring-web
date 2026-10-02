@@ -99,6 +99,43 @@ export interface Mission {
   plan?: MissionPlan | null
 }
 
+export type MissionResultStatus =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+
+export type MissionResultApprovalStatus =
+  | 'PENDING_MANAGER_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+
+export interface MissionResult {
+  id: string
+  missionId: string
+  missionCode: string
+  status: MissionResultStatus
+  approvalStatus: MissionResultApprovalStatus
+  submittedAt?: string | null
+  approvedAt?: string | null
+  rejectedAt?: string | null
+  mediaFiles?: MissionResultMedia[] | null
+}
+
+export interface MissionResultMedia {
+  id: string
+  missionId: string
+  deviceId?: string | null
+  droneId?: string | null
+  type?: string | null
+  url: string
+  expiresIn?: number | null
+  contentType?: string | null
+  fileSize?: number | null
+  capturedAt?: string | null
+}
+
 export type MissionStaffRole = 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'
 export type StaffResponseStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED'
 

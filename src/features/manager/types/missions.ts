@@ -321,16 +321,23 @@ export type MissionResponse = {
   staffAssignments?: MissionStaffAssignmentResponse[]
   droneId: string | null
   droneCode: string | null
+  deviceId?: string | null
+  deviceCode?: string | null
+  deviceName?: string | null
   latitude: number | null
   longitude: number | null
   address: string | null
   scheduledStartAt: string | null
+  scheduledEndAt?: string | null
   startedAt: string | null
   completedAt: string | null
+  actualStartAt?: string | null
+  actualEndAt?: string | null
   description: string | null
   failureReason: string | null
   rejectionReason: string | null
   mediaType: 'IMAGE' | 'VIDEO' | 'STREAMING' | null
+  mediaSummary?: string | null
   plan: MissionPlanResponse | null
   preflightRetryCount: number
   preflightPassed: boolean
@@ -388,6 +395,73 @@ export type PersistedPreflightCheckResponse = {
   items: PreflightCheckItem[]
 }
 
+export type PostDeviceCheckItem = {
+  checkType: string
+  checkName: string
+  status: PreflightCheckItemStatus
+  checkLevel: PreflightCheckItemLevel
+  message: string | null
+  checkedAt: string | null
+}
+
+export type PersistedPostDeviceCheckResponse = {
+  id: string
+  missionId: string
+  deviceConnectionId: string | null
+  deviceId: string | null
+  deviceCode: string | null
+  deviceName: string | null
+  deviceSerialNumber: string | null
+  status: 'CHECKING' | 'PASSED' | 'FAILED' | 'CANCELLED'
+  totalChecks: number
+  passedChecks: number
+  failedChecks: number
+  startedAt: string
+  completedAt: string | null
+  overallOk: boolean
+  landingBatteryPercent: number | null
+  landingBatteryState: string | null
+  checkedAt: string | null
+  progressPercent: number
+  items: PostDeviceCheckItem[]
+}
+
+export type MissionResultStatus =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+
+export type MissionResultApprovalStatus =
+  | 'PENDING_MANAGER_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+
+export type MissionResultResponse = {
+  id: string
+  missionId: string
+  missionCode: string
+  status: MissionResultStatus
+  approvalStatus: MissionResultApprovalStatus
+  startedAt: string | null
+  endedAt: string | null
+  completedAt: string | null
+  submittedAt: string | null
+  approvedAt: string | null
+  rejectedAt: string | null
+  durationSeconds: number | null
+  mediaCount: number | null
+  summary: string | null
+  notes: string | null
+  createdBy: string | null
+  reviewedBy: string | null
+  reviewNote: string | null
+  createdAt: string | null
+  updatedAt: string | null
+  mediaFiles: MediaResponse[] | null
+}
+
 export type PreflightCheckResponse = {
   id: string
   droneCode: string
@@ -437,6 +511,7 @@ export type MediaAssetResponse = {
 export type MediaResponse = {
   id: string
   missionId: string
+  deviceId?: string | null
   droneId: string
   type: string
   url: string

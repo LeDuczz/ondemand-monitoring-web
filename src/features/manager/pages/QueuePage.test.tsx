@@ -11,6 +11,7 @@ import { QueuePage } from './QueuePage'
 const rows: OrderCreateResponse[] = [
   {
     id: 'ord-2609-0157',
+    orderCode: 'ORD-2609-0157',
     customerId: 'cust-le-quoc-bao',
     customerName: 'Lê Quốc Bảo',
     title: 'Tuần tra bãi container ngoài giờ',
@@ -36,6 +37,7 @@ const rows: OrderCreateResponse[] = [
   },
   {
     id: 'ord-2609-0160',
+    orderCode: 'ORD-2609-0160',
     customerId: 'cust-vo-thanh-tung',
     customerName: 'Võ Thanh Tùng',
     title: 'Tuần tra an ninh khu vực',
@@ -61,8 +63,6 @@ const rows: OrderCreateResponse[] = [
   },
 ]
 
-const FIXED_NOW = new Date('2026-09-19T14:32:00+07:00')
-
 afterEach(() => {
   vi.restoreAllMocks()
 })
@@ -70,26 +70,12 @@ afterEach(() => {
 describe('QueuePage', () => {
   it('shows loading, then the queue rows', async () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
-    render(<QueuePage now={FIXED_NOW} />)
+    render(<QueuePage />)
 
     await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
-    expect(screen.getByText('ord-2609-0157')).toBeInTheDocument()
-    expect(screen.getByText('ord-2609-0160')).toBeInTheDocument()
-    expect(
-      screen.getByText('2 đơn đang chờ · 0 đơn quá 24 giờ'),
-    ).toBeInTheDocument()
-  })
-
-  it('changes sort mode via the select', async () => {
-    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
-    render(<QueuePage now={FIXED_NOW} />)
-    await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
-
-    fireEvent.change(screen.getByLabelText('Sắp xếp'), {
-      target: { value: 'longestWait' },
-    })
-    const codes = screen.getAllByText(/ord-2609-/).map((el) => el.textContent)
-    expect(codes[0]).toBe('ord-2609-0160')
+    expect(screen.getByText('ORD-2609-0157')).toBeInTheDocument()
+    expect(screen.getByText('ORD-2609-0160')).toBeInTheDocument()
+    expect(screen.getByText('2 đơn đang chờ')).toBeInTheDocument()
   })
 
   it('shows the error state and retries', async () => {
@@ -100,18 +86,18 @@ describe('QueuePage', () => {
       )
       .mockResolvedValueOnce(rows)
 
-    render(<QueuePage now={FIXED_NOW} />)
+    render(<QueuePage />)
     await waitFor(() => screen.getByText('Không tải được hàng đợi'))
     expect(getQueue).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
-    await waitFor(() => screen.getByText('ord-2609-0157'))
+    await waitFor(() => screen.getByText('ORD-2609-0157'))
     expect(getQueue).toHaveBeenCalledTimes(2)
   })
 
   it('shows the empty state when there are no PENDING orders', async () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
-    render(<QueuePage now={FIXED_NOW} />)
+    render(<QueuePage />)
     await waitFor(() => screen.getByText('Không còn đơn chờ duyệt'))
     expect(screen.getAllByRole('link', { name: 'Xem nhiệm vụ đã tạo' })[0]).toHaveAttribute(
       'href',
@@ -121,13 +107,11 @@ describe('QueuePage', () => {
 
   it('renders the English title and summary when language is switched', async () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
-    render(<QueuePage now={FIXED_NOW} />)
+    render(<QueuePage />)
     await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
 
     act(() => setLanguage('en'))
     expect(screen.getByText('Order review queue')).toBeInTheDocument()
-    expect(
-      screen.getByText('2 orders pending · 0 orders over 24h'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('2 orders pending')).toBeInTheDocument()
   })
 })

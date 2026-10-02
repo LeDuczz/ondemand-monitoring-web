@@ -170,7 +170,7 @@ export default function ControlHandover({
           >
             {[
               [t.fields.mission, mission.id, true],
-              [t.fields.drone, drone.id, true],
+              [t.fields.drone, drone.name || drone.id, true],
               [t.fields.operator, 'J. Martinez (OPR-112)', false],
               [
                 t.fields.scheduled,

@@ -12,7 +12,7 @@ export const authPageMessages = defineMessages({
       'first-login': 'Đặt mật khẩu',
     } as Record<AuthMode, string>,
     subtitles: {
-      login: 'Chào mừng trở lại. Đăng nhập để quản lý yêu cầu giám sát.',
+      login: 'Chào mừng bạn trở lại.',
       register:
         'Dành cho khách hàng cá nhân. Phi công và nhân viên do quản trị viên tạo.',
       verify:
@@ -24,8 +24,6 @@ export const authPageMessages = defineMessages({
         'Quản trị viên đã tạo tài khoản này. Đặt mật khẩu cá nhân để tiếp tục.',
     } as Record<AuthMode, string>,
     skipLink: 'Bỏ qua tới biểu mẫu',
-    eyebrowRegister: 'Tham gia OnDemand Monitor',
-    eyebrowOther: 'Truy cập không gian làm việc an toàn',
     useAnotherEmail: 'Dùng email khác',
     accountLocked: 'Tài khoản đã bị khoá.',
     accountLockedDetail: 'Liên hệ quản trị viên qua support@odms.vn để mở lại.',
@@ -55,7 +53,7 @@ export const authPageMessages = defineMessages({
       'first-login': 'Set password',
     } as Record<AuthMode, string>,
     subtitles: {
-      login: 'Welcome back. Log in to manage your monitoring requests.',
+      login: 'Welcome back.',
       register:
         'For individual customers. Pilots and staff accounts are created by an administrator.',
       verify:
@@ -66,8 +64,6 @@ export const authPageMessages = defineMessages({
         'An administrator created this account. Set your own password to continue.',
     } as Record<AuthMode, string>,
     skipLink: 'Skip to form',
-    eyebrowRegister: 'Join OnDemand Monitor',
-    eyebrowOther: 'Access your secure workspace',
     useAnotherEmail: 'Use another email',
     accountLocked: 'This account has been locked.',
     accountLockedDetail:

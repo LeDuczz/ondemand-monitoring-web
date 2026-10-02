@@ -223,9 +223,6 @@ export function AuthPage({
           <div className="odm-auth-card">
             <AuthLogo />
             <div className="odm-auth-heading">
-              <p className="odm-auth-eyebrow">
-                {mode === 'register' ? t.eyebrowRegister : t.eyebrowOther}
-              </p>
               <h1>{title}</h1>
               <p>{subtitle}</p>
             </div>

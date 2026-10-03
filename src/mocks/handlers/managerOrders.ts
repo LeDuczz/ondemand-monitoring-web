@@ -334,6 +334,8 @@ registerMockRoutes([
           serviceName: order.serviceName,
           customerFullName: order.customer.fullName,
           preferredDate: order.preferredDate,
+          preferredDateFrom: order.preferredDateFrom ?? order.preferredDate,
+          preferredDateTo: order.preferredDateTo ?? order.preferredDate,
           preferredTimeName: order.preferredTimeName,
           addressText: order.addressText,
           center: order.center,
@@ -358,6 +360,8 @@ registerMockRoutes([
         serviceName: beOrder.serviceName,
         customerFullName: beOrder.customerName || beOrder.customerId,
         preferredDate: beOrder.preferredDateFrom,
+        preferredDateFrom: beOrder.preferredDateFrom,
+        preferredDateTo: beOrder.preferredDateTo,
         preferredTimeName: beOrder.preferredTimeName,
         addressText: beOrder.address ?? null,
         center:

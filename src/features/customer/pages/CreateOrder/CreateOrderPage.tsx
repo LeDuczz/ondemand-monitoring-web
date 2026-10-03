@@ -14,7 +14,7 @@ import { createOrderPageMessages } from './CreateOrderPage.messages'
 import './CreateOrder.css'
 import { useCreateOrderWizard } from './hooks/useCreateOrderWizard'
 
-/** Customer wizard: location, AI consultation, schedule, then review and submit. */
+/** Customer wizard: service goal, location, schedule, then deliverables and submit. */
 export function CreateOrderPage() {
   const { t } = useI18n(createOrderPageMessages)
   const { f, meta, chat, wizard, submit, service, time, deliverable } =
@@ -44,13 +44,6 @@ export function CreateOrderPage() {
       )}
 
       {step === 1 && (
-        <LocationStep
-          form={form}
-          errors={f.errors}
-          update={f.update}
-        />
-      )}
-      {step === 2 && (
         <ServiceStep
           form={form}
           errors={f.errors}
@@ -65,22 +58,31 @@ export function CreateOrderPage() {
           pricingLoading={meta.pricingLoading}
         />
       )}
+      {step === 2 && (
+        <LocationStep
+          form={form}
+          errors={f.errors}
+          update={f.update}
+        />
+      )}
       {step === 3 && (
         <ScheduleStep
           form={form}
           errors={f.errors}
           update={f.update}
           preferredTimes={meta.preferredTimes}
-          deliverables={meta.deliverables}
-          deliverablesLoading={meta.deliverablesLoading}
         />
       )}
       {step === 4 && (
         <ReviewStep
           form={form}
+          errors={f.errors}
+          update={f.update}
           service={service}
           time={time}
           deliverable={deliverable}
+          deliverables={meta.deliverables}
+          deliverablesLoading={meta.deliverablesLoading}
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={meta.pricingEstimate}

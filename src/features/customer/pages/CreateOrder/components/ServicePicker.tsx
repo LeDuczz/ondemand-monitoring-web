@@ -17,7 +17,8 @@ export function ServicePicker({ services, loading, selectedId, suggested, error,
   const { t, lang } = useI18n(servicePickerMessages)
 
   return (
-    <Card title={t.cardTitle}>
+    <Card title={t.cardTitle} className="co-service-card">
+      <p className="co-service-lead">{t.cardHint}</p>
       {suggested && (
         <div className="co-suggest">
           <strong>{t.aiSuggested}</strong>
@@ -61,6 +62,7 @@ export function ServicePicker({ services, loading, selectedId, suggested, error,
               onClick={() => onSelect(service.id)}
             >
               <span className="co-service-name">{localizeServiceName(service.id, lang, service.name)}</span>
+              {selectedId === service.id && <span className="co-service-picked">{t.selectedBadge}</span>}
               <span className="co-service-desc">
                 {service.description || t.defaultDescription}
               </span>

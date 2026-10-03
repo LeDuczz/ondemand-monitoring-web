@@ -22,7 +22,7 @@ type Props = {
   pricingLoading: boolean
 }
 
-/** Step 2: AI consultation, service choice, add-on and price estimate. */
+/** Step 1: choose the core service first; AI consultation is optional support. */
 export function ServiceStep(p: Props) {
   const recommended = findRecommendedService(p.consultation, p.services)
   const selected = p.services.find((s) => s.id === p.form.serviceId)
@@ -30,7 +30,6 @@ export function ServiceStep(p: Props) {
   return (
     <div className="co-grid">
       <div className="co-stack">
-        <ConsultationChat chat={p.chat} />
         <ServicePicker
           services={p.services}
           loading={p.servicesLoading}
@@ -39,6 +38,7 @@ export function ServiceStep(p: Props) {
           error={p.errors.serviceId}
           onSelect={(id) => p.update('serviceId', id)}
         />
+        <ConsultationChat chat={p.chat} />
       </div>
       <div className="co-stack">
         <RequestInfoPanel

@@ -29,7 +29,7 @@ function useLeafletOrderMap(order: OrderDetail) {
       : [HCMC_SERVICE_CENTER.latitude, HCMC_SERVICE_CENTER.longitude]
     const instance = L.map(container.current, {
       zoomControl: true,
-      attributionControl: true,
+      attributionControl: false,
     }).setView(initialCenter, resolved ? 16 : 11)
 
     L.tileLayer(

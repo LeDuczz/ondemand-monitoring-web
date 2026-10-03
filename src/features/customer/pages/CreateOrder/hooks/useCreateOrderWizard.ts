@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
 import {
   buildConsultationRequestContext,
-  buildInitialConsultationMessage,
   isReusableConsultation,
 } from '../../../lib/createOrder/consultation'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
@@ -28,7 +27,6 @@ export function useCreateOrderWizard() {
   const service = meta.services.find((s) => s.id === form.serviceId)
 
   const chat = useConsultation({
-    active: step === 2,
     initialConsultation: stored?.consultation ?? null,
     initialMessages: stored?.chatMessages ?? [],
     buildContext: (latestMessage) =>
@@ -38,11 +36,6 @@ export function useCreateOrderWizard() {
         services: meta.services,
         serviceName: service?.name,
         latestMessage,
-      }),
-    buildInitialMessage: () =>
-      buildInitialConsultationMessage({
-        form,
-        mapPoint: f.mapPoint,
       }),
     onReceive: (c) => f.applyConsultation(c, meta.services),
     onAiAnswer: f.setAiAnalysisRequested,

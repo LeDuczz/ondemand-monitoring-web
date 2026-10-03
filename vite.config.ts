@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    exclude: ['**/node_modules/**', '.claude/**'],
+    exclude: ['**/node_modules/**', '.claude/**', 'e2e/**'],
     env: {
       VITE_USE_MOCK_API: 'true',
       VITE_REAL_API_ROUTES: '',

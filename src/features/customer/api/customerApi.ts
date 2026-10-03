@@ -53,6 +53,41 @@ export type ServiceOption = {
   updatedAt?: string
 }
 
+export type WeatherSuitability = 'GOOD' | 'CAUTION' | 'POOR'
+
+/**
+ * `GET /api/weather/forecast` data. `FORECAST_NOT_AVAILABLE` is a normal 200
+ * response (date outside the provider range); every measurement is then absent.
+ * Advisory only - it never blocks creating an order.
+ */
+export type WeatherForecast = {
+  status: 'AVAILABLE' | 'FORECAST_NOT_AVAILABLE'
+  latitude: number
+  longitude: number
+  forecastTime?: string
+  temperatureC?: number
+  relativeHumidityPercent?: number
+  precipitationProbabilityPercent?: number
+  precipitationMm?: number
+  windSpeedKmh?: number
+  windGustKmh?: number
+  cloudCoverPercent?: number
+  visibilityMeters?: number
+  weatherCode?: number
+  weatherLabel?: string
+  suitability?: WeatherSuitability
+  warnings?: string[]
+}
+
+export type WeatherForecastQuery = {
+  latitude: number
+  longitude: number
+  /** yyyy-MM-dd, local date at the location. */
+  date: string
+  /** HH:mm, local time at the location. */
+  time: string
+}
+
 export type PreferredTimeOption = {
   id: string
   code?: string
@@ -188,6 +223,17 @@ export const customerApi = {
 
   listPreferredTimes: (signal?: AbortSignal) =>
     apiRequest<PreferredTimeOption[]>('/api/preferred-times', { signal }),
+
+  getWeatherForecast: (query: WeatherForecastQuery, signal?: AbortSignal) =>
+    apiRequest<WeatherForecast>('/api/weather/forecast', {
+      query: {
+        latitude: query.latitude.toFixed(6),
+        longitude: query.longitude.toFixed(6),
+        date: query.date,
+        time: query.time,
+      },
+      signal,
+    }),
 
   listServiceDeliverables: (serviceId: string, signal?: AbortSignal) =>
     apiRequest<ServiceDeliverableOption[]>('/api/service-deliverables', {

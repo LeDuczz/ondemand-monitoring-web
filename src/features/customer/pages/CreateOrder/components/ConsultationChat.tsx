@@ -64,64 +64,72 @@ export function ConsultationChat({ chat }: Props) {
   )
 
   return (
-    <Card title={t.cardTitle} actions={actions}>
-      <div className="co-chat-list" ref={listRef} aria-live="polite">
-        {chat.messages.length === 0 && <p className="co-hint">{t.emptyHint}</p>}
-        {chat.messages.map((message) => {
-          const mine = message.senderType === 'CUSTOMER'
-          return (
-            <div key={message.id} className={`co-msg${mine ? ' is-mine' : ''}`}>
-              <div className="co-msg-who">{mine ? t.you : t.assistant}</div>
-              {message.message}
-            </div>
-          )
-        })}
-        {chat.busy && <div className="co-msg">{t.typing}</div>}
-      </div>
-      <div className="co-chat-form">
-        <textarea
-          className="co-input"
-          rows={2}
-          aria-label={t.inputLabel}
-          value={chat.text}
-          placeholder={t.placeholder}
-          onChange={(e) => chat.setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault()
-              void send()
-            }
-          }}
-        />
-        <button
-          type="button"
-          className="odm-btn odm-btn-p"
-          onClick={() => void send()}
-          disabled={chat.busy || !chat.text.trim()}
-        >
-          {t.send}
-        </button>
-      </div>
-      {history.length > 0 ? (
-        <div className="co-chat-history" aria-label={t.recentTitle}>
-          <span>{t.recentTitle}</span>
-          <div className="co-chat-history-list">
-            {history.map((item) => (
-              <button
-                key={item}
-                type="button"
-                className="co-chat-history-chip"
-                disabled={chat.busy}
-                aria-label={t.recentAria(item)}
-                title={item}
-                onClick={() => void send(item)}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
+    <details className="co-ai-assist">
+      <summary>
+        <span>
+          <strong>{t.summaryTitle}</strong>
+          <small>{t.summaryHint}</small>
+        </span>
+      </summary>
+      <Card title={t.cardTitle} actions={actions} className="co-ai-card">
+        <div className="co-chat-list" ref={listRef} aria-live="polite">
+          {chat.messages.length === 0 && <p className="co-hint">{t.emptyHint}</p>}
+          {chat.messages.map((message) => {
+            const mine = message.senderType === 'CUSTOMER'
+            return (
+              <div key={message.id} className={`co-msg${mine ? ' is-mine' : ''}`}>
+                <div className="co-msg-who">{mine ? t.you : t.assistant}</div>
+                {message.message}
+              </div>
+            )
+          })}
+          {chat.busy && <div className="co-msg">{t.typing}</div>}
         </div>
-      ) : null}
-    </Card>
+        <div className="co-chat-form">
+          <textarea
+            className="co-input"
+            rows={2}
+            aria-label={t.inputLabel}
+            value={chat.text}
+            placeholder={t.placeholder}
+            onChange={(e) => chat.setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                void send()
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={() => void send()}
+            disabled={chat.busy || !chat.text.trim()}
+          >
+            {t.send}
+          </button>
+        </div>
+        {history.length > 0 ? (
+          <div className="co-chat-history" aria-label={t.recentTitle}>
+            <span>{t.recentTitle}</span>
+            <div className="co-chat-history-list">
+              {history.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className="co-chat-history-chip"
+                  disabled={chat.busy}
+                  aria-label={t.recentAria(item)}
+                  title={item}
+                  onClick={() => void send(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </Card>
+    </details>
   )
 }

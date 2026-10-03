@@ -17,6 +17,10 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
   return (
     <Card title={t.cardTitle}>
       <p className="co-hint">{t.dateRangeHint}</p>
+      <div className="co-notice is-info co-mt" role="note">
+        <strong>{t.advanceNoticeTitle}</strong>
+        <span>{t.advanceNoticeBody}</span>
+      </div>
       <div className="co-two co-mt">
         <FormField id="co-from" label={t.startDate} required error={errors.preferredDateFrom}>
           <input

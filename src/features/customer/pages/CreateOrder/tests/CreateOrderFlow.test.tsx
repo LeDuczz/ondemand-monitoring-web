@@ -1,5 +1,5 @@
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
@@ -9,51 +9,60 @@ import { CreateOrderPage } from '../CreateOrderPage'
 
 beforeEach(() => {
   resetMockDb()
-  // The simulation map metadata is a static file, not an API call.
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 })
 afterEach(() => {
   resetMockDb()
-  vi.unstubAllGlobals()
 })
 
 const next = (label: string) =>
   fireEvent.click(screen.getByRole('button', { name: `Tiếp tục: ${label}` }))
 
+async function fillService() {
+  fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
+  fireEvent.change(screen.getByLabelText(/Tiêu đề/), { target: { value: 'Đơn kiểm thử' } })
+  next('Vị trí & vùng giám sát')
+}
+
 async function fillLocation() {
   fireEvent.change(await screen.findByLabelText(/Địa chỉ\/khu vực/), {
     target: { value: 'KCN Long Hậu' },
   })
-  next('AI tư vấn & mục tiêu')
+  next('Thời gian')
 }
 
 describe('CreateOrderPage wizard', () => {
-  it('shows the map-unavailable notice and step 1 fields', async () => {
+  it('shows services and goal fields on step 1', async () => {
     render(<CreateOrderPage />)
-    expect(await screen.findByText('Không tải được map mô phỏng 3D.')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Địa chỉ\/khu vực/)).toBeInTheDocument()
-  })
-
-  it('blocks step 1 without an address and shows the validation message', async () => {
-    render(<CreateOrderPage />)
-    await screen.findByLabelText(/Địa chỉ\/khu vực/)
-    next('AI tư vấn & mục tiêu')
-    expect(await screen.findByText('Nhập địa chỉ/khu vực cần giám sát.')).toBeInTheDocument()
-    expect(screen.queryByText('Thông tin yêu cầu')).not.toBeInTheDocument()
-  })
-
-  it('lists BE services on step 2 and requires a service and title', async () => {
-    render(<CreateOrderPage />)
-    await fillLocation()
     expect(await screen.findByText('Giám sát Tiến độ Xây dựng')).toBeInTheDocument()
-    next('Thời gian và kết quả')
+    expect(screen.getByLabelText(/Tiêu đề/)).toBeInTheDocument()
+  })
+
+  it('blocks step 1 without a service and title', async () => {
+    render(<CreateOrderPage />)
+    await screen.findByText('Giám sát Tiến độ Xây dựng')
+    next('Vị trí & vùng giám sát')
     expect(await screen.findByText('Chọn dịch vụ giám sát.')).toBeInTheDocument()
     expect(screen.getByText('Nhập tiêu đề yêu cầu.')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Địa chỉ\/khu vực/)).not.toBeInTheDocument()
+  })
+
+  it('shows the real location map on step 2 and requires an address', async () => {
+    render(<CreateOrderPage />)
+    await fillService()
+    expect(await screen.findByRole('application', { name: 'Bản đồ chọn vị trí giám sát' })).toBeInTheDocument()
+    next('Thời gian')
+    expect(await screen.findByText('Nhập địa chỉ/khu vực cần giám sát.')).toBeInTheDocument()
+  })
+
+  it('continues from location to schedule after a valid address', async () => {
+    render(<CreateOrderPage />)
+    await fillService()
+    await fillLocation()
+    expect(await screen.findByLabelText(/Ngày sớm nhất/)).toBeInTheDocument()
   })
 
   it('shows the pricing estimate for the chosen service', async () => {
     render(<CreateOrderPage />)
-    await fillLocation()
     fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
     expect((await screen.findAllByText(/3\.200\.000/)).length).toBe(2)
     fireEvent.click(screen.getByLabelText(/AI phân tích hình ảnh/))
@@ -63,14 +72,13 @@ describe('CreateOrderPage wizard', () => {
 
   it('walks through all steps and submits via the confirm dialog', async () => {
     render(<CreateOrderPage />)
+    await fillService()
     await fillLocation()
-    fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
-    fireEvent.change(screen.getByLabelText(/Tiêu đề/), { target: { value: 'Đơn kiểm thử' } })
-    next('Thời gian và kết quả')
 
-    const deliverable = (await screen.findByLabelText(/Loại kết quả/)) as HTMLSelectElement
-    await waitFor(() => expect(deliverable.value).toBe('dt-progress'))
-    next('Xác nhận & gửi yêu cầu')
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect((screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value).toBe('dt-progress'),
+    )
 
     expect(await screen.findByText('Xác nhận yêu cầu')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -86,14 +94,12 @@ describe('CreateOrderPage wizard', () => {
 
   it('closes the confirm dialog with Escape without submitting', async () => {
     render(<CreateOrderPage />)
+    await fillService()
     await fillLocation()
-    fireEvent.click(await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }))
-    fireEvent.change(screen.getByLabelText(/Tiêu đề/), { target: { value: 'T' } })
-    next('Thời gian và kết quả')
+    next('Kết quả bàn giao & xác nhận')
     await waitFor(() =>
       expect((screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value).toBe('dt-progress'),
     )
-    next('Xác nhận & gửi yêu cầu')
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.keyDown(document, { key: 'Escape' })
@@ -102,9 +108,9 @@ describe('CreateOrderPage wizard', () => {
 
   it('switches step labels to English', async () => {
     render(<CreateOrderPage />)
-    await screen.findByLabelText(/Địa chỉ\/khu vực/)
+    await screen.findByText('Giám sát Tiến độ Xây dựng')
     act(() => setLanguage('en'))
-    expect(await screen.findByRole('button', { name: 'Continue: AI consultation & target' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/Address\/area/)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Continue: Location & monitoring area' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/Title/)).toBeInTheDocument()
   })
 })

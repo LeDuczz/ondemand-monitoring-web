@@ -2,12 +2,14 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const consultationChatMessages = defineMessages({
   vi: {
-    cardTitle: 'AI tư vấn nhu cầu',
+    summaryTitle: 'AI tư vấn tuỳ chọn',
+    summaryHint: 'Chỉ mở khi bạn muốn AI gợi ý thêm. Nếu đã chọn được dịch vụ thì bỏ qua phần này.',
+    cardTitle: 'AI tư vấn tuỳ chọn',
     clearAll: 'Xoá toàn bộ',
     consultAgain: 'Tư vấn lại',
     askAi: 'Nhờ AI tư vấn',
     emptyHint:
-      'AI sẽ hỏi nhu cầu giám sát, mục tiêu, rủi ro cần phát hiện và đề xuất dịch vụ phù hợp. Vị trí đã lấy từ bước 1; AI không tự quyết lịch bay.',
+      'Mô tả ngắn nhu cầu giám sát, AI sẽ gợi ý dịch vụ phù hợp. Bạn có thể bỏ qua phần này.',
     you: 'Bạn',
     assistant: 'AI tư vấn',
     typing: 'AI đang phân tích nhu cầu...',
@@ -19,12 +21,14 @@ export const consultationChatMessages = defineMessages({
     recentAria: (text: string) => `Gửi lại: ${text}`,
   },
   en: {
-    cardTitle: 'AI needs consultation',
+    summaryTitle: 'Optional AI consultation',
+    summaryHint: 'Open only when you want an AI suggestion. Skip this section if you already picked a service.',
+    cardTitle: 'Optional AI consultation',
     clearAll: 'Clear all',
     consultAgain: 'Consult again',
     askAi: 'Ask AI consultant',
     emptyHint:
-      'The AI will ask about your monitoring needs, targets and risks to detect, then suggest a suitable service. Location is taken from step 1; the AI does not decide the flight schedule.',
+      'Briefly describe your monitoring need and AI will suggest a matching service. You can skip this section.',
     you: 'You',
     assistant: 'AI consultant',
     typing: 'AI is analysing your needs...',

@@ -191,6 +191,8 @@ export function toOperatorMission(
     rejectReason: source.rejectionReason ?? undefined,
     radiusMeters: source.radiusM ?? source.radiusMeters ?? undefined,
     ceilingMeters: source.plan?.maxPlannedAltitudeM ?? undefined,
+    latitude: source.latitude,
+    longitude: source.longitude,
     targetX: source.longitude,
     targetY: source.latitude,
     planSummary: source.plan

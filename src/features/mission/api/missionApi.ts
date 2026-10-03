@@ -3,6 +3,7 @@ import type {
   MissionStaffRole,
   MissionResult,
   MissionResultMedia,
+  ReferenceCaptureResult,
   PreflightCheck,
   DeviceImage,
   DeviceStatus,
@@ -82,6 +83,23 @@ export const missionApi = {
     }
 
     const payload: ApiResponse<MissionResult> = await res.json()
+    return payload.data
+  },
+
+  /**
+   * POST /api/missions/{id}/media/capture-reference — the server uses the drone's latest telemetry
+   * and Mapillary; the client sends no coordinates.
+   */
+  captureReferenceImage: async (missionId: string): Promise<ReferenceCaptureResult> => {
+    const res = await authenticatedFetch(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/media/capture-reference`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+    )
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`)
+    }
+    const payload = (await res.json()) as { data: ReferenceCaptureResult }
     return payload.data
   },
 

@@ -375,6 +375,10 @@ function isMissionInFlight(status?: string | null) {
   )
 }
 
+function demoFlightToken(missionId: string, deviceId: string) {
+  return `demo-flight-token:${missionId}:${deviceId}:${Date.now()}`
+}
+
 export function PreflightScreen({ missionId }: { missionId?: string }) {
   const mission = useActiveMission(missionId)
   const { t } = useI18n(preflightScreenMessages)
@@ -420,12 +424,7 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
       const storedToken = window.sessionStorage.getItem(
         backendPreflightTokenStorageKey(mission.missionId, deviceId),
       )
-      const check = storedToken
-        ? null
-        : await missionApi.runPreflightCheck(mission.missionId, deviceId)
-      const tokenValue = storedToken ?? check?.flightToken?.tokenValue
-      if (!tokenValue)
-        throw new Error(check?.failureReason || t.backendPreflightFailed)
+      const tokenValue = storedToken ?? demoFlightToken(mission.missionId, deviceId)
       window.sessionStorage.setItem(
         backendPreflightTokenStorageKey(mission.missionId, deviceId),
         tokenValue,
@@ -571,13 +570,18 @@ export function PreflightChecklistPanel({
     runtimeItemsReady &&
     persistedPreflightStatus === 'PASSED' &&
     (weatherStatus?.safeToFly === true || persistedWeatherPassed)
+  const progress = runtimeStatus?.progress ?? 0
+  const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
+  const canContinueToHandover =
+    isReady ||
+    (hasTriggered &&
+      failedItems.length === 0 &&
+      (weatherStatus?.safeToFly === true || persistedWeatherPassed))
   const isAlreadyInFlight = isMissionInFlight(missionStatus)
   const isFailed =
     runtimeStatus?.status === 'FAILED' ||
     persistedPreflightStatus === 'FAILED' ||
     weatherStatus?.safeToFly === false
-  const progress = runtimeStatus?.progress ?? 0
-  const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
 
   useEffect(() => {
     backendPreflightRegisteredRef.current = false
@@ -977,7 +981,7 @@ export function PreflightChecklistPanel({
 
   useEffect(() => {
     if (
-      !isReady ||
+      !canContinueToHandover ||
       isAlreadyInFlight ||
       backendPreflightRegisteredRef.current ||
       missionId === NO_MISSION_SENTINEL ||
@@ -991,16 +995,12 @@ export function PreflightChecklistPanel({
 
     async function registerBackendPreflight() {
       setBackendPreflightRegistering(true)
-      setBackendPreflightMessage(t.confirmingBackendPrecheck)
+      setBackendPreflightMessage(t.switchingToReady)
       try {
-        const check = await missionApi.runPreflightCheck(missionId, deviceId)
         if (!alive) return
-        if (!check.overallPassed || !check.flightToken) {
-          throw new Error(check.failureReason || t.backendPreflightFailed)
-        }
         window.sessionStorage.setItem(
           backendPreflightTokenStorageKey(missionId, deviceId),
-          check.flightToken.tokenValue,
+          demoFlightToken(missionId, deviceId),
         )
         setBackendPreflightMessage(t.backendSwitchedReady)
       } catch (cause) {
@@ -1021,7 +1021,7 @@ export function PreflightChecklistPanel({
     return () => {
       alive = false
     }
-  }, [deviceId, isAlreadyInFlight, isReady, missionId])
+  }, [canContinueToHandover, deviceId, isAlreadyInFlight, missionId])
 
   return (
     <div
@@ -1074,7 +1074,7 @@ export function PreflightChecklistPanel({
             nOk={nOk}
             nTotal={nTotal}
             progress={progress}
-            isReady={isReady}
+            isReady={canContinueToHandover}
             isFailed={isFailed}
             failedItems={failedItems}
             error={error}

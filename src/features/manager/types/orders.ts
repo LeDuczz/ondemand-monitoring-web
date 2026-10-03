@@ -21,6 +21,8 @@ export type OrderQueueItem = {
   customer: OrderCustomerSummary
   serviceName: string
   preferredDate: string
+  preferredDateFrom?: string | null
+  preferredDateTo?: string | null
   preferredTimeName: string
   submittedAt: string
   aiVerdict: AiVerdict
@@ -62,6 +64,8 @@ export type OrderDetail = {
   customer: OrderCustomerContact
   serviceName: string
   preferredDate: string
+  preferredDateFrom?: string | null
+  preferredDateTo?: string | null
   preferredTimeName: string
   /** Precise HH:MM window — only sourced for the design's own demo order. */
   preferredWindow: string | null
@@ -148,6 +152,8 @@ export type OrderMissionBrief = {
   serviceName: string
   customerFullName: string
   preferredDate: string
+  preferredDateFrom?: string | null
+  preferredDateTo?: string | null
   preferredTimeName: string
   addressText: string | null
   center: { lat: number; lon: number } | null

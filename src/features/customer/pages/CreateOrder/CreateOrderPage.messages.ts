@@ -5,13 +5,13 @@ export const createOrderPageMessages = defineMessages({
   vi: {
     pageTitle: 'Tạo yêu cầu giám sát',
     pageSubtitle:
-      'Chọn vị trí trên bản đồ mô phỏng, nhập thông tin cần thiết, dùng AI tư vấn rồi gửi yêu cầu.',
+      'Chọn dịch vụ, xác định vùng giám sát, chọn thời gian rồi xác nhận kết quả bàn giao.',
     cancel: 'Huỷ',
     stepLabels: {
-      1: 'Vị trí giám sát',
-      2: 'AI tư vấn & mục tiêu',
-      3: 'Thời gian và kết quả',
-      4: 'Xác nhận & gửi yêu cầu',
+      1: 'Dịch vụ & mục tiêu',
+      2: 'Vị trí & vùng giám sát',
+      3: 'Thời gian',
+      4: 'Kết quả bàn giao & xác nhận',
     } as Record<1 | 2 | 3 | 4, string>,
     metaErrorTitle: 'Không tải được dữ liệu tạo yêu cầu',
     validation: {
@@ -19,7 +19,7 @@ export const createOrderPageMessages = defineMessages({
       latitude: 'Latitude không hợp lệ.',
       longitude: 'Longitude không hợp lệ.',
       outsideZone:
-        'Vị trí này nằm ngoài các vùng giám sát đã cấu hình. Vui lòng chọn lại điểm trong vùng phục vụ.',
+        'Hiện chỉ phục vụ trong khu vực TP.HCM. Vui lòng chọn lại điểm trong vùng phục vụ.',
       blockedZone: (zoneNames: string) =>
         `Vùng giám sát chạm vùng cấm: ${zoneNames}. Vui lòng chọn điểm hoặc giảm bán kính.`,
       serviceId: 'Chọn dịch vụ giám sát.',
@@ -42,13 +42,13 @@ export const createOrderPageMessages = defineMessages({
   en: {
     pageTitle: 'Create Monitoring Request',
     pageSubtitle:
-      'Pick a location on the simulation map, fill in the required details, use AI consultation, then submit.',
+      'Choose a service, define the monitoring area, pick a schedule, then confirm deliverables.',
     cancel: 'Cancel',
     stepLabels: {
-      1: 'Monitoring location',
-      2: 'AI consultation & target',
-      3: 'Schedule & deliverables',
-      4: 'Review & submit',
+      1: 'Service & target',
+      2: 'Location & monitoring area',
+      3: 'Schedule',
+      4: 'Deliverables & confirmation',
     } as Record<1 | 2 | 3 | 4, string>,
     metaErrorTitle: 'Unable to load data for creating this request',
     validation: {
@@ -56,7 +56,7 @@ export const createOrderPageMessages = defineMessages({
       latitude: 'Invalid latitude.',
       longitude: 'Invalid longitude.',
       outsideZone:
-        'This location is outside the configured monitoring zones. Please pick a point inside a service zone.',
+        'Service is currently limited to Ho Chi Minh City. Please pick a point inside the service area.',
       blockedZone: (zoneNames: string) =>
         `The monitoring area touches a no-fly zone: ${zoneNames}. Please pick another point or reduce the radius.`,
       serviceId: 'Select a monitoring service.',

@@ -413,3 +413,11 @@
     transition: none;
   }
 }
+
+.mission-media__reference {
+  margin: 4px 0 2px;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}

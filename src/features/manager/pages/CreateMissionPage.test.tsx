@@ -16,6 +16,8 @@ const brief: OrderMissionBrief = {
   serviceName: 'Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước',
   customerFullName: 'Trần Thị Thu Hà',
   preferredDate: '24/09',
+  preferredDateFrom: '2026-09-24T07:00:00+07:00',
+  preferredDateTo: '2026-09-26T11:00:00+07:00',
   preferredTimeName: 'Sáng',
   addressText: 'KCN Hiệp Phước, Nhà Bè',
   center: { lat: 10.6402, lon: 106.74 },
@@ -79,6 +81,10 @@ describe('CreateMissionPage', () => {
     )
     expect(screen.getByText('Khoảng thời gian khách yêu cầu')).toBeTruthy()
     expect(screen.getByText('24/09 · Sáng')).toBeTruthy()
+    expect(screen.getByText('Dự báo thời tiết theo khoảng khách yêu cầu')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('24/09/2026')).toBeInTheDocument())
+    expect(screen.getByText('25/09/2026')).toBeInTheDocument()
+    expect(screen.getByText('26/09/2026')).toBeInTheDocument()
     const startInput = screen.getByLabelText('Giờ cất cánh') as HTMLInputElement
     const endInput = screen.getByLabelText(
       'Giờ kết thúc dự kiến',

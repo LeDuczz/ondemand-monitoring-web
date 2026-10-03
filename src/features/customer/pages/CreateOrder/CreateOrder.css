@@ -68,6 +68,37 @@ textarea.co-input {
   width: 100%;
 }
 
+.co-address-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.co-secondary-action {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--ui-primary);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.co-secondary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.co-address-error {
+  color: var(--ui-danger);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
 /* ---------- Step tabs ---------- */
 
 .co-tabs {
@@ -143,6 +174,16 @@ textarea.co-input {
   background: var(--ui-warning-soft);
   border-color: var(--ui-warning);
   color: var(--ui-warning-text);
+}
+
+.co-notice.is-info {
+  background: var(--ui-primary-soft);
+  border-color: var(--ui-primary);
+  color: var(--ui-primary-text);
+}
+
+.co-notice.is-info strong {
+  margin-right: 4px;
 }
 
 .co-notice.is-danger {
@@ -354,9 +395,43 @@ textarea.co-input {
 
 /* ---------- Chat ---------- */
 
+.co-ai-assist {
+  border: 1px dashed var(--ui-border-strong);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+}
+
+.co-ai-assist > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  color: var(--ui-text);
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.co-ai-assist > summary span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.co-ai-assist > summary small {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.co-ai-card {
+  border-width: 1px 0 0;
+  border-radius: 0 0 var(--ui-radius-sm) var(--ui-radius-sm);
+  box-shadow: none;
+}
+
 .co-chat-list {
-  min-height: 220px;
-  max-height: 320px;
+  min-height: 120px;
+  max-height: 260px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -444,16 +519,30 @@ textarea.co-input {
 
 /* ---------- Services ---------- */
 
+.co-service-card {
+  border-color: var(--ui-primary);
+  box-shadow: 0 8px 22px rgba(21, 101, 232, 0.08);
+}
+
+.co-service-lead {
+  margin: 0;
+  max-width: 760px;
+  color: var(--ui-text-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 .co-service-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--ui-space-3);
-  max-height: 380px;
+  max-height: 470px;
   overflow-y: auto;
   padding: 2px;
 }
 
 .co-service {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-2);
@@ -469,12 +558,14 @@ textarea.co-input {
 }
 
 .co-service:hover {
-  border-color: var(--ui-border-strong);
+  border-color: var(--ui-primary);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
 .co-service.is-active {
   border-color: var(--ui-primary);
   background: var(--ui-primary-soft);
+  box-shadow: inset 0 0 0 1px var(--ui-primary);
 }
 
 .co-service.is-suggested {
@@ -483,6 +574,19 @@ textarea.co-input {
 
 .co-service-name {
   font-weight: 700;
+  padding-right: 76px;
+}
+
+.co-service-picked {
+  position: absolute;
+  right: var(--ui-space-3);
+  top: var(--ui-space-3);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ui-primary);
+  color: var(--ui-on-primary);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .co-service-desc {
@@ -619,4 +723,80 @@ textarea.co-input {
 
 .co-contents {
   display: contents;
+}
+
+.co-real-map-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.co-real-map {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid #d8e1ed;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 0;
+  background: #eef2f7;
+}
+
+.co-real-map .leaflet-tile {
+  max-width: none;
+  max-height: none;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.co-real-map .leaflet-control-attribution {
+  display: none;
+}
+
+.co-real-map .leaflet-control-layers {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  font: inherit;
+}
+
+.co-real-map .leaflet-control-layers-expanded {
+  padding: 8px 10px;
+}
+
+.co-real-map .leaflet-control-layers-base label {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ui-text);
+}
+
+.co-real-map.has-tile-fallback::after {
+  content: "Không tải được tile bản đồ thật. Có thể mạng/CSP đang chặn tile provider.";
+  position: absolute;
+  right: 12px;
+  bottom: 30px;
+  z-index: 450;
+  max-width: min(390px, calc(100% - 24px));
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.co-real-map-notice {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 500;
+  max-width: min(360px, calc(100% - 28px));
+  padding: 8px 10px;
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 251, 235, 0.96);
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
 }

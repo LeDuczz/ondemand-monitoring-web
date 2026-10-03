@@ -28,6 +28,8 @@ export type OperatorMission = {
   respondBy?: string
   radiusMeters?: number
   ceilingMeters?: number
+  latitude?: number | null
+  longitude?: number | null
   targetX?: number | null
   targetY?: number | null
   photoCount?: number

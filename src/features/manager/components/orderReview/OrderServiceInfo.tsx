@@ -5,8 +5,34 @@ import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { preferredLabel } from '../../lib/viLabels'
 import { estimatedAreaHa, humanizeMediaRequirement } from './format'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
+import { resolveOrderGpsCenter } from './orderGps'
 
 type InfoRow = { icon: OrderIconName; label: string; value: ReactNode }
+
+function centerLabel(order: OrderDetail) {
+  const resolved = resolveOrderGpsCenter(order.center)
+  if (!resolved) return '—'
+  return `${resolved.center.lat}, ${resolved.center.lon}`
+}
+
+function isGenericAddress(value: string | null) {
+  if (!value) return false
+  const normalized = value.trim().toLowerCase()
+  return [
+    'công trường xây dựng',
+    'cong truong xay dung',
+    'đập nước',
+    'dap nuoc',
+  ].includes(normalized)
+}
+
+function locationLabel(order: OrderDetail, t: OrderReviewMessages) {
+  const resolved = resolveOrderGpsCenter(order.center)
+  if (resolved && (!order.addressText || isGenericAddress(order.addressText))) {
+    return `${t.pickedMapLocation} · ${resolved.center.lat}, ${resolved.center.lon}`
+  }
+  return order.addressText ?? '—'
+}
 
 function InfoColumn({ rows }: { rows: InfoRow[] }) {
   return (
@@ -58,11 +84,11 @@ export function OrderServiceInfo({
     { icon: 'media', label: t.mediaPackage, value: media },
   ]
   const right: InfoRow[] = [
-    { icon: 'pin', label: t.locationLabel, value: order.addressText ?? '—' },
+    { icon: 'pin', label: t.locationLabel, value: locationLabel(order, t) },
     {
       icon: 'target',
       label: t.centerCoords,
-      value: order.center ? `${order.center.lat}, ${order.center.lon}` : '—',
+      value: centerLabel(order),
     },
     {
       icon: 'radius',

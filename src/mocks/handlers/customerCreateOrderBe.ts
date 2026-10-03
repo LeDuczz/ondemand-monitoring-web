@@ -17,7 +17,7 @@ import type {
 } from '../../features/customer/api/customerApi'
 import type { OrderCreateResponse } from '../../features/customer/api/orderApi'
 import { createCollection } from '../db'
-import { created, fail, ok, registerMockRoutes } from '../mockServer'
+import { created, fail, isRealApiRoute, ok, passThrough, registerMockRoutes } from '../mockServer'
 import {
   mockCategoryServices,
   mockRequirementSuggestions,
@@ -289,6 +289,7 @@ registerMockRoutes([
     method: 'POST',
     path: '/api/orders',
     handler: ({ body }) => {
+      if (isRealApiRoute('POST', '/api/orders')) return passThrough()
       const b = (body ?? {}) as Record<string, unknown>
       const errors: Record<string, string> = {}
       for (const key of REQUIRED) {

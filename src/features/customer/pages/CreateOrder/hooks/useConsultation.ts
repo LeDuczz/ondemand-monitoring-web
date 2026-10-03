@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { useI18n } from '../../../../../shared/i18n'
@@ -20,12 +20,9 @@ import { clearStoredDraft } from '../../../lib/createOrder/draftStorage'
 import { consultationHookMessages } from './useConsultation.messages'
 
 type Options = {
-  /** True while the consultation UI is visible (step 2); auto-starts a session. */
-  active: boolean
   initialConsultation: CustomerConsultation | null
   initialMessages: ConsultationMessage[]
   buildContext: (latestMessage: string) => string
-  buildInitialMessage?: () => string
   onReceive: (consultation: CustomerConsultation) => void
   onAiAnswer: (requested: boolean) => void
   onError: (message: string | null) => void
@@ -119,19 +116,6 @@ export function useConsultation(options: Options) {
       const session = await withConsultationTimeout((s) => customerApi.startConsultation(s))
       setConsultation(session)
       setMessages(session.messages ?? [])
-      const initialMessage = options.buildInitialMessage?.().trim()
-      if (initialMessage && !(session.messages?.length)) {
-        setMessages([
-          { id: `local-${Date.now()}`, senderType: 'CUSTOMER', message: initialMessage },
-        ])
-        const seeded = await withConsultationTimeout((signal) =>
-          customerApi.sendConsultationMessage(session.id, initialMessage, {
-            signal,
-            requestContext: options.buildContext(initialMessage),
-          }),
-        )
-        receive(seeded)
-      }
       options.onError(null)
     } catch (error) {
       const message = t.startFailed(describe(error))
@@ -187,13 +171,6 @@ export function useConsultation(options: Options) {
       requestInFlight.current = false
     }
   }
-
-  useEffect(() => {
-    if (options.active && !isReusableConsultation(consultation) && !busy) {
-      void start()
-    }
-    // Only when the step becomes active, not on every busy/consultation change.
-  }, [options.active])
 
   function clear() {
     setConsultation(null)

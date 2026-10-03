@@ -1,4 +1,5 @@
 import { env } from '../config/env'
+import { matchesRealApiRoute } from '../shared/api/realApiRoutes'
 
 export type MockEnvelope<T = unknown> = {
   success: boolean
@@ -70,6 +71,15 @@ export function created<T>(data: T, message = 'Created'): MockResult<T> {
  */
 export function passThrough(): MockResult {
   return { passThrough: true }
+}
+
+/**
+ * True when `VITE_REAL_API_ROUTES` lists this route. A handler that wants to honour the hybrid
+ * setting returns `passThrough()` in that case, so the request reaches the real network (or an
+ * E2E interceptor) instead of the in-memory mock.
+ */
+export function isRealApiRoute(method: string, pathname: string): boolean {
+  return matchesRealApiRoute(env.realApiRoutes, method, pathname)
 }
 
 /** Builds an error envelope + HTTP status, e.g. `fail(404, 'NOT_FOUND', …)`. */

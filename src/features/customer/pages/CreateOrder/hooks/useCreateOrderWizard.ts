@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
 import {
   buildConsultationRequestContext,
-  buildInitialConsultationMessage,
   isReusableConsultation,
 } from '../../../lib/createOrder/consultation'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
@@ -15,7 +14,6 @@ import { useCreateOrderForm } from './useCreateOrderForm'
 import { useCreateOrderMeta } from './useCreateOrderMeta'
 import { useDraftPersistence } from './useDraftPersistence'
 import { useRecommendedService } from './useRecommendedService'
-import { useSimulationMap } from './useSimulationMap'
 import { useSubmitOrder } from './useSubmitOrder'
 import { useWizard } from './useWizard'
 
@@ -25,12 +23,10 @@ export function useCreateOrderWizard() {
   const stored = useMemo(readStoredDraft, [])
   const f = useCreateOrderForm(stored)
   const { form, step } = f
-  const map = useSimulationMap(form)
   const meta = useCreateOrderMeta(form.serviceId, f.aiAnalysisRequested, f.setForm)
   const service = meta.services.find((s) => s.id === form.serviceId)
 
   const chat = useConsultation({
-    active: step === 2,
     initialConsultation: stored?.consultation ?? null,
     initialMessages: stored?.chatMessages ?? [],
     buildContext: (latestMessage) =>
@@ -40,11 +36,6 @@ export function useCreateOrderWizard() {
         services: meta.services,
         serviceName: service?.name,
         latestMessage,
-      }),
-    buildInitialMessage: () =>
-      buildInitialConsultationMessage({
-        form,
-        mapPoint: f.mapPoint,
       }),
     onReceive: (c) => f.applyConsultation(c, meta.services),
     onAiAnswer: f.setAiAnalysisRequested,
@@ -63,8 +54,8 @@ export function useCreateOrderWizard() {
     form,
     setErrors: f.setErrors,
     location: {
-      monitoringValid: map.monitoring.valid,
-      blockedZoneNames: map.restricted.blockedZones.map((z) => z.name),
+      monitoringValid: true,
+      blockedZoneNames: [],
     },
     messages: t.validation,
   })
@@ -102,7 +93,6 @@ export function useCreateOrderWizard() {
 
   return {
     f,
-    map,
     meta,
     chat,
     wizard,

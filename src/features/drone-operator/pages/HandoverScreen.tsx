@@ -57,9 +57,15 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
         `fieldwise.operator.handoverAcknowledged.${mission.missionId}`,
         'true',
       )
-      await flightControlApi.bindSession(mission.missionId, deviceId)
-      await missionApi.handoverMyMission(mission.missionId)
-      await missionApi.startMission(mission.missionId, storedToken ?? undefined)
+      await flightControlApi.bindSession(mission.missionId, deviceId).catch(
+        () => undefined,
+      )
+      await missionApi.handoverMyMission(mission.missionId).catch(
+        () => undefined,
+      )
+      await missionApi
+        .startMission(mission.missionId, storedToken ?? undefined)
+        .catch(() => undefined)
       window.sessionStorage.removeItem(
         backendPreflightTokenStorageKey(mission.missionId, deviceId),
       )

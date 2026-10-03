@@ -1,6 +1,6 @@
 import { defineMessages } from '../../../../../shared/i18n'
 
 export const locationStepMessages = defineMessages({
-  vi: { outsideZoneAddress: 'Ngoài các vùng giám sát đã cấu hình' },
-  en: { outsideZoneAddress: 'Outside configured monitoring zones' },
+  vi: { mapLabel: 'Bản đồ chọn vị trí giám sát' },
+  en: { mapLabel: 'Monitoring location map' },
 })

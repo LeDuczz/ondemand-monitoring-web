@@ -205,13 +205,3 @@ export function buildConsultationRequestContext(input: {
     serviceCatalog.length ? serviceCatalog.join('\n') : '- chưa tải được catalog',
   ].join('\n')
 }
-
-export function buildInitialConsultationMessage(input: {
-  form: FormState
-  mapPoint: MapPoint
-}) {
-  const place = input.form.address?.trim()
-  return place
-    ? `Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực ${place}.`
-    : 'Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực đã chọn trên bản đồ.'
-}

@@ -23,9 +23,15 @@ import type {
   WeatherPreflightCheckResponse,
 } from '../types/missions'
 
-type StaffMissionPage = { items: MissionResponse[]; page: number; totalPages: number }
+type StaffMissionPage = {
+  items: MissionResponse[]
+  page: number
+  totalPages: number
+}
 
-export function toMissionCalendarItem(source: MissionResponse): MissionCalendarItem {
+export function toMissionCalendarItem(
+  source: MissionResponse,
+): MissionCalendarItem {
   return {
     id: source.id,
     orderId: source.orderId,
@@ -83,7 +89,10 @@ export const missionsApi = {
   },
 
   /** `GET /api/missions/{id}` [BE `MissionResponse`]. Full manager/operator detail shape. */
-  getMissionResponse(id: string, signal?: AbortSignal): Promise<MissionResponse> {
+  getMissionResponse(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResponse> {
     return apiRequest<MissionResponse>(`/api/missions/${id}`, { signal })
   },
 
@@ -118,7 +127,7 @@ export const missionsApi = {
   assignOperator(missionId: string, operatorId: string): Promise<Mission> {
     return apiRequest<Mission>(`/api/missions/${missionId}/assign-staff`, {
       method: 'POST',
-      body: { staffId: operatorId, assignedRole: 'OPERATOR' },
+      body: { staffId: operatorId, assignedRole: 'PILOT' },
     })
   },
 
@@ -151,14 +160,18 @@ export const missionsApi = {
     if (options.to) query['to'] = options.to
     if (options.status) query['status'] = options.status
     if (env.useMockApi || import.meta.env.MODE === 'test') {
-      return apiRequest<{ items: MissionCalendarItem[] }>('/api/missions', { query, signal: options.signal })
+      return apiRequest<{ items: MissionCalendarItem[] }>('/api/missions', {
+        query,
+        signal: options.signal,
+      })
     }
     const items: MissionCalendarItem[] = []
     let page = 0
     let totalPages: number
     do {
       const result = await apiRequest<StaffMissionPage>('/api/missions/staff', {
-        query: { ...query, page: String(page), size: '100' }, signal: options.signal,
+        query: { ...query, page: String(page), size: '100' },
+        signal: options.signal,
       })
       items.push(...result.items.map(toMissionCalendarItem))
       totalPages = result.totalPages
@@ -246,21 +259,36 @@ export const missionsApi = {
 
   /** `GET /api/missions/pending-assignment` [BE]. */
   getPendingAssignment(signal?: AbortSignal): Promise<MissionResponse[]> {
-    return apiRequest<MissionResponse[]>('/api/missions/pending-assignment', { signal })
+    return apiRequest<MissionResponse[]>('/api/missions/pending-assignment', {
+      signal,
+    })
   },
 
   /** `GET /api/missions/code/{missionCode}` [BE]. */
-  getMissionByCode(missionCode: string, signal?: AbortSignal): Promise<MissionResponse> {
-    return apiRequest<MissionResponse>(`/api/missions/code/${missionCode}`, { signal })
+  getMissionByCode(
+    missionCode: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(`/api/missions/code/${missionCode}`, {
+      signal,
+    })
   },
 
   /** `GET /api/missions/{id}/plan` [BE]. */
-  getMissionPlan(missionId: string, signal?: AbortSignal): Promise<MissionPlanResponse> {
-    return apiRequest<MissionPlanResponse>(`/api/missions/${missionId}/plan`, { signal })
+  getMissionPlan(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<MissionPlanResponse> {
+    return apiRequest<MissionPlanResponse>(`/api/missions/${missionId}/plan`, {
+      signal,
+    })
   },
 
   /** `POST /api/missions/{id}/start?tokenValue=` [BE]. */
-  startMission(missionId: string, tokenValue: string): Promise<MissionResponse> {
+  startMission(
+    missionId: string,
+    tokenValue: string,
+  ): Promise<MissionResponse> {
     return apiRequest<MissionResponse>(`/api/missions/${missionId}/start`, {
       method: 'POST',
       query: { tokenValue },
@@ -282,7 +310,10 @@ export const missionsApi = {
   },
 
   /** `PATCH /api/missions/{id}/accept` [BE]. Header: X-Operator-Id. */
-  acceptMission(missionId: string, operatorId: string): Promise<MissionResponse> {
+  acceptMission(
+    missionId: string,
+    operatorId: string,
+  ): Promise<MissionResponse> {
     return apiRequest<MissionResponse>(`/api/missions/${missionId}/accept`, {
       method: 'PATCH',
       headers: { 'X-Operator-Id': operatorId },
@@ -297,16 +328,27 @@ export const missionsApi = {
   },
 
   /** `POST /api/missions/{id}/pre-device-check?droneCode=` [BE]. */
-  preflightCheck(missionId: string, droneCode: string): Promise<PreflightCheckResponse> {
-    return apiRequest<PreflightCheckResponse>(`/api/missions/${missionId}/pre-device-check`, {
-      method: 'POST',
-      query: { droneCode },
-    })
+  preflightCheck(
+    missionId: string,
+    droneCode: string,
+  ): Promise<PreflightCheckResponse> {
+    return apiRequest<PreflightCheckResponse>(
+      `/api/missions/${missionId}/pre-device-check`,
+      {
+        method: 'POST',
+        query: { droneCode },
+      },
+    )
   },
 
   /** `GET /api/missions/{missionId}/media` [BE]. */
-  getMissionMedia(missionId: string, signal?: AbortSignal): Promise<MediaResponse[]> {
-    return apiRequest<MediaResponse[]>(`/api/missions/${missionId}/media`, { signal })
+  getMissionMedia(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<MediaResponse[]> {
+    return apiRequest<MediaResponse[]>(`/api/missions/${missionId}/media`, {
+      signal,
+    })
   },
 
   /**
@@ -318,7 +360,10 @@ export const missionsApi = {
    * browser set the multipart boundary) or a separate upload helper
    * before this method is wired up to a real upload flow.
    */
-  uploadMissionMedia(missionId: string, file: File): Promise<MediaAssetResponse> {
+  uploadMissionMedia(
+    missionId: string,
+    file: File,
+  ): Promise<MediaAssetResponse> {
     const formData = new FormData()
     formData.append('file', file)
     return apiRequest<MediaAssetResponse>(`/api/missions/${missionId}/media`, {
@@ -328,45 +373,80 @@ export const missionsApi = {
   },
 
   /** `GET /api/missions/{missionId}/pre-device-checks` [BE]. History. */
-  getPreflightHistory(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse[]> {
-    return apiRequest<PersistedPreflightCheckResponse[]>(`/api/missions/${missionId}/pre-device-checks`, { signal })
+  getPreflightHistory(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<PersistedPreflightCheckResponse[]> {
+    return apiRequest<PersistedPreflightCheckResponse[]>(
+      `/api/missions/${missionId}/pre-device-checks`,
+      { signal },
+    )
   },
 
   /** `POST /api/missions/{missionId}/pre-device-checks` [BE]. Start a new preflight check session. */
-  startPreflightCheck(missionId: string): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/pre-device-checks`, {
-      method: 'POST',
-    })
+  startPreflightCheck(
+    missionId: string,
+  ): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(
+      `/api/missions/${missionId}/pre-device-checks`,
+      {
+        method: 'POST',
+      },
+    )
   },
 
   /** `GET /api/missions/{missionId}/pre-device-checks/current` [BE]. */
-  getCurrentPreflight(missionId: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/missions/${missionId}/pre-device-checks/current`, { signal })
+  getCurrentPreflight(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(
+      `/api/missions/${missionId}/pre-device-checks/current`,
+      { signal },
+    )
   },
 
   /** `GET /api/missions/{missionId}/post-device-checks/current` [BE]. */
-  getCurrentPostDeviceCheck(missionId: string, signal?: AbortSignal): Promise<PersistedPostDeviceCheckResponse> {
-    return apiRequest<PersistedPostDeviceCheckResponse>(`/api/missions/${missionId}/post-device-checks/current`, { signal })
+  getCurrentPostDeviceCheck(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<PersistedPostDeviceCheckResponse> {
+    return apiRequest<PersistedPostDeviceCheckResponse>(
+      `/api/missions/${missionId}/post-device-checks/current`,
+      { signal },
+    )
   },
 
   /** `GET /api/missions/{missionId}/result` [BE]. */
-  getMissionResult(missionId: string, signal?: AbortSignal): Promise<MissionResultResponse> {
-    return apiRequest<MissionResultResponse>(`/api/missions/${missionId}/result`, { signal })
+  getMissionResult(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResultResponse> {
+    return apiRequest<MissionResultResponse>(
+      `/api/missions/${missionId}/result`,
+      { signal },
+    )
   },
 
   /** `POST /api/manager/mission-results/{resultId}/approve` [BE]. Makes the mission result customer-deliverable. */
   approveMissionResult(resultId: string): Promise<MissionResultResponse> {
-    return apiRequest<MissionResultResponse>(`/api/manager/mission-results/${resultId}/approve`, {
-      method: 'POST',
-      body: {},
-    })
+    return apiRequest<MissionResultResponse>(
+      `/api/manager/mission-results/${resultId}/approve`,
+      {
+        method: 'POST',
+        body: {},
+      },
+    )
   },
 
   /** `POST /api/manager/missions/{missionId}/media-approvals/{mediaId}/approve` [BE]. Makes one media asset visible to the customer. */
   approveMissionMedia(missionId: string, mediaId: string): Promise<unknown> {
-    return apiRequest<unknown>(`/api/manager/missions/${missionId}/media-approvals/${mediaId}/approve`, {
-      method: 'POST',
-    })
+    return apiRequest<unknown>(
+      `/api/manager/missions/${missionId}/media-approvals/${mediaId}/approve`,
+      {
+        method: 'POST',
+      },
+    )
   },
 
   /** `POST /api/missions/{id}/connect` [BE]. */
@@ -378,9 +458,12 @@ export const missionsApi = {
 
   /** `POST /api/missions/{id}/disconnect` [BE]. */
   disconnectMission(missionId: string): Promise<MissionResponse> {
-    return apiRequest<MissionResponse>(`/api/missions/${missionId}/disconnect`, {
-      method: 'POST',
-    })
+    return apiRequest<MissionResponse>(
+      `/api/missions/${missionId}/disconnect`,
+      {
+        method: 'POST',
+      },
+    )
   },
 
   /** `POST /api/missions/{id}/return` [BE]. */
@@ -392,9 +475,12 @@ export const missionsApi = {
 
   /** `POST /api/missions/{id}/postflight` [BE]. */
   postflightMission(missionId: string): Promise<MissionResponse> {
-    return apiRequest<MissionResponse>(`/api/missions/${missionId}/postflight`, {
-      method: 'POST',
-    })
+    return apiRequest<MissionResponse>(
+      `/api/missions/${missionId}/postflight`,
+      {
+        method: 'POST',
+      },
+    )
   },
 
   /** `POST /api/missions/{id}/gcs-lost` [BE]. Report GCS connection lost. */
@@ -413,21 +499,33 @@ export const missionsApi = {
 
   /** `PATCH /api/missions/{id}/replace-drone` [BE]. Replace drone on mission. */
   replaceDrone(missionId: string): Promise<MissionResponse> {
-    return apiRequest<MissionResponse>(`/api/missions/${missionId}/replace-drone`, {
-      method: 'PATCH',
-    })
+    return apiRequest<MissionResponse>(
+      `/api/missions/${missionId}/replace-drone`,
+      {
+        method: 'PATCH',
+      },
+    )
   },
 
   /** `PATCH /api/missions/{id}/postflight-status` [BE]. Update post-flight status. */
-  updatePostflightStatus(missionId: string, request: PostFlightStatusRequest): Promise<MissionResponse> {
-    return apiRequest<MissionResponse>(`/api/missions/${missionId}/postflight-status`, {
-      method: 'PATCH',
-      body: request,
-    })
+  updatePostflightStatus(
+    missionId: string,
+    request: PostFlightStatusRequest,
+  ): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(
+      `/api/missions/${missionId}/postflight-status`,
+      {
+        method: 'PATCH',
+        body: request,
+      },
+    )
   },
 
   /** `POST /api/missions/{missionId}/images` [BE]. Upload image for mission. */
-  uploadMissionImage(missionId: string, file: File): Promise<MediaAssetResponse> {
+  uploadMissionImage(
+    missionId: string,
+    file: File,
+  ): Promise<MediaAssetResponse> {
     // TODO: needs multipart handling - apiRequest JSON-stringifies body
     return apiRequest<MediaAssetResponse>(`/api/missions/${missionId}/images`, {
       method: 'POST',
@@ -436,23 +534,41 @@ export const missionsApi = {
   },
 
   /** `POST /api/weather/preflight-check` [BE]. Check weather conditions. */
-  checkWeather(request: WeatherPreflightCheckRequest): Promise<WeatherPreflightCheckResponse> {
-    return apiRequest<WeatherPreflightCheckResponse>('/api/weather/preflight-check', {
-      method: 'POST',
-      body: request,
-    })
+  checkWeather(
+    request: WeatherPreflightCheckRequest,
+  ): Promise<WeatherPreflightCheckResponse> {
+    return apiRequest<WeatherPreflightCheckResponse>(
+      '/api/weather/preflight-check',
+      {
+        method: 'POST',
+        body: request,
+      },
+    )
   },
 
   /** `GET /api/pre-device-checks/{id}` [BE]. Get preflight check by ID. */
-  getPreflightCheckById(id: string, signal?: AbortSignal): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/pre-device-checks/${id}`, { signal })
+  getPreflightCheckById(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(
+      `/api/pre-device-checks/${id}`,
+      { signal },
+    )
   },
 
   /** `PATCH /api/pre-device-checks/{id}/items/{checkType}` [BE]. Update preflight check item. */
-  updatePreflightCheckItem(id: string, checkType: string, data: unknown): Promise<PersistedPreflightCheckResponse> {
-    return apiRequest<PersistedPreflightCheckResponse>(`/api/pre-device-checks/${id}/items/${checkType}`, {
-      method: 'PATCH',
-      body: data,
-    })
+  updatePreflightCheckItem(
+    id: string,
+    checkType: string,
+    data: unknown,
+  ): Promise<PersistedPreflightCheckResponse> {
+    return apiRequest<PersistedPreflightCheckResponse>(
+      `/api/pre-device-checks/${id}/items/${checkType}`,
+      {
+        method: 'PATCH',
+        body: data,
+      },
+    )
   },
 }

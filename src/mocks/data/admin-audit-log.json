@@ -25,7 +25,7 @@
       "ip": "192.168.1.10",
       "userAgent": "Mozilla/5.0",
       "before": null,
-      "after": { "email": "trang.dang@odms.vn", "role": "AUDITOR" }
+      "after": { "email": "trang.dang@odms.vn", "role": "ADMIN" }
     },
     {
       "id": "audit-003",
@@ -141,7 +141,7 @@
       "entityId": "acc-old-deleted",
       "ip": "192.168.1.10",
       "userAgent": "Mozilla/5.0",
-      "before": { "email": "old.user@test.vn", "role": "STAFF" },
+      "before": { "email": "old.user@test.vn", "role": "MANAGER" },
       "after": null
     },
     {

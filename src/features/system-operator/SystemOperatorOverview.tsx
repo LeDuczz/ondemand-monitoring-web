@@ -1,11 +1,14 @@
 import { Icon, type IconName } from '../../shared/components/Icon'
 import { useI18n } from '../../shared/i18n'
 import { rolePortalPageMessages } from '../portal/pages/RolePortalPage.messages'
+import { technicalOverviewMessages } from './TechnicalOverview.messages'
+import './sysop.css'
 
 /** Overview body for the System Operator portal (same data as the old portal home). */
 export function SystemOperatorOverview() {
   const { t } = useI18n(rolePortalPageMessages)
-  const content = t.roleContent.SYSTEM_OPERATOR
+  const { t: technical } = useI18n(technicalOverviewMessages)
+  const content = technical.content
   return (
     <>
       <section className="odm-sysop-hero">
@@ -14,7 +17,7 @@ export function SystemOperatorOverview() {
           <h2>{t.heroTitle}</h2>
           <p>{t.heroCopy}</p>
         </div>
-        <a className="odm-btn odm-btn-p" href="#portal/system-operator/devices">
+        <a className="odm-btn odm-btn-p" href="#portal/staff/technical/devices">
           {content.primary}
         </a>
       </section>

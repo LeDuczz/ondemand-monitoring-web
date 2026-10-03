@@ -105,20 +105,20 @@ describe('DashboardPage', () => {
 
     expect(screen.getByRole('link', { name: /Đơn chờ duyệt/ })).toHaveAttribute(
       'href',
-      '#portal/staff/orders',
+      '#portal/manager/orders',
     )
     expect(
       screen.getByRole('link', { name: /Mission hôm nay/ }),
-    ).toHaveAttribute('href', '#portal/staff/missions')
+    ).toHaveAttribute('href', '#portal/manager/missions')
     expect(
       screen.getByRole('link', { name: /Mission đang bay/ }),
-    ).toHaveAttribute('href', '#portal/staff/live')
+    ).toHaveAttribute('href', '#portal/manager/live')
     expect(
       screen.getByRole('link', { name: /Drone sẵn sàng/ }),
-    ).toHaveAttribute('href', '#portal/staff/drones')
+    ).toHaveAttribute('href', '#portal/manager/drones')
     expect(
       screen.getByRole('link', { name: /Việc cần xử lý/ }),
-    ).toHaveAttribute('href', '#portal/staff/media')
+    ).toHaveAttribute('href', '#portal/manager/media')
   })
 
   it('shows the error state with the mono debug line and retries on click', async () => {

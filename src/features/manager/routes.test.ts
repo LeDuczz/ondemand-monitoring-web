@@ -4,95 +4,97 @@ import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 
 describe('parseManagerRoute', () => {
   it('parses the dashboard route (MNG-01)', () => {
-    expect(parseManagerRoute('#portal/staff')).toEqual({
+    expect(parseManagerRoute('#portal/manager')).toEqual({
       screen: 'dashboard',
     })
   })
 
   it('parses the order queue route (MNG-02)', () => {
-    expect(parseManagerRoute('#portal/staff/orders')).toEqual({
+    expect(parseManagerRoute('#portal/manager/orders')).toEqual({
       screen: 'orderQueue',
     })
   })
 
   it('parses the order review route (MNG-03)', () => {
-    expect(parseManagerRoute('#portal/staff/orders/ORD-1')).toEqual({
+    expect(parseManagerRoute('#portal/manager/orders/ORD-1')).toEqual({
       screen: 'orderReview',
       orderId: 'ORD-1',
     })
   })
 
   it('parses the create-mission route (MNG-04)', () => {
-    expect(parseManagerRoute('#portal/staff/orders/ORD-1/mission')).toEqual({
+    expect(parseManagerRoute('#portal/manager/orders/ORD-1/mission')).toEqual({
       screen: 'missionCreate',
       orderId: 'ORD-1',
     })
   })
 
   it('parses the dispatch route (MNG-05)', () => {
-    expect(parseManagerRoute('#portal/staff/missions/MSN-1/detail')).toEqual({
+    expect(parseManagerRoute('#portal/manager/missions/MSN-1/detail')).toEqual({
       screen: 'missionDetail',
       missionId: 'MSN-1',
     })
-    expect(parseManagerRoute('#portal/staff/missions/MSN-1/dispatch')).toEqual({
+    expect(
+      parseManagerRoute('#portal/manager/missions/MSN-1/dispatch'),
+    ).toEqual({
       screen: 'missionDispatch',
       missionId: 'MSN-1',
     })
   })
 
   it('parses the schedule route (MNG-06)', () => {
-    expect(parseManagerRoute('#portal/staff/schedule')).toEqual({
+    expect(parseManagerRoute('#portal/manager/schedule')).toEqual({
       screen: 'schedule',
     })
   })
 
   it('parses the live-monitoring routes (MNG-07), with and without missionId', () => {
-    expect(parseManagerRoute('#portal/staff/live')).toEqual({
+    expect(parseManagerRoute('#portal/manager/live')).toEqual({
       screen: 'live',
       missionId: undefined,
     })
-    expect(parseManagerRoute('#portal/staff/live/MSN-1')).toEqual({
+    expect(parseManagerRoute('#portal/manager/live/MSN-1')).toEqual({
       screen: 'live',
       missionId: 'MSN-1',
     })
   })
 
   it('parses the mission list routes (MNG-08), with and without missionId', () => {
-    expect(parseManagerRoute('#portal/staff/missions')).toEqual({
+    expect(parseManagerRoute('#portal/manager/missions')).toEqual({
       screen: 'missions',
       missionId: undefined,
     })
-    expect(parseManagerRoute('#portal/staff/missions/MSN-1')).toEqual({
+    expect(parseManagerRoute('#portal/manager/missions/MSN-1')).toEqual({
       screen: 'missions',
       missionId: 'MSN-1',
     })
   })
 
   it('parses the fleet routes (MNG-09), with and without droneId', () => {
-    expect(parseManagerRoute('#portal/staff/drones')).toEqual({
+    expect(parseManagerRoute('#portal/manager/drones')).toEqual({
       screen: 'drones',
       droneId: undefined,
     })
-    expect(parseManagerRoute('#portal/staff/drones/DRN-1')).toEqual({
+    expect(parseManagerRoute('#portal/manager/drones/DRN-1')).toEqual({
       screen: 'drones',
       droneId: 'DRN-1',
     })
   })
 
   it('parses the maintenance route (MNG-10)', () => {
-    expect(parseManagerRoute('#portal/staff/maintenance')).toEqual({
+    expect(parseManagerRoute('#portal/manager/maintenance')).toEqual({
       screen: 'maintenance',
     })
   })
 
   it('parses the media route (MNG-11)', () => {
-    expect(parseManagerRoute('#portal/staff/media')).toEqual({
+    expect(parseManagerRoute('#portal/manager/media')).toEqual({
       screen: 'media',
     })
   })
 
   it('parses the reports route (MNG-12)', () => {
-    expect(parseManagerRoute('#portal/staff/reports')).toEqual({
+    expect(parseManagerRoute('#portal/manager/reports')).toEqual({
       screen: 'reports',
     })
   })
@@ -105,34 +107,34 @@ describe('parseManagerRoute', () => {
   })
 
   it('falls back to notFound for unknown sub-paths and malformed segments', () => {
-    expect(parseManagerRoute('#portal/staff/unknown')).toEqual({
+    expect(parseManagerRoute('#portal/manager/unknown')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/orders/ORD-1/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/orders/ORD-1/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/orders/ORD-1/not-mission')).toEqual(
-      { screen: 'notFound' },
-    )
-    expect(parseManagerRoute('#portal/staff/missions/MSN-1/extra')).toEqual({
+    expect(
+      parseManagerRoute('#portal/manager/orders/ORD-1/not-mission'),
+    ).toEqual({ screen: 'notFound' })
+    expect(parseManagerRoute('#portal/manager/missions/MSN-1/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/live/MSN-1/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/live/MSN-1/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/drones/DRN-1/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/drones/DRN-1/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/schedule/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/schedule/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/maintenance/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/maintenance/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/media/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/media/extra')).toEqual({
       screen: 'notFound',
     })
-    expect(parseManagerRoute('#portal/staff/reports/extra')).toEqual({
+    expect(parseManagerRoute('#portal/manager/reports/extra')).toEqual({
       screen: 'notFound',
     })
   })
@@ -140,31 +142,34 @@ describe('parseManagerRoute', () => {
 
 describe('managerHref', () => {
   const cases: Array<[ManagerRoute, string]> = [
-    [{ screen: 'dashboard' }, '#portal/staff'],
-    [{ screen: 'orderQueue' }, '#portal/staff/orders'],
-    [{ screen: 'orderReview', orderId: 'ORD-1' }, '#portal/staff/orders/ORD-1'],
+    [{ screen: 'dashboard' }, '#portal/manager'],
+    [{ screen: 'orderQueue' }, '#portal/manager/orders'],
+    [
+      { screen: 'orderReview', orderId: 'ORD-1' },
+      '#portal/manager/orders/ORD-1',
+    ],
     [
       { screen: 'missionCreate', orderId: 'ORD-1' },
-      '#portal/staff/orders/ORD-1/mission',
+      '#portal/manager/orders/ORD-1/mission',
     ],
     [
       { screen: 'missionDispatch', missionId: 'MSN-1' },
-      '#portal/staff/missions/MSN-1/dispatch',
+      '#portal/manager/missions/MSN-1/dispatch',
     ],
-    [{ screen: 'schedule' }, '#portal/staff/schedule'],
-    [{ screen: 'live' }, '#portal/staff/live'],
-    [{ screen: 'live', missionId: 'MSN-1' }, '#portal/staff/live/MSN-1'],
-    [{ screen: 'missions' }, '#portal/staff/missions'],
+    [{ screen: 'schedule' }, '#portal/manager/schedule'],
+    [{ screen: 'live' }, '#portal/manager/live'],
+    [{ screen: 'live', missionId: 'MSN-1' }, '#portal/manager/live/MSN-1'],
+    [{ screen: 'missions' }, '#portal/manager/missions'],
     [
       { screen: 'missions', missionId: 'MSN-1' },
-      '#portal/staff/missions/MSN-1',
+      '#portal/manager/missions/MSN-1',
     ],
-    [{ screen: 'drones' }, '#portal/staff/drones'],
-    [{ screen: 'drones', droneId: 'DRN-1' }, '#portal/staff/drones/DRN-1'],
-    [{ screen: 'maintenance' }, '#portal/staff/maintenance'],
-    [{ screen: 'media' }, '#portal/staff/media'],
-    [{ screen: 'reports' }, '#portal/staff/reports'],
-    [{ screen: 'notFound' }, '#portal/staff'],
+    [{ screen: 'drones' }, '#portal/manager/drones'],
+    [{ screen: 'drones', droneId: 'DRN-1' }, '#portal/manager/drones/DRN-1'],
+    [{ screen: 'maintenance' }, '#portal/manager/maintenance'],
+    [{ screen: 'media' }, '#portal/manager/media'],
+    [{ screen: 'reports' }, '#portal/manager/reports'],
+    [{ screen: 'notFound' }, '#portal/manager'],
   ]
 
   it.each(cases)('builds the href for %o', (route, expected) => {

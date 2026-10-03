@@ -75,8 +75,20 @@ export function SocialCallbackPage() {
         if (storageKey) sessionStorage.setItem(storageKey, 'done')
         setUserName(response.user?.fullName)
         setUserRole(response.user?.role)
+        const pendingEmail = sessionStorage.getItem(
+          'fieldwise.pendingLocalLinkEmail',
+        )
+        sessionStorage.removeItem('fieldwise.pendingLocalLinkEmail')
+        const shouldLink =
+          pendingEmail &&
+          response.user?.email.trim().toLowerCase() === pendingEmail
         window.setTimeout(
-          () => window.location.replace(getRoleHomeUrl(response.user?.role)),
+          () =>
+            window.location.replace(
+              shouldLink
+                ? `${window.location.origin}/#profile`
+                : getRoleHomeUrl(response.user?.role),
+            ),
           700,
         )
       })

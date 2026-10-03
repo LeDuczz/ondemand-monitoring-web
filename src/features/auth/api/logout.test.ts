@@ -23,7 +23,7 @@ describe('logout', () => {
         id: '1',
         fullName: 'A',
         email: 'a@b.com',
-        role: 'STAFF',
+        role: 'MANAGER',
       }),
     )
     const logoutSpy = vi.spyOn(authApi, 'logout').mockResolvedValue(undefined)

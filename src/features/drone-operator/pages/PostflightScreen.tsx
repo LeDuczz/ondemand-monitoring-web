@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
   EmptyState,
@@ -14,7 +14,6 @@ import {
   type FlightControlStatus,
 } from '../omss/api/flightControlApi'
 import { formatDeviceLabel } from '../lib/deviceLabel'
-import { useMissionSkippedSteps } from '../lib/useMissionSkippedSteps'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -27,7 +26,6 @@ import type {
 import { postflightScreenMessages } from '../i18n/postflightScreen.messages'
 import { FlightStepHeader } from './FlightStepper'
 import { MaintenanceTicketDialog } from './MaintenanceTicketDialog'
-
 
 type PostflightCategoryDef = {
   title: string
@@ -161,7 +159,9 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   const missionLabel =
     activeData?.missionCode || effectiveMissionId || t.defaultMissionLabel
   const deviceId = activeData?.deviceId ?? 'DEVICE'
-  const deviceLabel = activeData ? formatDeviceLabel(activeData) ?? deviceId : deviceId
+  const deviceLabel = activeData
+    ? (formatDeviceLabel(activeData) ?? deviceId)
+    : deviceId
   const categories = useMemo(() => postflightCategories(lang), [lang])
 
   const [error, setError] = useState<string | null>(null)
@@ -308,36 +308,6 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
     }
   }
 
-  const skipped = useMissionSkippedSteps(effectiveMissionId || null)
-  const skipPostflight = skipped.loaded && skipped.skipPostflight
-  const autoSkipped = useRef(false)
-
-  async function handleSkipPostflight() {
-    setSaving(true)
-    setError(null)
-    try {
-      if (activeData?.status === 'RETURNING') {
-        await missionApi.startPostflight(effectiveMissionId).catch(() => {})
-      }
-      await missionApi.completeMission(effectiveMissionId)
-      await missionApi.disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED').catch(() => {})
-      await flightControlApi.releaseSession(effectiveMissionId).catch(() => {})
-      clearCompletedMissionState(effectiveMissionId, missionLabel, deviceId)
-      setCompleted({ overallOk: true, ticketCreated: false, droneStatus: 'AVAILABLE' })
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t.saveFailed)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!skipPostflight || !effectiveMissionId || !activeData || autoSkipped.current) return
-    autoSkipped.current = true
-    void handleSkipPostflight()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skipPostflight, effectiveMissionId, activeData])
-
   if (loading) return <LoadingState />
 
   if (queryError || !effectiveMissionId) {
@@ -346,24 +316,6 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         title={t.missionNotFoundTitle}
         description={String(queryError || t.missionNotFoundDesc)}
       />
-    )
-  }
-
-  if (skipPostflight && !completed) {
-    return (
-      <div className="odm-card" style={{ marginBottom: 0 }}>
-        <div style={{ padding: 24 }}>
-          <strong>Bỏ qua bước kiểm tra sau bay</strong>
-          <p style={{ color: 'var(--tx3)', margin: '6px 0 0' }}>
-            Nhiệm vụ chưa phân công nhân sự bảo trì nên bước này được bỏ qua. Đang hoàn tất nhiệm vụ...
-          </p>
-          {error ? (
-            <p role="alert" style={{ color: 'var(--red-fg)' }}>
-              {error}
-            </p>
-          ) : null}
-        </div>
-      </div>
     )
   }
 
@@ -525,8 +477,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   {postflightMissions.map((m) => (
                     <option key={m.id} value={m.id}>
                       🎯 {m.missionCode || m.id} (
-                      {formatDeviceLabel(m) || 'DEVICE'}) —{' '}
-                      {m.status}
+                      {formatDeviceLabel(m) || 'DEVICE'}) — {m.status}
                     </option>
                   ))}
                 </select>

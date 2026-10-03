@@ -11,11 +11,15 @@ import { systemOperatorLayoutMessages } from './SystemOperatorLayout.messages'
 type NavKey = keyof (typeof systemOperatorLayoutMessages)['vi']['nav']
 
 const NAV: Array<{ key: NavKey; icon: string; href: string }> = [
-  { key: 'overview', icon: '▦', href: '#portal/system-operator' },
-  { key: 'maintenance', icon: '🛠', href: '#portal/system-operator/maintenance' },
-  { key: 'devices', icon: '◉', href: '#portal/system-operator/devices' },
-  { key: 'telemetry', icon: '〰', href: '#portal/system-operator/telemetry' },
-  { key: 'alerts', icon: '🔔', href: '#portal/system-operator/alerts' },
+  { key: 'overview', icon: '▦', href: '#portal/staff/technical' },
+  {
+    key: 'maintenance',
+    icon: '🛠',
+    href: '#portal/staff/technical/maintenance',
+  },
+  { key: 'devices', icon: '◉', href: '#portal/staff/technical/devices' },
+  { key: 'telemetry', icon: '〰', href: '#portal/staff/technical/telemetry' },
+  { key: 'alerts', icon: '🔔', href: '#portal/staff/technical/alerts' },
 ]
 
 function activeKey(hash: string): NavKey {
@@ -68,7 +72,7 @@ export function SystemOperatorLayout({
         >
           <a
             className="odm-opr-brand"
-            href="#portal/system-operator"
+            href="#portal/staff/technical"
             onClick={() => setMenuOpen(false)}
           >
             <img

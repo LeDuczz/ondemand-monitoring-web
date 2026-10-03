@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { mapAccountStatus, mapUserDetail, mapUserSummary } from './accountMappers'
+import {
+  mapAccountStatus,
+  mapUserDetail,
+  mapUserSummary,
+} from './accountMappers'
 
 const summary = {
   id: 'u1',
   fullName: 'An Nguyen',
   email: 'an@x.vn',
-  role: 'STAFF' as const,
+  role: 'MANAGER' as const,
   active: true,
   emailVerified: false,
   createdAt: '2026-01-01T00:00:00Z',
@@ -23,7 +27,7 @@ describe('accountMappers', () => {
       id: 'u1',
       fullName: 'An Nguyen',
       email: 'an@x.vn',
-      role: 'STAFF',
+      role: 'MANAGER',
       status: 'ACTIVE',
       emailVerified: false,
       createdAt: '2026-01-01T00:00:00Z',

@@ -87,7 +87,9 @@ describe('CreateMissionPage', () => {
     expect(endInput.value).toBe('')
     expect(screen.queryByText('Flight plan')).not.toBeInTheDocument()
     expect(screen.queryByText('Kiểu bay')).not.toBeInTheDocument()
-    expect(screen.queryByRole('img', { name: 'Xem trước đường bay' })).toBeNull()
+    expect(
+      screen.queryByRole('img', { name: 'Xem trước đường bay' }),
+    ).toBeNull()
   })
 
   it('shows the error state with a mono debug line when the brief fails to load', async () => {
@@ -136,7 +138,7 @@ describe('CreateMissionPage', () => {
     )
     await waitFor(() =>
       expect(window.location.hash).toBe(
-        '#portal/staff/missions/msn-2609-0153-1/setup',
+        '#portal/manager/missions/msn-2609-0153-1/setup',
       ),
     )
   })
@@ -201,9 +203,7 @@ describe('CreateMissionPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Thêm waypoint' }),
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Thử lại' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
   })
 
   it('renders English title and labels when language is switched', async () => {

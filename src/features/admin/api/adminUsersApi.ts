@@ -1,15 +1,12 @@
+import { SYSTEM_ROLES, EMPLOYEE_ROLES } from '../../auth/roles'
 import { apiRequest } from '../../../shared/api/httpClient'
 
 // DTOs mirror the backend OpenAPI schemas (http://localhost:8080/v3/api-docs).
 // Single source of truth for role lists (filters, create form, badges). The
 // backend has no roles endpoint: this mirrors the enum in its OpenAPI schema.
-export const BE_USER_ROLES = [
-  'CUSTOMER',
-  'STAFF',
-  'DRONE_OPERATOR',
-  'SYSTEM_OPERATOR',
-  'ADMIN',
-] as const
+export const BE_USER_ROLES = SYSTEM_ROLES
+
+export type EmployeeRole = (typeof EMPLOYEE_ROLES)[number]
 
 export type ManagedUserRole = (typeof BE_USER_ROLES)[number]
 
@@ -51,7 +48,7 @@ export type UserStatusUpdateRequest = { active: boolean }
 export type CreateManagedAccountRequest = {
   email: string
   fullName: string
-  role: ManagedUserRole
+  role: EmployeeRole
 }
 
 export type ManagedAccountResponse = {

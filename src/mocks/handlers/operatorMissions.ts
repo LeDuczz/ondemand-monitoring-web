@@ -23,6 +23,7 @@ import { createCollection } from '../db'
 import { fail, ok, registerMockRoutes } from '../mockServer'
 import mediaSeed from '../data/operator-media.json'
 import seed from '../data/operator-missions.json'
+import authSeed from '../data/auth-users.json'
 
 const POSTFLIGHT_TOTAL = 6
 
@@ -43,6 +44,32 @@ const maintenanceTickets = createCollection([] as MaintenanceTicket[])
 const TABS: OperatorMissionTab[] = ['pending', 'upcoming', 'history']
 
 registerMockRoutes([
+  {
+    method: 'GET',
+    path: '/api/missions/:id/permissions',
+    handler: ({ params, headers }) => {
+      const token = headers.get('Authorization')?.replace(/^Bearer /i, '')
+      const user = authSeed.users.find((entry) => entry.accessToken === token)
+      if (!user) return fail(401, 'UNAUTHORIZED', 'Sign in first')
+      const mission = missions.find((entry) => entry.id === params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Mission not found')
+      const owner = user.role === 'STAFF' && user.id === profile.id
+      if (!owner && user.role !== 'MANAGER' && user.role !== 'ADMIN') {
+        return fail(403, 'FORBIDDEN', 'Not assigned to this mission')
+      }
+      // The demo fixture assigns the profile as PILOT without optional specialists.
+      const accepted =
+        owner && ['ACCEPTED', 'IN_FLIGHT'].includes(mission.status)
+      return ok({
+        canRespond: owner && mission.status === 'PENDING',
+        canControlFlight: accepted,
+        canInspectDevice: accepted,
+        canOperatePayload: accepted,
+        canMaintainDevice: false,
+        canUploadMedia: accepted || (owner && mission.status === 'COMPLETED'),
+      })
+    },
+  },
   {
     method: 'GET',
     path: '/api/operator/profile',
@@ -239,8 +266,10 @@ registerMockRoutes([
         severity?: MaintenanceSeverity
         description?: string
       }
-      if (!issueType) return fail(400, 'ISSUE_TYPE_REQUIRED', 'issue_type is required')
-      if (!severity) return fail(400, 'SEVERITY_REQUIRED', 'severity is required')
+      if (!issueType)
+        return fail(400, 'ISSUE_TYPE_REQUIRED', 'issue_type is required')
+      if (!severity)
+        return fail(400, 'SEVERITY_REQUIRED', 'severity is required')
       const ticket: MaintenanceTicket = {
         id: `MTK-${String(maintenanceTickets.length + 1).padStart(4, '0')}`,
         droneCode: mission.droneCode ?? '',

@@ -28,6 +28,8 @@ export const authPageMessages = defineMessages({
     accountLocked: 'Tài khoản đã bị khoá.',
     accountLockedDetail: 'Liên hệ quản trị viên qua support@odms.vn để mở lại.',
     invalidCredentials: 'Email hoặc mật khẩu không đúng.',
+    linkLocalRequired:
+      'Email này đã đăng nhập bằng Google. Hãy đăng nhập Google để xác nhận chủ tài khoản, sau đó đặt mật khẩu đăng nhập local.',
     genericError: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
     passwordMismatch: 'Mật khẩu không khớp',
     otpSent: (email: string) =>
@@ -69,6 +71,8 @@ export const authPageMessages = defineMessages({
     accountLockedDetail:
       'Contact an administrator at support@odms.vn to unlock it.',
     invalidCredentials: 'Incorrect email or password.',
+    linkLocalRequired:
+      'This email already uses Google sign-in. Sign in with Google to verify ownership, then set a local password.',
     genericError: 'Something went wrong. Please try again.',
     passwordMismatch: 'Passwords do not match',
     otpSent: (email: string) =>

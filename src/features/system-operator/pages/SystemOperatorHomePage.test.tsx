@@ -11,13 +11,15 @@ afterEach(() => {
 
 describe('SystemOperatorHomePage', () => {
   it('renders the Vietnamese devices banner title for the devices route', () => {
-    window.location.hash = '#portal/system-operator/devices'
+    window.location.hash = '#portal/staff/technical/devices'
     render(<SystemOperatorHomePage />)
-    expect(screen.getByText('Quản lý Trạng thái Fleet & Thiết bị Drone')).toBeInTheDocument()
+    expect(
+      screen.getByText('Quản lý Trạng thái Fleet & Thiết bị Drone'),
+    ).toBeInTheDocument()
   })
 
   it('renders the English devices banner title when language is switched', () => {
-    window.location.hash = '#portal/system-operator/devices'
+    window.location.hash = '#portal/staff/technical/devices'
     render(<SystemOperatorHomePage />)
     act(() => setLanguage('en'))
     expect(screen.getByText('Fleet & Drone Device Status')).toBeInTheDocument()

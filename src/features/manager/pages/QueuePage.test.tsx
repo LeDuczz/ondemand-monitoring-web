@@ -99,10 +99,9 @@ describe('QueuePage', () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
     render(<QueuePage />)
     await waitFor(() => screen.getByText('Không còn đơn chờ duyệt'))
-    expect(screen.getAllByRole('link', { name: 'Xem nhiệm vụ đã tạo' })[0]).toHaveAttribute(
-      'href',
-      '#portal/staff/missions',
-    )
+    expect(
+      screen.getAllByRole('link', { name: 'Xem nhiệm vụ đã tạo' })[0],
+    ).toHaveAttribute('href', '#portal/manager/missions')
   })
 
   it('renders the English title and summary when language is switched', async () => {

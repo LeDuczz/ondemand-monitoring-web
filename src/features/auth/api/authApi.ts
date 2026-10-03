@@ -1,3 +1,5 @@
+import { matchesRealApiRoute } from '../../../shared/api/realApiRoutes'
+import { isUserRole } from '../roles'
 import { env } from '../../../config/env'
 import type {
   ApiResponse,
@@ -88,19 +90,69 @@ async function transportFetch(
   url: string,
   init: RequestInit,
 ): Promise<Response> {
-  if (env.useMockApi) {
+  if (usesMockTransport(url, init.method)) {
     const { mockFetch } = await import('../../../mocks')
     return mockFetch(url, init)
   }
   return fetch(url, init)
 }
 
+function usesMockTransport(url: string, method = 'GET') {
+  return (
+    env.useMockApi &&
+    !matchesRealApiRoute(
+      env.realApiRoutes,
+      method,
+      new URL(url, env.apiBaseUrl).pathname,
+    )
+  )
+}
+
+const cookieAuthenticationPaths = new Set([
+  '/api/auth/refresh',
+  '/api/auth/logout',
+  '/api/v1/auth/refresh',
+  '/api/v1/auth/logout',
+])
+
+async function csrfHeaders(url: string, method = 'GET'): Promise<Headers> {
+  const headers = new Headers()
+  const path = new URL(url, env.apiBaseUrl).pathname
+  if (
+    usesMockTransport(url, method) ||
+    ['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase()) ||
+    !cookieAuthenticationPaths.has(path)
+  )
+    return headers
+  // Read the response token (Spring's CSRF handler may mask the cookie token).
+  const response = await fetch(`${env.apiBaseUrl}/api/auth/csrf`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  })
+  const payload = (await response.json().catch(() => undefined)) as
+    ApiResponse<string> | undefined
+  if (
+    !response.ok ||
+    payload?.success === false ||
+    typeof payload?.data !== 'string'
+  ) {
+    throw new AuthApiError(
+      payload?.message ?? 'Unable to initialize CSRF protection.',
+      'CSRF_TOKEN_UNAVAILABLE',
+    )
+  }
+  headers.set('X-XSRF-TOKEN', payload.data)
+  return headers
+}
+
 export async function authenticatedFetch(
   url: string,
   init: RequestInit = {},
 ): Promise<Response> {
+  const protection = await csrfHeaders(url, init.method)
   const request = (token?: string) => {
     const headers = new Headers(init.headers)
+    protection.forEach((value, key) => headers.set(key, value))
     if (token) headers.set('Authorization', `Bearer ${token}`)
     return transportFetch(url, { ...init, credentials: 'include', headers })
   }
@@ -116,6 +168,11 @@ export async function authenticatedFetch(
 async function request<T>(path: string, options: RequestOptions = {}) {
   const { accessToken, skipRefresh, body, ...requestInit } = options
   const headers = new Headers(options.headers)
+  const protection = await csrfHeaders(
+    `${env.apiBaseUrl}${path}`,
+    options.method,
+  )
+  protection.forEach((value, key) => headers.set(key, value))
   headers.set('Accept', 'application/json')
   if (body !== undefined) headers.set('Content-Type', 'application/json')
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
@@ -185,6 +242,12 @@ export const authApi = {
     }),
   socialSync: (body: SocialSyncRequest) =>
     request<AuthResponse>('/api/auth/social/sync', { method: 'POST', body }),
+  linkLocal: (password: string) =>
+    request<void>('/api/auth/social/link-local', {
+      method: 'POST',
+      body: { password },
+      accessToken: authSession.getAccessToken(),
+    }),
   refresh: () =>
     request<AuthResponse>('/api/auth/refresh', {
       method: 'POST',
@@ -205,9 +268,9 @@ export const authApi = {
     request<void>('/api/auth/forgot-password', { method: 'POST', body }),
   resetPassword: (body: ResetPasswordRequest) =>
     request<void>('/api/auth/reset-password', { method: 'POST', body }),
-  /** `GET /api/v1/auth/csrf` [BE]. */
+  /** `GET /api/auth/csrf` [BE]. */
   getCsrf: (signal?: AbortSignal) =>
-    request<unknown>('/api/v1/auth/csrf', { signal }),
+    request<string>('/api/auth/csrf', { signal }),
 }
 
 const ACCESS_TOKEN_KEY = 'fieldwise.accessToken'
@@ -227,7 +290,7 @@ const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
   id: String(user.id),
   fullName: String(user.fullName),
   email: String(user.email),
-  emailVerified: Boolean(user.emailVerified),
+  emailVerified: user.emailVerified,
   role: user.role,
   linkedProviders: user.linkedProviders?.filter(
     (provider): provider is string => typeof provider === 'string',
@@ -236,22 +299,47 @@ const sanitizeUser = (user: NonNullable<AuthResponse['user']>) => ({
     typeof user.avatarUrl === 'string' && /^https?:\/\//i.test(user.avatarUrl)
       ? user.avatarUrl
       : undefined,
-  isActive: Boolean(user.isActive),
+  isActive: user.isActive,
 })
 
 export const authSession = {
   save(response: AuthResponse, rememberMe: boolean) {
-    if (!isUsableAccessToken(response.accessToken) || !response.user) return
+    if (
+      !isUsableAccessToken(response.accessToken) ||
+      !response.user ||
+      !isUserRole(response.user.role)
+    ) {
+      throw new AuthApiError(
+        'Invalid authentication response or unsupported account role.',
+        'INVALID_AUTH_RESPONSE',
+      )
+    }
+    authSession.clear()
     const storage = rememberMe ? localStorage : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
     storage.setItem(USER_KEY, JSON.stringify(sanitizeUser(response.user)))
   },
   updateAccessToken(response: AuthResponse) {
-    if (!isUsableAccessToken(response.accessToken)) return
+    if (!isUsableAccessToken(response.accessToken)) {
+      throw new AuthApiError(
+        'Invalid refreshed access token.',
+        'INVALID_AUTH_RESPONSE',
+      )
+    }
     const storage = localStorage.getItem(ACCESS_TOKEN_KEY)
       ? localStorage
       : sessionStorage
     storage.setItem(ACCESS_TOKEN_KEY, response.accessToken)
+    if (response.user) {
+      if (!isUserRole(response.user.role)) {
+        authSession.clear()
+        throw new AuthApiError(
+          'Unsupported account role.',
+          'INVALID_AUTH_RESPONSE',
+        )
+      }
+      storage.setItem(USER_KEY, JSON.stringify(sanitizeUser(response.user)))
+    }
   },
   getAccessToken() {
     const token =
@@ -270,10 +358,31 @@ export const authSession = {
       localStorage.getItem(USER_KEY) ?? sessionStorage.getItem(USER_KEY)
     if (!raw) return undefined
     try {
-      return JSON.parse(raw) as AuthResponse['user']
+      const user = JSON.parse(raw) as AuthResponse['user']
+      if (!user || !isUserRole(user.role)) {
+        authSession.clear()
+        return undefined
+      }
+      return user
     } catch {
       return undefined
     }
+  },
+  markLocalLinked() {
+    const user = authSession.getUser()
+    if (!user) return
+    const storage = localStorage.getItem(USER_KEY)
+      ? localStorage
+      : sessionStorage
+    storage.setItem(
+      USER_KEY,
+      JSON.stringify({
+        ...user,
+        linkedProviders: Array.from(
+          new Set([...(user.linkedProviders ?? ['GOOGLE']), 'LOCAL']),
+        ),
+      }),
+    )
   },
   clear() {
     localStorage.removeItem(ACCESS_TOKEN_KEY)

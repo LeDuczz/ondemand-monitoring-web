@@ -4,11 +4,9 @@ export const portalLayoutMessages = defineMessages({
   vi: {
     roleLabels: {
       CUSTOMER: 'Không gian khách hàng',
-      STAFF: 'Không gian vận hành',
-      DRONE_OPERATOR: 'Vận hành drone',
-      SYSTEM_OPERATOR: 'Vận hành hệ thống',
+      MANAGER: 'Không gian quản lý',
+      STAFF: 'Không gian nhân viên',
       ADMIN: 'Quản trị',
-      AUDITOR: 'Không gian kiểm toán',
     },
     nav: {
       customerOverview: 'Tổng quan',
@@ -35,6 +33,7 @@ export const portalLayoutMessages = defineMessages({
       auditLog: 'Nhật ký kiểm toán',
     },
     navAria: 'Điều hướng cổng thông tin',
+    profile: 'Hồ sơ cá nhân',
     lightMode: 'Chế độ sáng',
     darkMode: 'Chế độ tối',
     closeNav: 'Đóng điều hướng',
@@ -44,11 +43,9 @@ export const portalLayoutMessages = defineMessages({
   en: {
     roleLabels: {
       CUSTOMER: 'Customer workspace',
-      STAFF: 'Operations workspace',
-      DRONE_OPERATOR: 'Drone operations',
-      SYSTEM_OPERATOR: 'System operations',
+      MANAGER: 'Manager workspace',
+      STAFF: 'Staff workspace',
       ADMIN: 'Administration',
-      AUDITOR: 'Audit workspace',
     },
     nav: {
       customerOverview: 'Overview',
@@ -75,6 +72,7 @@ export const portalLayoutMessages = defineMessages({
       auditLog: 'Audit log',
     },
     navAria: 'Portal navigation',
+    profile: 'My profile',
     lightMode: 'Light mode',
     darkMode: 'Dark mode',
     closeNav: 'Close navigation',

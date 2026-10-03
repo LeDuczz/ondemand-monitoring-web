@@ -71,7 +71,7 @@ export const rolePortalPageMessages = defineMessages({
           'Yêu cầu MON-2481 đã được giao cho đội vận hành',
         ],
       },
-      STAFF: {
+      MANAGER: {
         title: 'Tổng quan vận hành',
         subtitle:
           'Xem lại các yêu cầu mới, phân công đúng đội và giữ tiến độ dịch vụ.',
@@ -109,7 +109,7 @@ export const rolePortalPageMessages = defineMessages({
           'Đội Alpha đã hoàn tất kiểm tra trước bay',
         ],
       },
-      DRONE_OPERATOR: {
+      STAFF: {
         title: 'Bảng điều khiển mission',
         subtitle:
           'Quản lý các mission được giao, từ khi nhận đến khi kiểm tra sau bay.',
@@ -145,44 +145,6 @@ export const rolePortalPageMessages = defineMessages({
           'Mission M-001 sẵn sàng để operator nhận',
           'Luồng telemetry của DRONE-01 đã kết nối',
           'M-0008 đang chờ kiểm tra sau bay',
-        ],
-      },
-      SYSTEM_OPERATOR: {
-        title: 'Vận hành hệ thống',
-        subtitle:
-          'Theo dõi tình trạng thiết bị, khả năng truyền telemetry và các sự cố vận hành.',
-        eyebrow: 'Độ tin cậy nền tảng',
-        primary: 'Xem tình trạng thiết bị',
-        metrics: [
-          {
-            label: 'Thiết bị trực tuyến',
-            value: '28/30',
-            detail: '2 thiết bị cần chú ý',
-            icon: 'radio',
-          },
-          {
-            label: 'Tình trạng telemetry',
-            value: '99.2%',
-            detail: '24 giờ gần nhất',
-            icon: 'chart',
-          },
-          {
-            label: 'Cảnh báo đang hoạt động',
-            value: '03',
-            detail: '1 cảnh báo ưu tiên cao',
-            icon: 'shield',
-          },
-          {
-            label: 'Thời gian hoạt động dịch vụ',
-            value: '99.98%',
-            detail: 'Tháng hiện tại',
-            icon: 'clock',
-          },
-        ],
-        activities: [
-          'DRONE-07 đã bỏ lỡ 3 nhịp telemetry',
-          'Độ trễ dịch vụ media đã trở lại bình thường',
-          'Cần xoay vòng chứng chỉ thiết bị trong 9 ngày nữa',
         ],
       },
       ADMIN: {
@@ -222,21 +184,6 @@ export const rolePortalPageMessages = defineMessages({
           'Quyền vai trò Staff đã được cập nhật',
           'Bản xuất nhật ký hàng tuần đã sẵn sàng',
         ],
-      },
-      AUDITOR: {
-        title: 'Khu vực làm việc kiểm toán',
-        subtitle: 'Xem lại nhật ký kiểm toán hệ thống và hồ sơ tuân thủ.',
-        eyebrow: 'Tổng quan kiểm toán',
-        primary: 'Xem nhật ký kiểm toán',
-        metrics: [
-          {
-            label: 'Sự kiện kiểm toán hôm nay',
-            value: '12',
-            detail: '24 giờ gần nhất',
-            icon: 'clock' as const,
-          },
-        ],
-        activities: ['Xem lại các mục kiểm toán gần đây'],
       },
     } satisfies Record<UserRole, RoleContent>,
   },
@@ -293,7 +240,7 @@ export const rolePortalPageMessages = defineMessages({
           'Request MON-2481 was assigned to an operations team',
         ],
       },
-      STAFF: {
+      MANAGER: {
         title: 'Operations overview',
         subtitle:
           'Review incoming requests, assign the right team, and keep service delivery on track.',
@@ -331,7 +278,7 @@ export const rolePortalPageMessages = defineMessages({
           'Team Alpha completed preflight checks',
         ],
       },
-      DRONE_OPERATOR: {
+      STAFF: {
         title: 'Mission console',
         subtitle:
           'Manage assigned inspections from acceptance through post-flight review.',
@@ -367,44 +314,6 @@ export const rolePortalPageMessages = defineMessages({
           'Mission M-001 is ready for operator acceptance',
           'DRONE-01 telemetry stream is connected',
           'Post-flight review pending for M-0008',
-        ],
-      },
-      SYSTEM_OPERATOR: {
-        title: 'System operations',
-        subtitle:
-          'Monitor device health, telemetry availability, and operational incidents.',
-        eyebrow: 'Platform reliability',
-        primary: 'Review device health',
-        metrics: [
-          {
-            label: 'Devices online',
-            value: '28/30',
-            detail: '2 require attention',
-            icon: 'radio',
-          },
-          {
-            label: 'Telemetry health',
-            value: '99.2%',
-            detail: 'Last 24 hours',
-            icon: 'chart',
-          },
-          {
-            label: 'Active alerts',
-            value: '03',
-            detail: '1 high priority',
-            icon: 'shield',
-          },
-          {
-            label: 'Service uptime',
-            value: '99.98%',
-            detail: 'Current month',
-            icon: 'clock',
-          },
-        ],
-        activities: [
-          'DRONE-07 has missed 3 telemetry heartbeats',
-          'Media service latency returned to normal',
-          'Device certificate rotation due in 9 days',
         ],
       },
       ADMIN: {
@@ -444,21 +353,6 @@ export const rolePortalPageMessages = defineMessages({
           'Staff role permissions were updated',
           'Weekly audit export is ready',
         ],
-      },
-      AUDITOR: {
-        title: 'Audit workspace',
-        subtitle: 'Review system audit logs and compliance records.',
-        eyebrow: 'Audit overview',
-        primary: 'View audit log',
-        metrics: [
-          {
-            label: 'Audit events today',
-            value: '12',
-            detail: 'Last 24 hours',
-            icon: 'clock' as const,
-          },
-        ],
-        activities: ['Review recent audit entries'],
       },
     } satisfies Record<UserRole, RoleContent>,
   },

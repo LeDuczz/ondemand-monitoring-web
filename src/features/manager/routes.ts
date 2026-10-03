@@ -1,5 +1,5 @@
-// Manager (role STAFF) client-side routing. All manager screens live under
-// the `#portal/staff` hash prefix. `parseManagerRoute` is a pure function so
+// Manager (role MANAGER) client-side routing. All manager screens live under
+// the `#portal/manager` hash prefix. `parseManagerRoute` is a pure function so
 // it can be unit-tested exhaustively without mounting the router; it plans
 // for all 12 MNG-* screens up front so later phases only need to add pages,
 // never touch routing shape.
@@ -10,7 +10,7 @@
 //  live             MNG-07   missions        MNG-08   drones        MNG-09
 //  maintenance      MNG-10   media           MNG-11   reports       MNG-12
 
-export const MANAGER_ROOT = '#portal/staff'
+export const MANAGER_ROOT = '#portal/manager'
 
 export type ManagerRoute =
   | { screen: 'dashboard' }
@@ -54,7 +54,7 @@ export const managerScreenCode: Record<ManagerScreen, string> = {
 
 /**
  * Parses a `window.location.hash`-style string into a `ManagerRoute`. Any
- * hash that doesn't start with `#portal/staff` (or doesn't match one of the
+ * hash that doesn't start with `#portal/manager` (or doesn't match one of the
  * known screen shapes) resolves to `notFound`.
  */
 export function parseManagerRoute(hash: string): ManagerRoute {
@@ -115,7 +115,7 @@ export function parseManagerRoute(hash: string): ManagerRoute {
   }
 }
 
-/** Builds the `#portal/staff/...` href for a given route. Inverse of `parseManagerRoute`. */
+/** Builds the `#portal/manager/...` href for a given route. Inverse of `parseManagerRoute`. */
 export function managerHref(route: ManagerRoute): string {
   switch (route.screen) {
     case 'dashboard':

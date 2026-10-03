@@ -168,7 +168,7 @@ export default function Sidebar({ role, active, onChange, alerts }: Props) {
   return (
     <aside className="portal-sidebar">
       {/* Brand — identical to PortalLayout */}
-      <a className="portal-brand" href="#portal/drone-operator">
+      <a className="portal-brand" href="#portal/staff">
         <span className="brand-mark" aria-hidden="true">
           <span />
         </span>

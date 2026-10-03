@@ -46,6 +46,15 @@ export function AuthPage({
   const handleApiError = (error: unknown) => {
     if (error instanceof AuthApiError) {
       setFieldErrors(error.errors ?? {})
+      if (error.code === 'LOCAL_IDENTITY_LINK_REQUIRED') {
+        sessionStorage.setItem(
+          'fieldwise.pendingLocalLinkEmail',
+          email.trim().toLowerCase(),
+        )
+        setMode('login')
+        setNotice({ type: 'info', message: t.linkLocalRequired })
+        return
+      }
       if (error.code === 'USER_NOT_CONFIRMED') setMode('verify')
       if (error.code === 'ACCOUNT_DISABLED') {
         // Design state "Tài khoản khoá" (SYS-01). No backend "remaining

@@ -1,5 +1,4 @@
-export type UserRole =
-  'CUSTOMER' | 'STAFF' | 'DRONE_OPERATOR' | 'SYSTEM_OPERATOR' | 'ADMIN' | 'AUDITOR'
+export type UserRole = 'CUSTOMER' | 'STAFF' | 'MANAGER' | 'ADMIN'
 
 export type AuthProvider = 'LOCAL' | 'GOOGLE'
 export type SocialAuthIntent = 'LOGIN_ONLY' | 'LOGIN_OR_REGISTER'
@@ -42,11 +41,11 @@ export type UserProfile = {
   id: string
   fullName: string
   email: string
-  emailVerified: boolean
+  emailVerified?: boolean
   role: UserRole
   linkedProviders?: string[]
   avatarUrl?: string
-  isActive: boolean
+  isActive?: boolean
 }
 
 export type RegisterResponse = { otpRequired: boolean }

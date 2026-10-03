@@ -3,6 +3,7 @@ import '../styles/odm.css'
 
 import { useEffect, useState, type ReactNode } from 'react'
 
+import { UserProfilePage } from '../features/user/pages/UserProfilePage'
 import { AuthPage } from '../features/auth/pages/AuthPage'
 import { LandingPage } from '../features/landing/pages/LandingPage'
 import { SocialCallbackPage } from '../features/auth/pages/SocialCallbackPage'
@@ -19,14 +20,19 @@ import { useI18n } from '../shared/i18n'
 import { CustomerCreateRequestPage } from '../features/customer/pages/CustomerCreateRequest'
 import { ManagerApp } from '../features/manager/ManagerApp'
 import { DroneOperatorHomePage } from '../features/drone-operator/pages/DroneOperatorHomePage'
-import { SystemOperatorHomePage } from '../features/system-operator/pages/SystemOperatorHomePage'
 import { AdminApp } from '../features/admin/AdminApp'
 import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboardPage'
 import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHome'
 import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsList'
 import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetail'
 
-function RoleRoute({ role, children }: { role: UserRole; children: ReactNode }) {
+function RoleRoute({
+  role,
+  children,
+}: {
+  role: UserRole
+  children: ReactNode
+}) {
   const user = authSession.getUser()
   if (!authSession.getAccessToken() || !user) {
     window.location.hash = '#auth/login'
@@ -111,6 +117,12 @@ export function Router() {
     )
 
   if (pathname === '/social/callback') return <SocialCallbackPage />
+  if (hash === '#profile')
+    return (
+      <AuthRoute>
+        <UserProfilePage />
+      </AuthRoute>
+    )
   if (hash === '#auth/register')
     return <AuthPage key="register" initialMode="register" />
   if (hash === '#auth/login')
@@ -127,22 +139,16 @@ export function Router() {
         <CustomerApp />
       </RoleRoute>
     )
-  if (hash === '#portal/staff' || hash.startsWith('#portal/staff/'))
+  if (hash === '#portal/manager' || hash.startsWith('#portal/manager/'))
     return (
-      <RoleRoute role="STAFF">
+      <RoleRoute role="MANAGER">
         <ManagerApp />
       </RoleRoute>
     )
-  if (hash === '#portal/drone-operator' || hash.startsWith('#portal/drone-operator/'))
+  if (hash === '#portal/staff' || hash.startsWith('#portal/staff/'))
     return (
-      <RoleRoute role="DRONE_OPERATOR">
+      <RoleRoute role="STAFF">
         <DroneOperatorHomePage />
-      </RoleRoute>
-    )
-  if (hash === '#portal/system-operator' || hash.startsWith('#portal/system-operator/'))
-    return (
-      <RoleRoute role="SYSTEM_OPERATOR">
-        <SystemOperatorHomePage />
       </RoleRoute>
     )
   if (hash === '#portal/admin' || hash.startsWith('#portal/admin/'))
@@ -151,7 +157,12 @@ export function Router() {
         <AdminApp />
       </RoleRoute>
     )
-  if (hash === '#operator') return <OperatorDashboardPage />
+  if (hash === '#operator')
+    return (
+      <RoleRoute role="STAFF">
+        <OperatorDashboardPage />
+      </RoleRoute>
+    )
 
   return <LandingPage />
 }

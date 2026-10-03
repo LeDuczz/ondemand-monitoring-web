@@ -42,6 +42,10 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const missionApi = {
+  getPermissions: (missionId: string) =>
+    request<import('../types/permissions').MissionPermissions>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/permissions`,
+    ),
   // GET /api/missions?operatorId={id} – list all missions for an operator
   getMissionsByOperator: async (operatorId: string): Promise<Mission[]> => {
     return request<Mission[]>(
@@ -54,7 +58,10 @@ export const missionApi = {
     return request<Mission>(`${API_BASE}/missions/${missionId}`)
   },
 
-  getMissionResult: async (missionId: string, signal?: AbortSignal): Promise<MissionResult | null> => {
+  getMissionResult: async (
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResult | null> => {
     const res = await authenticatedFetch(
       `${API_BASE}/missions/${encodeURIComponent(missionId)}/result`,
       {
@@ -79,7 +86,10 @@ export const missionApi = {
   },
 
   /** GET /api/missions/{id}/media — all uploaded media of a mission (fallback when no result yet). */
-  getMissionMedia: async (missionId: string, signal?: AbortSignal): Promise<MissionResultMedia[]> => {
+  getMissionMedia: async (
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<MissionResultMedia[]> => {
     const res = await authenticatedFetch(
       `${API_BASE}/missions/${encodeURIComponent(missionId)}/media`,
       { signal, headers: { 'Content-Type': 'application/json' } },
@@ -87,16 +97,20 @@ export const missionApi = {
     if (res.status === 404) return []
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`)
+      throw new Error(
+        errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+      )
     }
-    const payload = (await res.json()) as { data?: MissionResultMedia[] | null } | MissionResultMedia[]
+    const payload = (await res.json()) as
+      { data?: MissionResultMedia[] | null } | MissionResultMedia[]
     return (Array.isArray(payload) ? payload : payload.data) ?? []
   },
 
   submitMissionResult: async (
     missionId: string,
     payload: {
-      status: 'COMPLETED' | 'COMPLETED_WITH_ISSUES' | 'FAILED' | 'REVIEW_REQUIRED'
+      status:
+        'COMPLETED' | 'COMPLETED_WITH_ISSUES' | 'FAILED' | 'REVIEW_REQUIRED'
       startedAt?: string | null
       endedAt?: string | null
       completedAt?: string | null
@@ -125,7 +139,8 @@ export const missionApi = {
   assignResources: async (
     missionId: string,
     deviceIds: string | string[],
-    staffAssignments: Partial<Record<MissionStaffRole, string | string[]>> | string,
+    staffAssignments:
+      Partial<Record<MissionStaffRole, string | string[]>> | string,
   ): Promise<Mission> => {
     const resolvedDeviceIds = Array.isArray(deviceIds) ? deviceIds : [deviceIds]
     let latest: Mission | null = null
@@ -134,18 +149,32 @@ export const missionApi = {
         `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-device`,
         {
           method: 'POST',
-          body: JSON.stringify({ deviceId, deviceRole: index === 0 ? 'MAIN' : 'SUPPORT' }),
+          body: JSON.stringify({
+            deviceId,
+            deviceRole: index === 0 ? 'MAIN' : 'SUPPORT',
+          }),
         },
       )
     }
     const assignments =
       typeof staffAssignments === 'string'
-        ? ({ PILOT: [staffAssignments] } as Partial<Record<MissionStaffRole, string[]>>)
+        ? ({ PILOT: [staffAssignments] } as Partial<
+            Record<MissionStaffRole, string[]>
+          >)
         : staffAssignments
 
-    for (const assignedRole of ['PILOT', 'OPERATOR', 'MAINTAINER', 'INSPECTOR'] as MissionStaffRole[]) {
+    for (const assignedRole of [
+      'PILOT',
+      'OPERATOR',
+      'MAINTAINER',
+      'INSPECTOR',
+    ] as MissionStaffRole[]) {
       const roleStaff = assignments[assignedRole]
-      const staffIds = Array.isArray(roleStaff) ? roleStaff : roleStaff ? [roleStaff] : []
+      const staffIds = Array.isArray(roleStaff)
+        ? roleStaff
+        : roleStaff
+          ? [roleStaff]
+          : []
       for (const staffId of staffIds) {
         latest = await request<Mission>(
           `${API_BASE}/missions/${encodeURIComponent(missionId)}/assign-staff`,
@@ -185,26 +214,20 @@ export const missionApi = {
   },
 
   assignDrone: async (missionId: string, droneId: string): Promise<Mission> => {
-    return request<Mission>(
-      `${API_BASE}/missions/${missionId}/assign-device`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ deviceId: droneId, deviceRole: 'MAIN' }),
-      },
-    )
+    return request<Mission>(`${API_BASE}/missions/${missionId}/assign-device`, {
+      method: 'POST',
+      body: JSON.stringify({ deviceId: droneId, deviceRole: 'MAIN' }),
+    })
   },
 
   assignOperator: async (
     missionId: string,
     operatorId: string,
   ): Promise<Mission> => {
-    return request<Mission>(
-      `${API_BASE}/missions/${missionId}/assign-staff`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ staffId: operatorId, assignedRole: 'OPERATOR' }),
-      },
-    )
+    return request<Mission>(`${API_BASE}/missions/${missionId}/assign-staff`, {
+      method: 'POST',
+      body: JSON.stringify({ staffId: operatorId, assignedRole: 'PILOT' }),
+    })
   },
 
   // F3.1 Accept mission (PATCH /api/missions/{id}/accept)
@@ -212,6 +235,7 @@ export const missionApi = {
     missionId: string,
     _operatorId?: string,
   ): Promise<Mission> => {
+    void _operatorId // The backend resolves the accepting account from the access token.
     return request<Mission>(
       `${API_BASE}/missions/${missionId}/accept-current`,
       {
@@ -226,6 +250,7 @@ export const missionApi = {
     reason: string,
     _operatorId?: string,
   ): Promise<Mission> => {
+    void _operatorId // The backend resolves the rejecting account from the access token.
     return request<Mission>(
       `${API_BASE}/missions/${missionId}/reject-current`,
       {
@@ -293,6 +318,7 @@ export const missionApi = {
     missionId: string,
     _newOperatorId?: string,
   ): Promise<Mission> => {
+    void _newOperatorId // Flight control can only be handed to the authenticated pilot.
     return request<Mission>(
       `${API_BASE}/missions/${missionId}/handover-current`,
       {

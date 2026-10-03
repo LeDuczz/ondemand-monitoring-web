@@ -50,7 +50,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
 }
 
 /**
- * Root of the Manager (role STAFF) area. Parses `#portal/staff...` hashes
+ * Root of the Manager (role MANAGER) area. Parses `#portal/manager...` hashes
  * into a `ManagerRoute` and renders the matching screen inside
  * `ManagerLayout`. Only MNG-01 (Dashboard) is implemented in this phase;
  * every other screen renders a temporary "đang được xây dựng" placeholder
@@ -74,10 +74,10 @@ export function ManagerApp() {
   // src/features/manager/types/dashboard.ts and evd/P3-manager-dashboard.md.
   const counts = data
     ? {
-      pendingOrders: data.navCounts?.pendingOrders ?? 0,
-      openMaintenance: data.navCounts?.openMaintenanceTickets ?? 0,
-      mediaNeedsAction: data.navCounts?.mediaNeedsAction ?? 0,
-    }
+        pendingOrders: data.navCounts?.pendingOrders ?? 0,
+        openMaintenance: data.navCounts?.openMaintenanceTickets ?? 0,
+        mediaNeedsAction: data.navCounts?.mediaNeedsAction ?? 0,
+      }
     : undefined
 
   return (

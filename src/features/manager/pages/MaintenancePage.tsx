@@ -456,10 +456,7 @@ function systemOperatorList(lang: Language) {
       id: '00000000-0000-0000-0000-000000000004',
       name: 'Seed System Operator',
       email: 'seed.system.operator@odms.local',
-      role:
-        lang === 'en'
-          ? 'SYSTEM_OPERATOR (Technician)'
-          : 'SYSTEM_OPERATOR (Kỹ thuật viên)',
+      role: lang === 'en' ? 'STAFF (Technician)' : 'STAFF (Kỹ thuật viên)',
       status: lang === 'en' ? 'Available' : 'Sẵn sàng',
     },
   ]
@@ -562,7 +559,9 @@ function AssignModal({
             {t.assignModal.droneLabel}
             <b>{ticket.droneCode}</b>
           </div>
-          <div style={{ color: '#64748b', marginTop: 2 }}>{formatTicketTitle(ticket.title)}</div>
+          <div style={{ color: '#64748b', marginTop: 2 }}>
+            {formatTicketTitle(ticket.title)}
+          </div>
         </div>
 
         <div

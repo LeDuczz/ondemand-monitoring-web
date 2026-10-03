@@ -1,3 +1,8 @@
+import { UserProfilePage } from '../user/pages/UserProfilePage'
+import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
+import { SystemOperatorOverview } from '../system-operator/SystemOperatorOverview'
+import { SystemOperatorDevicesScreen } from '../system-operator/pages/SystemOperatorDevicesScreen'
+import { MissionActionGuard } from './components/MissionActionGuard'
 import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -28,7 +33,6 @@ import {
   type OperatorRoute,
 } from './routes'
 import {
-  getActiveMissionFlowStep,
   getActiveMissionId,
   markActiveMissionFlowStep,
   setActiveMissionId,
@@ -49,11 +53,7 @@ export function DroneOperatorApp() {
   const route = parseOperatorRoute(hash)
   const [searchQuery, setSearchQuery] = useState('')
   const { lang } = useLanguage()
-  const guardedRoute = guardOperatorFlowRoute(
-    route,
-    getActiveMissionId(),
-    getActiveMissionFlowStep(),
-  )
+  const guardedRoute = guardOperatorFlowRoute(route, getActiveMissionId())
 
   useEffect(() => {
     if (guardedRoute) {
@@ -81,7 +81,15 @@ export function DroneOperatorApp() {
 
   // Buồng lái renders full-screen without the shell, same as OMSS.
   if (route.screen === 'flight') {
-    return <ActiveFlightScreen missionId={route.missionId} />
+    return (
+      <MissionActionGuard
+        key={`${route.missionId}:${route.screen}`}
+        missionId={route.missionId}
+        action="flight"
+      >
+        <ActiveFlightScreen missionId={route.missionId} />
+      </MissionActionGuard>
+    )
   }
 
   return (
@@ -109,15 +117,59 @@ function renderScreen(
     return <MissionDetailScreen missionId={route.missionId} />
   if (route.screen === 'availability') return <AvailabilityScreen />
   if (route.screen === 'connect')
-    return <ConnectDroneScreen missionId={route.missionId} />
+    return (
+      <MissionActionGuard
+        key={`${route.missionId}:${route.screen}`}
+        missionId={route.missionId}
+        action="connect"
+      >
+        <ConnectDroneScreen missionId={route.missionId} />
+      </MissionActionGuard>
+    )
   if (route.screen === 'handover')
-    return <HandoverScreen missionId={route.missionId} />
+    return (
+      <MissionActionGuard
+        key={`${route.missionId}:${route.screen}`}
+        missionId={route.missionId}
+        action="handover"
+      >
+        <HandoverScreen missionId={route.missionId} />
+      </MissionActionGuard>
+    )
   if (route.screen === 'preflight')
-    return <PreflightScreen missionId={route.missionId} />
+    return (
+      <MissionActionGuard
+        key={`${route.missionId}:${route.screen}`}
+        missionId={route.missionId}
+        action="preflight"
+      >
+        <PreflightScreen missionId={route.missionId} />
+      </MissionActionGuard>
+    )
   if (route.screen === 'upload')
-    return <UploadMediaScreen missionId={route.missionId} />
+    return (
+      <MissionActionGuard
+        key={`${route.missionId}:${route.screen}`}
+        missionId={route.missionId}
+        action="upload"
+      >
+        <UploadMediaScreen missionId={route.missionId} />
+      </MissionActionGuard>
+    )
   if (route.screen === 'postflight')
-    return <PostflightScreen missionId={route.missionId} />
+    return (
+      <MissionActionGuard
+        key={`${route.missionId}:${route.screen}`}
+        missionId={route.missionId}
+        action="postflight"
+      >
+        <PostflightScreen missionId={route.missionId} />
+      </MissionActionGuard>
+    )
+  if (route.screen === 'profile') return <UserProfilePage />
+  if (route.screen === 'support') return <StaffSupportDashboardPage />
+  if (route.screen === 'technical') return <SystemOperatorOverview />
+  if (route.screen === 'devices') return <SystemOperatorDevicesScreen />
   if (route.screen === 'maintenance') return <OperatorMaintenanceScreen />
   if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return (

@@ -1,4 +1,4 @@
-export const OPERATOR_ROOT = '#portal/drone-operator'
+export const OPERATOR_ROOT = '#portal/staff'
 
 export type OperatorRoute =
   | { screen: 'missions' }
@@ -10,6 +10,9 @@ export type OperatorRoute =
   | { screen: 'flight'; missionId?: string }
   | { screen: 'upload'; missionId?: string }
   | { screen: 'postflight'; missionId?: string }
+  | { screen: 'technical' }
+  | { screen: 'devices' }
+  | { screen: 'support' }
   | { screen: 'maintenance' }
   | { screen: 'zoneMap' }
   | { screen: 'notifications' }
@@ -52,7 +55,6 @@ export function operatorFlowRoute(
 export function guardOperatorFlowRoute(
   route: OperatorRoute,
   activeMissionId: string | null,
-  maxStep: number,
 ): OperatorRoute | null {
   const step = operatorFlowStep(route.screen)
   if (step === null) return null
@@ -65,18 +67,7 @@ export function guardOperatorFlowRoute(
       : { screen: 'missions' }
   }
 
-  if (activeMissionId !== route.missionId) {
-    return null
-  }
-
-  const allowedStep = Math.min(OPERATOR_FLOW_SCREENS.length - 1, maxStep + 1)
-  if (step > allowedStep) {
-    return operatorFlowRoute(
-      OPERATOR_FLOW_SCREENS[allowedStep],
-      route.missionId,
-    )
-  }
-
+  // Explicit mission routes are authorized by the backend capability endpoint.
   return null
 }
 
@@ -111,6 +102,14 @@ export function parseOperatorRoute(hash: string): OperatorRoute {
       return { screen: 'upload', missionId: tail[0] }
     case 'postflight':
       return { screen: 'postflight', missionId: tail[0] }
+    case 'support':
+      return { screen: 'support' }
+    case 'technical':
+      if (tail[0] === 'maintenance') return { screen: 'maintenance' }
+      if (tail[0] === 'devices') return { screen: 'devices' }
+      return tail.length === 0
+        ? { screen: 'technical' }
+        : { screen: 'notFound' }
     case 'maintenance':
       return { screen: 'maintenance' }
     case 'zone-map':
@@ -156,6 +155,12 @@ export function operatorHref(route: OperatorRoute): string {
       return route.missionId
         ? `${OPERATOR_ROOT}/postflight/${encodeURIComponent(route.missionId)}`
         : `${OPERATOR_ROOT}/postflight`
+    case 'support':
+      return `${OPERATOR_ROOT}/support`
+    case 'technical':
+      return `${OPERATOR_ROOT}/technical`
+    case 'devices':
+      return `${OPERATOR_ROOT}/technical/devices`
     case 'maintenance':
       return `${OPERATOR_ROOT}/maintenance`
     case 'zoneMap':

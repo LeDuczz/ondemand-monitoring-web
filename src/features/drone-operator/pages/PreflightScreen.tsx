@@ -7,7 +7,6 @@ import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { useActiveMission } from '../api/useActiveMission'
 import { formatDeviceLabel } from '../lib/deviceLabel'
-import { useMissionSkippedSteps } from '../lib/useMissionSkippedSteps'
 import { backendPreflightTokenStorageKey } from '../lib/flightWorkflowStorage'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
@@ -381,8 +380,6 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
   const { t } = useI18n(preflightScreenMessages)
   const [startError, setStartError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
-  const skipped = useMissionSkippedSteps(mission.missionId)
-  const autoSkipped = useRef(false)
 
   async function handleContinueToHandover() {
     const data = mission.data
@@ -391,21 +388,31 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
       setStartError(t.noDroneAssignedError)
       return
     }
-    if (isMissionInFlight(data?.status)) {
-      window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-      window.location.hash = operatorHref({
-        screen: 'flight',
-        missionId: mission.missionId,
-      })
-      return
-    }
     setStarting(true)
     setStartError(null)
     try {
-      await flightControlApi.bindSession(mission.missionId, deviceId)
+      const permissions = await missionApi.getPermissions(mission.missionId)
+      if (!permissions.canInspectDevice)
+        throw new Error('Inspection is not permitted for this mission.')
+      if (isMissionInFlight(data?.status)) {
+        if (permissions.canControlFlight) {
+          window.sessionStorage.setItem(
+            'odm.operator.autoStartSimulation',
+            'true',
+          )
+        }
+        window.location.hash = operatorHref({
+          screen: permissions.canControlFlight ? 'flight' : 'missionDetail',
+          missionId: mission.missionId,
+        })
+        return
+      }
+      if (permissions.canControlFlight) {
+        await flightControlApi.bindSession(mission.missionId, deviceId)
+      }
       if (data?.status === 'READY_TO_FLY') {
         window.location.hash = operatorHref({
-          screen: 'handover',
+          screen: permissions.canControlFlight ? 'handover' : 'missionDetail',
           missionId: mission.missionId,
         })
         return
@@ -424,7 +431,7 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         tokenValue,
       )
       window.location.hash = operatorHref({
-        screen: 'handover',
+        screen: permissions.canControlFlight ? 'handover' : 'missionDetail',
         missionId: mission.missionId,
       })
     } catch (cause) {
@@ -434,35 +441,6 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
     } finally {
       setStarting(false)
     }
-  }
-
-  const skipPreflight = skipped.loaded && skipped.skipPreflight
-  const missionReady = Boolean(mission.missionId && mission.data?.deviceId)
-  useEffect(() => {
-    if (!skipPreflight || !missionReady || autoSkipped.current) return
-    autoSkipped.current = true
-    void handleContinueToHandover()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skipPreflight, missionReady])
-
-  if (skipPreflight) {
-    return (
-      <>
-        {startError && (
-          <p role="alert" style={{ color: 'var(--red-fg)' }}>
-            {startError}
-          </p>
-        )}
-        <div className="odm-card">
-          <div className="odm-card-body" style={{ padding: 24 }}>
-            <strong>Bỏ qua bước kiểm tra trước bay</strong>
-            <p style={{ color: 'var(--tx3)', margin: '6px 0 0' }}>
-              Nhiệm vụ chưa phân công nhân sự vận hành nên bước này được bỏ qua. Đang chuyển sang bàn giao điều khiển...
-            </p>
-          </div>
-        </div>
-      </>
-    )
   }
 
   return (
@@ -483,7 +461,9 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         }
         deviceId={mission.data?.deviceId ?? NO_DRONE_SENTINEL}
         deviceLabel={
-          mission.data ? formatDeviceLabel(mission.data) ?? undefined : undefined
+          mission.data
+            ? (formatDeviceLabel(mission.data) ?? undefined)
+            : undefined
         }
         missionStatus={mission.data?.status}
         latitude={mission.data?.latitude ?? undefined}
@@ -1079,7 +1059,7 @@ export function PreflightChecklistPanel({
           >
             {deviceId === NO_DRONE_SENTINEL
               ? t.noDroneAssigned
-              : deviceLabel ?? deviceId}
+              : (deviceLabel ?? deviceId)}
           </span>
         }
       />
@@ -1261,7 +1241,7 @@ function SummaryBanner({
         ) : (
           <a
             className="odm-btn odm-btn-ok"
-            href={operatorHref({ screen: 'handover', missionId })}
+            href={operatorHref({ screen: 'missionDetail', missionId })}
             style={{ minWidth: 220 }}
           >
             {t.continueToHandover}

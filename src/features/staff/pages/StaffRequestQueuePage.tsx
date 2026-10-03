@@ -18,8 +18,8 @@ export function StaffRequestQueuePage() {
     try {
       const data = await orderApi.getPendingOrders()
       setOrders(data || [])
-    } catch (e: any) {
-      setError(e.message || t.loadFailed)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -27,20 +27,19 @@ export function StaffRequestQueuePage() {
 
   useEffect(() => {
     fetchOrders()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleApprove = async (orderId: string) => {
     try {
       await orderApi.approveOrder(orderId)
       fetchOrders()
-    } catch (e: any) {
-      alert(e.message || t.approveFailed)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : t.approveFailed)
     }
   }
 
   return (
-    <PortalLayout role="STAFF" title={t.title} subtitle={t.subtitle}>
+    <PortalLayout role="MANAGER" title={t.title} subtitle={t.subtitle}>
       <section className="portal-panel">
         <div
           style={{

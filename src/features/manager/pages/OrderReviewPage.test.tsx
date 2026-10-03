@@ -208,7 +208,7 @@ describe('OrderReviewPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
 
     await waitFor(() =>
-      expect(window.location.hash).toBe('#portal/staff/orders'),
+      expect(window.location.hash).toBe('#portal/manager/orders'),
     )
   })
 
@@ -219,16 +219,16 @@ describe('OrderReviewPage', () => {
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
 
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Tạo nhiệm vụ' })).toBeInTheDocument(),
+      expect(
+        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
+      ).toBeInTheDocument(),
     )
     expect(briefSpy).not.toHaveBeenCalled()
     expect(window.location.hash).not.toBe(
-      '#portal/staff/orders/ord-2609-0157/mission',
+      '#portal/manager/orders/ord-2609-0157/mission',
     )
   })
 
@@ -240,12 +240,10 @@ describe('OrderReviewPage', () => {
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
     await waitFor(() =>
       expect(window.location.hash).toBe(
-        '#portal/staff/missions/mission-real/dispatch',
+        '#portal/manager/missions/mission-real/dispatch',
       ),
     )
     expect(briefSpy).not.toHaveBeenCalled()
@@ -271,7 +269,7 @@ describe('OrderReviewPage', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Về hàng đợi' })).toHaveAttribute(
       'href',
-      '#portal/staff/orders',
+      '#portal/manager/orders',
     )
   })
 

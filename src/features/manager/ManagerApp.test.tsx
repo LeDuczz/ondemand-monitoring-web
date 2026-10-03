@@ -45,7 +45,7 @@ beforeEach(() => {
       id: '1',
       fullName: 'Lê Thị Thanh Hằng',
       email: 'hang.le@odms.vn',
-      role: 'STAFF',
+      role: 'MANAGER',
     }),
   )
   window.location.hash = ''
@@ -58,9 +58,9 @@ afterEach(() => {
 })
 
 describe('ManagerApp', () => {
-  it('renders the Dashboard (MNG-01) for #portal/staff', async () => {
+  it('renders the Dashboard (MNG-01) for #portal/manager', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    window.location.hash = '#portal/staff'
+    window.location.hash = '#portal/manager'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -70,7 +70,7 @@ describe('ManagerApp', () => {
 
   it('feeds the nav badges from navCounts, not from actionItems', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    window.location.hash = '#portal/staff'
+    window.location.hash = '#portal/manager'
     render(<ManagerApp />)
 
     await waitFor(() => {
@@ -89,9 +89,9 @@ describe('ManagerApp', () => {
     })
   })
 
-  it('renders the real MediaPage (MNG-11) for #portal/staff/media', async () => {
+  it('renders the real MediaPage (MNG-11) for #portal/manager/media', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    window.location.hash = '#portal/staff/media'
+    window.location.hash = '#portal/manager/media'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -101,10 +101,10 @@ describe('ManagerApp', () => {
     )
   })
 
-  it('renders the real QueuePage (MNG-02) for #portal/staff/orders', async () => {
+  it('renders the real QueuePage (MNG-02) for #portal/manager/orders', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
-    window.location.hash = '#portal/staff/orders'
+    window.location.hash = '#portal/manager/orders'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -112,7 +112,7 @@ describe('ManagerApp', () => {
     )
   })
 
-  it('renders the real CreateMissionPage (MNG-04) for #portal/staff/orders/:id/mission', async () => {
+  it('renders the real CreateMissionPage (MNG-04) for #portal/manager/orders/:id/mission', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     const brief: OrderMissionBrief = {
       id: 'ord-2609-0153',
@@ -128,7 +128,7 @@ describe('ManagerApp', () => {
       mediaRequirements: [],
     }
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
-    window.location.hash = '#portal/staff/orders/ord-2609-0153/mission'
+    window.location.hash = '#portal/manager/orders/ord-2609-0153/mission'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -138,7 +138,7 @@ describe('ManagerApp', () => {
     )
   })
 
-  it('renders the real DispatchPage (MNG-05) for #portal/staff/missions/:id/dispatch', async () => {
+  it('renders the real DispatchPage (MNG-05) for #portal/manager/missions/:id/dispatch', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     const { missionsApi } = await import('./api/missionsApi')
     vi.spyOn(missionsApi, 'getMission').mockResolvedValue({
@@ -187,7 +187,7 @@ describe('ManagerApp', () => {
       timeline: { date: '', windowStart: '', windowEnd: '', resources: [] },
       alternatives: [],
     })
-    window.location.hash = '#portal/staff/missions/msn-2609-0153-1/dispatch'
+    window.location.hash = '#portal/manager/missions/msn-2609-0153-1/dispatch'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -199,7 +199,7 @@ describe('ManagerApp', () => {
 
   it('shows a not-found state with a link back to Dashboard for unknown routes', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
-    window.location.hash = '#portal/staff/unknown-thing'
+    window.location.hash = '#portal/manager/unknown-thing'
     render(<ManagerApp />)
 
     await waitFor(() =>
@@ -207,7 +207,7 @@ describe('ManagerApp', () => {
     )
     expect(screen.getByRole('link', { name: 'Về Dashboard' })).toHaveAttribute(
       'href',
-      '#portal/staff',
+      '#portal/manager',
     )
   })
 })

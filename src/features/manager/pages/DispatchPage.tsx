@@ -24,7 +24,7 @@ import '../manager.css'
 
 /**
  * MNG-05 "Phân công nguồn lực" (dispatch). Route
- * #portal/staff/missions/:missionId/dispatch. Layout and copy for the
+ * #portal/manager/missions/:missionId/dispatch. Layout and copy for the
  * default / xung đột lịch / không đủ nguồn lực / đang tính điểm / lỗi
  * states are copied from evd/design/MNG-05.dc.html. Deviation: the
  * design's day timeline is a pixel-positioned Gantt bar chart; this page

@@ -78,7 +78,7 @@ describe('Router - auth hash sync (regression)', () => {
   })
 })
 
-describe('Router - manager routes (#portal/staff*)', () => {
+describe('Router - manager routes (#portal/manager*)', () => {
   const sampleDashboard: ManagerDashboardResponse = {
     kpis: {
       pendingOrders: { count: 6, detail: '2 quá 24h' },
@@ -106,7 +106,7 @@ describe('Router - manager routes (#portal/staff*)', () => {
         id: '1',
         fullName: 'Lê Thị Thanh Hằng',
         email: 'hang.le@odms.vn',
-        role: 'STAFF',
+        role: 'MANAGER',
       }),
     )
   })
@@ -116,9 +116,9 @@ describe('Router - manager routes (#portal/staff*)', () => {
     vi.restoreAllMocks()
   })
 
-  it('routes a STAFF user hitting #portal/staff to the Manager dashboard', async () => {
+  it('routes a MANAGER user hitting #portal/manager to the Manager dashboard', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
-    window.location.hash = '#portal/staff'
+    window.location.hash = '#portal/manager'
     render(<Router />)
 
     await waitFor(() =>
@@ -126,9 +126,9 @@ describe('Router - manager routes (#portal/staff*)', () => {
     )
   })
 
-  it('routes nested #portal/staff/... hashes to the Manager area too', async () => {
+  it('routes nested #portal/manager/... hashes to the Manager area too', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
-    window.location.hash = '#portal/staff/orders'
+    window.location.hash = '#portal/manager/orders'
     render(<Router />)
 
     await waitFor(() =>
@@ -136,9 +136,9 @@ describe('Router - manager routes (#portal/staff*)', () => {
     )
   })
 
-  it('does not route #portal/staff/assignments to the legacy FIELDWISE staff shell', async () => {
+  it('does not route #portal/manager/assignments to the legacy FIELDWISE staff shell', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
-    window.location.hash = '#portal/staff/assignments'
+    window.location.hash = '#portal/manager/assignments'
     render(<Router />)
 
     await waitFor(() =>

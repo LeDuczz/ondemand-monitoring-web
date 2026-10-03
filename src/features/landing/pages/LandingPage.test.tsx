@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { setLanguage } from '../../../shared/i18n'
 import { LandingPage } from './LandingPage'
 
-function saveSession(role: 'CUSTOMER' | 'STAFF') {
+function saveSession(role: 'CUSTOMER' | 'MANAGER') {
   localStorage.setItem('fieldwise.accessToken', 'token.value-123')
   localStorage.setItem(
     'fieldwise.user',
@@ -76,12 +76,12 @@ describe('LandingPage', () => {
     }
   })
 
-  it('sends a logged-in STAFF user to their own role home', () => {
-    saveSession('STAFF')
+  it('sends a logged-in MANAGER user to their own role home', () => {
+    saveSession('MANAGER')
     render(<LandingPage />)
     const links = screen.getAllByRole('link', { name: 'Tạo yêu cầu giám sát' })
     for (const link of links) {
-      expect(link).toHaveAttribute('href', '#portal/staff')
+      expect(link).toHaveAttribute('href', '#portal/manager')
     }
   })
 

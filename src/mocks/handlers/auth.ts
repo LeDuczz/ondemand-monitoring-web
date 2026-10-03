@@ -21,7 +21,7 @@ type MockUser = {
   email: string
   password: string
   fullName: string
-  role: 'CUSTOMER' | 'STAFF' | 'DRONE_OPERATOR' | 'SYSTEM_OPERATOR' | 'ADMIN'
+  role: 'CUSTOMER' | 'MANAGER' | 'STAFF' | 'ADMIN'
   emailVerified: boolean
   isActive: boolean
   accessToken: string
@@ -139,6 +139,22 @@ const authRoutes: MockRoute[] = [
 // The frontend calls `/api/auth/*` (current BE contract); `/api/v1/auth/*` is
 // the legacy prefix these handlers were first written for. Serve both.
 registerMockRoutes([
+  {
+    method: 'GET',
+    path: '/api/users/me',
+    handler: ({ headers }) => {
+      const token = bearerToken(headers)
+      const user = token ? findUserByToken(token) : undefined
+      if (!user) return passThrough()
+      return ok({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        linkedProviders: ['LOCAL'],
+      })
+    },
+  },
   ...authRoutes,
   ...authRoutes.map((route) => ({
     ...route,

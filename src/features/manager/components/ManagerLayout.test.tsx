@@ -12,7 +12,7 @@ beforeEach(() => {
       id: '1',
       fullName: 'Lê Thị Thanh Hằng',
       email: 'hang.le@odms.vn',
-      role: 'STAFF',
+      role: 'MANAGER',
     }),
   )
 })

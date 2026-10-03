@@ -119,7 +119,9 @@ export function CustomerLayout({
               return (
                 <a
                   key={item.key}
-                  href={item.href || (item.route ? customerHref(item.route) : '#')}
+                  href={
+                    item.href || (item.route ? customerHref(item.route) : '#')
+                  }
                   className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
@@ -137,7 +139,11 @@ export function CustomerLayout({
             })}
           </div>
 
-          <div className="odm-cus-user">
+          <a
+            href="#profile"
+            className="odm-cus-user"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
             <span className="odm-cus-avatar" aria-hidden="true">
               {initialsOf(user?.fullName)}
             </span>
@@ -147,7 +153,7 @@ export function CustomerLayout({
               </span>
               <span className="odm-cus-user-email">{user?.email ?? ''}</span>
             </span>
-          </div>
+          </a>
           <LogoutButton className="odm-cus-logout" />
         </nav>
 
@@ -173,7 +179,12 @@ export function CustomerLayout({
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
             <a href="#help" className="odm-btn odm-btn-gh odm-cus-help-link">
-              <Icon name="file-text" width={15} height={15} aria-hidden="true" />
+              <Icon
+                name="file-text"
+                width={15}
+                height={15}
+                aria-hidden="true"
+              />
               {t.helpLink}
             </a>
             <LanguageToggle />

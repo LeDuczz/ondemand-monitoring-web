@@ -137,7 +137,7 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
 
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
     expect(screen.getByText('Lê Quốc Bảo')).toBeInTheDocument()
     expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
     expect(screen.getByText('Khách hàng doanh nghiệp')).toBeInTheDocument()
@@ -161,7 +161,7 @@ describe('OrderReviewPage', () => {
     vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
 
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
     expect(
       screen.getByText(
         'Báo cáo Phân tích Nhiệt · Ảnh · 10 mục · 4K · 100 m · 3.1 ha',
@@ -185,7 +185,7 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
 
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
@@ -201,7 +201,7 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
 
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Vùng cấm bay' }))
@@ -217,7 +217,7 @@ describe('OrderReviewPage', () => {
     vi.spyOn(ordersApi, 'approve').mockResolvedValue(undefined)
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Duyệt & lên lịch' }),

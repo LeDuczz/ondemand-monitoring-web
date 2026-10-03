@@ -39,9 +39,6 @@ export function CustomerCreateRequestPage() {
             form={form}
             errors={errors}
             update={update}
-            mapPoint={r.mapPoint}
-            setMapPoint={r.setMapPoint}
-            map={r.map}
           />
           <div className="co-grid">
             <div className="co-stack">

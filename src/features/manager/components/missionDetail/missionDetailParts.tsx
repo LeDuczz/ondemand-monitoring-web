@@ -242,7 +242,7 @@ export function ResultDetail({
               <dd>{formatDateTime(result.submittedAt ?? result.completedAt, locale)}</dd>
             </div>
             <div>
-              <dt>Thời lượng</dt>
+              <dt>Thời lượng thực tế</dt>
               <dd>{formatDuration(result.durationSeconds)}</dd>
             </div>
             <div>

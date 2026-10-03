@@ -38,7 +38,7 @@ export function toMissionCalendarItem(source: MissionResponse): MissionCalendarI
     droneAssignmentId: null,
     operatorAssignmentId: null,
     scheduledStartAt: source.scheduledStartAt,
-    scheduledEndAt: null,
+    scheduledEndAt: source.scheduledEndAt ?? null,
     addressText: source.address,
     centerLat: source.latitude,
     centerLon: source.longitude,

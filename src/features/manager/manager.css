@@ -1889,6 +1889,22 @@
   border-radius: 0;
 }
 
+.odm-or-real-map {
+  background: #111827;
+}
+
+.odm-or-real-map-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.odm-or-real-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+}
+
 .odm-or-map-layer {
   position: absolute;
 }
@@ -1936,6 +1952,14 @@
   font-weight: 700;
   white-space: nowrap;
   pointer-events: none;
+}
+
+.odm-or-gps-badge {
+  left: 50%;
+  top: 14px;
+  z-index: 500;
+  transform: translateX(-50%);
+  color: #0f172a;
 }
 
 .odm-or-map-controls {

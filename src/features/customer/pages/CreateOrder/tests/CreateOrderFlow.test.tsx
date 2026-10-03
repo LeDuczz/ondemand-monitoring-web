@@ -1,5 +1,5 @@
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
@@ -9,12 +9,9 @@ import { CreateOrderPage } from '../CreateOrderPage'
 
 beforeEach(() => {
   resetMockDb()
-  // The simulation map metadata is a static file, not an API call.
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 })
 afterEach(() => {
   resetMockDb()
-  vi.unstubAllGlobals()
 })
 
 const next = (label: string) =>
@@ -28,9 +25,9 @@ async function fillLocation() {
 }
 
 describe('CreateOrderPage wizard', () => {
-  it('shows the map-unavailable notice and step 1 fields', async () => {
+  it('shows the real location map and step 1 fields', async () => {
     render(<CreateOrderPage />)
-    expect(await screen.findByText('Không tải được map mô phỏng 3D.')).toBeInTheDocument()
+    expect(await screen.findByRole('application', { name: 'Bản đồ chọn vị trí giám sát' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Địa chỉ\/khu vực/)).toBeInTheDocument()
   })
 

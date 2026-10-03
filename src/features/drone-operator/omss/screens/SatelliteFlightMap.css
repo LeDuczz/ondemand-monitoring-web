@@ -1,0 +1,217 @@
+.satellite-flight-screen {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 420px;
+  overflow: hidden;
+  background: #17212b;
+}
+
+.satellite-flight-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.satellite-flight-map .leaflet-control-attribution {
+  display: none;
+}
+
+.satellite-drone-arrow-icon {
+  border: 0;
+  background: transparent;
+}
+
+.satellite-drone-arrow {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .48));
+  transform-origin: center;
+  transition: transform .25s ease;
+}
+
+.satellite-drone-arrow svg {
+  width: 42px;
+  height: 42px;
+  display: block;
+}
+
+.satellite-flight-status {
+  position: absolute;
+  z-index: 500;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  max-width: calc(100% - 24px);
+  padding: 8px 12px;
+  color: #fff;
+  background: rgba(10, 17, 27, .88);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.satellite-flight-controls {
+  position: absolute;
+  z-index: 500;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  max-height: 40vh;
+  overflow: auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 8px;
+  background: rgba(10, 17, 27, .88);
+  border-radius: 6px;
+}
+
+.satellite-flight-controls button {
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #fff;
+  background: #23466e;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.satellite-flight-controls button:hover:not(:disabled) { background: #1664b8; }
+.satellite-flight-controls button:disabled { opacity: .45; cursor: not-allowed; }
+.satellite-flight-controls button.is-emergency { background: #9f1d29; }
+
+.satellite-flight-controls .satellite-flight-primary-action {
+  min-width: min(260px, calc(100vw - 48px));
+  padding: 12px 20px;
+  border-color: rgba(255, 255, 255, .32);
+  background: #1565e8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.satellite-flight-controls .satellite-flight-review-action {
+  min-width: 120px;
+  padding: 12px 18px;
+  border-color: rgba(255, 255, 255, .28);
+  background: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.satellite-flight-preflight {
+  position: absolute;
+  z-index: 600;
+  inset: 0;
+  overflow: auto;
+  padding: 20px;
+  background: #f1f5f9;
+}
+
+.satellite-manual-preflight {
+  width: min(520px, calc(100vw - 32px));
+  margin: 8vh auto 0;
+  padding: 22px;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .18);
+  color: #0f172a;
+}
+
+.satellite-manual-preflight__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5eaf2;
+}
+
+.satellite-manual-preflight__header p {
+  margin: 0 0 6px;
+  color: #1565e8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.satellite-manual-preflight__header h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.satellite-manual-preflight__header span {
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.satellite-manual-preflight__header strong {
+  flex: none;
+  min-width: 64px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #1565e8;
+  font-size: 15px;
+}
+
+.satellite-manual-preflight__list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.satellite-manual-preflight__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 12px 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.satellite-manual-preflight__item:has(input:checked) {
+  border-color: #22c55e;
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.satellite-manual-preflight__item input {
+  width: 22px;
+  height: 22px;
+  accent-color: #1565e8;
+}
+
+.satellite-manual-preflight__button {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  background: #1565e8;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.satellite-manual-preflight__button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}

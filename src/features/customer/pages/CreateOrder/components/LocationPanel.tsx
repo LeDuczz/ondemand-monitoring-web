@@ -1,9 +1,5 @@
 import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
-import type {
-  MonitoringValidation,
-  RestrictedValidation,
-} from '../../../lib/createOrder/geometry'
 import { calcArea } from '../../../lib/createOrder/payload'
 import type {
   FormErrors,
@@ -12,19 +8,25 @@ import type {
 } from '../../../lib/createOrder/types'
 import { locationPanelMessages } from './LocationPanel.messages'
 import { Metric } from './Metric'
-import { ZoneStatusNotice } from './ZoneStatusNotice'
 
 type Props = {
   form: FormState
   errors: FormErrors
   update: UpdateField
-  monitoring: MonitoringValidation
-  restricted: RestrictedValidation
+  locatingAddress?: boolean
+  addressLookupError?: string | null
+  onLocateAddress?: () => void
 }
 
-export function LocationPanel({ form, errors, update, monitoring, restricted }: Props) {
+export function LocationPanel({
+  form,
+  errors,
+  update,
+  locatingAddress = false,
+  addressLookupError,
+  onLocateAddress,
+}: Props) {
   const { t } = useI18n(locationPanelMessages)
-  const outside = monitoring.checked && !monitoring.valid
 
   return (
     <Card title={t.cardTitle}>
@@ -37,6 +39,21 @@ export function LocationPanel({ form, errors, update, monitoring, restricted }: 
           placeholder={t.addressPlaceholder}
           onChange={(e) => update('address', e.target.value)}
         />
+        <div className="co-address-actions">
+          <button
+            type="button"
+            className="co-secondary-action"
+            disabled={!form.address.trim() || locatingAddress}
+            onClick={onLocateAddress}
+          >
+            {locatingAddress ? t.locatingAddress : t.locateAddress}
+          </button>
+          {addressLookupError ? (
+            <span className="co-address-error">
+              {addressLookupError === 'NOT_FOUND' ? t.addressNotFound : addressLookupError}
+            </span>
+          ) : null}
+        </div>
       </FormField>
       <div className="co-two">
         <FormField id="co-lat" label={t.latitudeLabel} error={errors.latitude}>
@@ -68,13 +85,8 @@ export function LocationPanel({ form, errors, update, monitoring, restricted }: 
           onChange={(e) => update('radiusM', Number(e.target.value))}
         />
       </FormField>
-      <ZoneStatusNotice monitoring={monitoring} restricted={restricted} />
       <div className="co-two co-mt">
         <Metric label={t.areaEstimate} value={`${calcArea(form.radiusM)} ha`} />
-        <Metric
-          label={t.monitoringZone}
-          value={outside ? t.outsideZoneValue : (monitoring.zone?.name ?? t.checkedValue)}
-        />
       </div>
     </Card>
   )

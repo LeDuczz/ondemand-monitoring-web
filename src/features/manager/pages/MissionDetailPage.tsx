@@ -201,8 +201,12 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     { label: t.fields.service, value: mission.serviceName ?? '—' },
     { label: t.kpi.drone, value: deviceLabel },
     {
-      label: t.fields.schedule,
+      label: t.fields.scheduledStart,
       value: formatDateTime(mission.scheduledStartAt, locale),
+    },
+    {
+      label: t.fields.scheduledEnd,
+      value: formatDateTime(mission.scheduledEndAt ?? null, locale),
     },
     { label: t.fields.started, value: formatDateTime(startedAt, locale) },
     {
@@ -234,7 +238,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     },
     { label: t.kpi.media, value: String(mediaCount) },
     {
-      label: t.kpi.duration,
+      label: detail.result?.durationSeconds != null ? t.kpi.actualDuration : t.kpi.plannedDuration,
       value: formatDuration(detail.result?.durationSeconds ?? plan?.plannedDurationSec),
     },
   ]

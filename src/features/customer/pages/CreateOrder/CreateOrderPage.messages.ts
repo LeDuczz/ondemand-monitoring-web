@@ -19,7 +19,7 @@ export const createOrderPageMessages = defineMessages({
       latitude: 'Latitude không hợp lệ.',
       longitude: 'Longitude không hợp lệ.',
       outsideZone:
-        'Vị trí này nằm ngoài các vùng giám sát đã cấu hình. Vui lòng chọn lại điểm trong vùng phục vụ.',
+        'Hiện chỉ phục vụ trong khu vực TP.HCM. Vui lòng chọn lại điểm trong vùng phục vụ.',
       blockedZone: (zoneNames: string) =>
         `Vùng giám sát chạm vùng cấm: ${zoneNames}. Vui lòng chọn điểm hoặc giảm bán kính.`,
       serviceId: 'Chọn dịch vụ giám sát.',
@@ -56,7 +56,7 @@ export const createOrderPageMessages = defineMessages({
       latitude: 'Invalid latitude.',
       longitude: 'Invalid longitude.',
       outsideZone:
-        'This location is outside the configured monitoring zones. Please pick a point inside a service zone.',
+        'Service is currently limited to Ho Chi Minh City. Please pick a point inside the service area.',
       blockedZone: (zoneNames: string) =>
         `The monitoring area touches a no-fly zone: ${zoneNames}. Please pick another point or reduce the radius.`,
       serviceId: 'Select a monitoring service.',

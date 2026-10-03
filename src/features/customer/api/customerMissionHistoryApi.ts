@@ -10,6 +10,7 @@ export interface CustomerMissionHistory {
   /** Swagger lists the full mission enum; the BE only returns finished ones. */
   status: MissionStatus
   scheduledStartAt: string | null
+  scheduledEndAt?: string | null
   startedAt: string | null
   completedAt: string | null
   description: string | null

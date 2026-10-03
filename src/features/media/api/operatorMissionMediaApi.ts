@@ -27,6 +27,12 @@ function toUploaded(item: MissionResultMedia): UploadedMissionMedia {
     capturedAt: item.capturedAt ?? null,
     availableAt: null,
     downloadUrl: item.url,
+    sourceType: item.sourceType ?? null,
+    sourceReferenceId: item.sourceReferenceId ?? null,
+    sourceCapturedAt: item.sourceCapturedAt ?? null,
+    captureLatitude: item.captureLatitude ?? null,
+    captureLongitude: item.captureLongitude ?? null,
+    sourceDistanceMeters: item.sourceDistanceMeters ?? null,
   }
 }
 

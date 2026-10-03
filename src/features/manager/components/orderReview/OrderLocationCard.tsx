@@ -1,61 +1,91 @@
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
-import { env } from '../../../../config/env'
 import {
-  SIMULATION_MAP_DEFAULT_CROP,
-  simulationMapAspectRatio,
-  simulationMapImageStyle,
-  worldToViewportPercent,
-} from '../../../../shared/lib/simulationMapProjection'
+  HCMC_SERVICE_CENTER,
+  hcmcServicePolygonLatLngs,
+} from '../../../../shared/lib/serviceArea'
 import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { estimatedAreaHa } from './format'
 import { OrderIcon } from './OrderIcon'
+import { resolveOrderGpsCenter } from './orderGps'
 
-const SIMULATION_MAP_TOP_IMAGE = '/simulation-viewer/simulation_map_top.png'
-const SIMULATION_MAP_VERSION = '20260925113000'
-const SIMULATION_MAP_BOUNDS = {
-  minX: -417.15933531249993,
-  maxX: 415.15933531249993,
-  minY: -414.65578218749977,
-  maxY: 417.66288843749993,
-}
-const SIMULATION_MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
-const ZOOM_STEPS = [1, 1.5, 2, 3]
+function useLeafletOrderMap(order: OrderDetail) {
+  const container = useRef<HTMLDivElement>(null)
+  const map = useRef<L.Map | null>(null)
+  const marker = useRef<L.Marker | null>(null)
+  const circle = useRef<L.Circle | null>(null)
+  const resolved = resolveOrderGpsCenter(order.center)
+  const centerLat = resolved?.center.lat
+  const centerLon = resolved?.center.lon
 
-// The source image is square, so the visible (cropped) area has this aspect.
-const MAP_ASPECT = (() => {
-  const [w, h] = simulationMapAspectRatio(SIMULATION_MAP_IMAGE_CROP)
-    .split('/')
-    .map((n) => Number(n))
-  return w / h
-})()
+  useEffect(() => {
+    if (import.meta.env.MODE === 'test') return
+    if (!container.current || map.current) return
+    const initialCenter: L.LatLngExpression = resolved
+      ? [resolved.center.lat, resolved.center.lon]
+      : [HCMC_SERVICE_CENTER.latitude, HCMC_SERVICE_CENTER.longitude]
+    const instance = L.map(container.current, {
+      zoomControl: true,
+      attributionControl: true,
+    }).setView(initialCenter, resolved ? 16 : 11)
 
-const clamp = (v: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, v))
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri',
+        crossOrigin: true,
+      },
+    ).addTo(instance)
 
-function useElementSize<T extends HTMLElement>() {
-  const ref = useRef<T>(null)
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null)
+    L.polygon(hcmcServicePolygonLatLngs(), {
+      color: '#16a34a',
+      fillColor: '#22c55e',
+      fillOpacity: 0.08,
+      weight: 2,
+    }).addTo(instance)
 
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const update = () => setSize({ w: el.clientWidth, h: el.clientHeight })
-    update()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(update)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    map.current = instance
+    window.setTimeout(() => instance.invalidateSize(), 0)
+    return () => {
+      instance.remove()
+      map.current = null
+      marker.current = null
+      circle.current = null
+    }
+  }, [centerLat, centerLon])
 
-  return [ref, size] as const
+  useEffect(() => {
+    if (!map.current || !resolved) return
+    const target: L.LatLngExpression = [resolved.center.lat, resolved.center.lon]
+    if (marker.current) {
+      marker.current.setLatLng(target)
+    } else {
+      marker.current = L.marker(target).addTo(map.current).bindTooltip('GPS target')
+    }
+    if (order.radiusM != null) {
+      if (circle.current) {
+        circle.current.setLatLng(target).setRadius(order.radiusM)
+      } else {
+        circle.current = L.circle(target, {
+          radius: order.radiusM,
+          color: '#1677ff',
+          fillColor: '#1677ff',
+          fillOpacity: 0.16,
+          weight: 2,
+        }).addTo(map.current)
+      }
+    } else if (circle.current) {
+      circle.current.remove()
+      circle.current = null
+    }
+    map.current.setView(target, 16)
+  }, [centerLat, centerLon, order.radiusM])
+
+  return container
 }
 
 export function OrderLocationCard({
@@ -65,8 +95,8 @@ export function OrderLocationCard({
   order: OrderDetail
   t: OrderReviewMessages
 }) {
-  const [frameRef, size] = useElementSize<HTMLDivElement>()
-  const [zoomIndex, setZoomIndex] = useState(0)
+  const mapRef = useLeafletOrderMap(order)
+  const resolved = resolveOrderGpsCenter(order.center)
 
   const header = (action?: ReactNode) => (
     <header className="odm-or-card-head">
@@ -89,59 +119,20 @@ export function OrderLocationCard({
     )
   }
 
-  const target = order.center
-    ? worldToViewportPercent(
-        { simX: order.center.lon, simY: order.center.lat },
-        SIMULATION_MAP_BOUNDS,
-        SIMULATION_MAP_IMAGE_CROP,
-      )
-    : { x: 50, y: 50 }
-  const radiusUnits =
-    order.radiusM == null
-      ? null
-      : Math.min(
-          24,
-          Math.max(
-            4,
-            (order.radiusM /
-              (SIMULATION_MAP_BOUNDS.maxX - SIMULATION_MAP_BOUNDS.minX)) *
-              100,
-          ),
-        )
-  const areaHa = estimatedAreaHa(order.radiusM)
-  const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}?v=${SIMULATION_MAP_VERSION}`
-  const imageStyle = simulationMapImageStyle(SIMULATION_MAP_IMAGE_CROP)
-
-  // Keep the original projection untouched; just size/offset the projected
-  // layer so it covers the (wide) frame and the target stays centered.
-  const zoom = ZOOM_STEPS[zoomIndex]
-  let layerStyle: CSSProperties = {
-    left: 0,
-    top: 0,
-    width: '100%',
-    height: '100%',
-  }
-  if (size && size.w > 0 && size.h > 0) {
-    const layerW = Math.max(size.w, size.h * MAP_ASPECT) * zoom
-    const layerH = layerW / MAP_ASPECT
-    layerStyle = {
-      width: layerW,
-      height: layerH,
-      left: clamp(size.w / 2 - (target.x / 100) * layerW, size.w - layerW, 0),
-      top: clamp(size.h / 2 - (target.y / 100) * layerH, size.h - layerH, 0),
-    }
-  }
-
   function toggleFullscreen() {
-    const frame = frameRef.current
+    const frame = mapRef.current?.closest('.odm-or-map') as HTMLElement | null
     if (!frame) return
     if (document.fullscreenElement) {
       void document.exitFullscreen?.()
     } else {
       void frame.requestFullscreen?.()
     }
+    window.setTimeout(() => {
+      window.dispatchEvent(new Event('resize'))
+    }, 0)
   }
 
+  const areaHa = estimatedAreaHa(order.radiusM)
   const openButton = (
     <button
       type="button"
@@ -156,81 +147,20 @@ export function OrderLocationCard({
   return (
     <section className="odm-or-card">
       {header(openButton)}
-      <div className="odm-or-map" ref={frameRef}>
-        <div className="odm-or-map-layer" style={layerStyle}>
-          <img
-            className="odm-or-map-image"
-            src={mapImageUrl}
-            alt=""
-            style={imageStyle}
-          />
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            role="img"
-            aria-label={t.mapAriaLabel}
-          >
-            {radiusUnits != null && (
-              <circle
-                cx={target.x}
-                cy={target.y}
-                r={radiusUnits}
-                className="odm-or-map-radius"
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-          </svg>
-          <span
-            className="odm-or-map-pin"
-            style={{ left: `${target.x}%`, top: `${target.y}%` }}
-            aria-hidden="true"
-          >
-            <svg width="30" height="38" viewBox="0 0 30 38">
-              <path
-                d="M15 37C15 37 3 24.5 3 14.5a12 12 0 0 1 24 0C27 24.5 15 37 15 37z"
-                fill="#1677ff"
-                stroke="#fff"
-                strokeWidth="2"
-              />
-              <circle cx="15" cy="14.5" r="4.5" fill="#fff" />
-            </svg>
-          </span>
-          {order.center ? (
-            <span
-              className="odm-or-map-badge"
-              style={{ left: `${target.x}%`, top: `${target.y}%` }}
-            >
-              TARGET · X {order.center.lon.toFixed(1)} · Y{' '}
-              {order.center.lat.toFixed(1)}
-            </span>
-          ) : null}
-        </div>
+      <div className="odm-or-map odm-or-real-map">
+        <div
+          ref={mapRef}
+          className="odm-or-real-map-canvas"
+          role="application"
+          aria-label={t.mapAriaLabel}
+        />
 
-        <div className="odm-or-map-controls">
-          <button
-            type="button"
-            aria-label={t.mapZoomIn}
-            disabled={zoomIndex >= ZOOM_STEPS.length - 1}
-            onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
-          >
-            <OrderIcon name="plus" />
-          </button>
-          <button
-            type="button"
-            aria-label={t.mapZoomOut}
-            disabled={zoomIndex <= 0}
-            onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
-          >
-            <OrderIcon name="minus" />
-          </button>
-          <button
-            type="button"
-            aria-label={t.mapRecenter}
-            onClick={() => setZoomIndex(0)}
-          >
-            <OrderIcon name="locate" />
-          </button>
-        </div>
+        {resolved ? (
+          <div className="odm-or-map-badge odm-or-gps-badge">
+            TARGET · {resolved.center.lat.toFixed(6)},{' '}
+            {resolved.center.lon.toFixed(6)}
+          </div>
+        ) : null}
 
         {order.radiusM != null ? (
           <div className="odm-or-map-overlay">

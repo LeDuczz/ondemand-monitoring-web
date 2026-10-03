@@ -134,6 +134,29 @@ export interface MissionResultMedia {
   contentType?: string | null
   fileSize?: number | null
   capturedAt?: string | null
+  /** DRONE_CAMERA | MANUAL_UPLOAD | MAPILLARY_REFERENCE; absent on legacy media. */
+  sourceType?: string | null
+  sourceReferenceId?: string | null
+  sourceCapturedAt?: string | null
+  sourceLatitude?: number | null
+  sourceLongitude?: number | null
+  captureLatitude?: number | null
+  captureLongitude?: number | null
+  captureAltitudeM?: number | null
+  sourceDistanceMeters?: number | null
+}
+
+export interface ReferenceCaptureResult {
+  mediaAssetId: string
+  missionId: string
+  sourceType: string
+  dronePosition: { lat: number | null; lon: number | null; altitude: number | null }
+  sourcePosition: { lat: number | null; lon: number | null }
+  distanceMeters: number | null
+  mapillaryImageId: string | null
+  capturedAt: string | null
+  mediaUrl: string | null
+  duplicate?: boolean
 }
 
 export type MissionStaffRole = 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'

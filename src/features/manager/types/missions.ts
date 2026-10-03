@@ -519,6 +519,12 @@ export type MediaResponse = {
   contentType: string
   fileSize: number
   capturedAt: string
+  sourceType?: string | null
+  sourceReferenceId?: string | null
+  sourceCapturedAt?: string | null
+  captureLatitude?: number | null
+  captureLongitude?: number | null
+  sourceDistanceMeters?: number | null
 }
 
 /** Body of `PATCH /api/missions/{id}/postflight-status` [BE]. */

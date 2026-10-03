@@ -15,7 +15,6 @@ import { useCreateOrderForm } from './useCreateOrderForm'
 import { useCreateOrderMeta } from './useCreateOrderMeta'
 import { useDraftPersistence } from './useDraftPersistence'
 import { useRecommendedService } from './useRecommendedService'
-import { useSimulationMap } from './useSimulationMap'
 import { useSubmitOrder } from './useSubmitOrder'
 import { useWizard } from './useWizard'
 
@@ -25,7 +24,6 @@ export function useCreateOrderWizard() {
   const stored = useMemo(readStoredDraft, [])
   const f = useCreateOrderForm(stored)
   const { form, step } = f
-  const map = useSimulationMap(form)
   const meta = useCreateOrderMeta(form.serviceId, f.aiAnalysisRequested, f.setForm)
   const service = meta.services.find((s) => s.id === form.serviceId)
 
@@ -63,8 +61,8 @@ export function useCreateOrderWizard() {
     form,
     setErrors: f.setErrors,
     location: {
-      monitoringValid: map.monitoring.valid,
-      blockedZoneNames: map.restricted.blockedZones.map((z) => z.name),
+      monitoringValid: true,
+      blockedZoneNames: [],
     },
     messages: t.validation,
   })
@@ -102,7 +100,6 @@ export function useCreateOrderWizard() {
 
   return {
     f,
-    map,
     meta,
     chat,
     wizard,

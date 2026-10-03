@@ -15,6 +15,9 @@ const formatFileSize = (bytes: number) => {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
+const isReference = (item: UploadedMissionMedia) =>
+  item.sourceType === 'MAPILLARY_REFERENCE'
+
 const formatCapturedAt = (value: string | null) => {
   if (!value) return 'Chưa có thời điểm chụp'
   const capturedAt = new Date(value)
@@ -193,7 +196,9 @@ function Gallery({
                       </span>
                     )}
                     <span className="mission-media__type">
-                      {item.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
+                      {isReference(item)
+                        ? 'Ảnh tham chiếu thực tế · Mapillary'
+                        : item.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
                     </span>
                     <span className="mission-media__open-label">Xem media</span>
                   </button>
@@ -211,6 +216,16 @@ function Gallery({
                       </span>
                       <span>{formatFileSize(item.fileSize)}</span>
                     </div>
+                    {isReference(item) ? (
+                      <p className="mission-media__reference">
+                        {item.sourceDistanceMeters != null
+                          ? `Ảnh tham chiếu cách vị trí drone ${Math.round(item.sourceDistanceMeters)} m`
+                          : 'Ảnh tham chiếu thực tế'}
+                        {item.captureLatitude != null && item.captureLongitude != null
+                          ? ` · Drone: ${item.captureLatitude.toFixed(5)}, ${item.captureLongitude.toFixed(5)}`
+                          : ''}
+                      </p>
+                    ) : null}
                     <time dateTime={item.capturedAt ?? undefined}>
                       <Icon
                         name="clock"

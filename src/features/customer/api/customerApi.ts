@@ -5,6 +5,10 @@ import type { RawAnalysis } from '../lib/analysis/types'
 import type { CustomerOrderItem } from '../types/orders'
 import { normalizeStatus } from '../lib/orders/mapOrder'
 import type { OrderCreateResponse } from './orderApi'
+import type {
+  ChecklistInput,
+  ServiceChecklistItem,
+} from '../lib/checklist/types'
 
 export type FindingDecision = {
   findingId: string
@@ -12,6 +16,7 @@ export type FindingDecision = {
 }
 
 export type CreateOrderPayload = {
+  checklistItems?: ChecklistInput[] | null
   title: string
   description?: string
   serviceId: string
@@ -187,6 +192,11 @@ function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
 }
 
 export const customerApi = {
+  getServiceChecklist: (serviceId: string, signal?: AbortSignal) =>
+    apiRequest<ServiceChecklistItem[]>(
+      `/api/services/${encodeURIComponent(serviceId)}/checklists`,
+      { signal },
+    ),
   /** `GET /api/orders/mine[?status]` [BE]: the whole list, no paging. */
   listMyOrders: (params: { status?: OrderStatus; signal?: AbortSignal } = {}) =>
     apiRequest<OrderCreateResponse[]>('/api/orders/mine', {

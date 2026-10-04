@@ -1,4 +1,7 @@
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { PageHeader } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
 import { customerHref } from '../../routes'
@@ -13,16 +16,31 @@ import { WizardFooter } from './components/WizardFooter'
 import { createOrderPageMessages } from './CreateOrderPage.messages'
 import './CreateOrder.css'
 import { useCreateOrderWizard } from './hooks/useCreateOrderWizard'
+import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
 
 /** Customer wizard: service goal, location, schedule, then deliverables and submit. */
 export function CreateOrderPage() {
   const { t } = useI18n(createOrderPageMessages)
-  const { f, meta, chat, wizard, submit, service, time, deliverable } =
-    useCreateOrderWizard()
+  const {
+    f,
+    meta,
+    chat,
+    wizard,
+    submit,
+    service,
+    time,
+    deliverable,
+    checklist,
+  } = useCreateOrderWizard()
   const { form, step } = f
 
   if (submit.createdId) {
-    return <CreatedSuccess orderId={submit.createdId} orderCode={submit.createdCode} />
+    return (
+      <CreatedSuccess
+        orderId={submit.createdId}
+        orderCode={submit.createdCode}
+      />
+    )
   }
 
   return (
@@ -31,7 +49,10 @@ export function CreateOrderPage() {
         title={t.pageTitle}
         subtitle={t.pageSubtitle}
         actions={
-          <a href={customerHref({ screen: 'orders' })} className="odm-btn odm-btn-gh">
+          <a
+            href={customerHref({ screen: 'orders' })}
+            className="odm-btn odm-btn-gh"
+          >
             {t.cancel}
           </a>
         }
@@ -40,7 +61,11 @@ export function CreateOrderPage() {
 
       {meta.loading && !meta.services.length && <LoadingState />}
       {Boolean(meta.error) && (
-        <ErrorState title={t.metaErrorTitle} error={meta.error} onRetry={meta.reload} />
+        <ErrorState
+          title={t.metaErrorTitle}
+          error={meta.error}
+          onRetry={meta.reload}
+        />
       )}
 
       {step === 1 && (
@@ -59,11 +84,7 @@ export function CreateOrderPage() {
         />
       )}
       {step === 2 && (
-        <LocationStep
-          form={form}
-          errors={f.errors}
-          update={f.update}
-        />
+        <LocationStep form={form} errors={f.errors} update={f.update} />
       )}
       {step === 3 && (
         <ScheduleStep
@@ -90,14 +111,24 @@ export function CreateOrderPage() {
         />
       )}
 
+      {(step === 1 || step === 4) && (
+        <ChecklistEditor
+          checklist={checklist}
+          disabled={submit.submitting}
+          onReload={() => f.setSubmitError(null)}
+        />
+      )}
+
       {f.submitError && !submit.confirmOpen && (
-        <div className="co-notice is-danger" role="alert">{f.submitError}</div>
+        <div className="co-notice is-danger" role="alert">
+          {f.submitError}
+        </div>
       )}
 
       <WizardFooter
         step={step}
         nextLabel={t.stepLabels[Math.min(4, step + 1) as 1 | 2 | 3 | 4]}
-        submitDisabled={meta.loading}
+        submitDisabled={meta.loading || submit.submitting || !checklist.valid}
         onBack={wizard.back}
         onNext={wizard.next}
         onSubmit={submit.openConfirm}

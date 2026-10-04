@@ -9,6 +9,7 @@ import { OrderInfoCard } from './components/OrderInfoCard'
 import { OrderTimeline } from './components/OrderTimeline'
 import { ReviewNotice } from './components/ReviewNotice'
 import { useOrderDetail } from './hooks/useOrderDetail'
+import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnapshotCard'
 import './OrderDetail.css'
 import { orderDetailPageMessages } from './OrderDetailPage.messages'
 
@@ -31,6 +32,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       <div className="od-grid">
         <div className="od-stack">
           <OrderInfoCard order={order} />
+          <ChecklistSnapshotCard items={order.checklistItems} snapshotAt={order.checklistSnapshotAt} />
           <DeliverablesCard order={order} />
         </div>
         <div className="od-stack">

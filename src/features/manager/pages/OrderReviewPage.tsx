@@ -10,6 +10,7 @@ import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachments
 import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
 import { OrderLocationCard } from '../components/orderReview/OrderLocationCard'
 import { OrderServiceInfo } from '../components/orderReview/OrderServiceInfo'
+import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
 import { OrderStatusCard } from '../components/orderReview/OrderStatusCard'
 import { ResourceAvailabilityCard } from '../components/orderReview/ResourceAvailabilityCard'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
@@ -46,7 +47,12 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   }
 
   if (scheduleBrief) {
-    return <CreateMissionPage orderId={scheduleBrief.id} initialBrief={scheduleBrief} />
+    return (
+      <CreateMissionPage
+        orderId={scheduleBrief.id}
+        initialBrief={scheduleBrief}
+      />
+    )
   }
 
   if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} t={t} />
@@ -130,6 +136,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
         <div className="odm-or-col">
           <OrderLocationCard order={order} t={t} />
           <OrderServiceInfo order={order} t={t} />
+          <OrderChecklistCard order={order} t={t} />
           <OrderAttachmentsCard order={order} t={t} />
         </div>
         <div className="odm-or-col">

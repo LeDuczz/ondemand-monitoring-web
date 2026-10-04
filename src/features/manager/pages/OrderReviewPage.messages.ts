@@ -2,6 +2,13 @@ import { defineMessages } from '../../../shared/i18n'
 
 export const orderReviewPageMessages = defineMessages({
   vi: {
+    monitoringRequirements: 'Nội dung giám sát',
+    serviceRequirement: 'Nội dung từ dịch vụ',
+    customerRequirement: 'Nội dung khách hàng bổ sung',
+    requirementsHistory:
+      'Nội dung đã chốt khi khách hàng gửi yêu cầu · Chỉ xem, không thay đổi theo danh mục dịch vụ hiện tại.',
+    requirementsEmpty: 'Khách hàng đã gửi yêu cầu không kèm nội dung giám sát.',
+    requirementsLegacy: 'Đơn hàng này chưa có bản chốt nội dung giám sát.',
     customerActionLabel: {
       ACCEPTED: 'ACCEPTED',
       IGNORED: 'IGNORED',
@@ -67,7 +74,8 @@ export const orderReviewPageMessages = defineMessages({
     topDrones: 'Top drone',
     topPilots: 'Top phi công',
     internalNote: 'Ghi chú nội bộ',
-    internalNotePlaceholder: 'Thêm ghi chú cho đồng nghiệp (khách không thấy)...',
+    internalNotePlaceholder:
+      'Thêm ghi chú cho đồng nghiệp (khách không thấy)...',
     saveNote: 'Lưu ghi chú',
     internalNoteDisabled: 'Backend chưa hỗ trợ ghi chú nội bộ',
     saving: 'Đang lưu…',
@@ -122,7 +130,8 @@ export const orderReviewPageMessages = defineMessages({
     actionHintNext:
       'Sau khi duyệt, hệ thống sẽ chuyển sang bước Lên lịch để thiết lập thời gian, gán nguồn lực và xác nhận thực hiện nhiệm vụ.',
     approveTitle: 'Duyệt đơn hàng?',
-    approveHint: 'Hệ thống sẽ tạo mission và giữ manager trong luồng thiết lập.',
+    approveHint:
+      'Hệ thống sẽ tạo mission và giữ manager trong luồng thiết lập.',
     approveChecklist: [
       'Tạo Mission tự động',
       'Sao chép khu vực',
@@ -138,6 +147,15 @@ export const orderReviewPageMessages = defineMessages({
     },
   },
   en: {
+    monitoringRequirements: 'Monitoring requirements',
+    serviceRequirement: 'Service requirement',
+    customerRequirement: 'Customer-added requirement',
+    requirementsHistory:
+      'Requirements saved on customer submission · Read only, independent of the current service catalog.',
+    requirementsEmpty:
+      'The customer submitted this order without monitoring requirements.',
+    requirementsLegacy:
+      'No monitoring requirements snapshot is available for this order.',
     customerActionLabel: {
       ACCEPTED: 'ACCEPTED',
       IGNORED: 'IGNORED',
@@ -227,8 +245,7 @@ export const orderReviewPageMessages = defineMessages({
     sendRequest: 'Send request',
     submitFailed: 'Submitting failed, try again.',
     pageTitle: 'Orders',
-    pageSubtitle:
-      'Review the order details and approve to continue scheduling',
+    pageSubtitle: 'Review the order details and approve to continue scheduling',
     statusPending: 'Pending review',
     orderStatus: 'Order status',
     orderCode: 'Order code',

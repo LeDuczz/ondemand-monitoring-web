@@ -1,4 +1,5 @@
 import { ApiError, apiRequest } from '../../../shared/api/httpClient'
+import { readOrderChecklistSnapshot } from '../lib/orderChecklistSnapshot'
 import type {
   ApprovalRequest,
   OrderAnalysis,
@@ -38,8 +39,9 @@ function numberValue(value: unknown) {
 
 function radiusFromDeliverables(order: OrderCreateResponse) {
   for (const deliverable of order.deliverables ?? []) {
-    const radius = numberValue(deliverable.requirement?.radiusM)
-      ?? numberValue(deliverable.requirement?.radius_m)
+    const radius =
+      numberValue(deliverable.requirement?.radiusM) ??
+      numberValue(deliverable.requirement?.radius_m)
     if (radius != null) return radius
   }
   return null
@@ -52,7 +54,9 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     status: order.orderStatus,
     customer: {
       fullName: order.customerName || order.customerId,
-      companyName: '', email: null, phone: null,
+      companyName: '',
+      email: null,
+      phone: null,
     },
     serviceName: order.serviceName,
     preferredDate: order.preferredDateFrom,
@@ -62,13 +66,16 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     preferredWindow: order.preferredTimeName || null,
     submittedAt: order.createdAt,
     addressText: order.address || null,
-    center: order.latitude != null && order.longitude != null
-      ? { lat: order.latitude, lon: order.longitude } : null,
+    center:
+      order.latitude != null && order.longitude != null
+        ? { lat: order.latitude, lon: order.longitude }
+        : null,
     radiusM: order.radiusM ?? radiusFromDeliverables(order),
     nearestBase: null,
-    mediaRequirements: order.deliverables?.map((item) => ({
-      label: `${item.deliverableTypeName}${formatRequirement(item.requirement)}`,
-    })) ?? null,
+    mediaRequirements:
+      order.deliverables?.map((item) => ({
+        label: `${item.deliverableTypeName}${formatRequirement(item.requirement)}`,
+      })) ?? null,
     purpose: order.description || null,
     attachments: null,
   }
@@ -110,8 +117,12 @@ export const ordersApi = {
 
   /** `GET /api/orders/{id}` [TK]. */
   getOrder(id: string, signal?: AbortSignal): Promise<OrderDetail> {
-    return apiRequest<OrderCreateResponse | OrderDetail>(`/api/orders/${id}`, { signal })
-      .then((order) => 'customer' in order ? order : toOrderDetail(order))
+    return apiRequest<OrderCreateResponse | OrderDetail>(`/api/orders/${id}`, {
+      signal,
+    }).then((order) => ({
+      ...('customer' in order ? order : toOrderDetail(order)),
+      ...readOrderChecklistSnapshot(order, id),
+    }))
   },
 
   /** `GET /api/orders/{id}/analysis/latest` [BRIEF C4]. */
@@ -145,7 +156,9 @@ export const ordersApi = {
 
   /** `POST /api/orders/{id}/approve` [BE] — approves only; staff schedules the mission later. */
   approve(id: string): Promise<OrderCreateResponse | void> {
-    return apiRequest<OrderCreateResponse | void>(`/api/orders/${id}/approve`, { method: 'POST' })
+    return apiRequest<OrderCreateResponse | void>(`/api/orders/${id}/approve`, {
+      method: 'POST',
+    })
   },
 
   /** `POST /api/orders/{id}/approval` [BRIEF C4] `{decision, reason}`. */
@@ -174,9 +187,12 @@ export const ordersApi = {
       })
       .catch((error) => {
         if (error instanceof ApiError && error.status === 409) {
-          return apiRequest<OrderMissionBrief>(`/api/orders/${id}/mission-brief`, {
-            signal,
-          })
+          return apiRequest<OrderMissionBrief>(
+            `/api/orders/${id}/mission-brief`,
+            {
+              signal,
+            },
+          )
         }
         throw error
       })

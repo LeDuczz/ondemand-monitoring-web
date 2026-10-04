@@ -15,15 +15,32 @@ describe('mission action permissions', () => {
     expect(mayPerformMissionAction(none, 'flight')).toBe(false)
     expect(mayPerformMissionAction(none, 'preflight')).toBe(false)
   })
-  it('lets an inspector inspect without handing over flight control', () => {
+  it('does not let an inspector run maintainer postcheck', () => {
     const inspector = { ...none, canInspectDevice: true }
-    expect(mayPerformMissionAction(inspector, 'preflight')).toBe(true)
-    expect(mayPerformMissionAction(inspector, 'postflight')).toBe(true)
+    expect(mayPerformMissionAction(inspector, 'preflight')).toBe(false)
+    expect(mayPerformMissionAction(inspector, 'postflight')).toBe(false)
     expect(mayPerformMissionAction(inspector, 'handover')).toBe(false)
+  })
+  it('lets a maintainer run postcheck', () => {
+    const maintainer = { ...none, canMaintainDevice: true }
+    expect(mayPerformMissionAction(maintainer, 'postflight')).toBe(true)
+    expect(mayPerformMissionAction(maintainer, 'upload')).toBe(false)
+  })
+  it('lets an operator connect, preflight, and hand over before pilot control', () => {
+    const operator = { ...none, canOperatePayload: true }
+    expect(mayPerformMissionAction(operator, 'connect')).toBe(true)
+    expect(mayPerformMissionAction(operator, 'preflight')).toBe(true)
+    expect(mayPerformMissionAction(operator, 'handover')).toBe(true)
+    expect(mayPerformMissionAction(operator, 'flight')).toBe(false)
   })
   it('allows media upload independently of flying and maintenance', () => {
     const operator = { ...none, canUploadMedia: true }
     expect(mayPerformMissionAction(operator, 'upload')).toBe(true)
     expect(mayPerformMissionAction(operator, 'connect')).toBe(false)
+  })
+  it('lets the assigned pilot open media in view-only mode', () => {
+    const pilot = { ...none, canControlFlight: true }
+    expect(mayPerformMissionAction(pilot, 'upload')).toBe(true)
+    expect(mayPerformMissionAction(pilot, 'connect')).toBe(false)
   })
 })

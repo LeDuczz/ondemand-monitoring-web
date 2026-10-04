@@ -15,11 +15,15 @@ import { markActiveMissionFlowStep } from '../../api/liveMission'
 import { getLanguage, useI18n } from '../../../../shared/i18n'
 import { isInsideHcmcServiceArea } from '../../../../shared/lib/serviceArea'
 import { inFlightControlMessages } from '../i18n/inFlightControl.messages'
+import { captureSatelliteSnapshot } from './satelliteSnapshot'
 import { flightControlApi } from '../api/flightControlApi'
 import { missionApi } from '../../../mission/api/missionApi'
 import { SatelliteFlightMap } from './SatelliteFlightMap'
+import { DroneCameraView, type DroneCameraTelemetry } from './DroneCameraView'
+import { FlightCockpit } from './FlightCockpit'
 import {
-  buildAvoidanceRoute,
+  buildExecutableFlightRoute,
+  gpsDistanceMeters,
   isRestrictedGpsZonePayload,
   isValidGps,
   type RestrictedGpsZone,
@@ -108,6 +112,14 @@ type IconName =
   | 'check'
   | 'chevronRight'
 
+// Slow, steady cruise so the drone drifts calmly along the map route.
+const GPS_TARGET_CRUISE_SPEED_MPS = 8
+const MAX_GPS_ROUTE_WAYPOINTS = 5
+
+const STATUS_POLL_MS = 400
+const STATUS_RETRY_MS = 1200
+const STATUS_MAX_FAILURES = 3
+
 type ControlStatus = {
   online?: boolean
   missionId?: string | null
@@ -115,6 +127,7 @@ type ControlStatus = {
   positionReady?: boolean
   positionGazebo?: { x: number; y: number }
   positionNed?: { northM: number; eastM: number; downM: number }
+  velocityNed?: { northMps: number; eastMps: number; downMps: number }
   positionGps?: { latitude: number; longitude: number; absoluteAltitudeM: number; relativeAltitudeM: number } | null
   inAir?: boolean
   yawDeg?: number
@@ -123,7 +136,11 @@ type ControlStatus = {
   airPressurePa?: number
   speedMps?: number
   batteryPercent?: number
+  rawPx4BatteryPercent?: number | null
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
+  freshness?: {
+    px4BatteryAgeS?: number | null
+  }
   batteryDrainMode?:
     'LANDED' | 'IDLE' | 'HOVER' | 'CRUISE' | 'ASCEND' | 'DESCEND'
   autoPlan?: {
@@ -836,6 +853,56 @@ function useRestrictedZones() {
   return zones
 }
 
+function useRestrictedGpsZones() {
+  const [zones, setZones] = useState<RestrictedGpsZone[]>(() => withDefaultRestrictedGpsZones([]))
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadZones() {
+      try {
+        const response = await fetch(`${env.apiBaseUrl}/api/zones`, { cache: 'no-store' })
+        const payload = await response.json()
+        const items = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload)
+            ? payload
+            : []
+        const restrictedGps = withDefaultRestrictedGpsZones((items as Array<{
+          id?: string
+          code?: string
+          name?: string
+          restricted?: boolean
+          zoneType?: string
+          coordinates?: number[][]
+        }>)
+          .filter(isRestrictedGpsZonePayload)
+          .map((zone) => ({
+            id: String(zone.id ?? zone.code ?? zone.name ?? 'restricted-zone'),
+            code: zone.code,
+            name: zone.name,
+            coordinates: (zone.coordinates ?? [])
+              .map((point) => ({ longitude: Number(point[0]), latitude: Number(point[1]) }))
+              .filter(isValidGps),
+          }))
+          .filter((zone) => zone.coordinates.length >= 3))
+        if (alive) setZones(restrictedGps)
+      } catch {
+        if (alive) setZones(withDefaultRestrictedGpsZones([]))
+      }
+    }
+
+    void loadZones()
+    const timer = window.setInterval(loadZones, 10000)
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  return zones
+}
+
 function formatNumber(value: number | null | undefined, digits = 1) {
   return typeof value === 'number' && Number.isFinite(value)
     ? value.toFixed(digits)
@@ -888,6 +955,17 @@ function statusToSimulationPoint(
     return [status.positionGazebo.x, status.positionGazebo.y]
   }
   return null
+}
+
+function toControllerRouteWaypoints(route: Array<{ latitude: number; longitude: number }>) {
+  const waypoints = route.slice(1)
+  if (waypoints.length <= MAX_GPS_ROUTE_WAYPOINTS) return waypoints
+
+  const target = waypoints[waypoints.length - 1]
+  const step = (waypoints.length - 1) / (MAX_GPS_ROUTE_WAYPOINTS - 1)
+  const sampled = Array.from({ length: MAX_GPS_ROUTE_WAYPOINTS - 1 }, (_, index) =>
+    waypoints[Math.floor(index * step)])
+  return [...sampled, target]
 }
 
 const RealMiniMap = memo(function RealMiniMap({
@@ -2599,11 +2677,15 @@ const FlightControls = memo(function FlightControls({
   onWeatherPreset,
   onToggleMore,
   onReviewMedia,
+  onFinishFlight,
+  finishFlightBusy,
   onReferenceCapture,
   referenceBusy,
 }: {
   referenceBusy?: boolean
   onReferenceCapture?: () => void
+  onFinishFlight?: () => void
+  finishFlightBusy?: boolean
   busyCommand: FlightCommand | null
   lidarDetailsOpen: boolean
   moreOpen: boolean
@@ -2819,6 +2901,24 @@ const FlightControls = memo(function FlightControls({
             </span>
           </button>
         )}
+        {onFinishFlight && (
+          <button
+            onClick={onFinishFlight}
+            disabled={busyCommand !== null || finishFlightBusy}
+            style={{
+              ...buttonStyle(),
+              width: 86,
+              background: 'rgba(20,83,45,.82)',
+              color: '#86efac',
+            }}
+            title={t.toolbar.finishFlightTitle}
+          >
+            <Icon name="check" size={14} />
+            <span>
+              {finishFlightBusy ? t.toolbar.sending : t.toolbar.finishFlight}
+            </span>
+          </button>
+        )}
         <button
           onClick={() => onCommand('thermal_toggle')}
           disabled={busyCommand !== null}
@@ -2986,11 +3086,11 @@ export default function InFlightControl({
   const [busyCommand, setBusyCommand] = useState<FlightCommand | null>(null)
   const [referenceBusy, setReferenceBusy] = useState(false)
   const referenceBusyRef = useRef(false)
+  const [finishFlightBusy, setFinishFlightBusy] = useState(false)
   const [streamRevision, setStreamRevision] = useState(0)
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
   const [lidarDetailsOpen, setLidarDetailsOpen] = useState(false)
-  const [restrictedGpsZones, setRestrictedGpsZones] = useState<RestrictedGpsZone[]>([])
   const cameraDefaultAppliedRef = useRef(false)
   const [preflightReady, setPreflightReady] = useState(() => {
     if (requiresBackendPreflight) return false
@@ -3001,6 +3101,7 @@ export default function InFlightControl({
     }
   })
   const restrictedZones = useRestrictedZones()
+  const restrictedGpsZones = useRestrictedGpsZones()
 
   const thermalEnabled = controlStatus?.thermalEnabled === true
   const streamUrl = useMemo(
@@ -3066,43 +3167,6 @@ export default function InFlightControl({
   }, [preflightStorageKey, requiresBackendPreflight])
 
   useEffect(() => {
-    let alive = true
-
-    async function loadZones() {
-      try {
-        const response = await fetch(`${env.apiBaseUrl}/api/zones`, { cache: 'no-store' })
-        const payload = await response.json()
-        const items = Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload)
-            ? payload
-            : []
-        const restrictedGps = withDefaultRestrictedGpsZones(items
-          .filter(isRestrictedGpsZonePayload)
-          .map((zone: { id?: string; code?: string; name?: string; coordinates?: number[][] }) => ({
-            id: String(zone.id ?? zone.code ?? zone.name ?? 'restricted-zone'),
-            code: zone.code,
-            name: zone.name,
-            coordinates: (zone.coordinates ?? [])
-              .map((point) => ({ longitude: Number(point[0]), latitude: Number(point[1]) }))
-              .filter(isValidGps),
-          }))
-          .filter((zone: RestrictedGpsZone) => zone.coordinates.length >= 3))
-        if (alive) setRestrictedGpsZones(restrictedGps)
-      } catch {
-        if (alive) setRestrictedGpsZones(withDefaultRestrictedGpsZones([]))
-      }
-    }
-
-    void loadZones()
-    const timer = window.setInterval(loadZones, 10000)
-    return () => {
-      alive = false
-      window.clearInterval(timer)
-    }
-  }, [])
-
-  useEffect(() => {
     const timer = window.setInterval(() => {
       setElapsed((value) => value + 1)
       setProgress((value) => Math.min(100, value + 0.04))
@@ -3113,9 +3177,16 @@ export default function InFlightControl({
   useEffect(() => {
     let alive = true
 
+    // Poll telemetry fast enough for smooth motion (was every 2.5s, which made the drone
+    // "jump then stand still"). Requests never overlap, and a single failed poll no longer
+    // wipes the drone off the map: we only drop the status after several misses in a row.
+    let timer: number | undefined
+    let failures = 0
+
     async function checkStatus() {
       try {
         const status = await flightControlApi.status()
+        failures = 0
         if (alive) {
           setControlStatus(status)
           setIsOnline((wasOnline) => {
@@ -3125,18 +3196,25 @@ export default function InFlightControl({
           })
         }
       } catch {
-        if (alive) {
+        failures += 1
+        if (alive && failures >= STATUS_MAX_FAILURES) {
           setControlStatus(null)
           setIsOnline(false)
+        }
+      } finally {
+        if (alive) {
+          timer = window.setTimeout(
+            checkStatus,
+            failures > 0 ? STATUS_RETRY_MS : STATUS_POLL_MS,
+          )
         }
       }
     }
 
     void checkStatus()
-    const timer = window.setInterval(checkStatus, 2500)
     return () => {
       alive = false
-      window.clearInterval(timer)
+      if (timer !== undefined) window.clearTimeout(timer)
     }
   }, [])
 
@@ -3144,14 +3222,6 @@ export default function InFlightControl({
     async (command: FlightCommand) => {
       if (!preflightReady) {
         setLastCommand(t.status.preflightRequired)
-        return
-      }
-      if (
-        (command === 'photo' || command === 'video_toggle') &&
-        (controlStatus?.missionId !== (mission.backendId ?? mission.id) ||
-          controlStatus?.deviceId !== drone.id)
-      ) {
-        setLastCommand(t.status.controllerNotBound)
         return
       }
       const target = Number.isFinite(mission.lat) && Number.isFinite(mission.lng)
@@ -3171,9 +3241,18 @@ export default function InFlightControl({
           return
         }
       }
-      const gpsRoute = command === 'gps_target_start' && target
-        ? buildAvoidanceRoute(controlStatus?.positionGps ?? null, target, restrictedGpsZones)
-        : []
+      let gpsRoute: Array<{ latitude: number; longitude: number }> = []
+      let routeWaypoints: Array<{ latitude: number; longitude: number }> = []
+      if (command === 'gps_target_start' && target) {
+        gpsRoute = buildExecutableFlightRoute(controlStatus?.positionGps ?? null, target, restrictedGpsZones)
+        routeWaypoints = toControllerRouteWaypoints(gpsRoute)
+        if (routeWaypoints.length === 0) {
+          setLastCommand(getLanguage() === 'en'
+            ? 'Waiting for current GPS before starting route flight'
+            : 'Chưa có GPS hiện tại để tạo đường bay né vùng cấm')
+          return
+        }
+      }
       const routePoints = (mission.routePoints ?? [])
         .slice()
         .sort((a, b) => a.sequence - b.sequence)
@@ -3183,6 +3262,55 @@ export default function InFlightControl({
       }
       setBusyCommand(command)
       try {
+        const missionKey = mission.backendId ?? mission.id
+        if (
+          // Bind on the ground too (takeoff), so the session already belongs to this
+          // mission before the drone is airborne and "Fly to point" never needs a mid-air switch.
+          // Photo / video also bind on demand instead of failing when the status poll is stale.
+          (command === 'gps_target_start' || command === 'takeoff' || command === 'photo' || command === 'video_toggle') &&
+          (controlStatus?.missionId !== missionKey || controlStatus?.deviceId !== drone.id)
+        ) {
+          setLastCommand(getLanguage() === 'en'
+            ? 'Binding drone controller...'
+            : 'Đang kết nối bộ điều khiển drone...')
+          await flightControlApi.bindSession(missionKey, drone.id)
+        }
+        if (command === 'photo') {
+          // The cockpit camera is satellite imagery, so capture exactly that view in the browser
+          // and hand it to the controller's local media library for review/upload.
+          const gps = controlStatus?.positionGps
+          if (gps) {
+            const altitudeForView = gps.relativeAltitudeM ?? controlStatus?.altitudeM ?? null
+            const stamp = new Date()
+            const blob = await captureSatelliteSnapshot({
+              latitude: gps.latitude,
+              longitude: gps.longitude,
+              heading: controlStatus?.yawDeg ?? null,
+              altitudeM: altitudeForView,
+              caption: `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}  ALT ${altitudeForView === null ? '--' : Math.round(altitudeForView)}m  ${stamp.toLocaleTimeString()}`,
+            })
+            const upload = await fetch(`${controlBaseUrl}/api/media/local/capture`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'image/jpeg' },
+              body: blob,
+            })
+            if (!upload.ok) {
+              const payload = await upload.json().catch(() => null) as { error?: string } | null
+              throw new Error(payload?.error ?? `HTTP ${upload.status}`)
+            }
+            setLastCommand(getLanguage() === 'en'
+              ? 'Photo saved — open Review to approve it'
+              : 'Đã chụp ảnh — bấm Xem lại để duyệt và upload')
+            setIsOnline(true)
+            return
+          }
+        }
+        const currentAltitudeM =
+          controlStatus?.positionGps?.relativeAltitudeM ?? controlStatus?.altitudeM
+        const targetAltitudeM =
+          typeof currentAltitudeM === 'number' && Number.isFinite(currentAltitudeM)
+            ? Math.max(8, Math.min(50, currentAltitudeM))
+            : 25
         const response = await fetch(`${controlBaseUrl}/api/control/command`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3190,7 +3318,7 @@ export default function InFlightControl({
             command,
             ...(command === 'auto_plan_start'
               ? {
-                  missionId: mission.backendId ?? mission.id,
+                  missionId: missionKey,
                   waypoints: routePoints.map((point) => ({
                     sequence: point.sequence,
                     simX: point.simX,
@@ -3203,15 +3331,16 @@ export default function InFlightControl({
               : {}),
             ...(command === 'gps_target_start' && target
               ? {
-                  missionId: mission.backendId ?? mission.id,
+                  missionId: missionKey,
                   latitude: target.latitude,
                   longitude: target.longitude,
-                  relativeAltitudeM: 20,
-                  routeWaypoints: gpsRoute.slice(1).map((point, index) => ({
+                  relativeAltitudeM: targetAltitudeM,
+                  speedMps: GPS_TARGET_CRUISE_SPEED_MPS,
+                  routeWaypoints: routeWaypoints.map((point, index) => ({
                     sequence: index,
                     latitude: point.latitude,
                     longitude: point.longitude,
-                    relativeAltitudeM: 20,
+                    relativeAltitudeM: targetAltitudeM,
                   })),
                 }
               : {}),
@@ -3239,7 +3368,11 @@ export default function InFlightControl({
         if (command === 'emergency_stop') onEmergency()
       } catch (cause) {
         setLastCommand(
-          cause instanceof Error ? cause.message : t.status.controllerOffline,
+          cause instanceof TypeError
+            ? t.status.controllerOffline
+            : cause instanceof Error
+              ? cause.message
+              : t.status.controllerOffline,
         )
         if (cause instanceof TypeError) setIsOnline(false)
       } finally {
@@ -3248,7 +3381,9 @@ export default function InFlightControl({
     },
     [
       controlStatus?.deviceId,
+      controlStatus?.altitudeM,
       controlStatus?.missionId,
+      controlStatus?.positionGps,
       drone.id,
       mission.backendId,
       mission.id,
@@ -3295,10 +3430,43 @@ export default function InFlightControl({
     t,
   ])
 
+  const px4BatteryFresh =
+    typeof controlStatus?.freshness?.px4BatteryAgeS === 'number' &&
+    Number.isFinite(controlStatus.freshness.px4BatteryAgeS) &&
+    controlStatus.freshness.px4BatteryAgeS <= 10
+  const liveBatteryPercent =
+    px4BatteryFresh &&
+    typeof controlStatus?.rawPx4BatteryPercent === 'number' &&
+    Number.isFinite(controlStatus.rawPx4BatteryPercent)
+      ? controlStatus.rawPx4BatteryPercent
+      : controlStatus?.batteryPercent
+
+  // Camera view reads the SAME GPS telemetry as the main flight map (controlStatus.positionGps).
+  const cameraTelemetry = useMemo<DroneCameraTelemetry | null>(() => {
+    const gps = controlStatus?.positionGps
+    if (!gps) return null
+    return {
+      latitude: gps.latitude,
+      longitude: gps.longitude,
+      heading: controlStatus?.yawDeg ?? null,
+      altitude: gps.relativeAltitudeM ?? controlStatus?.altitudeM ?? null,
+      speedMps: controlStatus?.speedMps ?? null,
+      batteryPercent: liveBatteryPercent ?? null,
+    }
+  }, [
+    controlStatus?.positionGps?.latitude,
+    controlStatus?.positionGps?.longitude,
+    controlStatus?.positionGps?.relativeAltitudeM,
+    controlStatus?.yawDeg,
+    controlStatus?.altitudeM,
+    controlStatus?.speedMps,
+    liveBatteryPercent,
+  ])
+
   const telemetryBattery =
-    typeof controlStatus?.batteryPercent === 'number' &&
-    Number.isFinite(controlStatus.batteryPercent)
-      ? Math.max(0, Math.min(100, controlStatus.batteryPercent))
+    typeof liveBatteryPercent === 'number' &&
+    Number.isFinite(liveBatteryPercent)
+      ? Math.max(0, Math.min(100, liveBatteryPercent))
       : null
   const batteryDisplay =
     telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`
@@ -3363,6 +3531,23 @@ export default function InFlightControl({
     }
     navigateOperator(operatorHref({ screen: 'upload', missionId }))
   }, [mission.backendId, mission.id, onReviewMedia])
+  const handleFinishFlight = useCallback(async () => {
+    if (finishFlightBusy) return
+    const missionId = mission.backendId ?? mission.id
+    setFinishFlightBusy(true)
+    setLastCommand(t.status.finishingFlight)
+    try {
+      await missionApi.markReturning(missionId).catch(() => undefined)
+      await missionApi.startPostflight(missionId)
+      markActiveMissionFlowStep(missionId, 5)
+      setLastCommand(t.status.flightFinished)
+      navigateOperator(operatorHref({ screen: 'missions' }))
+    } catch (error) {
+      setLastCommand(error instanceof Error ? error.message : t.status.controllerOffline)
+    } finally {
+      setFinishFlightBusy(false)
+    }
+  }, [finishFlightBusy, mission.backendId, mission.id, onReviewMedia, t])
   const handleReferenceCapture = useCallback(async () => {
     if (referenceBusyRef.current) return
     referenceBusyRef.current = true
@@ -3470,50 +3655,52 @@ export default function InFlightControl({
       target &&
       isInsideHcmcServiceArea(target),
     )
+    const droneGps = controlStatus?.positionGps ?? null
+    const altitudeM = droneGps?.relativeAltitudeM ?? controlStatus?.altitudeM ?? null
+    const verticalMps = controlStatus?.velocityNed?.downMps == null
+      ? null
+      : -controlStatus.velocityNed.downMps
+    const baseDistanceKm = controlStatus?.positionNed
+      ? Math.hypot(controlStatus.positionNed.northM, controlStatus.positionNed.eastM) / 1000
+      : null
+    const targetDistanceKm = droneGps && target
+      ? gpsDistanceMeters(droneGps, target) / 1000
+      : null
+    const language = getLanguage() === 'en' ? 'en' : 'vi'
     return (
-      <div className="satellite-flight-screen">
-        <SatelliteFlightMap missionId={mission.backendId ?? mission.id} target={target} drone={controlStatus?.positionGps ?? null} />
-        <div className="satellite-flight-status">
-          <strong>{mission.id}</strong>
-          <span>{t.header.droneOperator}</span>
-          <span>{isOnline ? t.header.live : t.header.offline}</span>
-          <span>{controlStatus?.positionGps
-            ? `${controlStatus.positionGps.latitude.toFixed(6)}, ${controlStatus.positionGps.longitude.toFixed(6)}`
-            : getLanguage() === 'en' ? 'Waiting for PX4 GPS' : 'Đang chờ GPS từ PX4'}</span>
-          <span>{lastCommand}</span>
-        </div>
-        <div className="satellite-flight-controls">
-          <button
-            type="button"
-            className="satellite-flight-review-action"
-            disabled={busyCommand !== null}
-            onClick={handleReviewMedia}
-            title={getLanguage() === 'en' ? 'Review captured media' : 'Xem lại dữ liệu đã chụp'}
-          >
-            {getLanguage() === 'en' ? 'Review' : 'Review'}
-          </button>
-          <button
-            type="button"
-            className="satellite-flight-review-action"
-            disabled={busyCommand !== null || referenceBusy}
-            onClick={() => void handleReferenceCapture()}
-            title={getLanguage() === 'en' ? 'Capture real-world reference image (Mapillary)' : 'Chụp ảnh tham chiếu thực tế (Mapillary)'}
-          >
-            {referenceBusy
-              ? getLanguage() === 'en' ? 'Fetching…' : 'Đang lấy vị trí drone...'
-              : getLanguage() === 'en' ? 'Reference photo' : 'Chụp ảnh tham chiếu'}
-          </button>
-          <button
-            type="button"
-            className="satellite-flight-primary-action"
-            disabled={busyCommand !== null || !preflightReady || !gpsTargetReady}
-            onClick={() => handleCommand('gps_target_start')}
-            title={getLanguage() === 'en' ? 'Fly to selected point' : 'Bay tới điểm khách đã chọn'}
-          >
-            {getLanguage() === 'en' ? 'Fly to point' : 'Bay tới điểm'}
-          </button>
-        </div>
-        {!preflightReady && (
+      <FlightCockpit
+        language={language}
+        missionLabel={mission.id}
+        roleLabel={t.header.droneOperator}
+        liveLabel={isOnline ? t.header.live : t.header.offline}
+        online={isOnline}
+        waitingGpsLabel={language === 'en' ? 'Waiting for PX4 GPS' : 'Đang chờ GPS từ PX4'}
+        statusMessage={lastCommand}
+        telemetry={{
+          latitude: droneGps?.latitude ?? null,
+          longitude: droneGps?.longitude ?? null,
+          altitudeM,
+          speedMps: controlStatus?.speedMps ?? null,
+          verticalMps,
+          headingDeg: controlStatus?.yawDeg ?? null,
+          batteryPercent: telemetryBattery,
+          inAir: Boolean(controlStatus?.inAir),
+          flightMode: controlStatus?.batteryDrainMode ?? null,
+          baseDistanceKm,
+          targetDistanceKm,
+        }}
+        camera={<DroneCameraView telemetry={cameraTelemetry} language={language} />}
+        map={<SatelliteFlightMap missionId={mission.backendId ?? mission.id} target={target} drone={droneGps} />}
+        busy={busyCommand !== null}
+        canFly={preflightReady}
+        canFlyToTarget={gpsTargetReady}
+        referenceBusy={referenceBusy}
+        onCommand={handleCommand}
+        onReview={handleReviewMedia}
+        onFinishFlight={handleFinishFlight}
+        finishingFlight={finishFlightBusy}
+        onReferenceCapture={() => void handleReferenceCapture()}
+        overlay={!preflightReady ? (
           <div className="satellite-flight-preflight">
             <ManualCockpitPreflight
               missionLabel={mission.id}
@@ -3521,8 +3708,8 @@ export default function InFlightControl({
               onReady={handlePreflightReady}
             />
           </div>
-        )}
-      </div>
+        ) : null}
+      />
     )
   }
 
@@ -3976,6 +4163,8 @@ export default function InFlightControl({
             onWeatherPreset={handleWeatherPreset}
             onToggleMore={handleToggleMore}
             onReviewMedia={handleReviewMedia}
+            onFinishFlight={handleFinishFlight}
+            finishFlightBusy={finishFlightBusy}
             onReferenceCapture={handleReferenceCapture}
             referenceBusy={referenceBusy}
           />

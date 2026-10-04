@@ -23,7 +23,7 @@ export function MediaTable({
 }: {
   files: MediaFile[]
   retryingId: string | null
-  onRetry: (fileId: string) => void
+  onRetry?: (fileId: string) => void
 }) {
   const { t } = useI18n(mediaTableMessages)
   if (files.length === 0) {
@@ -104,7 +104,7 @@ export function MediaTable({
                       {t.manualTaskCreated}
                     </span>
                   ) : null}
-                  {file.status === 'FAILED' && file.attempt < file.maxAttempts ? (
+                  {onRetry && file.status === 'FAILED' && file.attempt < file.maxAttempts ? (
                     <button
                       type="button"
                       className="odm-btn odm-btn-sm"

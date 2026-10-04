@@ -9,8 +9,8 @@ export const flightStepperMessages = defineMessages({
       { key: 'preflight', label: 'Preflight' },
       { key: 'handover', label: 'Bàn giao' },
       { key: 'flight', label: 'Bay' },
-      { key: 'upload', label: 'Review' },
-      { key: 'postflight', label: 'Postflight check' },
+      { key: 'postflight', label: 'Postcheck' },
+      { key: 'upload', label: 'Nghiệm thu' },
     ],
   },
   en: {
@@ -21,8 +21,8 @@ export const flightStepperMessages = defineMessages({
       { key: 'preflight', label: 'Preflight' },
       { key: 'handover', label: 'Handover' },
       { key: 'flight', label: 'Flight' },
-      { key: 'upload', label: 'Review' },
       { key: 'postflight', label: 'Postflight check' },
+      { key: 'upload', label: 'Review' },
     ],
   },
 })

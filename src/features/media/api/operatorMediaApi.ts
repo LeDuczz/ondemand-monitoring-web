@@ -78,9 +78,13 @@ export const operatorMediaApi = {
   previewUrl(id: string) {
     return `${controllerUrl}/api/media/local/${encodeURIComponent(id)}/preview`
   },
-  async list(missionId: string): Promise<LocalMedia[]> {
-    const response = await controller<{ media: LocalMedia[] }>('/api/media/local')
-    return response.media.filter((item) => item.missionId === missionId)
+  async list(missionId: string, missionAliases: string[] = []): Promise<LocalMedia[]> {
+    const params = new URLSearchParams()
+    params.set('missionId', missionId)
+    missionAliases.filter(Boolean).forEach((alias) => params.append('missionAlias', alias))
+    const response = await controller<{ media: LocalMedia[] }>(`/api/media/local?${params.toString()}`)
+    const keys = new Set([missionId, ...missionAliases].filter(Boolean))
+    return response.media.filter((item) => keys.has(item.missionId) || (item.missionCode ? keys.has(item.missionCode) : false))
       .map((item) => ({ ...item, backendMediaId: item.backendMediaId ?? storedMediaId(item) }))
   },
   async manualTasks(missionId: string) {
@@ -90,9 +94,9 @@ export const operatorMediaApi = {
       return []
     }
   },
-  async reviewItems(missionId: string): Promise<LocalMedia[]> {
+  async reviewItems(missionId: string, missionAliases: string[] = []): Promise<LocalMedia[]> {
     const [local, tasks] = await Promise.all([
-      operatorMediaApi.list(missionId).catch(() => [] as LocalMedia[]),
+      operatorMediaApi.list(missionId, missionAliases).catch(() => [] as LocalMedia[]),
       operatorMediaApi.manualTasks(missionId),
     ])
     const merged = new Map(local.map((item) => [item.localMediaId, { ...item, localAvailable: true }]))

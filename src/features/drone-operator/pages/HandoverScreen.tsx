@@ -47,27 +47,9 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
       const deviceId = data?.deviceId
       if (!mission.missionId || !deviceId)
         throw new Error(t.noDroneAssignedError)
-      const storedToken = window.sessionStorage.getItem(
-        backendPreflightTokenStorageKey(mission.missionId, deviceId),
-      )
-      if (!storedToken && data?.status !== 'READY_TO_FLY') {
-        throw new Error(t.precheckRequiredError)
-      }
       window.sessionStorage.setItem(
         `fieldwise.operator.handoverAcknowledged.${mission.missionId}`,
         'true',
-      )
-      await flightControlApi.bindSession(mission.missionId, deviceId).catch(
-        () => undefined,
-      )
-      await missionApi.handoverMyMission(mission.missionId).catch(
-        () => undefined,
-      )
-      await missionApi
-        .startMission(mission.missionId, storedToken ?? undefined)
-        .catch(() => undefined)
-      window.sessionStorage.removeItem(
-        backendPreflightTokenStorageKey(mission.missionId, deviceId),
       )
       window.localStorage.setItem(
         preflightReadyStorageKey(
@@ -80,28 +62,30 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
         preflightReadyStorageKey(mission.missionId, deviceId),
         'true',
       )
-      window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
+
+      await flightControlApi.bindSession(mission.missionId, deviceId).catch(
+        () => undefined,
+      )
+      if (data?.status !== 'READY_TO_FLY') {
+        const completedPreflight = await missionApi.runPreflightCheck(
+          mission.missionId,
+          deviceId,
+        )
+        const tokenValue = completedPreflight.flightToken?.tokenValue
+        if (tokenValue) {
+          window.sessionStorage.setItem(
+            backendPreflightTokenStorageKey(mission.missionId, deviceId),
+            tokenValue,
+          )
+        }
+      }
+      await missionApi.handoverMyMission(mission.missionId)
       setConfirmed(true)
-      window.location.hash = operatorHref({
-        screen: 'flight',
-        missionId: mission.missionId,
-      })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.confirmFailed)
     } finally {
       setSubmitting(false)
     }
-  }
-
-  function handleRevoke() {
-    if (mission.missionId)
-      window.sessionStorage.removeItem(
-        `fieldwise.operator.handoverAcknowledged.${mission.missionId}`,
-      )
-    setRevoked(true)
-    setConfirmed(false)
-    setAck(false)
-    setChecked([false, false, false, false])
   }
 
   return (
@@ -126,10 +110,7 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
           {revoked ? (
             <RevokedBanner onReconfirm={() => setRevoked(false)} />
           ) : confirmed ? (
-            <ConfirmedBanner
-              missionId={mission.missionId}
-              onRevoke={handleRevoke}
-            />
+            <ConfirmedBanner />
           ) : (
             <>
               <div className="odm-card">

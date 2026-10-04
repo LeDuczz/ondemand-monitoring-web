@@ -27,8 +27,8 @@ export const OPERATOR_FLOW_SCREENS = [
   'preflight',
   'handover',
   'flight',
-  'upload',
   'postflight',
+  'upload',
 ] as const
 
 type OperatorFlowScreen = (typeof OPERATOR_FLOW_SCREENS)[number]

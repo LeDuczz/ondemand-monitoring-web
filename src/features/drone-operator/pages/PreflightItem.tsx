@@ -22,21 +22,14 @@ export function preflightGroups(
         { key: 'battery', ...t.items.battery, code: 'battery_ok' },
         { key: 'camera', ...t.items.camera, code: 'camera_ok' },
         { key: 'lidar', ...t.items.lidar, code: 'lidar_ok' },
-        { key: 'modules', ...t.items.modules, code: 'modules_ok' },
       ],
     },
     {
       title: t.groups.connection,
       items: [
-        { key: 'gazebo', ...t.items.gazebo, code: 'gazebo_ok' },
         { key: 'px4', ...t.items.px4, code: 'px4_ok' },
         { key: 'mavsdk', ...t.items.mavsdk, code: 'mavsdk_ok' },
         { key: 'px4Control', ...t.items.px4Control, code: 'px4_control_ok' },
-        {
-          key: 'localPosition',
-          ...t.items.localPosition,
-          code: 'local_position_ok',
-        },
         {
           key: 'mavsdkHealth',
           ...t.items.mavsdkHealth,

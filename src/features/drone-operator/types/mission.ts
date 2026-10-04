@@ -16,11 +16,16 @@ export type OperatorMission = {
   serviceLabel: string
   deviceId?: string | null
   deviceCode?: string | null
+  deviceSerialNumber?: string | null
+  deviceStatus?: string | null
+  deviceModelCode?: string | null
+  deviceManufacturer?: string | null
   droneCode: string | null
   droneName: string | null
   flightStartedAt?: string
   completedAt?: string
   managerSubmissionStatus?: 'NEEDS_SUBMIT' | 'PENDING_MANAGER' | 'SENT_TO_CUSTOMER'
+  permissions?: OperatorMissionPermissions
   rejectReason?: string
   acceptedAt?: string
   managerNote?: string
@@ -44,6 +49,14 @@ export type OperatorMission = {
   droneReadinessPct?: number
   droneHoursSinceMaintenance?: number
   planSummary?: OperatorMissionPlanSummary
+}
+
+export type OperatorMissionPermissions = {
+  canControlFlight: boolean
+  canOperatePayload: boolean
+  canInspectDevice: boolean
+  canMaintainDevice: boolean
+  canUploadMedia: boolean
 }
 
 export type OperatorMissionPlanSummary = {

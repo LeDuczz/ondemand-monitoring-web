@@ -14,8 +14,10 @@ export function mayPerformMissionAction(
   permissions: MissionPermissions,
   action: MissionAction,
 ): boolean {
-  if (action === 'preflight' || action === 'postflight')
-    return permissions.canInspectDevice
-  if (action === 'upload') return permissions.canUploadMedia
+  if (action === 'connect' || action === 'preflight' || action === 'handover')
+    return permissions.canOperatePayload
+  if (action === 'postflight') return permissions.canMaintainDevice
+  if (action === 'upload')
+    return permissions.canUploadMedia || permissions.canControlFlight
   return permissions.canControlFlight
 }

@@ -14,6 +14,13 @@ export type BackendMission = {
   droneId?: string | null
   deviceId?: string | null
   deviceCode?: string | null
+  deviceName?: string | null
+  deviceSerialNumber?: string | null
+  deviceStatus?: string | null
+  deviceModelCode?: string | null
+  deviceModelName?: string | null
+  deviceManufacturer?: string | null
+  devicePayload?: string | null
   droneCode?: string | null
   droneName?: string | null
   staffAssignments?: Array<{
@@ -26,6 +33,7 @@ export type BackendMission = {
   radiusMeters?: number | null
   address?: string | null
   scheduledStartAt?: string | null
+  scheduledEndAt?: string | null
   startedAt?: string | null
   completedAt?: string | null
   description?: string | null
@@ -150,14 +158,12 @@ export function toOperatorMission(
     source.scheduledStartAt ?? source.startedAt ?? source.completedAt
   const scheduled = localDateAndTime(start)
   const durationSeconds = source.plan?.plannedDurationSec
-  const end =
-    start && typeof durationSeconds === 'number'
-      ? localDateAndTime(
-          new Date(
-            new Date(start).getTime() + durationSeconds * 1000,
-          ).toISOString(),
-        )
-      : { time: '' }
+  const endSource =
+    source.scheduledEndAt ??
+    (start && typeof durationSeconds === 'number'
+      ? new Date(new Date(start).getTime() + durationSeconds * 1000).toISOString()
+      : null)
+  const end = localDateAndTime(endSource)
   const myResponseStatus =
     currentUserId
       ? source.staffAssignments?.find(
@@ -184,8 +190,14 @@ export function toOperatorMission(
     serviceLabel: source.serviceName ?? source.mediaType ?? '—',
     deviceId: source.deviceId ?? source.droneId ?? null,
     deviceCode: source.deviceCode ?? null,
+    deviceSerialNumber: source.deviceSerialNumber ?? null,
+    deviceStatus: source.deviceStatus ?? null,
+    deviceModelCode: source.deviceModelCode ?? null,
+    deviceManufacturer: source.deviceManufacturer ?? null,
     droneCode: source.droneCode ?? source.deviceCode ?? source.deviceId ?? null,
-    droneName: source.droneName ?? null,
+    droneName: source.droneName ?? source.deviceName ?? null,
+    droneModel: source.deviceModelName ?? undefined,
+    dronePayload: source.devicePayload ?? undefined,
     flightStartedAt: source.startedAt ?? undefined,
     completedAt: source.completedAt ?? undefined,
     rejectReason: source.rejectionReason ?? undefined,
@@ -263,7 +275,7 @@ export function toFlightMission(source: BackendMission): Mission {
     priority: 'NORMAL',
     droneId: source.deviceId ?? source.droneId ?? '',
     droneCode: source.droneCode ?? source.deviceCode ?? undefined,
-    droneName: source.droneName ?? undefined,
+    droneName: source.droneName ?? source.deviceName ?? undefined,
     operatorId: source.staffId ?? source.operatorId ?? '',
     customer: source.customerName ?? '',
     location: source.address ?? '',
@@ -284,14 +296,15 @@ export function toFlightMission(source: BackendMission): Mission {
 export function toFlightDrone(source: BackendMission): Drone {
   const id = source.deviceId ?? source.droneId ?? ''
   const code = source.droneCode ?? source.deviceCode ?? id
-  const name = source.droneName
-    ? `${code} ${source.droneName}`
+  const deviceName = source.droneName ?? source.deviceName
+  const name = deviceName
+    ? `${code} ${deviceName}`
     : code
   return {
     id,
     name,
-    model: 'Assigned mission device',
-    serialNumber: '',
+    model: source.deviceModelName ?? 'Assigned mission device',
+    serialNumber: source.deviceSerialNumber ?? '',
     state: source.status === 'IN_FLIGHT' ? 'ACTIVE_MISSION' : 'PREFLIGHT',
     battery: 0,
     gpsCount: 0,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { missionApi } from '../../mission/api/missionApi'
 import type { MissionPermissions } from '../../mission/types/permissions'
 import { MissionActionGuard } from './MissionActionGuard'
@@ -8,14 +8,14 @@ const permissions: MissionPermissions = {
   canRespond: false,
   canControlFlight: false,
   canOperatePayload: false,
-  canInspectDevice: true,
-  canMaintainDevice: false,
+  canInspectDevice: false,
+  canMaintainDevice: true,
   canUploadMedia: false,
 }
 afterEach(() => vi.restoreAllMocks())
 
 describe('mission action guard', () => {
-  it('does not render a flight screen for an inspector', async () => {
+  it('does not render a flight screen for a maintainer', async () => {
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(permissions)
     render(
       <MissionActionGuard missionId="m1" action="flight">
@@ -25,7 +25,7 @@ describe('mission action guard', () => {
     expect(await screen.findByRole('alert')).toBeTruthy()
     expect(screen.queryByText('Flight controls')).toBeNull()
   })
-  it('allows inspection independently of wizard progress', async () => {
+  it('allows postcheck independently of wizard progress', async () => {
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(permissions)
     render(
       <MissionActionGuard missionId="m1" action="postflight">
@@ -33,6 +33,25 @@ describe('mission action guard', () => {
       </MissionActionGuard>,
     )
     expect(await screen.findByText('Inspection form')).toBeTruthy()
+  })
+  it('guides a pilot away from operator-only connect steps into the cockpit', async () => {
+    window.location.hash = '#portal/staff/connect/m1'
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...permissions,
+      canControlFlight: true,
+      canInspectDevice: false,
+    })
+    render(
+      <MissionActionGuard missionId="m1" action="connect">
+        <div>Connect screen</div>
+      </MissionActionGuard>,
+    )
+
+    expect(await screen.findByText('Đang mở buồng lái')).toBeTruthy()
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#portal/staff/flight/m1'),
+    )
+    expect(screen.queryByText('Connect screen')).toBeNull()
   })
   it('fails closed if the backend denies permission', async () => {
     vi.spyOn(missionApi, 'getPermissions').mockRejectedValue(

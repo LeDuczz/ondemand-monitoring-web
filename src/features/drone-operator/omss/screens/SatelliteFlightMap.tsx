@@ -4,13 +4,14 @@ import 'leaflet/dist/leaflet.css'
 import { env } from '../../../../config/env'
 import {
   bearingDegrees,
-  buildAvoidanceRoute,
+  buildFlightPath,
   isRestrictedGpsZonePayload,
   isValidGps,
   type GpsPoint,
   type RestrictedGpsZone,
   withDefaultRestrictedGpsZones,
 } from './gpsRoutePlanner'
+import { SATELLITE_TILE_URL } from './satelliteSource'
 
 type GpsPosition = {
   latitude: number
@@ -38,14 +39,37 @@ function lerpGpsPoint(from: GpsPoint, to: GpsPoint, progress: number): GpsPoint 
 function droneArrowIcon(rotationDegrees: number) {
   return L.divIcon({
     className: 'satellite-drone-arrow-icon',
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
     html: `
       <div class="satellite-drone-arrow" style="transform: rotate(${rotationDegrees}deg)">
-        <svg viewBox="0 0 42 42" aria-hidden="true" focusable="false">
-          <circle cx="21" cy="21" r="17" fill="rgba(21, 101, 232, .2)" stroke="rgba(255,255,255,.75)" stroke-width="2"></circle>
-          <path d="M21 5 32 35 21 29 10 35Z" fill="#1565e8" stroke="#ffffff" stroke-width="2.8" stroke-linejoin="round"></path>
-          <circle cx="21" cy="21" r="3.2" fill="#ffffff"></circle>
+        <svg viewBox="0 0 60 60" aria-hidden="true" focusable="false">
+          <circle class="satellite-drone-pulse" cx="30" cy="30" r="27" fill="rgba(21,101,232,.18)" stroke="rgba(255,255,255,.6)" stroke-width="1.5"></circle>
+          <path d="M17 17 43 43M43 17 17 43" stroke="#0f172a" stroke-width="5" stroke-linecap="round"></path>
+          <path d="M17 17 43 43M43 17 17 43" stroke="#475569" stroke-width="2.4" stroke-linecap="round"></path>
+          <g transform="translate(15 15)">
+            <circle r="11" fill="rgba(15,23,42,.35)" stroke="#e2e8f0" stroke-width="1.6"></circle>
+            <g class="satellite-drone-rotor" style="animation-duration:0.5s"><rect x="-10" y="-1.6" width="20" height="3.2" rx="1.6" fill="#f8fafc"></rect><rect x="-1.6" y="-10" width="3.2" height="20" rx="1.6" fill="#f8fafc" opacity=".55"></rect></g>
+            <circle r="2.2" fill="#1e293b"></circle>
+          </g>
+          <g transform="translate(45 15)">
+            <circle r="11" fill="rgba(15,23,42,.35)" stroke="#e2e8f0" stroke-width="1.6"></circle>
+            <g class="satellite-drone-rotor" style="animation-duration:0.55s"><rect x="-10" y="-1.6" width="20" height="3.2" rx="1.6" fill="#f8fafc"></rect><rect x="-1.6" y="-10" width="3.2" height="20" rx="1.6" fill="#f8fafc" opacity=".55"></rect></g>
+            <circle r="2.2" fill="#1e293b"></circle>
+          </g>
+          <g transform="translate(15 45)">
+            <circle r="11" fill="rgba(15,23,42,.35)" stroke="#e2e8f0" stroke-width="1.6"></circle>
+            <g class="satellite-drone-rotor" style="animation-duration:0.55s"><rect x="-10" y="-1.6" width="20" height="3.2" rx="1.6" fill="#f8fafc"></rect><rect x="-1.6" y="-10" width="3.2" height="20" rx="1.6" fill="#f8fafc" opacity=".55"></rect></g>
+            <circle r="2.2" fill="#1e293b"></circle>
+          </g>
+          <g transform="translate(45 45)">
+            <circle r="11" fill="rgba(15,23,42,.35)" stroke="#e2e8f0" stroke-width="1.6"></circle>
+            <g class="satellite-drone-rotor" style="animation-duration:0.5s"><rect x="-10" y="-1.6" width="20" height="3.2" rx="1.6" fill="#f8fafc"></rect><rect x="-1.6" y="-10" width="3.2" height="20" rx="1.6" fill="#f8fafc" opacity=".55"></rect></g>
+            <circle r="2.2" fill="#1e293b"></circle>
+          </g>
+          <rect x="24" y="21" width="12" height="18" rx="6" fill="#1565e8" stroke="#ffffff" stroke-width="2"></rect>
+          <circle cx="30" cy="33" r="3" fill="#0f172a" stroke="#93c5fd" stroke-width="1.2"></circle>
+          <path d="M30 4 35 12H25Z" fill="#f97316" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"></path>
         </svg>
       </div>
     `,
@@ -64,13 +88,16 @@ export function SatelliteFlightMap({ missionId, target, drone }: Props) {
   const trackPoints = useRef<L.LatLngExpression[]>([])
   const displayedDronePoint = useRef<GpsPoint | null>(null)
   const droneAnimationFrame = useRef<number | null>(null)
+  const lastDroneUpdateAt = useRef<number | null>(null)
   const centeredOnDrone = useRef(false)
 
   useEffect(() => {
     if (!container.current) return
     const instance = L.map(container.current, { zoomControl: true }).setView([0, 0], 2)
+    instance.zoomControl.setPosition('topright')
+    L.control.scale({ imperial: false, position: 'topright', maxWidth: 140 }).addTo(instance)
     L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      SATELLITE_TILE_URL,
       {
         maxZoom: 19,
         attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, GIS User Community',
@@ -196,9 +223,16 @@ export function SatelliteFlightMap({ missionId, target, drone }: Props) {
     const previousPoint = Array.isArray(previous)
       ? { latitude: Number(previous[0]), longitude: Number(previous[1]) }
       : null
-    const heading = isValidGps(target) ? bearingDegrees(currentPoint, target) : 0
+    const flightPath = isValidGps(target) ? buildFlightPath(currentPoint, target, zones.current) : []
+    const heading = flightPath.length > 1 ? bearingDegrees(currentPoint, flightPath[1]) : 0
+    // Rotate the existing icon in place. Replacing the icon (setIcon) rebuilt the DOM on every
+    // frame, which was expensive and restarted the rotor animation.
+    const setMarkerHeading = (deg: number) => {
+      const el = droneMarker.current?.getElement()?.querySelector<HTMLElement>('.satellite-drone-arrow')
+      if (el) el.style.transform = `rotate(${deg}deg)`
+    }
     if (droneMarker.current) {
-      droneMarker.current.setIcon(droneArrowIcon(heading))
+      setMarkerHeading(heading)
     }
     else {
       droneMarker.current = L.marker(point, {
@@ -206,26 +240,39 @@ export function SatelliteFlightMap({ missionId, target, drone }: Props) {
         zIndexOffset: 1000,
       }).addTo(map.current).bindTooltip('PX4 drone')
     }
+    // Animate over the time we expect until the next telemetry sample (the last measured
+    // interval), so the marker glides continuously instead of "move 0.5s, then stand still".
+    const updateAt = window.performance.now()
+    const measuredIntervalMs = lastDroneUpdateAt.current === null ? 600 : updateAt - lastDroneUpdateAt.current
+    lastDroneUpdateAt.current = updateAt
+    const durationMs = Math.max(250, Math.min(3000, measuredIntervalMs))
     const animationStart = displayedDronePoint.current ?? previousPoint ?? currentPoint
     if (droneAnimationFrame.current !== null) window.cancelAnimationFrame(droneAnimationFrame.current)
     if (!sameGpsPoint(animationStart, currentPoint)) {
-      const startedAt = window.performance.now()
-      const durationMs = 550
+      const startedAt = updateAt
+      let lastRouteAt = 0
       const animate = (now: number) => {
         const progress = Math.min(1, (now - startedAt) / durationMs)
         const nextPoint = lerpGpsPoint(animationStart, currentPoint, progress)
         const nextLatLng: L.LatLngExpression = [nextPoint.latitude, nextPoint.longitude]
         droneMarker.current?.setLatLng(nextLatLng)
-        if (isValidGps(target)) {
-          droneMarker.current?.setIcon(droneArrowIcon(bearingDegrees(nextPoint, target)))
-        }
         displayedDronePoint.current = nextPoint
-        if (isValidGps(target)) {
-          const route = buildAvoidanceRoute(nextPoint, target, zones.current)
+        // Route planning is the costly part: refresh it ~8x per second, not every frame.
+        if (isValidGps(target) && (now - lastRouteAt >= 120 || progress >= 1)) {
+          lastRouteAt = now
+          const route = buildFlightPath(nextPoint, target, zones.current)
+          setMarkerHeading(route.length > 1 ? bearingDegrees(nextPoint, route[1]) : 0)
           targetLine.current?.setLatLngs(route.map((routePoint) => [routePoint.latitude, routePoint.longitude]))
         }
         if (progress < 1) droneAnimationFrame.current = window.requestAnimationFrame(animate)
-        else droneAnimationFrame.current = null
+        else {
+          droneAnimationFrame.current = null
+          // keep the drone on screen while it flies
+          const instance = map.current
+          if (instance && !instance.getBounds().pad(-0.2).contains(nextLatLng)) {
+            instance.panTo(nextLatLng, { animate: true, duration: 0.8 })
+          }
+        }
       }
       droneAnimationFrame.current = window.requestAnimationFrame(animate)
     } else {
@@ -238,7 +285,7 @@ export function SatelliteFlightMap({ missionId, target, drone }: Props) {
       track.current?.setLatLngs(trackPoints.current)
     }
     if (isValidGps(target)) {
-      const route = buildAvoidanceRoute(currentPoint, target, zones.current)
+      const route = buildFlightPath(currentPoint, target, zones.current)
       targetLine.current?.setLatLngs(route.map((routePoint) => [routePoint.latitude, routePoint.longitude]))
     }
     else targetLine.current?.setLatLngs([])

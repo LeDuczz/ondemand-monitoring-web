@@ -1,5 +1,4 @@
 import { useI18n } from '../../../shared/i18n'
-import { operatorHref } from '../routes'
 import { handoverBannersMessages } from './HandoverBanners.messages'
 
 export function RevokedBanner({ onReconfirm }: { onReconfirm: () => void }) {
@@ -52,13 +51,7 @@ export function RevokedBanner({ onReconfirm }: { onReconfirm: () => void }) {
   )
 }
 
-export function ConfirmedBanner({
-  missionId,
-  onRevoke,
-}: {
-  missionId?: string
-  onRevoke: () => void
-}) {
+export function ConfirmedBanner() {
   const { t } = useI18n(handoverBannersMessages)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -76,22 +69,7 @@ export function ConfirmedBanner({
         }}
       >
         <span>{t.confirmedText}</span>
-        <a
-          className="odm-btn odm-btn-sm"
-          href={operatorHref({ screen: 'flight', missionId })}
-        >
-          {t.continueToCockpit}
-        </a>
       </div>
-      {/* Demo-only affordance to exercise the REVOKED state without a real dispatcher action. */}
-      <button
-        type="button"
-        className="odm-btn"
-        style={{ alignSelf: 'flex-start', fontSize: 11.5, color: 'var(--tx3)' }}
-        onClick={onRevoke}
-      >
-        {t.demoRevoke}
-      </button>
     </div>
   )
 }

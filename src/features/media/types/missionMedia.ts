@@ -28,6 +28,11 @@ export interface UploadedMissionMediaPage {
   last: boolean
 }
 
+export type MissionMediaReviewStatus =
+  | 'PENDING_MANAGER_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+
 export interface MissionMediaReader {
   list(
     missionId: string,

@@ -54,4 +54,37 @@ describe('live mission mapping', () => {
     expect(mapped.myResponseStatus).toBe('ACCEPTED')
     expect(mapped.status).toBe('ACCEPTED')
   })
+
+  it('maps the manager scheduled end time for operator mission detail', () => {
+    const mapped = toOperatorMission({
+      ...mission,
+      scheduledStartAt: '2026-10-05T00:35:00.000Z',
+      scheduledEndAt: '2026-10-05T02:05:00.000Z',
+    })
+
+    expect(mapped.startTime).toBe('07:35')
+    expect(mapped.endTime).toBe('09:05')
+  })
+
+  it('maps assigned device database fields for mission detail', () => {
+    const mapped = toOperatorMission({
+      ...mission,
+      droneName: null,
+      deviceName: 'Drone test 0054',
+      deviceSerialNumber: 'SN-0054',
+      deviceStatus: 'AVAILABLE',
+      deviceModelCode: 'ASTAR-X1',
+      deviceModelName: 'A* Monitoring Drone X1',
+      deviceManufacturer: 'OnDemand Monitor',
+      devicePayload: '4K camera',
+    })
+
+    expect(mapped.droneName).toBe('Drone test 0054')
+    expect(mapped.deviceSerialNumber).toBe('SN-0054')
+    expect(mapped.deviceStatus).toBe('AVAILABLE')
+    expect(mapped.deviceModelCode).toBe('ASTAR-X1')
+    expect(mapped.deviceManufacturer).toBe('OnDemand Monitor')
+    expect(mapped.droneModel).toBe('A* Monitoring Drone X1')
+    expect(mapped.dronePayload).toBe('4K camera')
+  })
 })

@@ -52,14 +52,25 @@ export const operatorApi = {
     const items = await Promise.all(
       missions.map(async (mission) => {
         const item = toOperatorMission(mission, currentUserId)
-        if (item.status !== 'COMPLETED' && item.status !== 'FAILED') {
-          return item
+        const permissions = await missionApi
+          .getPermissions(mission.id)
+          .then((value) => ({
+            canControlFlight: value.canControlFlight,
+            canOperatePayload: value.canOperatePayload,
+            canInspectDevice: value.canInspectDevice,
+            canMaintainDevice: value.canMaintainDevice,
+            canUploadMedia: value.canUploadMedia,
+          }))
+          .catch(() => undefined)
+        const itemWithPermissions = permissions ? { ...item, permissions } : item
+        if (itemWithPermissions.status !== 'COMPLETED' && itemWithPermissions.status !== 'FAILED') {
+          return itemWithPermissions
         }
 
         try {
           const result = await missionApi.getMissionResult(mission.id)
           return {
-            ...item,
+            ...itemWithPermissions,
             managerSubmissionStatus:
               result?.approvalStatus === 'APPROVED'
                 ? 'SENT_TO_CUSTOMER'
@@ -69,7 +80,7 @@ export const operatorApi = {
           } satisfies OperatorMission
         } catch {
           return {
-            ...item,
+            ...itemWithPermissions,
             managerSubmissionStatus: 'NEEDS_SUBMIT',
           } satisfies OperatorMission
         }

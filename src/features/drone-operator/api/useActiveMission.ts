@@ -10,6 +10,7 @@ import {
 
 export function isSelectableMission(status?: string | null) {
   return (
+    status === 'PENDING_REVIEW' ||
     status === 'POSTFLIGHT_CHECKING' ||
     status === 'RETURNING' ||
     status === 'IN_FLIGHT' ||
@@ -25,6 +26,15 @@ export function isSelectableMission(status?: string | null) {
 
 function hasAssignedDevice(mission?: BackendMission) {
   return Boolean(mission?.deviceId)
+}
+
+function isPostflightReviewMission(status?: string | null) {
+  return (
+    status === 'PENDING_REVIEW' ||
+    status === 'POSTFLIGHT_CHECKING' ||
+    status === 'RETURNING' ||
+    status === 'COMPLETED'
+  )
 }
 
 export function mergeMissionSnapshot(
@@ -58,9 +68,9 @@ export function useActiveMission(paramMissionId?: string) {
 
   const allMissions = myMissionsQuery.data || []
 
-  // Candidate missions in active or postflight statuses
+  // Candidate missions that can resume or review the postflight handoff.
   const postflightMissions = allMissions.filter(
-    (m) => m.status === 'POSTFLIGHT_CHECKING' || m.status === 'RETURNING',
+    (m) => isPostflightReviewMission(m.status),
   )
   const activeMissions = allMissions.filter((m) =>
     isSelectableMission(m.status),
@@ -78,7 +88,9 @@ export function useActiveMission(paramMissionId?: string) {
     !targetId &&
     selectedId &&
     allMissions.some(
-      (m) => m.id === selectedId && isSelectableMission(m.status),
+      (m) =>
+        m.id === selectedId &&
+        (isSelectableMission(m.status) || isPostflightReviewMission(m.status)),
     )
   ) {
     targetId = selectedId

@@ -13,6 +13,7 @@ import { HCMC_SERVICE_CENTER } from '../../../shared/lib/serviceArea'
 import { env } from '../../../config/env'
 import { authenticatedFetch } from '../../auth/api/authApi'
 import { missionApi } from '../../mission/api/missionApi'
+import type { MissionResultApprovalStatus } from '../../mission/types/mission'
 import { operatorApi } from '../api/operatorApi'
 import { setActiveMissionId } from '../api/liveMission'
 import { formatDeviceLabel } from '../lib/deviceLabel'
@@ -41,6 +42,38 @@ const STATUS_LABEL: Record<OperatorMission['status'], string> = {
   COMPLETED: 'Hoàn thành',
   REJECTED: 'Bị từ chối',
   FAILED: 'Không hoàn thành',
+}
+
+const GCS_CONNECTED_STATUSES = new Set([
+  'PENDING_REVIEW',
+  'CONNECTED',
+  'PREFLIGHT_CHECKING',
+  'READY_TO_FLY',
+  'IN_FLIGHT',
+  'IN_PROGRESS',
+  'RETURNING',
+  'POSTFLIGHT_CHECKING',
+  'COMPLETED',
+])
+
+const INSPECTION_MEDIA_STATUSES = new Set([
+  'PENDING_REVIEW',
+  'RETURNING',
+  'POSTFLIGHT_CHECKING',
+  'COMPLETED',
+])
+
+function missionProgressBadge(status?: string | null) {
+  if (status === 'CONNECTED') {
+    return { tone: 'blue' as const, label: 'Quy trình: đã kết nối GCS' }
+  }
+  if (status === 'PREFLIGHT_CHECKING') {
+    return { tone: 'blue' as const, label: 'Quy trình: đang preflight' }
+  }
+  if (status === 'READY_TO_FLY') {
+    return { tone: 'green' as const, label: 'Quy trình: sẵn sàng bàn giao' }
+  }
+  return null
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -392,17 +425,15 @@ function formatHm(iso: string): string {
   return m ? `${m[1]}:${m[2]}` : ''
 }
 
-function formatMeters(value?: number | null): string {
-  if (value == null) return '—'
-  return value >= 1000
-    ? `${(value / 1000).toFixed(2)} km`
-    : `${Math.round(value)} m`
+function dash(value?: string | number | null): string {
+  if (value == null || value === '') return '—'
+  return String(value)
 }
 
-function formatSeconds(value?: number | null): string {
-  if (value == null) return '—'
-  const minutes = Math.max(1, Math.round(value / 60))
-  return `${minutes} phút`
+function formatCoord(value?: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(6)
+    : '—'
 }
 
 function missionDescriptionText(description: string | undefined): string {
@@ -420,29 +451,11 @@ function missionDescriptionText(description: string | undefined): string {
   return text
 }
 
-function waypointReasonLabel(value?: string | null): string {
-  if (!value) return 'Điểm bay'
-  if (value === 'START') return 'Điểm xuất phát'
-  if (value === 'TARGET') return 'Điểm giám sát'
-  if (value === 'CRUISE') return 'Điểm trung gian'
-  return value.replaceAll('_', ' ').toLowerCase()
-}
-
 function locationLabel(value: string): string {
   if (value === 'Construction Site') return 'Công trường'
   if (value === 'Dam') return 'Đập nước / hồ chứa'
   if (value === 'Warehouse') return 'Kho bãi'
   return value || 'Chưa có địa điểm'
-}
-
-function routeDurationNote(value?: number | null): string {
-  const duration = formatSeconds(value)
-  return `${duration} là thời gian bay ước tính từ điểm xuất phát đến vùng giám sát theo đường bay tự động.`
-}
-
-function altitudeNote(value?: number | null): string {
-  const altitude = formatMeters(value)
-  return `${altitude} là độ cao bay dự kiến của drone trong bản đồ mô phỏng.`
 }
 
 function statusTone(status?: RuntimeOverallStatus | WeatherCheckStatus) {
@@ -595,6 +608,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   const [resultSubmitted, setResultSubmitted] = useState(false)
   const [persistedResultSubmitted, setPersistedResultSubmitted] =
     useState(false)
+  const [resultApprovalStatus, setResultApprovalStatus] =
+    useState<MissionResultApprovalStatus | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
 
@@ -607,6 +622,7 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     if (!mission) return
     if (mission.status !== 'COMPLETED') {
       setPersistedResultSubmitted(false)
+      setResultApprovalStatus(null)
       return
     }
 
@@ -615,13 +631,17 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
       .getMissionResult(mission.id)
       .then((result) => {
         if (!active) return
+        setResultApprovalStatus(result?.approvalStatus ?? null)
         setPersistedResultSubmitted(
           result?.approvalStatus === 'PENDING_MANAGER_APPROVAL' ||
             result?.approvalStatus === 'APPROVED',
         )
       })
       .catch(() => {
-        if (active) setPersistedResultSubmitted(false)
+        if (active) {
+          setPersistedResultSubmitted(false)
+          setResultApprovalStatus(null)
+        }
       })
 
     return () => {
@@ -691,6 +711,9 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     setActionError(null)
     setResultMessage(null)
     try {
+      if (mission.backendStatus === 'PENDING_REVIEW') {
+        await missionApi.completeMission(mission.id)
+      }
       await missionApi.submitMissionResult(mission.id, {
         status: 'COMPLETED',
         startedAt: mission.flightStartedAt ?? null,
@@ -700,14 +723,14 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
           `Mission ${mission.missionCode ?? mission.id} đã hoàn thành.`,
           `Dịch vụ: ${mission.serviceLabel || 'Chưa rõ'}.`,
           `Địa điểm: ${mission.location || 'Chưa rõ'}.`,
-          `Quãng đường: ${formatMeters(mission.planSummary?.plannedDistanceM)}.`,
-          `Thời lượng dự kiến: ${formatSeconds(mission.planSummary?.plannedDurationSec)}.`,
-          `Waypoint: ${mission.planSummary?.waypointCount ?? mission.planSummary?.waypoints.length ?? 0}.`,
+          `Ngày bay: ${formatVnDate(mission.date)}.`,
+          `Vùng giám sát: ${mission.radiusMeters == null ? 'chưa rõ bán kính' : `bán kính ${mission.radiusMeters} m`}.`,
         ].join(' '),
-        notes: 'Kết quả mission được gửi từ phi công để manager duyệt.',
+        notes: 'Kết quả mission được nghiệm thu gửi cho manager duyệt.',
       })
       setResultSubmitted(true)
       setPersistedResultSubmitted(true)
+      setResultApprovalStatus('PENDING_MANAGER_APPROVAL')
       setResultMessage('Đã gửi kết quả mission cho manager duyệt.')
     } catch (error) {
       setActionError(
@@ -729,6 +752,7 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
         actionError={actionError}
         resultSubmitting={resultSubmitting}
         resultSubmitted={resultSubmitted || persistedResultSubmitted}
+        resultApprovalStatus={resultApprovalStatus}
         resultMessage={resultMessage}
         onAccept={handleAccept}
         onOpenReject={() => setShowReject(true)}
@@ -755,6 +779,7 @@ function MissionDashboard({
   actionError,
   resultSubmitting,
   resultSubmitted,
+  resultApprovalStatus,
   resultMessage,
   onAccept,
   onOpenReject,
@@ -765,6 +790,7 @@ function MissionDashboard({
   actionError: string | null
   resultSubmitting: boolean
   resultSubmitted: boolean
+  resultApprovalStatus: MissionResultApprovalStatus | null
   resultMessage: string | null
   onAccept: () => void
   onOpenReject: () => void
@@ -785,7 +811,7 @@ function MissionDashboard({
   const tabs: Array<{ id: 'overview' | 'checks' | 'media'; label: string }> = [
     { id: 'overview', label: 'Tổng quan' },
     { id: 'checks', label: 'Kiểm tra' },
-    ...(mission.status === 'COMPLETED'
+    ...(mission.status === 'COMPLETED' || mission.backendStatus === 'PENDING_REVIEW'
       ? [{ id: 'media' as const, label: 'Ảnh & video' }]
       : []),
   ]
@@ -883,15 +909,9 @@ function MissionDashboard({
         <div className="mds-tab-grid">
           <div className="mds-col">
             <MissionMapCard mission={mission} />
-            {mission.status === 'PENDING' ? null : (
-              <WaypointTableCard mission={mission} />
-            )}
           </div>
           <div className="mds-col mds-sticky-col">
             <MissionInfoCard mission={mission} />
-            {mission.status === 'PENDING' ? null : (
-              <FlightSummaryCard mission={mission} />
-            )}
             <DroneDeviceCard mission={mission} />
             {mission.managerNote ? <ManagerNoteCard mission={mission} /> : null}
           </div>
@@ -910,8 +930,11 @@ function MissionDashboard({
         </div>
       ) : null}
 
-      {tab === 'media' && mission.status === 'COMPLETED' ? (
-        <MissionUploadedMedia missionId={mission.id} />
+      {tab === 'media' && (mission.status === 'COMPLETED' || mission.backendStatus === 'PENDING_REVIEW') ? (
+        <MissionUploadedMedia
+          missionId={mission.id}
+          reviewStatus={resultApprovalStatus}
+        />
       ) : null}
     </div>
   )
@@ -943,6 +966,14 @@ function MissionHeader({
   const access =
     !permissions.loading && !permissions.error ? permissions.data : undefined
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
+  const progressBadge = missionProgressBadge(mission.backendStatus)
+  const canHandleInspectionMedia =
+    access?.canUploadMedia === true &&
+    (access?.canInspectDevice === true ||
+      INSPECTION_MEDIA_STATUSES.has(mission.backendStatus ?? ''))
+  const showProgressBadge =
+    progressBadge &&
+    !(access?.canInspectDevice === true || access?.canUploadMedia === true)
   return (
     <div className="mds-header">
       {/* Row 1: code + badge + actions */}
@@ -969,13 +1000,15 @@ function MissionHeader({
           {mission.missionCode ?? mission.id}
         </span>
         <StatusBadge tone={STATUS_TONE[mission.status]}>
-          {STATUS_LABEL[mission.status]}
+          {mission.backendStatus === 'PENDING_REVIEW' ? 'Chờ nghiệm thu' : STATUS_LABEL[mission.status]}
         </StatusBadge>
 
         {/* spacer */}
         <div style={{ flex: 1 }} />
 
-        {access?.canInspectDevice && mission.status !== 'IN_FLIGHT' && (
+        {access?.canOperatePayload &&
+          mission.status !== 'IN_FLIGHT' &&
+          !GCS_CONNECTED_STATUSES.has(mission.backendStatus ?? '') && (
           <a
             className="odm-btn"
             href={operatorHref({ screen: 'preflight', missionId: mission.id })}
@@ -997,14 +1030,19 @@ function MissionHeader({
               Kiểm tra sau bay
             </a>
           )}
-        {access?.canUploadMedia && mission.status === 'ACCEPTED' && (
+        {canHandleInspectionMedia && (
           <a
             className="odm-btn"
             href={operatorHref({ screen: 'upload', missionId: mission.id })}
           >
-            Media
+            Mở media nghiệm thu
           </a>
         )}
+        {showProgressBadge ? (
+          <StatusBadge tone={progressBadge.tone}>
+            {progressBadge.label}
+          </StatusBadge>
+        ) : null}
         {/* Action permissions come from the backend assignment policy. */}
         {mission.status === 'PENDING' && hasAccepted ? (
           <StatusBadge tone="green">Bạn đã chấp nhận</StatusBadge>
@@ -1027,7 +1065,17 @@ function MissionHeader({
               {submitting ? 'Đang xử lý...' : 'Chấp nhận'}
             </button>
           </>
-        ) : mission.status === 'ACCEPTED' && access?.canControlFlight ? (
+        ) : mission.backendStatus === 'READY_TO_FLY' &&
+          access?.canControlFlight ? (
+          <a
+            className="odm-btn odm-btn-p"
+            href={operatorHref({ screen: 'flight', missionId: mission.id })}
+          >
+            Mở buồng lái
+          </a>
+        ) : mission.status === 'ACCEPTED' &&
+          access?.canOperatePayload &&
+          !GCS_CONNECTED_STATUSES.has(mission.backendStatus ?? '') ? (
           <a
             className="odm-btn odm-btn-p"
             href={operatorHref({ screen: 'connect', missionId: mission.id })}
@@ -1053,7 +1101,7 @@ function MissionHeader({
               </a>
             )}
           </>
-        ) : mission.status === 'COMPLETED' ? (
+        ) : mission.status === 'COMPLETED' || mission.backendStatus === 'PENDING_REVIEW' ? (
           <>
             {resultSubmitted ? (
               <StatusBadge tone="green">Đã gửi manager</StatusBadge>
@@ -1070,7 +1118,7 @@ function MissionHeader({
                 ? 'Đang gửi...'
                 : resultSubmitted
                   ? 'Đã gửi manager'
-                  : 'Gửi manager duyệt'}
+                  : 'Hoàn tất nghiệm thu & gửi manager'}
             </button>
           </>
         ) : null}
@@ -1123,10 +1171,185 @@ function missionTargetGps(mission: OperatorMission) {
     return legacySimulationToGps(mission.targetX, mission.targetY)
   }
 
-  const routeTarget = mission.planSummary?.waypoints.at(-1)
-  return routeTarget
-    ? legacySimulationToGps(routeTarget.simX, routeTarget.simY)
-    : null
+  return null
+}
+
+type GpsPoint = { latitude: number; longitude: number }
+
+const TAN_SON_NHAT_NO_FLY_ZONE: GpsPoint[] = [
+  { longitude: 106.6348, latitude: 10.8079 },
+  { longitude: 106.6348, latitude: 10.8142 },
+  { longitude: 106.638, latitude: 10.8179 },
+  { longitude: 106.6479, latitude: 10.8212 },
+  { longitude: 106.6548, latitude: 10.8219 },
+  { longitude: 106.661, latitude: 10.8232 },
+  { longitude: 106.67, latitude: 10.8258 },
+  { longitude: 106.6741, latitude: 10.8271 },
+  { longitude: 106.6785, latitude: 10.8264 },
+  { longitude: 106.6748, latitude: 10.8244 },
+  { longitude: 106.6736, latitude: 10.8215 },
+  { longitude: 106.6731, latitude: 10.8188 },
+  { longitude: 106.6711, latitude: 10.8175 },
+  { longitude: 106.6683, latitude: 10.8151 },
+  { longitude: 106.6672, latitude: 10.8133 },
+  { longitude: 106.6661, latitude: 10.8098 },
+  { longitude: 106.6636, latitude: 10.8079 },
+  { longitude: 106.661, latitude: 10.809 },
+  { longitude: 106.6587, latitude: 10.8103 },
+  { longitude: 106.6514, latitude: 10.8095 },
+  { longitude: 106.6438, latitude: 10.8077 },
+  { longitude: 106.6376, latitude: 10.8066 },
+]
+
+const TSN_NO_FLY_LAT_LNGS: L.LatLngExpression[] =
+  TAN_SON_NHAT_NO_FLY_ZONE.map((point) => [
+    point.latitude,
+    point.longitude,
+  ])
+
+function orientation(a: GpsPoint, b: GpsPoint, c: GpsPoint) {
+  const value =
+    (b.longitude - a.longitude) * (c.latitude - a.latitude) -
+    (b.latitude - a.latitude) * (c.longitude - a.longitude)
+  if (Math.abs(value) < 1e-10) return 0
+  return value > 0 ? 1 : -1
+}
+
+function onSegment(a: GpsPoint, b: GpsPoint, c: GpsPoint) {
+  return (
+    Math.min(a.longitude, c.longitude) <= b.longitude + 1e-10 &&
+    b.longitude <= Math.max(a.longitude, c.longitude) + 1e-10 &&
+    Math.min(a.latitude, c.latitude) <= b.latitude + 1e-10 &&
+    b.latitude <= Math.max(a.latitude, c.latitude) + 1e-10
+  )
+}
+
+function segmentsIntersect(
+  a: GpsPoint,
+  b: GpsPoint,
+  c: GpsPoint,
+  d: GpsPoint,
+) {
+  const o1 = orientation(a, b, c)
+  const o2 = orientation(a, b, d)
+  const o3 = orientation(c, d, a)
+  const o4 = orientation(c, d, b)
+  if (o1 !== o2 && o3 !== o4) return true
+  if (o1 === 0 && onSegment(a, c, b)) return true
+  if (o2 === 0 && onSegment(a, d, b)) return true
+  if (o3 === 0 && onSegment(c, a, d)) return true
+  return o4 === 0 && onSegment(c, b, d)
+}
+
+function pointInsidePolygon(point: GpsPoint, polygon: GpsPoint[]) {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i]
+    const b = polygon[j]
+    const crosses =
+      a.latitude > point.latitude !== b.latitude > point.latitude &&
+      point.longitude <
+        ((b.longitude - a.longitude) * (point.latitude - a.latitude)) /
+          (b.latitude - a.latitude) +
+          a.longitude
+    if (crosses) inside = !inside
+  }
+  return inside
+}
+
+function segmentTouchesPolygon(a: GpsPoint, b: GpsPoint, polygon: GpsPoint[]) {
+  if (pointInsidePolygon(a, polygon) || pointInsidePolygon(b, polygon)) {
+    return true
+  }
+  return polygon.some((point, index) =>
+    segmentsIntersect(
+      a,
+      b,
+      point,
+      polygon[(index + 1) % polygon.length],
+    ),
+  )
+}
+
+function routeTouchesPolygon(route: GpsPoint[], polygon: GpsPoint[]) {
+  return route.some((point, index) => {
+    const next = route[index + 1]
+    return next ? segmentTouchesPolygon(point, next, polygon) : false
+  })
+}
+
+function routeDistance(route: GpsPoint[]) {
+  return route.reduce((total, point, index) => {
+    const next = route[index + 1]
+    if (!next) return total
+    const latM = (next.latitude - point.latitude) * 111_320
+    const lonM =
+      (next.longitude - point.longitude) *
+      111_320 *
+      Math.cos((point.latitude * Math.PI) / 180)
+    return total + Math.hypot(latM, lonM)
+  }, 0)
+}
+
+function avoidNoFlyRoute(home: GpsPoint, target: GpsPoint) {
+  const direct = [home, target]
+  if (!routeTouchesPolygon(direct, TAN_SON_NHAT_NO_FLY_ZONE)) return direct
+
+  const lats = TAN_SON_NHAT_NO_FLY_ZONE.map((point) => point.latitude)
+  const lons = TAN_SON_NHAT_NO_FLY_ZONE.map((point) => point.longitude)
+  const pad = 0.006
+  const north = Math.max(...lats) + pad
+  const south = Math.min(...lats) - pad
+  const east = Math.max(...lons) + pad
+  const west = Math.min(...lons) - pad
+  const candidates: GpsPoint[][] = [
+    [home, { latitude: north, longitude: west }, target],
+    [home, { latitude: north, longitude: east }, target],
+    [home, { latitude: south, longitude: west }, target],
+    [home, { latitude: south, longitude: east }, target],
+    [
+      home,
+      { latitude: south, longitude: east },
+      { latitude: north, longitude: east },
+      target,
+    ],
+    [
+      home,
+      { latitude: south, longitude: west },
+      { latitude: north, longitude: west },
+      target,
+    ],
+  ]
+  return (
+    candidates
+      .filter((route) => !routeTouchesPolygon(route, TAN_SON_NHAT_NO_FLY_ZONE))
+      .sort((a, b) => routeDistance(a) - routeDistance(b))[0] ?? direct
+  )
+}
+
+function routeMarkerIcon(label: string, color: string) {
+  return L.divIcon({
+    html: `<div style="
+      min-width:42px;
+      height:24px;
+      padding:0 8px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-sizing:border-box;
+      background:${color};
+      color:#fff;
+      border:2px solid #fff;
+      box-shadow:0 3px 10px rgba(15,23,42,.28);
+      font-size:10px;
+      font-weight:800;
+      line-height:1;
+    ">${label}</div>`,
+    className: 'mds-route-marker',
+    iconSize: [42, 24],
+    iconAnchor: [21, 12],
+  })
 }
 
 function useOperatorMissionMap(mission: OperatorMission) {
@@ -1134,9 +1357,18 @@ function useOperatorMissionMap(mission: OperatorMission) {
   const map = useRef<L.Map | null>(null)
   const marker = useRef<L.Marker | null>(null)
   const circle = useRef<L.Circle | null>(null)
+  const homeMarker = useRef<L.Marker | null>(null)
+  const targetMarker = useRef<L.Marker | null>(null)
+  const routeLine = useRef<L.Polyline | null>(null)
+  const noFlyZone = useRef<L.Polygon | null>(null)
   const target = missionTargetGps(mission)
   const targetLat = target?.latitude
   const targetLon = target?.longitude
+  const homePoint: GpsPoint = {
+    latitude: HCMC_SERVICE_CENTER.latitude,
+    longitude: HCMC_SERVICE_CENTER.longitude,
+  }
+  const home: L.LatLngExpression = [homePoint.latitude, homePoint.longitude]
 
   useEffect(() => {
     if (import.meta.env.MODE === 'test') return
@@ -1165,12 +1397,78 @@ function useOperatorMissionMap(mission: OperatorMission) {
       map.current = null
       marker.current = null
       circle.current = null
+      homeMarker.current = null
+      targetMarker.current = null
+      routeLine.current = null
+      noFlyZone.current = null
     }
   }, [targetLat, targetLon])
 
   useEffect(() => {
-    if (!map.current || !target) return
-    const point: L.LatLngExpression = [target.latitude, target.longitude]
+    if (!map.current) return
+    const point: L.LatLngExpression | null = target
+      ? [target.latitude, target.longitude]
+      : null
+
+    if (noFlyZone.current) {
+      noFlyZone.current.setLatLngs(TSN_NO_FLY_LAT_LNGS)
+    } else {
+      noFlyZone.current = L.polygon(TSN_NO_FLY_LAT_LNGS, {
+        color: '#dc2626',
+        fillColor: '#ef4444',
+        fillOpacity: 0.22,
+        weight: 2,
+      })
+        .addTo(map.current)
+        .bindTooltip('Vùng cấm bay sân bay Tân Sơn Nhất')
+    }
+
+    if (!target || !point) return
+    const targetPoint: GpsPoint = {
+      latitude: target.latitude,
+      longitude: target.longitude,
+    }
+    const route = avoidNoFlyRoute(homePoint, targetPoint)
+    const routeLatLngs = route.map(
+      (routePoint) =>
+        [routePoint.latitude, routePoint.longitude] as L.LatLngExpression,
+    )
+
+    if (homeMarker.current) {
+      homeMarker.current.setLatLng(home)
+    } else {
+      homeMarker.current = L.marker(home, {
+        icon: routeMarkerIcon('HOME', '#16a34a'),
+        keyboard: false,
+      })
+        .addTo(map.current)
+        .bindTooltip('Điểm xuất phát')
+    }
+
+    if (targetMarker.current) {
+      targetMarker.current.setLatLng(point)
+    } else {
+      targetMarker.current = L.marker(point, {
+        icon: routeMarkerIcon('TARGET', '#dc2626'),
+        keyboard: false,
+      })
+        .addTo(map.current)
+        .bindTooltip('Điểm giám sát')
+    }
+
+    if (routeLine.current) {
+      routeLine.current.setLatLngs(routeLatLngs)
+    } else {
+      routeLine.current = L.polyline(routeLatLngs, {
+        color: '#2563eb',
+        weight: 4,
+        opacity: 0.95,
+        dashArray: '8 8',
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(map.current)
+    }
+
     if (marker.current) {
       marker.current.setLatLng(point)
     } else {
@@ -1196,7 +1494,11 @@ function useOperatorMissionMap(mission: OperatorMission) {
       circle.current = null
     }
 
-    map.current.setView(point, 16)
+    const bounds = L.latLngBounds([home, point])
+    if (circle.current) bounds.extend(circle.current.getBounds())
+    if (routeLine.current) bounds.extend(routeLine.current.getBounds())
+    if (noFlyZone.current) bounds.extend(noFlyZone.current.getBounds())
+    map.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 16 })
   }, [targetLat, targetLon, mission.radiusMeters])
 
   return { container, target }
@@ -1263,421 +1565,45 @@ function MissionMapCard({ mission }: { mission: OperatorMission }) {
             Bán kính giám sát: {Math.round(mission.radiusMeters)} m
           </div>
         ) : null}
-      </div>
-    </div>
-  )
-}
 
-// ─── Waypoint table card ──────────────────────────────────────────────────────
-
-function WaypointTableCard({ mission }: { mission: OperatorMission }) {
-  const route = mission.planSummary?.waypoints ?? []
-  return (
-    <div className="odm-card" style={{ overflow: 'hidden' }}>
-      <div className="odm-card-header">
-        <span>Danh sách điểm bay</span>
-      </div>
-      <div
-        className="mds-waypoint-scroll"
-        style={{ maxHeight: 230, overflowY: 'auto' }}
-      >
-        <table className="odm-table" style={{ fontSize: 11.5 }}>
-          <thead>
-            <tr>
-              <th>Điểm</th>
-              <th>X mô phỏng</th>
-              <th>Y mô phỏng</th>
-              <th>Độ cao</th>
-              <th>Tốc độ</th>
-              <th>Vai trò</th>
-            </tr>
-          </thead>
-          <tbody>
-            {route.length > 0 ? (
-              route.map((point) => (
-                <tr key={point.id}>
-                  <td>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          flexShrink: 0,
-                          background:
-                            point.reason?.toUpperCase() === 'TARGET'
-                              ? '#ef4444'
-                              : point.reason?.toUpperCase() === 'START' ||
-                                  point.sequence === 0
-                                ? '#0f172a'
-                                : '#2563eb',
-                        }}
-                      />
-                      {point.sequence}
-                    </span>
-                  </td>
-                  <td>{point.simX.toFixed(2)}</td>
-                  <td>{point.simY.toFixed(2)}</td>
-                  <td>
-                    {point.altitudeM == null
-                      ? '—'
-                      : `${point.altitudeM.toFixed(1)} m`}
-                  </td>
-                  <td>
-                    {point.plannedSpeedMps == null
-                      ? '—'
-                      : `${point.plannedSpeedMps.toFixed(1)} m/s`}
-                  </td>
-                  <td>{waypointReasonLabel(point.reason)}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={6}
-                  style={{ color: 'var(--tx3)', textAlign: 'center' }}
-                >
-                  Chưa có dữ liệu kế hoạch mission.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-// ─── Flight summary card ──────────────────────────────────────────────────────
-
-function FlightSummaryCard({ mission }: { mission: OperatorMission }) {
-  const route = mission.planSummary?.waypoints ?? []
-  const startPoint = route[0]
-  const endPoint = route.at(-1)
-  const target =
-    typeof mission.targetX === 'number' && typeof mission.targetY === 'number'
-      ? { simX: mission.targetX, simY: mission.targetY }
-      : endPoint
-
-  const routeHighlights = route.filter(
-    (_p, i) => i === 0 || i === route.length - 1,
-  )
-  const intermediateCount = Math.max(0, route.length - 2)
-
-  return (
-    <div className="odm-card">
-      {/* Card header */}
-      <div className="odm-card-header">
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>Tóm tắt đường bay</div>
+        {target ? (
           <div
             style={{
-              fontWeight: 400,
-              fontSize: 11.5,
-              color: 'var(--tx3)',
-              marginTop: 1,
+              position: 'absolute',
+              left: 10,
+              top: 10,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: 'rgba(255,255,255,.94)',
+              color: 'var(--tx)',
+              fontSize: 12,
+              fontWeight: 700,
+              boxShadow: '0 2px 10px rgba(15,23,42,.12)',
+              zIndex: 500,
             }}
           >
-            Đường bay được tạo trên bản đồ mô phỏng
+            Đường bay: HOME → điểm giám sát
           </div>
-        </div>
-      </div>
+        ) : null}
 
-      <div className="odm-card-body">
-        {/* 2×2 metric grid */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 8,
-            marginBottom: 12,
-          }}
-        >
-          <FlightMetric
-            icon="📍"
-            label="Số điểm bay"
-            value={`${route.length}`}
-          />
-          <FlightMetric
-            icon="📏"
-            label="Quãng đường"
-            value={formatMeters(mission.planSummary?.plannedDistanceM)}
-          />
-          <FlightMetric
-            icon="⏱"
-            label="Thời gian ước tính"
-            value={formatSeconds(mission.planSummary?.plannedDurationSec)}
-          />
-          <FlightMetric
-            icon="🔺"
-            label="Độ cao dự kiến"
-            value={formatMeters(mission.planSummary?.maxPlannedAltitudeM)}
-          />
-        </div>
-
-        {/* Notes */}
-        <div
-          style={{
-            fontSize: 11.5,
-            color: 'var(--tx3)',
-            lineHeight: 1.5,
-            marginBottom: 14,
-            padding: '8px 10px',
-            background: 'var(--sf2)',
-            borderRadius: 6,
-            border: '1px solid var(--bd)',
-          }}
-        >
-          {routeDurationNote(mission.planSummary?.plannedDurationSec)}{' '}
-          {altitudeNote(mission.planSummary?.maxPlannedAltitudeM)}
-        </div>
-
-        {/* Tọa độ quan trọng */}
-        <div
-          style={{
+            position: 'absolute',
+            right: 10,
+            bottom: 10,
+            padding: '8px 12px',
+            borderRadius: 8,
+            background: 'rgba(254,242,242,.94)',
+            color: '#991b1b',
+            border: '1px solid rgba(239,68,68,.35)',
             fontSize: 12,
             fontWeight: 700,
-            marginBottom: 8,
-            color: 'var(--tx2)',
+            boxShadow: '0 2px 10px rgba(15,23,42,.12)',
+            zIndex: 500,
           }}
         >
-          Tọa độ quan trọng
+          Vùng cấm bay Tân Sơn Nhất
         </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            marginBottom: 14,
-          }}
-        >
-          {/* Start point */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '28px 1fr',
-              gap: 8,
-              alignItems: 'center',
-              padding: '10px 12px',
-              borderRadius: 8,
-              background: '#f8fafc',
-              border: '1px solid var(--bd)',
-            }}
-          >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: '#0f172a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: 13,
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-            >
-              H
-            </div>
-            <div>
-              <div
-                style={{
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  marginBottom: 2,
-                }}
-              >
-                Điểm xuất phát
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
-                {startPoint
-                  ? `X ${startPoint.simX.toFixed(1)} · Y ${startPoint.simY.toFixed(1)}`
-                  : '—'}
-                {startPoint?.altitudeM != null && (
-                  <span style={{ marginLeft: 8 }}>
-                    Độ cao: {startPoint.altitudeM.toFixed(1)} m
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Target point */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '28px 1fr',
-              gap: 8,
-              alignItems: 'center',
-              padding: '10px 12px',
-              borderRadius: 8,
-              background: '#fef2f2',
-              border: '1px solid rgba(239,68,68,.25)',
-            }}
-          >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: '#ef4444',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: 13,
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-            >
-              T
-            </div>
-            <div>
-              <div
-                style={{
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  color: '#b91c1c',
-                  marginBottom: 2,
-                }}
-              >
-                Điểm giám sát
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
-                {target
-                  ? `X ${target.simX.toFixed(1)} · Y ${target.simY.toFixed(1)}`
-                  : '—'}
-                {endPoint?.altitudeM != null && (
-                  <span style={{ marginLeft: 8 }}>
-                    Độ cao: {endPoint.altitudeM.toFixed(1)} m
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Lộ trình bay */}
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            marginBottom: 8,
-            color: 'var(--tx2)',
-          }}
-        >
-          Lộ trình bay
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 5,
-            maxHeight: 200,
-            overflowY: 'auto',
-          }}
-        >
-          {routeHighlights.length > 0 ? (
-            routeHighlights.map((point, index) => {
-              const isTarget = point.reason?.toUpperCase() === 'TARGET'
-              return (
-                <div
-                  key={`route-wrap-${point.id}`}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 5 }}
-                >
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '44px 1fr',
-                      gap: 8,
-                      alignItems: 'center',
-                      padding: '7px 10px',
-                      borderRadius: 7,
-                      background: isTarget ? '#fef2f2' : 'var(--sf2)',
-                      border: '1px solid var(--bd)',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: 800,
-                        fontSize: 12,
-                        color: isTarget ? '#b91c1c' : 'var(--blue-dot)',
-                      }}
-                    >
-                      WP {point.sequence}
-                    </span>
-                    <div>
-                      <div style={{ fontSize: 11.5, color: 'var(--tx2)' }}>
-                        Tọa độ X {point.simX.toFixed(1)} · Y{' '}
-                        {point.simY.toFixed(1)}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                        {waypointReasonLabel(point.reason)}
-                      </div>
-                    </div>
-                  </div>
-                  {index === 0 && intermediateCount > 0 ? (
-                    <div
-                      style={{
-                        padding: '4px 10px',
-                        color: 'var(--tx3)',
-                        fontSize: 11.5,
-                        textAlign: 'center',
-                      }}
-                    >
-                      ↓ {intermediateCount} điểm trung gian
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })
-          ) : (
-            <div style={{ color: 'var(--tx3)', fontSize: 12 }}>
-              Chưa có điểm bay.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FlightMetric({
-  icon,
-  label,
-  value,
-}: {
-  icon: string
-  label: string
-  value: string
-}) {
-  return (
-    <div
-      style={{
-        padding: '10px 12px',
-        borderRadius: 8,
-        border: '1px solid var(--bd)',
-        background: 'var(--sf2)',
-        display: 'flex',
-        gap: 8,
-        alignItems: 'flex-start',
-      }}
-    >
-      <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
-      <div>
-        <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 3 }}>
-          {label}
-        </div>
-        <div style={{ fontWeight: 800, fontSize: 15 }}>{value}</div>
       </div>
     </div>
   )
@@ -1696,6 +1622,16 @@ function MissionInfoCard({ mission }: { mission: OperatorMission }) {
       </div>
       <div className="odm-card-body" style={{ padding: '10px 14px' }}>
         <InfoRow
+          icon="#"
+          label="Mã mission"
+          value={mission.missionCode ?? mission.id}
+        />
+        <InfoRow
+          icon="•"
+          label="Trạng thái hệ thống"
+          value={mission.backendStatus ?? STATUS_LABEL[mission.status]}
+        />
+        <InfoRow
           icon="📅"
           label="Ngày bay"
           value={formatVnDate(mission.date)}
@@ -1706,6 +1642,11 @@ function MissionInfoCard({ mission }: { mission: OperatorMission }) {
           value={mission.startTime || 'Chưa lên lịch'}
         />
         <InfoRow
+          icon="⏳"
+          label="Giờ kết thúc"
+          value={mission.endTime || 'Chưa lên lịch'}
+        />
+        <InfoRow
           icon="📍"
           label="Địa điểm"
           value={locationLabel(mission.location)}
@@ -1714,6 +1655,16 @@ function MissionInfoCard({ mission }: { mission: OperatorMission }) {
           icon="🔵"
           label="Vùng giám sát"
           value={`Bán kính ${mission.radiusMeters == null ? '—' : `${mission.radiusMeters} m`}`}
+        />
+        <InfoRow
+          icon="◎"
+          label="Tọa độ GPS"
+          value={`${formatCoord(mission.latitude)}, ${formatCoord(mission.longitude)}`}
+        />
+        <InfoRow
+          icon="X"
+          label="Tọa độ mô phỏng"
+          value={`X ${dash(mission.targetX)} · Y ${dash(mission.targetY)}`}
         />
         <InfoRow icon="📋" label="Loại nhiệm vụ" value={mission.serviceLabel} />
 
@@ -1803,6 +1754,43 @@ function InfoRow({
 
 function DroneDeviceCard({ mission }: { mission: OperatorMission }) {
   const droneLabel = formatDeviceLabel(mission) ?? 'Chưa gán thiết bị'
+  const deviceInfoRows = [
+    { icon: '#', label: 'Device ID', value: mission.deviceId },
+    { icon: 'ID', label: 'Device code', value: mission.deviceCode },
+    { icon: 'SN', label: 'Serial', value: mission.deviceSerialNumber },
+    { icon: '●', label: 'Trạng thái', value: mission.deviceStatus },
+    { icon: 'DR', label: 'Drone code', value: mission.droneCode },
+    { icon: 'NM', label: 'Tên drone', value: mission.droneName },
+    { icon: 'MD', label: 'Model', value: mission.droneModel },
+    { icon: 'MC', label: 'Model code', value: mission.deviceModelCode },
+    { icon: 'MF', label: 'Hãng', value: mission.deviceManufacturer },
+    { icon: 'PL', label: 'Payload', value: mission.dronePayload },
+    { icon: 'ST', label: 'Trạm', value: mission.droneStation },
+    {
+      icon: '↔',
+      label: 'Khoảng cách trạm',
+      value:
+        mission.droneStationDistanceKm == null
+          ? null
+          : `${mission.droneStationDistanceKm} km`,
+    },
+    {
+      icon: '%',
+      label: 'Sẵn sàng',
+      value:
+        mission.droneReadinessPct == null
+          ? null
+          : `${mission.droneReadinessPct}%`,
+    },
+    {
+      icon: '⏱',
+      label: 'Giờ bay từ bảo trì',
+      value:
+        mission.droneHoursSinceMaintenance == null
+          ? null
+          : `${mission.droneHoursSinceMaintenance} giờ`,
+    },
+  ].filter((row) => row.value != null && String(row.value).trim() !== '')
 
   return (
     <div className="odm-card">
@@ -1883,6 +1871,24 @@ function DroneDeviceCard({ mission }: { mission: OperatorMission }) {
             )}
           </div>
         )}
+        {deviceInfoRows.length > 0 ? (
+          <div
+            style={{
+              marginTop: 10,
+              paddingTop: 10,
+              borderTop: '1px solid var(--bd)',
+            }}
+          >
+            {deviceInfoRows.map((row) => (
+              <InfoRow
+                key={`${row.icon}-${row.label}`}
+                icon={row.icon}
+                label={row.label}
+                value={String(row.value)}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   )

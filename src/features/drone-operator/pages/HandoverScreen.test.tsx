@@ -10,7 +10,7 @@ describe('HandoverScreen', () => {
     render(<HandoverScreen />)
     expect(screen.getByText('Bàn giao quyền điều khiển')).toBeTruthy()
     expect(
-      screen.getByText('Cam kết an toàn trước khi nhận quyền điều khiển'),
+      screen.getByText('Xác nhận bàn giao sau preflight'),
     ).toBeTruthy()
   })
 
@@ -19,7 +19,7 @@ describe('HandoverScreen', () => {
     act(() => setLanguage('en'))
     expect(screen.getByText('Control handover')).toBeTruthy()
     expect(
-      screen.getByText('Safety commitments before taking control'),
+      screen.getByText('Post-preflight handover confirmation'),
     ).toBeTruthy()
   })
 })

@@ -10,7 +10,7 @@ describe('PreflightScreen', () => {
     render(<PreflightScreen />)
     expect(screen.getByText('Preflight checklist')).toBeTruthy()
     expect(screen.getByText('Thiết bị')).toBeTruthy()
-    expect(screen.getByText('Trigger precheck')).toBeTruthy()
+    expect(screen.getByText('Bắt đầu kiểm tra')).toBeTruthy()
   })
 
   it('renders english chrome text when language is switched', () => {

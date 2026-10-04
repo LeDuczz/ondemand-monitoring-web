@@ -186,15 +186,51 @@ function expandedZoneVertices(zone: RestrictedGpsZone) {
   })
 }
 
+function zoneDetourCandidates(zone: RestrictedGpsZone) {
+  const openRing = zone.coordinates.filter((point, index, list) => {
+    if (index === list.length - 1) {
+      const first = list[0]
+      return first.latitude !== point.latitude || first.longitude !== point.longitude
+    }
+    return true
+  })
+  const lats = openRing.map((point) => point.latitude)
+  const lngs = openRing.map((point) => point.longitude)
+  const north = Math.max(...lats) + detourPaddingDeg
+  const south = Math.min(...lats) - detourPaddingDeg
+  const east = Math.max(...lngs) + detourPaddingDeg
+  const west = Math.min(...lngs) - detourPaddingDeg
+  const northWest = { latitude: north, longitude: west }
+  const northEast = { latitude: north, longitude: east }
+  const southEast = { latitude: south, longitude: east }
+  const southWest = { latitude: south, longitude: west }
+
+  return [
+    ...expandedZoneVertices(zone).map((point) => [point]),
+    [northWest],
+    [northEast],
+    [southEast],
+    [southWest],
+    [northWest, northEast],
+    [northEast, southEast],
+    [southEast, southWest],
+    [southWest, northWest],
+    [northWest, northEast, southEast],
+    [northEast, southEast, southWest],
+    [southEast, southWest, northWest],
+    [southWest, northWest, northEast],
+  ]
+}
+
 function routeLength(route: GpsPoint[]) {
   return route.slice(0, -1).reduce((sum, point, index) => sum + gpsDistanceMeters(point, route[index + 1]), 0)
 }
 
 function findDetour(from: GpsPoint, to: GpsPoint, zone: RestrictedGpsZone, zones: RestrictedGpsZone[]) {
-  return expandedZoneVertices(zone)
-    .map((candidate) => [from, candidate, to])
+  return zoneDetourCandidates(zone)
+    .map((candidates) => [from, ...candidates, to])
     .filter((route) => !routeCrossesAnyZone(route, zones))
-    .sort((a, b) => routeLength(a) - routeLength(b))[0]?.[1] ?? null
+    .sort((a, b) => routeLength(a) - routeLength(b))[0]?.slice(1, -1) ?? null
 }
 
 export function buildAvoidanceRoute(from: GpsPoint | null, to: GpsPoint | null, zones: RestrictedGpsZone[]) {
@@ -209,8 +245,8 @@ export function buildAvoidanceRoute(from: GpsPoint | null, to: GpsPoint | null, 
       if (!hitZone) continue
 
       const detour = findDetour(route[index], route[index + 1], hitZone, restrictedZones)
-      if (!detour) continue
-      route.splice(index + 1, 0, detour)
+      if (!detour?.length) continue
+      route.splice(index + 1, 0, ...detour)
       changed = true
       break
     }
@@ -218,4 +254,110 @@ export function buildAvoidanceRoute(from: GpsPoint | null, to: GpsPoint | null, 
   }
 
   return route
+}
+
+function polygonCentroid(zone: RestrictedGpsZone): GpsPoint {
+  const n = zone.coordinates.length || 1
+  return zone.coordinates.reduce(
+    (sum, point) => ({
+      latitude: sum.latitude + point.latitude / n,
+      longitude: sum.longitude + point.longitude / n,
+    }),
+    { latitude: 0, longitude: 0 },
+  )
+}
+
+// When the drone is already inside a no-fly zone, find the closest way out:
+// the nearest boundary point pushed slightly outside the zone.
+function findZoneExit(from: GpsPoint, zone: RestrictedGpsZone, zones: RestrictedGpsZone[]): GpsPoint | null {
+  const ring = zone.coordinates
+  let best: GpsPoint | null = null
+  let bestDist = Infinity
+  for (let i = 0; i < ring.length; i += 1) {
+    const a = ring[i]
+    const b = ring[(i + 1) % ring.length]
+    const dx = b.longitude - a.longitude
+    const dy = b.latitude - a.latitude
+    const lenSq = dx * dx + dy * dy
+    const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((from.longitude - a.longitude) * dx + (from.latitude - a.latitude) * dy) / lenSq))
+    const q = { longitude: a.longitude + t * dx, latitude: a.latitude + t * dy }
+    const dist = (q.longitude - from.longitude) ** 2 + (q.latitude - from.latitude) ** 2
+    if (dist < bestDist) {
+      bestDist = dist
+      best = q
+    }
+  }
+  if (!best) return null
+  const center = polygonCentroid(zone)
+  let dirLon = best.longitude - from.longitude
+  let dirLat = best.latitude - from.latitude
+  if (Math.hypot(dirLon, dirLat) < 1e-9) {
+    dirLon = best.longitude - center.longitude
+    dirLat = best.latitude - center.latitude
+  }
+  const norm = Math.hypot(dirLon, dirLat) || 1
+  for (let pad = detourPaddingDeg / 2; pad <= detourPaddingDeg * 4; pad *= 2) {
+    const exit = {
+      longitude: best.longitude + (dirLon / norm) * pad,
+      latitude: best.latitude + (dirLat / norm) * pad,
+    }
+    if (!zones.some((z) => isPointInPolygon(exit, z.coordinates))) return exit
+  }
+  return null
+}
+
+function chaikin(route: GpsPoint[], iterations: number) {
+  let current = route
+  for (let k = 0; k < iterations; k += 1) {
+    if (current.length < 3) return current
+    const next: GpsPoint[] = [current[0]]
+    for (let i = 0; i < current.length - 1; i += 1) {
+      const a = current[i]
+      const b = current[i + 1]
+      next.push(
+        { latitude: a.latitude * 0.75 + b.latitude * 0.25, longitude: a.longitude * 0.75 + b.longitude * 0.25 },
+        { latitude: a.latitude * 0.25 + b.latitude * 0.75, longitude: a.longitude * 0.25 + b.longitude * 0.75 },
+      )
+    }
+    next.push(current[current.length - 1])
+    current = next
+  }
+  return current
+}
+
+/**
+ * Execution path used by both the live map and the command payload. Keep this
+ * compact so the controller receives the same no-fly-zone route that the pilot sees.
+ */
+export function buildExecutableFlightRoute(from: GpsPoint | null, to: GpsPoint | null, zones: RestrictedGpsZone[]) {
+  if (!isValidGps(from) || !isValidGps(to)) return []
+  const restrictedZones = withDefaultRestrictedGpsZones(zones)
+  const startZone = restrictedZones.find((zone) => isPointInPolygon(from, zone.coordinates))
+  const exit = startZone ? findZoneExit(from, startZone, restrictedZones) : null
+  const tail = buildAvoidanceRoute(exit ?? from, to, restrictedZones)
+  return exit ? [from, ...tail] : tail
+}
+
+/**
+ * Flight path used by the live map: leaves a no-fly zone if the drone is inside it,
+ * detours around any zone on the way to the target, then rounds the corners into a
+ * smooth S-shaped curve (falls back to the straight-edged detour if smoothing would
+ * clip a zone).
+ */
+export function buildFlightPath(from: GpsPoint | null, to: GpsPoint | null, zones: RestrictedGpsZone[]) {
+  const raw = buildExecutableFlightRoute(from, to, zones)
+  if (raw.length < 3) return raw
+
+  const restrictedZones = withDefaultRestrictedGpsZones(zones)
+  const startZone = isValidGps(from)
+    ? restrictedZones.find((zone) => isPointInPolygon(from, zone.coordinates))
+    : null
+  const exit = Boolean(startZone)
+  const smooth = chaikin(raw, 3)
+  const body = exit ? smooth.slice(1) : smooth
+  const clips = body.some((point, index) => {
+    const next = body[index + 1]
+    return next ? restrictedZones.some((zone) => segmentCrossesPolygon(point, next, zone.coordinates)) : false
+  })
+  return clips ? raw : smooth
 }

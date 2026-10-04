@@ -3,7 +3,8 @@ import { env } from '../../../../config/env'
 
 const baseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
-const STATUS_CACHE_MS = 2_000
+// Short cache: dedupes simultaneous callers but keeps live flight telemetry fresh (was 2s).
+const STATUS_CACHE_MS = 300
 
 let statusCache:
   | { fetchedAt: number; value: FlightControlStatus }
@@ -30,9 +31,11 @@ export type FlightControlStatus = {
   altitudeM?: number
   speedMps?: number
   batteryPercent?: number
+  rawPx4BatteryPercent?: number | null
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
   headingDeg?: number
   connection?: { grpcConnected?: boolean; px4Connected?: boolean }
+  freshness?: { px4BatteryAgeS?: number | null }
 }
 
 export const flightControlApi = {

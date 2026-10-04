@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useI18n } from '../../../shared/i18n'
+import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { operatorMediaApi, type LocalMedia } from '../../media/api/operatorMediaApi'
 import { operatorMissionMediaApi } from '../../media/api/operatorMissionMediaApi'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
-import { PcBackupPicker } from '../../media/components/PcBackupPicker'
 import { missionApi } from '../../mission/api/missionApi'
+import { PcBackupPicker } from '../../media/components/PcBackupPicker'
 import { getActiveMissionId, markActiveMissionFlowStep, setActiveMissionId } from '../api/liveMission'
 import { useActiveMission } from '../api/useActiveMission'
 import { formatDeviceLabel } from '../lib/deviceLabel'
@@ -16,9 +17,6 @@ import { FlightStepHeader } from './FlightStepper'
 import { MediaTable } from './MediaTable'
 import { uploadMediaScreenMessages } from './UploadMediaScreen.messages'
 
-const postflightTelemetryKey = (missionId: string) =>
-  `fieldwise.operator.postflightTelemetry.${missionId}`
-
 const finishedUploadStatuses = new Set(['PENDING_MANAGER_APPROVAL', 'AVAILABLE'])
 const visibleAfterControllerDropStatuses = new Set(['UPLOADING', 'VALIDATING', 'PENDING_MANAGER_APPROVAL', 'AVAILABLE'])
 
@@ -28,14 +26,18 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
   const [fallbackMissionId] = useState(() => getActiveMissionId())
   const missionId = routeMissionId ?? fallbackMissionId
   const activeMission = useActiveMission(missionId ?? undefined)
+  const permissions = useApiQuery(
+    () =>
+      missionId
+        ? missionApi.getPermissions(missionId)
+        : Promise.reject(new Error('Select a mission first.')),
+    [missionId],
+  )
   const [items, setItems] = useState<LocalMedia[]>([])
   const [statuses, setStatuses] = useState<Record<string, string>>({})
   const [attemptNumbers, setAttemptNumbers] = useState<Record<string, number>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [postflightBusy, setPostflightBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Kept apart from `error`: the 10s media refresh clears `error`, which would hide this message.
-  const [postflightError, setPostflightError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   // Reference images (Mapillary) are stored by the backend directly, so they are already "uploaded".
   const [referenceCount, setReferenceCount] = useState(0)
@@ -51,7 +53,15 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
   const refresh = useCallback(async () => {
     if (!missionId) { setLoading(false); return }
     try {
-      const media = await operatorMediaApi.reviewItems(missionId)
+      const mission = activeMission.data
+      const deviceId = mission?.deviceId
+      if (deviceId) {
+        await flightControlApi.bindSession(missionId, deviceId).catch(() => undefined)
+      }
+      const media = await operatorMediaApi.reviewItems(
+        missionId,
+        mission?.missionCode ? [mission.missionCode] : [],
+      )
       const previous = itemsRef.current
       const ids = [...new Set([...media, ...previous].flatMap((item) => item.backendMediaId ? [item.backendMediaId] : []))]
       const results = await Promise.allSettled(ids.map((id) => operatorMediaApi.status(id)))
@@ -90,7 +100,7 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
     } finally {
       setLoading(false)
     }
-  }, [missionId, t])
+  }, [activeMission.data?.deviceId, activeMission.data?.missionCode, missionId, t])
 
   useEffect(() => {
     void refresh()
@@ -144,36 +154,6 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
     }
   }
 
-  async function continueToPostflight() {
-    if (!missionId || postflightBusy) return
-    setPostflightBusy(true)
-    setPostflightError(null)
-    try {
-      const telemetrySnapshot = await flightControlApi.status().catch(() => null)
-      if (telemetrySnapshot) {
-        window.sessionStorage.setItem(postflightTelemetryKey(missionId), JSON.stringify(telemetrySnapshot))
-      }
-
-      let mission = await missionApi.getMissionById(missionId)
-      if (mission.status === 'IN_FLIGHT' || mission.status === 'IN_PROGRESS') {
-        mission = await missionApi.markReturning(missionId)
-      }
-      if (mission.status === 'RETURNING' || mission.status === 'CONNECTED' || mission.status === 'PREFLIGHT_CHECKING' || mission.status === 'READY_TO_FLY') {
-        mission = await missionApi.startPostflight(missionId)
-      }
-      if (mission.status !== 'POSTFLIGHT_CHECKING') {
-        throw new Error(t.notReadyForPostcheck(mission.status))
-      }
-
-      markActiveMissionFlowStep(missionId, 6)
-      window.location.hash = operatorHref({ screen: 'postflight', missionId })
-    } catch (cause) {
-      setPostflightError(cause instanceof Error ? cause.message : t.postcheckTransitionFailed)
-    } finally {
-      setPostflightBusy(false)
-    }
-  }
-
   const effectiveStatus = (item: LocalMedia) => (item.backendMediaId && statuses[item.backendMediaId]) || item.status
   const approvable = items.filter((item) => ['REVIEW_PENDING', 'UPLOAD_FAILED', 'RETRY_REQUIRED'].includes(effectiveStatus(item)))
   const files: MediaFile[] = items.map((item) => {
@@ -195,10 +175,14 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
   const deviceLabel = activeMission.data
     ? formatDeviceLabel(activeMission.data)
     : items[0]?.deviceId
+  const canManageMedia = permissions.data?.canUploadMedia === true
+  const backRoute = canManageMedia && missionId
+    ? operatorHref({ screen: 'missionDetail', missionId })
+    : operatorHref({ screen: 'flight', missionId: missionId ?? undefined })
 
   return (
     <div className="odm-card" style={{ marginBottom: 0 }}>
-      <FlightStepHeader title={t.stepTitle} missionId={missionId ?? t.openingMission} active={6}
+      <FlightStepHeader title={t.stepTitle} missionId={missionId ?? t.openingMission} active={7}
         right={<span style={{ padding: '6px 12px', borderRadius: 16, background: 'var(--sf3)', fontWeight: 700, fontSize: 13 }}>{deviceLabel ?? '—'}</span>} />
       <div style={{ padding: '18px 22px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -207,12 +191,10 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
               <div style={{ fontSize: 15, fontWeight: 700 }}>{t.summary(uploaded + referenceCount, files.length + referenceCount, uploading, manual)}</div>
               <div style={{ fontSize: 12.5, color: 'var(--tx3)', marginTop: 2 }}>{t.summaryNote}</div>
             </div>
-            <a className="odm-btn" href={operatorHref({ screen: 'flight', missionId: missionId ?? undefined })}>{t.backToCockpit}</a>
-            <button type="button" className="odm-btn odm-btn-ok" disabled={!missionId || postflightBusy} onClick={() => void continueToPostflight()}>
-              {postflightBusy ? t.completingMission : t.completeMission}
-            </button>
+            <a className="odm-btn" href={backRoute}>{canManageMedia ? t.backToResult : t.backToCockpit}</a>
             <button type="button" className="odm-btn" onClick={() => void refresh()}>{t.refresh}</button>
-            <button type="button" className="odm-btn odm-btn-p" disabled={!missionId || !!busyId}
+            {canManageMedia ? (
+              <button type="button" className="odm-btn odm-btn-p" disabled={!missionId || !!busyId}
                   onClick={() => {
                     void (async () => {
                       setUploadInfo(null)
@@ -227,10 +209,24 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
                       setUploadInfo('Đã upload xong các file đang chờ.')
                     })()
                   }}>{t.uploadAll}</button>
+            ) : (
+              <span
+                role="status"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 16,
+                  background: 'var(--sf3)',
+                  color: 'var(--tx2)',
+                  fontWeight: 700,
+                  fontSize: 12.5,
+                }}
+              >
+                {t.viewOnly}
+              </span>
+            )}
           </div>
           {!missionId && !loading && <p role="alert">{t.restoringMission}</p>}
           {uploadInfo && <p role="status" style={{ color: 'var(--green-fg, #15803d)', fontWeight: 600 }}>{uploadInfo}</p>}
-          {postflightError && <p role="alert" style={{ color: 'var(--red-fg)', fontWeight: 600 }}>{postflightError}</p>}
           {error && <p role="alert" style={{ color: 'var(--red-fg)' }}>{error}</p>}
           {loading && <p>{t.loadingMedia}</p>}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14 }}>
@@ -246,20 +242,32 @@ export function UploadMediaScreen({ missionId: routeMissionId }: { missionId?: s
                     <div className="odm-mono" style={{ fontWeight: 700, overflowWrap: 'anywhere' }}>{item.fileName}</div>
                     <div style={{ color: 'var(--tx3)', fontSize: 12, margin: '6px 0' }}>{item.mediaType} · {(item.fileSize / 1_000_000).toFixed(2)} MB · {status}</div>
                     {item.previewError && <p role="alert" style={{ color: 'var(--red-fg)' }}>{item.previewError}</p>}
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {status === 'MANUAL_UPLOAD_REQUIRED' && <button type="button" className="odm-btn odm-btn-p" disabled={!!busyId || item.localAvailable === false} onClick={() => void approve(item, true)}>Upload thủ công từ bản gốc</button>}
-                      <button type="button" className="odm-btn odm-btn-p" disabled={!!busyId || !canApprove} onClick={() => void approve(item)}>{busyId === item.localMediaId ? t.processing : t.approveUpload}</button>
-                      <button type="button" className="odm-btn" disabled={!!busyId || !(['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status) || finishedUploadStatuses.has(status))} onClick={() => void discard(item)}>{finishedUploadStatuses.has(status) ? t.deleteLocal : t.discard}</button>
-                    </div>
-                    {item.manualTaskId && ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(status) &&
+                    {canManageMedia ? (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {status === 'MANUAL_UPLOAD_REQUIRED' && <button type="button" className="odm-btn odm-btn-p" disabled={!!busyId || item.localAvailable === false} onClick={() => void approve(item, true)}>Upload thủ công từ bản gốc</button>}
+                        <button type="button" className="odm-btn odm-btn-p" disabled={!!busyId || !canApprove} onClick={() => void approve(item)}>{busyId === item.localMediaId ? t.processing : t.approveUpload}</button>
+                        <button type="button" className="odm-btn" disabled={!!busyId || !(['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status) || finishedUploadStatuses.has(status))} onClick={() => void discard(item)}>{finishedUploadStatuses.has(status) ? t.deleteLocal : t.discard}</button>
+                      </div>
+                    ) : null}
+                    {canManageMedia && item.manualTaskId && ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(status) &&
                       <PcBackupPicker contentType={item.contentType} disabled={!!busyId} onSelect={(file) => void uploadPc(item, file)} />}
                   </div>
                 </article>
               )
             })}
           </div>
-          <MediaTable files={files} retryingId={busyId} onRetry={(id) => { const item = items.find((entry) => entry.localMediaId === id); if (item) void approve(item, effectiveStatus(item) === 'MANUAL_UPLOAD_REQUIRED') }} />
-          {missionId ? <div style={{ marginTop: 18 }}><MissionUploadedMedia missionId={missionId} /></div> : null}
+          {canManageMedia ? (
+            <MediaTable
+              files={files}
+              retryingId={busyId}
+              onRetry={(id) => { const item = items.find((entry) => entry.localMediaId === id); if (item) void approve(item, effectiveStatus(item) === 'MANUAL_UPLOAD_REQUIRED') }}
+            />
+          ) : null}
+          {canManageMedia && missionId ? (
+            <div style={{ marginTop: 18 }}>
+              <MissionUploadedMedia missionId={missionId} />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

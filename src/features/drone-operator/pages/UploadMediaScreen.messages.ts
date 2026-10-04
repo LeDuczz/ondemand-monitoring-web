@@ -14,10 +14,10 @@ export const uploadMediaScreenMessages = defineMessages({
     summaryNote:
       'Ảnh/video vẫn ở Flight Controller cho đến khi duyệt hoặc xóa bản local.',
     backToCockpit: 'Quay lại buồng lái',
-    completingMission: 'Đang chuyển...',
-    completeMission: 'Complete mission',
+    backToResult: 'Quay lại kết quả',
     refresh: 'Làm mới',
     uploadAll: 'Upload tất cả',
+    viewOnly: 'Chỉ xem media',
     restoringMission: 'Đang khôi phục mission đang mở...',
     loadingMedia: 'Đang tải media…',
     confirmDiscard: (fileName: string) =>
@@ -29,9 +29,6 @@ export const uploadMediaScreenMessages = defineMessages({
     loadMediaFailed: 'Không tải được media trên Flight Controller',
     uploadFailed: 'Upload thất bại',
     deleteFailed: 'Không xóa được media',
-    notReadyForPostcheck: (status: string) =>
-      `Mission chưa sẵn sàng Postcheck (${status}).`,
-    postcheckTransitionFailed: 'Không chuyển được mission sang Postcheck',
   },
   en: {
     stepTitle: 'Upload media',
@@ -46,10 +43,10 @@ export const uploadMediaScreenMessages = defineMessages({
     summaryNote:
       'Photos/videos stay on the Flight Controller until approved or the local copy is discarded.',
     backToCockpit: 'Back to cockpit',
-    completingMission: 'Completing...',
-    completeMission: 'Complete mission',
+    backToResult: 'Back to results',
     refresh: 'Refresh',
     uploadAll: 'Upload all',
+    viewOnly: 'View only',
     restoringMission: 'Restoring the open mission...',
     loadingMedia: 'Loading media…',
     confirmDiscard: (fileName: string) =>
@@ -61,8 +58,5 @@ export const uploadMediaScreenMessages = defineMessages({
     loadMediaFailed: 'Could not load media from the Flight Controller',
     uploadFailed: 'Upload failed',
     deleteFailed: 'Could not delete the media',
-    notReadyForPostcheck: (status: string) =>
-      `Mission is not ready for postcheck (${status}).`,
-    postcheckTransitionFailed: 'Could not move the mission to postcheck',
   },
 })

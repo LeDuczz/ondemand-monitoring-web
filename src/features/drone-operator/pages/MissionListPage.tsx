@@ -343,6 +343,46 @@ function NextFlightCard({
   const dayLabel =
     mission.date === today ? t.today2 : start.toLocaleDateString(locale)
   const deviceLabel = formatDeviceLabel(mission)
+  const permissions = mission.permissions
+  const reviewAction =
+    permissions?.canInspectDevice ||
+    permissions?.canUploadMedia ||
+    permissions?.canMaintainDevice
+      ? permissions.canMaintainDevice &&
+        (mission.backendStatus === 'RETURNING' ||
+          mission.backendStatus === 'POSTFLIGHT_CHECKING')
+        ? {
+            label: t.inspect,
+            href: operatorHref({ screen: 'postflight', missionId: mission.id }),
+          }
+        : (mission.backendStatus === 'PENDING_REVIEW' || mission.backendStatus === 'COMPLETED') && permissions.canUploadMedia
+          ? {
+              label: t.reviewMedia,
+              href: operatorHref({ screen: 'upload', missionId: mission.id }),
+            }
+          : {
+              label: t.viewResult,
+              href: operatorHref({
+                screen: 'missionDetail',
+                missionId: mission.id,
+              }),
+            }
+      : null
+  const flightAction =
+    reviewAction ??
+    (permissions?.canControlFlight &&
+    (mission.backendStatus === 'READY_TO_FLY' ||
+      mission.backendStatus === 'IN_FLIGHT' ||
+      mission.backendStatus === 'IN_PROGRESS' ||
+      mission.backendStatus === 'RETURNING')
+      ? {
+          label: t.startFlight,
+          href: operatorHref({ screen: 'flight', missionId: mission.id }),
+        }
+      : {
+          label: t.startFlight,
+          href: operatorHref({ screen: 'connect', missionId: mission.id }),
+        })
 
   return (
     <div>
@@ -380,10 +420,10 @@ function NextFlightCard({
       <a
         className="odm-btn odm-btn-ok"
         style={{ width: '100%', justifyContent: 'center' }}
-        href={operatorHref({ screen: 'connect', missionId: mission.id })}
+        href={flightAction.href}
         onClick={() => setActiveMissionId(mission.id)}
       >
-        {t.startFlight}
+        {flightAction.label}
       </a>
     </div>
   )

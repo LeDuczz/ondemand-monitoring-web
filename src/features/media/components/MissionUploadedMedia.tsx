@@ -6,7 +6,10 @@ import {
   type UploadedMissionMediaPage,
 } from '../api/operatorMissionMediaApi'
 
-import type { MissionMediaReader } from '../types/missionMedia'
+import type {
+  MissionMediaReader,
+  MissionMediaReviewStatus,
+} from '../types/missionMedia'
 import './MissionUploadedMedia.css'
 
 const formatFileSize = (bytes: number) => {
@@ -31,19 +34,30 @@ const formatCapturedAt = (value: string | null) => {
 export function MissionUploadedMedia({
   missionId,
   reader = operatorMissionMediaApi,
+  reviewStatus,
 }: {
   missionId: string
   reader?: MissionMediaReader
+  reviewStatus?: MissionMediaReviewStatus | null
 }) {
-  return <Gallery key={missionId} missionId={missionId} reader={reader} />
+  return (
+    <Gallery
+      key={missionId}
+      missionId={missionId}
+      reader={reader}
+      reviewStatus={reviewStatus ?? null}
+    />
+  )
 }
 
 function Gallery({
   missionId,
   reader,
+  reviewStatus,
 }: {
   missionId: string
   reader: MissionMediaReader
+  reviewStatus: MissionMediaReviewStatus | null
 }) {
   const [page, setPage] = useState(0)
   const [revision, setRevision] = useState(0)
@@ -124,8 +138,12 @@ function Gallery({
               {data ? (
                 <span className="mission-media__count">{data.totalItems}</span>
               ) : null}
+              {reviewStatus ? <ReviewStatusBadge status={reviewStatus} /> : null}
             </div>
-            <p>Media đã được xác thực và lưu trữ thành công từ thiết bị bay.</p>
+            <p>
+              Ảnh/video operator đã gửi cho manager nghiệm thu. Manager có thể mở
+              từng media để kiểm tra trước khi duyệt.
+            </p>
           </div>
           <button
             type="button"
@@ -169,7 +187,7 @@ function Gallery({
               <Icon name="camera" width={28} height={28} aria-hidden="true" />
             </span>
             <strong>Chưa có media</strong>
-            <span>Nhiệm vụ chưa có kết quả ảnh/video. Dữ liệu sẽ hiển thị sau khi thiết bị bay tải lên.</span>
+            <span>Mission chưa có ảnh/video upload thành công.</span>
           </div>
         ) : null}
         {!loading && data ? (
@@ -204,6 +222,9 @@ function Gallery({
                   </button>
                   <div className="mission-media__card-body">
                     <h4 title={item.fileName}>{item.fileName}</h4>
+                    {reviewStatus ? (
+                      <ReviewStatusBadge status={reviewStatus} compact />
+                    ) : null}
                     <div className="mission-media__meta">
                       <span title={item.deviceId}>
                         <Icon
@@ -322,5 +343,33 @@ function Gallery({
         </dialog>
       </div>
     </section>
+  )
+}
+
+function reviewStatusText(status: MissionMediaReviewStatus) {
+  if (status === 'APPROVED') return 'Đã nghiệm thu'
+  if (status === 'REJECTED') return 'Bị từ chối'
+  return 'Chờ manager nghiệm thu'
+}
+
+function ReviewStatusBadge({
+  status,
+  compact = false,
+}: {
+  status: MissionMediaReviewStatus
+  compact?: boolean
+}) {
+  const tone =
+    status === 'APPROVED'
+      ? 'approved'
+      : status === 'REJECTED'
+        ? 'rejected'
+        : 'pending'
+  return (
+    <span
+      className={`mission-media__review-badge mission-media__review-badge--${tone}${compact ? ' is-compact' : ''}`}
+    >
+      {reviewStatusText(status)}
+    </span>
   )
 }

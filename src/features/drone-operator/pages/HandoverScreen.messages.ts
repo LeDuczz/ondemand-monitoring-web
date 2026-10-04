@@ -15,13 +15,13 @@ export const handoverScreenMessages = defineMessages({
       'Vui lòng chạy precheck thành công trước khi bàn giao',
     confirmFailed: 'Không xác nhận được cam kết',
     stepTitle: 'Bàn giao quyền điều khiển',
-    commitmentTitle: 'Cam kết an toàn trước khi nhận quyền điều khiển',
-    ackLabel: 'Tôi xác nhận đã kiểm soát thiết bị và chịu trách nhiệm vận hành',
+    commitmentTitle: 'Xác nhận bàn giao sau preflight',
+    ackLabel: 'Tôi xác nhận preflight đã đạt và bàn giao cho pilot tiếp tục bay',
     back: 'Quay lại',
     processing: 'Đang xử lý...',
     confirmHandover: 'Xác nhận bàn giao',
     confirmLockedNote:
-      'Nút xác nhận bị khoá đến khi bạn tick đủ 4 cam kết. Ghi control_handover.status = CONFIRMED và confirmed_at.',
+      'Nút xác nhận bị khoá đến khi bạn tick đủ 4 cam kết. Operator xác nhận xong thì pilot mới tiếp tục điều khiển.',
     connectedAt:
       'Đã kết nối GCS DJI-RC-PLUS-7A31 lúc 13:26:41 · telemetry hoạt động',
     connected: 'Đã kết nối',
@@ -41,14 +41,14 @@ export const handoverScreenMessages = defineMessages({
       'Please run the precheck successfully before the handover',
     confirmFailed: 'Could not confirm the commitments',
     stepTitle: 'Control handover',
-    commitmentTitle: 'Safety commitments before taking control',
+    commitmentTitle: 'Post-preflight handover confirmation',
     ackLabel:
-      'I confirm I am in control of the device and responsible for operations',
+      'I confirm preflight passed and hand over the mission to the pilot',
     back: 'Back',
     processing: 'Processing...',
     confirmHandover: 'Confirm handover',
     confirmLockedNote:
-      'The confirm button stays locked until all 4 commitments are checked. Writes control_handover.status = CONFIRMED and confirmed_at.',
+      'The confirm button stays locked until all 4 commitments are checked. After the operator confirms, the pilot continues flight control.',
     connectedAt:
       'Connected to GCS DJI-RC-PLUS-7A31 at 13:26:41 · telemetry active',
     connected: 'Connected',

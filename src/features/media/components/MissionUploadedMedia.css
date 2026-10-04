@@ -59,6 +59,41 @@
   text-align: center;
 }
 
+.mission-media__review-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mission-media__review-badge.is-compact {
+  width: fit-content;
+  margin: 0 0 8px;
+}
+
+.mission-media__review-badge--pending {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.mission-media__review-badge--approved {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.mission-media__review-badge--rejected {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
 .mission-media__header p {
   margin: 7px 0 0;
   color: var(--tx3, #5b6577);

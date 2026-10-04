@@ -7,7 +7,6 @@ import {
 import { useI18n } from '../../../shared/i18n'
 import type { Language } from '../../../shared/i18n/languageStore'
 import { missionApi } from '../../mission/api/missionApi'
-import { clearActiveMissionId } from '../api/liveMission'
 import { useActiveMission } from '../api/useActiveMission'
 import {
   flightControlApi,
@@ -126,7 +125,6 @@ function clearCompletedMissionState(
   missionLabel: string,
   deviceId: string,
 ) {
-  clearActiveMissionId(missionId)
   window.sessionStorage.removeItem(postflightTelemetryKey(missionId))
   window.sessionStorage.removeItem(
     `fieldwise.operator.handoverAcknowledged.${missionId}`,
@@ -261,14 +259,10 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         telemetrySnapshot,
       )
 
-      // Try marking mission completed if not automatically completed by BE
-      await missionApi.completeMission(effectiveMissionId).catch(() => {
-        // Ignored if BE already auto-completed on status submit
-      })
       await missionApi
-        .disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED')
+        .disconnectGcs(effectiveMissionId, 'POSTFLIGHT_COMPLETED')
         .catch(() => {
-          // The mission is complete; local cleanup must still happen even if the session was already closed.
+          // Postcheck is complete; local cleanup must still happen even if the session was already closed.
         })
       await flightControlApi.releaseSession(effectiveMissionId).catch(() => {
         // Controller may be offline after landing; local cleanup still allows the operator flow to reset.
@@ -325,7 +319,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         <FlightStepHeader
           title={t.completedStepTitle}
           missionId={missionLabel}
-          active={7}
+          active={6}
         />
         <div style={{ padding: '32px 24px', maxWidth: 680, margin: '0 auto' }}>
           <div
@@ -443,7 +437,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       <FlightStepHeader
         title={t.stepTitle}
         missionId={missionLabel}
-        active={7}
+        active={6}
         right={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {postflightMissions.length > 0 && (

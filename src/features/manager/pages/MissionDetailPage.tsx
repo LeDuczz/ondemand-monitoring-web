@@ -384,6 +384,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
               <MissionUploadedMedia
                 missionId={mission.id}
                 reader={staffMissionMediaReader}
+                reviewStatus={detail.result?.approvalStatus ?? null}
               />
             </>
           ) : null}

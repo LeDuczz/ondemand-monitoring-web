@@ -47,6 +47,9 @@ export const missionListPageMessages = defineMessages({
       `còn ${hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`}`,
     today2: 'Hôm nay',
     startFlight: 'Bắt đầu chuyến bay',
+    inspect: 'Postcheck',
+    reviewMedia: 'Nghiệm thu',
+    viewResult: 'Xem kết quả',
   },
   en: {
     tabLabel: {
@@ -94,5 +97,8 @@ export const missionListPageMessages = defineMessages({
       `${hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`} left`,
     today2: 'Today',
     startFlight: 'Start flight',
+    inspect: 'Postcheck',
+    reviewMedia: 'Review media',
+    viewResult: 'View result',
   },
 })

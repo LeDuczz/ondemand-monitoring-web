@@ -29,6 +29,14 @@ export function ServicesTable({
         {items.map((s) => (
           <tr key={s.id}>
             <td>
+              {s.imageUrl && (
+                <img
+                  className="adm-service-thumbnail"
+                  src={s.imageUrl}
+                  alt=""
+                  loading="lazy"
+                />
+              )}
               <div className="adm-wrap adm-strong">{s.name}</div>
               {s.description && (
                 <div className="adm-cell-email adm-wrap">{s.description}</div>

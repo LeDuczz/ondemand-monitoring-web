@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { catalogApi } from '../../../api/catalogApi'
@@ -31,6 +31,22 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [savedId, setSavedId] = useState(service?.id)
+  const [image, setImage] = useState<File | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
+  const [preview, setPreview] = useState<string | null>(
+    service?.imageUrl ?? null,
+  )
+
+  useEffect(() => {
+    if (!image) {
+      setPreview(removeImage ? null : (service?.imageUrl ?? null))
+      return
+    }
+    const url = URL.createObjectURL(image)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [image, removeImage, service?.imageUrl])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -41,15 +57,21 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
     setBusy(true)
     setSubmitError(null)
     setErrors({})
+    let detailsSaved = false
     try {
       const body = toServiceRequest(values)
-      if (service) await catalogApi.updateService(service.id, body)
-      else await catalogApi.createService(body)
+      const saved = savedId
+        ? await catalogApi.updateService(savedId, body)
+        : await catalogApi.createService(body)
+      setSavedId(saved.id)
+      detailsSaved = true
+      if (image) await catalogApi.uploadServiceImage(saved.id, image)
+      else if (removeImage) await catalogApi.removeServiceImage(saved.id)
       onSaved()
     } catch (err) {
       const { message, fields } = readApiError(err, t.genericError)
       setErrors(fields)
-      setSubmitError(message)
+      setSubmitError(detailsSaved ? `${t.imageError} ${message}` : message)
     } finally {
       setBusy(false)
     }
@@ -62,10 +84,17 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
       title={service ? t.editTitle : t.createTitle}
       subtitle={service ? t.editSubtitle : t.createSubtitle}
       onClose={onClose}
-      footer={<FormFooter formId="adm-service-form" busy={busy} onClose={onClose} />}
+      footer={
+        <FormFooter formId="adm-service-form" busy={busy} onClose={onClose} />
+      }
     >
       <form id="adm-service-form" onSubmit={handleSubmit} noValidate>
-        <FormField id="adm-svc-name" label={t.name} required error={errors.name}>
+        <FormField
+          id="adm-svc-name"
+          label={t.name}
+          required
+          error={errors.name}
+        >
           <input
             id="adm-svc-name"
             className="odm-inp"
@@ -75,20 +104,75 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
             onChange={(e) => setValues({ ...values, name: e.target.value })}
           />
         </FormField>
-        <FormField id="adm-svc-desc" label={t.description} error={errors.description}>
+        <FormField
+          id="adm-svc-desc"
+          label={t.description}
+          error={errors.description}
+        >
           <textarea
             id="adm-svc-desc"
             className="odm-inp"
             rows={4}
             value={values.description}
-            onChange={(e) => setValues({ ...values, description: e.target.value })}
+            onChange={(e) =>
+              setValues({ ...values, description: e.target.value })
+            }
           />
+        </FormField>
+        <FormField id="adm-svc-image" label={t.image} error={errors.image}>
+          <div className="adm-service-image">
+            {preview && <img src={preview} alt={t.image} />}
+            <input
+              id="adm-svc-image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={busy}
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (!file) return
+                if (
+                  !['image/jpeg', 'image/png', 'image/webp'].includes(
+                    file.type,
+                  ) ||
+                  file.size === 0 ||
+                  file.size > 5 * 1024 * 1024
+                ) {
+                  setErrors((current) => ({
+                    ...current,
+                    image: t.invalidImage,
+                  }))
+                  event.target.value = ''
+                  return
+                }
+                setErrors((current) => ({ ...current, image: '' }))
+                setImage(file)
+                setRemoveImage(false)
+              }}
+            />
+            <small>{t.imageHint}</small>
+            {(preview || image) && (
+              <button
+                type="button"
+                className="odm-btn odm-btn-sm"
+                disabled={busy}
+                onClick={() => {
+                  setImage(null)
+                  setRemoveImage(true)
+                  setErrors((current) => ({ ...current, image: '' }))
+                }}
+              >
+                {t.removeImage}
+              </button>
+            )}
+          </div>
         </FormField>
         <label className="adm-check">
           <input
             type="checkbox"
             checked={values.isActive}
-            onChange={(e) => setValues({ ...values, isActive: e.target.checked })}
+            onChange={(e) =>
+              setValues({ ...values, isActive: e.target.checked })
+            }
           />
           <span>
             {t.isActive}
@@ -113,12 +197,17 @@ export function ServiceModal({ service, onClose, onSaved }: Props) {
       onClose={onClose}
       load={
         service
-          ? (signal) => catalogApi.getService(service.id, signal).then(mapService)
+          ? (signal) =>
+              catalogApi.getService(service.id, signal).then(mapService)
           : undefined
       }
     >
       {(fresh) => (
-        <ServiceForm service={fresh ?? service} onClose={onClose} onSaved={onSaved} />
+        <ServiceForm
+          service={fresh ?? service}
+          onClose={onClose}
+          onSaved={onSaved}
+        />
       )}
     </EditLoader>
   )

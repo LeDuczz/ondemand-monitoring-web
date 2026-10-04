@@ -4,6 +4,7 @@ export type AdminService = {
   id: string
   name: string
   description: string
+  imageUrl?: string | null
   isActive: boolean
   createdAt: string | null
   updatedAt: string | null

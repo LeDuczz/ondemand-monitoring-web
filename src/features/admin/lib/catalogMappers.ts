@@ -24,6 +24,7 @@ export function mapService(dto: ServiceResponse): AdminService {
     id: dto.id,
     name: dto.name,
     description: dto.description ?? '',
+    imageUrl: dto.imageUrl ?? null,
     isActive: dto.isActive,
     createdAt: dto.createdAt ?? null,
     updatedAt: dto.updatedAt ?? null,

@@ -153,6 +153,7 @@ function matchRoute(method: string, pathname: string) {
 function parseBody(init?: RequestInit): unknown {
   const raw = init?.body
   if (raw === undefined || raw === null) return undefined
+  if (raw instanceof FormData) return raw
   if (typeof raw !== 'string') return undefined
   try {
     return JSON.parse(raw)

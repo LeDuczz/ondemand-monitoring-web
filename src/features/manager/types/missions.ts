@@ -434,6 +434,7 @@ export type MissionResultStatus =
   | 'CANCELLED'
 
 export type MissionResultApprovalStatus =
+  | 'DRAFT'
   | 'PENDING_MANAGER_APPROVAL'
   | 'APPROVED'
   | 'REJECTED'

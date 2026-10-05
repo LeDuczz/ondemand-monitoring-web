@@ -35,10 +35,12 @@ export function MissionUploadedMedia({
   missionId,
   reader = operatorMissionMediaApi,
   reviewStatus,
+  approveMedia,
 }: {
   missionId: string
   reader?: MissionMediaReader
   reviewStatus?: MissionMediaReviewStatus | null
+  approveMedia?: (mediaId: string) => Promise<unknown>
 }) {
   return (
     <Gallery
@@ -46,6 +48,7 @@ export function MissionUploadedMedia({
       missionId={missionId}
       reader={reader}
       reviewStatus={reviewStatus ?? null}
+      approveMedia={approveMedia}
     />
   )
 }
@@ -54,11 +57,25 @@ function Gallery({
   missionId,
   reader,
   reviewStatus,
+  approveMedia,
 }: {
   missionId: string
   reader: MissionMediaReader
   reviewStatus: MissionMediaReviewStatus | null
+  approveMedia?: (mediaId: string) => Promise<unknown>
 }) {
+  const [approving, setApproving] = useState<string | null>(null)
+  const [approved, setApproved] = useState<string[]>([])
+  async function approve(mediaId: string) {
+    if (!approveMedia || approving) return
+    setApproving(mediaId); setError(null)
+    try {
+      await approveMedia(mediaId)
+      setApproved((ids) => [...ids, mediaId])
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không thể duyệt media.')
+    } finally { setApproving(null) }
+  }
   const [page, setPage] = useState(0)
   const [revision, setRevision] = useState(0)
   const [data, setData] = useState<UploadedMissionMediaPage | null>(null)
@@ -216,12 +233,16 @@ function Gallery({
                     <span className="mission-media__type">
                       {isReference(item)
                         ? 'Ảnh tham chiếu thực tế · Mapillary'
+                        : item.sourceType === 'SATELLITE_SNAPSHOT' ? 'Ảnh vệ tinh · Browser snapshot'
+                        : item.sourceType === 'DRONE_CAMERA' ? 'Camera drone'
+                        : item.sourceType === 'MANUAL_UPLOAD' ? 'Media tải lên thủ công'
                         : item.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
                     </span>
                     <span className="mission-media__open-label">Xem media</span>
                   </button>
                   <div className="mission-media__card-body">
                     <h4 title={item.fileName}>{item.fileName}</h4>
+                    {approveMedia && <button type="button" className="odm-btn" disabled={approving !== null || approved.includes(item.mediaId)} onClick={() => void approve(item.mediaId)}>{approved.includes(item.mediaId) ? 'Đã duyệt media trong phiên này' : approving === item.mediaId ? 'Đang duyệt media…' : 'Duyệt media cho khách hàng'}</button>}
                     {reviewStatus ? (
                       <ReviewStatusBadge status={reviewStatus} compact />
                     ) : null}
@@ -347,6 +368,7 @@ function Gallery({
 }
 
 function reviewStatusText(status: MissionMediaReviewStatus) {
+  if (status === 'DRAFT') return 'Kết quả nháp — chưa gửi manager'
   if (status === 'APPROVED') return 'Đã nghiệm thu'
   if (status === 'REJECTED') return 'Bị từ chối'
   return 'Chờ manager nghiệm thu'

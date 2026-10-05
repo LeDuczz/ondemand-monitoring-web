@@ -1,5 +1,9 @@
 // MNG-08: Mission detail & result page (opened from the mission list).
 import { useEffect, useState } from 'react'
+import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { checklistExecutionApi } from '../../mission/api/checklistExecutionApi'
+import { MonitoringChecklistSection } from '../../mission/components/MonitoringChecklistSection'
+import { MissionResultReviewActions } from '../components/missionDetail/MissionResultReviewActions'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { StateView } from '../../../shared/components/odm/StateView'
@@ -42,15 +46,19 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [droneLookup, setDroneLookup] = useState<string | null>(null)
-  const [delivering, setDelivering] = useState(false)
-  const [deliverError, setDeliverError] = useState<string | null>(null)
+  const [revision, setRevision] = useState(0)
+  const checklist = useApiQuery(
+    (signal) =>
+      checklistExecutionApi.getMissionChecklistExecutions(missionId, signal),
+    [missionId, revision],
+  )
+  const refreshDetail = () => setRevision((value) => value + 1)
   const [tab, setTab] = useState<'overview' | 'plan' | 'checks'>('overview')
 
   useEffect(() => {
     const abort = new AbortController()
     setLoading(true)
     setError(null)
-    setDetail(null)
     Promise.allSettled([
       missionsApi.getMissionResponse(missionId, abort.signal),
       missionsApi.getCurrentPreflight(missionId, abort.signal),
@@ -82,7 +90,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
       })
     return () => abort.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [missionId])
+  }, [missionId, revision])
 
   // Completed missions may no longer carry `droneCode`; resolve the device
   // from the post-check, then from the drone that captured the media.
@@ -113,37 +121,6 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     return () => abort.abort()
   }, [droneIdForLookup])
 
-  async function handleDeliverToCustomer() {
-    if (!detail?.result) return
-    setDelivering(true)
-    setDeliverError(null)
-    try {
-      const mediaIds = [
-        ...(detail.result.mediaFiles?.map((item) => item.id) ?? []),
-        ...detail.media.map((item) => item.id),
-      ].filter((id, index, all) => id && all.indexOf(id) === index)
-
-      await Promise.allSettled(
-        mediaIds.map((mediaId) => missionsApi.approveMissionMedia(missionId, mediaId)),
-      )
-      const approved = await missionsApi.approveMissionResult(detail.result.id)
-      setDetail((current) =>
-        current
-          ? {
-              ...current,
-              result: approved,
-            }
-          : current,
-      )
-    } catch (cause) {
-      setDeliverError(
-        cause instanceof Error ? cause.message : 'Không gửi được kết quả cho customer.',
-      )
-    } finally {
-      setDelivering(false)
-    }
-  }
-
   const backLink = (
     <a className="odm-or-back" href={managerHref({ screen: 'missions' })}>
       <OrderIcon name="arrow-right" size={14} />
@@ -151,7 +128,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     </a>
   )
 
-  if (loading) {
+  if (loading && (!detail || detail.mission?.id !== missionId)) {
     return (
       <div className="odm-or" aria-busy="true">
         {backLink}
@@ -166,7 +143,11 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
       <div className="odm-or">
         {backLink}
         <section className="odm-or-card">
-          <StateView state="error" title={t.loadError} error={error ?? undefined} />
+          <StateView
+            state="error"
+            title={t.loadError}
+            error={error ?? undefined}
+          />
         </section>
       </div>
     )
@@ -179,12 +160,20 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
   const canSetup =
     mission.status === 'CREATED' || mission.status === 'RESOURCE_ASSIGNING'
   const deviceCode =
-    mission.deviceCode ?? mission.droneCode ?? postcheck?.deviceCode ?? droneLookup ?? null
+    mission.deviceCode ??
+    mission.droneCode ??
+    postcheck?.deviceCode ??
+    droneLookup ??
+    null
   const deviceName = mission.deviceName ?? postcheck?.deviceName ?? null
   const deviceLabel = deviceCode
     ? `${deviceCode}${deviceName && deviceName !== deviceCode ? ` · ${deviceName}` : ''}`
     : '—'
-  const startedAt = mission.actualStartAt ?? mission.startedAt ?? detail.result?.startedAt ?? null
+  const startedAt =
+    mission.actualStartAt ??
+    mission.startedAt ??
+    detail.result?.startedAt ??
+    null
   const completedAt =
     mission.actualEndAt ??
     mission.completedAt ??
@@ -221,16 +210,24 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           ? `${mission.latitude}, ${mission.longitude}`
           : '—',
     },
-    { label: t.fields.mediaType, value: mission.mediaSummary ?? mission.mediaType ?? '—' },
+    {
+      label: t.fields.mediaType,
+      value: mission.mediaSummary ?? mission.mediaType ?? '—',
+    },
   ]
   const failure = mission.failureReason ?? mission.rejectionReason
   if (failure) rows.push({ label: t.fields.failure, value: failure })
 
   const mediaCount =
-    detail.result?.mediaCount ?? detail.result?.mediaFiles?.length ?? detail.media.length
+    detail.result?.mediaCount ??
+    detail.result?.mediaFiles?.length ??
+    detail.media.length
   const kpis: Array<{ label: string; value: string }> = [
     { label: t.kpi.customer, value: mission.customerName || '—' },
-    { label: t.kpi.schedule, value: formatDateTime(mission.scheduledStartAt, locale) },
+    {
+      label: t.kpi.schedule,
+      value: formatDateTime(mission.scheduledStartAt, locale),
+    },
     { label: t.kpi.drone, value: deviceLabel },
     {
       label: t.kpi.crew,
@@ -238,8 +235,13 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     },
     { label: t.kpi.media, value: String(mediaCount) },
     {
-      label: detail.result?.durationSeconds != null ? t.kpi.actualDuration : t.kpi.plannedDuration,
-      value: formatDuration(detail.result?.durationSeconds ?? plan?.plannedDurationSec),
+      label:
+        detail.result?.durationSeconds != null
+          ? t.kpi.actualDuration
+          : t.kpi.plannedDuration,
+      value: formatDuration(
+        detail.result?.durationSeconds ?? plan?.plannedDurationSec,
+      ),
     },
   ]
   const tabs: Array<{ id: typeof tab; label: string }> = [
@@ -247,7 +249,9 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     { id: 'plan', label: t.tabs.plan },
     { id: 'checks', label: t.tabs.checks },
   ]
-  const waypoints = [...(plan?.waypoints ?? [])].sort((a, b) => a.sequence - b.sequence)
+  const waypoints = [...(plan?.waypoints ?? [])].sort(
+    (a, b) => a.sequence - b.sequence,
+  )
 
   return (
     <div className="odm-or">
@@ -266,7 +270,10 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           {canSetup ? (
             <a
               className="odm-or-btn odm-or-btn-blue"
-              href={managerHref({ screen: 'missionSetup', missionId: mission.id })}
+              href={managerHref({
+                screen: 'missionSetup',
+                missionId: mission.id,
+              })}
             >
               {t.continueSetup}
             </a>
@@ -304,7 +311,10 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
             <>
               <section className="odm-or-card odm-rm-card">
                 <div className="odm-rm-stage">
-                  <MissionRouteMap waypoints={waypoints} labels={{ ...t.map, drone: t.kpi.drone }} />
+                  <MissionRouteMap
+                    waypoints={waypoints}
+                    labels={{ ...t.map, drone: t.kpi.drone }}
+                  />
                 </div>
                 <div className="odm-rm-side">
                   <h3>{t.map.title}</h3>
@@ -327,10 +337,22 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                     </div>
                   </dl>
                   <ul className="odm-rm-key">
-                    <li><i className="is-home" />{t.map.home}</li>
-                    <li><i className="is-line" />{t.map.route}</li>
-                    <li><i className="is-wp" />{t.map.waypoint}</li>
-                    <li><i className="is-target" />{t.map.target}</li>
+                    <li>
+                      <i className="is-home" />
+                      {t.map.home}
+                    </li>
+                    <li>
+                      <i className="is-line" />
+                      {t.map.route}
+                    </li>
+                    <li>
+                      <i className="is-wp" />
+                      {t.map.waypoint}
+                    </li>
+                    <li>
+                      <i className="is-target" />
+                      {t.map.target}
+                    </li>
                   </ul>
                   {waypoints.length > 0 ? (
                     <ul className="odm-rm-wps">
@@ -355,36 +377,48 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
                   <DetailSection title={t.resultCard}>
-                    <ResultDetail result={detail.result} media={[]} locale={locale} />
-                    {detail.result ? (
-                      <div className="odm-or-result-actions">
-                        {deliverError ? (
-                          <div className="odm-or-error">{deliverError}</div>
-                        ) : null}
-                        {detail.result.approvalStatus === 'APPROVED' ? (
-                          <span className="odm-or-pill odm-or-pill-green">
-                            {t.deliveredToCustomer}
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="odm-or-btn odm-or-btn-blue"
-                            onClick={handleDeliverToCustomer}
-                            disabled={delivering}
-                          >
-                            {delivering ? t.deliveringToCustomer : t.deliverToCustomer}
-                          </button>
-                        )}
-                      </div>
-                    ) : null}
+                    <ResultDetail
+                      result={detail.result}
+                      media={[]}
+                      locale={locale}
+                    />
+                    {detail.result && (
+                      <MissionResultReviewActions
+                        resultId={detail.result.id}
+                        status={detail.result.approvalStatus}
+                        refreshing={loading}
+                        ready={
+                          !loading &&
+                          !checklist.loading &&
+                          !checklist.error &&
+                          checklist.data?.readyForSubmission === true
+                        }
+                        onReviewed={refreshDetail}
+                      />
+                    )}
                   </DetailSection>
                 </div>
               </section>
 
+              <MonitoringChecklistSection
+                missionId={mission.id}
+                data={checklist.data}
+                loading={checklist.loading}
+                error={checklist.error}
+                resultStatus={detail.result?.approvalStatus}
+                resultNote={detail.result?.reviewNote}
+                refresh={() => {
+                  checklist.reload()
+                  refreshDetail()
+                }}
+              />
               <MissionUploadedMedia
                 missionId={mission.id}
                 reader={staffMissionMediaReader}
                 reviewStatus={detail.result?.approvalStatus ?? null}
+                approveMedia={(mediaId) =>
+                  missionsApi.approveMissionMedia(missionId, mediaId)
+                }
               />
             </>
           ) : null}
@@ -393,14 +427,24 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
             <>
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
-                  <DetailSection title={t.planCard} badge={plan?.feasibilityStatus}>
-                    <PlanDetail plan={plan} postcheck={postcheck} precheckItems={preflight?.items} />
+                  <DetailSection
+                    title={t.planCard}
+                    badge={plan?.feasibilityStatus}
+                  >
+                    <PlanDetail
+                      plan={plan}
+                      postcheck={postcheck}
+                      precheckItems={preflight?.items}
+                    />
                   </DetailSection>
                 </div>
               </section>
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
-                  <DetailSection title={t.waypoints.title} badge={String(waypoints.length)}>
+                  <DetailSection
+                    title={t.waypoints.title}
+                    badge={String(waypoints.length)}
+                  >
                     {waypoints.length === 0 ? (
                       <div className="odm-or-empty">{t.waypoints.empty}</div>
                     ) : (
@@ -421,10 +465,16 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                               <tr key={point.id}>
                                 <td className="odm-mono">{point.sequence}</td>
                                 <td>{waypointReasonLabel(point.reason)}</td>
-                                <td className="odm-mono">{point.simX.toFixed(2)}</td>
-                                <td className="odm-mono">{point.simY.toFixed(2)}</td>
+                                <td className="odm-mono">
+                                  {point.simX.toFixed(2)}
+                                </td>
+                                <td className="odm-mono">
+                                  {point.simY.toFixed(2)}
+                                </td>
                                 <td>{formatNumber(point.altitudeM, ' m')}</td>
-                                <td>{formatNumber(point.plannedSpeedMps, ' m/s')}</td>
+                                <td>
+                                  {formatNumber(point.plannedSpeedMps, ' m/s')}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -448,9 +498,18 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                     {preflight ? (
                       <div className="odm-or-detail-stack">
                         <div className="odm-or-detail-grid">
-                          <MetricTile label={t.totalChecks} value={preflight.totalChecks} />
-                          <MetricTile label={t.passed} value={preflight.passedChecks} />
-                          <MetricTile label={t.failed} value={preflight.failedChecks} />
+                          <MetricTile
+                            label={t.totalChecks}
+                            value={preflight.totalChecks}
+                          />
+                          <MetricTile
+                            label={t.passed}
+                            value={preflight.passedChecks}
+                          />
+                          <MetricTile
+                            label={t.failed}
+                            value={preflight.failedChecks}
+                          />
                           <MetricTile
                             label={t.progress}
                             value={formatNumber(preflight.progressPercent, '%')}
@@ -473,18 +532,33 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                     {postcheck ? (
                       <div className="odm-or-detail-stack">
                         <div className="odm-or-detail-grid">
-                          <MetricTile label={t.device} value={postcheck.deviceCode} />
+                          <MetricTile
+                            label={t.device}
+                            value={postcheck.deviceCode}
+                          />
                           <MetricTile
                             label={t.batteryLeft}
-                            value={formatNumber(postcheck.landingBatteryPercent, '%')}
+                            value={formatNumber(
+                              postcheck.landingBatteryPercent,
+                              '%',
+                            )}
                           />
-                          <MetricTile label={t.batteryState} value={postcheck.landingBatteryState} />
+                          <MetricTile
+                            label={t.batteryState}
+                            value={postcheck.landingBatteryState}
+                          />
                           <MetricTile
                             label={t.checkedAt}
                             value={formatDateTime(postcheck.checkedAt, locale)}
                           />
-                          <MetricTile label={t.passed} value={postcheck.passedChecks} />
-                          <MetricTile label={t.failed} value={postcheck.failedChecks} />
+                          <MetricTile
+                            label={t.passed}
+                            value={postcheck.passedChecks}
+                          />
+                          <MetricTile
+                            label={t.failed}
+                            value={postcheck.failedChecks}
+                          />
                         </div>
                         <CheckItemsList items={postcheck.items} />
                       </div>
@@ -536,7 +610,9 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
             <div className="odm-or-card-body">
               {staff.length > 0 ? (
                 <div className="odm-or-crew-progress" aria-hidden="true">
-                  <span style={{ width: `${(accepted / staff.length) * 100}%` }} />
+                  <span
+                    style={{ width: `${(accepted / staff.length) * 100}%` }}
+                  />
                 </div>
               ) : null}
               {deviceCode || staff.length > 0 ? (
@@ -550,12 +626,16 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                         <span className="odm-or-crew-role">{t.crewDevice}</span>
                         <strong>{deviceLabel}</strong>
                       </span>
-                      <span className="odm-or-pill odm-or-pill-blue">{t.crewReserved}</span>
+                      <span className="odm-or-pill odm-or-pill-blue">
+                        {t.crewReserved}
+                      </span>
                     </li>
                   ) : null}
                   {staff.map((assignment) => {
                     const name =
-                      assignment.staffName ?? assignment.staffEmail ?? assignment.staffId
+                      assignment.staffName ??
+                      assignment.staffEmail ??
+                      assignment.staffId
                     return (
                       <li key={assignment.id} className="odm-or-crew-item">
                         <span className="odm-or-crew-avatar" aria-hidden="true">

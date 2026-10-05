@@ -15,6 +15,7 @@ export type LocalMedia = {
   fileSize: number
   checksumSha256: string
   capturedAt: string
+  sourceType?: 'DRONE_CAMERA' | 'SATELLITE_SNAPSHOT' | 'MANUAL_UPLOAD' | null
   status: 'REVIEW_PENDING' | 'UPLOADING' | 'UPLOAD_FAILED' | 'VALIDATING' | 'MANUAL_UPLOAD_REQUIRED' | 'UPLOAD_PENDING' | 'RETRY_REQUIRED' | 'PENDING_MANAGER_APPROVAL' | 'AVAILABLE'
   previewError?: string
   backendMediaId?: string
@@ -173,6 +174,7 @@ export const operatorMediaApi = {
       fileSize: item.fileSize,
       checksumSha256: item.checksumSha256,
       capturedAt: item.capturedAt,
+      sourceType: item.sourceType ?? null,
     })
     // Persist only the correlation ID, never credentials or signed URLs.
     try { window.localStorage.setItem(referenceKey(item), plan.mediaId) } catch { /* Storage may be disabled. */ }

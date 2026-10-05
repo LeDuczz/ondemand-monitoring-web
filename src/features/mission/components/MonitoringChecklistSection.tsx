@@ -1,0 +1,404 @@
+import { useState } from 'react'
+import { ApiError } from '../../../shared/api/httpClient'
+import { checklistExecutionApi } from '../api/checklistExecutionApi'
+import type {
+  ChecklistExecutionStatus,
+  ChecklistAssessmentStatus,
+  MissionChecklistExecution,
+  MissionChecklistResponse,
+} from '../types/checklistExecution'
+import type { MissionResultApprovalStatus } from '../types/mission'
+import './MonitoringChecklistSection.css'
+
+const statuses: Record<ChecklistExecutionStatus, string> = {
+  PENDING: 'Chưa thực hiện',
+  IN_PROGRESS: 'Đang thực hiện',
+  COMPLETED: 'Đã thực hiện',
+  UNABLE_TO_VERIFY: 'Không thể xác minh',
+}
+const assessments: Record<ChecklistAssessmentStatus, string> = {
+  NOT_ASSESSED: 'Chưa đánh giá',
+  COMPLIANT: 'Đạt yêu cầu',
+  NON_COMPLIANT: 'Không đạt yêu cầu',
+}
+const terminal = (status: ChecklistExecutionStatus) =>
+  status === 'COMPLETED' || status === 'UNABLE_TO_VERIFY'
+export function allowedExecutionStatuses(
+  status: ChecklistExecutionStatus,
+  rejected: boolean,
+): ChecklistExecutionStatus[] {
+  const all: ChecklistExecutionStatus[] = [
+    'PENDING',
+    'IN_PROGRESS',
+    'COMPLETED',
+    'UNABLE_TO_VERIFY',
+  ]
+  if (terminal(status)) return rejected ? all : [status]
+  return all.filter(
+    (next) =>
+      next === status ||
+      next === 'COMPLETED' ||
+      next === 'UNABLE_TO_VERIFY' ||
+      (status === 'PENDING' && next === 'IN_PROGRESS'),
+  )
+}
+
+export function monitoringErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.code === 'CHECKLIST_EXECUTION_PARENT_MISMATCH')
+      return 'Mục checklist không thuộc mission này. Vui lòng tải lại đúng mission.'
+    if (error.code === 'CONCURRENT_UPDATE')
+      return 'Dữ liệu đã thay đổi. Chỉnh sửa của bạn chưa được lưu. Tải dữ liệu mới và kiểm tra lại trước khi lưu.'
+    if (error.status === 401)
+      return 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'
+    if (error.status === 403)
+      return 'Bạn không có quyền thực hiện thao tác này.'
+    if (error.status === 404)
+      return 'Không tìm thấy mission hoặc mục checklist. Vui lòng tải lại.'
+    if (error.code === 'CHECKLIST_EXECUTION_LOCKED')
+      return 'Checklist đã khóa để duyệt kết quả. Vui lòng tải lại trạng thái.'
+    if (error.code === 'CHECKLIST_EXECUTION_TRANSITION_INVALID')
+      return 'Chuyển trạng thái không hợp lệ. Vui lòng tải lại dữ liệu.'
+    if (error.code === 'MISSION_STATUS_INVALID')
+      return 'Trạng thái mission đã thay đổi. Vui lòng tải lại.'
+    if (error.code === 'CHECKLIST_NOT_READY')
+      return 'Checklist chưa sẵn sàng gửi kết quả. Vui lòng kiểm tra các mục còn lại.'
+  }
+  return error instanceof Error
+    ? error.message
+    : 'Không thể tải hoặc lưu checklist. Vui lòng thử lại.'
+}
+
+export function MonitoringChecklistSection({
+  missionId,
+  data,
+  loading,
+  error,
+  canExecute = false,
+  resultStatus,
+  resultNote,
+  resultKnown = true,
+  refresh,
+}: {
+  missionId: string
+  data?: MissionChecklistResponse
+  loading: boolean
+  error?: unknown
+  canExecute?: boolean
+  resultStatus?: MissionResultApprovalStatus | null
+  resultNote?: string | null
+  resultKnown?: boolean
+  refresh: () => void
+}) {
+  const locked =
+    resultStatus === 'PENDING_MANAGER_APPROVAL' || resultStatus === 'APPROVED'
+  const editable = canExecute && resultKnown && !locked && !loading && !error
+  const rows = [...(data?.executions ?? [])].sort(
+    (a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id),
+  )
+  const done = rows.filter((row) => terminal(row.executionStatus)).length
+  return (
+    <section
+      className="monitoring-checklist odm-card"
+      aria-label="Monitoring Checklist"
+    >
+      <header>
+        <div>
+          <h2>Checklist giám sát</h2>
+          <p>
+            Yêu cầu lịch sử của đơn hàng · tách biệt kiểm tra kỹ thuật thiết bị.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="odm-btn"
+          onClick={refresh}
+          disabled={loading}
+        >
+          Làm mới checklist
+        </button>
+      </header>
+      {loading && (
+        <p role="status">Đang tải checklist và trạng thái kết quả…</p>
+      )}
+      {error ? (
+        <div role="alert">
+          <p>{monitoringErrorMessage(error)}</p>
+          <button type="button" className="odm-btn" onClick={refresh}>
+            Thử lại checklist
+          </button>
+        </div>
+      ) : null}
+      {!loading && !error && data ? (
+        <>
+          <div className="monitoring-summary" role="status">
+            <strong>
+              {data.readyForSubmission
+                ? 'Sẵn sàng gửi kết quả'
+                : 'Chưa sẵn sàng gửi kết quả'}
+            </strong>
+            <span>
+              {done} / {rows.length} mục ở trạng thái kết thúc ·{' '}
+              {rows.length - done} mục chưa hoàn tất
+            </span>
+          </div>
+          {resultStatus && (
+            <p>
+              Trạng thái kết quả:{' '}
+              {
+                {
+                  DRAFT: 'Nháp — chưa gửi manager',
+                  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+                  APPROVED: 'Đã duyệt',
+                  REJECTED:
+                    'Bị từ chối — có thể chỉnh sửa và gửi lại khi có quyền',
+                }[resultStatus]
+              }
+            </p>
+          )}
+          {resultStatus === 'REJECTED' && resultNote && (
+            <p>Nhận xét của manager: {resultNote}</p>
+          )}
+          {!data.readyForSubmission && done === rows.length && (
+            <p role="alert">
+              Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới; nếu
+              vẫn chưa sẵn sàng, liên hệ quản trị viên.
+            </p>
+          )}
+          {data.legacySnapshot && (
+            <p>
+              Mission cũ — không có snapshot checklist giám sát lịch sử. Không
+              suy diễn yêu cầu từ dịch vụ hiện tại.
+            </p>
+          )}
+          {!rows.length && <p>Không có mục checklist giám sát.</p>}
+          <p>
+            {locked
+              ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
+              : editable
+                ? 'Bạn có thể cập nhật checklist.'
+                : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
+          </p>
+        </>
+      ) : null}
+      {data && (
+        <ol>
+          {rows.map((item) => (
+            <ChecklistExecutionItem
+              key={`${missionId}:${item.id}`}
+              item={item}
+              missionId={missionId}
+              editable={editable}
+              rejected={resultStatus === 'REJECTED'}
+              refresh={refresh}
+            />
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+function ChecklistExecutionItem({
+  item,
+  missionId,
+  editable,
+  rejected,
+  refresh,
+}: {
+  item: MissionChecklistExecution
+  missionId: string
+  editable: boolean
+  rejected: boolean
+  refresh: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [base, setBase] = useState(item)
+  const [status, setStatus] = useState(item.executionStatus)
+  const [assessment, setAssessment] = useState(item.assessmentStatus)
+  const [observation, setObservation] = useState(item.observation ?? '')
+  const [reason, setReason] = useState(item.unableToVerifyReason ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  function reset() {
+    setBase(item)
+    setStatus(item.executionStatus)
+    setAssessment(item.assessmentStatus)
+    setObservation(item.observation ?? '')
+    setReason(item.unableToVerifyReason ?? '')
+    setConflict(false)
+    setError(null)
+  }
+  async function save() {
+    if (!editable || busy || conflict) return
+    if (status === 'UNABLE_TO_VERIFY' && !reason.trim()) {
+      setError('Vui lòng nhập lý do không thể xác minh.')
+      return
+    }
+    if (observation.length > 2000 || reason.length > 1000) {
+      setError('Ghi nhận tối đa 2000 ký tự; lý do tối đa 1000 ký tự.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const updated =
+        await checklistExecutionApi.updateMissionChecklistExecution(
+          missionId,
+          item.id,
+          {
+            expectedVersion: base.version,
+            executionStatus: status,
+            assessmentStatus: assessment,
+            observation: observation.trim() || null,
+            unableToVerifyReason:
+              status === 'UNABLE_TO_VERIFY' ? reason.trim() : null,
+          },
+        )
+      setBase(updated)
+      setEditing(false)
+      refresh()
+    } catch (cause) {
+      setError(monitoringErrorMessage(cause))
+      if (cause instanceof ApiError && cause.code === 'CONCURRENT_UPDATE')
+        setConflict(true)
+      // Never retry a mutation automatically. Refresh authority/versions after any rejected save.
+      refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <li className="monitoring-item">
+      <h3>{item.content}</h3>
+      <div className="monitoring-meta">
+        <span>{statuses[item.executionStatus]}</span>
+        <span>{assessments[item.assessmentStatus]}</span>
+        <span>
+          {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
+        </span>
+      </div>
+      {item.observation && (
+        <p>
+          <strong>Ghi nhận:</strong> {item.observation}
+        </p>
+      )}
+      {item.unableToVerifyReason && (
+        <p>
+          <strong>Lý do không thể xác minh:</strong> {item.unableToVerifyReason}
+        </p>
+      )}
+      {item.updatedAt && (
+        <small>
+          Cập nhật: {new Date(item.updatedAt).toLocaleString('vi-VN')}
+        </small>
+      )}
+      {error && <p role="alert">{error}</p>}
+      {editable && !editing && (
+        <button
+          type="button"
+          className="odm-btn"
+          onClick={() => {
+            reset()
+            setEditing(true)
+          }}
+        >
+          Cập nhật mục
+        </button>
+      )}
+      {editing && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            void save()
+          }}
+        >
+          <fieldset disabled={!editable || busy}>
+            <label>
+              Trạng thái thực hiện
+              <select
+                value={status}
+                onChange={(event) => {
+                  setStatus(event.target.value as ChecklistExecutionStatus)
+                  if (event.target.value !== 'UNABLE_TO_VERIFY') setReason('')
+                }}
+              >
+                {allowedExecutionStatuses(base.executionStatus, rejected).map(
+                  (value) => (
+                    <option key={value} value={value}>
+                      {statuses[value]}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <label>
+              Đánh giá
+              <select
+                value={assessment}
+                onChange={(event) =>
+                  setAssessment(event.target.value as ChecklistAssessmentStatus)
+                }
+              >
+                {(Object.keys(assessments) as ChecklistAssessmentStatus[]).map(
+                  (value) => (
+                    <option key={value} value={value}>
+                      {assessments[value]}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <small>
+              Không đạt yêu cầu không đồng nghĩa mission thất bại. Chưa đánh giá
+              là lựa chọn hợp lệ.
+            </small>
+            <label>
+              Ghi nhận
+              <textarea
+                maxLength={2000}
+                value={observation}
+                onChange={(event) => setObservation(event.target.value)}
+              />
+            </label>
+            <small>{observation.length} / 2000</small>
+            {status === 'UNABLE_TO_VERIFY' && (
+              <label>
+                Lý do không thể xác minh
+                <textarea
+                  aria-label="Lý do không thể xác minh"
+                  maxLength={1000}
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                />
+                <small>{reason.length} / 1000</small>
+              </label>
+            )}
+            {conflict && (
+              <button type="button" className="odm-btn" onClick={reset}>
+                Dùng dữ liệu mới (bỏ chỉnh sửa chưa lưu)
+              </button>
+            )}
+            <div className="monitoring-actions">
+              <button
+                className="odm-btn odm-btn-p"
+                type="submit"
+                disabled={conflict || busy}
+              >
+                Lưu mục
+              </button>
+              <button
+                className="odm-btn"
+                type="button"
+                onClick={() => setEditing(false)}
+              >
+                Hủy chỉnh sửa
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      )}
+    </li>
+  )
+}

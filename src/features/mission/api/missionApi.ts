@@ -11,6 +11,7 @@ import type {
 import type { FlightControlStatus } from '../../drone-operator/omss/api/flightControlApi'
 
 import { env } from '../../../config/env'
+import { ApiError } from '../../../shared/api/httpClient'
 
 const API_BASE = `${env.apiBaseUrl}/api`
 
@@ -33,9 +34,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}))
-    throw new Error(
-      errorData.message || `HTTP ${res.status}: ${res.statusText}`,
-    )
+    throw new ApiError(errorData.message || `HTTP ${res.status}: ${res.statusText}`, {
+      status: res.status, code: errorData.code, method: options?.method ?? 'GET', path: url,
+    })
   }
 
   const payload: ApiResponse<T> = await res.json()
@@ -77,9 +78,9 @@ export const missionApi = {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
-      throw new Error(
-        errorData.message || `HTTP ${res.status}: ${res.statusText}`,
-      )
+      throw new ApiError(errorData.message || `HTTP ${res.status}: ${res.statusText}`, {
+        status: res.status, code: errorData.code, method: 'GET', path: `/api/missions/${missionId}/result`,
+      })
     }
 
     const payload: ApiResponse<MissionResult> = await res.json()

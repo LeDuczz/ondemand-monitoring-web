@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
+import { missionStatusTone } from '../../../shared/lib/statusTone'
 import {
   EmptyState,
   LoadingState,
@@ -13,6 +14,8 @@ import { HCMC_SERVICE_CENTER } from '../../../shared/lib/serviceArea'
 import { env } from '../../../config/env'
 import { authenticatedFetch } from '../../auth/api/authApi'
 import { missionApi } from '../../mission/api/missionApi'
+import { useMissionMonitoring } from '../../mission/hooks/useMissionMonitoring'
+import { MonitoringChecklistSection, monitoringErrorMessage } from '../../mission/components/MonitoringChecklistSection'
 import type { MissionResultApprovalStatus } from '../../mission/types/mission'
 import { operatorApi } from '../api/operatorApi'
 import { setActiveMissionId } from '../api/liveMission'
@@ -27,6 +30,8 @@ import { viCheckMessage, viCheckName } from '../../../shared/lib/checkText'
 // ─── Status maps ────────────────────────────────────────────────────────────
 
 const STATUS_TONE = {
+  ...missionStatusTone,
+  UNKNOWN: 'gray',
   PENDING: 'gray',
   ACCEPTED: 'green',
   IN_FLIGHT: 'blue',
@@ -35,7 +40,9 @@ const STATUS_TONE = {
   FAILED: 'red',
 } as const
 
-const STATUS_LABEL: Record<OperatorMission['status'], string> = {
+const STATUS_LABEL: Record<string, string> = {
+  PENDING_REVIEW: 'Chờ nghiệm thu',
+  UNKNOWN: 'Trạng thái chưa hỗ trợ',
   PENDING: 'Chờ phản hồi',
   ACCEPTED: 'Đã nhận',
   IN_FLIGHT: 'Đang bay',
@@ -591,7 +598,7 @@ function formatCheckedAt(value?: string) {
 }
 
 function actionErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback
+  return error instanceof Error && error.message ? monitoringErrorMessage(error) : fallback
 }
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
@@ -605,49 +612,18 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   const [showReject, setShowReject] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [resultSubmitting, setResultSubmitting] = useState(false)
-  const [resultSubmitted, setResultSubmitted] = useState(false)
-  const [persistedResultSubmitted, setPersistedResultSubmitted] =
-    useState(false)
-  const [resultApprovalStatus, setResultApprovalStatus] =
-    useState<MissionResultApprovalStatus | null>(null)
+  const monitoring = useMissionMonitoring(missionId, query.data)
+  const resultApprovalStatus = monitoring.data?.result?.approvalStatus ?? null
+  const resultSubmitted = resultApprovalStatus === 'PENDING_MANAGER_APPROVAL' || resultApprovalStatus === 'APPROVED'
+  const monitoringKnown = !monitoring.loading && !monitoring.error && Boolean(monitoring.data)
+  const submitReady = monitoringKnown && monitoring.data?.checklist.readyForSubmission === true && monitoring.data.permissions.canSubmitMissionResult === true && !resultSubmitted
   const [actionError, setActionError] = useState<string | null>(null)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
+  useEffect(() => { if (resultApprovalStatus === 'REJECTED') setResultMessage(null) }, [resultApprovalStatus])
 
   useEffect(() => {
     setActiveMissionId(missionId)
   }, [missionId])
-
-  useEffect(() => {
-    const mission = query.data
-    if (!mission) return
-    if (mission.status !== 'COMPLETED') {
-      setPersistedResultSubmitted(false)
-      setResultApprovalStatus(null)
-      return
-    }
-
-    let active = true
-    missionApi
-      .getMissionResult(mission.id)
-      .then((result) => {
-        if (!active) return
-        setResultApprovalStatus(result?.approvalStatus ?? null)
-        setPersistedResultSubmitted(
-          result?.approvalStatus === 'PENDING_MANAGER_APPROVAL' ||
-            result?.approvalStatus === 'APPROVED',
-        )
-      })
-      .catch(() => {
-        if (active) {
-          setPersistedResultSubmitted(false)
-          setResultApprovalStatus(null)
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [query.data])
 
   if (query.loading) return <LoadingState />
   if (query.error || !query.data) {
@@ -706,14 +682,26 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     }
   }
 
+  async function handleCompleteMission() {
+    setSubmitting(true)
+    setActionError(null)
+    try {
+      await missionApi.completeMission(mission.id)
+      query.reload()
+      monitoring.reload()
+    } catch (error) {
+      setActionError(actionErrorMessage(error, 'Không thể nghiệm thu mission.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleSubmitResult() {
+    if (!submitReady || resultSubmitting) return
     setResultSubmitting(true)
     setActionError(null)
     setResultMessage(null)
     try {
-      if (mission.backendStatus === 'PENDING_REVIEW') {
-        await missionApi.completeMission(mission.id)
-      }
       await missionApi.submitMissionResult(mission.id, {
         status: 'COMPLETED',
         startedAt: mission.flightStartedAt ?? null,
@@ -726,13 +714,13 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
           `Ngày bay: ${formatVnDate(mission.date)}.`,
           `Vùng giám sát: ${mission.radiusMeters == null ? 'chưa rõ bán kính' : `bán kính ${mission.radiusMeters} m`}.`,
         ].join(' '),
-        notes: 'Kết quả mission được nghiệm thu gửi cho manager duyệt.',
+        notes: 'Kết quả giám sát được gửi cho manager duyệt.',
       })
-      setResultSubmitted(true)
-      setPersistedResultSubmitted(true)
-      setResultApprovalStatus('PENDING_MANAGER_APPROVAL')
+      monitoring.reload()
+      query.reload()
       setResultMessage('Đã gửi kết quả mission cho manager duyệt.')
     } catch (error) {
+      monitoring.reload()
       setActionError(
         actionErrorMessage(
           error,
@@ -751,12 +739,15 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
         submitting={submitting}
         actionError={actionError}
         resultSubmitting={resultSubmitting}
-        resultSubmitted={resultSubmitted || persistedResultSubmitted}
+        resultSubmitted={resultSubmitted}
+        submitReady={submitReady}
+        monitoringSection={<MonitoringChecklistSection missionId={mission.id} data={monitoring.data?.checklist} loading={monitoring.loading} error={monitoring.error} canExecute={monitoring.data?.permissions.canExecuteMonitoringChecklist} resultStatus={resultApprovalStatus} resultNote={monitoring.data?.result?.reviewNote} resultKnown={monitoringKnown} refresh={monitoring.reload} />}
         resultApprovalStatus={resultApprovalStatus}
         resultMessage={resultMessage}
         onAccept={handleAccept}
         onOpenReject={() => setShowReject(true)}
         onSubmitResult={handleSubmitResult}
+        onCompleteMission={handleCompleteMission}
       />
 
       {showReject ? (
@@ -779,22 +770,28 @@ function MissionDashboard({
   actionError,
   resultSubmitting,
   resultSubmitted,
+  submitReady,
+  monitoringSection,
   resultApprovalStatus,
   resultMessage,
   onAccept,
   onOpenReject,
   onSubmitResult,
+  onCompleteMission,
 }: {
   mission: OperatorMission
   submitting: boolean
   actionError: string | null
   resultSubmitting: boolean
   resultSubmitted: boolean
+  submitReady: boolean
+  monitoringSection: ReactNode
   resultApprovalStatus: MissionResultApprovalStatus | null
   resultMessage: string | null
   onAccept: () => void
   onOpenReject: () => void
   onSubmitResult: () => void
+  onCompleteMission: () => void
 }) {
   const deviceId = mission.deviceId
   const [preflightStatus, setPreflightStatus] =
@@ -853,10 +850,15 @@ function MissionDashboard({
         submitting={submitting}
         resultSubmitting={resultSubmitting}
         resultSubmitted={resultSubmitted}
+        submitReady={submitReady}
         onAccept={onAccept}
         onOpenReject={onOpenReject}
         onSubmitResult={onSubmitResult}
+        onCompleteMission={onCompleteMission}
       />
+
+      {monitoringSection}
+      {mission.status === 'COMPLETED' && !resultSubmitted && !submitReady && <p role="status">Chưa thể gửi: hãy hoàn thiện checklist và tải lại trạng thái/quyền trước khi gửi kết quả.</p>}
 
       {actionError ? (
         <div
@@ -947,21 +949,25 @@ function MissionHeader({
   submitting,
   resultSubmitting,
   resultSubmitted,
+  submitReady,
   onAccept,
   onOpenReject,
   onSubmitResult,
+  onCompleteMission,
 }: {
   mission: OperatorMission
   submitting: boolean
   resultSubmitting: boolean
   resultSubmitted: boolean
+  submitReady: boolean
   onAccept: () => void
   onOpenReject: () => void
   onSubmitResult: () => void
+  onCompleteMission: () => void
 }) {
   const permissions = useApiQuery(
     () => missionApi.getPermissions(mission.id),
-    [mission.id, mission.status, mission.myResponseStatus],
+    [mission.id, mission.status, mission.backendStatus, mission.myResponseStatus],
   )
   const access =
     !permissions.loading && !permissions.error ? permissions.data : undefined
@@ -1000,11 +1006,12 @@ function MissionHeader({
           {mission.missionCode ?? mission.id}
         </span>
         <StatusBadge tone={STATUS_TONE[mission.status]}>
-          {mission.backendStatus === 'PENDING_REVIEW' ? 'Chờ nghiệm thu' : STATUS_LABEL[mission.status]}
+          {STATUS_LABEL[mission.status] ?? mission.backendStatus ?? mission.status}
         </StatusBadge>
 
         {/* spacer */}
         <div style={{ flex: 1 }} />
+        {access?.canExecuteMonitoringChecklist === true && !canHandleInspectionMedia && <a className="odm-btn" href={operatorHref({ screen: 'upload', missionId: mission.id })}>Checklist & media</a>}
 
         {access?.canOperatePayload &&
           mission.status !== 'IN_FLIGHT' &&
@@ -1016,7 +1023,7 @@ function MissionHeader({
             Kiểm tra thiết bị
           </a>
         )}
-        {access?.canInspectDevice &&
+        {access?.canMaintainDevice &&
           ['RETURNING', 'POSTFLIGHT_CHECKING'].includes(
             mission.backendStatus ?? '',
           ) && (
@@ -1106,20 +1113,26 @@ function MissionHeader({
             {resultSubmitted ? (
               <StatusBadge tone="green">Đã gửi manager</StatusBadge>
             ) : null}
-            <button
+            {access?.canCompleteMission === true && <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={onCompleteMission}
+              disabled={submitting}
+            >
+              {submitting ? 'Đang nghiệm thu...' : 'Nghiệm thu mission'}
+            </button>}
+            {access?.canSubmitMissionResult === true && <button
               type="button"
               className="odm-btn odm-btn-p"
               onClick={onSubmitResult}
-              disabled={
-                resultSubmitting || resultSubmitted || !access?.canUploadMedia
-              }
+              disabled={resultSubmitting || resultSubmitted || !submitReady}
             >
               {resultSubmitting
                 ? 'Đang gửi...'
                 : resultSubmitted
                   ? 'Đã gửi manager'
-                  : 'Hoàn tất nghiệm thu & gửi manager'}
-            </button>
+                  : 'Gửi kết quả giám sát'}
+            </button>}
           </>
         ) : null}
       </div>
@@ -1617,7 +1630,7 @@ function MissionInfoCard({ mission }: { mission: OperatorMission }) {
       <div className="odm-card-header">
         <span style={{ fontWeight: 700 }}>Thông tin mission</span>
         <StatusBadge tone={STATUS_TONE[mission.status]}>
-          {STATUS_LABEL[mission.status]}
+          {STATUS_LABEL[mission.status] ?? mission.backendStatus ?? mission.status}
         </StatusBadge>
       </div>
       <div className="odm-card-body" style={{ padding: '10px 14px' }}>

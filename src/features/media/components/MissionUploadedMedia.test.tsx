@@ -47,6 +47,21 @@ const page = (items: UploadedMissionMedia[]) => ({
 })
 
 describe('uploaded mission media gallery', () => {
+  it('approves media only through its explicit separate action', async () => {
+    vi.mocked(operatorMissionMediaApi.list).mockResolvedValue(page([image]))
+    const approveMedia = vi.fn().mockResolvedValue({})
+    render(<MissionUploadedMedia missionId="mission" approveMedia={approveMedia} />)
+    fireEvent.click(await screen.findByText('Duyệt media cho khách hàng'))
+    await waitFor(() => expect(approveMedia).toHaveBeenCalledWith(image.mediaId))
+    expect(await screen.findByText('Đã duyệt media trong phiên này')).toBeDisabled()
+  })
+  it('distinguishes satellite media and draft result without claiming camera capture or manager submission', async () => {
+    vi.mocked(operatorMissionMediaApi.list).mockResolvedValue(page([{ ...image, sourceType: 'SATELLITE_SNAPSHOT' }]))
+    render(<MissionUploadedMedia missionId="mission" reviewStatus="DRAFT" />)
+    expect(await screen.findByText('Ảnh vệ tinh · Browser snapshot')).toBeTruthy()
+    expect(screen.getAllByText('Kết quả nháp — chưa gửi manager').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Camera drone')).toBeNull()
+  })
   beforeEach(() => {
     vi.clearAllMocks()
     HTMLDialogElement.prototype.showModal = vi.fn()

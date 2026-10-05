@@ -3291,7 +3291,7 @@ export default function InFlightControl({
             })
             const upload = await fetch(`${controlBaseUrl}/api/media/local/capture`, {
               method: 'POST',
-              headers: { 'Content-Type': 'image/jpeg' },
+              headers: { 'Content-Type': 'image/jpeg', 'X-Media-Source-Type': 'SATELLITE_SNAPSHOT' },
               body: blob,
             })
             if (!upload.ok) {

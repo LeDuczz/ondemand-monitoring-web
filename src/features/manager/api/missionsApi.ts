@@ -439,6 +439,12 @@ export const missionsApi = {
     )
   },
 
+  rejectMissionResult(resultId: string, note: string): Promise<MissionResultResponse> {
+    return apiRequest<MissionResultResponse>(`/api/manager/mission-results/${encodeURIComponent(resultId)}/reject`, {
+      method: 'POST', body: { note: note.trim() || null },
+    })
+  },
+
   /** `POST /api/manager/missions/{missionId}/media-approvals/{mediaId}/approve` [BE]. Makes one media asset visible to the customer. */
   approveMissionMedia(missionId: string, mediaId: string): Promise<unknown> {
     return apiRequest<unknown>(

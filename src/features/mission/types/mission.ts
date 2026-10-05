@@ -13,6 +13,7 @@ export type MissionStatus =
   | 'IN_PROGRESS'
   | 'RETURNING'
   | 'POSTFLIGHT_CHECKING'
+  | 'PENDING_REVIEW'
   | 'COMPLETED'
   | 'FAILED'
   | 'CANCELLED'
@@ -107,6 +108,7 @@ export type MissionResultStatus =
   | 'CANCELLED'
 
 export type MissionResultApprovalStatus =
+  | 'DRAFT'
   | 'PENDING_MANAGER_APPROVAL'
   | 'APPROVED'
   | 'REJECTED'
@@ -120,6 +122,7 @@ export interface MissionResult {
   submittedAt?: string | null
   approvedAt?: string | null
   rejectedAt?: string | null
+  reviewNote?: string | null
   mediaFiles?: MissionResultMedia[] | null
 }
 

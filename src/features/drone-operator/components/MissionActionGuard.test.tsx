@@ -15,6 +15,11 @@ const permissions: MissionPermissions = {
 afterEach(() => vi.restoreAllMocks())
 
 describe('mission action guard', () => {
+  it('allows a monitoring actor into the shared media/checklist workspace without granting upload', async () => {
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({ ...permissions, canMaintainDevice: false, canExecuteMonitoringChecklist: true })
+    render(<MissionActionGuard missionId="m1" action="upload"><div>Monitoring workspace</div></MissionActionGuard>)
+    expect(await screen.findByText('Monitoring workspace')).toBeInTheDocument()
+  })
   it('does not render a flight screen for a maintainer', async () => {
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(permissions)
     render(

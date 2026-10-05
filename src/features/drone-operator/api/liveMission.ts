@@ -136,7 +136,18 @@ function operatorStatus(status: string): OperatorMissionStatus {
   if (status === 'COMPLETED') return 'COMPLETED'
   if (status === 'FAILED' || status === 'CANCELLED') return 'FAILED'
   if (status === 'RESOURCE_ASSIGNING') return 'REJECTED'
-  return 'ACCEPTED'
+  const remainingStatuses = [
+    'CREATED',
+    'SCHEDULED',
+    'CONNECTED',
+    'PREFLIGHT_CHECKING',
+    'READY_TO_FLY',
+    'FAILED_PREFLIGHT',
+    'PENDING_APPROVAL',
+    'POSTFLIGHT_CHECKING',
+    'PENDING_REVIEW',
+  ] as const
+  return remainingStatuses.find((value) => value === status) ?? 'UNKNOWN'
 }
 
 function operatorStatusForAssignment(
@@ -144,7 +155,9 @@ function operatorStatusForAssignment(
   responseStatus?: string | null,
 ): OperatorMissionStatus {
   if (responseStatus === 'ACCEPTED') {
-    return operatorStatus(status) === 'PENDING' ? 'ACCEPTED' : operatorStatus(status)
+    return operatorStatus(status) === 'PENDING'
+      ? 'ACCEPTED'
+      : operatorStatus(status)
   }
   if (responseStatus === 'REJECTED') return 'REJECTED'
   return operatorStatus(status)
@@ -161,15 +174,16 @@ export function toOperatorMission(
   const endSource =
     source.scheduledEndAt ??
     (start && typeof durationSeconds === 'number'
-      ? new Date(new Date(start).getTime() + durationSeconds * 1000).toISOString()
+      ? new Date(
+          new Date(start).getTime() + durationSeconds * 1000,
+        ).toISOString()
       : null)
   const end = localDateAndTime(endSource)
-  const myResponseStatus =
-    currentUserId
-      ? source.staffAssignments?.find(
-          (assignment) => assignment.staffId === currentUserId,
-        )?.responseStatus
-      : undefined
+  const myResponseStatus = currentUserId
+    ? source.staffAssignments?.find(
+        (assignment) => assignment.staffId === currentUserId,
+      )?.responseStatus
+    : undefined
   return {
     id: source.id,
     missionCode: source.missionCode ?? source.id,
@@ -297,9 +311,7 @@ export function toFlightDrone(source: BackendMission): Drone {
   const id = source.deviceId ?? source.droneId ?? ''
   const code = source.droneCode ?? source.deviceCode ?? id
   const deviceName = source.droneName ?? source.deviceName
-  const name = deviceName
-    ? `${code} ${deviceName}`
-    : code
+  const name = deviceName ? `${code} ${deviceName}` : code
   return {
     id,
     name,

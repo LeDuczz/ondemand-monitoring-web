@@ -3,6 +3,11 @@ import { defineMessages } from '../../../shared/i18n'
 export const uploadMediaScreenMessages = defineMessages({
   vi: {
     stepTitle: 'Upload media',
+    uploadPermissionNote: 'Upload ảnh cần Inspector đã nhận nhiệm vụ, khi mission ở PENDING_REVIEW hoặc COMPLETED. Pilot xem ảnh đã chụp; checklist chỉ sửa khi backend cấp quyền giám sát.',
+    checkingPermissions: 'Đang xác nhận quyền upload…',
+    permissionsUnavailable: 'Không tải được quyền upload. Bấm Làm mới để thử lại.',
+    enlargePreview: 'Xem ảnh lớn',
+    closePreview: 'Đóng ảnh',
     openingMission: 'Đang mở mission',
     summary: (
       uploaded: number,
@@ -31,6 +36,11 @@ export const uploadMediaScreenMessages = defineMessages({
     deleteFailed: 'Không xóa được media',
   },
   en: {
+    uploadPermissionNote: 'Uploading requires an accepted Inspector assignment and a PENDING_REVIEW or COMPLETED mission. Pilots can preview captures; checklist editing follows the backend monitoring capability.',
+    checkingPermissions: 'Checking upload permissions…',
+    permissionsUnavailable: 'Could not load upload permissions. Refresh to retry.',
+    enlargePreview: 'Enlarge image',
+    closePreview: 'Close image',
     stepTitle: 'Upload media',
     openingMission: 'Opening mission',
     summary: (

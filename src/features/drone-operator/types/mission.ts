@@ -1,5 +1,5 @@
-export type OperatorMissionStatus =
-  'PENDING' | 'ACCEPTED' | 'IN_FLIGHT' | 'COMPLETED' | 'REJECTED' | 'FAILED'
+import type { MissionStatus } from '../../mission/types/mission'
+export type OperatorMissionStatus = MissionStatus | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'UNKNOWN'
 
 export type OperatorMission = {
   id: string
@@ -52,6 +52,9 @@ export type OperatorMission = {
 }
 
 export type OperatorMissionPermissions = {
+  canCompleteMission?: boolean
+  canSubmitMissionResult?: boolean
+  canExecuteMonitoringChecklist?: boolean
   canControlFlight: boolean
   canOperatePayload: boolean
   canInspectDevice: boolean

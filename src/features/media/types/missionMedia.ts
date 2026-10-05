@@ -10,7 +10,7 @@ export interface UploadedMissionMedia {
   availableAt: string | null
   downloadUrl: string
   urlExpiresAt?: string
-  /** MAPILLARY_REFERENCE for real-world reference images; undefined for drone/manual media. */
+  /** Capture provenance; null/undefined means unknown legacy source. */
   sourceType?: string | null
   sourceReferenceId?: string | null
   sourceCapturedAt?: string | null
@@ -29,6 +29,7 @@ export interface UploadedMissionMediaPage {
 }
 
 export type MissionMediaReviewStatus =
+  | 'DRAFT'
   | 'PENDING_MANAGER_APPROVAL'
   | 'APPROVED'
   | 'REJECTED'

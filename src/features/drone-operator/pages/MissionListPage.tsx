@@ -292,7 +292,7 @@ function UpcomingRail({
   const { t } = useI18n(missionListPageMessages)
   const today = now.toISOString().slice(0, 10)
   const next = missions
-    .filter((m) => m.status === 'ACCEPTED')
+    .filter((m) => m.status === 'ACCEPTED' || m.status === 'SCHEDULED')
     .map((m) => ({ m, start: new Date(`${m.date}T${m.startTime}:00+07:00`) }))
     .filter(({ start }) => start.getTime() > now.getTime())
     .sort((a, b) => a.start.getTime() - b.start.getTime())[0]
@@ -344,11 +344,16 @@ function NextFlightCard({
     mission.date === today ? t.today2 : start.toLocaleDateString(locale)
   const deviceLabel = formatDeviceLabel(mission)
   const permissions = mission.permissions
+  const hasReportingAction = Boolean(permissions && (
+    permissions.canCompleteMission || permissions.canSubmitMissionResult ||
+    (mission.backendStatus === 'PENDING_REVIEW' && permissions.canExecuteMonitoringChecklist)
+  ))
   const reviewAction =
-    permissions?.canInspectDevice ||
-    permissions?.canUploadMedia ||
-    permissions?.canMaintainDevice
-      ? permissions.canMaintainDevice &&
+    permissions && (hasReportingAction || permissions.canInspectDevice ||
+      permissions.canUploadMedia || permissions.canMaintainDevice)
+      ? hasReportingAction
+        ? { label: t.viewResult, href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
+        : permissions.canMaintainDevice &&
         (mission.backendStatus === 'RETURNING' ||
           mission.backendStatus === 'POSTFLIGHT_CHECKING')
         ? {
@@ -369,7 +374,9 @@ function NextFlightCard({
             }
       : null
   const flightAction =
-    reviewAction ??
+    (!permissions || mission.backendStatus === 'PENDING_REVIEW' || mission.backendStatus === 'COMPLETED'
+      ? { label: t.viewResult, href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
+      : reviewAction) ??
     (permissions?.canControlFlight &&
     (mission.backendStatus === 'READY_TO_FLY' ||
       mission.backendStatus === 'IN_FLIGHT' ||

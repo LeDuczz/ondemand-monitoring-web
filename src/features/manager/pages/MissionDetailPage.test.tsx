@@ -75,6 +75,7 @@ beforeEach(() => {
     missionId: 'm',
     legacySnapshot: false,
     readyForSubmission: true,
+    readyForFinalApproval: true,
     executions: [
       {
         id: 'e',

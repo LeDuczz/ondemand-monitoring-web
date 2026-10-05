@@ -52,6 +52,8 @@ export type OperatorMission = {
 }
 
 export type OperatorMissionPermissions = {
+  canAttachChecklistEvidence?: boolean
+  canDetachChecklistEvidence?: boolean
   canCompleteMission?: boolean
   canSubmitMissionResult?: boolean
   canExecuteMonitoringChecklist?: boolean

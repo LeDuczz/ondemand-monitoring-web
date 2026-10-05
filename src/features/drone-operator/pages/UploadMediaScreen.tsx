@@ -25,6 +25,9 @@ import { MediaTable } from './MediaTable'
 import { uploadMediaScreenMessages } from './UploadMediaScreen.messages'
 import { UploadMonitoringChecklist } from './UploadMonitoringChecklist'
 import './UploadMediaScreen.css'
+import { useMissionMonitoring } from '../../mission/hooks/useMissionMonitoring'
+import { checklistEvidenceApi } from '../../mission/api/checklistEvidenceApi'
+import { checklistExecutionApi } from '../../mission/api/checklistExecutionApi'
 
 const finishedUploadStatuses = new Set([
   'PENDING_MANAGER_APPROVAL',
@@ -62,6 +65,9 @@ export function UploadMediaScreen({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [batchUploading, setBatchUploading] = useState(false)
   const [checklistRevision, setChecklistRevision] = useState(0)
+  const monitoring = useMissionMonitoring(missionId ?? '', checklistRevision)
+  const [selectedTargets, setSelectedTargets] = useState<Record<string, string[]>>({})
+  const [attachFailures, setAttachFailures] = useState<Record<string, string>>({})
   const [preview, setPreview] = useState<LocalMedia | null>(null)
   const previewDialog = useRef<HTMLDialogElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,6 +76,10 @@ export function UploadMediaScreen({
   const [referenceCount, setReferenceCount] = useState(0)
   const [uploadInfo, setUploadInfo] = useState<string | null>(null)
   const itemsRef = useRef<LocalMedia[]>([])
+  const uploadedMediaIds = useRef<Record<string, string>>({})
+  useEffect(() => {
+    setSelectedTargets({}); setAttachFailures({}); setItems([]); itemsRef.current = []; uploadedMediaIds.current = {}
+  }, [missionId])
   useEffect(() => {
     if (preview) previewDialog.current?.showModal()
   }, [preview])
@@ -126,7 +136,10 @@ export function UploadMediaScreen({
         const next = { ...previous, ...refreshedStatuses }
         return next
       })
-      const merged = new Map(media.map((item) => [item.localMediaId, item]))
+      const merged = new Map<string, LocalMedia>(media.map((item) => [item.localMediaId, {
+        ...item,
+        backendMediaId: item.backendMediaId ?? uploadedMediaIds.current[item.localMediaId] ?? previous.find(old => old.localMediaId === item.localMediaId)?.backendMediaId,
+      }]))
       for (const item of previous) {
         if (merged.has(item.localMediaId) || !item.backendMediaId) continue
         const status = refreshedStatuses[item.backendMediaId] ?? item.status
@@ -177,6 +190,7 @@ export function UploadMediaScreen({
     setError(null)
     try {
       const mediaId = await operatorMediaApi.upload(item, manual)
+      uploadedMediaIds.current[item.localMediaId] = mediaId
       setStatuses((previous) => ({
         ...previous,
         [mediaId]: previous[mediaId] ?? 'VALIDATING',
@@ -194,6 +208,7 @@ export function UploadMediaScreen({
         itemsRef.current = next
         return next
       })
+      await attachSelected(item, mediaId)
       await refresh()
       return true
     } catch (cause) {
@@ -202,6 +217,24 @@ export function UploadMediaScreen({
     } finally {
       setBusyId(null)
     }
+  }
+
+  async function attachSelected(item: LocalMedia, mediaId: string) {
+    const ids = selectedTargets[item.localMediaId] ?? []
+    if (!missionId || ids.length === 0) return
+    try {
+      // Fetch fresh package/versions for an explicit attach retry, never re-transfer the file.
+      const latest = await checklistExecutionApi.getMissionChecklistExecutions(missionId)
+      const targets = ids.map(id => {
+        const row = latest.executions.find(execution => execution.id === id)
+        if (!row) throw new Error('Mục checklist không còn thuộc Mission này.')
+        return { executionId: id, expectedVersion: row.version }
+      })
+      await checklistEvidenceApi.batch(missionId, mediaId, targets)
+      setAttachFailures(previous => { const next = { ...previous }; delete next[item.localMediaId]; return next })
+    } catch (cause) {
+      setAttachFailures(previous => ({ ...previous, [item.localMediaId]: cause instanceof Error ? cause.message : 'Không gắn được bằng chứng.' }))
+    } finally { monitoring.reload(); setChecklistRevision(value => value + 1) }
   }
 
   async function discard(item: LocalMedia) {
@@ -223,7 +256,8 @@ export function UploadMediaScreen({
     setBusyId(item.localMediaId)
     setError(null)
     try {
-      await operatorMediaApi.uploadPcBackup(item, file)
+      const mediaId = await operatorMediaApi.uploadPcBackup(item, file)
+      await attachSelected(item, mediaId)
       await refresh()
     } catch (cause) {
       setError(
@@ -460,7 +494,7 @@ export function UploadMediaScreen({
                             margin: '6px 0',
                           }}
                         >
-                          {item.mediaType} ·{' '}
+                          {item.mediaType} · {item.sourceType ?? 'Unknown/Legacy'} ·{' '}
                           {(item.fileSize / 1_000_000).toFixed(2)} MB · {status}
                         </div>
                         {item.previewError && (
@@ -525,6 +559,22 @@ export function UploadMediaScreen({
                             </button>
                           </div>
                         ) : null}
+                        {monitoring.data?.permissions.canAttachChecklistEvidence === true && !monitoring.loading && !monitoring.error && <fieldset disabled={isBusy}>
+                          <legend>Gắn vào checklist</legend>
+                          {monitoring.data.checklist.executions.map(execution => <label key={execution.id} style={{ display: 'block', fontSize: 12, margin: '6px 0' }}>
+                            <input type="checkbox" checked={(selectedTargets[item.localMediaId] ?? []).includes(execution.id)} onChange={event => setSelectedTargets(previous => {
+                              const current = previous[item.localMediaId] ?? []
+                              return { ...previous, [item.localMediaId]: event.target.checked ? [...current, execution.id] : current.filter(id => id !== execution.id) }
+                            })} /> {execution.content} · {execution.eligibleEvidenceCount ?? 0}/{execution.minimumEvidenceCount ?? 0}
+                          </label>)}
+                          {item.backendMediaId && <button type="button" className="odm-btn" disabled={isBusy || !(selectedTargets[item.localMediaId]?.length)} onClick={() => {
+                            const mediaId = item.backendMediaId
+                            if (!mediaId) return
+                            setBusyId(item.localMediaId)
+                            void attachSelected(item, mediaId).finally(() => setBusyId(null))
+                          }}>Gắn bằng chứng — không upload lại</button>}
+                        </fieldset>}
+                        {attachFailures[item.localMediaId] && <p role="alert">Media đã được giữ. Gắn bằng chứng chưa thành công: {attachFailures[item.localMediaId]}. Chọn “Gắn bằng chứng” để thử lại, không upload lại.</p>}
                         {canManageMedia &&
                           item.manualTaskId &&
                           ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(

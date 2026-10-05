@@ -171,6 +171,7 @@ describe('MissionDetailScreen', () => {
     )
   })
   it('inspector completes without chaining result submission', async () => {
+    vi.mocked(checklistExecutionApi.getMissionChecklistExecutions).mockResolvedValue({ missionId: 'm', legacySnapshot: false, executions: [], readyForSubmission: false, readyForMissionCompletion: true, checklistEvidenceReady: true })
     vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
       ...noActions,
@@ -192,6 +193,16 @@ describe('MissionDetailScreen', () => {
     expect(
       screen.queryByRole('button', { name: 'Gửi kết quả giám sát' }),
     ).toBeNull()
+  })
+
+  it('does not allow Inspector completion before backend evidence readiness', async () => {
+    vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({ ...noActions, canCompleteMission: true, canUploadMedia: true })
+    vi.mocked(checklistExecutionApi.getMissionChecklistExecutions).mockResolvedValue({ missionId: 'm', legacySnapshot: false, executions: [], readyForSubmission: false, readyForMissionCompletion: false, checklistEvidenceReady: false })
+    const complete = vi.spyOn(missionApi, 'completeMission').mockResolvedValue({} as never)
+    render(<MissionDetailScreen missionId="m" />)
+    expect(await screen.findByRole('button', { name: 'Nghiệm thu mission' })).toBeDisabled()
+    expect(complete).not.toHaveBeenCalled()
   })
 
   it.each(['OPERATOR', 'PILOT fallback'])(

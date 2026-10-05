@@ -9,6 +9,7 @@ import {
 } from '../../media/api/operatorMediaApi'
 import { operatorMissionMediaApi } from '../../media/api/operatorMissionMediaApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
+import { checklistEvidenceApi } from '../../mission/api/checklistEvidenceApi'
 
 vi.mock('../api/useActiveMission', () => ({
   useActiveMission: () => ({
@@ -90,6 +91,34 @@ beforeEach(() => {
 })
 afterEach(() => vi.restoreAllMocks())
 describe('Upload media and monitoring workspace', () => {
+  it('allows one capture to target multiple historical checklist executions', async () => {
+    vi.mocked(missionApi.getPermissions).mockResolvedValue({ ...permissions, canUploadMedia: true, canAttachChecklistEvidence: true, canExecuteMonitoringChecklist: false })
+    const snapshot = await checklistExecutionApi.getMissionChecklistExecutions('m')
+    vi.mocked(checklistExecutionApi.getMissionChecklistExecutions).mockResolvedValue({ ...snapshot, executions: [snapshot.executions[0], { ...snapshot.executions[0], id: 'e2', content: 'Khu vực phía Bắc', version: 2 }] })
+    vi.spyOn(operatorMediaApi, 'upload').mockResolvedValue('backend-media')
+    const attach = vi.spyOn(checklistEvidenceApi, 'batch').mockResolvedValue([])
+    render(<UploadMediaScreen missionId="m" />)
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Quan sát hàng rào/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /Khu vực phía Bắc/ }))
+    fireEvent.click(screen.getByText('Duyệt & upload'))
+    await waitFor(() => expect(attach).toHaveBeenCalledWith('m', 'backend-media', [{ executionId: 'e', expectedVersion: 4 }, { executionId: 'e2', expectedVersion: 2 }]))
+  })
+  it('uploads then attaches using backend media id and recovers attach failure without another upload', async () => {
+    vi.mocked(missionApi.getPermissions).mockResolvedValue({ ...permissions, canUploadMedia: true, canAttachChecklistEvidence: true, canExecuteMonitoringChecklist: false })
+    vi.mocked(operatorMediaApi.reviewItems).mockResolvedValue([{ ...media, sourceType: 'DRONE_CAMERA' }])
+    const upload = vi.spyOn(operatorMediaApi, 'upload').mockResolvedValue('backend-media')
+    const attach = vi.spyOn(checklistEvidenceApi, 'batch').mockRejectedValueOnce(new Error('attach failed')).mockResolvedValue([])
+    render(<UploadMediaScreen missionId="m" />)
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Quan sát hàng rào/ }))
+    fireEvent.click(screen.getByText('Duyệt & upload'))
+    await screen.findByText(/Gắn bằng chứng chưa thành công/)
+    expect(attach).toHaveBeenCalledWith('m', 'backend-media', [{ executionId: 'e', expectedVersion: 4 }])
+    const retry = await screen.findByText('Gắn bằng chứng — không upload lại')
+    await waitFor(() => expect(retry).toBeEnabled())
+    fireEvent.click(retry)
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(2))
+    expect(upload).toHaveBeenCalledOnce()
+  })
   it('shows compact captured images and editable checklist together without granting Pilot/Operator upload', async () => {
     render(<UploadMediaScreen missionId="m" />)
     await screen.findByText('Quan sát hàng rào')

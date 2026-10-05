@@ -391,7 +391,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                           !loading &&
                           !checklist.loading &&
                           !checklist.error &&
-                          checklist.data?.readyForSubmission === true
+                          checklist.data?.readyForFinalApproval === true
                         }
                         onReviewed={refreshDetail}
                       />
@@ -407,6 +407,11 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 error={checklist.error}
                 resultStatus={detail.result?.approvalStatus}
                 resultNote={detail.result?.reviewNote}
+                reviewMedia={async (mediaId, reject) => {
+                  if (reject) await missionsApi.rejectMissionMedia(mission.id, mediaId)
+                  else await missionsApi.approveMissionMedia(mission.id, mediaId)
+                  refreshDetail()
+                }}
                 refresh={() => {
                   checklist.reload()
                   refreshDetail()

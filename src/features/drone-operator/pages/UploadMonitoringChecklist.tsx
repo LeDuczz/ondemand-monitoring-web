@@ -20,6 +20,8 @@ export function UploadMonitoringChecklist({
       resultStatus={query.data?.result?.approvalStatus}
       resultNote={query.data?.result?.reviewNote}
       canExecute={query.data?.permissions.canExecuteMonitoringChecklist}
+      canAttach={query.data?.permissions.canAttachChecklistEvidence}
+      canDetach={query.data?.permissions.canDetachChecklistEvidence}
       refresh={query.reload}
     />
   )

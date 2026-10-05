@@ -454,6 +454,9 @@ export const missionsApi = {
       },
     )
   },
+  rejectMissionMedia(missionId: string, mediaId: string): Promise<unknown> {
+    return apiRequest<unknown>(`/api/manager/missions/${encodeURIComponent(missionId)}/media-approvals/${encodeURIComponent(mediaId)}/reject`, { method: 'POST' })
+  },
 
   /** `POST /api/missions/{id}/connect` [BE]. */
   connectMission(missionId: string): Promise<MissionResponse> {

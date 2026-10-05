@@ -9,6 +9,7 @@ import type {
 } from '../types/checklistExecution'
 import type { MissionResultApprovalStatus } from '../types/mission'
 import './MonitoringChecklistSection.css'
+import { ChecklistEvidencePanel, evidenceReason } from './ChecklistEvidencePanel'
 
 const statuses: Record<ChecklistExecutionStatus, string> = {
   PENDING: 'Chưa thực hiện',
@@ -79,6 +80,9 @@ export function MonitoringChecklistSection({
   resultNote,
   resultKnown = true,
   refresh,
+  canAttach = false,
+  canDetach = false,
+  reviewMedia,
 }: {
   missionId: string
   data?: MissionChecklistResponse
@@ -89,6 +93,9 @@ export function MonitoringChecklistSection({
   resultNote?: string | null
   resultKnown?: boolean
   refresh: () => void
+  canAttach?: boolean
+  canDetach?: boolean
+  reviewMedia?: (mediaId: string, reject: boolean) => Promise<unknown>
 }) {
   const locked =
     resultStatus === 'PENDING_MANAGER_APPROVAL' || resultStatus === 'APPROVED'
@@ -133,7 +140,7 @@ export function MonitoringChecklistSection({
         <>
           <div className="monitoring-summary" role="status">
             <strong>
-              {data.readyForSubmission
+              {(data.checklistEvidenceReady ?? data.readyForSubmission)
                 ? 'Sẵn sàng gửi kết quả'
                 : 'Chưa sẵn sàng gửi kết quả'}
             </strong>
@@ -142,6 +149,7 @@ export function MonitoringChecklistSection({
               {rows.length - done} mục chưa hoàn tất
             </span>
           </div>
+          {data.blockingReasons?.map(reason => <p key={reason} role="status">{evidenceReason[reason]}</p>)}
           {resultStatus && (
             <p>
               Trạng thái kết quả:{' '}
@@ -184,6 +192,7 @@ export function MonitoringChecklistSection({
       {data && (
         <ol>
           {rows.map((item) => (
+            <li key={`evidence:${missionId}:${item.id}`}>
             <ChecklistExecutionItem
               key={`${missionId}:${item.id}`}
               item={item}
@@ -192,6 +201,8 @@ export function MonitoringChecklistSection({
               rejected={resultStatus === 'REJECTED'}
               refresh={refresh}
             />
+            <ChecklistEvidencePanel missionId={missionId} item={item} canAttach={canAttach && resultKnown && !locked && !loading && !error} canDetach={canDetach && resultKnown && !locked && !loading && !error} refresh={refresh} reviewMedia={reviewMedia} />
+            </li>
           ))}
         </ol>
       )}
@@ -270,7 +281,7 @@ function ChecklistExecutionItem({
     }
   }
   return (
-    <li className="monitoring-item">
+    <div className="monitoring-item">
       <h3>{item.content}</h3>
       <div className="monitoring-meta">
         <span>{statuses[item.executionStatus]}</span>
@@ -399,6 +410,6 @@ function ChecklistExecutionItem({
           </fieldset>
         </form>
       )}
-    </li>
+    </div>
   )
 }

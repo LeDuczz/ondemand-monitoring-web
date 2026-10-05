@@ -683,6 +683,7 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   }
 
   async function handleCompleteMission() {
+    if (!monitoringKnown || monitoring.data?.checklist.readyForMissionCompletion !== true) return
     setSubmitting(true)
     setActionError(null)
     try {
@@ -741,7 +742,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
         resultSubmitting={resultSubmitting}
         resultSubmitted={resultSubmitted}
         submitReady={submitReady}
-        monitoringSection={<MonitoringChecklistSection missionId={mission.id} data={monitoring.data?.checklist} loading={monitoring.loading} error={monitoring.error} canExecute={monitoring.data?.permissions.canExecuteMonitoringChecklist} resultStatus={resultApprovalStatus} resultNote={monitoring.data?.result?.reviewNote} resultKnown={monitoringKnown} refresh={monitoring.reload} />}
+        completeReady={monitoringKnown && monitoring.data?.checklist.readyForMissionCompletion === true}
+        monitoringSection={<MonitoringChecklistSection missionId={mission.id} data={monitoring.data?.checklist} loading={monitoring.loading} error={monitoring.error} canExecute={monitoring.data?.permissions.canExecuteMonitoringChecklist} canAttach={monitoring.data?.permissions.canAttachChecklistEvidence} canDetach={monitoring.data?.permissions.canDetachChecklistEvidence} resultStatus={resultApprovalStatus} resultNote={monitoring.data?.result?.reviewNote} resultKnown={monitoringKnown} refresh={monitoring.reload} />}
         resultApprovalStatus={resultApprovalStatus}
         resultMessage={resultMessage}
         onAccept={handleAccept}
@@ -772,6 +774,7 @@ function MissionDashboard({
   resultSubmitted,
   submitReady,
   monitoringSection,
+  completeReady,
   resultApprovalStatus,
   resultMessage,
   onAccept,
@@ -786,6 +789,7 @@ function MissionDashboard({
   resultSubmitted: boolean
   submitReady: boolean
   monitoringSection: ReactNode
+  completeReady: boolean
   resultApprovalStatus: MissionResultApprovalStatus | null
   resultMessage: string | null
   onAccept: () => void
@@ -846,6 +850,7 @@ function MissionDashboard({
     <div>
       {/* ── Header ── */}
       <MissionHeader
+        completeReady={completeReady}
         mission={mission}
         submitting={submitting}
         resultSubmitting={resultSubmitting}
@@ -945,6 +950,7 @@ function MissionDashboard({
 // ─── Mission Header ───────────────────────────────────────────────────────────
 
 function MissionHeader({
+  completeReady,
   mission,
   submitting,
   resultSubmitting,
@@ -955,6 +961,7 @@ function MissionHeader({
   onSubmitResult,
   onCompleteMission,
 }: {
+  completeReady: boolean
   mission: OperatorMission
   submitting: boolean
   resultSubmitting: boolean
@@ -965,6 +972,7 @@ function MissionHeader({
   onSubmitResult: () => void
   onCompleteMission: () => void
 }) {
+  // Completion readiness comes from the same backend checklist query shown on this page.
   const permissions = useApiQuery(
     () => missionApi.getPermissions(mission.id),
     [mission.id, mission.status, mission.backendStatus, mission.myResponseStatus],
@@ -1117,7 +1125,7 @@ function MissionHeader({
               type="button"
               className="odm-btn odm-btn-p"
               onClick={onCompleteMission}
-              disabled={submitting}
+              disabled={submitting || !completeReady}
             >
               {submitting ? 'Đang nghiệm thu...' : 'Nghiệm thu mission'}
             </button>}

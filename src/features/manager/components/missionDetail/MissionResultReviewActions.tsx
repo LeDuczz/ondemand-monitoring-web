@@ -60,7 +60,7 @@ export function MissionResultReviewActions({
             />
           </label>
           {!ready && (
-            <p>Hãy tải và kiểm tra checklist sẵn sàng trước khi duyệt.</p>
+            <p>Duyệt media bắt buộc trước, rồi kiểm tra checklist sẵn sàng để duyệt kết quả.</p>
           )}
           <button
             type="button"

@@ -239,7 +239,7 @@ export function ResultDetail({
           <dl className="odm-or-kv compact">
             <div>
               <dt>Gửi lúc</dt>
-              <dd>{formatDateTime(result.submittedAt ?? result.completedAt, locale)}</dd>
+              <dd>{result.approvalStatus === 'DRAFT' ? 'Chưa gửi' : formatDateTime(result.submittedAt, locale)}</dd>
             </div>
             <div>
               <dt>Thời lượng thực tế</dt>

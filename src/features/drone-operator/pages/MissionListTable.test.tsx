@@ -5,6 +5,7 @@ import { render, screen } from '@testing-library/react'
 import { setLanguage } from '../../../shared/i18n'
 import { MissionListTable } from './MissionListTable'
 import type { OperatorMission } from '../types/mission'
+import { operatorHref } from '../routes'
 
 const missions: OperatorMission[] = [
   {
@@ -22,6 +23,58 @@ const missions: OperatorMission[] = [
 ]
 
 describe('MissionListTable', () => {
+  it('fails closed when permissions cannot be loaded in pending review', () => {
+    render(
+      <MissionListTable
+        missions={[
+          {
+            ...missions[0],
+            status: 'PENDING_REVIEW',
+            backendStatus: 'PENDING_REVIEW',
+          },
+        ]}
+        now={new Date()}
+      />,
+    )
+    expect(
+      screen
+        .getAllByRole('link')
+        .some((link) => link.getAttribute('href')?.includes('/connect/')),
+    ).toBe(false)
+  })
+  it('routes a monitoring actor in pending review to detail, not back to connect', () => {
+    render(
+      <MissionListTable
+        missions={[
+          {
+            ...missions[0],
+            status: 'ACCEPTED',
+            backendStatus: 'PENDING_REVIEW',
+            permissions: {
+              canControlFlight: false,
+              canOperatePayload: true,
+              canInspectDevice: false,
+              canMaintainDevice: false,
+              canUploadMedia: false,
+              canExecuteMonitoringChecklist: true,
+            },
+          },
+        ]}
+        now={new Date()}
+      />,
+    )
+    const links = screen.getAllByRole('link')
+    expect(
+      links.some(
+        (link) =>
+          link.getAttribute('href') ===
+          operatorHref({ screen: 'missionDetail', missionId: 'MSN-1' }),
+      ),
+    ).toBe(true)
+    expect(
+      links.some((link) => link.getAttribute('href')?.includes('/connect/')),
+    ).toBe(false)
+  })
   it('renders vietnamese column headers and status label', () => {
     render(
       <MissionListTable

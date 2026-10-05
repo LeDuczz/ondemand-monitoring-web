@@ -532,6 +532,23 @@ textarea.co-input {
   line-height: 1.55;
 }
 
+.co-service-illustration {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--ui-surface-2, #f1f5f9);
+  color: var(--ui-text-3, #64748b);
+  margin-bottom: 10px;
+}
+.co-service-illustration img, .co-service-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.co-service-image { max-height: 160px; border-radius: 8px; }
 .co-service-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

@@ -1447,6 +1447,29 @@
 .adm-json-label.is-after {
   color: var(--adm-success-text);
 }
+.adm-service-image {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--adm-border);
+  border-radius: 10px;
+}
+.adm-service-image img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.adm-service-image input { max-width: 100%; }
+.adm-service-image small { color: var(--adm-text-3); }
+.adm-service-thumbnail {
+  float: left;
+  width: 64px;
+  height: 48px;
+  margin-right: 12px;
+  border-radius: 8px;
+  object-fit: cover;
+}
 .adm-json {
   margin: 0;
   padding: var(--adm-space-3);

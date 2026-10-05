@@ -60,6 +60,7 @@ export const missionStatusTone: Record<MissionStatus, StatusTone> = {
   RETURNING: 'blue',
   // mapping by meaning: checklist actively running.
   POSTFLIGHT_CHECKING: 'blue',
+  PENDING_REVIEW: 'yellow',
   COMPLETED: 'green', // brief: COMPLETED → green
   FAILED: 'red', // brief: FAILED → red
   // mapping by meaning: terminal, non-error stop, same as OrderStatus.CANCELLED.
@@ -152,6 +153,7 @@ export const missionStatusLabel: Record<MissionStatus, string> = {
   IN_PROGRESS: 'Đang bay',
   RETURNING: 'Đang trở về',
   POSTFLIGHT_CHECKING: 'Đang kiểm tra sau bay',
+  PENDING_REVIEW: 'Chờ nghiệm thu',
   COMPLETED: 'Hoàn thành',
   FAILED: 'Thất bại',
   CANCELLED: 'Đã huỷ',
@@ -254,6 +256,7 @@ export const missionStatusLabelEn: Record<MissionStatus, string> = {
   IN_PROGRESS: 'In flight',
   RETURNING: 'Returning',
   POSTFLIGHT_CHECKING: 'Postflight check running',
+  PENDING_REVIEW: 'Awaiting inspection',
   COMPLETED: 'Completed',
   FAILED: 'Failed',
   CANCELLED: 'Cancelled',

@@ -1,0 +1,78 @@
+.monitoring-checklist {
+  margin: 16px 0;
+  padding: 20px;
+  color: var(--tx, #172033);
+}
+.monitoring-checklist header,
+.monitoring-summary,
+.monitoring-meta,
+.monitoring-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.monitoring-checklist header {
+  justify-content: space-between;
+}
+.monitoring-checklist h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.monitoring-checklist header p,
+.monitoring-checklist small {
+  color: var(--tx3, #64748b);
+}
+.monitoring-summary {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg2, #f1f5f9);
+}
+.monitoring-checklist ol {
+  padding-left: 24px;
+}
+.monitoring-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--bd, #e2e8f0);
+  overflow-wrap: anywhere;
+}
+.monitoring-item h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.monitoring-meta span {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg2, #f1f5f9);
+  font-size: 12px;
+}
+.monitoring-item fieldset {
+  border: 0;
+  padding: 12px 0;
+  display: grid;
+  gap: 8px;
+}
+.monitoring-item label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.monitoring-item textarea,
+.monitoring-item select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--bd, #cbd5e1);
+  border-radius: 6px;
+  font: inherit;
+  background: var(--bg, white);
+  color: inherit;
+}
+.monitoring-item textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.monitoring-checklist [role='alert'] {
+  color: var(--red-fg, #b91c1c);
+}

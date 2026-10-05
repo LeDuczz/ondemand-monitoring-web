@@ -17,13 +17,42 @@ import type {
 } from '../../features/customer/api/customerApi'
 import type { OrderCreateResponse } from '../../features/customer/api/orderApi'
 import { createCollection } from '../db'
-import { created, fail, isRealApiRoute, ok, passThrough, registerMockRoutes } from '../mockServer'
+import {
+  created,
+  fail,
+  isRealApiRoute,
+  ok,
+  passThrough,
+  registerMockRoutes,
+} from '../mockServer'
 import {
   mockCategoryServices,
   mockRequirementSuggestions,
   mockServiceDeliverables,
 } from '../data/customerCreateOrderSeeds'
 import { createdOrders } from './customerOrdersStore'
+import type {
+  ChecklistInput,
+  ServiceChecklistItem,
+} from '../../features/customer/lib/checklist/types'
+
+export const mockServiceChecklist = (
+  serviceId: string,
+): ServiceChecklistItem[] =>
+  serviceId === 'svc-2'
+    ? [
+        {
+          id: 'assignment-progress',
+          serviceId,
+          checklistId: 'check-progress',
+          content: 'Kiểm tra tiến độ thi công',
+          displayOrder: 0,
+          checklistVersion: 1,
+          serviceActive: true,
+          checklistActive: true,
+        },
+      ]
+    : []
 
 const SERVICE_PRICES: Record<string, number> = {
   'svc-1': 1_500_000,
@@ -42,8 +71,22 @@ const square = (min: number, max: number) => [
   [min, min],
 ]
 const zones = [
-  { id: 'zone-mon', code: 'MON-1', name: 'Khu giám sát A', zoneType: 'MONITORING', restricted: false, coordinates: square(0, 1000) },
-  { id: 'zone-nofly', code: 'NOFLY-1', name: 'Vùng cấm sân bay', zoneType: 'RESTRICTED', restricted: true, coordinates: square(500, 600) },
+  {
+    id: 'zone-mon',
+    code: 'MON-1',
+    name: 'Khu giám sát A',
+    zoneType: 'MONITORING',
+    restricted: false,
+    coordinates: square(0, 1000),
+  },
+  {
+    id: 'zone-nofly',
+    code: 'NOFLY-1',
+    name: 'Vùng cấm sân bay',
+    zoneType: 'RESTRICTED',
+    restricted: true,
+    coordinates: square(500, 600),
+  },
 ]
 
 const consultations = createCollection<CustomerConsultation[]>([])
@@ -131,9 +174,7 @@ function parseServicesFromContext(requestContext?: string) {
         .replace(/^- /, '')
         .split('|')
         .map((part) => part.trim())
-      return id && name
-        ? { id, name, description: description ?? '' }
-        : null
+      return id && name ? { id, name, description: description ?? '' } : null
     })
     .filter((item): item is ConsultationService => Boolean(item))
 }
@@ -175,13 +216,18 @@ function recommendService(
   const messageTokens = new Set(tokenize(evidence))
   const ranked = consultationServices(requestContext)
     .map((service) => {
-      const serviceText = normalizeText(`${service.name} ${service.description}`)
+      const serviceText = normalizeText(
+        `${service.name} ${service.description}`,
+      )
       const serviceTokens = new Set(tokenize(serviceText))
       let score = 0
       for (const token of messageTokens) {
         if (serviceTokens.has(token)) score += token.length
       }
-      if (serviceText.includes(messageText) || messageText.includes(serviceText)) {
+      if (
+        serviceText.includes(messageText) ||
+        messageText.includes(serviceText)
+      ) {
         score += 20
       }
       return { service, score }
@@ -233,6 +279,11 @@ const REQUIRED = [
 registerMockRoutes([
   {
     method: 'GET',
+    path: '/api/services/:serviceId/checklists',
+    handler: ({ params }) => ok(mockServiceChecklist(params.serviceId)),
+  },
+  {
+    method: 'GET',
     path: '/api/services/pricing-estimate',
     handler: ({ query }) => {
       const serviceId = query.get('serviceId')
@@ -265,7 +316,11 @@ registerMockRoutes([
     path: '/api/services/requirement-suggestions',
     handler: ({ query }) => {
       const serviceId = query.get('serviceId')
-      return ok(serviceId ? mockRequirementSuggestions.filter((s) => s.serviceId === serviceId) : mockRequirementSuggestions)
+      return ok(
+        serviceId
+          ? mockRequirementSuggestions.filter((s) => s.serviceId === serviceId)
+          : mockRequirementSuggestions,
+      )
     },
   },
   {
@@ -284,7 +339,11 @@ registerMockRoutes([
     },
   },
   { method: 'GET', path: '/api/zones', handler: () => ok([...zones]) },
-  { method: 'GET', path: '/api/category-services', handler: () => ok([...mockCategoryServices]) },
+  {
+    method: 'GET',
+    path: '/api/category-services',
+    handler: () => ok([...mockCategoryServices]),
+  },
   {
     method: 'POST',
     path: '/api/orders',
@@ -294,7 +353,8 @@ registerMockRoutes([
       const errors: Record<string, string> = {}
       for (const key of REQUIRED) {
         const value = b[key]
-        if (value === undefined || value === null || value === '') errors[key] = `${key} is required`
+        if (value === undefined || value === null || value === '')
+          errors[key] = `${key} is required`
       }
       if (Array.isArray(b.deliverables) && b.deliverables.length === 0) {
         errors.deliverables = 'deliverables must not be empty'
@@ -303,6 +363,12 @@ registerMockRoutes([
         return fail(400, 'VALIDATION_ERROR', 'Validation failed', errors)
       }
       const now = new Date().toISOString()
+      const template = mockServiceChecklist(String(b.serviceId))
+      const checklist = (b.checklistItems ??
+        template.map((item) => ({
+          sourceChecklistId: item.checklistId,
+          expectedChecklistVersion: item.checklistVersion,
+        }))) as ChecklistInput[]
       const order: OrderCreateResponse = {
         id: nextId('ord'),
         customerId: 'usr-customer',
@@ -319,11 +385,27 @@ registerMockRoutes([
         preferredDateTo: String(b.preferredDateTo),
         preferredTimeId: String(b.preferredTimeId),
         orderStatus: 'PENDING',
-        deliverables: (b.deliverables as Array<Record<string, unknown>>).map((d, i) => ({
-          id: `od-${i + 1}`,
-          deliverableTypeId: String(d.deliverableTypeId),
-          requirement: (d.requirement as Record<string, unknown>) ?? {},
+        checklistSnapshotAt: now,
+        checklistItems: checklist.map((item, displayOrder) => ({
+          id: nextId('snapshot'),
+          sourceChecklistId: item.sourceChecklistId ?? null,
+          content:
+            item.contentOverride ??
+            template.find((row) => row.checklistId === item.sourceChecklistId)
+              ?.content ??
+            '',
+          displayOrder,
+          sourceType: item.sourceChecklistId
+            ? 'SERVICE_TEMPLATE'
+            : 'CUSTOMER_CUSTOM',
         })),
+        deliverables: (b.deliverables as Array<Record<string, unknown>>).map(
+          (d, i) => ({
+            id: `od-${i + 1}`,
+            deliverableTypeId: String(d.deliverableTypeId),
+            requirement: (d.requirement as Record<string, unknown>) ?? {},
+          }),
+        ),
         createdAt: now,
         updatedAt: now,
       }
@@ -365,19 +447,30 @@ registerMockRoutes([
     handler: ({ params, body }) => {
       const found = consultations.find((c) => c.id === params.id)
       if (!found) return notFound('Consultation')
-      const request = body as { message?: string; requestContext?: string } | undefined
+      const request = body as
+        { message?: string; requestContext?: string } | undefined
       const text = String(request?.message ?? '').trim()
       if (!text) {
-        return fail(400, 'VALIDATION_ERROR', 'Validation failed', { message: 'message is required' })
+        return fail(400, 'VALIDATION_ERROR', 'Validation failed', {
+          message: 'message is required',
+        })
       }
-      const recommendation = recommendService(text, request?.requestContext, found.messages)
+      const recommendation = recommendService(
+        text,
+        request?.requestContext,
+        found.messages,
+      )
       const assistantMessage = recommendation
         ? buildRecommendationReply(recommendation)
         : buildClarifyingReply(request?.requestContext)
       found.messages = [
         ...(found.messages ?? []),
         { id: nextId('msg'), senderType: 'CUSTOMER', message: text },
-        { id: nextId('msg'), senderType: 'ASSISTANT', message: assistantMessage },
+        {
+          id: nextId('msg'),
+          senderType: 'ASSISTANT',
+          message: assistantMessage,
+        },
       ]
       found.status = recommendation ? 'READY_FOR_CONFIRMATION' : 'ACTIVE'
       found.recommendedServiceId = recommendation?.id

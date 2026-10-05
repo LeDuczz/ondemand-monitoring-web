@@ -108,6 +108,8 @@ export function toOrderDetail(order: OrderCreateResponse): OrderDetailView {
   return {
     ...row,
     description: orNull(order.description),
+    checklistItems: order.checklistItems ?? [],
+    checklistSnapshotAt: orNull(order.checklistSnapshotAt),
     latitude: orNull(order.latitude),
     longitude: orNull(order.longitude),
     rejectReason: orNull(order.rejectReason),

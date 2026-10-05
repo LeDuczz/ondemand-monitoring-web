@@ -1,4 +1,5 @@
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
+import { missionStatusTone } from '../../../shared/lib/statusTone'
 import { useI18n } from '../../../shared/i18n'
 import { setActiveMissionId } from '../api/liveMission'
 import { formatDeviceLabel } from '../lib/deviceLabel'
@@ -8,6 +9,8 @@ import type { OperatorMission } from '../types/mission'
 import { missionListTableMessages } from './MissionListTable.messages'
 
 const STATUS_TONE = {
+  ...missionStatusTone,
+  UNKNOWN: 'gray',
   PENDING: 'gray',
   ACCEPTED: 'green',
   IN_FLIGHT: 'blue',
@@ -27,7 +30,18 @@ type Messages = (typeof missionListTableMessages)['vi']
 function actionFor(mission: OperatorMission, t: Messages) {
   const backendStatus = mission.backendStatus
   const permissions = mission.permissions
+  if (!permissions || backendStatus === 'PENDING_REVIEW' || backendStatus === 'COMPLETED') {
+    return { label: t.action.viewResult, cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
+  }
   if (permissions) {
+    if (permissions.canCompleteMission || permissions.canSubmitMissionResult ||
+        (backendStatus === 'PENDING_REVIEW' && permissions.canExecuteMonitoringChecklist)) {
+      return {
+        label: t.action.viewResult,
+        cls: '',
+        href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+      }
+    }
     if (
       permissions.canMaintainDevice &&
       (backendStatus === 'RETURNING' || backendStatus === 'POSTFLIGHT_CHECKING')
@@ -304,7 +318,7 @@ export function MissionListTable({
                   <StatusBadge tone={STATUS_TONE[mission.status]}>
                     {mission.backendStatus === 'PENDING_REVIEW'
                       ? (lang === 'vi' ? 'Chờ nghiệm thu' : 'Awaiting review')
-                      : t.statusLabel[mission.status]}
+                      : (t.statusLabel as Record<string, string>)[mission.status] ?? mission.backendStatus ?? mission.status}
                   </StatusBadge>
                 </td>
                 <td>

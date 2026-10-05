@@ -1,4 +1,5 @@
 import { Card, EmptyState } from '../../../../../shared/components/ui'
+import { Icon } from '../../../../../shared/components/Icon'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption } from '../../../api/customerApi'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
@@ -13,7 +14,14 @@ type Props = {
   onSelect: (serviceId: string) => void
 }
 
-export function ServicePicker({ services, loading, selectedId, suggested, error, onSelect }: Props) {
+export function ServicePicker({
+  services,
+  loading,
+  selectedId,
+  suggested,
+  error,
+  onSelect,
+}: Props) {
   const { t, lang } = useI18n(servicePickerMessages)
 
   return (
@@ -24,7 +32,17 @@ export function ServicePicker({ services, loading, selectedId, suggested, error,
           <strong>{t.aiSuggested}</strong>
           <div className="co-hint">{t.aiSuggestedHint}</div>
           <div className="co-service">
-            <div className="co-service-name">{localizeServiceName(suggested.id, lang, suggested.name)}</div>
+            {suggested.imageUrl && (
+              <img
+                className="co-service-image"
+                src={suggested.imageUrl}
+                alt=""
+                loading="lazy"
+              />
+            )}
+            <div className="co-service-name">
+              {localizeServiceName(suggested.id, lang, suggested.name)}
+            </div>
             <div className="co-service-desc">
               {suggested.description || t.defaultDescription}
             </div>
@@ -61,8 +79,24 @@ export function ServicePicker({ services, loading, selectedId, suggested, error,
               aria-pressed={selectedId === service.id}
               onClick={() => onSelect(service.id)}
             >
-              <span className="co-service-name">{localizeServiceName(service.id, lang, service.name)}</span>
-              {selectedId === service.id && <span className="co-service-picked">{t.selectedBadge}</span>}
+              <span className="co-service-illustration">
+                {service.imageUrl ? (
+                  <img src={service.imageUrl} alt="" loading="lazy" />
+                ) : (
+                  <Icon
+                    name="camera"
+                    width={32}
+                    height={32}
+                    aria-hidden="true"
+                  />
+                )}
+              </span>
+              <span className="co-service-name">
+                {localizeServiceName(service.id, lang, service.name)}
+              </span>
+              {selectedId === service.id && (
+                <span className="co-service-picked">{t.selectedBadge}</span>
+              )}
               <span className="co-service-desc">
                 {service.description || t.defaultDescription}
               </span>

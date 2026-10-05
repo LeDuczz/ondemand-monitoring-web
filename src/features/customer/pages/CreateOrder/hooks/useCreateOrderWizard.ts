@@ -16,6 +16,7 @@ import { useDraftPersistence } from './useDraftPersistence'
 import { useRecommendedService } from './useRecommendedService'
 import { useSubmitOrder } from './useSubmitOrder'
 import { useWizard } from './useWizard'
+import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
 
 /** Wires every wizard hook together; the page only renders the result. */
 export function useCreateOrderWizard() {
@@ -23,7 +24,12 @@ export function useCreateOrderWizard() {
   const stored = useMemo(readStoredDraft, [])
   const f = useCreateOrderForm(stored)
   const { form, step } = f
-  const meta = useCreateOrderMeta(form.serviceId, f.aiAnalysisRequested, f.setForm)
+  const checklist = useOrderChecklist(form.serviceId)
+  const meta = useCreateOrderMeta(
+    form.serviceId,
+    f.aiAnalysisRequested,
+    f.setForm,
+  )
   const service = meta.services.find((s) => s.id === form.serviceId)
 
   const chat = useConsultation({
@@ -44,7 +50,9 @@ export function useCreateOrderWizard() {
   })
 
   useRecommendedService(chat.consultation, meta.services, (serviceId) => {
-    f.setForm((cur) => (cur.serviceId === serviceId ? cur : { ...cur, serviceId }))
+    f.setForm((cur) =>
+      cur.serviceId === serviceId ? cur : { ...cur, serviceId },
+    )
     f.setErrors((cur) => ({ ...cur, serviceId: undefined }))
   })
 
@@ -60,22 +68,28 @@ export function useCreateOrderWizard() {
     messages: t.validation,
   })
 
-  const score = useMemo(() => scoreRequest(form, t.scoreNotes), [form, t.scoreNotes])
+  const score = useMemo(
+    () => scoreRequest(form, t.scoreNotes),
+    [form, t.scoreNotes],
+  )
   const consultationId = isReusableConsultation(chat.consultation)
     ? chat.consultation.id
     : undefined
 
   const submit = useSubmitOrder({
-    validate: () => wizard.validate(4),
+    validate: () => wizard.validate(4) && checklist.valid,
+    onTemplateChanged: checklist.markStale,
     onError: f.setSubmitError,
-    buildPayload: () =>
-      buildOrderPayload({
+    buildPayload: () => ({
+      ...buildOrderPayload({
         form,
         score,
         consultationId,
         aiAnalysisRequested: f.aiAnalysisRequested,
         pricingEstimate: meta.pricingEstimate,
       }),
+      checklistItems: checklist.serialize(),
+    }),
   })
 
   useDraftPersistence(
@@ -92,6 +106,7 @@ export function useCreateOrderWizard() {
   )
 
   return {
+    checklist,
     f,
     meta,
     chat,

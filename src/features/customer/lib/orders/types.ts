@@ -1,4 +1,5 @@
 import type { OrderStatus } from '../../../../shared/types/domain'
+import type { ChecklistSnapshot } from '../checklist/types'
 
 /** One row of `GET /api/orders/mine`, flattened for the list and dashboard. */
 export type OrderRow = {
@@ -37,6 +38,8 @@ export type OrderTimelineEvent = {
 
 /** `GET /api/orders/{id}` mapped for the detail page. */
 export type OrderDetailView = OrderRow & {
+  checklistItems?: ChecklistSnapshot[]
+  checklistSnapshotAt?: string | null
   description: string | null
   latitude: number | null
   longitude: number | null

@@ -22,6 +22,17 @@ const mission = {
 }
 
 describe('live mission mapping', () => {
+  it('preserves pending review and never treats unknown statuses as accepted', () => {
+    expect(
+      toOperatorMission({ ...mission, status: 'PENDING_REVIEW' }).status,
+    ).toBe('PENDING_REVIEW')
+    expect(
+      toOperatorMission({ ...mission, status: 'FUTURE_STATUS' }).status,
+    ).toBe('UNKNOWN')
+    expect(
+      toOperatorMission({ ...mission, status: 'FUTURE_STATUS' }).backendStatus,
+    ).toBe('FUTURE_STATUS')
+  })
   it('keeps the backend ID for API calls and the code for display', () => {
     expect(toOperatorMission(mission).id).toBe(mission.id)
     expect(toOperatorMission(mission).missionCode).toBe(mission.missionCode)

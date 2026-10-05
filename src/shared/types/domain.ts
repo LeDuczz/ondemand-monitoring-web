@@ -36,6 +36,7 @@ export type MissionStatus =
   | 'IN_PROGRESS'
   | 'RETURNING'
   | 'POSTFLIGHT_CHECKING'
+  | 'PENDING_REVIEW'
   | 'COMPLETED'
   | 'FAILED'
   | 'CANCELLED'

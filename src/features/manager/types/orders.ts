@@ -58,6 +58,8 @@ export type OrderAttachment = {
  * when its field is `null`.
  */
 export type OrderDetail = {
+  checklistItems?: OrderChecklistSnapshot[]
+  checklistSnapshotAt?: string | null
   id: string
   code: string
   status: OrderStatus
@@ -180,6 +182,8 @@ export type OrderDeliverableResponse = {
 
 /** BE actual response for `GET /api/orders/pending` and related order-detail endpoints. */
 export type OrderCreateResponse = {
+  checklistItems?: OrderChecklistSnapshot[]
+  checklistSnapshotAt?: string | null
   id: string
   orderCode?: string | null
   customerId: string
@@ -205,4 +209,13 @@ export type OrderCreateResponse = {
   deliverables: OrderDeliverableResponse[]
   createdAt: string
   updatedAt: string
+}
+
+/** Historical OrderChecklistItem DTO; never reconstructed from the catalog. */
+export type OrderChecklistSnapshot = {
+  id: string
+  sourceChecklistId: string | null
+  sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
+  content: string
+  displayOrder: number
 }

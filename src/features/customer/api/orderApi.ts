@@ -1,6 +1,7 @@
 import { env } from '../../../config/env'
 import { getLanguage } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
+import type { ChecklistSnapshot } from '../lib/checklist/types'
 
 const errorText = {
   vi: {
@@ -78,6 +79,8 @@ export type OrderDeliverableResponse = {
 
 /** Backend `OrderCreateResponse` (POST /api/orders, GET /api/orders/pending). */
 export type OrderCreateResponse = {
+  checklistItems?: ChecklistSnapshot[]
+  checklistSnapshotAt?: string | null
   id: string
   orderCode?: string | null
   customerId: string

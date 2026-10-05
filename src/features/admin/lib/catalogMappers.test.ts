@@ -19,6 +19,7 @@ describe('catalogMappers', () => {
       id: '1',
       name: 'A',
       description: '',
+      imageUrl: null,
       isActive: false,
       createdAt: null,
       updatedAt: null,
@@ -31,7 +32,9 @@ describe('catalogMappers', () => {
     ).toEqual({ name: 'X', description: 'd', isActive: true })
     expect(emptyServiceForm().isActive).toBe(true)
     expect(
-      serviceToForm(mapService({ id: '1', name: 'A', description: 'd', isActive: true })),
+      serviceToForm(
+        mapService({ id: '1', name: 'A', description: 'd', isActive: true }),
+      ),
     ).toEqual({ name: 'A', description: 'd', isActive: true })
   })
 

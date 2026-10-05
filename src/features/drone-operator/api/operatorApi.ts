@@ -60,6 +60,11 @@ export const operatorApi = {
             canInspectDevice: value.canInspectDevice,
             canMaintainDevice: value.canMaintainDevice,
             canUploadMedia: value.canUploadMedia,
+            canCompleteMission: value.canCompleteMission,
+            canSubmitMissionResult: value.canSubmitMissionResult,
+            canExecuteMonitoringChecklist: value.canExecuteMonitoringChecklist,
+            canAttachChecklistEvidence: value.canAttachChecklistEvidence,
+            canDetachChecklistEvidence: value.canDetachChecklistEvidence,
           }))
           .catch(() => undefined)
         const itemWithPermissions = permissions ? { ...item, permissions } : item

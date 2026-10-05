@@ -10,6 +10,8 @@ export type AdminRoute =
   | { screen: 'accountDetail'; accountId: string }
   | { screen: 'roles' }
   | { screen: 'catalog' }
+  | { screen: 'checklists' }
+  | { screen: 'serviceChecklists'; serviceId?: string }
   | { screen: 'operatingConfig' }
   | { screen: 'aiKnowledge' }
   | { screen: 'auditLog' }
@@ -41,6 +43,15 @@ export function parseAdminRoute(hash: string): AdminRoute {
       return { screen: 'roles' }
     case 'catalog':
       return { screen: 'catalog' }
+    case 'checklists':
+      return tail.length === 0
+        ? { screen: 'checklists' }
+        : { screen: 'notFound' }
+    case 'services':
+      if (tail.length === 0) return { screen: 'serviceChecklists' }
+      if (tail.length === 2 && tail[1] === 'checklists')
+        return { screen: 'serviceChecklists', serviceId: tail[0] }
+      return { screen: 'notFound' }
     case 'operating-config':
       return { screen: 'operatingConfig' }
     case 'ai-knowledge':
@@ -66,6 +77,12 @@ export function adminHref(route: AdminRoute): string {
       return `${ADMIN_ROOT}/roles`
     case 'catalog':
       return `${ADMIN_ROOT}/catalog`
+    case 'checklists':
+      return `${ADMIN_ROOT}/checklists`
+    case 'serviceChecklists':
+      return route.serviceId
+        ? `${ADMIN_ROOT}/services/${encodeURIComponent(route.serviceId)}/checklists`
+        : `${ADMIN_ROOT}/services`
     case 'operatingConfig':
       return `${ADMIN_ROOT}/operating-config`
     case 'aiKnowledge':

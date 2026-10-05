@@ -97,6 +97,9 @@ describe('ServicesTab', () => {
   it('deletes after a danger confirmation', async () => {
     render(<ServicesTab />)
     await screen.findByText('Giám sát Tiến độ Xây dựng')
+    fireEvent.click(
+      screen.getByLabelText('Thao tác khác Giám sát Tiến độ Xây dựng'),
+    )
     fireEvent.click(screen.getByLabelText('Xoá Giám sát Tiến độ Xây dựng'))
     expect(screen.getByText(/Bạn có chắc muốn xoá/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Xoá' }))

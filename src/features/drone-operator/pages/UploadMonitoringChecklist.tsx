@@ -25,6 +25,7 @@ export function UploadMonitoringChecklist({
       canAttach={query.data?.permissions.canAttachChecklistEvidence}
       canDetach={query.data?.permissions.canDetachChecklistEvidence}
       refresh={query.reload}
+      compact
     />
   )
 }

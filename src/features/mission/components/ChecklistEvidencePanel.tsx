@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
 import type {
   EvidenceBlockingReason,
@@ -49,6 +50,7 @@ export function ChecklistEvidencePanel({
 }) {
   const [candidates, setCandidates] = useState<EvidenceCandidate[] | null>(null)
   const [page, setPage] = useState(0)
+  const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   async function act(operation: () => Promise<unknown>) {
@@ -81,6 +83,10 @@ export function ChecklistEvidencePanel({
       setBusy(false)
     }
   }
+  const needle = query.trim().toLowerCase()
+  const shown = (candidates ?? []).filter(
+    (media) => !needle || media.fileName.toLowerCase().includes(needle),
+  )
   return (
     <section
       className="checklist-evidence"
@@ -98,172 +104,253 @@ export function ChecklistEvidencePanel({
       <div className="checklist-evidence-grid">
         {item.evidence?.map((link) => (
           <article key={link.evidenceId}>
-            {link.previewUrl &&
-              (link.mediaType === 'VIDEO' ? (
-                <video src={link.previewUrl} controls preload="metadata" />
-              ) : (
-                <a href={link.previewUrl} target="_blank" rel="noreferrer">
-                  <img
-                    src={link.previewUrl}
-                    alt={link.fileName}
-                    loading="lazy"
-                  />
-                </a>
-              ))}
-            <div className="checklist-evidence-name">{link.fileName}</div>
-            <small>
-              {link.sourceType ?? 'Unknown/Legacy'} ·{' '}
-              {link.mediaStatus ?? 'Legacy'}
-            </small>
-            <small>{new Date(link.capturedAt).toLocaleString('vi-VN')}</small>
-            <p>
-              {link.eligibleForOperationalReadiness
-                ? 'Đủ điều kiện vận hành'
-                : link.ineligibilityReason
-                  ? evidenceReason[link.ineligibilityReason]
-                  : 'Chưa hợp lệ'}
-            </p>
-            {!link.eligibleForFinalApproval &&
-              link.mediaStatus === 'PENDING_MANAGER_APPROVAL' && (
-                <p>{evidenceReason.MEDIA_APPROVAL_REQUIRED}</p>
-              )}
-            {canDetach && (
-              <button
-                type="button"
-                className="odm-btn"
-                disabled={busy}
-                onClick={() =>
-                  void act(() =>
-                    checklistEvidenceApi.detach(
-                      missionId,
-                      item.id,
-                      link.evidenceId,
-                      item.version,
-                    ),
-                  )
-                }
-              >
-                Gỡ bằng chứng
-              </button>
-            )}
-            {reviewMedia && link.mediaStatus === 'PENDING_MANAGER_APPROVAL' && (
-              <div>
-                <button
-                  type="button"
-                  className="odm-btn"
-                  disabled={busy}
-                  onClick={() =>
-                    void act(() => reviewMedia(link.mediaId, false))
-                  }
-                >
-                  Duyệt media
-                </button>
-                <button
-                  type="button"
-                  className="odm-btn"
-                  disabled={busy}
-                  onClick={() =>
-                    void act(() => reviewMedia(link.mediaId, true))
-                  }
-                >
-                  Từ chối media
-                </button>
+            <div className="checklist-evidence-thumb">
+              {link.previewUrl &&
+                (link.mediaType === 'VIDEO' ? (
+                  <video src={link.previewUrl} controls preload="metadata" />
+                ) : (
+                  <a href={link.previewUrl} target="_blank" rel="noreferrer">
+                    <img
+                      src={link.previewUrl}
+                      alt={link.fileName}
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+            </div>
+            <div className="checklist-evidence-main">
+              <div className="checklist-evidence-name" title={link.fileName}>
+                {link.fileName}
               </div>
-            )}
+              <div className="checklist-candidate-meta">
+                <span>
+                  {sourceLabel[link.sourceType ?? ''] ??
+                    link.sourceType ??
+                    'Unknown/Legacy'}
+                </span>
+                <span className="checklist-candidate-status">
+                  {mediaStatusLabel[link.mediaStatus ?? ''] ??
+                    link.mediaStatus ??
+                    'Legacy'}
+                </span>
+              </div>
+              <small>{new Date(link.capturedAt).toLocaleString('vi-VN')}</small>
+              <p
+                className={`checklist-evidence-note${link.eligibleForOperationalReadiness ? ' is-ok' : ''}`}
+              >
+                {link.eligibleForOperationalReadiness
+                  ? 'Đủ điều kiện vận hành'
+                  : link.ineligibilityReason
+                    ? evidenceReason[link.ineligibilityReason]
+                    : 'Chưa hợp lệ'}
+              </p>
+              {!link.eligibleForFinalApproval &&
+                link.mediaStatus === 'PENDING_MANAGER_APPROVAL' && (
+                  <p className="checklist-evidence-note">
+                    {evidenceReason.MEDIA_APPROVAL_REQUIRED}
+                  </p>
+                )}
+              <div className="checklist-evidence-actions">
+                {canDetach && (
+                  <button
+                    type="button"
+                    className="odm-btn"
+                    disabled={busy}
+                    onClick={() =>
+                      void act(() =>
+                        checklistEvidenceApi.detach(
+                          missionId,
+                          item.id,
+                          link.evidenceId,
+                          item.version,
+                        ),
+                      )
+                    }
+                  >
+                    Gỡ bằng chứng
+                  </button>
+                )}
+                {reviewMedia &&
+                  link.mediaStatus === 'PENDING_MANAGER_APPROVAL' && (
+                    <>
+                      <button
+                        type="button"
+                        className="odm-btn"
+                        disabled={busy}
+                        onClick={() =>
+                          void act(() => reviewMedia(link.mediaId, false))
+                        }
+                      >
+                        Duyệt media
+                      </button>
+                      <button
+                        type="button"
+                        className="odm-btn"
+                        disabled={busy}
+                        onClick={() =>
+                          void act(() => reviewMedia(link.mediaId, true))
+                        }
+                      >
+                        Từ chối media
+                      </button>
+                    </>
+                  )}
+              </div>
+            </div>
           </article>
         ))}
       </div>
       {canAttach && (
         <button
           type="button"
-          className="odm-btn"
+          className="odm-btn checklist-evidence-add"
           disabled={busy}
           onClick={() => void load(0)}
         >
           Thêm bằng chứng từ media Mission
         </button>
       )}
-      {canAttach && candidates && (
-        <div className="checklist-candidates">
-          <ul className="checklist-candidate-list">
-            {candidates.map((media) => (
-              <li key={media.mediaId} className="checklist-candidate">
-                <div className="checklist-candidate-info">
-                  <span className="checklist-candidate-name" title={media.fileName}>
-                    {media.fileName}
+      {canAttach &&
+        candidates &&
+        createPortal(
+          <div
+            className="checklist-picker"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Chọn media làm bằng chứng"
+          >
+            <div
+              className="checklist-picker-backdrop"
+              onClick={() => setCandidates(null)}
+            />
+            <div className="checklist-picker-panel">
+              <header className="checklist-picker-head">
+                <div>
+                  <strong>Chọn media làm bằng chứng</strong>
+                  <span>
+                    {item.content} · Trang {page + 1}
                   </span>
-                  <span className="checklist-candidate-meta">
-                    <span>
-                      {sourceLabel[media.sourceType ?? ''] ??
-                        media.sourceType ??
-                        'Unknown/Legacy'}
-                    </span>
-                    <span className="checklist-candidate-status">
-                      {mediaStatusLabel[media.status ?? ''] ??
-                        media.status ??
-                        'Legacy'}
-                    </span>
-                  </span>
-                  {!media.attachable && (
-                    <small>
-                      {media.ineligibilityReason
-                        ? evidenceReason[media.ineligibilityReason]
-                        : 'Không thể gắn'}
-                    </small>
-                  )}
                 </div>
                 <button
                   type="button"
-                  className="odm-btn"
-                  disabled={
-                    busy ||
-                    !media.attachable ||
-                    media.alreadyAttachedExecutionIds.includes(item.id)
-                  }
-                  onClick={() =>
-                    void act(async () => {
-                      await checklistEvidenceApi.attach(
-                        missionId,
-                        item.id,
-                        media.mediaId,
-                        item.version,
-                      )
-                      setCandidates(null)
-                    })
-                  }
+                  className="checklist-picker-close"
+                  aria-label="Đóng"
+                  onClick={() => setCandidates(null)}
                 >
-                  Gắn media
+                  ×
                 </button>
-              </li>
-            ))}
-          </ul>
-          <div className="checklist-candidate-pager">
-            <button
-              type="button"
-              className="odm-btn"
-              disabled={busy || page === 0}
-              onClick={() => void load(page - 1)}
-            >
-              Trang trước
-            </button>
-            <button
-              type="button"
-              className="odm-btn"
-              disabled={busy || candidates.length < 50}
-              onClick={() => void load(page + 1)}
-            >
-              Trang sau
-            </button>
-            <button
-              type="button"
-              className="odm-btn"
-              onClick={() => setCandidates(null)}
-            >
-              Đóng chọn media
-            </button>
-          </div>
-        </div>
-      )}
+              </header>
+              <input
+                type="search"
+                className="checklist-picker-search"
+                aria-label="Tìm media"
+                placeholder="Tìm theo tên file…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <div className="checklist-picker-body">
+                {shown.length === 0 && (
+                  <p className="checklist-candidates-empty">
+                    Không có media nào để gắn.
+                  </p>
+                )}
+                <ul className="checklist-candidate-list">
+                  {shown.map((media) => (
+                    <li key={media.mediaId} className="checklist-candidate">
+                      <div className="checklist-candidate-thumb">
+                        {media.previewUrl && media.mediaType !== 'VIDEO' ? (
+                          <img src={media.previewUrl} alt="" loading="lazy" />
+                        ) : (
+                          <span aria-hidden="true">
+                            {media.mediaType === 'VIDEO' ? '▶' : '▣'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="checklist-candidate-info">
+                        <span
+                          className="checklist-candidate-name"
+                          title={media.fileName}
+                        >
+                          {media.fileName}
+                        </span>
+                        <span className="checklist-candidate-meta">
+                          <span>
+                            {sourceLabel[media.sourceType ?? ''] ??
+                              media.sourceType ??
+                              'Unknown/Legacy'}
+                          </span>
+                          <span className="checklist-candidate-status">
+                            {mediaStatusLabel[media.status ?? ''] ??
+                              media.status ??
+                              'Legacy'}
+                          </span>
+                        </span>
+                        <small className="checklist-candidate-time">
+                          {new Date(media.capturedAt).toLocaleString('vi-VN')}
+                        </small>
+                        {!media.attachable && (
+                          <small>
+                            {media.ineligibilityReason
+                              ? evidenceReason[media.ineligibilityReason]
+                              : 'Không thể gắn'}
+                          </small>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="odm-btn odm-btn-p"
+                        disabled={
+                          busy ||
+                          !media.attachable ||
+                          media.alreadyAttachedExecutionIds.includes(item.id)
+                        }
+                        onClick={() =>
+                          void act(async () => {
+                            await checklistEvidenceApi.attach(
+                              missionId,
+                              item.id,
+                              media.mediaId,
+                              item.version,
+                            )
+                            setCandidates(null)
+                          })
+                        }
+                      >
+                        Gắn media
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <footer className="checklist-candidate-pager">
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={busy || page === 0}
+                  onClick={() => void load(page - 1)}
+                >
+                  Trang trước
+                </button>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={busy || candidates.length < 50}
+                  onClick={() => void load(page + 1)}
+                >
+                  Trang sau
+                </button>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  onClick={() => setCandidates(null)}
+                >
+                  Đóng chọn media
+                </button>
+              </footer>
+            </div>
+          </div>,
+          document.body,
+        )}
       {error && <p role="alert">{error}</p>}
     </section>
   )

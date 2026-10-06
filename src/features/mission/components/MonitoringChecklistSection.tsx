@@ -83,6 +83,7 @@ export function MonitoringChecklistSection({
   canAttach = false,
   canDetach = false,
   reviewMedia,
+  compact = false,
 }: {
   missionId: string
   data?: MissionChecklistResponse
@@ -96,7 +97,10 @@ export function MonitoringChecklistSection({
   canAttach?: boolean
   canDetach?: boolean
   reviewMedia?: (mediaId: string, reject: boolean) => Promise<unknown>
+  /** Dense acceptance panel: one line per item, only the active item expands. */
+  compact?: boolean
 }) {
+  const [openId, setOpenId] = useState<string | null>(null)
   const locked =
     resultStatus === 'PENDING_MANAGER_APPROVAL' || resultStatus === 'APPROVED'
   const editable = canExecute && resultKnown && !locked && !loading && !error
@@ -104,6 +108,125 @@ export function MonitoringChecklistSection({
     (a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id),
   )
   const done = rows.filter((row) => terminal(row.executionStatus)).length
+  if (compact) {
+    const firstTodo = rows.find((row) => !terminal(row.executionStatus))
+    const activeId =
+      openId === '' ? null : rows.some((row) => row.id === openId) ? openId : (firstTodo ?? rows[0])?.id
+    const canChange = (data?.checklistEvidenceReady ?? data?.readyForSubmission) === true
+    return (
+      <section
+        className="monitoring-checklist odm-card is-compact"
+        aria-label="Monitoring Checklist"
+      >
+        <header>
+          <h2>Checklist nghiệm thu</h2>
+          <span className="mc-count">
+            {done} / {rows.length}
+          </span>
+        </header>
+        <div className="mc-progress" aria-hidden="true">
+          <span style={{ width: rows.length ? `${(done / rows.length) * 100}%` : '0%' }} />
+        </div>
+        {loading && <p role="status" className="mc-note">Đang tải checklist…</p>}
+        {error ? (
+          <div role="alert" className="mc-note is-danger">
+            <p>{monitoringErrorMessage(error)}</p>
+            <button type="button" className="odm-btn" onClick={refresh}>
+              Thử lại checklist
+            </button>
+          </div>
+        ) : null}
+        {!loading && !error && data ? (
+          <>
+            {resultStatus === 'REJECTED' && (
+              <p className="mc-note is-warn">
+                Kết quả bị từ chối
+                {resultNote ? `: ${resultNote}` : ''}
+              </p>
+            )}
+            {data.legacySnapshot && (
+              <p className="mc-note">Mission cũ — không có snapshot checklist giám sát lịch sử.</p>
+            )}
+            {!rows.length && <p className="mc-note">Không có mục checklist giám sát.</p>}
+            {!editable && rows.length > 0 && (
+              <p className="mc-note">
+                {locked
+                  ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
+                  : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
+              </p>
+            )}
+            {!canChange && done === rows.length && rows.length > 0 && !data.readyForSubmission && (
+              <p className="mc-note is-warn" role="alert">
+                Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới; nếu vẫn chưa sẵn sàng, liên hệ quản trị viên.
+              </p>
+            )}
+          </>
+        ) : null}
+        {data && (
+          <ol className="mc-list">
+            {rows.map((item, index) => {
+              const open = item.id === activeId
+              const finished = terminal(item.executionStatus)
+              const missing =
+                finished &&
+                item.executionStatus === 'COMPLETED' &&
+                (item.eligibleEvidenceCount ?? 0) < (item.minimumEvidenceCount ?? 0)
+              const tone =
+                item.executionStatus === 'UNABLE_TO_VERIFY'
+                  ? 'is-unable'
+                  : finished
+                    ? missing
+                      ? 'is-missing'
+                      : 'is-done'
+                    : item.id === firstTodo?.id
+                      ? 'is-current'
+                      : ''
+              return (
+                <li key={`evidence:${missionId}:${item.id}`} className={`mc-item ${tone}${open ? ' is-open' : ''}`}>
+                  <button
+                    type="button"
+                    className="mc-row"
+                    aria-expanded={open}
+                    onClick={() => setOpenId(open ? '' : item.id)}
+                  >
+                    <span className="mc-mark" aria-hidden="true">
+                      {tone === 'is-done' ? '✓' : tone === 'is-unable' ? '!' : index + 1}
+                    </span>
+                    <span className="mc-title">{item.content}</span>
+                    {tone === 'is-current' && <span className="mc-chip is-todo">Cần làm</span>}
+                    {tone === 'is-missing' && <span className="mc-chip is-todo">Thiếu bằng chứng</span>}
+                    {tone === 'is-unable' && <span className="mc-chip is-danger">Không xác minh</span>}
+                    <span className="mc-caret" aria-hidden="true" />
+                  </button>
+                  {open && (
+                    <div className="mc-detail">
+                      <ChecklistExecutionItem
+                        key={`${missionId}:${item.id}`}
+                        item={item}
+                        missionId={missionId}
+                        editable={editable}
+                        rejected={resultStatus === 'REJECTED'}
+                        refresh={refresh}
+                        compact
+                      />
+                      <ChecklistEvidencePanel
+                        missionId={missionId}
+                        item={item}
+                        canAttach={canAttach && resultKnown && !locked && !loading && !error}
+                        canDetach={canDetach && resultKnown && !locked && !loading && !error}
+                        refresh={refresh}
+                        reviewMedia={reviewMedia}
+                      />
+                    </div>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        )}
+      </section>
+    )
+  }
   return (
     <section
       className="monitoring-checklist odm-card"
@@ -230,12 +353,14 @@ function ChecklistExecutionItem({
   editable,
   rejected,
   refresh,
+  compact = false,
 }: {
   item: MissionChecklistExecution
   missionId: string
   editable: boolean
   rejected: boolean
   refresh: () => void
+  compact?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [base, setBase] = useState(item)
@@ -296,18 +421,24 @@ function ChecklistExecutionItem({
   }
   return (
     <div className="monitoring-item">
-      <h3>{item.content}</h3>
+      {!compact && <h3>{item.content}</h3>}
+      {(!compact || item.assessmentStatus !== 'NOT_ASSESSED') && (
       <div className="monitoring-meta">
-        <span className={`is-exec-${item.executionStatus.toLowerCase()}`}>
-          {statuses[item.executionStatus]}
-        </span>
+        {!compact && (
+          <span className={`is-exec-${item.executionStatus.toLowerCase()}`}>
+            {statuses[item.executionStatus]}
+          </span>
+        )}
         <span className={`is-assess-${item.assessmentStatus.toLowerCase()}`}>
           {assessments[item.assessmentStatus]}
         </span>
-        <span className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}>
-          {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
-        </span>
+        {!compact && (
+          <span className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}>
+            {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
+          </span>
+        )}
       </div>
+      )}
       {item.observation && (
         <p>
           <strong>Ghi nhận:</strong> {item.observation}

@@ -242,3 +242,219 @@
     margin-bottom: 8px;
   }
 }
+
+/* Never let long content (fieldsets default to min-width: min-content) force horizontal scroll. */
+.monitoring-checklist,
+.monitoring-list > li,
+.monitoring-item,
+.monitoring-item form,
+.monitoring-item fieldset,
+.monitoring-item label {
+  min-width: 0;
+  max-width: 100%;
+}
+.monitoring-summary > span:not(.monitoring-progress) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Implicit grid tracks are `auto` (= min-content), so a native <select> widened its whole form. */
+.monitoring-item fieldset,
+.monitoring-item label {
+  grid-template-columns: minmax(0, 1fr);
+}
+.monitoring-item select,
+.monitoring-item textarea {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  field-sizing: fixed;
+}
+.monitoring-item select {
+  text-overflow: ellipsis;
+}
+.monitoring-list > li {
+  overflow: hidden;
+}
+.monitoring-list > li > .monitoring-item,
+.monitoring-list > li > .checklist-evidence {
+  max-width: 100%;
+}
+
+/* ---------- Compact acceptance panel (Upload media): one line per item, one expanded ---------- */
+.monitoring-checklist.is-compact {
+  margin: 0;
+  padding: 18px 16px;
+  border-radius: 14px;
+}
+.monitoring-checklist.is-compact header {
+  flex-wrap: nowrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.monitoring-checklist.is-compact h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.mc-count {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+.mc-progress {
+  height: 6px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+.mc-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #16a34a;
+  transition: width 0.25s ease;
+}
+.mc-note {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.mc-note.is-warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+.mc-note.is-danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.mc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mc-item {
+  border-radius: 10px;
+  min-width: 0;
+}
+.mc-item.is-open {
+  background: #f8fbff;
+  box-shadow: inset 0 0 0 1px #bfdbfe;
+}
+.mc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: #0f172a;
+  cursor: pointer;
+}
+.mc-row:hover {
+  background: #f1f5f9;
+}
+.mc-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.mc-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.mc-item.is-done .mc-mark {
+  background: #16a34a;
+  color: #fff;
+}
+.mc-item.is-current .mc-mark {
+  background: #2563eb;
+  color: #fff;
+}
+.mc-item.is-missing .mc-mark {
+  background: #fef3c7;
+  color: #b45309;
+}
+.mc-item.is-unable .mc-mark {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.mc-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.mc-chip {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.mc-chip.is-todo {
+  background: #fef3c7;
+  color: #b45309;
+}
+.mc-chip.is-danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.mc-caret {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+.mc-item.is-open .mc-caret {
+  transform: rotate(45deg);
+}
+.mc-detail {
+  padding: 0 10px 12px 44px;
+  min-width: 0;
+}
+.mc-detail .monitoring-item > .odm-btn {
+  margin-top: 4px;
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.mc-detail .monitoring-item p {
+  margin: 4px 0 0;
+}
+.mc-detail .monitoring-item form {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.mc-detail .checklist-evidence {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff;
+}

@@ -81,7 +81,7 @@ describe('Checklist evidence', () => {
   it('shows per-item preview, source, status and backend readiness', () => {
     render(<ChecklistEvidencePanel {...props} />)
     expect(screen.getByAltText('capture.jpg')).toBeInTheDocument()
-    expect(screen.getByText(/DRONE_CAMERA/)).toBeInTheDocument()
+    expect(screen.getByText(/Camera drone/)).toBeInTheDocument()
     expect(screen.getByText('Bằng chứng hợp lệ: 1 / 1')).toBeInTheDocument()
     expect(screen.getByText(/Duyệt media bắt buộc/)).toBeInTheDocument()
   })

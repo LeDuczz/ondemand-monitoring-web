@@ -20,6 +20,110 @@ import { missionListPageMessages } from './MissionListPage.messages'
 
 type Messages = (typeof missionListPageMessages)['vi']
 
+const ACTIVE_RAIL_STATUSES = new Set([
+  'CONNECTED',
+  'PREFLIGHT_CHECKING',
+  'FAILED_PREFLIGHT',
+  'READY_TO_FLY',
+  'IN_FLIGHT',
+  'IN_PROGRESS',
+  'RETURNING',
+  'POSTFLIGHT_CHECKING',
+  'PENDING_REVIEW',
+])
+
+function latestMissionStatus(mission: OperatorMission) {
+  return mission.backendStatus ?? mission.status
+}
+
+function isRailMission(mission: OperatorMission, start: Date, now: Date) {
+  const status = latestMissionStatus(mission)
+  if (ACTIVE_RAIL_STATUSES.has(status)) return true
+  if (status === 'COMPLETED' || mission.status === 'COMPLETED') return false
+  if (mission.status !== 'ACCEPTED' && status !== 'SCHEDULED') return false
+  return start.getTime() > now.getTime()
+}
+
+function railMissionPriority(status: string) {
+  if (ACTIVE_RAIL_STATUSES.has(status)) return 0
+  return 1
+}
+
+function railStatusTone(status: string) {
+  if (status === 'PENDING_REVIEW' || status === 'READY_TO_FLY') return 'blue'
+  if (status === 'FAILED_PREFLIGHT') return 'red'
+  if (
+    status === 'IN_FLIGHT' ||
+    status === 'IN_PROGRESS' ||
+    status === 'RETURNING' ||
+    status === 'POSTFLIGHT_CHECKING' ||
+    status === 'PREFLIGHT_CHECKING'
+  )
+    return 'yellow'
+  return 'green'
+}
+
+function railActionFor(mission: OperatorMission, t: Messages) {
+  const status = latestMissionStatus(mission)
+  const permissions = mission.permissions
+  if (
+    permissions?.canMaintainDevice &&
+    (status === 'RETURNING' || status === 'POSTFLIGHT_CHECKING')
+  ) {
+    return {
+      label: t.inspect,
+      href: operatorHref({ screen: 'postflight', missionId: mission.id }),
+    }
+  }
+  if (
+    status === 'PENDING_REVIEW' &&
+    (permissions?.canUploadMedia ||
+      permissions?.canCompleteMission ||
+      permissions?.canExecuteMonitoringChecklist)
+  ) {
+    return {
+      label: t.reviewMedia,
+      href: operatorHref({ screen: 'upload', missionId: mission.id }),
+    }
+  }
+  if (
+    permissions?.canControlFlight &&
+    (status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING')
+  ) {
+    return {
+      label: t.openCockpit,
+      href: operatorHref({ screen: 'flight', missionId: mission.id }),
+    }
+  }
+  if (permissions?.canOperatePayload && status === 'READY_TO_FLY') {
+    return {
+      label: t.handover,
+      href: operatorHref({ screen: 'handover', missionId: mission.id }),
+    }
+  }
+  if (
+    permissions?.canOperatePayload &&
+    (status === 'CONNECTED' ||
+      status === 'PREFLIGHT_CHECKING' ||
+      status === 'FAILED_PREFLIGHT')
+  ) {
+    return {
+      label: t.precheck,
+      href: operatorHref({ screen: 'preflight', missionId: mission.id }),
+    }
+  }
+  if (permissions?.canOperatePayload) {
+    return {
+      label: t.connect,
+      href: operatorHref({ screen: 'connect', missionId: mission.id }),
+    }
+  }
+  return {
+    label: t.viewResult,
+    href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+  }
+}
+
 function headerDateLabel(now: Date, t: Messages): string {
   const weekday = t.weekdays[now.getDay()]
   const dd = String(now.getDate()).padStart(2, '0')
@@ -292,10 +396,16 @@ function UpcomingRail({
   const { t } = useI18n(missionListPageMessages)
   const today = now.toISOString().slice(0, 10)
   const next = missions
-    .filter((m) => m.status === 'ACCEPTED' || m.status === 'SCHEDULED')
     .map((m) => ({ m, start: new Date(`${m.date}T${m.startTime}:00+07:00`) }))
-    .filter(({ start }) => start.getTime() > now.getTime())
-    .sort((a, b) => a.start.getTime() - b.start.getTime())[0]
+    .filter(({ m, start }) => isRailMission(m, start, now))
+    .sort((a, b) => {
+      const statusA = latestMissionStatus(a.m)
+      const statusB = latestMissionStatus(b.m)
+      return (
+        railMissionPriority(statusA) - railMissionPriority(statusB) ||
+        a.start.getTime() - b.start.getTime()
+      )
+    })[0]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -343,53 +453,12 @@ function NextFlightCard({
   const dayLabel =
     mission.date === today ? t.today2 : start.toLocaleDateString(locale)
   const deviceLabel = formatDeviceLabel(mission)
-  const permissions = mission.permissions
-  const hasReportingAction = Boolean(permissions && (
-    permissions.canCompleteMission || permissions.canSubmitMissionResult ||
-    (mission.backendStatus === 'PENDING_REVIEW' && permissions.canExecuteMonitoringChecklist)
-  ))
-  const reviewAction =
-    permissions && (hasReportingAction || permissions.canInspectDevice ||
-      permissions.canUploadMedia || permissions.canMaintainDevice)
-      ? hasReportingAction
-        ? { label: t.viewResult, href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
-        : permissions.canMaintainDevice &&
-        (mission.backendStatus === 'RETURNING' ||
-          mission.backendStatus === 'POSTFLIGHT_CHECKING')
-        ? {
-            label: t.inspect,
-            href: operatorHref({ screen: 'postflight', missionId: mission.id }),
-          }
-        : (mission.backendStatus === 'PENDING_REVIEW' || mission.backendStatus === 'COMPLETED') && permissions.canUploadMedia
-          ? {
-              label: t.reviewMedia,
-              href: operatorHref({ screen: 'upload', missionId: mission.id }),
-            }
-          : {
-              label: t.viewResult,
-              href: operatorHref({
-                screen: 'missionDetail',
-                missionId: mission.id,
-              }),
-            }
-      : null
-  const flightAction =
-    (!permissions || mission.backendStatus === 'PENDING_REVIEW' || mission.backendStatus === 'COMPLETED'
-      ? { label: t.viewResult, href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
-      : reviewAction) ??
-    (permissions?.canControlFlight &&
-    (mission.backendStatus === 'READY_TO_FLY' ||
-      mission.backendStatus === 'IN_FLIGHT' ||
-      mission.backendStatus === 'IN_PROGRESS' ||
-      mission.backendStatus === 'RETURNING')
-      ? {
-          label: t.startFlight,
-          href: operatorHref({ screen: 'flight', missionId: mission.id }),
-        }
-      : {
-          label: t.startFlight,
-          href: operatorHref({ screen: 'connect', missionId: mission.id }),
-        })
+  const status = latestMissionStatus(mission)
+  const statusLabel =
+    (t.statusLabel as Record<string, string>)[status] ??
+    (t.statusLabel as Record<string, string>)[mission.status] ??
+    status
+  const action = railActionFor(mission, t)
 
   return (
     <div>
@@ -404,7 +473,7 @@ function NextFlightCard({
         <span className="odm-mono" style={{ fontWeight: 600, fontSize: 12.5 }}>
           {mission.missionCode ?? mission.id}
         </span>
-        <StatusBadge tone="green">{t.accepted}</StatusBadge>
+        <StatusBadge tone={railStatusTone(status)}>{statusLabel}</StatusBadge>
       </div>
       <div style={{ color: 'var(--tx3)', fontSize: 12, marginBottom: 8 }}>
         {t.timeLeft(hours, minutes)}
@@ -427,10 +496,10 @@ function NextFlightCard({
       <a
         className="odm-btn odm-btn-ok"
         style={{ width: '100%', justifyContent: 'center' }}
-        href={flightAction.href}
+        href={action.href}
         onClick={() => setActiveMissionId(mission.id)}
       >
-        {flightAction.label}
+        {action.label}
       </a>
     </div>
   )

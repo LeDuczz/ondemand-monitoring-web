@@ -43,4 +43,20 @@ describe('mission action permissions', () => {
     expect(mayPerformMissionAction(pilot, 'upload')).toBe(true)
     expect(mayPerformMissionAction(pilot, 'connect')).toBe(false)
   })
+  it('lets one accepted staff member with all mission roles perform the full flow', () => {
+    const soloCrew = {
+      ...none,
+      canControlFlight: true,
+      canOperatePayload: true,
+      canMaintainDevice: true,
+      canUploadMedia: true,
+      canExecuteMonitoringChecklist: true,
+    }
+    expect(mayPerformMissionAction(soloCrew, 'connect')).toBe(true)
+    expect(mayPerformMissionAction(soloCrew, 'preflight')).toBe(true)
+    expect(mayPerformMissionAction(soloCrew, 'handover')).toBe(true)
+    expect(mayPerformMissionAction(soloCrew, 'flight')).toBe(true)
+    expect(mayPerformMissionAction(soloCrew, 'postflight')).toBe(true)
+    expect(mayPerformMissionAction(soloCrew, 'upload')).toBe(true)
+  })
 })

@@ -5,7 +5,7 @@ export const missionDetailPageMessages = defineMessages({
     tabs: {
       overview: 'Bản đồ & Media',
       plan: 'Kế hoạch bay',
-      checks: 'Kiểm tra thiết bị',
+      checks: 'Kết quả check',
     },
     tabsAria: 'Các mục chi tiết nhiệm vụ',
     kpi: {
@@ -41,6 +41,7 @@ export const missionDetailPageMessages = defineMessages({
     deliverToCustomer: 'Gửi cho customer',
     deliveringToCustomer: 'Đang gửi...',
     deliveredToCustomer: 'Đã gửi cho customer',
+    weatherResultCard: 'Kết quả thời tiết',
     planCard: 'Kế hoạch bay',
     precheckCard: 'Kiểm tra thiết bị trước bay',
     postcheckCard: 'Kiểm tra pin & phần cứng sau bay',
@@ -79,7 +80,7 @@ export const missionDetailPageMessages = defineMessages({
     tabs: {
       overview: 'Map & Media',
       plan: 'Flight plan',
-      checks: 'Device checks',
+      checks: 'Check results',
     },
     tabsAria: 'Mission detail sections',
     kpi: {
@@ -115,6 +116,7 @@ export const missionDetailPageMessages = defineMessages({
     deliverToCustomer: 'Send to customer',
     deliveringToCustomer: 'Sending...',
     deliveredToCustomer: 'Sent to customer',
+    weatherResultCard: 'Weather result',
     planCard: 'Flight plan',
     precheckCard: 'Pre-flight device check',
     postcheckCard: 'Post-flight battery & hardware check',

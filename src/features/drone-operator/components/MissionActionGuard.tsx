@@ -30,6 +30,7 @@ export function MissionActionGuard({
     : operatorHref({ screen: 'missions' })
   const pilotOnOperatorStep =
     query.data?.canControlFlight === true &&
+    query.data?.canOperatePayload !== true &&
     (action === 'connect' || action === 'preflight' || action === 'handover')
 
   useEffect(() => {

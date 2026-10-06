@@ -2,7 +2,7 @@ import { defineMessages } from '../../../shared/i18n'
 
 export const liveDispatchPageMessages = defineMessages({
   vi: {
-    selectDroneAndOperator: 'Cần ít nhất 1 phi công và 1 thiết bị trước khi phân công.',
+    selectDroneAndOperator: 'Cần phân công đủ 4 vai trò và ít nhất 1 thiết bị trước khi phân công.',
     assignFailed: 'Không phân công được nguồn lực',
     loadingResources: 'Đang tải nguồn lực khả dụng…',
     loadError: 'Không tải được dữ liệu phân công',
@@ -43,7 +43,7 @@ export const liveDispatchPageMessages = defineMessages({
     alreadyAssigned: (drone: string, operator: string) =>
       `Nhiệm vụ đã được gán: thiết bị ${drone}, nhân sự ${operator}.`,
     step1: 'Phân công nhân sự',
-    roleHelp: 'Bắt buộc có phi công. Thiếu vai trò vận hành hoặc bảo trì thì bước kiểm tra trước bay hoặc sau bay tương ứng sẽ được bỏ qua khi thực hiện nhiệm vụ.',
+    roleHelp: 'Chọn đủ 4 vai trò để có người phụ trách từng bước. Một nhân sự có thể kiêm nhiều vai trò nếu cần.',
     roles: {
       PILOT: 'Phi công',
       OPERATOR: 'Vận hành',
@@ -91,7 +91,7 @@ export const liveDispatchPageMessages = defineMessages({
     assigning: 'Đang phân công…',
     assign: 'Phân công',
     readyToAssign: 'Sẵn sàng phân công',
-    confirmBody: 'Kiểm tra lại đơn hàng, nhiệm vụ, 4 nhân sự và thiết bị trước khi gửi phân công.',
+    confirmBody: 'Kiểm tra lại đơn hàng, nhiệm vụ, các vai trò đã phân công và thiết bị trước khi gửi phân công.',
     tabsAria: 'Các mục phân công',
     assignedTitle: 'Đã phân công nguồn lực',
     assignedBody: (code: string, status: string) =>
@@ -103,8 +103,8 @@ export const liveDispatchPageMessages = defineMessages({
     deviceSelectedCount: (n: number) => `Đã chọn ${n} thiết bị`,
     deviceMissing: 'Chưa chọn thiết bị',
     rolesComplete: 'Đã chọn đủ 4 vai trò',
-    rolesMissing: (n: number) => `Thiếu ${n} vai trò (bước tương ứng sẽ bỏ qua)`,
-    staffFooterHint: 'Chọn ít nhất 1 phi công rồi sang bước Thiết bị.',
+    rolesMissing: (n: number) => `Thiếu ${n} vai trò`,
+    staffFooterHint: 'Chọn đủ 4 vai trò rồi sang bước Thiết bị.',
     deviceFooterHint: 'Chọn ít nhất một thiết bị khả dụng rồi sang bước Xác nhận.',
     missionFooterHint: 'Kiểm tra lịch bay đã tạo rồi sang bước Nhân sự.',
     checklist: 'Kiểm tra trước khi phân công',
@@ -122,7 +122,7 @@ export const liveDispatchPageMessages = defineMessages({
     },
   },
   en: {
-    selectDroneAndOperator: 'Choose all 4 mission roles and one device before assigning.',
+    selectDroneAndOperator: 'Assign all 4 mission roles and one device before assigning.',
     assignFailed: 'Could not assign the resources',
     loadingResources: 'Loading available resources…',
     loadError: 'Could not load the assignment data',
@@ -163,7 +163,7 @@ export const liveDispatchPageMessages = defineMessages({
     alreadyAssigned: (drone: string, operator: string) =>
       `Mission already assigned: device ${drone}, staff ${operator}.`,
     step1: 'Staff assignment',
-    roleHelp: 'Choose all 4 duties: Pilot flies, Operator connects/preflights, Maintainer postchecks, Inspector reviews results.',
+    roleHelp: 'Assign all 4 duties. One staff member can cover multiple roles when needed.',
     roles: {
       PILOT: 'Pilot',
       OPERATOR: 'Operator',
@@ -212,7 +212,7 @@ export const liveDispatchPageMessages = defineMessages({
     assigning: 'Assigning…',
     assign: 'Assign',
     readyToAssign: 'Ready to assign',
-    confirmBody: 'Review the order, mission, 4 staff members, and device before submitting the assignment.',
+    confirmBody: 'Review the order, mission role assignments, and device before submitting the assignment.',
     tabsAria: 'Assignment sections',
     assignedTitle: 'Resources assigned',
     assignedBody: (code: string, status: string) =>

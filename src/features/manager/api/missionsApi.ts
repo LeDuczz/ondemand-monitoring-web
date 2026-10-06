@@ -555,6 +555,17 @@ export const missionsApi = {
     )
   },
 
+  /** `GET /api/weather/pre-device-checks/latest?missionId=...` [BE]. Latest weather result recorded during preflight. */
+  getLatestWeatherCheck(
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<WeatherPreflightCheckResponse | null> {
+    return apiRequest<WeatherPreflightCheckResponse | null>(
+      '/api/weather/pre-device-checks/latest',
+      { query: { missionId }, signal },
+    )
+  },
+
   /** `GET /api/pre-device-checks/{id}` [BE]. Get preflight check by ID. */
   getPreflightCheckById(
     id: string,

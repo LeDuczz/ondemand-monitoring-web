@@ -889,8 +889,7 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
 
   const selectedStaffIds = missionRoles
     .flatMap((role) => staffByRole[role] ?? [])
-  // Chỉ Phi công là bắt buộc; thiếu vai trò khác thì operator bỏ qua bước tương ứng.
-  const hasAllRoles = (staffByRole.PILOT ?? []).length > 0
+  const hasAllRoles = missionRoles.every((role) => (staffByRole[role] ?? []).length > 0)
 
   async function assign() {
     if (droneIds.length === 0 || !hasAllRoles) {

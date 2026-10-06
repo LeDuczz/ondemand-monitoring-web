@@ -80,6 +80,16 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
         }
       }
       await missionApi.handoverMyMission(mission.missionId)
+      const permissions = await missionApi
+        .getPermissions(mission.missionId)
+        .catch(() => null)
+      if (permissions?.canControlFlight) {
+        window.location.hash = operatorHref({
+          screen: 'flight',
+          missionId: mission.missionId,
+        })
+        return
+      }
       setConfirmed(true)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.confirmFailed)

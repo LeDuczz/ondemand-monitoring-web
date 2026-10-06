@@ -21,6 +21,7 @@ import {
   ResultDetail,
   STAFF_RESPONSE_LABELS,
   STAFF_ROLE_LABELS,
+  WeatherResultDetail,
   assignmentTone,
   checkLabel,
   formatDateTime,
@@ -31,14 +32,16 @@ import {
   type DetailData,
 } from '../components/missionDetail/missionDetailParts'
 import {
-  MissionRouteMap,
   waypointReasonLabel,
 } from '../components/missionDetail/MissionRouteMap'
+import { MissionSatelliteMap } from '../components/missionDetail/MissionSatelliteMap'
 import { formatOrderCode } from '../components/orderReview/format'
 import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { managerHref } from '../routes'
 import { missionDetailPageMessages } from './MissionDetailPage.messages'
 import '../manager.css'
+
+type MissionDetailTab = 'overview' | 'plan' | 'checks'
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
   const { t, locale } = useI18n(missionDetailPageMessages)
@@ -53,7 +56,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     [missionId, revision],
   )
   const refreshDetail = () => setRevision((value) => value + 1)
-  const [tab, setTab] = useState<'overview' | 'plan' | 'checks'>('overview')
+  const [tab, setTab] = useState<MissionDetailTab>('overview')
 
   useEffect(() => {
     const abort = new AbortController()
@@ -65,8 +68,9 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
       missionsApi.getCurrentPostDeviceCheck(missionId, abort.signal),
       missionsApi.getMissionResult(missionId, abort.signal),
       missionsApi.getMissionMedia(missionId, abort.signal),
+      missionsApi.getLatestWeatherCheck(missionId, abort.signal),
     ])
-      .then(([mission, preflight, postcheck, result, media]) => {
+      .then(([mission, preflight, postcheck, result, media, weather]) => {
         if (abort.signal.aborted) return
         const fullMission = unwrapSettled(mission)
         if (!fullMission) {
@@ -83,6 +87,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           postcheck: unwrapSettled(postcheck),
           result: unwrapSettled(result),
           media: unwrapSettled(media) ?? [],
+          weather: unwrapSettled(weather),
         })
       })
       .finally(() => {
@@ -244,9 +249,11 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
       ),
     },
   ]
-  const tabs: Array<{ id: typeof tab; label: string }> = [
+  const showPlanTab = mission.status !== 'COMPLETED'
+  const activeTab: MissionDetailTab = showPlanTab || tab !== 'plan' ? tab : 'overview'
+  const tabs: Array<{ id: MissionDetailTab; label: string }> = [
     { id: 'overview', label: t.tabs.overview },
-    { id: 'plan', label: t.tabs.plan },
+    ...(showPlanTab ? [{ id: 'plan' as const, label: t.tabs.plan }] : []),
     { id: 'checks', label: t.tabs.checks },
   ]
   const waypoints = [...(plan?.waypoints ?? [])].sort(
@@ -298,8 +305,8 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 key={item.id}
                 type="button"
                 role="tab"
-                aria-selected={tab === item.id}
-                className={`odm-or-seg-btn${tab === item.id ? ' is-active' : ''}`}
+                aria-selected={activeTab === item.id}
+                className={`odm-or-seg-btn${activeTab === item.id ? ' is-active' : ''}`}
                 onClick={() => setTab(item.id)}
               >
                 {item.label}
@@ -307,13 +314,13 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
             ))}
           </div>
 
-          {tab === 'overview' ? (
+          {activeTab === 'overview' ? (
             <>
               <section className="odm-or-card odm-rm-card">
                 <div className="odm-rm-stage">
-                  <MissionRouteMap
-                    waypoints={waypoints}
-                    labels={{ ...t.map, drone: t.kpi.drone }}
+                  <MissionSatelliteMap
+                    latitude={mission.latitude}
+                    longitude={mission.longitude}
                   />
                 </div>
                 <div className="odm-rm-side">
@@ -400,6 +407,14 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 </div>
               </section>
 
+              <section className="odm-or-card">
+                <div className="odm-or-card-body">
+                  <DetailSection title={t.weatherResultCard}>
+                    <WeatherResultDetail weather={detail.weather} locale={locale} />
+                  </DetailSection>
+                </div>
+              </section>
+
               <MonitoringChecklistSection
                 missionId={mission.id}
                 data={checklist.data}
@@ -428,7 +443,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
             </>
           ) : null}
 
-          {tab === 'plan' ? (
+          {activeTab === 'plan' ? (
             <>
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
@@ -489,11 +504,24 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                   </DetailSection>
                 </div>
               </section>
+
             </>
           ) : null}
 
-          {tab === 'checks' ? (
+          {activeTab === 'checks' ? (
             <>
+              <section className="odm-or-card">
+                <div className="odm-or-card-body">
+                  <DetailSection
+                    title={t.weatherResultCard}
+                    badge={
+                      detail.weather ? checkLabel(detail.weather.status) : undefined
+                    }
+                  >
+                    <WeatherResultDetail weather={detail.weather} locale={locale} />
+                  </DetailSection>
+                </div>
+              </section>
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
                   <DetailSection

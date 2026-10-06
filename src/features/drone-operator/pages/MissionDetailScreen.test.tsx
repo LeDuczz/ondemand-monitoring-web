@@ -53,6 +53,24 @@ const noActions = {
 // it rejects in this test environment and the screen settles on its
 // bilingual "mission not found" error state.
 describe('MissionDetailScreen', () => {
+  it('shows GCS connection before preflight for a scheduled accepted mission', async () => {
+    vi.spyOn(operatorApi, 'getMission').mockResolvedValue({
+      ...mission,
+      backendStatus: 'SCHEDULED',
+      status: 'SCHEDULED',
+      myResponseStatus: 'ACCEPTED',
+    })
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...noActions,
+      canOperatePayload: true,
+    })
+
+    render(<MissionDetailScreen missionId="m" />)
+
+    expect(await screen.findByText('Kết nối GCS')).toBeInTheDocument()
+    expect(screen.queryByText('Kiểm tra thiết bị')).toBeNull()
+  })
+
   it.each([
     ['OPERATOR', true, false],
     ['PILOT fallback', true, false],
@@ -195,6 +213,44 @@ describe('MissionDetailScreen', () => {
     ).toBeNull()
   })
 
+  it('submits the result to manager when completion staff has submit capability', async () => {
+    vi.mocked(checklistExecutionApi.getMissionChecklistExecutions).mockResolvedValue({
+      missionId: 'm',
+      legacySnapshot: false,
+      executions: [],
+      readyForSubmission: true,
+      readyForMissionCompletion: true,
+      checklistEvidenceReady: true,
+    })
+    vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...noActions,
+      canCompleteMission: true,
+      canSubmitMissionResult: true,
+      canUploadMedia: true,
+    })
+    const complete = vi
+      .spyOn(missionApi, 'completeMission')
+      .mockResolvedValue({} as never)
+    const submit = vi
+      .spyOn(missionApi, 'submitMissionResult')
+      .mockResolvedValue({} as never)
+
+    render(<MissionDetailScreen missionId="m" />)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Nghiệm thu mission' }),
+    )
+
+    await waitFor(() => expect(complete).toHaveBeenCalledWith('m'))
+    expect(submit).toHaveBeenCalledWith('m', expect.objectContaining({
+      notes: 'Kết quả giám sát được gửi cho manager duyệt.',
+      status: 'COMPLETED',
+    }))
+    expect(
+      await screen.findByText('Đã nghiệm thu và gửi kết quả mission cho manager duyệt.'),
+    ).toBeInTheDocument()
+  })
+
   it('does not allow Inspector completion before backend evidence readiness', async () => {
     vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({ ...noActions, canCompleteMission: true, canUploadMedia: true })
@@ -257,12 +313,14 @@ describe('MissionDetailScreen', () => {
     ).toBeNull()
   })
   it('renders the vietnamese error state', async () => {
+    vi.spyOn(operatorApi, 'getMission').mockRejectedValue(new Error('not found'))
     render(<MissionDetailScreen missionId="MSN-1" />)
     expect(await screen.findByText('Không tải được mission')).toBeTruthy()
     expect(screen.getByText('Về danh sách')).toBeTruthy()
   })
 
   it('renders the english error state when language is switched', async () => {
+    vi.spyOn(operatorApi, 'getMission').mockRejectedValue(new Error('not found'))
     render(<MissionDetailScreen missionId="MSN-1" />)
     await screen.findByText('Không tải được mission')
     act(() => setLanguage('en'))

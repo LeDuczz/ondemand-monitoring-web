@@ -21,7 +21,7 @@ export const handoverScreenMessages = defineMessages({
     processing: 'Đang xử lý...',
     confirmHandover: 'Xác nhận bàn giao',
     confirmLockedNote:
-      'Nút xác nhận bị khoá đến khi bạn tick đủ 4 cam kết. Operator xác nhận xong thì pilot mới tiếp tục điều khiển.',
+      'Nút xác nhận bị khoá đến khi bạn tick đủ 4 cam kết. Nếu bạn kiêm pilot, hệ thống sẽ chuyển thẳng sang buồng lái sau khi xác nhận.',
     connectedAt:
       'Đã kết nối GCS DJI-RC-PLUS-7A31 lúc 13:26:41 · telemetry hoạt động',
     connected: 'Đã kết nối',
@@ -48,7 +48,7 @@ export const handoverScreenMessages = defineMessages({
     processing: 'Processing...',
     confirmHandover: 'Confirm handover',
     confirmLockedNote:
-      'The confirm button stays locked until all 4 commitments are checked. After the operator confirms, the pilot continues flight control.',
+      'The confirm button stays locked until all 4 commitments are checked. If you also have the pilot role, you will go straight to the cockpit after confirmation.',
     connectedAt:
       'Connected to GCS DJI-RC-PLUS-7A31 at 13:26:41 · telemetry active',
     connected: 'Connected',

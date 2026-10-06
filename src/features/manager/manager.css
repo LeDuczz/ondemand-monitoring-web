@@ -4079,13 +4079,13 @@ a.odm-or-btn.odm-or-view-btn {
 /* Mission map: keep the real aspect ratio, side panel for details */
 .odm-rm-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(520px, 1.45fr) minmax(320px, 0.85fr);
 }
 
 .odm-rm-stage {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   min-width: 0;
   padding: 12px;
   background: #e9eee9;
@@ -4096,6 +4096,83 @@ a.odm-or-btn.odm-or-view-btn {
   width: auto;
   max-width: 100%;
   border-radius: 10px;
+}
+
+.odm-rm-satellite {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: min(620px, 72vh);
+  min-height: 520px;
+  overflow: hidden;
+  background: #111827;
+  border-radius: 10px;
+}
+
+.odm-rm-leaflet {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.odm-rm-satellite .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+.odm-rm-chip {
+  position: absolute;
+  z-index: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--or-tx);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.odm-rm-chip-target,
+.odm-rm-chip-zone {
+  background: rgba(254, 242, 242, 0.94);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.odm-rm-chip-target {
+  top: 10px;
+  right: 10px;
+}
+
+.odm-rm-chip-route {
+  top: 10px;
+  left: 10px;
+}
+
+.odm-rm-chip-radius {
+  left: 10px;
+  bottom: 10px;
+}
+
+.odm-rm-chip-zone {
+  right: 10px;
+  bottom: 10px;
+}
+
+.odm-or-weather-advisories {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--or-tx2);
+  font-size: 13px;
+}
+
+.odm-or-weather-advisories li {
+  padding: 8px 10px;
+  border: 1px solid var(--or-border);
+  border-radius: 8px;
+  background: var(--or-surface-muted);
 }
 
 .odm-rm-side {
@@ -4171,6 +4248,11 @@ a.odm-or-btn.odm-or-view-btn {
   .odm-rm-stage .odm-rm {
     height: auto;
     width: 100%;
+  }
+
+  .odm-rm-satellite {
+    height: clamp(360px, 70vw, 520px);
+    min-height: 360px;
   }
 }
 

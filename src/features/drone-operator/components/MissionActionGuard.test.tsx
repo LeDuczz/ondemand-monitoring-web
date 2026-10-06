@@ -58,6 +58,25 @@ describe('mission action guard', () => {
     )
     expect(screen.queryByText('Connect screen')).toBeNull()
   })
+  it('keeps a multi-role staff member on preflight instead of redirecting to cockpit', async () => {
+    window.location.hash = '#portal/staff/preflight/m1'
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...permissions,
+      canControlFlight: true,
+      canOperatePayload: true,
+      canMaintainDevice: true,
+      canUploadMedia: true,
+      canExecuteMonitoringChecklist: true,
+    })
+    render(
+      <MissionActionGuard missionId="m1" action="preflight">
+        <div>Precheck flow</div>
+      </MissionActionGuard>,
+    )
+
+    expect(await screen.findByText('Precheck flow')).toBeTruthy()
+    expect(window.location.hash).toBe('#portal/staff/preflight/m1')
+  })
   it('fails closed if the backend denies permission', async () => {
     vi.spyOn(missionApi, 'getPermissions').mockRejectedValue(
       new Error('Forbidden'),

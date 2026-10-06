@@ -75,10 +75,12 @@ export function UploadMediaScreen({
   // Reference images (Mapillary) are stored by the backend directly, so they are already "uploaded".
   const [referenceCount, setReferenceCount] = useState(0)
   const [uploadInfo, setUploadInfo] = useState<string | null>(null)
+  const [completionSubmitting, setCompletionSubmitting] = useState(false)
+  const [resultSentLocally, setResultSentLocally] = useState(false)
   const itemsRef = useRef<LocalMedia[]>([])
   const uploadedMediaIds = useRef<Record<string, string>>({})
   useEffect(() => {
-    setSelectedTargets({}); setAttachFailures({}); setItems([]); itemsRef.current = []; uploadedMediaIds.current = {}
+    setSelectedTargets({}); setAttachFailures({}); setItems([]); setResultSentLocally(false); itemsRef.current = []; uploadedMediaIds.current = {}
   }, [missionId])
   useEffect(() => {
     if (preview) previewDialog.current?.showModal()
@@ -185,11 +187,14 @@ export function UploadMediaScreen({
   }, [refresh])
 
   async function approve(item: LocalMedia, manual = false) {
-    if (!canManageMedia) return false
+    if (!canManageMedia || !missionId) return false
     setBusyId(item.localMediaId)
     setError(null)
     try {
-      const mediaId = await operatorMediaApi.upload(item, manual)
+      const mediaId = await operatorMediaApi.upload(
+        { ...item, missionId },
+        manual,
+      )
       uploadedMediaIds.current[item.localMediaId] = mediaId
       setStatuses((previous) => ({
         ...previous,
@@ -252,11 +257,14 @@ export function UploadMediaScreen({
   }
 
   async function uploadPc(item: LocalMedia, file: File) {
-    if (!canManageMedia || batchUploading) return
+    if (!canManageMedia || batchUploading || !missionId) return
     setBusyId(item.localMediaId)
     setError(null)
     try {
-      const mediaId = await operatorMediaApi.uploadPcBackup(item, file)
+      const mediaId = await operatorMediaApi.uploadPcBackup(
+        { ...item, missionId },
+        file,
+      )
       await attachSelected(item, mediaId)
       await refresh()
     } catch (cause) {
@@ -319,11 +327,123 @@ export function UploadMediaScreen({
     !permissions.loading &&
     !permissions.error &&
     permissions.data?.canUploadMedia === true
+  const resultApprovalStatus = monitoring.data?.result?.approvalStatus ?? null
+  const resultSubmitted =
+    resultApprovalStatus === 'PENDING_MANAGER_APPROVAL' ||
+    resultApprovalStatus === 'APPROVED'
+  const resultSentToManager = resultSubmitted || resultSentLocally
+  const canCompleteMission =
+    monitoring.data?.permissions.canCompleteMission === true
+  const canSubmitMissionResult =
+    monitoring.data?.permissions.canSubmitMissionResult === true
+  const readyForMissionCompletion =
+    monitoring.data?.checklist.readyForMissionCompletion === true
+  const readyForSubmission =
+    monitoring.data?.checklist.readyForSubmission === true
+  const canSendManagerFromUpload =
+    !!missionId &&
+    canSubmitMissionResult &&
+    !resultSentToManager
+  const canCompleteFromUpload =
+    !!missionId &&
+    canCompleteMission &&
+    readyForMissionCompletion &&
+    (!canSubmitMissionResult || readyForSubmission || resultSentToManager)
+  const willSubmitToManager =
+    canSubmitMissionResult && readyForSubmission && !resultSentToManager
   const isBusy = !!busyId || batchUploading
   const backRoute =
     canManageMedia && missionId
       ? operatorHref({ screen: 'missionDetail', missionId })
       : operatorHref({ screen: 'flight', missionId: missionId ?? undefined })
+
+  function buildMissionResultPayload() {
+    const mission = activeMission.data
+    return {
+      status: 'COMPLETED' as const,
+      startedAt: null,
+      endedAt: null,
+      completedAt: new Date().toISOString(),
+      summary: [
+        `Mission ${mission?.missionCode ?? missionId} đã hoàn thành.`,
+        `Thiết bị: ${deviceLabel ?? 'chưa rõ'}.`,
+      ].join(' '),
+      notes: 'Kết quả giám sát được gửi cho manager duyệt.',
+    }
+  }
+
+  function uploadedBackendMediaIds() {
+    return [
+      ...new Set(
+        itemsRef.current
+          .filter((item) => {
+            if (!item.backendMediaId) return false
+            const status = statuses[item.backendMediaId] ?? item.status
+            return finishedUploadStatuses.has(status)
+          })
+          .map((item) => item.backendMediaId as string),
+      ),
+    ]
+  }
+
+  async function attachUploadedEvidenceForMissingChecklist() {
+    if (
+      !missionId ||
+      monitoring.data?.checklist.readyForSubmission === true ||
+      monitoring.data?.permissions.canAttachChecklistEvidence !== true
+    )
+      return
+    const latest = await checklistExecutionApi.getMissionChecklistExecutions(missionId)
+    const targets = latest.executions
+      .filter((execution) => {
+        const required = execution.minimumEvidenceCount ?? 0
+        const current = execution.eligibleEvidenceCount ?? 0
+        return execution.executionStatus === 'COMPLETED' && required > current
+      })
+      .map((execution) => ({
+        executionId: execution.id,
+        expectedVersion: execution.version,
+      }))
+    if (targets.length === 0) return
+    const mediaId = uploadedBackendMediaIds()[0]
+    if (!mediaId) throw new Error(t.missingChecklistEvidence)
+    await checklistEvidenceApi.batch(missionId, mediaId, targets)
+    setChecklistRevision((value) => value + 1)
+    monitoring.reload()
+  }
+
+  async function completeMissionFromUpload() {
+    if (
+      !missionId ||
+      completionSubmitting ||
+      (!canCompleteFromUpload && !canSendManagerFromUpload)
+    )
+      return
+    setCompletionSubmitting(true)
+    setError(null)
+    setUploadInfo(null)
+    try {
+      await attachUploadedEvidenceForMissingChecklist()
+      if (canCompleteMission) {
+        await missionApi.completeMission(missionId)
+      }
+      if (canSubmitMissionResult && !resultSentToManager) {
+        await missionApi.submitMissionResult(missionId, buildMissionResultPayload())
+        setResultSentLocally(true)
+        setUploadInfo(t.completeSubmitSuccess)
+      } else {
+        setUploadInfo(t.completeSuccess)
+      }
+      setChecklistRevision((value) => value + 1)
+      monitoring.reload()
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t.completeSubmitFailed)
+      monitoring.reload()
+    } finally {
+      setCompletionSubmitting(false)
+    }
+  }
 
   return (
     <div className="odm-card" style={{ marginBottom: 0 }}>
@@ -424,6 +544,28 @@ export function UploadMediaScreen({
                 {t.viewOnly}
               </span>
             )}
+            {canCompleteMission || canSubmitMissionResult || resultSentToManager ? (
+              <button
+                type="button"
+                className="odm-btn odm-btn-p"
+                disabled={
+                  resultSentToManager ||
+                  completionSubmitting ||
+                  (canSubmitMissionResult
+                    ? !canSendManagerFromUpload
+                    : !canCompleteFromUpload)
+                }
+                onClick={() => void completeMissionFromUpload()}
+              >
+                {completionSubmitting
+                  ? t.completing
+                  : resultSentToManager
+                    ? t.submittedToManager
+                    : canSubmitMissionResult
+                    ? t.completeAndSubmit
+                    : t.completeOnly}
+              </button>
+            ) : null}
           </div>
           {!missionId && !loading && <p role="alert">{t.restoringMission}</p>}
           {uploadInfo && (

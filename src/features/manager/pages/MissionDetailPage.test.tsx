@@ -18,8 +18,8 @@ const mission: MissionResponse = {
   operatorId: null,
   droneId: null,
   droneCode: 'DR-1',
-  latitude: null,
-  longitude: null,
+  latitude: 10.637554,
+  longitude: 106.6983628,
   address: null,
   scheduledStartAt: null,
   startedAt: null,
@@ -68,6 +68,22 @@ beforeEach(() => {
   )
   vi.spyOn(missionsApi, 'getMissionResult').mockResolvedValue(result)
   vi.spyOn(missionsApi, 'getMissionMedia').mockResolvedValue([])
+  vi.spyOn(missionsApi, 'getLatestWeatherCheck').mockResolvedValue({
+    id: 'w',
+    missionId: 'm',
+    deviceId: 'd',
+    status: 'PASS',
+    safeToFly: true,
+    summary: 'Thời tiết phù hợp để cất cánh.',
+    windSpeedMps: 4.2,
+    windGustMps: 6.3,
+    precipitationMmH: 0.1,
+    visibilityKm: 10.5,
+    temperatureC: 29.1,
+    humidityPercent: 72,
+    advisories: ['Thời tiết ổn định, đủ điều kiện bay mô phỏng.'],
+    checkedAt: '2026-10-06T00:00:00Z',
+  })
   vi.spyOn(
     checklistExecutionApi,
     'getMissionChecklistExecutions',
@@ -109,6 +125,31 @@ describe('Manager Mission Detail monitoring review', () => {
     expect(screen.queryByText('Cập nhật mục')).toBeNull()
     expect(screen.getByText('Duyệt kết quả')).toBeEnabled()
     expect(screen.getByText('Từ chối kết quả')).toBeEnabled()
+  })
+  it('uses the satellite mission map on result review', async () => {
+    render(<MissionDetailPage missionId="m" />)
+
+    expect(
+      await screen.findByRole('application', {
+        name: 'Bản đồ vệ tinh mission',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/ĐIỂM GIÁM SÁT/)).toBeInTheDocument()
+  })
+  it('hides the flight plan tab after mission completion', async () => {
+    render(<MissionDetailPage missionId="m" />)
+
+    await screen.findByRole('tab', { name: 'Bản đồ & Media' })
+    expect(screen.queryByRole('tab', { name: 'Kế hoạch bay' })).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Kết quả check' })).toBeInTheDocument()
+  })
+  it('shows the recorded weather result on manager review', async () => {
+    render(<MissionDetailPage missionId="m" />)
+
+    expect(await screen.findByText('Kết quả thời tiết')).toBeInTheDocument()
+    expect(screen.getByText('Thời tiết phù hợp để cất cánh.')).toBeInTheDocument()
+    expect(screen.getByText('4,2 m/s')).toBeInTheDocument()
+    expect(screen.getByText('Thời tiết ổn định, đủ điều kiện bay mô phỏng.')).toBeInTheDocument()
   })
   it.each(['DRAFT', 'REJECTED', 'APPROVED'] as const)(
     '%s cannot be approved/rejected',

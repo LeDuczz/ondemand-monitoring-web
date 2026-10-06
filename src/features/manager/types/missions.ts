@@ -544,6 +544,9 @@ export type WeatherPreflightCheckRequest = {
 
 /** `POST /api/weather/preflight-check` [BE] response. */
 export type WeatherPreflightCheckResponse = {
+  id?: string | null
+  missionId?: string | null
+  deviceId?: string | null
   status: string
   safeToFly: boolean
   summary: string

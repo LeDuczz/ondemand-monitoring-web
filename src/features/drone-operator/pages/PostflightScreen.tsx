@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   EmptyState,
@@ -113,6 +113,18 @@ function readPostflightTelemetry(
   }
 }
 
+function isUsablePostflightTelemetry(
+  status: FlightControlStatus,
+  missionId: string,
+) {
+  const matchesMission = !status.missionId || status.missionId === missionId
+  return (
+    matchesMission &&
+    typeof status.batteryPercent === 'number' &&
+    Number.isFinite(status.batteryPercent)
+  )
+}
+
 function removeStorageByPrefix(storage: Storage, prefix: string) {
   for (let index = storage.length - 1; index >= 0; index -= 1) {
     const key = storage.key(index)
@@ -169,6 +181,8 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   const [showTicketDialog, setShowTicketDialog] = useState(false)
   const [ticketSubmitting, setTicketSubmitting] = useState(false)
   const [ticketCreated, setTicketCreated] = useState(false)
+  const [liveTelemetrySnapshot, setLiveTelemetrySnapshot] =
+    useState<FlightControlStatus | null>(null)
   const [completed, setCompleted] = useState<{
     overallOk: boolean
     ticketCreated: boolean
@@ -185,10 +199,37 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   )
 
   const summary = postflightSummary(items, ALL_KEYS.length)
-  const telemetrySnapshot = useMemo(
+  const storedTelemetrySnapshot = useMemo(
     () => readPostflightTelemetry(effectiveMissionId),
     [effectiveMissionId],
   )
+  const telemetrySnapshot = liveTelemetrySnapshot ?? storedTelemetrySnapshot
+
+  useEffect(() => {
+    if (!effectiveMissionId || !deviceId) {
+      setLiveTelemetrySnapshot(null)
+      return
+    }
+    let cancelled = false
+    flightControlApi
+      .status()
+      .then((status) => {
+        if (cancelled) return
+        if (isUsablePostflightTelemetry(status, effectiveMissionId)) {
+          setLiveTelemetrySnapshot(status)
+          window.sessionStorage.setItem(
+            postflightTelemetryKey(effectiveMissionId),
+            JSON.stringify(status),
+          )
+        }
+      })
+      .catch(() => {
+        // Postflight can still be recorded manually if the controller is offline.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [deviceId, effectiveMissionId])
   const failItems = useMemo(
     () => ALL_KEYS.filter((k) => results[k] === 'fail'),
     [results],

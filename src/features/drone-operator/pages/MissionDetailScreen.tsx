@@ -682,28 +682,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
     }
   }
 
-  async function handleCompleteMission() {
-    if (!monitoringKnown || monitoring.data?.checklist.readyForMissionCompletion !== true) return
-    setSubmitting(true)
-    setActionError(null)
-    try {
-      await missionApi.completeMission(mission.id)
-      query.reload()
-      monitoring.reload()
-    } catch (error) {
-      setActionError(actionErrorMessage(error, 'Không thể nghiệm thu mission.'))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleSubmitResult() {
-    if (!submitReady || resultSubmitting) return
-    setResultSubmitting(true)
-    setActionError(null)
-    setResultMessage(null)
-    try {
-      await missionApi.submitMissionResult(mission.id, {
+  function buildMissionResultPayload() {
+    return {
         status: 'COMPLETED',
         startedAt: mission.flightStartedAt ?? null,
         endedAt: mission.completedAt ?? null,
@@ -716,7 +696,45 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
           `Vùng giám sát: ${mission.radiusMeters == null ? 'chưa rõ bán kính' : `bán kính ${mission.radiusMeters} m`}.`,
         ].join(' '),
         notes: 'Kết quả giám sát được gửi cho manager duyệt.',
-      })
+      } as const
+  }
+
+  async function submitResultToManager() {
+    await missionApi.submitMissionResult(mission.id, buildMissionResultPayload())
+  }
+
+  async function handleCompleteMission() {
+    if (!monitoringKnown || monitoring.data?.checklist.readyForMissionCompletion !== true) return
+    setSubmitting(true)
+    setActionError(null)
+    setResultMessage(null)
+    try {
+      await missionApi.completeMission(mission.id)
+      if (
+        monitoring.data.permissions.canSubmitMissionResult === true &&
+        monitoring.data.checklist.readyForSubmission === true &&
+        !resultSubmitted
+      ) {
+        await submitResultToManager()
+        setResultMessage('Đã nghiệm thu và gửi kết quả mission cho manager duyệt.')
+      }
+      query.reload()
+      monitoring.reload()
+    } catch (error) {
+      setActionError(actionErrorMessage(error, 'Không thể nghiệm thu mission hoặc gửi kết quả cho manager.'))
+      monitoring.reload()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleSubmitResult() {
+    if (!submitReady || resultSubmitting) return
+    setResultSubmitting(true)
+    setActionError(null)
+    setResultMessage(null)
+    try {
+      await submitResultToManager()
       monitoring.reload()
       query.reload()
       setResultMessage('Đã gửi kết quả mission cho manager duyệt.')
@@ -811,7 +829,7 @@ function MissionDashboard({
   const [tab, setTab] = useState<'overview' | 'checks' | 'media'>('overview')
   const tabs: Array<{ id: 'overview' | 'checks' | 'media'; label: string }> = [
     { id: 'overview', label: 'Tổng quan' },
-    { id: 'checks', label: 'Kiểm tra' },
+    { id: 'checks', label: 'Kết quả check' },
     ...(mission.status === 'COMPLETED' || mission.backendStatus === 'PENDING_REVIEW'
       ? [{ id: 'media' as const, label: 'Ảnh & video' }]
       : []),
@@ -928,7 +946,7 @@ function MissionDashboard({
       {tab === 'checks' ? (
         <div className="mds-tab-grid">
           <div className="mds-col">
-            <PrecheckCard preflight={preflightStatus} />
+            <PrecheckCard preflight={preflightStatus} weather={weatherStatus} />
             <WeatherCard weather={weatherStatus} />
           </div>
           <div className="mds-col">
@@ -981,6 +999,16 @@ function MissionHeader({
     !permissions.loading && !permissions.error ? permissions.data : undefined
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
   const progressBadge = missionProgressBadge(mission.backendStatus)
+  const backendStatus = mission.backendStatus ?? mission.status
+  const canConnectGcs =
+    access?.canOperatePayload !== false &&
+    (backendStatus === 'SCHEDULED' || mission.status === 'ACCEPTED') &&
+    !GCS_CONNECTED_STATUSES.has(backendStatus)
+  const canRunPreflight =
+    access?.canOperatePayload === true &&
+    ['CONNECTED', 'PREFLIGHT_CHECKING', 'FAILED_PREFLIGHT'].includes(
+      backendStatus,
+    )
   const canHandleInspectionMedia =
     access?.canUploadMedia === true &&
     (access?.canInspectDevice === true ||
@@ -1021,9 +1049,7 @@ function MissionHeader({
         <div style={{ flex: 1 }} />
         {access?.canExecuteMonitoringChecklist === true && !canHandleInspectionMedia && <a className="odm-btn" href={operatorHref({ screen: 'upload', missionId: mission.id })}>Checklist & media</a>}
 
-        {access?.canOperatePayload &&
-          mission.status !== 'IN_FLIGHT' &&
-          !GCS_CONNECTED_STATUSES.has(mission.backendStatus ?? '') && (
+        {canRunPreflight && (
           <a
             className="odm-btn"
             href={operatorHref({ screen: 'preflight', missionId: mission.id })}
@@ -1088,9 +1114,7 @@ function MissionHeader({
           >
             Mở buồng lái
           </a>
-        ) : mission.status === 'ACCEPTED' &&
-          access?.canOperatePayload &&
-          !GCS_CONNECTED_STATUSES.has(mission.backendStatus ?? '') ? (
+        ) : canConnectGcs ? (
           <a
             className="odm-btn odm-btn-p"
             href={operatorHref({ screen: 'connect', missionId: mission.id })}
@@ -1919,8 +1943,10 @@ function DroneDeviceCard({ mission }: { mission: OperatorMission }) {
 
 function PrecheckCard({
   preflight,
+  weather,
 }: {
   preflight: RuntimePreflightStatus | null
+  weather: WeatherPreflightStatus | null
 }) {
   const [expanded, setExpanded] = useState(false)
   const passCount =
@@ -1987,6 +2013,8 @@ function PrecheckCard({
                 {failCount ? ` · ${failCount} lỗi` : ''}
               </span>
             </div>
+
+            <PrecheckWeatherResult weather={weather} />
 
             {/* Check items */}
             <div
@@ -2106,11 +2134,116 @@ function PrecheckCard({
             )}
           </>
         ) : (
-          <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
-            Chưa có dữ liệu precheck cho mission này.
-          </div>
+          <>
+            <PrecheckWeatherResult weather={weather} />
+            <div style={{ color: 'var(--tx3)', fontSize: 12.5 }}>
+              Chưa có dữ liệu precheck cho mission này.
+            </div>
+          </>
         )}
       </div>
+    </div>
+  )
+}
+
+function PrecheckWeatherResult({
+  weather,
+}: {
+  weather: WeatherPreflightStatus | null
+}) {
+  const statusLabel = weather
+    ? weather.safeToFly
+      ? 'Đạt'
+      : weather.status === 'WARN'
+        ? 'Cảnh báo'
+        : 'Không đạt'
+    : 'Chưa check'
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '18px 1fr auto',
+        gap: 6,
+        alignItems: 'center',
+        padding: '8px 10px',
+        marginBottom: 10,
+        border: '1px solid var(--bd)',
+        borderRadius: 7,
+        background:
+          weather?.status === 'FAIL'
+            ? 'var(--red-bg)'
+            : weather?.status === 'WARN'
+              ? 'var(--yellow-bg)'
+              : '#fff',
+        fontSize: 12,
+      }}
+    >
+      <span
+        style={{
+          fontWeight: 800,
+          color:
+            weather?.status === 'FAIL'
+              ? 'var(--red-fg)'
+              : weather?.status === 'WARN'
+                ? 'var(--yellow-fg)'
+                : weather
+                  ? 'var(--green-fg)'
+                  : 'var(--tx3)',
+          fontSize: 13,
+        }}
+      >
+        {weather?.status === 'FAIL' ? '✗' : weather ? '✓' : '○'}
+      </span>
+      <div>
+        <div
+          style={{
+            fontWeight: 600,
+            color:
+              weather?.status === 'FAIL'
+                ? 'var(--red-fg)'
+                : 'var(--tx)',
+          }}
+        >
+          Kết quả check thời tiết
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            color:
+              weather?.status === 'FAIL'
+                ? 'var(--red-fg)'
+                : 'var(--tx3)',
+            marginTop: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: 360,
+          }}
+          title={weather?.summary}
+        >
+          {weather
+            ? `${weather.summary} · Gió ${weather.windSpeedMps.toFixed(1)} m/s · Tầm nhìn ${weather.visibilityKm.toFixed(1)} km`
+            : 'Chưa có kết quả check thời tiết.'}
+        </div>
+      </div>
+      <span
+        style={{
+          fontWeight: 700,
+          fontSize: 11.5,
+          color:
+            weather?.status === 'FAIL'
+              ? 'var(--red-fg)'
+              : weather?.status === 'WARN'
+                ? 'var(--yellow-fg)'
+                : weather
+                  ? 'var(--green-fg)'
+                  : 'var(--tx3)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {statusLabel}
+      </span>
     </div>
   )
 }

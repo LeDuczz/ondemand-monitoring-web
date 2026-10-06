@@ -19,6 +19,19 @@ export const evidenceReason: Record<EvidenceBlockingReason, string> = {
   UNABLE_REASON_REQUIRED: 'Cần lý do không thể xác minh.',
   CHECKLIST_INTEGRITY_INVALID: 'Checklist không khớp snapshot đơn hàng.',
 }
+const sourceLabel: Record<string, string> = {
+  DRONE_CAMERA: 'Camera drone',
+  SATELLITE_SNAPSHOT: 'Ảnh vệ tinh',
+  MANUAL_UPLOAD: 'Upload thủ công',
+}
+const mediaStatusLabel: Record<string, string> = {
+  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+  AVAILABLE: 'Đã duyệt',
+  VALIDATING: 'Đang xác thực',
+  UPLOADING: 'Đang upload',
+  REJECTED: 'Bị từ chối',
+}
+
 export function ChecklistEvidencePanel({
   missionId,
   item,
@@ -171,61 +184,84 @@ export function ChecklistEvidencePanel({
         </button>
       )}
       {canAttach && candidates && (
-        <div>
-          {candidates.map((media) => (
-            <div key={media.mediaId}>
-              <span>
-                {media.fileName} · {media.sourceType ?? 'Unknown/Legacy'} ·{' '}
-                {media.status ?? 'Legacy'}
-              </span>
-              {!media.attachable && (
-                <small>
-                  {media.ineligibilityReason
-                    ? evidenceReason[media.ineligibilityReason]
-                    : 'Không thể gắn'}
-                </small>
-              )}
-              <button
-                type="button"
-                className="odm-btn"
-                disabled={
-                  busy ||
-                  !media.attachable ||
-                  media.alreadyAttachedExecutionIds.includes(item.id)
-                }
-                onClick={() =>
-                  void act(async () => {
-                    await checklistEvidenceApi.attach(
-                      missionId,
-                      item.id,
-                      media.mediaId,
-                      item.version,
-                    )
-                    setCandidates(null)
-                  })
-                }
-              >
-                Gắn media
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            disabled={busy || page === 0}
-            onClick={() => void load(page - 1)}
-          >
-            Trang trước
-          </button>
-          <button
-            type="button"
-            disabled={busy || candidates.length < 50}
-            onClick={() => void load(page + 1)}
-          >
-            Trang sau
-          </button>
-          <button type="button" onClick={() => setCandidates(null)}>
-            Đóng chọn media
-          </button>
+        <div className="checklist-candidates">
+          <ul className="checklist-candidate-list">
+            {candidates.map((media) => (
+              <li key={media.mediaId} className="checklist-candidate">
+                <div className="checklist-candidate-info">
+                  <span className="checklist-candidate-name" title={media.fileName}>
+                    {media.fileName}
+                  </span>
+                  <span className="checklist-candidate-meta">
+                    <span>
+                      {sourceLabel[media.sourceType ?? ''] ??
+                        media.sourceType ??
+                        'Unknown/Legacy'}
+                    </span>
+                    <span className="checklist-candidate-status">
+                      {mediaStatusLabel[media.status ?? ''] ??
+                        media.status ??
+                        'Legacy'}
+                    </span>
+                  </span>
+                  {!media.attachable && (
+                    <small>
+                      {media.ineligibilityReason
+                        ? evidenceReason[media.ineligibilityReason]
+                        : 'Không thể gắn'}
+                    </small>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={
+                    busy ||
+                    !media.attachable ||
+                    media.alreadyAttachedExecutionIds.includes(item.id)
+                  }
+                  onClick={() =>
+                    void act(async () => {
+                      await checklistEvidenceApi.attach(
+                        missionId,
+                        item.id,
+                        media.mediaId,
+                        item.version,
+                      )
+                      setCandidates(null)
+                    })
+                  }
+                >
+                  Gắn media
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="checklist-candidate-pager">
+            <button
+              type="button"
+              className="odm-btn"
+              disabled={busy || page === 0}
+              onClick={() => void load(page - 1)}
+            >
+              Trang trước
+            </button>
+            <button
+              type="button"
+              className="odm-btn"
+              disabled={busy || candidates.length < 50}
+              onClick={() => void load(page + 1)}
+            >
+              Trang sau
+            </button>
+            <button
+              type="button"
+              className="odm-btn"
+              onClick={() => setCandidates(null)}
+            >
+              Đóng chọn media
+            </button>
+          </div>
         </div>
       )}
       {error && <p role="alert">{error}</p>}

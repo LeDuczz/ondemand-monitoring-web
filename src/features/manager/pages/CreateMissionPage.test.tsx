@@ -64,6 +64,7 @@ const createdMission: Mission = {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  sessionStorage.clear()
   window.location.hash = ''
 })
 
@@ -115,7 +116,7 @@ describe('CreateMissionPage', () => {
     expect(screen.getByText(/mission-brief · 409/)).toBeInTheDocument()
   })
 
-  it('submits and navigates to the dispatch page on success', async () => {
+  it('sends the idempotent planning contract and navigates to detail on success', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
     render(
@@ -137,6 +138,9 @@ describe('CreateMissionPage', () => {
       expect(missionsApi.createMission).toHaveBeenCalledWith(
         'ord-2609-0153',
         expect.objectContaining({
+          idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/i),
+          expectedPlanRevision: 0,
+          scopeLabel: 'Whole Order scope',
           scheduledStart: '2026-09-24T01:00:00.000Z',
           scheduledEnd: '2026-09-24T02:30:00.000Z',
         }),
@@ -144,9 +148,28 @@ describe('CreateMissionPage', () => {
     )
     await waitFor(() =>
       expect(window.location.hash).toBe(
-        '#portal/manager/missions/msn-2609-0153-1/setup',
+        '#portal/manager/missions/msn-2609-0153-1/detail',
       ),
     )
+  })
+
+  it('keeps the key while refreshing a stale plan revision for the next retry', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValueOnce(brief).mockResolvedValue({ ...brief, executionPlanRevision: 1 })
+    const create = vi.spyOn(missionsApi, 'createMission').mockRejectedValueOnce(new ApiError('Plan revision changed', {
+      status: 409, code: 'EXECUTION_PLAN_REVISION_CONFLICT', method: 'POST', path: '/api/orders/o/missions',
+    })).mockResolvedValue(createdMission)
+    render(<CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />)
+    await screen.findByRole('heading', { name: 'Tạo nhiệm vụ' })
+    fireEvent.change(screen.getByLabelText('Giờ cất cánh'), { target: { value: '2026-09-24T08:00' } })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), { target: { value: '2026-09-24T09:30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
+    await screen.findByText('Plan revision changed')
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(2))
+    const first = create.mock.calls[0][1], retry = create.mock.calls[1][1]
+    expect(retry.idempotencyKey).toBe(first.idempotencyKey)
+    expect(first.expectedPlanRevision).toBe(0)
+    expect(retry.expectedPlanRevision).toBe(1)
   })
 
   it('blocks submit when the finish time is before takeoff time', async () => {

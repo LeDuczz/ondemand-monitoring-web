@@ -6,6 +6,7 @@ import { useI18n } from '../../../shared/i18n'
 import { customerApi, type WeatherForecast } from '../../customer/api/customerApi'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
+import { clearMissionCreationKey, missionCreationKey } from '../api/missionCreationIntent'
 import { OrderIcon, type OrderIconName } from '../components/orderReview/OrderIcon'
 import { formatOrderCode, humanizeMediaRequirement } from '../components/orderReview/format'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
@@ -19,11 +20,9 @@ import '../manager.css'
 /**
  * MNG-04 "Tạo nhiệm vụ" — create-mission form for an already-APPROVED order.
  *
- * Deviation from evd/design/MNG-04.dc.html: that prototype's only
- * implemented states are a list of *other* orders, a loading skeleton, and
- * the 422 flight-plan-generation-failure error. Staff only needs to choose
- * the actual schedule here; the hidden default flight plan keeps the create
- * API valid, then the flow continues to drone/staff assignment.
+ * Phase 4 creates a planning-only Mission with copied Order scope and a
+ * persisted retry key. It does not generate flight plans or enter dispatch.
+ * The existing list-page single-Mission UI gate remains in place.
  */
 export function CreateMissionPage({
   orderId,
@@ -222,6 +221,7 @@ function CreateMissionForm({
 
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
+  const [planRevision, setPlanRevision] = useState(brief.executionPlanRevision ?? 0)
   const [submit, setSubmit] = useState<SubmitState>({ kind: 'idle' })
   const [navigateTo, setNavigateTo] = useState<string | null>(null)
   const fillFromCustomer = () => {
@@ -297,14 +297,27 @@ function CreateMissionForm({
     }
     setSubmit({ kind: 'submitting' })
     try {
-      const mission = await missionsApi.createMission(orderId, {
+      const intent = {
+        scopeLabel: 'Whole Order scope',
         scheduledStart: startDate.toISOString(),
         scheduledEnd: endDate.toISOString(),
+      }
+      const mission = await missionsApi.createMission(orderId, {
+        ...intent,
+        idempotencyKey: missionCreationKey(orderId, intent),
+        expectedPlanRevision: planRevision,
       })
+      clearMissionCreationKey(orderId)
       setNavigateTo(
-        managerHref({ screen: 'missionSetup', missionId: mission.id }),
+        managerHref({ screen: 'missionDetail', missionId: mission.id }),
       )
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'EXECUTION_PLAN_REVISION_CONFLICT') {
+        try {
+          const current = await ordersApi.getOrderForMission(orderId)
+          setPlanRevision(current.executionPlanRevision ?? 0)
+        } catch { /* Keep the unresolved command/key; the user can reload and retry. */ }
+      }
       if (err instanceof ApiError && err.status === 422) {
         setSubmit({
           kind: 'planFailed',

@@ -58,6 +58,7 @@ export type OrderAttachment = {
  * when its field is `null`.
  */
 export type OrderDetail = {
+  executionPlanRevision?: number
   checklistItems?: OrderChecklistSnapshot[]
   checklistSnapshotAt?: string | null
   id: string
@@ -149,6 +150,7 @@ export type OrderInternalNote = {
  * scoped to APPROVED orders instead.
  */
 export type OrderMissionBrief = {
+  executionPlanRevision?: number
   id: string
   code: string
   serviceName: string
@@ -182,6 +184,8 @@ export type OrderDeliverableResponse = {
 
 /** BE actual response for `GET /api/orders/pending` and related order-detail endpoints. */
 export type OrderCreateResponse = {
+  executionPlanRevision?: number
+  executionPlanStatus?: 'DRAFT' | 'FINALIZED'
   checklistItems?: OrderChecklistSnapshot[]
   checklistSnapshotAt?: string | null
   id: string

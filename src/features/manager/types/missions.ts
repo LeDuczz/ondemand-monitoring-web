@@ -161,6 +161,9 @@ export type CancelMissionRequest = {
 
 /** Body of `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. */
 export type CreateMissionRequest = {
+  idempotencyKey: string
+  expectedPlanRevision: number
+  scopeLabel: string
   scheduledStart: string
   scheduledEnd: string
 }

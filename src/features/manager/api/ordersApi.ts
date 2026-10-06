@@ -49,6 +49,7 @@ function radiusFromDeliverables(order: OrderCreateResponse) {
 
 function toOrderDetail(order: OrderCreateResponse): OrderDetail {
   return {
+    executionPlanRevision: order.executionPlanRevision,
     id: order.id,
     code: order.id,
     status: order.orderStatus,
@@ -83,6 +84,7 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
 
 function toOrderMissionBrief(order: OrderDetail): OrderMissionBrief {
   return {
+    executionPlanRevision: order.executionPlanRevision,
     id: order.id,
     code: order.code,
     serviceName: order.serviceName,

@@ -191,11 +191,14 @@ function getApprovedMissionId(
 
 function toMissionBrief(order: OrderDetail): OrderMissionBrief {
   return {
+    executionPlanRevision: order.executionPlanRevision,
     id: order.id,
     code: order.code,
     serviceName: order.serviceName,
     customerFullName: order.customer.fullName,
     preferredDate: order.preferredDate,
+    preferredDateFrom: order.preferredDateFrom,
+    preferredDateTo: order.preferredDateTo,
     preferredTimeName: order.preferredTimeName,
     addressText: order.addressText,
     center: order.center,

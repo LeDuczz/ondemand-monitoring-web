@@ -43,6 +43,17 @@ export function CreateOrderPage() {
     )
   }
 
+  const footer = (
+    <WizardFooter
+      step={step}
+      nextLabel={t.stepLabels[Math.min(4, step + 1) as 1 | 2 | 3 | 4]}
+      submitDisabled={meta.loading || submit.submitting || !checklist.valid}
+      onBack={wizard.back}
+      onNext={wizard.next}
+      onSubmit={submit.openConfirm}
+    />
+  )
+
   return (
     <div className="co-page">
       <PageHeader
@@ -81,6 +92,14 @@ export function CreateOrderPage() {
           setAiAnalysisRequested={f.setAiAnalysisRequested}
           pricingEstimate={meta.pricingEstimate}
           pricingLoading={meta.pricingLoading}
+          checklist={
+            <ChecklistEditor
+              checklist={checklist}
+              disabled={submit.submitting}
+              onReload={() => f.setSubmitError(null)}
+            />
+          }
+          footer={footer}
         />
       )}
       {step === 2 && (
@@ -108,14 +127,15 @@ export function CreateOrderPage() {
           aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={meta.pricingEstimate}
           pricingLoading={meta.pricingLoading}
-        />
-      )}
-
-      {(step === 1 || step === 4) && (
-        <ChecklistEditor
-          checklist={checklist}
-          disabled={submit.submitting}
-          onReload={() => f.setSubmitError(null)}
+          checklist={
+            <ChecklistEditor
+              variant="compact"
+              checklist={checklist}
+              disabled={submit.submitting}
+              onReload={() => f.setSubmitError(null)}
+            />
+          }
+          footer={footer}
         />
       )}
 
@@ -125,14 +145,7 @@ export function CreateOrderPage() {
         </div>
       )}
 
-      <WizardFooter
-        step={step}
-        nextLabel={t.stepLabels[Math.min(4, step + 1) as 1 | 2 | 3 | 4]}
-        submitDisabled={meta.loading || submit.submitting || !checklist.valid}
-        onBack={wizard.back}
-        onNext={wizard.next}
-        onSubmit={submit.openConfirm}
-      />
+      {step !== 1 && step !== 4 && footer}
 
       {submit.confirmOpen && (
         <ConfirmSubmitModal

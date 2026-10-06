@@ -41,6 +41,14 @@ const visibleAfterControllerDropStatuses = new Set([
 ])
 
 /** Existing upload layout backed by the selected mission's local media. */
+/** Maps a backend media status to a chip tone. */
+function statusTone(status: string) {
+  if (/FAIL|REJECT|ERROR|MANUAL_UPLOAD_REQUIRED/.test(status)) return 'is-danger'
+  if (/PENDING|VALIDATING|UPLOADING|REVIEW/.test(status)) return 'is-warning'
+  if (/AVAILABLE|UPLOADED|VALIDATED|STORED|COMPLETED|READY/.test(status)) return 'is-success'
+  return ''
+}
+
 export function UploadMediaScreen({
   missionId: routeMissionId,
 }: {
@@ -65,7 +73,9 @@ export function UploadMediaScreen({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [batchUploading, setBatchUploading] = useState(false)
   const [checklistRevision, setChecklistRevision] = useState(0)
-  const monitoring = useMissionMonitoring(missionId ?? '', checklistRevision)
+  const monitoring = useMissionMonitoring(missionId ?? '', checklistRevision, {
+    autoRefresh: false,
+  })
   const [selectedTargets, setSelectedTargets] = useState<Record<string, string[]>>({})
   const [attachFailures, setAttachFailures] = useState<Record<string, string>>({})
   const [preview, setPreview] = useState<LocalMedia | null>(null)
@@ -182,8 +192,6 @@ export function UploadMediaScreen({
 
   useEffect(() => {
     void refresh()
-    const timer = window.setInterval(() => void refresh(), 10000)
-    return () => window.clearInterval(timer)
   }, [refresh])
 
   async function approve(item: LocalMedia, manual = false) {
@@ -452,24 +460,14 @@ export function UploadMediaScreen({
         missionId={missionId ?? t.openingMission}
         active={7}
         right={
-          <span
-            style={{
-              padding: '6px 12px',
-              borderRadius: 16,
-              background: 'var(--sf3)',
-              fontWeight: 700,
-              fontSize: 13,
-            }}
-          >
-            {deviceLabel ?? '—'}
-          </span>
+          <span className="upload-media-device">{deviceLabel ?? '—'}</span>
         }
       />
-      <div style={{ padding: '18px 22px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="upload-media-body">
+        <div className="upload-media-stack">
           <div className="upload-media-summary">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>
+            <div className="upload-media-summary-text">
+              <div className="upload-media-summary-title">
                 {t.summary(
                   uploaded + referenceCount,
                   files.length + referenceCount,
@@ -477,11 +475,7 @@ export function UploadMediaScreen({
                   manual,
                 )}
               </div>
-              <div
-                style={{ fontSize: 12.5, color: 'var(--tx3)', marginTop: 2 }}
-              >
-                {t.summaryNote}
-              </div>
+              <div className="upload-media-summary-note">{t.summaryNote}</div>
             </div>
             <a className="odm-btn" href={backRoute}>
               {canManageMedia ? t.backToResult : t.backToCockpit}
@@ -530,17 +524,7 @@ export function UploadMediaScreen({
                 {t.uploadAll}
               </button>
             ) : (
-              <span
-                role="status"
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 16,
-                  background: 'var(--sf3)',
-                  color: 'var(--tx2)',
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                }}
-              >
+              <span role="status" className="upload-media-viewonly">
                 {t.viewOnly}
               </span>
             )}
@@ -569,15 +553,12 @@ export function UploadMediaScreen({
           </div>
           {!missionId && !loading && <p role="alert">{t.restoringMission}</p>}
           {uploadInfo && (
-            <p
-              role="status"
-              style={{ color: 'var(--green-fg, #15803d)', fontWeight: 600 }}
-            >
+            <p role="status" className="upload-media-notice is-success">
               {uploadInfo}
             </p>
           )}
           {error && (
-            <p role="alert" style={{ color: 'var(--red-fg)' }}>
+            <p role="alert" className="upload-media-notice is-danger">
               {error}
             </p>
           )}
@@ -600,11 +581,10 @@ export function UploadMediaScreen({
                   return (
                     <article
                       key={item.localMediaId}
-                      className="odm-card"
-                      style={{ overflow: 'hidden', marginBottom: 0 }}
+                      className="odm-card upload-media-card"
                     >
                       {item.localAvailable === false ? (
-                        <p style={{ padding: 14 }}>
+                        <p className="upload-media-unavailable">
                           Bản gốc trên Flight Controller không khả dụng. Chọn
                           bản sao PC để khôi phục.
                         </p>
@@ -622,25 +602,20 @@ export function UploadMediaScreen({
                           className="upload-media-preview"
                         />
                       )}
-                      <div style={{ padding: 14 }}>
-                        <div
-                          className="odm-mono"
-                          style={{ fontWeight: 700, overflowWrap: 'anywhere' }}
-                        >
+                      <div className="upload-media-card-body">
+                        <div className="odm-mono upload-media-filename" title={item.fileName}>
                           {item.fileName}
                         </div>
-                        <div
-                          style={{
-                            color: 'var(--tx3)',
-                            fontSize: 12,
-                            margin: '6px 0',
-                          }}
-                        >
-                          {item.mediaType} · {item.sourceType ?? 'Unknown/Legacy'} ·{' '}
-                          {(item.fileSize / 1_000_000).toFixed(2)} MB · {status}
+                        <div className="upload-media-meta">
+                          <span className="upload-media-chip">{item.mediaType}</span>
+                          <span>{item.sourceType ?? 'Unknown/Legacy'}</span>
+                          <span>{(item.fileSize / 1_000_000).toFixed(2)} MB</span>
+                          <span className={`upload-media-status ${statusTone(status)}`}>
+                            {status}
+                          </span>
                         </div>
                         {item.previewError && (
-                          <p role="alert" style={{ color: 'var(--red-fg)' }}>
+                          <p role="alert" className="upload-media-notice is-danger">
                             {item.previewError}
                           </p>
                         )}
@@ -655,7 +630,7 @@ export function UploadMediaScreen({
                             </button>
                           )}
                         {canManageMedia ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
+                          <div className="upload-media-actions">
                             {status === 'MANUAL_UPLOAD_REQUIRED' && (
                               <button
                                 type="button"
@@ -701,9 +676,14 @@ export function UploadMediaScreen({
                             </button>
                           </div>
                         ) : null}
-                        {monitoring.data?.permissions.canAttachChecklistEvidence === true && !monitoring.loading && !monitoring.error && <fieldset disabled={isBusy}>
-                          <legend>Gắn vào checklist</legend>
-                          {monitoring.data.checklist.executions.map(execution => <label key={execution.id} style={{ display: 'block', fontSize: 12, margin: '6px 0' }}>
+                        {monitoring.data?.permissions.canAttachChecklistEvidence === true && !monitoring.loading && !monitoring.error && <details className="upload-media-attach-wrap" open={(selectedTargets[item.localMediaId]?.length ?? 0) > 0}>
+                          <summary>
+                            Gắn vào checklist
+                            {(selectedTargets[item.localMediaId]?.length ?? 0) > 0 &&
+                              ` · đã chọn ${selectedTargets[item.localMediaId]?.length}`}
+                          </summary>
+                          <fieldset disabled={isBusy} className="upload-media-attach">
+                          {monitoring.data.checklist.executions.map(execution => <label key={execution.id} className="upload-media-attach-row">
                             <input type="checkbox" checked={(selectedTargets[item.localMediaId] ?? []).includes(execution.id)} onChange={event => setSelectedTargets(previous => {
                               const current = previous[item.localMediaId] ?? []
                               return { ...previous, [item.localMediaId]: event.target.checked ? [...current, execution.id] : current.filter(id => id !== execution.id) }
@@ -715,8 +695,9 @@ export function UploadMediaScreen({
                             setBusyId(item.localMediaId)
                             void attachSelected(item, mediaId).finally(() => setBusyId(null))
                           }}>Gắn bằng chứng — không upload lại</button>}
-                        </fieldset>}
-                        {attachFailures[item.localMediaId] && <p role="alert">Media đã được giữ. Gắn bằng chứng chưa thành công: {attachFailures[item.localMediaId]}. Chọn “Gắn bằng chứng” để thử lại, không upload lại.</p>}
+                          </fieldset>
+                        </details>}
+                        {attachFailures[item.localMediaId] && <p role="alert" className="upload-media-notice is-danger">Media đã được giữ. Gắn bằng chứng chưa thành công: {attachFailures[item.localMediaId]}. Chọn “Gắn bằng chứng” để thử lại, không upload lại.</p>}
                         {canManageMedia &&
                           item.manualTaskId &&
                           ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(
@@ -750,6 +731,11 @@ export function UploadMediaScreen({
                   }}
                 />
               ) : null}
+              {canManageMedia && missionId ? (
+                <div className="upload-media-uploaded">
+                  <MissionUploadedMedia missionId={missionId} />
+                </div>
+              ) : null}
             </div>
             {missionId && (
               <UploadMonitoringChecklist
@@ -759,11 +745,6 @@ export function UploadMediaScreen({
               />
             )}
           </div>
-          {canManageMedia && missionId ? (
-            <div style={{ marginTop: 18 }}>
-              <MissionUploadedMedia missionId={missionId} />
-            </div>
-          ) : null}
         </div>
       </div>
       {preview && (

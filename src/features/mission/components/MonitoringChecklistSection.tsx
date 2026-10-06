@@ -138,7 +138,10 @@ export function MonitoringChecklistSection({
       ) : null}
       {!loading && !error && data ? (
         <>
-          <div className="monitoring-summary" role="status">
+          <div
+            className={`monitoring-summary${(data.checklistEvidenceReady ?? data.readyForSubmission) ? ' is-ready' : ''}`}
+            role="status"
+          >
             <strong>
               {(data.checklistEvidenceReady ?? data.readyForSubmission)
                 ? 'Sẵn sàng gửi kết quả'
@@ -148,8 +151,18 @@ export function MonitoringChecklistSection({
               {done} / {rows.length} mục ở trạng thái kết thúc ·{' '}
               {rows.length - done} mục chưa hoàn tất
             </span>
+            <span
+              className="monitoring-progress"
+              aria-hidden="true"
+              style={{
+                ['--p' as string]: rows.length
+                  ? `${(done / rows.length) * 100}%`
+                  : '0%',
+              }}
+            />
           </div>
-          {data.blockingReasons?.map(reason => <p key={reason} role="status">{evidenceReason[reason]}</p>)}
+          <div className="monitoring-notes">
+          {data.blockingReasons?.map(reason => <p key={reason} role="status" className="is-warn">{evidenceReason[reason]}</p>)}
           {resultStatus && (
             <p>
               Trạng thái kết quả:{' '}
@@ -168,7 +181,7 @@ export function MonitoringChecklistSection({
             <p>Nhận xét của manager: {resultNote}</p>
           )}
           {!data.readyForSubmission && done === rows.length && (
-            <p role="alert">
+            <p role="alert" className="is-warn">
               Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới; nếu
               vẫn chưa sẵn sàng, liên hệ quản trị viên.
             </p>
@@ -180,17 +193,18 @@ export function MonitoringChecklistSection({
             </p>
           )}
           {!rows.length && <p>Không có mục checklist giám sát.</p>}
-          <p>
+          <p className="monitoring-hint">
             {locked
               ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
               : editable
                 ? 'Bạn có thể cập nhật checklist.'
                 : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
           </p>
+          </div>
         </>
       ) : null}
       {data && (
-        <ol>
+        <ol className="monitoring-list">
           {rows.map((item) => (
             <li key={`evidence:${missionId}:${item.id}`}>
             <ChecklistExecutionItem
@@ -284,9 +298,13 @@ function ChecklistExecutionItem({
     <div className="monitoring-item">
       <h3>{item.content}</h3>
       <div className="monitoring-meta">
-        <span>{statuses[item.executionStatus]}</span>
-        <span>{assessments[item.assessmentStatus]}</span>
-        <span>
+        <span className={`is-exec-${item.executionStatus.toLowerCase()}`}>
+          {statuses[item.executionStatus]}
+        </span>
+        <span className={`is-assess-${item.assessmentStatus.toLowerCase()}`}>
+          {assessments[item.assessmentStatus]}
+        </span>
+        <span className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}>
           {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
         </span>
       </div>

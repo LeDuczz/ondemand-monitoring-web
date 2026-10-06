@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type {
   CustomerConsultation,
   PreferredTimeOption,
@@ -24,12 +26,16 @@ type Props = {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
+  /** Monitoring-content editor, rendered under the deliverables card. */
+  checklist?: ReactNode
+  /** Wizard actions, rendered at the bottom of the sticky summary panel. */
+  footer?: ReactNode
 }
 
-/** Step 4: choose deliverables and review before the confirm dialog. */
+/** Step 4: choose deliverables on the left, review + submit on the right. */
 export function ReviewStep(p: Props) {
   return (
-    <div className="co-grid is-wide">
+    <div className="co-grid is-review">
       <div className="co-stack">
         <DeliverablesCard
           form={p.form}
@@ -38,6 +44,9 @@ export function ReviewStep(p: Props) {
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
         />
+        {p.checklist}
+      </div>
+      <aside className="co-stack co-summary">
         <RequestSummaryCard
           form={p.form}
           service={p.service}
@@ -52,8 +61,14 @@ export function ReviewStep(p: Props) {
           hasService={Boolean(p.service)}
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
-      </div>
-      <ConsultationSummaryCard form={p.form} consultation={p.consultation} service={p.service} />
+        <ConsultationSummaryCard
+          form={p.form}
+          consultation={p.consultation}
+          service={p.service}
+          aiAnalysisRequested={p.aiAnalysisRequested}
+        />
+        {p.footer && <div className="co-summary-cta">{p.footer}</div>}
+      </aside>
     </div>
   )
 }

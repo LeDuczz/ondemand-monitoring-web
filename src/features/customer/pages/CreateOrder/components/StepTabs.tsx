@@ -1,3 +1,4 @@
+import { Icon } from '../../../../../shared/components/Icon'
 import { useI18n } from '../../../../../shared/i18n'
 import { STEPS, type Step } from '../../../lib/createOrder/types'
 import { stepTabsMessages } from './StepTabs.messages'
@@ -24,8 +25,17 @@ export function StepTabs({ step, labels, onSelect }: Props) {
             disabled={item > step}
             onClick={() => onSelect(item)}
           >
-            <span className="co-tab-num">{item}</span>
-            {labels[item]}
+            <span className="co-tab-num">
+              {item < step ? (
+                <Icon name="check" width={14} height={14} aria-hidden="true" />
+              ) : (
+                item
+              )}
+            </span>
+            <span className="co-tab-text">
+              <span className="co-tab-title">{labels[item]}</span>
+              <span className="co-tab-sub">{t.subtitles[item]}</span>
+            </span>
           </button>
         )
       })}

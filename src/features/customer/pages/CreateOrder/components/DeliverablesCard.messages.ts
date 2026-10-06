@@ -3,6 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const deliverablesCardMessages = defineMessages({
   vi: {
     cardTitle: 'Kết quả bàn giao',
+    cardSubtitle: 'Chọn định dạng kết quả bạn muốn nhận sau khi mission hoàn thành.',
     deliverableType: 'Loại kết quả',
     selectDeliverable: 'Chọn kết quả',
     loading: 'Đang tải kết quả bàn giao...',
@@ -17,11 +18,15 @@ export const deliverablesCardMessages = defineMessages({
     attachmentHint:
       'Gắn ảnh hiện trạng, bản vẽ hoặc ảnh mẫu để staff hiểu rõ khu vực trước khi duyệt.',
     chooseImages: 'Chọn ảnh',
+    uploadTitle: 'Tải ảnh tham khảo',
+    uploadMeta: 'PNG, JPG • Có thể chọn nhiều ảnh',
+    removeAttachmentNamed: (name: string) => `Xóa ảnh ${name}`,
     removeAttachment: 'Xóa ảnh',
     invalidImage: 'Chỉ nhận file hình ảnh.',
   },
   en: {
     cardTitle: 'Deliverables',
+    cardSubtitle: 'Choose the result format you want after the mission is completed.',
     deliverableType: 'Deliverable type',
     selectDeliverable: 'Select a deliverable',
     loading: 'Loading deliverables...',
@@ -36,6 +41,9 @@ export const deliverablesCardMessages = defineMessages({
     attachmentHint:
       'Attach current-site photos, drawings, or sample images so staff understand the area before approval.',
     chooseImages: 'Choose images',
+    uploadTitle: 'Upload reference images',
+    uploadMeta: 'PNG, JPG • Multiple images allowed',
+    removeAttachmentNamed: (name: string) => `Remove image ${name}`,
     removeAttachment: 'Remove image',
     invalidImage: 'Only image files are accepted.',
   },

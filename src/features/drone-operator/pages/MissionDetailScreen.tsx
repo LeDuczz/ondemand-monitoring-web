@@ -612,7 +612,9 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
   const [showReject, setShowReject] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [resultSubmitting, setResultSubmitting] = useState(false)
-  const monitoring = useMissionMonitoring(missionId, query.data)
+  const monitoring = useMissionMonitoring(missionId, undefined, {
+    autoRefresh: false,
+  })
   const resultApprovalStatus = monitoring.data?.result?.approvalStatus ?? null
   const resultSubmitted = resultApprovalStatus === 'PENDING_MANAGER_APPROVAL' || resultApprovalStatus === 'APPROVED'
   const monitoringKnown = !monitoring.loading && !monitoring.error && Boolean(monitoring.data)
@@ -1019,14 +1021,7 @@ function MissionHeader({
   return (
     <div className="mds-header">
       {/* Row 1: code + badge + actions */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 6,
-        }}
-      >
+      <div className="mds-header-row">
         <a
           href={operatorHref({ screen: 'missions' })}
           className="odm-btn odm-btn-sm odm-btn-ic1"
@@ -1116,7 +1111,7 @@ function MissionHeader({
           </a>
         ) : canConnectGcs ? (
           <a
-            className="odm-btn odm-btn-p"
+            className="odm-btn odm-btn-p mds-cta"
             href={operatorHref({ screen: 'connect', missionId: mission.id })}
           >
             Kết nối GCS

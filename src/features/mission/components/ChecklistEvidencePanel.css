@@ -1,8 +1,47 @@
 .checklist-evidence {
-  margin: 12px 0;
-  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
   background: var(--sf2, #f8fafc);
+  border: 1px solid var(--bd, #e2e8f0);
   border-radius: 10px;
+}
+.checklist-evidence > strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Blocking reasons render as compact pills next to the counter, not stacked paragraphs. */
+.checklist-evidence > p {
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+}
+.checklist-evidence > p[role='alert'] {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.checklist-evidence > .checklist-evidence-grid,
+.checklist-evidence > button,
+.checklist-evidence > div:not(.checklist-evidence-grid) {
+  flex: 1 1 100%;
+}
+.checklist-evidence > button {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.checklist-evidence h3,
+.checklist-evidence h4 {
+  margin: 0 0 4px;
+  font-family: inherit;
+  letter-spacing: normal;
+  font-size: 14px;
+  font-weight: 600;
 }
 .checklist-evidence-grid {
   display: grid;
@@ -35,4 +74,8 @@
 }
 .checklist-evidence p {
   font-size: 12px;
+}
+/* No evidence yet: don't reserve an empty block. */
+.checklist-evidence-grid:empty {
+  display: none;
 }

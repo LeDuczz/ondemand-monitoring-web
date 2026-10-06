@@ -3,8 +3,17 @@ import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { missionApi } from '../api/missionApi'
 import { checklistExecutionApi } from '../api/checklistExecutionApi'
 
+type MissionMonitoringOptions = {
+  autoRefresh?: boolean
+}
+
 /** Result locks and actor capabilities are refreshed together with readiness. */
-export function useMissionMonitoring(missionId: string, revision?: unknown) {
+export function useMissionMonitoring(
+  missionId: string,
+  revision?: unknown,
+  options: MissionMonitoringOptions = {},
+) {
+  const { autoRefresh = true } = options
   const query = useApiQuery(
     async (signal) => {
       const [checklist, result, permissions] = await Promise.all([
@@ -18,6 +27,7 @@ export function useMissionMonitoring(missionId: string, revision?: unknown) {
   )
 
   useEffect(() => {
+    if (!autoRefresh) return undefined
     const refresh = () => {
       if (!document.hidden) query.reload()
     }
@@ -29,6 +39,6 @@ export function useMissionMonitoring(missionId: string, revision?: unknown) {
       window.removeEventListener('focus', refresh)
       document.removeEventListener('visibilitychange', refresh)
     }
-  }, [query.reload])
+  }, [autoRefresh, query.reload])
   return query
 }

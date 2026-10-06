@@ -1,6 +1,6 @@
 .monitoring-checklist {
   margin: 16px 0;
-  padding: 20px;
+  padding: 24px;
   color: var(--tx, #172033);
 }
 .monitoring-checklist header,
@@ -14,43 +14,184 @@
 }
 .monitoring-checklist header {
   justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+/* The global h1/h2 negative letter-spacing glued Vietnamese words together. */
+.monitoring-checklist h2,
+.monitoring-checklist h3 {
+  margin: 0;
+  font-family: inherit;
+  letter-spacing: normal;
+  word-spacing: normal;
 }
 .monitoring-checklist h2 {
-  margin: 0;
   font-size: 18px;
+  font-weight: 700;
+}
+.monitoring-checklist header p {
+  margin: 4px 0 0;
+  font-size: 13px;
 }
 .monitoring-checklist header p,
 .monitoring-checklist small {
   color: var(--tx3, #64748b);
 }
 .monitoring-summary {
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--bg2, #f1f5f9);
+  position: relative;
+  padding: 14px 16px 18px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+  font-size: 14px;
 }
-.monitoring-checklist ol {
-  padding-left: 24px;
+.monitoring-summary.is-ready {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.monitoring-summary strong {
+  font-weight: 600;
+}
+.monitoring-progress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+.monitoring-progress::after {
+  content: '';
+  display: block;
+  width: var(--p, 0%);
+  height: 100%;
+  background: #16a34a;
+  transition: width 0.25s ease;
+}
+.monitoring-notes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+/* Warnings are compact pills on one row; the hint is a quiet full-width line. */
+.monitoring-notes p {
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bg2, #f1f5f9);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.monitoring-notes p.is-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.monitoring-notes p.monitoring-hint {
+  flex: 1 1 100%;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--tx3, #64748b);
+}
+.monitoring-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  counter-reset: item;
+}
+.monitoring-list > li {
+  position: relative;
+  counter-increment: item;
+  padding: 16px 16px 16px 56px;
+  border: 1px solid var(--bd, #e2e8f0);
+  border-radius: 12px;
+  background: var(--bg, #fff);
+}
+.monitoring-list > li::before {
+  content: counter(item);
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
 }
 .monitoring-item {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--bd, #e2e8f0);
   overflow-wrap: anywhere;
 }
 .monitoring-item h3 {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.monitoring-item p {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+.monitoring-item > small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.monitoring-item > .odm-btn {
+  margin-top: 12px;
+}
+.monitoring-meta {
+  gap: 6px;
 }
 .monitoring-meta span {
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
   background: var(--bg2, #f1f5f9);
+  color: #475569;
   font-size: 12px;
+  font-weight: 500;
+}
+.monitoring-meta .is-exec-completed,
+.monitoring-meta .is-assess-compliant,
+.monitoring-meta .is-done {
+  background: #dcfce7;
+  color: #166534;
+}
+.monitoring-meta .is-exec-in_progress {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.monitoring-meta .is-exec-unable_to_verify,
+.monitoring-meta .is-assess-non_compliant {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.monitoring-meta .is-todo {
+  background: #fef3c7;
+  color: #92400e;
+}
+.monitoring-item form {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg2, #f8fafc);
 }
 .monitoring-item fieldset {
   border: 0;
-  padding: 12px 0;
+  margin: 0;
+  padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 12px;
 }
 .monitoring-item label {
   display: grid;
@@ -62,17 +203,42 @@
 .monitoring-item select {
   width: 100%;
   box-sizing: border-box;
-  padding: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--bd, #cbd5e1);
-  border-radius: 6px;
+  border-radius: 8px;
   font: inherit;
   background: var(--bg, white);
   color: inherit;
+}
+.monitoring-item textarea:focus,
+.monitoring-item select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 .monitoring-item textarea {
   min-height: 80px;
   resize: vertical;
 }
+.monitoring-item fieldset > small {
+  text-align: right;
+  white-space: nowrap;
+}
 .monitoring-checklist [role='alert'] {
   color: var(--red-fg, #b91c1c);
+}
+.monitoring-notes p.is-warn[role='alert'] {
+  color: #92400e;
+}
+@media (max-width: 640px) {
+  .monitoring-checklist {
+    padding: 16px;
+  }
+  .monitoring-list > li {
+    padding: 14px;
+  }
+  .monitoring-list > li::before {
+    position: static;
+    margin-bottom: 8px;
+  }
 }

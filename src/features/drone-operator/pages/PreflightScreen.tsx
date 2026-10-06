@@ -414,13 +414,6 @@ function weatherFormFromStatus(
   }
 }
 
-function parseWeatherNumber(value: string) {
-  const normalized = value.trim().replace(',', '.')
-  if (!normalized) return null
-  const number = Number(normalized)
-  return Number.isFinite(number) ? number : null
-}
-
 function isMissionInFlight(status?: string | null) {
   return (
     status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING'
@@ -590,7 +583,6 @@ export function PreflightChecklistPanel({
     useState(false)
   const backendPreflightRegisteredRef = useRef(false)
   const [triggering, setTriggering] = useState(false)
-  const [weatherSaving, setWeatherSaving] = useState(false)
   const [weatherSuggesting, setWeatherSuggesting] = useState(false)
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const validatedStoredCheckRef = useRef(false)
@@ -735,75 +727,6 @@ export function PreflightChecklistPanel({
       setError(t.triggerFailed)
     } finally {
       setTriggering(false)
-    }
-  }
-
-  async function handleWeatherCheck() {
-    setWeatherSaving(true)
-    setWeatherError(null)
-
-    try {
-      const source = weatherForm.source.trim()
-      const windSpeedMps = parseWeatherNumber(weatherForm.windSpeedMps)
-      const windGustMps = parseWeatherNumber(weatherForm.windGustMps)
-      const precipitationMmH = parseWeatherNumber(weatherForm.precipitationMmH)
-      const visibilityKm = parseWeatherNumber(weatherForm.visibilityKm)
-      const temperatureC = parseWeatherNumber(weatherForm.temperatureC)
-      const humidityPercent = parseWeatherNumber(weatherForm.humidityPercent)
-
-      if (
-        !source ||
-        !weatherForm.observedAt ||
-        windSpeedMps == null ||
-        windGustMps == null ||
-        precipitationMmH == null ||
-        visibilityKm == null ||
-        temperatureC == null ||
-        humidityPercent == null
-      ) {
-        throw new Error('Missing manual weather observation')
-      }
-
-      const observedAt = new Date(weatherForm.observedAt)
-      const notes = weatherForm.notes.trim()
-      const nextStatus: WeatherPreflightStatus = {
-        missionId,
-        droneCode: deviceId,
-        status: weatherForm.decision,
-        safeToFly: weatherForm.decision !== 'FAIL',
-        summary:
-          notes ||
-          (weatherForm.decision === 'FAIL'
-            ? t.weatherManualUnsafe
-            : weatherForm.decision === 'WARN'
-              ? t.weatherManualCaution
-              : t.weatherManualSafe),
-        windSpeedMps,
-        windGustMps,
-        precipitationMmH,
-        visibilityKm,
-        temperatureC,
-        humidityPercent,
-        advisories: [
-          `Nguồn: ${source}`,
-          weatherForm.decision === 'FAIL'
-            ? t.weatherManualUnsafe
-            : weatherForm.decision === 'WARN'
-              ? t.weatherManualCaution
-              : t.weatherManualSafe,
-        ],
-        checkedAt: Number.isNaN(observedAt.getTime())
-          ? new Date().toISOString()
-          : observedAt.toISOString(),
-      }
-
-      setWeatherStatus(nextStatus)
-      writeStoredWeatherState(weatherStorageKey, nextStatus)
-      setPersistedWeatherPassed(false)
-    } catch {
-      setWeatherError(t.weatherManualMissing)
-    } finally {
-      setWeatherSaving(false)
     }
   }
 
@@ -1245,13 +1168,11 @@ export function PreflightChecklistPanel({
           <WeatherCheckPanel
             status={weatherStatus}
             form={weatherForm}
-            saving={weatherSaving}
             suggesting={weatherSuggesting}
             error={weatherError}
             latitude={latitude}
             longitude={longitude}
             onFormChange={setWeatherForm}
-            onCheck={handleWeatherCheck}
             onSuggest={handleWeatherSuggestion}
           />
 
@@ -1446,24 +1367,20 @@ function SummaryBanner({
 function WeatherCheckPanel({
   status,
   form,
-  saving,
   suggesting,
   error,
   latitude,
   longitude,
   onFormChange,
-  onCheck,
   onSuggest,
 }: {
   status: WeatherPreflightStatus | null
   form: WeatherObservationForm
-  saving: boolean
   suggesting: boolean
   error: string | null
   latitude?: number | null
   longitude?: number | null
   onFormChange: (form: WeatherObservationForm) => void
-  onCheck: () => void
   onSuggest: () => void
 }) {
   const { t } = useI18n(preflightScreenMessages)
@@ -1704,15 +1621,6 @@ function WeatherCheckPanel({
           style={{ gridColumn: 'span 4' }}
         />
       </div>
-      <button
-        type="button"
-        className={passed ? 'odm-btn odm-btn-ok' : 'odm-btn odm-btn-p'}
-        onClick={onCheck}
-        disabled={saving || suggesting}
-        style={{ alignSelf: 'flex-end', minWidth: 190 }}
-      >
-        {saving ? t.weatherSaving : status ? t.weatherUpdate : t.weatherRecord}
-      </button>
     </div>
   )
 }

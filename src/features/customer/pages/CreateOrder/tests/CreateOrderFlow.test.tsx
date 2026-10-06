@@ -62,11 +62,12 @@ describe('CreateOrderPage wizard', () => {
           (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
         ).toBe('dt-progress'),
       )
-      await screen.findByLabelText('Nội dung giám sát 1')
+      await screen.findByLabelText('Chọn nội dung 1')
       if (selection === 'empty') {
         for (let index = 1; index <= 3; index++)
           fireEvent.click(screen.getByLabelText(`Chọn nội dung ${index}`))
       } else {
+        fireEvent.click(screen.getByLabelText('Sửa nội dung 2'))
         fireEvent.change(screen.getByLabelText('Nội dung giám sát 2'), {
           target: { value: 'Edited requirement' },
         })
@@ -160,7 +161,7 @@ describe('CreateOrderPage wizard', () => {
       ).toBe('dt-progress'),
     )
 
-    expect(await screen.findByText('Xác nhận yêu cầu')).toBeInTheDocument()
+    expect(await screen.findByText('Tóm tắt yêu cầu')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
 
     const dialog = await screen.findByRole('dialog')

@@ -444,6 +444,35 @@
 .mds-header {
   margin-bottom: 14px;
 }
+.mds-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.mds-header-row > .odm-btn,
+.mds-header-row > a.odm-btn {
+  white-space: nowrap;
+}
+.mds-header-row .mds-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 20px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+.mds-header-row .mds-cta::before {
+  content: '⚡';
+}
+@media (max-width: 640px) {
+  .mds-header-row .mds-cta {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
 
 .mds-main-grid {
   display: grid;

@@ -34,9 +34,13 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
           onChange={(e) => update('title', e.target.value)}
         />
       </FormField>
-      <div className="co-block-title">{t.understood}</div>
-      <div className="co-block co-pre">{consultation?.requirementSummary || t.noSummary}</div>
-      <div className="co-two co-mt">
+      <div className="co-ai-insight">
+        <div className="co-ai-insight-title">
+          <span aria-hidden="true">✦</span> {t.understood}
+        </div>
+        <div className="co-pre">{consultation?.requirementSummary || t.noSummary}</div>
+      </div>
+      <div className="co-two co-mt co-compact">
         <Metric
           label={t.aiSuggested}
           value={

@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type { CustomerConsultation, ServiceOption, ServicePricingEstimate } from '../../../api/customerApi'
 import { findRecommendedService } from '../../../lib/createOrder/consultation'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
@@ -20,6 +22,10 @@ type Props = {
   setAiAnalysisRequested: (value: boolean) => void
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
+  /** Monitoring-content editor, rendered right under the service picker. */
+  checklist?: ReactNode
+  /** Wizard actions, rendered at the bottom of the sticky summary panel. */
+  footer?: ReactNode
 }
 
 /** Step 1: choose the core service first; AI consultation is optional support. */
@@ -28,7 +34,7 @@ export function ServiceStep(p: Props) {
   const selected = p.services.find((s) => s.id === p.form.serviceId)
 
   return (
-    <div className="co-grid">
+    <div className="co-grid is-service">
       <div className="co-stack">
         <ServicePicker
           services={p.services}
@@ -38,9 +44,10 @@ export function ServiceStep(p: Props) {
           error={p.errors.serviceId}
           onSelect={(id) => p.update('serviceId', id)}
         />
+        {p.checklist}
         <ConsultationChat chat={p.chat} />
       </div>
-      <div className="co-stack">
+      <aside className="co-stack co-summary">
         <RequestInfoPanel
           form={p.form}
           errors={p.errors}
@@ -58,7 +65,8 @@ export function ServiceStep(p: Props) {
           hasService={Boolean(selected)}
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
-      </div>
+        {p.footer && <div className="co-summary-cta">{p.footer}</div>}
+      </aside>
     </div>
   )
 }

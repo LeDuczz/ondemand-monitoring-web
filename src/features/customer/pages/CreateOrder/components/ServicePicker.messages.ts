@@ -3,7 +3,11 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const servicePickerMessages = defineMessages({
   vi: {
     cardTitle: 'Chọn dịch vụ giám sát',
-    cardHint: 'Đây là lựa chọn chính của yêu cầu. Chọn dịch vụ phù hợp trước, AI chỉ hỗ trợ khi bạn chưa chắc nên chọn gì.',
+    cardHint: 'Chọn dịch vụ phù hợp với nhu cầu của bạn. AI chỉ hỗ trợ khi bạn chưa chắc nên chọn gì.',
+    searchPlaceholder: 'Tìm dịch vụ…',
+    searchLabel: 'Tìm dịch vụ',
+    noImage: 'Chưa có hình ảnh',
+    noMatch: 'Không có dịch vụ nào khớp với từ khóa.',
     aiSuggested: 'AI đề xuất',
     aiSuggestedHint: 'Dựa trên nội dung chat và thông tin yêu cầu hiện tại.',
     defaultDescription: 'Dịch vụ giám sát bằng drone.',
@@ -18,7 +22,11 @@ export const servicePickerMessages = defineMessages({
   },
   en: {
     cardTitle: 'Choose a monitoring service',
-    cardHint: 'This is the main choice for the request. Pick the service first; AI is only here if you are unsure.',
+    cardHint: 'Pick the service that fits your needs. AI is only here if you are unsure.',
+    searchPlaceholder: 'Search services…',
+    searchLabel: 'Search services',
+    noImage: 'No image yet',
+    noMatch: 'No service matches your search.',
     aiSuggested: 'AI suggestion',
     aiSuggestedHint: 'Based on the chat content and the current request.',
     defaultDescription: 'Drone monitoring service.',

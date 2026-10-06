@@ -1,3 +1,4 @@
+import { Icon } from '../../../../../shared/components/Icon'
 import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceDeliverableOption } from '../../../api/customerApi'
@@ -62,6 +63,7 @@ export function DeliverablesCard({ form, errors, update, deliverables, loading }
 
   return (
     <Card title={t.cardTitle}>
+      <p className="co-hint co-card-sub">{t.cardSubtitle}</p>
       <FormField id="co-deliv" label={t.deliverableType} required error={errors.deliverableTypeId}>
         <select
           id="co-deliv"
@@ -117,68 +119,51 @@ export function DeliverablesCard({ form, errors, update, deliverables, loading }
       </FormField>
       <div className="co-mt">
         <FormField id="co-attachments" label={t.attachments}>
-          <input
-            id="co-attachments"
-            className="co-input"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(event) => {
-              void attachImages(event.target.files)
-              event.currentTarget.value = ''
-            }}
-          />
+          <div className="co-upload">
+            <input
+              id="co-attachments"
+              className="co-upload-input"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => {
+                void attachImages(event.target.files)
+                event.currentTarget.value = ''
+              }}
+            />
+            <label htmlFor="co-attachments" className="co-upload-zone">
+              <span className="co-upload-icon" aria-hidden="true">
+                <Icon name="arrow-up" width={18} height={18} />
+              </span>
+              <span className="co-upload-text">
+                <span className="co-upload-title">{t.uploadTitle}</span>
+                <span className="co-upload-meta">{t.uploadMeta}</span>
+              </span>
+              <span className="odm-btn odm-btn-gh odm-btn-sm co-upload-btn">{t.chooseImages}</span>
+            </label>
+          </div>
         </FormField>
         <p className="co-hint">{t.attachmentHint}</p>
         {form.attachments.length > 0 && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-              gap: 10,
-              marginTop: 10,
-            }}
-          >
+          <ul className="co-attach-list">
             {form.attachments.map((attachment) => (
-              <div
-                key={attachment.id}
-                style={{
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  background: 'var(--surface)',
-                }}
-              >
-                <img
-                  src={attachment.dataUrl}
-                  alt={attachment.fileName}
-                  style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover' }}
-                />
-                <div style={{ padding: 8 }}>
-                  <div
-                    title={attachment.fileName}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {attachment.fileName}
-                  </div>
-                  <button
-                    type="button"
-                    className="odm-btn odm-btn-gh odm-btn-sm"
-                    style={{ marginTop: 6, width: '100%' }}
-                    onClick={() => removeAttachment(attachment.id)}
-                  >
-                    {t.removeAttachment}
-                  </button>
-                </div>
-              </div>
+              <li key={attachment.id} className="co-attach-item">
+                <img src={attachment.dataUrl} alt={attachment.fileName} />
+                <span className="co-attach-name" title={attachment.fileName}>
+                  {attachment.fileName}
+                </span>
+                <button
+                  type="button"
+                  className="co-attach-remove"
+                  aria-label={t.removeAttachmentNamed(attachment.fileName)}
+                  title={t.removeAttachment}
+                  onClick={() => removeAttachment(attachment.id)}
+                >
+                  <Icon name="x" width={14} height={14} />
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </Card>

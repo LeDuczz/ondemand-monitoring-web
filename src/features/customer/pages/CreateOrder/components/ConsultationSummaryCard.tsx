@@ -10,31 +10,50 @@ type Props = {
   form: FormState
   consultation: CustomerConsultation | null
   service?: ServiceOption
+  aiAnalysisRequested: boolean
 }
 
-export function ConsultationSummaryCard({ form, consultation, service }: Props) {
+export function ConsultationSummaryCard({ form, consultation, service, aiAnalysisRequested }: Props) {
   const { t, lang } = useI18n(consultationSummaryCardMessages)
   const recommended =
     consultation?.recommendedServiceName || consultation?.recommendedServiceId
-  return (
-    <Card title={t.cardTitle}>
-      {recommended ? (
-        <div className="co-notice is-success">
-          <strong className="co-notice-title">{t.recommendedService}</strong>
-          {localizeServiceName(
-            consultation?.recommendedServiceName || service?.name || recommended,
-            lang,
-          )}
+
+  if (!recommended) {
+    return (
+      <section className="co-ai-empty">
+        <span className="co-ai-empty-icon" aria-hidden="true">✦</span>
+        <div>
+          <h2 className="co-ai-empty-title">{t.cardTitle}</h2>
+          <p className="co-ai-empty-text">
+            <strong>{t.notUsedTitle}</strong>
+            <br />
+            {t.noConsultation}
+          </p>
         </div>
-      ) : (
-        <p className="co-hint">{t.noConsultation}</p>
-      )}
+      </section>
+    )
+  }
+
+  return (
+    <Card
+      title={t.cardTitle}
+      actions={<span className="co-ai-badge">✦ {t.aiBadge}</span>}
+    >
+      <div className="co-notice is-success">
+        <strong className="co-notice-title">{t.recommendedService}</strong>
+        {localizeServiceName(
+          consultation?.recommendedServiceName || service?.name || recommended,
+          lang,
+        )}
+      </div>
       {consultation?.requirementSummary && (
         <div className="co-block co-pre co-mt">{consultation.requirementSummary}</div>
       )}
       <div className="co-two co-mt">
-        <Metric label={t.media} value={`${t[form.mediaType]} · ${form.resolution}`} />
-        <Metric label={t.quantity} value={String(form.quantity)} />
+        <Metric label={t.media} value={t[form.mediaType]} />
+        <Metric label={t.resolution} value={form.resolution || '—'} />
+        <Metric label={t.quantity} value={Number.isFinite(form.quantity) ? String(form.quantity) : '—'} />
+        <Metric label={t.aiAnalysis} value={aiAnalysisRequested ? t.yes : t.no} />
       </div>
     </Card>
   )

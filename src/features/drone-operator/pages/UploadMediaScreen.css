@@ -54,3 +54,305 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------- Layout polish ---------- */
+.upload-media-body {
+  padding: 20px 24px 28px;
+}
+.upload-media-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.upload-media-device {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--sf3);
+  font-weight: 700;
+  font-size: 13px;
+}
+.upload-media-summary {
+}
+.upload-media-summary-text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.upload-media-summary-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.upload-media-summary-note {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--tx3);
+}
+.upload-media-viewonly {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.upload-media-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+  background: var(--sf);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.upload-media-notice.is-success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+.upload-media-notice.is-danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* Media cards */
+.upload-media-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+  border-radius: 14px;
+}
+.upload-media-preview {
+  height: 190px;
+}
+.upload-media-unavailable {
+  margin: 0;
+  padding: 14px;
+  font-size: 13px;
+}
+.upload-media-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+.upload-media-filename {
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-media-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12px;
+  color: var(--tx3);
+}
+.upload-media-chip {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-weight: 700;
+  font-size: 11px;
+}
+.upload-media-status {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-weight: 700;
+  font-size: 11px;
+}
+.upload-media-status.is-success {
+  background: #dcfce7;
+  color: #166534;
+}
+.upload-media-status.is-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+.upload-media-status.is-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.upload-media-card-body > .odm-btn {
+  align-self: flex-start;
+}
+.upload-media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.upload-media-actions .odm-btn-p {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* Attach-to-checklist */
+.upload-media-attach {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  background: var(--sf);
+  min-width: 0;
+}
+.upload-media-attach legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tx2);
+}
+.upload-media-attach-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.upload-media-attach-row input {
+  flex: none;
+  margin-top: 2px;
+}
+.upload-media-attach .odm-btn {
+  width: 100%;
+  margin-top: 6px;
+  justify-content: center;
+}
+
+.upload-media-uploaded {
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .upload-media-body {
+    padding: 14px;
+  }
+  .upload-media-summary .odm-btn {
+    flex: 1 1 140px;
+    justify-content: center;
+  }
+}
+
+/* Collapsible attach-to-checklist */
+.upload-media-attach-wrap {
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  background: var(--sf);
+}
+.upload-media-attach-wrap > summary {
+  padding: 9px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--tx2);
+  cursor: pointer;
+  list-style-position: inside;
+}
+.upload-media-attach-wrap > summary:focus-visible {
+  outline: 2px solid var(--blue, #2563eb);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.upload-media-attach-wrap .upload-media-attach {
+  border: 0;
+  border-top: 1px solid var(--bd);
+  border-radius: 0;
+  background: transparent;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Compact checklist panel (scoped: Mission Detail keeps its own look) */
+.upload-media-workspace .monitoring-checklist {
+  padding: 16px;
+  border-radius: 14px;
+}
+.upload-media-workspace .monitoring-checklist header {
+  margin-bottom: 10px;
+}
+.upload-media-workspace .monitoring-summary {
+  padding: 10px 14px 16px;
+  font-size: 13.5px;
+}
+.upload-media-workspace .monitoring-notes {
+  margin: 8px 0 0;
+}
+.upload-media-workspace .monitoring-list {
+  margin-top: 12px;
+  gap: 8px;
+}
+.upload-media-workspace .monitoring-list > li {
+  padding: 12px 12px 12px 48px;
+  border-radius: 10px;
+}
+.upload-media-workspace .monitoring-list > li::before {
+  left: 12px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+}
+.upload-media-workspace .monitoring-item h3 {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.upload-media-workspace .monitoring-item > .odm-btn {
+  margin-top: 8px;
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.upload-media-workspace .monitoring-item > small {
+  margin-top: 6px;
+}
+@media (max-width: 640px) {
+  .upload-media-workspace .monitoring-list > li {
+    padding: 12px;
+  }
+}
+
+/* Shorter checklist column: evidence panel is a single compact row. */
+.upload-media-workspace .checklist-evidence {
+  margin-top: 8px;
+  padding: 8px 10px;
+  gap: 4px 8px;
+}
+.upload-media-workspace .checklist-evidence > strong {
+  font-size: 12.5px;
+}
+.upload-media-workspace .checklist-evidence > button {
+  flex: 1 1 100%;
+  margin-left: 0;
+  min-height: 30px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+  justify-content: center;
+}
+.upload-media-workspace .monitoring-meta span {
+  padding: 2px 8px;
+  font-size: 11.5px;
+}
+.upload-media-workspace .monitoring-item > .odm-btn {
+  margin-top: 6px;
+}
+
+/* Checklist column: fixed height with its own scrollbar. */
+.upload-media-workspace > :last-child {
+  max-height: min(78vh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+@media (min-width: 1101px) {
+  .upload-media-workspace > :last-child {
+    position: sticky;
+    top: 84px;
+    max-height: calc(100vh - 110px);
+  }
+}

@@ -12,8 +12,10 @@ export const deliverablesCardMessages = defineMessages({
     photo: 'Ảnh',
     video: 'Video',
     quantity: 'Số lượng',
+    quantityPhoto: 'Số lượng ảnh',
+    quantityVideo: 'Số lượng video',
     resolution: 'Độ phân giải',
-    thermal: '640x512 (nhiệt)',
+    thermal: 'Ảnh nhiệt (640x512)',
     attachments: 'Ảnh khách hàng đính kèm',
     attachmentHint:
       'Gắn ảnh hiện trạng, bản vẽ hoặc ảnh mẫu để staff hiểu rõ khu vực trước khi duyệt.',
@@ -35,8 +37,10 @@ export const deliverablesCardMessages = defineMessages({
     photo: 'Photo',
     video: 'Video',
     quantity: 'Quantity',
+    quantityPhoto: 'Number of photos',
+    quantityVideo: 'Number of videos',
     resolution: 'Resolution',
-    thermal: '640x512 (thermal)',
+    thermal: 'Thermal (640x512)',
     attachments: 'Customer attached images',
     attachmentHint:
       'Attach current-site photos, drawings, or sample images so staff understand the area before approval.',

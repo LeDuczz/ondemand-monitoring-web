@@ -25,7 +25,7 @@ describe('draft storage', () => {
 
   it('validates step values', () => {
     expect(isStep(2)).toBe(true)
-    expect(isStep(5)).toBe(false)
+    expect(isStep(6)).toBe(false)
     expect(isStep('1')).toBe(false)
   })
 })

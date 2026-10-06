@@ -40,6 +40,7 @@ export function ChecklistEvidencePanel({
   canDetach,
   refresh,
   reviewMedia,
+  compact = false,
 }: {
   missionId: string
   item: MissionChecklistExecution
@@ -47,6 +48,8 @@ export function ChecklistEvidencePanel({
   canDetach: boolean
   refresh: () => void
   reviewMedia?: (mediaId: string, reject: boolean) => Promise<unknown>
+  /** Flat list layout for narrow side panels: no nested cards, one status per row. */
+  compact?: boolean
 }) {
   const [candidates, setCandidates] = useState<EvidenceCandidate[] | null>(null)
   const [page, setPage] = useState(0)
@@ -87,11 +90,158 @@ export function ChecklistEvidencePanel({
   const shown = (candidates ?? []).filter(
     (media) => !needle || media.fileName.toLowerCase().includes(needle),
   )
+  const required =
+    item.executionStatus === 'UNABLE_TO_VERIFY'
+      ? 0
+      : (item.minimumEvidenceCount ?? 0)
+  const have = item.eligibleEvidenceCount ?? 0
+  const links = item.evidence ?? []
+  const needsApproval = links.some(
+    (link) =>
+      !link.eligibleForFinalApproval &&
+      link.mediaStatus === 'PENDING_MANAGER_APPROVAL',
+  )
+  const compactBody = (
+    <>
+      <div className="ce-head">
+        <span>Bằng chứng</span>
+        <span className="ce-count">
+          {have} / {required}
+        </span>
+      </div>
+      {links.length > 0 && (
+        <ul className="ce-list">
+          {links.map((link) => {
+            const pending = link.mediaStatus === 'PENDING_MANAGER_APPROVAL'
+            const status =
+              !link.eligibleForOperationalReadiness && link.ineligibilityReason
+                ? evidenceReason[link.ineligibilityReason]
+                : (mediaStatusLabel[link.mediaStatus ?? ''] ??
+                  link.mediaStatus ??
+                  'Legacy')
+            const hasMenu = canDetach || (reviewMedia && pending)
+            return (
+              <li key={link.evidenceId} className="ce-row">
+                <div className="ce-thumb">
+                  {link.previewUrl &&
+                    (link.mediaType === 'VIDEO' ? (
+                      <video src={link.previewUrl} preload="metadata" />
+                    ) : (
+                      <img
+                        src={link.previewUrl}
+                        alt={link.fileName}
+                        loading="lazy"
+                      />
+                    ))}
+                </div>
+                <div className="ce-info">
+                  <span className="ce-name" title={link.fileName}>
+                    {link.fileName}
+                  </span>
+                  <span className="ce-meta">
+                    {link.mediaType === 'VIDEO' ? 'Video' : 'Ảnh'} •{' '}
+                    {sourceLabel[link.sourceType ?? ''] ??
+                      link.sourceType ??
+                      'Unknown/Legacy'}
+                  </span>
+                  <span
+                    className={`ce-status${link.eligibleForOperationalReadiness ? '' : ' is-warn'}`}
+                  >
+                    {status}
+                  </span>
+                </div>
+                <div className="ce-actions">
+                  {link.previewUrl && (
+                    <a
+                      className="ce-view"
+                      href={link.previewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Xem
+                    </a>
+                  )}
+                  {hasMenu && (
+                    <details className="ce-more">
+                      <summary aria-label="Thêm thao tác">⋮</summary>
+                      <div className="ce-menu">
+                        {canDetach && (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              void act(() =>
+                                checklistEvidenceApi.detach(
+                                  missionId,
+                                  item.id,
+                                  link.evidenceId,
+                                  item.version,
+                                ),
+                              )
+                            }
+                          >
+                            Gỡ bằng chứng
+                          </button>
+                        )}
+                        {reviewMedia && pending && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                void act(() => reviewMedia(link.mediaId, false))
+                              }
+                            >
+                              Duyệt media
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                void act(() => reviewMedia(link.mediaId, true))
+                              }
+                            >
+                              Từ chối media
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {required > 0 && have >= required && (
+        <p className="ce-ok">✓ Đã đủ bằng chứng</p>
+      )}
+      {needsApproval && (
+        <p className="ce-hint">
+          ⓘ Media phải được duyệt trước khi hoàn tất mục.
+        </p>
+      )}
+      {canAttach && (
+        <button
+          type="button"
+          className="ce-add"
+          title="Chọn media của mission làm bằng chứng"
+          disabled={busy}
+          onClick={() => void load(0)}
+        >
+          + Thêm media
+        </button>
+      )}
+    </>
+  )
   return (
     <section
-      className="checklist-evidence"
+      className={`checklist-evidence${compact ? ' is-compact' : ''}`}
       aria-label={`Bằng chứng: ${item.content}`}
     >
+      {compact ? compactBody : (
+      <>
       <strong>
         Bằng chứng hợp lệ: {item.eligibleEvidenceCount ?? 0} /{' '}
         {item.executionStatus === 'UNABLE_TO_VERIFY'
@@ -209,6 +359,8 @@ export function ChecklistEvidencePanel({
         >
           Thêm bằng chứng từ media Mission
         </button>
+      )}
+      </>
       )}
       {canAttach &&
         candidates &&

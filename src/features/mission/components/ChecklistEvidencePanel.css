@@ -253,7 +253,7 @@
   flex-direction: column;
   gap: 6px;
 }
-.checklist-candidate {
+.checklist-picker .checklist-candidate {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -263,7 +263,7 @@
   background: var(--bg, #fff);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.checklist-candidate:hover {
+.checklist-picker .checklist-candidate:hover {
   border-color: #93c5fd;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
 }
@@ -334,4 +334,219 @@
   padding: 3px 10px;
   font-size: 12.5px;
   justify-content: center;
+}
+
+/* ---------- Compact evidence: flat section, rows separated by hairlines ---------- */
+.checklist-evidence.is-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  background: transparent;
+}
+.ce-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.ce-count {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+.ce-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ce-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.ce-row:last-child {
+  border-bottom: 0;
+}
+.ce-thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+.ce-thumb img,
+.ce-thumb video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ce-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ce-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+}
+.ce-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+.ce-status {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+}
+.ce-status.is-warn {
+  color: #b45309;
+}
+.ce-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ce-view {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: none;
+}
+.ce-view:hover {
+  background: #eff6ff;
+}
+.ce-more {
+  position: relative;
+}
+.ce-more > summary {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  list-style: none;
+}
+.ce-more > summary::-webkit-details-marker {
+  display: none;
+}
+.ce-more > summary:hover,
+.ce-more[open] > summary {
+  background: #f1f5f9;
+}
+.ce-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 150px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+.ce-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: #0f172a;
+  cursor: pointer;
+}
+.ce-menu button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+.ce-ok,
+.ce-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ce-ok {
+  color: #16a34a;
+  font-weight: 500;
+}
+.ce-hint {
+  color: #64748b;
+}
+.ce-add {
+  height: 40px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+.ce-add:hover:not(:disabled) {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #f8fbff;
+}
+.ce-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Compact fixes: let flex children shrink (long filenames) and beat the legacy pill rule on `> p`. */
+.checklist-evidence.is-compact,
+.checklist-evidence.is-compact > *,
+.ce-list,
+.ce-row,
+.ce-info {
+  min-width: 0;
+  max-width: 100%;
+}
+.checklist-evidence.is-compact > p {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+}
+.checklist-evidence.is-compact > p.ce-ok {
+  color: #16a34a;
+}
+.checklist-evidence.is-compact > p.ce-hint {
+  color: #64748b;
+}
+.checklist-evidence.is-compact > button.ce-add {
+  flex: none;
+  width: 100%;
+  color: #475569;
+}
+.checklist-evidence.is-compact > button.ce-add:hover:not(:disabled) {
+  color: #2563eb;
 }

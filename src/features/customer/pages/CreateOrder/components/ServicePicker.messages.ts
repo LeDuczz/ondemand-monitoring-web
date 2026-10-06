@@ -3,9 +3,12 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const servicePickerMessages = defineMessages({
   vi: {
     cardTitle: 'Chọn dịch vụ giám sát',
-    cardHint: 'Chọn dịch vụ phù hợp với nhu cầu của bạn. AI chỉ hỗ trợ khi bạn chưa chắc nên chọn gì.',
+    cardHint: 'Chọn dịch vụ phù hợp với nhu cầu của bạn. Sau đó hệ thống sẽ gợi ý nội dung giám sát tương ứng.',
     searchPlaceholder: 'Tìm dịch vụ…',
     searchLabel: 'Tìm dịch vụ',
+    scrollNext: 'Xem thêm dịch vụ',
+    showMore: (n: number) => `Xem thêm ${n} dịch vụ`,
+    showLess: 'Thu gọn',
     noImage: 'Chưa có hình ảnh',
     noMatch: 'Không có dịch vụ nào khớp với từ khóa.',
     aiSuggested: 'AI đề xuất',
@@ -22,9 +25,12 @@ export const servicePickerMessages = defineMessages({
   },
   en: {
     cardTitle: 'Choose a monitoring service',
-    cardHint: 'Pick the service that fits your needs. AI is only here if you are unsure.',
+    cardHint: 'Pick the service that fits your needs. We will then suggest the matching monitoring content.',
     searchPlaceholder: 'Search services…',
     searchLabel: 'Search services',
+    scrollNext: 'Show more services',
+    showMore: (n: number) => `Show ${n} more service(s)`,
+    showLess: 'Show less',
     noImage: 'No image yet',
     noMatch: 'No service matches your search.',
     aiSuggested: 'AI suggestion',

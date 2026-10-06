@@ -1,7 +1,7 @@
 import { todayPlus } from './format'
 import type { FormState, Step, StoredCreateOrderDraft } from './types'
 
-export const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v1'
+export const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v2'
 
 export function createDefaultForm(): FormState {
   return {
@@ -24,7 +24,7 @@ export function createDefaultForm(): FormState {
 }
 
 export function isStep(value: unknown): value is Step {
-  return value === 1 || value === 2 || value === 3 || value === 4
+  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5
 }
 
 export function readStoredDraft(): StoredCreateOrderDraft | null {

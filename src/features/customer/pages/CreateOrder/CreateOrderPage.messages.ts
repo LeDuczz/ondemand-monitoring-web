@@ -5,14 +5,18 @@ export const createOrderPageMessages = defineMessages({
   vi: {
     pageTitle: 'Tạo yêu cầu giám sát',
     pageSubtitle:
-      'Chọn dịch vụ, xác định vùng giám sát, chọn thời gian rồi xác nhận kết quả bàn giao.',
-    cancel: 'Huỷ',
+      'Chọn dịch vụ, chốt nội dung giám sát, xác định vùng giám sát, chọn thời gian rồi xác nhận kết quả bàn giao.',
+    cancel: 'Hủy',
+    cancelConfirm: 'Thoát khỏi trang tạo yêu cầu? Bản nháp của bạn được lưu tự động.',
+    blockedChecklist: 'Hãy sửa nội dung giám sát chưa hợp lệ để tiếp tục.',
+    blockedLoading: 'Đang tải dữ liệu…',
     stepLabels: {
       1: 'Dịch vụ & mục tiêu',
-      2: 'Vị trí & vùng giám sát',
-      3: 'Thời gian',
-      4: 'Kết quả bàn giao & xác nhận',
-    } as Record<1 | 2 | 3 | 4, string>,
+      2: 'Nội dung giám sát',
+      3: 'Vị trí & vùng giám sát',
+      4: 'Thời gian',
+      5: 'Kết quả bàn giao & xác nhận',
+    } as Record<1 | 2 | 3 | 4 | 5, string>,
     metaErrorTitle: 'Không tải được dữ liệu tạo yêu cầu',
     validation: {
       address: 'Nhập địa chỉ/khu vực cần giám sát.',
@@ -42,14 +46,18 @@ export const createOrderPageMessages = defineMessages({
   en: {
     pageTitle: 'Create Monitoring Request',
     pageSubtitle:
-      'Choose a service, define the monitoring area, pick a schedule, then confirm deliverables.',
+      'Choose a service, confirm the monitoring content, define the monitoring area, pick a schedule, then confirm deliverables.',
     cancel: 'Cancel',
+    cancelConfirm: 'Leave the request page? Your draft is saved automatically.',
+    blockedChecklist: 'Fix the invalid monitoring content to continue.',
+    blockedLoading: 'Loading data…',
     stepLabels: {
       1: 'Service & target',
-      2: 'Location & monitoring area',
-      3: 'Schedule',
-      4: 'Deliverables & confirmation',
-    } as Record<1 | 2 | 3 | 4, string>,
+      2: 'Monitoring content',
+      3: 'Location & monitoring area',
+      4: 'Schedule',
+      5: 'Deliverables & confirmation',
+    } as Record<1 | 2 | 3 | 4 | 5, string>,
     metaErrorTitle: 'Unable to load data for creating this request',
     validation: {
       address: 'Enter the address/area to monitor.',

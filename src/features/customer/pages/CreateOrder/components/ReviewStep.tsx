@@ -26,13 +26,11 @@ type Props = {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
-  /** Monitoring-content editor, rendered under the deliverables card. */
-  checklist?: ReactNode
   /** Wizard actions, rendered at the bottom of the sticky summary panel. */
   footer?: ReactNode
 }
 
-/** Step 4: choose deliverables on the left, review + submit on the right. */
+/** Step 5: choose deliverables on the left, review + submit on the right. */
 export function ReviewStep(p: Props) {
   return (
     <div className="co-grid is-review">
@@ -44,7 +42,6 @@ export function ReviewStep(p: Props) {
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
         />
-        {p.checklist}
       </div>
       <aside className="co-stack co-summary">
         <RequestSummaryCard

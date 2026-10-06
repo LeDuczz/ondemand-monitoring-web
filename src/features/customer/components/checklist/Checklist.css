@@ -281,3 +281,260 @@
     margin-left: auto;
   }
 }
+
+/* ---------- Compact toolbar, icon actions ---------- */
+.checklist-card.is-compact .ui-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.checklist-card .checklist-add-top {
+  min-height: 34px;
+  padding: 4px 14px;
+  border: 1px solid var(--ui-primary);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: var(--ui-primary);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checklist-card .checklist-add-top:hover:not(:disabled) {
+  background: var(--ui-primary-soft);
+}
+.checklist-card .checklist-add-top:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.checklist-card .checklist-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface-2);
+}
+.checklist-card .checklist-selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checklist-card .checklist-selectall input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ui-primary);
+}
+.checklist-card .checklist-clear {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checklist-card .checklist-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.checklist-card .checklist-search {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 13.5px;
+}
+.checklist-card .checklist-search:focus-visible,
+.checklist-card .checklist-clear:focus-visible,
+.checklist-card .checklist-add-top:focus-visible {
+  outline: none;
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.checklist-card .checklist-row.is-compact .checklist-length {
+  flex: none;
+  align-self: center;
+}
+.checklist-card .checklist-icon-btn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text-2);
+  cursor: pointer;
+}
+.checklist-card .checklist-icon-btn:hover:not(:disabled) {
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary);
+}
+.checklist-card .checklist-icon-btn.is-danger {
+  color: var(--ui-danger);
+}
+.checklist-card .checklist-icon-btn.is-danger:hover:not(:disabled) {
+  background: #fee2e2;
+  color: var(--ui-danger);
+}
+.checklist-card .checklist-icon-btn:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+.checklist-card .checklist-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+@media (max-width: 600px) {
+  .checklist-card .checklist-row.is-compact .checklist-length {
+    order: 4;
+  }
+}
+
+/* ---------- Customer checklist: list/group toggle, round index chip ---------- */
+.checklist-card.is-compact .checklist-row.is-compact .checklist-index {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ui-primary-soft);
+  letter-spacing: 0;
+}
+.checklist-card .checklist-view {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.checklist-card .checklist-view button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checklist-card .checklist-view button[aria-pressed='true'] {
+  background: var(--ui-primary);
+  color: var(--ui-on-primary, #fff);
+}
+.checklist-card .checklist-view button:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+.checklist-card .checklist-group-title {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ui-text-3);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: inherit;
+}
+.checklist-card.is-compact .checklist-row.is-compact {
+  border-radius: 10px;
+}
+.checklist-card .checklist-toolbar .checklist-search {
+  flex: 1 1 180px;
+}
+
+/* ---------- Leak guards: admin `checklists.css` styles the same global class names ---------- */
+.checklist-card .checklist-summary {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  justify-content: initial;
+}
+.checklist-card .checklist-row:last-child {
+  border-bottom: 1px solid #dce3ec;
+}
+.checklist-card .checklist-row:hover {
+  background: var(--ui-surface);
+}
+
+/* ---------- UX polish: aligned rows, clear states ---------- */
+.checklist-card .checklist-row.is-compact {
+  gap: 12px;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.checklist-card .checklist-row.is-compact:hover {
+  background: #f8fafc;
+  border-color: #c7d2e0;
+}
+.checklist-card .checklist-row.is-compact.is-removed {
+  background: #f8fafc;
+  opacity: 1;
+}
+.checklist-card .checklist-row.is-compact.is-removed .checklist-summary {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+.checklist-card .checklist-row.is-compact.is-removed .checklist-index {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.checklist-card .checklist-row.is-compact .checklist-summary {
+  cursor: text;
+}
+.checklist-card .checklist-row.is-compact .checklist-length {
+  min-width: 56px;
+  text-align: right;
+}
+/* Expanded (editing) row: highlighted so the user knows which one is open. */
+.checklist-card .checklist-row:not(.is-compact):focus-within {
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  background: #f8fbff;
+}
+.checklist-card .checklist-row-heading .checklist-done {
+  min-height: 28px;
+  padding: 2px 12px;
+  background: var(--ui-primary);
+  border-color: var(--ui-primary);
+  color: #fff;
+}
+.checklist-card .checklist-row-heading .checklist-done:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+/* Long lists: the rows scroll inside the card; header and toolbar stay put. */
+.checklist-card.is-compact .checklist-fields {
+  max-height: min(62vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 2px 6px 2px 2px;
+}
+.checklist-card.is-compact .checklist-row.is-compact,
+.checklist-card.is-compact .checklist-row:not(.is-compact) {
+  flex: none;
+}

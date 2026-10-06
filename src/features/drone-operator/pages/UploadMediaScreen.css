@@ -161,13 +161,13 @@
 /* ---------- Layout: media + sticky checklist ---------- */
 .upload-media-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 20px;
   align-items: start;
 }
-@media (min-width: 1440px) {
+@media (min-width: 1600px) {
   .upload-media-workspace {
-    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-columns: minmax(0, 1fr) 400px;
   }
 }
 .upload-media-workspace > *,

@@ -835,7 +835,7 @@ textarea.co-input {
   position: sticky;
   top: 88px;
   gap: 0;
-  max-height: calc(100vh - 104px);
+  max-height: calc(100vh - 190px);
   overflow-y: auto;
   scrollbar-width: thin;
   background: var(--ui-surface);
@@ -1184,14 +1184,45 @@ textarea.co-input {
 
 .co-upload-zone {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--ui-space-3);
-  padding: 14px 16px;
-  border: 1px dashed var(--ui-border-strong);
+  justify-content: center;
+  gap: 6px;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px dashed #cbd5e1;
   border-radius: 12px;
-  background: var(--ui-surface-2);
+  background: #fff;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ui-text-2);
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s;
+}
+
+.co-upload-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.co-upload-link {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.co-upload-zone.is-dragging {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.co-counter {
+  margin-top: 4px;
+  text-align: right;
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .co-upload-zone:hover,
@@ -1306,4 +1337,126 @@ textarea.co-input {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ---------- Step 1: shorter service cards ---------- */
+.co-service-grid {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--ui-space-3);
+}
+.co-service-grid .co-service-illustration {
+  aspect-ratio: auto;
+  height: 72px;
+}
+.co-service-grid .co-service-noimg {
+  flex-direction: row;
+  gap: 8px;
+}
+.co-service-grid .co-service-desc {
+  -webkit-line-clamp: 2;
+}
+.co-service-lead {
+  max-width: none;
+  font-size: 13.5px;
+}
+
+/* ---------- Step 1: 3-column service grid (two rows, then "show more") + sticky bottom bar ---------- */
+.co-service-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1180px) {
+  .co-service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .co-service-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.co-service-more {
+  display: block;
+  margin: var(--ui-space-3) auto 0;
+  padding: 6px 18px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 999px;
+  background: var(--ui-surface);
+  color: #2563eb;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.co-service-more:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+.co-service-more:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.co-page .ui-page-title {
+  font-size: 28px;
+}
+@media (max-width: 640px) {
+  .co-page .ui-page-title {
+    font-size: 22px;
+  }
+}
+.co-bottom-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
+}
+.co-bottom-bar .co-footer {
+  flex: 1;
+  flex-wrap: nowrap;
+}
+.co-bottom-bar .co-footer .odm-btn-p {
+  margin-left: 0;
+}
+.co-draft-note {
+  font-size: 12px;
+  color: var(--ui-text-3);
+  white-space: nowrap;
+}
+.co-footer-blocked {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #b45309;
+  text-align: right;
+}
+@media (max-width: 760px) {
+  .co-draft-note {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .co-bottom-bar .co-footer .odm-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Stepper: keep every tab one title line + one subtitle line, even with 5 steps. */
+.co-tab {
+  min-height: 52px;
+}
+.co-tab-text {
+  flex: 1;
+}
+.co-tab-title,
+.co-tab-sub {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

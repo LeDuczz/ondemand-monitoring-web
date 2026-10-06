@@ -66,6 +66,7 @@ export function useCreateOrderWizard() {
       blockedZoneNames: [],
     },
     messages: t.validation,
+    canAdvance: (current) => current !== 2 || checklist.valid,
   })
 
   const score = useMemo(
@@ -77,7 +78,7 @@ export function useCreateOrderWizard() {
     : undefined
 
   const submit = useSubmitOrder({
-    validate: () => wizard.validate(4) && checklist.valid,
+    validate: () => wizard.validate(5) && checklist.valid,
     onTemplateChanged: checklist.markStale,
     onError: f.setSubmitError,
     buildPayload: () => ({

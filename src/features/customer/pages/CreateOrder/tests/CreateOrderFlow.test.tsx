@@ -19,14 +19,21 @@ afterEach(() => {
 const next = (label: string) =>
   fireEvent.click(screen.getByRole('button', { name: `Tiếp tục: ${label}` }))
 
-async function fillService() {
+/** Step 1 -> step 2 (monitoring content) -> step 3 (location). */
+async function fillService(onContent?: () => Promise<void> | void) {
   fireEvent.click(
     await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }),
   )
   fireEvent.change(screen.getByLabelText(/Tiêu đề/), {
     target: { value: 'Đơn kiểm thử' },
   })
-  next('Vị trí & vùng giám sát')
+  next('Nội dung giám sát')
+  await onContent?.()
+  const forward = await screen.findByRole('button', {
+    name: 'Tiếp tục: Vị trí & vùng giám sát',
+  })
+  await waitFor(() => expect(forward).toBeEnabled())
+  fireEvent.click(forward)
 }
 
 async function fillLocation() {
@@ -54,7 +61,23 @@ describe('CreateOrderPage wizard', () => {
       )
       const create = vi.spyOn(customerApi, 'createOrder')
       render(<CreateOrderPage />)
-      await fillService()
+      await fillService(async () => {
+        await screen.findByLabelText('Chọn nội dung 1')
+        if (selection === 'empty') {
+          for (let index = 1; index <= 3; index++)
+            fireEvent.click(screen.getByLabelText(`Chọn nội dung ${index}`))
+        } else {
+          fireEvent.click(screen.getByLabelText('Sửa nội dung 2'))
+          fireEvent.change(screen.getByLabelText('Nội dung giám sát 2'), {
+            target: { value: 'Edited requirement' },
+          })
+          fireEvent.click(screen.getByLabelText('Chọn nội dung 3'))
+          fireEvent.click(screen.getByRole('button', { name: '+ Thêm nội dung' }))
+          fireEvent.change(screen.getByLabelText('Nội dung giám sát 4'), {
+            target: { value: 'Custom requirement' },
+          })
+        }
+      })
       await fillLocation()
       next('Kết quả bàn giao & xác nhận')
       await waitFor(() =>
@@ -62,21 +85,6 @@ describe('CreateOrderPage wizard', () => {
           (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
         ).toBe('dt-progress'),
       )
-      await screen.findByLabelText('Chọn nội dung 1')
-      if (selection === 'empty') {
-        for (let index = 1; index <= 3; index++)
-          fireEvent.click(screen.getByLabelText(`Chọn nội dung ${index}`))
-      } else {
-        fireEvent.click(screen.getByLabelText('Sửa nội dung 2'))
-        fireEvent.change(screen.getByLabelText('Nội dung giám sát 2'), {
-          target: { value: 'Edited requirement' },
-        })
-        fireEvent.click(screen.getByLabelText('Chọn nội dung 3'))
-        fireEvent.click(screen.getByRole('button', { name: '+ Thêm nội dung' }))
-        fireEvent.change(screen.getByLabelText('Nội dung giám sát 4'), {
-          target: { value: 'Custom requirement' },
-        })
-      }
       fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
       await screen.findByRole('dialog')
       fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -109,7 +117,7 @@ describe('CreateOrderPage wizard', () => {
   it('blocks step 1 without a service and title', async () => {
     render(<CreateOrderPage />)
     await screen.findByText('Giám sát Tiến độ Xây dựng')
-    next('Vị trí & vùng giám sát')
+    next('Nội dung giám sát')
     expect(
       await screen.findByText('Chọn dịch vụ giám sát.'),
     ).toBeInTheDocument()
@@ -117,7 +125,7 @@ describe('CreateOrderPage wizard', () => {
     expect(screen.queryByLabelText(/Địa chỉ\/khu vực/)).not.toBeInTheDocument()
   })
 
-  it('shows the real location map on step 2 and requires an address', async () => {
+  it('shows the real location map on step 3 and requires an address', async () => {
     render(<CreateOrderPage />)
     await fillService()
     expect(
@@ -171,7 +179,7 @@ describe('CreateOrderPage wizard', () => {
 
     expect(await screen.findByText('Đã tạo yêu cầu')).toBeInTheDocument()
     expect(
-      window.localStorage.getItem('odm.customer.createOrderDraft.v1'),
+      window.localStorage.getItem('odm.customer.createOrderDraft.v2'),
     ).toBeNull()
   })
 
@@ -199,7 +207,7 @@ describe('CreateOrderPage wizard', () => {
     act(() => setLanguage('en'))
     expect(
       await screen.findByRole('button', {
-        name: 'Continue: Location & monitoring area',
+        name: 'Continue: Monitoring content',
       }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText(/Title/)).toBeInTheDocument()

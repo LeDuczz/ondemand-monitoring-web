@@ -3,8 +3,8 @@ import type {
   CustomerConsultation,
 } from '../../api/customerApi'
 
-export type Step = 1 | 2 | 3 | 4
-export const STEPS: readonly Step[] = [1, 2, 3, 4]
+export type Step = 1 | 2 | 3 | 4 | 5
+export const STEPS: readonly Step[] = [1, 2, 3, 4, 5]
 
 export type MapPoint = { x: number; y: number }
 

@@ -22,8 +22,6 @@ type Props = {
   setAiAnalysisRequested: (value: boolean) => void
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
-  /** Monitoring-content editor, rendered right under the service picker. */
-  checklist?: ReactNode
   /** Wizard actions, rendered at the bottom of the sticky summary panel. */
   footer?: ReactNode
 }
@@ -34,6 +32,7 @@ export function ServiceStep(p: Props) {
   const selected = p.services.find((s) => s.id === p.form.serviceId)
 
   return (
+    <>
     <div className="co-grid is-service">
       <div className="co-stack">
         <ServicePicker
@@ -44,7 +43,6 @@ export function ServiceStep(p: Props) {
           error={p.errors.serviceId}
           onSelect={(id) => p.update('serviceId', id)}
         />
-        {p.checklist}
         <ConsultationChat chat={p.chat} />
       </div>
       <aside className="co-stack co-summary">
@@ -65,8 +63,9 @@ export function ServiceStep(p: Props) {
           hasService={Boolean(selected)}
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
-        {p.footer && <div className="co-summary-cta">{p.footer}</div>}
       </aside>
     </div>
+    {p.footer && <div className="co-bottom-bar">{p.footer}</div>}
+    </>
   )
 }

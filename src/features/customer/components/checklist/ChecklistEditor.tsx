@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { Icon } from '../../../../shared/components/Icon'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
-import { normalizeContent } from '../../lib/checklist/types'
+import { normalizeContent, type ChecklistRow } from '../../lib/checklist/types'
 import type { OrderChecklistEditorState } from '../../lib/checklist/useOrderChecklist'
 import './Checklist.css'
 
 /** Rows shown before "show more" in the compact variant. */
-const COMPACT_VISIBLE = 8
+const COMPACT_VISIBLE = 50
 
 export function ChecklistEditor({
   checklist,
@@ -27,6 +28,8 @@ export function ChecklistEditor({
   const compact = variant === 'compact'
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
+  const [query, setQuery] = useState('')
+  const [view, setView] = useState<'list' | 'group'>('list')
   const openNewRow = useRef(false)
   const previousCount = useRef(rows.length)
 
@@ -44,48 +47,47 @@ export function ChecklistEditor({
       document.getElementById(`requirement-${editingKey}`)?.focus()
   }, [editingKey])
 
+  const needle = query.trim().toLowerCase()
+  const searching = compact && needle !== ''
   const hiddenCount =
-    compact && !showAll ? Math.max(0, rows.length - COMPACT_VISIBLE) : 0
+    compact && !showAll && !searching
+      ? Math.max(0, rows.length - COMPACT_VISIBLE)
+      : 0
+  const addRow = () => {
+    openNewRow.current = true
+    setShowAll(true)
+    setQuery('')
+    checklist.add()
+  }
 
-  return (
-    <div role="region" aria-label={t.title}>
-      <Card
-        className={`checklist-card${compact ? ' is-compact' : ''}`}
-        title={t.title}
-        actions={
-          <span className="checklist-hint">
-            {t.count(checklist.selectedCount)}
-          </span>
-        }
-      >
-        <p className="checklist-hint">{t.hint}</p>
-        {status === 'idle' && <p>{t.choose}</p>}
-        {status === 'loading' && <p role="status">{t.loading}</p>}
-        {(status === 'error' || status === 'stale') && (
-          <div role="alert" className="co-notice is-danger">
-            <p>{status === 'stale' ? t.stale : checklist.error}</p>
-            {status === 'stale' && <p>{t.discard}</p>}
-            <button
-              type="button"
-              className="odm-btn odm-btn-gh"
-              disabled={disabled}
-              onClick={() => {
-                checklist.reload()
-                onReload?.()
-              }}
-            >
-              {status === 'stale' ? t.reload : t.retry}
-            </button>
-          </div>
-        )}
-        {ready && !rows.length && <p>{t.empty}</p>}
-        <fieldset disabled={disabled || !ready} className="checklist-fields">
-          {rows.map((row, index) => {
+  const grouped = compact && view === 'group'
+  const selectedTotal = rows.filter((row) => row.selected).length
+  const ordered = rows
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) =>
+      grouped ? Number(b.row.selected) - Number(a.row.selected) : 0,
+    )
+    .map((entry, pos, all) => ({
+      ...entry,
+      heading:
+        grouped && (pos === 0 || all[pos - 1].row.selected !== entry.row.selected)
+          ? entry.row.selected
+            ? t.groupSelected(selectedTotal)
+            : t.groupUnselected(rows.length - selectedTotal)
+          : null,
+    }))
+  const renderRow = (row: ChecklistRow, index: number) => {
             const normalizedLength = normalizeContent(row.content).length
             const invalid =
               row.selected && (normalizedLength < 1 || normalizedLength > 500)
             const expanded = !compact || editingKey === row.key || invalid
             if (hiddenCount && index >= COMPACT_VISIBLE && !expanded)
+              return null
+            if (
+              searching &&
+              !expanded &&
+              !row.content.toLowerCase().includes(needle)
+            )
               return null
             const checkbox = (
               <input
@@ -110,21 +112,44 @@ export function ChecklistEditor({
                   <span className="checklist-index">
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  <span className="checklist-summary" title={row.content}>
+                  <span
+                    className="checklist-summary"
+                    title={row.content}
+                    onClick={() => {
+                      // Click-to-edit, but never while the user is selecting text.
+                      if (row.selected && !window.getSelection()?.toString())
+                        setEditingKey(row.key)
+                    }}
+                  >
                     {row.content || t.emptyContent}
                     {!row.sourceChecklistId && (
                       <span className="checklist-custom-tag">{t.custom}</span>
                     )}
                   </span>
+                  <span className="checklist-length">
+                    {row.content.length} / 500
+                  </span>
                   <button
                     type="button"
-                    className="checklist-edit"
+                    className="checklist-icon-btn"
                     aria-label={t.editRow(index + 1)}
+                    title={t.edit}
                     disabled={!row.selected}
                     onClick={() => setEditingKey(row.key)}
                   >
-                    {t.edit}
+                    <Icon name="edit" width={16} height={16} aria-hidden="true" />
                   </button>
+                  {!row.sourceChecklistId && (
+                    <button
+                      type="button"
+                      className="checklist-icon-btn is-danger"
+                      aria-label={`${t.remove} ${index + 1}`}
+                      title={t.remove}
+                      onClick={() => checklist.remove(row.key)}
+                    >
+                      <Icon name="trash" width={16} height={16} aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
               )
             }
@@ -187,7 +212,114 @@ export function ChecklistEditor({
                 </div>
               </div>
             )
-          })}
+  }
+  return (
+    <div role="region" aria-label={t.title}>
+      <Card
+        className={`checklist-card${compact ? ' is-compact' : ''}`}
+        title={t.title}
+        actions={
+          <>
+            <span className="checklist-hint">
+              {t.count(checklist.selectedCount)}
+            </span>
+            {compact && ready && (
+              <button
+                type="button"
+                className="checklist-add-top"
+                disabled={disabled || checklist.selectedCount >= 100}
+                onClick={addRow}
+              >
+                + {t.add}
+              </button>
+            )}
+          </>
+        }
+      >
+        <p className="checklist-hint">{t.hint}</p>
+        {compact && ready && rows.length > 0 && (
+          <div className="checklist-toolbar">
+            <label className="checklist-selectall">
+              <input
+                type="checkbox"
+                disabled={disabled}
+                checked={rows.every((row) => row.selected)}
+                onChange={(event) => {
+                  for (const row of rows)
+                    if (row.selected !== event.target.checked)
+                      checklist.change(row.key, {
+                        selected: event.target.checked,
+                      })
+                }}
+              />
+              {t.selectAll(rows.length)}
+            </label>
+            <button
+              type="button"
+              className="checklist-clear"
+              disabled={disabled || checklist.selectedCount === 0}
+              onClick={() => {
+                for (const row of rows)
+                  if (row.selected) checklist.change(row.key, { selected: false })
+              }}
+            >
+              {t.deselectAll}
+            </button>
+            <input
+              type="search"
+              className="checklist-search"
+              aria-label={t.searchLabel}
+              placeholder={t.searchPlaceholder}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <div className="checklist-view" role="group" aria-label={t.viewLabel}>
+              <button
+                type="button"
+                aria-pressed={view === 'list'}
+                onClick={() => setView('list')}
+              >
+                <Icon name="menu" width={14} height={14} aria-hidden="true" />
+                {t.viewList}
+              </button>
+              <button
+                type="button"
+                aria-pressed={view === 'group'}
+                onClick={() => setView('group')}
+              >
+                <Icon name="clipboard" width={14} height={14} aria-hidden="true" />
+                {t.viewGroup}
+              </button>
+            </div>
+          </div>
+        )}
+        {status === 'idle' && <p>{t.choose}</p>}
+        {status === 'loading' && <p role="status">{t.loading}</p>}
+        {(status === 'error' || status === 'stale') && (
+          <div role="alert" className="co-notice is-danger">
+            <p>{status === 'stale' ? t.stale : checklist.error}</p>
+            {status === 'stale' && <p>{t.discard}</p>}
+            <button
+              type="button"
+              className="odm-btn odm-btn-gh"
+              disabled={disabled}
+              onClick={() => {
+                checklist.reload()
+                onReload?.()
+              }}
+            >
+              {status === 'stale' ? t.reload : t.retry}
+            </button>
+          </div>
+        )}
+        {ready && !rows.length && <p>{t.empty}</p>}
+        <fieldset disabled={disabled || !ready} className="checklist-fields">
+          {ordered.map(({ row, index, heading }) => (
+            <Fragment key={row.key}>
+              {heading && <h3 className="checklist-group-title">{heading}</h3>}
+              {renderRow(row, index)}
+            </Fragment>
+          ))}
           {hiddenCount > 0 && (
             <button
               type="button"
@@ -206,16 +338,16 @@ export function ChecklistEditor({
               {t.showLess}
             </button>
           )}
-          {ready && (
+          {searching && ready && rows.length > 0 &&
+            !rows.some((row) => row.content.toLowerCase().includes(needle)) && (
+              <p className="checklist-hint">{t.noMatch}</p>
+            )}
+          {ready && !compact && (
             <button
               type="button"
               className="checklist-add"
               disabled={checklist.selectedCount >= 100}
-              onClick={() => {
-                openNewRow.current = true
-                setShowAll(true)
-                checklist.add()
-              }}
+              onClick={addRow}
             >
               + {t.add}
             </button>

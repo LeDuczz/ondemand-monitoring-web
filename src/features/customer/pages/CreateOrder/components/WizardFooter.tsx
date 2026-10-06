@@ -6,12 +6,15 @@ type Props = {
   step: Step
   nextLabel: string
   submitDisabled: boolean
+  nextDisabled?: boolean
+  /** Why the primary button is disabled; shown right next to it. */
+  blockedReason?: string | null
   onBack: () => void
   onNext: () => void
   onSubmit: () => void
 }
 
-export function WizardFooter({ step, nextLabel, submitDisabled, onBack, onNext, onSubmit }: Props) {
+export function WizardFooter({ step, nextLabel, submitDisabled, nextDisabled = false, blockedReason = null, onBack, onNext, onSubmit }: Props) {
   const { t } = useI18n(wizardFooterMessages)
   return (
     <div className="co-footer">
@@ -20,9 +23,15 @@ export function WizardFooter({ step, nextLabel, submitDisabled, onBack, onNext, 
           {t.back}
         </button>
       )}
+      <span className="co-draft-note">{t.draftNote}</span>
       <div className="co-footer-spacer" />
-      {step < 4 ? (
-        <button type="button" className="odm-btn odm-btn-p" onClick={onNext}>
+      {blockedReason && (
+        <span className="co-footer-blocked" role="status">
+          {blockedReason}
+        </span>
+      )}
+      {step < 5 ? (
+        <button type="button" className="odm-btn odm-btn-p" onClick={onNext} disabled={nextDisabled}>
           {t.continueTo(nextLabel)}
         </button>
       ) : (

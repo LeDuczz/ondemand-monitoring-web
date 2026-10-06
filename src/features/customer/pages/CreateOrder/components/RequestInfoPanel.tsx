@@ -4,8 +4,11 @@ import type { CustomerConsultation, ServiceOption } from '../../../api/customerA
 import { consultationStatusKey } from '../../../lib/createOrder/consultation'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
+import { AttachmentsField } from './AttachmentsField'
 import { Metric } from './Metric'
 import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
+
+const DESCRIPTION_MAX = 2000
 
 type Props = {
   form: FormState
@@ -62,11 +65,18 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
             id="co-desc"
             className="co-input"
             rows={5}
+            maxLength={DESCRIPTION_MAX}
             value={form.description}
             placeholder={t.descriptionPlaceholder}
             onChange={(e) => update('description', e.target.value)}
           />
         </FormField>
+        <div className="co-counter">
+          {form.description.length} / {DESCRIPTION_MAX}
+        </div>
+      </div>
+      <div className="co-mt">
+        <AttachmentsField attachments={form.attachments} update={update} />
       </div>
     </Card>
   )

@@ -191,7 +191,7 @@ describe('CustomerCreateRequestPage', () => {
 
   it('does not clear the create-order wizard draft', async () => {
     window.localStorage.setItem(
-      'odm.customer.createOrderDraft.v1',
+      'odm.customer.createOrderDraft.v2',
       '{"step":2}',
     )
     render(<CustomerCreateRequestPage />)
@@ -201,7 +201,7 @@ describe('CustomerCreateRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
     await screen.findByText('Đã tạo yêu cầu')
     expect(
-      window.localStorage.getItem('odm.customer.createOrderDraft.v1'),
+      window.localStorage.getItem('odm.customer.createOrderDraft.v2'),
     ).toBe('{"step":2}')
   })
 

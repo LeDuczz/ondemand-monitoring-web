@@ -97,7 +97,7 @@ function renderScreen(route: ManagerRoute) {
   if (route.screen === 'orderReview')
     return <OrderReviewPage orderId={route.orderId} />
   if (route.screen === 'missionCreate')
-    return <CreateMissionPage orderId={route.orderId} />
+    return <CreateMissionPage orderId={route.orderId} replacesMissionId={route.replacesMissionId} />
   if (route.screen === 'missionDispatch')
     return <DispatchPage missionId={route.missionId} />
   if (route.screen === 'missionSetup')

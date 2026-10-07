@@ -9,6 +9,8 @@ import {
   missionStatusTone,
 } from '../../../shared/lib/statusTone'
 import { missionsApi } from '../api/missionsApi'
+import { planningApi } from '../api/planningApi'
+import { planningError } from '../lib/planningErrors'
 import type { LiveTelemetry, MissionCalendarItem } from '../types/missions'
 import { managerHref } from '../routes'
 import { livePageMessages } from './LivePage.messages'
@@ -381,11 +383,15 @@ function CancelModal({
   const [step, setStep] = useState<1 | 2>(1)
   const [reason, setReason] = useState('')
   const [confirmCode, setConfirmCode] = useState('')
+  const planQuery = useApiQuery(signal => planningApi.getExecutionPlan(mission.orderId, signal), [mission.orderId])
+  const capabilities = useApiQuery(signal => planningApi.getSafeStop(mission.id, signal), [mission.id])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (capabilities.loading || capabilities.error || capabilities.data?.canCancelMission !== true) { setError('Backend chưa cho phép hủy. Mở kế hoạch Order để yêu cầu safe-stop / cleanup.'); return }
+    if (!planQuery.data || planQuery.loading || planQuery.error) { setError('Cần tải lại plan trước khi hủy.'); return }
     if (!reason.trim()) {
       setError(t.cancelModal.reasonRequired)
       return
@@ -397,12 +403,12 @@ function CancelModal({
     setSaving(true)
     setError(null)
     try {
-      await missionsApi.cancelMission(mission.id, { reason })
+      await missionsApi.cancelMission(mission.id, { reason, expectedPlanRevision: planQuery.data.revision })
       onCancelled()
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : t.cancelModal.unknownError,
-      )
+      setError(planningError(err))
+      planQuery.reload()
+      capabilities.reload()
     } finally {
       setSaving(false)
     }
@@ -537,6 +543,7 @@ function CancelModal({
                 }}
               >
                 {error}
+                <a href={managerHref({ screen: 'orderReview', orderId: mission.orderId })}>Mở kế hoạch Order / safe-stop</a>
               </div>
             )}
             <div
@@ -552,7 +559,7 @@ function CancelModal({
               <button
                 type="submit"
                 className="odm-btn odm-btn-rd"
-                disabled={saving}
+                disabled={saving || capabilities.loading || Boolean(capabilities.error) || capabilities.data?.canCancelMission !== true}
               >
                 {saving
                   ? t.cancelModal.cancelling

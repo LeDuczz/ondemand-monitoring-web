@@ -6,6 +6,8 @@ import { useI18n } from '../../../shared/i18n'
 import { customerApi, type WeatherForecast } from '../../customer/api/customerApi'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
+import { planningApi } from '../api/planningApi'
+import { planningError } from '../lib/planningErrors'
 import { clearMissionCreationKey, missionCreationKey } from '../api/missionCreationIntent'
 import { OrderIcon, type OrderIconName } from '../components/orderReview/OrderIcon'
 import { formatOrderCode, humanizeMediaRequirement } from '../components/orderReview/format'
@@ -22,16 +24,18 @@ import '../manager.css'
  *
  * Phase 4 creates a planning-only Mission with copied Order scope and a
  * persisted retry key. It does not generate flight plans or enter dispatch.
- * The existing list-page single-Mission UI gate remains in place.
+ * Plan state/revision, not sibling count, determines planning eligibility.
  */
 export function CreateMissionPage({
   orderId,
   initialBrief,
   now: nowProp,
+  replacesMissionId,
 }: {
   orderId: string
   initialBrief?: OrderMissionBrief
   now?: Date
+  replacesMissionId?: string
 }) {
   const [now] = useState(() => nowProp ?? new Date())
   const briefQuery = useApiQuery(
@@ -48,7 +52,7 @@ export function CreateMissionPage({
   }
 
   return (
-    <CreateMissionForm orderId={orderId} brief={briefQuery.data} now={now} />
+    <CreateMissionForm key={`${orderId}:${replacesMissionId ?? ''}`} orderId={orderId} brief={briefQuery.data} now={now} replacesMissionId={replacesMissionId} />
   )
 }
 
@@ -208,10 +212,12 @@ function CreateMissionForm({
   orderId,
   brief,
   now,
+  replacesMissionId,
 }: {
   orderId: string
   brief: OrderMissionBrief
   now: Date
+  replacesMissionId?: string
 }) {
   const { t } = useI18n(createMissionPageMessages)
   const { t: reviewT } = useI18n(orderReviewPageMessages)
@@ -222,6 +228,10 @@ function CreateMissionForm({
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
   const [planRevision, setPlanRevision] = useState(brief.executionPlanRevision ?? 0)
+  const [scopeLabel, setScopeLabel] = useState('Whole Order scope')
+  const planQuery = useApiQuery(signal => planningApi.getExecutionPlan(orderId, signal), [orderId])
+  const replacementQuery = useApiQuery(signal => replacesMissionId ? missionsApi.getMissionResponse(replacesMissionId, signal) : Promise.resolve(null), [replacesMissionId])
+  useEffect(() => { if (planQuery.data) setPlanRevision(planQuery.data.revision) }, [planQuery.data])
   const [submit, setSubmit] = useState<SubmitState>({ kind: 'idle' })
   const [navigateTo, setNavigateTo] = useState<string | null>(null)
   const fillFromCustomer = () => {
@@ -279,6 +289,9 @@ function CreateMissionForm({
   }
 
   async function handleSubmit() {
+    if (submit.kind === 'submitting' || planQuery.loading || planQuery.error || planQuery.data?.planStatus !== 'DRAFT'
+      || replacementQuery.loading || replacementQuery.error || (replacesMissionId && (replacementQuery.data?.status !== 'CANCELLED' || replacementQuery.data.orderId !== orderId))) return
+    if (!scopeLabel.trim()) { setSubmit({ kind: 'validationFailed', message: 'Nhập nhãn phạm vi Mission.' }); return }
     if (!scheduledStart || !scheduledEnd) {
       setSubmit({
         kind: 'validationFailed',
@@ -298,7 +311,8 @@ function CreateMissionForm({
     setSubmit({ kind: 'submitting' })
     try {
       const intent = {
-        scopeLabel: 'Whole Order scope',
+        scopeLabel: scopeLabel.trim(),
+        ...(replacesMissionId ? { replacesMissionId } : {}),
         scheduledStart: startDate.toISOString(),
         scheduledEnd: endDate.toISOString(),
       }
@@ -314,8 +328,9 @@ function CreateMissionForm({
     } catch (err) {
       if (err instanceof ApiError && err.code === 'EXECUTION_PLAN_REVISION_CONFLICT') {
         try {
-          const current = await ordersApi.getOrderForMission(orderId)
-          setPlanRevision(current.executionPlanRevision ?? 0)
+          const current = await planningApi.getExecutionPlan(orderId)
+          setPlanRevision(current.revision)
+          planQuery.reload()
         } catch { /* Keep the unresolved command/key; the user can reload and retry. */ }
       }
       if (err instanceof ApiError && err.status === 422) {
@@ -327,7 +342,7 @@ function CreateMissionForm({
       }
       setSubmit({
         kind: 'validationFailed',
-        message: err instanceof ApiError ? err.message : t.createFailed,
+        message: planningError(err),
       })
     }
   }
@@ -426,6 +441,17 @@ function CreateMissionForm({
       </div>
 
       <OrderWorkflowStepper currentStep={2} />
+
+      <section className="odm-or-card" style={{ padding: 16 }} aria-label="Mission planning context">
+        <a href={managerHref({ screen: 'orderReview', orderId })}>Kế hoạch Order</a>
+        <p>{planQuery.loading ? 'Đang tải revision…' : `Plan ${planQuery.data?.planStatus ?? 'chưa xác minh'} · revision ${planRevision}`}</p>
+        {planQuery.error ? <p role="alert">{planningError(planQuery.error)} <button type="button" onClick={planQuery.reload}>Tải lại plan</button></p> : null}
+        {planQuery.data?.planStatus === 'FINALIZED' && <p>Cần amendment trước khi tạo Mission mới.</p>}
+        <label>Nhãn phạm vi Mission<input maxLength={255} required value={scopeLabel} onChange={event => setScopeLabel(event.target.value)} /></label>
+        <p>Phạm vi địa lý dùng dữ liệu Order hiện có. Phân công checklist sau khi tạo; chưa hỗ trợ target point/area tùy chỉnh.</p>
+        {replacesMissionId && <p>Replacement của {replacesMissionId}. Chỉ sao chép planning do bạn nhập; không kế thừa evidence hoặc kết quả.</p>}
+        {replacementQuery.error ? <p role="alert">{planningError(replacementQuery.error)}</p> : null}
+      </section>
 
       <div className="odm-or-grid">
         <div className="odm-or-col">
@@ -634,7 +660,7 @@ function CreateMissionForm({
             type="button"
             className="odm-or-btn odm-or-btn-primary"
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || planQuery.loading || Boolean(planQuery.error) || planQuery.data?.planStatus !== 'DRAFT' || replacementQuery.loading || Boolean(replacementQuery.error) || Boolean(replacesMissionId && (replacementQuery.data?.status !== 'CANCELLED' || replacementQuery.data.orderId !== orderId))}
           >
             {submitting ? t.creating : t.createMission}
             <OrderIcon name="chevron-right" size={16} />

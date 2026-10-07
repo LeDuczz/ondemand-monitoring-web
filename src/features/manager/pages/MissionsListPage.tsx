@@ -1,6 +1,5 @@
 // MNG-08: Mission list + detail panel
 import { useEffect, useMemo, useState } from 'react'
-import { env } from '../../../config/env'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
@@ -86,26 +85,6 @@ function deliveryLabel(status: DeliveryStatus, t: PageMessages) {
   return t.deliveryStatus.none
 }
 
-function normalizedCode(value?: string | null) {
-  return value?.trim().replace(/^#/, '').toUpperCase() ?? ''
-}
-
-function hasMissionForOrder(
-  order: OrderCreateResponse,
-  missions: MissionCalendarItem[],
-) {
-  const orderId = normalizedCode(order.id)
-  const orderCode = normalizedCode(order.orderCode)
-  return missions.some((mission) => {
-    const missionOrderId = normalizedCode(mission.orderId)
-    const missionOrderCode = normalizedCode(mission.orderCode)
-    return (
-      (orderId && missionOrderId === orderId) ||
-      (orderCode && missionOrderCode === orderCode)
-    )
-  })
-}
-
 type ApprovedOrdersSectionProps = {
   orders: OrderCreateResponse[]
   loading: boolean
@@ -169,7 +148,7 @@ function ApprovedOrdersSection({
                   <a
                     className="odm-or-btn odm-or-btn-sm odm-or-btn-blue"
                     href={managerHref({
-                      screen: 'missionCreate',
+                      screen: 'orderReview',
                       orderId: order.id,
                     })}
                   >
@@ -188,7 +167,6 @@ function ApprovedOrdersSection({
 type DetailPanelProps = {
   mission: MissionCalendarItem
   onClose: () => void
-  onRetried: (newId: string) => void
   t: PageMessages
   locale: 'vi-VN' | 'en-US'
 }
@@ -196,25 +174,9 @@ type DetailPanelProps = {
 function DetailPanel({
   mission,
   onClose,
-  onRetried,
   t,
   locale,
 }: DetailPanelProps) {
-  const [retrying, setRetrying] = useState(false)
-  const [retryError, setRetryError] = useState<string | null>(null)
-  async function handleRetry() {
-    setRetrying(true)
-    setRetryError(null)
-    try {
-      const result = await missionsApi.retryMission(mission.id)
-      onRetried(result.newMissionId)
-    } catch (e) {
-      setRetryError(e instanceof Error ? e.message : t.retryError)
-    } finally {
-      setRetrying(false)
-    }
-  }
-
   const rows: Array<{ label: string; value: string }> = []
   if (mission.orderCode)
     rows.push({ label: t.fields.order, value: formatOrderCode(mission.orderCode) })
@@ -374,26 +336,7 @@ function DetailPanel({
           )}
         </section>
 
-        {mission.status === 'FAILED' && (
-          <div style={{ display: 'grid', gap: 8 }}>
-            {retryError && <div className="odm-or-error">{retryError}</div>}
-            <button
-              type="button"
-              className="odm-or-btn odm-or-btn-blue"
-              disabled={
-                retrying || (!env.useMockApi && import.meta.env.MODE !== 'test')
-              }
-              title={
-                !env.useMockApi && import.meta.env.MODE !== 'test'
-                  ? t.backendNotSupported
-                  : undefined
-              }
-              onClick={handleRetry}
-            >
-              {retrying ? t.retrying : t.retry}
-            </button>
-          </div>
-        )}
+        <a className="odm-or-btn odm-or-btn-blue" href={managerHref({ screen: 'orderReview', orderId: mission.orderId })}>Kế hoạch Order / cancellation / replacement</a>
       </div>
     </aside>
   )
@@ -408,7 +351,6 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
   const [statusFilter, setStatusFilter] = useState<StatusChip>('ALL')
   const [selectedMission, setSelectedMission] =
     useState<MissionCalendarItem | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [deliveryStatuses, setDeliveryStatuses] = useState<Record<string, DeliveryStatus>>({})
 
   const statusChips: Array<{ value: StatusChip; label: string }> = [
@@ -435,8 +377,8 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
   const missions = query.data?.items ?? []
   const approvedOrders = approvedOrdersQuery.data ?? []
   const setupOrders = useMemo(
-    () => approvedOrders.filter((order) => !hasMissionForOrder(order, missions)),
-    [approvedOrders, missions],
+    () => approvedOrders,
+    [approvedOrders],
   )
   const showApprovedOrders = statusFilter === 'ALL' || statusFilter === 'CREATED'
 
@@ -495,11 +437,6 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
     }
   }, [missionId, missions])
 
-  function handleRetried(newId: string) {
-    query.reload()
-    setNotice(t.retriedAlert(newId))
-  }
-
   const columns = [
     t.columns.mission,
     t.columns.order,
@@ -538,13 +475,6 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
           </button>
         ))}
       </div>
-
-      {notice ? (
-        <div role="status" className="odm-or-notice">
-          <OrderIcon name="check" size={16} />
-          {notice}
-        </div>
-      ) : null}
 
       <div className={`odm-or-list-layout${selectedMission ? ' has-panel' : ''}`}>
         <div className="odm-or-col">
@@ -684,7 +614,6 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
             key={selectedMission.id}
             mission={selectedMission}
             onClose={() => setSelectedMission(null)}
-            onRetried={handleRetried}
             t={t}
             locale={locale}
           />

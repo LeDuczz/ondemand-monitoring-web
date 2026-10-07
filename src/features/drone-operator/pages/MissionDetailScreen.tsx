@@ -24,6 +24,8 @@ import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
 import { RejectDialog } from './RejectDialog'
 import { missionDetailScreenMessages } from './MissionDetailScreen.messages'
+import { SafeStopPanel } from '../../manager/components/planning/SafeStopPanel'
+import '../../manager/components/planning/planning.css'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
 import { viCheckMessage, viCheckName } from '../../../shared/lib/checkText'
 
@@ -771,6 +773,8 @@ export function MissionDetailScreen({ missionId }: { missionId: string }) {
         onSubmitResult={handleSubmitResult}
         onCompleteMission={handleCompleteMission}
       />
+
+      <SafeStopPanel key={mission.id} missionId={mission.id} onChanged={() => { query.reload(); monitoring.reload() }} />
 
       {showReject ? (
         <RejectDialog

@@ -17,13 +17,13 @@ export const missionsListPageMessages = defineMessages({
     view: 'Xem',
     viewDetail: 'Xem chi tiết & kết quả',
     approvedOrders: {
-      title: 'Đơn đã duyệt chưa có nhiệm vụ',
+      title: 'Đơn đã duyệt — kế hoạch Mission',
       count: (n: number) => `${n} đơn cần thiết lập`,
       description:
-        'Chỉ hiển thị đơn đã duyệt nhưng chưa có nhiệm vụ nào được tạo.',
-      action: 'Tạo nhiệm vụ & thiết lập',
+        'Xem toàn bộ Mission và quản lý kế hoạch thực hiện của từng Order.',
+      action: 'Mở kế hoạch Order',
       empty: 'Không còn đơn đã duyệt nào cần tạo nhiệm vụ.',
-      status: 'Chưa có nhiệm vụ',
+      status: 'Đã duyệt',
     },
     fields: {
       order: 'Đơn hàng:',
@@ -83,13 +83,13 @@ export const missionsListPageMessages = defineMessages({
     view: 'View',
     viewDetail: 'View details & results',
     approvedOrders: {
-      title: 'Approved orders without a mission',
+      title: 'Approved orders — Mission planning',
       count: (n: number) => `${n} orders need setup`,
       description:
-        'Only approved orders that do not have a mission yet are shown here.',
-      action: 'Create mission / setup →',
+        'View all Missions and manage each Order execution plan.',
+      action: 'Open Order planning →',
       empty: 'No approved orders need a new mission.',
-      status: 'No mission yet',
+      status: 'Approved',
     },
     fields: {
       order: 'Order:',

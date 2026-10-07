@@ -1,0 +1,80 @@
+.odm-planning {
+  margin: 16px 0;
+  padding: 20px;
+}
+.odm-planning-heading,
+.odm-planning-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.odm-planning-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.odm-planning-metrics span {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--sf3, #f1f5f9);
+}
+.odm-planning-metrics strong {
+  display: block;
+  font-size: 22px;
+}
+.odm-planning-mission {
+  border: 1px solid var(--border, #dbe2ea);
+  border-radius: 10px;
+  margin-top: 16px;
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
+.odm-planning-stop {
+  border-top: 1px solid var(--border, #dbe2ea);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.odm-planning-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 0;
+}
+.odm-planning-item small {
+  display: block;
+  color: var(--tx3, #64748b);
+}
+.odm-planning textarea,
+.odm-planning-stop textarea {
+  display: block;
+  width: 100%;
+  min-height: 80px;
+  box-sizing: border-box;
+  margin: 8px 0;
+}
+.odm-planning-editor summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
+.odm-planning fieldset {
+  border: 0;
+  padding: 0;
+}
+.odm-planning-notice {
+  background: var(--sf3, #f1f5f9);
+  padding: 12px;
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  .odm-planning {
+    padding: 12px;
+  }
+  .odm-planning-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .odm-planning-mission {
+    padding: 12px;
+  }
+}

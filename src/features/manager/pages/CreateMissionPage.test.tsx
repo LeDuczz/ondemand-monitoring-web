@@ -1,11 +1,12 @@
 import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
+import { planningApi } from '../api/planningApi'
 import type { Mission } from '../types/missions'
 import type { OrderMissionBrief } from '../types/orders'
 import { CreateMissionPage } from './CreateMissionPage'
@@ -28,6 +29,10 @@ const brief: OrderMissionBrief = {
     { label: 'PHOTO × 30 · 640×512' },
   ],
 }
+
+beforeEach(() => {
+  vi.spyOn(planningApi, 'getExecutionPlan').mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 0, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+})
 
 const createdMission: Mission = {
   id: 'msn-2609-0153-1',
@@ -69,6 +74,26 @@ afterEach(() => {
 })
 
 describe('CreateMissionPage', () => {
+  it('creates a second planning Mission using authoritative revision, not sibling count', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 4, missions: [{ missionId: 'existing', scopeLabel: 'First', assignmentCount: 0, finalizedPlanRevision: null }], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+    const create = vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
+    render(<CreateMissionPage orderId={brief.id} />)
+    const start = await screen.findByLabelText('Giờ cất cánh')
+    fireEvent.change(start, { target: { value: '2026-09-24T09:00' } })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), { target: { value: '2026-09-24T10:00' } })
+    fireEvent.change(screen.getByLabelText('Nhãn phạm vi Mission'), { target: { value: 'Second scope' } })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tạo nhiệm vụ' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
+    await waitFor(() => expect(create).toHaveBeenCalledWith(brief.id, expect.objectContaining({ scopeLabel: 'Second scope', expectedPlanRevision: 4, idempotencyKey: expect.any(String) })))
+  })
+  it('locks new creation when the server plan is finalized', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({ orderId: brief.id, planStatus: 'FINALIZED', revision: 4, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+    render(<CreateMissionPage orderId={brief.id} />)
+    expect(await screen.findByText('Cần amendment trước khi tạo Mission mới.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tạo nhiệm vụ' })).toBeDisabled()
+  })
   it('shows the customer window but leaves the flight schedule for staff to choose', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     render(
@@ -154,7 +179,8 @@ describe('CreateMissionPage', () => {
   })
 
   it('keeps the key while refreshing a stale plan revision for the next retry', async () => {
-    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValueOnce(brief).mockResolvedValue({ ...brief, executionPlanRevision: 1 })
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValueOnce({ orderId: brief.id, planStatus: 'DRAFT', revision: 0, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] }).mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 1, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
     const create = vi.spyOn(missionsApi, 'createMission').mockRejectedValueOnce(new ApiError('Plan revision changed', {
       status: 409, code: 'EXECUTION_PLAN_REVISION_CONFLICT', method: 'POST', path: '/api/orders/o/missions',
     })).mockResolvedValue(createdMission)
@@ -163,7 +189,8 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), { target: { value: '2026-09-24T08:00' } })
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), { target: { value: '2026-09-24T09:30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
-    await screen.findByText('Plan revision changed')
+    await screen.findByText(/Kế hoạch đã thay đổi/)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tạo nhiệm vụ' })).toBeEnabled())
     fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
     await waitFor(() => expect(create).toHaveBeenCalledTimes(2))
     const first = create.mock.calls[0][1], retry = create.mock.calls[1][1]

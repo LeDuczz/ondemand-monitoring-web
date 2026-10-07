@@ -236,6 +236,7 @@ describe('missionsApi.cancelMission', () => {
   it('cancels the mission', async () => {
     setHttpTransport(mockFetch)
     const m = await missionsApi.cancelMission('msn-2609-0142-1', {
+      expectedPlanRevision: 0,
       reason: 'Thời tiết xấu',
     })
     expect(m.status).toBe('CANCELLED')

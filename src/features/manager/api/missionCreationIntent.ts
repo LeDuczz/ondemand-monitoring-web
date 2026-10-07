@@ -1,6 +1,6 @@
 import type { CreateMissionRequest } from '../types/missions'
 
-type Intent = Pick<CreateMissionRequest, 'scopeLabel' | 'scheduledStart' | 'scheduledEnd'>
+type Intent = Pick<CreateMissionRequest, 'scopeLabel' | 'scheduledStart' | 'scheduledEnd' | 'replacesMissionId'>
 const prefix = 'odms:pending-mission-creation:'
 
 /** Persist an unresolved command through retries/reloads; public plan revision is not identity. */
@@ -10,6 +10,7 @@ export function missionCreationKey(orderId: string, intent: Intent): string {
     intent.scopeLabel.normalize('NFC').trim().replace(/\s+/g, ' '),
     new Date(intent.scheduledStart).toISOString(),
     new Date(intent.scheduledEnd).toISOString(),
+    intent.replacesMissionId ?? null,
   ])
   const storageKey = prefix + orderId
   const stored = sessionStorage.getItem(storageKey)

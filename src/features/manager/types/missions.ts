@@ -156,11 +156,13 @@ export type CreateIncidentRequest = {
 
 /** Body of `POST /api/missions/{id}/cancel` [ĐỀ XUẤT]. */
 export type CancelMissionRequest = {
+  expectedPlanRevision: number
   reason: string
 }
 
 /** Body of `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. */
 export type CreateMissionRequest = {
+  replacesMissionId?: string
   idempotencyKey: string
   expectedPlanRevision: number
   scopeLabel: string
@@ -309,6 +311,7 @@ export type PlanWaypointResponse = {
 }
 
 export type MissionResponse = {
+  replacesMissionId?: string | null
   id: string
   orderId: string
   orderCode?: string | null

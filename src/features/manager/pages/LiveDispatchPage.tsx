@@ -18,6 +18,7 @@ import { ManagerIcon } from '../components/ManagerIcon'
 import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
 import { managerHref } from '../routes'
+import { planningError } from '../lib/planningErrors'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import type { MissionStaffRole } from '../../mission/types/mission'
 
@@ -904,7 +905,10 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
       drones.reload()
       operators.reload()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t.assignFailed)
+      setError(planningError(cause))
+      drones.reload()
+      operators.reload()
+      mission.reload()
     } finally {
       setBusy(false)
     }

@@ -19,4 +19,9 @@ describe('pending Mission creation intent', () => {
     clearMissionCreationKey('o')
     expect(missionCreationKey('o', intent)).not.toBe(first)
   })
+  it('includes replacement original in the retry identity', () => {
+    const original = missionCreationKey('o', { ...intent, replacesMissionId: 'm1' })
+    expect(missionCreationKey('o', { ...intent, replacesMissionId: 'm1' })).toBe(original)
+    expect(missionCreationKey('o', { ...intent, replacesMissionId: 'm2' })).not.toBe(original)
+  })
 })

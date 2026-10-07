@@ -178,7 +178,7 @@ export const ordersApi = {
   ): Promise<OrderMissionBrief> {
     return this.getOrder(id, signal)
       .then((order) => {
-        if (order.status !== 'APPROVED') {
+        if (order.status !== 'APPROVED' && order.status !== 'IN_PROGRESS') {
           throw new ApiError('Đơn không còn ở trạng thái đã duyệt.', {
             status: 409,
             method: 'GET',

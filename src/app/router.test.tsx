@@ -125,6 +125,14 @@ describe('Router - manager routes (#portal/manager*)', () => {
       expect(screen.getByText('Dashboard điều hành')).toBeInTheDocument(),
     )
   })
+  it('allows authenticated Admin into Manager planning without granting crew authority', async () => {
+    const user = authSession.getUser()!
+    localStorage.setItem('fieldwise.user', JSON.stringify({ ...user, role: 'ADMIN' }))
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
+    window.location.hash = '#portal/manager'
+    render(<Router />)
+    await waitFor(() => expect(screen.getByText('Dashboard điều hành')).toBeInTheDocument())
+  })
 
   it('routes nested #portal/manager/... hashes to the Manager area too', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)

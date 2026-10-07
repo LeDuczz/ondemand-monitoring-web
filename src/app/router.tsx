@@ -39,7 +39,7 @@ function RoleRoute({
   role,
   children,
 }: {
-  role: UserRole
+  role: UserRole | readonly UserRole[]
   children: ReactNode
 }) {
   const user = authSession.getUser()
@@ -47,7 +47,7 @@ function RoleRoute({
     redirectHash('#auth/login')
     return null
   }
-  if (user.role !== role) {
+  if (!(Array.isArray(role) ? role.includes(user.role) : user.role === role)) {
     redirectHash(getRoleHomePath(user.role))
     return null
   }
@@ -150,7 +150,7 @@ export function Router() {
     )
   if (hash === '#portal/manager' || hash.startsWith('#portal/manager/'))
     return (
-      <RoleRoute role="MANAGER">
+      <RoleRoute role={['MANAGER', 'ADMIN']}>
         <ManagerApp />
       </RoleRoute>
     )

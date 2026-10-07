@@ -16,6 +16,7 @@ import { ResourceAvailabilityCard } from '../components/orderReview/ResourceAvai
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
 import { managerHref } from '../routes'
 import { CreateMissionPage } from './CreateMissionPage'
+import { OrderMissionPlanningSection } from '../components/planning/OrderMissionPlanningSection'
 import {
   orderReviewPageMessages,
   type OrderReviewMessages,
@@ -131,6 +132,8 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       </div>
 
       <OrderWorkflowStepper currentStep={1} />
+
+      {['APPROVED', 'IN_PROGRESS', 'COMPLETED'].includes(order.status) && <OrderMissionPlanningSection orderId={order.id} />}
 
       <div className="odm-or-grid">
         <div className="odm-or-col">

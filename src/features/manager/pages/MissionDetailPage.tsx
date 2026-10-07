@@ -12,6 +12,7 @@ import { missionStatusTone } from '../../../shared/lib/statusTone'
 import { staffMissionMediaReader } from '../api/missionMediaReader'
 import { dronesApi } from '../api/dronesApi'
 import { missionsApi } from '../api/missionsApi'
+import { OrderMissionPlanningSection } from '../components/planning/OrderMissionPlanningSection'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
 import {
   CheckItemsList,
@@ -296,6 +297,8 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           </div>
         ))}
       </div>
+
+      <OrderMissionPlanningSection key={mission.orderId} orderId={mission.orderId} />
 
       <div className="odm-or-md-grid">
         <div className="odm-or-col">

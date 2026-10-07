@@ -1,5 +1,6 @@
 export type MissionStatus =
   | 'CREATED'
+  | 'WAITING_DEPOSIT'
   | 'RESOURCE_ASSIGNING'
   | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
@@ -101,17 +102,10 @@ export interface Mission {
 }
 
 export type MissionResultStatus =
-  | 'DRAFT'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED'
+  'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
 
 export type MissionResultApprovalStatus =
-  | 'DRAFT'
-  | 'PENDING_MANAGER_APPROVAL'
-  | 'APPROVED'
-  | 'REJECTED'
+  'DRAFT' | 'PENDING_MANAGER_APPROVAL' | 'APPROVED' | 'REJECTED'
 
 export interface MissionResult {
   id: string
@@ -153,7 +147,11 @@ export interface ReferenceCaptureResult {
   mediaAssetId: string
   missionId: string
   sourceType: string
-  dronePosition: { lat: number | null; lon: number | null; altitude: number | null }
+  dronePosition: {
+    lat: number | null
+    lon: number | null
+    altitude: number | null
+  }
   sourcePosition: { lat: number | null; lon: number | null }
   distanceMeters: number | null
   mapillaryImageId: string | null

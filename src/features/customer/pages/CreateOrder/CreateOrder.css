@@ -300,6 +300,16 @@ textarea.co-input {
   font-weight: 800;
 }
 
+.co-estimate-notice {
+  margin: var(--ui-space-2) 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #d97706;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 /* ---------- Map ---------- */
 
 .co-map {
@@ -543,12 +553,16 @@ textarea.co-input {
   color: var(--ui-text-3, #64748b);
   margin-bottom: 10px;
 }
-.co-service-illustration img, .co-service-image {
+.co-service-illustration img,
+.co-service-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.co-service-image { max-height: 160px; border-radius: 8px; }
+.co-service-image {
+  max-height: 160px;
+  border-radius: 8px;
+}
 .co-service-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -787,7 +801,7 @@ textarea.co-input {
 }
 
 .co-real-map.has-tile-fallback::after {
-  content: "Không tải được tile bản đồ thật. Có thể mạng/CSP đang chặn tile provider.";
+  content: 'Không tải được tile bản đồ thật. Có thể mạng/CSP đang chặn tile provider.';
   position: absolute;
   right: 12px;
   bottom: 30px;

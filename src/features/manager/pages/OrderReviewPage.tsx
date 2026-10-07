@@ -21,6 +21,7 @@ import {
   type OrderReviewMessages,
 } from './OrderReviewPage.messages'
 import type { OrderDetail, OrderMissionBrief } from '../types/orders'
+import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
 import '../manager.css'
 
 type PageMessages = OrderReviewMessages
@@ -137,6 +138,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
           <OrderLocationCard order={order} t={t} />
           <OrderServiceInfo order={order} t={t} />
           <OrderChecklistCard order={order} t={t} />
+          <ManagerPricingPanel orderId={order.id} />
           <OrderAttachmentsCard order={order} t={t} />
         </div>
         <div className="odm-or-col">
@@ -153,6 +155,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
         t={t}
         onApproved={handleApproved}
         onDecisionDone={() => setNavigateHome(true)}
+        showApprove={false}
       />
     </div>
   )

@@ -104,6 +104,8 @@ export function CreateOrderPage() {
           deliverable={deliverable}
           deliverables={meta.deliverables}
           deliverablesLoading={meta.deliverablesLoading}
+          deliverablesError={meta.deliverablesError}
+          reloadDeliverables={meta.reloadDeliverables}
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={meta.pricingEstimate}

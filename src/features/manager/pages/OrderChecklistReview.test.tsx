@@ -227,29 +227,17 @@ describe('Manager historical checklist review through Order API', () => {
     },
   )
 
-  it('approves the Order only, then opens the existing separate scheduling form', async () => {
+  it('does not expose the legacy approve-and-schedule bypass', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
     await screen.findByText('Check PPE')
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
-    const dialog = await screen.findByRole('dialog')
-    fireEvent.click(
-      within(dialog).getByRole('button', { name: 'Duyệt & tiếp tục' }),
-    )
-    await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Tạo nhiệm vụ' }),
-      ).toBeInTheDocument(),
-    )
+    expect(
+      screen.queryByRole('button', { name: 'Duyệt & lên lịch' }),
+    ).not.toBeInTheDocument()
     const writes = transport.mock.calls.filter(
       ([, init]) => init?.method === 'POST',
     )
-    expect(writes).toHaveLength(1)
-    expect(writes[0][0]).toContain('/api/orders/order-history/approve')
-    expect(writes[0][1]?.body).toBeUndefined()
-    expect(
-      transport.mock.calls.some(([url]) => url.includes('/missions')),
-    ).toBe(false)
+    expect(writes).toHaveLength(0)
   })
 
   it('requires rejection reason and posts only the existing Order decision', async () => {

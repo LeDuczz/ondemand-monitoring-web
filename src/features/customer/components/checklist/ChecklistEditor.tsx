@@ -28,6 +28,7 @@ export function ChecklistEditor({
         }
       >
         <p className="checklist-hint">{t.hint}</p>
+        {ready && <p className="checklist-pricing-notice">{t.pricingNotice}</p>}
         {status === 'idle' && <p>{t.choose}</p>}
         {status === 'loading' && <p role="status">{t.loading}</p>}
         {(status === 'error' || status === 'stale') && (
@@ -67,18 +68,27 @@ export function ChecklistEditor({
                     }
                   />
                   <span>
-                    {index + 1}. {row.sourceChecklistId ? t.title : t.custom}
+                    {index + 1}.{' '}
+                    {row.sourceChecklistId ? t.defaultItem : t.custom}
                   </span>
                 </label>
-                {!row.sourceChecklistId && (
-                  <button
-                    type="button"
-                    className="odm-btn odm-btn-gh"
-                    onClick={() => checklist.remove(row.key)}
-                  >
-                    {t.remove}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="odm-btn odm-btn-gh checklist-row-action"
+                  onClick={() => {
+                    if (row.sourceChecklistId) {
+                      checklist.change(row.key, { selected: !row.selected })
+                    } else {
+                      checklist.remove(row.key)
+                    }
+                  }}
+                >
+                  {row.sourceChecklistId
+                    ? row.selected
+                      ? t.removeDefault
+                      : t.restoreDefault
+                    : t.remove}
+                </button>
               </div>
               <label
                 className="checklist-content-label"

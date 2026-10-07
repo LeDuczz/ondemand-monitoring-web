@@ -25,6 +25,7 @@ import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboa
 import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHome'
 import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsList'
 import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetail'
+import { PaymentResultPage } from '../features/finance/PaymentResultPage'
 
 function RoleRoute({
   role,
@@ -99,6 +100,18 @@ export function Router() {
       </AuthRoute>
     )
   }
+  if (hash.startsWith('#payment/result'))
+    return (
+      <RoleRoute role="CUSTOMER">
+        <PaymentResultPage />
+      </RoleRoute>
+    )
+  if (hash.startsWith('#payment/cancel'))
+    return (
+      <RoleRoute role="CUSTOMER">
+        <PaymentResultPage cancelled />
+      </RoleRoute>
+    )
   if (hash === '#help/tickets')
     return (
       <AuthRoute>

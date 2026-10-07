@@ -32,9 +32,7 @@ export function useCreateOrderMeta(
   const deliverablesQuery = useApiQuery(
     (signal) =>
       serviceId
-        ? customerApi
-            .listServiceDeliverables(serviceId, signal)
-            .catch((error) => (rethrowAbort(error), []))
+        ? customerApi.listServiceDeliverables(serviceId, signal)
         : Promise.resolve([]),
     [serviceId],
   )
@@ -44,7 +42,10 @@ export function useCreateOrderMeta(
     (signal) =>
       serviceId
         ? customerApi
-            .getPricingEstimate(serviceId, { aiImageAnalysis: aiAnalysisRequested, signal })
+            .getPricingEstimate(serviceId, {
+              aiImageAnalysis: aiAnalysisRequested,
+              signal,
+            })
             .catch((error) => (rethrowAbort(error), null))
         : Promise.resolve(null),
     [serviceId, aiAnalysisRequested],
@@ -78,6 +79,8 @@ export function useCreateOrderMeta(
     pricingEstimate: serviceId ? (pricingQuery.data ?? null) : null,
     pricingLoading: Boolean(serviceId) && pricingQuery.loading,
     deliverablesLoading: Boolean(serviceId) && deliverablesQuery.loading,
+    deliverablesError: serviceId ? deliverablesQuery.error : undefined,
+    reloadDeliverables: deliverablesQuery.reload,
     loading: base.loading,
     error: base.error,
     reload: base.reload,

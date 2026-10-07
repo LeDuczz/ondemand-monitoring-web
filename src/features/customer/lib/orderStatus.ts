@@ -46,6 +46,7 @@ const ORDER_STATUS_LABEL_EN: Record<OrderStatus, string> = {
 
 export const MISSION_STATUS_TONE: Record<MissionStatus, StatusTone> = {
   CREATED: 'gray',
+  WAITING_DEPOSIT: 'yellow',
   RESOURCE_ASSIGNING: 'yellow',
   WAITING_CREW_CONFIRMATION: 'yellow',
   WAITING_OPERATOR_ACCEPTANCE: 'yellow',
@@ -67,6 +68,7 @@ export const MISSION_STATUS_TONE: Record<MissionStatus, StatusTone> = {
 
 const MISSION_STATUS_LABEL_VI: Record<MissionStatus, string> = {
   CREATED: 'Mới tạo',
+  WAITING_DEPOSIT: 'Chờ thanh toán tiền cọc',
   RESOURCE_ASSIGNING: 'Phân công nguồn lực',
   WAITING_CREW_CONFIRMATION: 'Chờ đội bay xác nhận',
   WAITING_OPERATOR_ACCEPTANCE: 'Chờ phi công xác nhận',
@@ -88,6 +90,7 @@ const MISSION_STATUS_LABEL_VI: Record<MissionStatus, string> = {
 
 const MISSION_STATUS_LABEL_EN: Record<MissionStatus, string> = {
   CREATED: 'Created',
+  WAITING_DEPOSIT: 'Waiting for deposit',
   RESOURCE_ASSIGNING: 'Assigning resources',
   WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
   WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',
@@ -135,10 +138,7 @@ export function getMissionStatusMeta(
   }
 }
 
-export function fmtDate(
-  iso: string,
-  locale: 'vi-VN' | 'en-US',
-): string {
+export function fmtDate(iso: string, locale: 'vi-VN' | 'en-US'): string {
   return new Date(iso).toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
@@ -146,10 +146,7 @@ export function fmtDate(
   })
 }
 
-export function fmtDateTime(
-  iso: string,
-  locale: 'vi-VN' | 'en-US',
-): string {
+export function fmtDateTime(iso: string, locale: 'vi-VN' | 'en-US'): string {
   return new Date(iso).toLocaleString(locale, {
     day: '2-digit',
     month: '2-digit',

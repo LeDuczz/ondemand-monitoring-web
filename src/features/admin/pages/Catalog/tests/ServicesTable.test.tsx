@@ -7,6 +7,7 @@ const service: AdminService = {
   id: 's',
   name: 'Service',
   description: 'Description',
+  basePrice: 2_000_000,
   isActive: true,
   createdAt: null,
   updatedAt: null,

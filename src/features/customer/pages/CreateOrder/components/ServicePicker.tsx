@@ -4,6 +4,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption } from '../../../api/customerApi'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { servicePickerMessages } from './ServicePicker.messages'
+import { formatMoney } from '../../../lib/createOrder/format'
 
 type Props = {
   services: ServiceOption[]
@@ -22,7 +23,7 @@ export function ServicePicker({
   error,
   onSelect,
 }: Props) {
-  const { t, lang } = useI18n(servicePickerMessages)
+  const { t, lang, locale } = useI18n(servicePickerMessages)
 
   return (
     <Card title={t.cardTitle} className="co-service-card">
@@ -46,6 +47,7 @@ export function ServicePicker({
             <div className="co-service-desc">
               {suggested.description || t.defaultDescription}
             </div>
+            <strong>{formatMoney(suggested.basePrice, locale)}</strong>
             <button
               type="button"
               className="odm-btn odm-btn-sm"
@@ -100,6 +102,7 @@ export function ServicePicker({
               <span className="co-service-desc">
                 {service.description || t.defaultDescription}
               </span>
+              <strong>{formatMoney(service.basePrice, locale)}</strong>
             </button>
           )
         })}

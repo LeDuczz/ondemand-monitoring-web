@@ -349,8 +349,6 @@ export function UploadMediaScreen({
     canCompleteMission &&
     readyForMissionCompletion &&
     (!canSubmitMissionResult || readyForSubmission || resultSentToManager)
-  const willSubmitToManager =
-    canSubmitMissionResult && readyForSubmission && !resultSentToManager
   const isBusy = !!busyId || batchUploading
   const backRoute =
     canManageMedia && missionId

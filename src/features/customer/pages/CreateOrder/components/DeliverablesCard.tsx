@@ -16,6 +16,8 @@ type Props = {
   update: UpdateField
   deliverables: ServiceDeliverableOption[]
   loading: boolean
+  error?: unknown
+  onRetry: () => void
 }
 
 function readImageAttachment(file: File): Promise<CustomerOrderAttachment> {
@@ -39,14 +41,25 @@ function readImageAttachment(file: File): Promise<CustomerOrderAttachment> {
   })
 }
 
-export function DeliverablesCard({ form, errors, update, deliverables, loading }: Props) {
+export function DeliverablesCard({
+  form,
+  errors,
+  update,
+  deliverables,
+  loading,
+  error,
+  onRetry,
+}: Props) {
   const { t, lang } = useI18n(deliverablesCardMessages)
   async function attachImages(files: FileList | null) {
     if (!files?.length) return
     try {
-      const attachments = await Promise.all(Array.from(files).map(readImageAttachment))
+      const attachments = await Promise.all(
+        Array.from(files).map(readImageAttachment),
+      )
       const existing = new Map(form.attachments.map((item) => [item.id, item]))
-      for (const attachment of attachments) existing.set(attachment.id, attachment)
+      for (const attachment of attachments)
+        existing.set(attachment.id, attachment)
       update('attachments', Array.from(existing.values()))
     } catch {
       window.alert(t.invalidImage)
@@ -62,30 +75,53 @@ export function DeliverablesCard({ form, errors, update, deliverables, loading }
 
   return (
     <Card title={t.cardTitle}>
-      <FormField id="co-deliv" label={t.deliverableType} required error={errors.deliverableTypeId}>
+      <FormField
+        id="co-deliv"
+        label={t.deliverableType}
+        required
+        error={errors.deliverableTypeId}
+      >
         <select
           id="co-deliv"
           className="co-input"
           value={form.deliverableTypeId}
+          disabled={loading || Boolean(error)}
           onChange={(e) => update('deliverableTypeId', e.target.value)}
         >
           <option value="">{t.selectDeliverable}</option>
           {deliverables.map((item) => (
             <option key={item.id} value={item.deliverableTypeId}>
-              {localizeDeliverableName(item.deliverableTypeName, lang) || item.deliverableTypeId}
+              {localizeDeliverableName(item.deliverableTypeName, lang) ||
+                item.deliverableTypeId}
             </option>
           ))}
         </select>
       </FormField>
       {loading && <p className="co-hint">{t.loading}</p>}
-      {!loading && deliverables.length === 0 && <p className="co-hint">{t.empty}</p>}
+      {!loading && error ? (
+        <div className="co-notice is-danger" role="alert">
+          <p>{t.loadFailed}</p>
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onRetry}
+          >
+            {t.retry}
+          </button>
+        </div>
+      ) : null}
+      {!loading && !error && deliverables.length === 0 ? (
+        <p className="co-hint">{t.empty}</p>
+      ) : null}
       <div className="co-two co-mt">
         <FormField id="co-media" label={t.media}>
           <select
             id="co-media"
             className="co-input"
             value={form.mediaType}
-            onChange={(e) => update('mediaType', e.target.value as FormState['mediaType'])}
+            onChange={(e) =>
+              update('mediaType', e.target.value as FormState['mediaType'])
+            }
           >
             <option value="IMAGE">{t.photo}</option>
             <option value="VIDEO">{t.video}</option>
@@ -152,7 +188,11 @@ export function DeliverablesCard({ form, errors, update, deliverables, loading }
                 <img
                   src={attachment.dataUrl}
                   alt={attachment.fileName}
-                  style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover' }}
+                  style={{
+                    width: '100%',
+                    aspectRatio: '4 / 3',
+                    objectFit: 'cover',
+                  }}
                 />
                 <div style={{ padding: 8 }}>
                   <div

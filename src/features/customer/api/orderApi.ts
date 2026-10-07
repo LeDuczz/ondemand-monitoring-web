@@ -88,6 +88,7 @@ export type OrderCreateResponse = {
   title?: string
   serviceId?: string
   serviceName?: string
+  serviceBasePriceSnapshot?: number
   description?: string
   address?: string
   longitude?: number

@@ -5,7 +5,11 @@ import type {
   ServiceOption,
   ServicePricingEstimate,
 } from '../../../api/customerApi'
-import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import type {
+  FormErrors,
+  FormState,
+  UpdateField,
+} from '../../../lib/createOrder/types'
 import { ConsultationSummaryCard } from './ConsultationSummaryCard'
 import { DeliverablesCard } from './DeliverablesCard'
 import { PricingEstimateCard } from './PricingEstimateCard'
@@ -20,6 +24,8 @@ type Props = {
   deliverable?: ServiceDeliverableOption
   deliverables: ServiceDeliverableOption[]
   deliverablesLoading: boolean
+  deliverablesError?: unknown
+  reloadDeliverables: () => void
   consultation: CustomerConsultation | null
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
@@ -37,6 +43,8 @@ export function ReviewStep(p: Props) {
           update={p.update}
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
+          error={p.deliverablesError}
+          onRetry={p.reloadDeliverables}
         />
         <RequestSummaryCard
           form={p.form}
@@ -53,7 +61,11 @@ export function ReviewStep(p: Props) {
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
       </div>
-      <ConsultationSummaryCard form={p.form} consultation={p.consultation} service={p.service} />
+      <ConsultationSummaryCard
+        form={p.form}
+        consultation={p.consultation}
+        service={p.service}
+      />
     </div>
   )
 }

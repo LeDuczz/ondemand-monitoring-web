@@ -11,6 +11,15 @@
   font-size: 13px;
   line-height: 1.6;
 }
+.checklist-pricing-notice {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid #d97706;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.55;
+}
 .checklist-fields {
   border: 0;
   margin: 0;
@@ -57,6 +66,8 @@
 }
 .checklist-row.is-removed {
   background: var(--ui-surface);
+  border-style: dashed;
+  opacity: 0.78;
 }
 .checklist-row textarea:disabled {
   color: var(--ui-muted);
@@ -71,6 +82,10 @@
 .checklist-length {
   display: block;
   text-align: right;
+}
+.checklist-row-action {
+  min-height: 36px;
+  white-space: nowrap;
 }
 .checklist-lock {
   display: inline-block;

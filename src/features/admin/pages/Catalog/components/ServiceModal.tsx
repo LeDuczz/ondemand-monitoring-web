@@ -50,8 +50,13 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!values.name.trim()) {
-      setErrors({ name: t.required })
+    if (!values.name.trim() || !Number.isSafeInteger(values.basePrice) || values.basePrice <= 0) {
+      setErrors({
+        ...(!values.name.trim() ? { name: t.required } : {}),
+        ...(!Number.isSafeInteger(values.basePrice) || values.basePrice <= 0
+          ? { basePrice: t.invalidPrice }
+          : {}),
+      })
       return
     }
     setBusy(true)
@@ -103,6 +108,27 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
             aria-invalid={!!errors.name}
             onChange={(e) => setValues({ ...values, name: e.target.value })}
           />
+        </FormField>
+        <FormField
+          id="adm-svc-price"
+          label={t.basePrice}
+          required
+          error={errors.basePrice}
+        >
+          <input
+            id="adm-svc-price"
+            className="odm-inp"
+            type="number"
+            min={1}
+            step={1000}
+            inputMode="numeric"
+            value={values.basePrice}
+            aria-invalid={!!errors.basePrice}
+            onChange={(e) =>
+              setValues({ ...values, basePrice: Number(e.target.value) })
+            }
+          />
+          <small>{t.basePriceHint}</small>
         </FormField>
         <FormField
           id="adm-svc-desc"

@@ -9,6 +9,7 @@ import type { AdminService, AdminTimeslot } from '../types/catalog'
 export type ServiceFormValues = {
   name: string
   description: string
+  basePrice: number
   isActive: boolean
 }
 
@@ -24,6 +25,7 @@ export function mapService(dto: ServiceResponse): AdminService {
     id: dto.id,
     name: dto.name,
     description: dto.description ?? '',
+    basePrice: dto.basePrice,
     imageUrl: dto.imageUrl ?? null,
     isActive: dto.isActive,
     createdAt: dto.createdAt ?? null,
@@ -42,17 +44,23 @@ export function mapTimeslot(dto: PreferredTimeResponse): AdminTimeslot {
 }
 
 export function emptyServiceForm(): ServiceFormValues {
-  return { name: '', description: '', isActive: true }
+  return { name: '', description: '', basePrice: 3_200_000, isActive: true }
 }
 
 export function serviceToForm(s: AdminService): ServiceFormValues {
-  return { name: s.name, description: s.description, isActive: s.isActive }
+  return {
+    name: s.name,
+    description: s.description,
+    basePrice: s.basePrice,
+    isActive: s.isActive,
+  }
 }
 
 export function toServiceRequest(v: ServiceFormValues): ServiceRequest {
   return {
     name: v.name.trim(),
     description: v.description.trim(),
+    basePrice: v.basePrice,
     isActive: v.isActive,
   }
 }

@@ -1,5 +1,11 @@
 import type { FormErrors, FormState, Step } from './types'
 import { isInsideHcmcServiceArea } from '../../../../shared/lib/serviceArea'
+import { findPermitZone } from './airspace'
+
+export const ALTITUDE_MIN = 10
+export const ALTITUDE_MAX = 120
+const LENGTH_MAX = 100_000
+const PHONE_PATTERN = /^[+0-9 ().-]{8,20}$/
 
 export type ValidationMessages = {
   address: string
@@ -13,7 +19,17 @@ export type ValidationMessages = {
   preferredDateTo: string
   preferredDateOrder: string
   preferredTimeId: string
+  resultDeadline: string
+  recurrenceOccurrences: string
   deliverableTypeId: string
+  resultFormats: string
+  deliveryMethods: string
+  termsAccepted: string
+  altitudeM: string
+  estimatedLengthM: string
+  siteContactPhone: string
+  permitStatus: (zoneName: string) => string
+  permitNumber: string
 }
 
 export type LocationCheck = {
@@ -59,6 +75,29 @@ export function validateStep(
     if (location.blockedZoneNames.length > 0) {
       errors.address = msg.blockedZone(location.blockedZoneNames.join(', '))
     }
+    if (
+      !Number.isFinite(form.altitudeM) ||
+      form.altitudeM < ALTITUDE_MIN ||
+      form.altitudeM > ALTITUDE_MAX
+    ) {
+      errors.altitudeM = msg.altitudeM
+    }
+    const length = form.estimatedLengthM.trim()
+    if (length && !(Number(length) > 0 && Number(length) <= LENGTH_MAX)) {
+      errors.estimatedLengthM = msg.estimatedLengthM
+    }
+    const phone = form.siteContactPhone.trim()
+    if (phone && !PHONE_PATTERN.test(phone)) errors.siteContactPhone = msg.siteContactPhone
+    if (validLatitude && validLongitude) {
+      const zone = findPermitZone({ latitude, longitude }, form.radiusM)
+      if (zone) {
+        if (form.permitStatus === 'NONE') {
+          errors.permitStatus = msg.permitStatus(zone.name)
+        } else if (form.permitStatus === 'HAVE_PERMIT' && !form.permitNumber.trim()) {
+          errors.permitNumber = msg.permitNumber
+        }
+      }
+    }
   }
   if (targetStep >= 4) {
     if (!form.preferredDateFrom) errors.preferredDateFrom = msg.preferredDateFrom
@@ -71,11 +110,31 @@ export function validateStep(
       errors.preferredDateTo = msg.preferredDateOrder
     }
     if (!form.preferredTimeId) errors.preferredTimeId = msg.preferredTimeId
+    if (
+      form.resultDeadline &&
+      form.preferredDateTo &&
+      form.resultDeadline < form.preferredDateTo
+    ) {
+      errors.resultDeadline = msg.resultDeadline
+    }
+    if (
+      form.recurrenceType !== 'NONE' &&
+      !(
+        Number.isInteger(form.recurrenceOccurrences) &&
+        form.recurrenceOccurrences >= 2 &&
+        form.recurrenceOccurrences <= 52
+      )
+    ) {
+      errors.recurrenceOccurrences = msg.recurrenceOccurrences
+    }
   }
   if (targetStep >= 5) {
     if (!form.deliverableTypeId) {
       errors.deliverableTypeId = msg.deliverableTypeId
     }
+    if (form.resultFormats.length === 0) errors.resultFormats = msg.resultFormats
+    if (form.deliveryMethods.length === 0) errors.deliveryMethods = msg.deliveryMethods
+    if (!form.termsAccepted) errors.termsAccepted = msg.termsAccepted
   }
   return errors
 }

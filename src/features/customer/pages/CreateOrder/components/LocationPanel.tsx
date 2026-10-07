@@ -34,7 +34,7 @@ export function LocationPanel({
         <textarea
           id="co-address"
           className="co-input"
-          rows={3}
+          rows={2}
           value={form.address}
           placeholder={t.addressPlaceholder}
           onChange={(e) => update('address', e.target.value)}

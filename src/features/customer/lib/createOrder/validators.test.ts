@@ -15,7 +15,17 @@ const msg: ValidationMessages = {
   preferredDateTo: 'to',
   preferredDateOrder: 'order',
   preferredTimeId: 'time',
+  resultDeadline: 'deadline',
+  recurrenceOccurrences: 'occurrences',
   deliverableTypeId: 'deliverable',
+  resultFormats: 'formats',
+  deliveryMethods: 'methods',
+  termsAccepted: 'terms',
+  altitudeM: 'altitude',
+  estimatedLengthM: 'length',
+  siteContactPhone: 'phone',
+  permitStatus: (n) => `permit:${n}`,
+  permitNumber: 'permitNumber',
 }
 const okLocation = { monitoringValid: true, blockedZoneNames: [] }
 const withService = { ...createDefaultForm(), serviceId: 's', title: 't' }
@@ -78,9 +88,55 @@ describe('validateStep', () => {
     const base = { ...withService, address: 'A', preferredTimeId: 'pt' }
     expect(validateStep(5, base, okLocation, msg)).toEqual({
       deliverableTypeId: 'deliverable',
+      termsAccepted: 'terms',
     })
     expect(
-      validateStep(5, { ...base, deliverableTypeId: 'dt' }, okLocation, msg),
+      validateStep(5, { ...base, deliverableTypeId: 'dt', termsAccepted: true }, okLocation, msg),
     ).toEqual({})
+  })
+
+  it('step 5 requires a result format, a delivery method and accepted terms', () => {
+    const base = { ...withService, address: 'A', preferredTimeId: 'pt', deliverableTypeId: 'dt' }
+    expect(validateStep(5, base, okLocation, msg)).toEqual({ termsAccepted: 'terms' })
+    expect(
+      validateStep(
+        5,
+        { ...base, termsAccepted: true, resultFormats: [], deliveryMethods: [] },
+        okLocation,
+        msg,
+      ),
+    ).toEqual({ resultFormats: 'formats', deliveryMethods: 'methods' })
+  })
+
+  it('step 3 validates altitude, length and contact phone', () => {
+    const form = { ...withService, address: 'A', altitudeM: 200, estimatedLengthM: '-5', siteContactPhone: 'abc' }
+    expect(validateStep(3, form, okLocation, msg)).toEqual({
+      altitudeM: 'altitude',
+      estimatedLengthM: 'length',
+      siteContactPhone: 'phone',
+    })
+  })
+
+  it('step 3 requires a permit answer near the airport', () => {
+    const near = { ...withService, address: 'A', latitude: '10.8150', longitude: '106.6600' }
+    expect(validateStep(3, near, okLocation, msg).permitStatus).toBe('permit:Sân bay Tân Sơn Nhất')
+    expect(validateStep(3, { ...near, permitStatus: 'NEED_SUPPORT' }, okLocation, msg)).toEqual({})
+    expect(validateStep(3, { ...near, permitStatus: 'HAVE_PERMIT' }, okLocation, msg).permitNumber).toBe('permitNumber')
+    expect(
+      validateStep(3, { ...near, permitStatus: 'HAVE_PERMIT', permitNumber: 'GP-1' }, okLocation, msg),
+    ).toEqual({})
+  })
+
+  it('step 4 checks the result deadline and recurrence count', () => {
+    const base = { ...withService, address: 'A', preferredDateFrom: '2026-10-10', preferredDateTo: '2026-10-12', preferredTimeId: 't' }
+    expect(validateStep(4, base, okLocation, msg)).toEqual({})
+    expect(validateStep(4, { ...base, resultDeadline: '2026-10-11' }, okLocation, msg).resultDeadline).toBe('deadline')
+    expect(validateStep(4, { ...base, resultDeadline: '2026-10-12' }, okLocation, msg).resultDeadline).toBeUndefined()
+    const weekly = { ...base, recurrenceType: 'WEEKLY' as const }
+    expect(validateStep(4, { ...weekly, recurrenceOccurrences: 1 }, okLocation, msg).recurrenceOccurrences).toBe('occurrences')
+    expect(validateStep(4, { ...weekly, recurrenceOccurrences: 53 }, okLocation, msg).recurrenceOccurrences).toBe('occurrences')
+    expect(validateStep(4, { ...weekly, recurrenceOccurrences: 4 }, okLocation, msg).recurrenceOccurrences).toBeUndefined()
+    // A stale count is ignored while the request does not repeat.
+    expect(validateStep(4, { ...base, recurrenceOccurrences: 1 }, okLocation, msg).recurrenceOccurrences).toBeUndefined()
   })
 })

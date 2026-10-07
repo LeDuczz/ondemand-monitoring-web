@@ -157,6 +157,7 @@ export function CreateOrderPage() {
           aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={meta.pricingEstimate}
           pricingLoading={meta.pricingLoading}
+          onEdit={wizard.goTo}
           footer={footer}
         />
       )}

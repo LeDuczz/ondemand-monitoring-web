@@ -85,6 +85,7 @@ describe('CreateOrderPage wizard', () => {
           (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
         ).toBe('dt-progress'),
       )
+      fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
       fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
       await screen.findByRole('dialog')
       fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -168,6 +169,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-progress'),
     )
+    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
 
     expect(await screen.findByText('Tóm tắt yêu cầu')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -183,6 +185,55 @@ describe('CreateOrderPage wizard', () => {
     ).toBeNull()
   })
 
+  it('blocks submit until the terms and security commitment are accepted', async () => {
+    render(<CreateOrderPage />)
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
+      ).toBe('dt-progress'),
+    )
+    fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))
+    expect(
+      await screen.findByText(/Bạn cần đồng ý điều khoản/),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('sends the chosen result formats, delivery methods and retention', async () => {
+    const create = vi.spyOn(customerApi, 'createOrder')
+    render(<CreateOrderPage />)
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
+      ).toBe('dt-progress'),
+    )
+    fireEvent.click(screen.getByLabelText('Báo cáo PDF'))
+    fireEvent.click(screen.getByLabelText('Email'))
+    fireEvent.change(screen.getByLabelText(/Thời hạn lưu trữ dữ liệu/), {
+      target: { value: '180' },
+    })
+    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    await screen.findByRole('dialog')
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+    await screen.findByText('Đã tạo yêu cầu')
+    expect(create.mock.calls[0][0]).toMatchObject({
+      resultFormats: ['PHOTO', 'PDF_REPORT'],
+      deliveryMethods: ['DOWNLOAD', 'EMAIL'],
+      dataRetentionDays: 180,
+      termsAccepted: true,
+    })
+  })
+
   it('closes the confirm dialog with Escape without submitting', async () => {
     render(<CreateOrderPage />)
     await fillService()
@@ -193,6 +244,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-progress'),
     )
+    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.keyDown(document, { key: 'Escape' })

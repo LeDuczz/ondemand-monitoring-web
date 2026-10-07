@@ -34,6 +34,7 @@ async function fillForm() {
     /Loại kết quả/,
   )) as HTMLSelectElement
   await waitFor(() => expect(deliverable.value).toBe('dt-progress'))
+  fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
 }
 
 describe('CustomerCreateRequestPage', () => {

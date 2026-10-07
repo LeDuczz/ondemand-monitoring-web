@@ -27,6 +27,23 @@ export type CreateOrderPayload = {
   preferredDateFrom: string
   preferredDateTo: string
   preferredTimeId: string
+  recurrenceType?: string
+  recurrenceOccurrences?: number
+  weatherFallback?: string
+  resultDeadline?: string
+  usagePurpose?: string
+  priority?: string
+  altitudeM?: number
+  estimatedLengthM?: number
+  siteContactName?: string
+  siteContactPhone?: string
+  accessNotes?: string
+  permitStatus?: string
+  permitNumber?: string
+  resultFormats?: string[]
+  deliveryMethods?: string[]
+  dataRetentionDays?: number
+  termsAccepted?: boolean
   deliverables: Array<{
     deliverableTypeId: string
     requirement: Record<string, unknown>
@@ -83,6 +100,77 @@ export type WeatherForecast = {
   weatherLabel?: string
   suitability?: WeatherSuitability
   warnings?: string[]
+}
+
+/** Level wording is fixed: never "safe". The text is advisory; final conditions are confirmed at planning/pre-flight. */
+export type FlightAreaRiskLevel = 'FAVORABLE' | 'NEEDS_REVIEW' | 'HIGH_RISK'
+export type FlightAreaFindingSeverity = 'INFO' | 'WARNING' | 'HIGH'
+
+export type FlightAreaNearbyFeature = {
+  type: string
+  name?: string | null
+  distanceMeters?: number | null
+  /** Only ever a height OpenStreetMap actually carries. */
+  heightMeters?: number | null
+  latitude?: number | null
+  longitude?: number | null
+  source?: string
+}
+
+export type FlightAreaAssessment = {
+  location: { latitude: number; longitude: number; radiusMeters: number }
+  elevation: {
+    available: boolean
+    /** Metres above mean sea level (AMSL). */
+    terrainElevationMeters?: number | null
+    reference?: string
+    /** Metres above ground level (AGL). */
+    requestedAltitudeAglMeters?: number | null
+    estimatedFlightAltitudeAmslMeters?: number | null
+    provider?: string
+    errorCode?: string | null
+  }
+  restrictedZones: {
+    dataAvailable: boolean
+    pointInsideRestrictedZone: boolean
+    monitoringAreaIntersectsRestrictedZone: boolean
+    nearestRestrictedZoneDistanceMeters?: number | null
+    affectedZones: Array<{
+      id: string
+      code: string
+      name: string
+      zoneType?: string
+      purpose?: string | null
+      restricted: boolean
+      distanceMeters?: number | null
+      intersectsMonitoringArea: boolean
+    }>
+  }
+  osmContext: {
+    available: boolean
+    errorCode?: string | null
+    queryRadiusMeters?: number | null
+    buildingCount: number
+    towerCount: number
+    mastCount: number
+    powerTowerCount: number
+    aerodromeNearby: boolean
+    helipadNearby: boolean
+    importantFeatures: FlightAreaNearbyFeature[]
+  }
+  assessment: {
+    level: FlightAreaRiskLevel
+    findings: Array<{ code: string; severity: FlightAreaFindingSeverity; message: string }>
+    disclaimer: string
+  }
+}
+
+export type FlightAreaAssessmentQuery = {
+  latitude: number
+  longitude: number
+  radiusMeters: number
+  /** Desired altitude above ground level, metres. */
+  requestedAltitudeAgl?: number
 }
 
 export type WeatherForecastQuery = {
@@ -242,6 +330,18 @@ export const customerApi = {
         longitude: query.longitude.toFixed(6),
         date: query.date,
         time: query.time,
+      },
+      signal,
+    }),
+
+  /** `GET /api/flight-area-assessment` [BE]: advisory aggregate, never approves or rejects an order. */
+  getFlightAreaAssessment: (query: FlightAreaAssessmentQuery, signal?: AbortSignal) =>
+    apiRequest<FlightAreaAssessment>('/api/flight-area-assessment', {
+      query: {
+        latitude: query.latitude.toFixed(7),
+        longitude: query.longitude.toFixed(7),
+        radiusMeters: Math.round(query.radiusMeters),
+        requestedAltitudeAgl: query.requestedAltitudeAgl,
       },
       signal,
     }),

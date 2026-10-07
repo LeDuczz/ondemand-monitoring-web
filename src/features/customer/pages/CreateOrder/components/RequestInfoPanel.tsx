@@ -2,13 +2,15 @@ import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { CustomerConsultation, ServiceOption } from '../../../api/customerApi'
 import { consultationStatusKey } from '../../../lib/createOrder/consultation'
-import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import type { FormErrors, FormState, RequestPriority, UpdateField, UsagePurpose } from '../../../lib/createOrder/types'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { AttachmentsField } from './AttachmentsField'
 import { Metric } from './Metric'
 import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
 
 const DESCRIPTION_MAX = 2000
+const PURPOSES = ['INTERNAL', 'LEGAL', 'PARTNER_REPORT', 'OTHER'] as const
+const PRIORITIES = ['NORMAL', 'HIGH', 'URGENT'] as const
 
 type Props = {
   form: FormState
@@ -37,7 +39,34 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
           onChange={(e) => update('title', e.target.value)}
         />
       </FormField>
-      <div className="co-ai-insight">
+      <div className="co-two co-mt co-compact">
+        <FormField id="co-purpose" label={t.purposeLabel}>
+          <select
+            id="co-purpose"
+            className="co-input"
+            value={form.usagePurpose}
+            onChange={(e) => update('usagePurpose', e.target.value as UsagePurpose)}
+          >
+            <option value="">{t.purposePlaceholder}</option>
+            {PURPOSES.map((p) => (
+              <option key={p} value={p}>{t.purposes[p]}</option>
+            ))}
+          </select>
+        </FormField>
+        <FormField id="co-priority" label={t.priorityLabel}>
+          <select
+            id="co-priority"
+            className="co-input"
+            value={form.priority}
+            onChange={(e) => update('priority', e.target.value as RequestPriority)}
+          >
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>{t.priorities[p]}</option>
+            ))}
+          </select>
+        </FormField>
+      </div>
+      <div className="co-ai-insight co-mt">
         <div className="co-ai-insight-title">
           <span aria-hidden="true">✦</span> {t.understood}
         </div>

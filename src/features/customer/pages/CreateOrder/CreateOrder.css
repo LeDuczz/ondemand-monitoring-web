@@ -1220,7 +1220,7 @@ textarea.co-input {
   margin-top: 4px;
   text-align: right;
   font-size: 12px;
-  color: #94a3b8;
+  color: #64748b;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -1405,6 +1405,7 @@ textarea.co-input {
   }
 }
 .co-bottom-bar {
+  margin-top: 16px;
   position: sticky;
   bottom: 12px;
   z-index: 10;
@@ -1459,4 +1460,671 @@ textarea.co-input {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ---------- Schedule options (recurrence, weather fallback, deadline) ---------- */
+.co-opt-group {
+  margin: 0 0 var(--ui-space-4);
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.co-opt-group legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+.co-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--ui-surface-2);
+}
+.co-segmented label {
+  position: relative;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ui-text-2);
+  cursor: pointer;
+}
+.co-segmented label.is-on {
+  background: var(--ui-primary);
+  color: var(--ui-on-primary, #fff);
+}
+.co-segmented input,
+.co-choice input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.co-segmented label:focus-within,
+.co-choice:focus-within {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+.co-choice-list {
+  display: grid;
+  gap: 8px;
+}
+.co-choice {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.co-choice::before {
+  content: '';
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 2px solid var(--ui-border-strong);
+  border-radius: 50%;
+  background: var(--ui-surface);
+}
+.co-choice.is-on {
+  border-color: var(--ui-primary);
+  background: var(--ui-primary-soft);
+}
+.co-choice.is-on::before {
+  border-color: var(--ui-primary);
+  background: radial-gradient(var(--ui-primary) 45%, transparent 50%);
+}
+.co-choice strong {
+  display: block;
+  font-size: 14px;
+}
+.co-choice small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ui-text-3);
+  line-height: 1.45;
+}
+.co-input-narrow {
+  max-width: 220px;
+}
+
+/* ---------- Step 3: site details ---------- */
+
+.co-two > * {
+  min-width: 0;
+}
+
+.co-subhead {
+  margin: var(--ui-space-4) 0 var(--ui-space-2);
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ui-text);
+}
+
+.co-subhead:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.co-help {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+ul.co-help {
+  padding-left: 16px;
+}
+
+/* ---------- Step 3: tall sticky map beside a compact form column ---------- */
+.co-grid.is-location {
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.95fr);
+  gap: 20px;
+}
+.co-grid.is-location .co-real-map-wrap {
+  position: sticky;
+  top: 88px;
+  align-self: start;
+}
+.co-grid.is-location .co-real-map {
+  height: calc(100vh - 150px);
+  min-height: 420px;
+  max-height: 780px;
+  border-radius: 14px;
+}
+.co-grid.is-location .ui-card-body {
+  padding-top: 8px;
+  padding-bottom: 14px;
+}
+.co-grid.is-location textarea.co-input {
+  min-height: 64px;
+}
+@media (max-width: 1000px) {
+  .co-grid.is-location {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .co-grid.is-location .co-real-map-wrap {
+    position: static;
+  }
+  .co-grid.is-location .co-real-map {
+    height: 380px;
+    min-height: 320px;
+  }
+}
+
+/* ---------- Step 5: delivery options + terms ---------- */
+.co-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.co-chip-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 999px;
+  background: var(--ui-surface);
+  color: var(--ui-text-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.co-chip-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.co-chip-option:hover {
+  border-color: #93c5fd;
+}
+.co-chip-option.is-on {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+.co-chip-option:focus-within {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.co-terms {
+  margin-top: var(--ui-space-4);
+  padding-top: var(--ui-space-4);
+  border-top: 1px solid var(--ui-border);
+}
+.co-terms .co-check input {
+  accent-color: #2563eb;
+}
+.co-terms-details {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ui-text-2);
+}
+.co-terms-details summary {
+  cursor: pointer;
+  color: #2563eb;
+  font-weight: 500;
+}
+.co-terms-details ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+/* ---------- Step 4 (schedule) balance polish ---------- */
+
+/* Empty decorative icon slots only pushed summary text off the card's left edge. */
+.co-sum-icon:empty {
+  display: none;
+}
+
+.co-summary .co-sum-list {
+  gap: 0;
+}
+
+.co-summary .co-sum-item {
+  padding: 10px 0;
+}
+
+.co-summary .co-sum-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.co-summary .co-sum-body dt {
+  margin-bottom: 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.co-summary .co-sum-body dd {
+  font-size: 14px;
+}
+
+/* Both columns start on the same line and the summary no longer needs its own scrollbar. */
+.co-grid.is-service > .co-summary {
+  top: 76px;
+  max-height: calc(100vh - 100px);
+}
+
+/* Sticky action bar: calmer, blurred, and clear of the floating assistant button. */
+.co-bottom-bar {
+  bottom: 16px;
+  align-items: center;
+  margin-top: var(--ui-space-2);
+  background: color-mix(in srgb, var(--ui-surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+@media (min-width: 761px) {
+  .co-bottom-bar {
+    padding-right: 88px;
+  }
+}
+
+.co-bottom-bar .co-footer .odm-btn-p {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.co-bottom-bar .co-footer .odm-btn-gh {
+  font-weight: 600;
+}
+
+/* Step 4 cards: consistent field rhythm and a clearer split between option groups. */
+.co-stack > .ui-card .co-two {
+  gap: var(--ui-space-3) var(--ui-space-4);
+}
+
+.co-opt-group + .co-opt-group {
+  margin-top: var(--ui-space-4);
+  padding-top: var(--ui-space-4);
+  border-top: 1px solid var(--ui-border);
+}
+
+.co-segmented {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  max-width: 420px;
+}
+.co-segmented label {
+  text-align: center;
+  white-space: nowrap;
+}
+.co-choice-list {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.co-choice {
+  align-items: flex-start;
+  height: 100%;
+}
+.co-opt-group:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Flight area assessment card + map key ---------- */
+.co-fa-card .ui-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+.co-fa-level {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.co-fa-level.is-favorable {
+  background: #dcfce7;
+  color: #166534;
+}
+.co-fa-level.is-review {
+  background: #fef3c7;
+  color: #b45309;
+}
+.co-fa-level.is-high {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.co-fa-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  position: relative;
+  transition: opacity 0.15s;
+}
+.co-fa-body {
+  animation: co-fa-in 0.25s ease-out;
+}
+.co-fa-body.is-refreshing {
+  opacity: 0.72;
+  pointer-events: none;
+}
+@keyframes co-fa-in {
+  from { opacity: 0.4; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}
+.co-fa-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.co-fa-updating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ui-text-3);
+  white-space: nowrap;
+}
+.co-fa-spin {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: co-fa-rotate 0.8s linear infinite;
+}
+@keyframes co-fa-rotate {
+  to { transform: rotate(360deg); }
+}
+/* Thin indeterminate bar along the top edge of the card while a request is running. */
+.co-fa-card {
+  position: relative;
+  overflow: hidden;
+}
+.co-fa-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #e0e7ff;
+  overflow: hidden;
+}
+.co-fa-progress::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  border-radius: 999px;
+  background: #2563eb;
+  animation: co-fa-slide 1.1s ease-in-out infinite;
+}
+@keyframes co-fa-slide {
+  from { left: -35%; }
+  to { left: 100%; }
+}
+.co-fa-rows {
+  margin: 0;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border);
+}
+.co-fa-rows:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.co-fa-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding: 3px 0;
+  font-size: 13.5px;
+}
+.co-fa-row dt {
+  color: var(--ui-text-3);
+}
+.co-fa-row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.co-fa-findings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.co-fa-findings li {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.co-fa-findings li.is-high {
+  color: #b91c1c;
+}
+.co-fa-findings li.is-warning {
+  color: #b45309;
+}
+.co-fa-findings li.is-info {
+  color: var(--ui-text-2);
+}
+.co-fa-mark {
+  flex: none;
+}
+.co-fa-disclaimer {
+  margin: 0;
+  padding-top: var(--ui-space-2);
+  border-top: 1px solid var(--ui-border);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ui-text-3);
+}
+.co-fa-retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.co-fa-skeleton {
+  display: grid;
+  gap: var(--ui-space-3);
+}
+.co-fa-skel-group {
+  display: grid;
+  gap: 8px;
+  padding-bottom: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border);
+}
+.co-fa-skel-group:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.co-fa-skel-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+}
+.co-fa-skel-row span {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9);
+  background-size: 200% 100%;
+  animation: co-fa-shimmer 1.2s linear infinite;
+}
+.co-fa-skel-row span:first-child { width: 42%; }
+.co-fa-skel-row span:last-child { width: 22%; }
+@keyframes co-fa-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .co-fa-skel-row span,
+  .co-fa-spin,
+  .co-fa-body { animation: none; }
+  .co-fa-progress::after { animation: none; left: 0; width: 100%; opacity: 0.5; }
+}
+.co-map-key {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 450;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 12px;
+  pointer-events: none;
+}
+.co-map-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.co-map-key i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+}
+.co-map-key-area {
+  border: 2px solid #1565e8;
+  border-radius: 50%;
+  background: rgba(21, 101, 232, 0.14);
+}
+.co-map-key-zone {
+  border: 2px dashed #dc2626;
+  background: rgba(220, 38, 38, 0.18);
+}
+.co-map-key-point {
+  border-radius: 50%;
+  background: #1565e8;
+  width: 8px !important;
+  height: 8px !important;
+  margin: 0 2px;
+}
+
+/* ---------- Collapsible optional groups ---------- */
+.co-fold {
+  margin-top: var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+}
+.co-fold-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.co-fold-head span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.co-fold-head strong {
+  font-size: 13px;
+}
+.co-fold-head small {
+  font-size: 12px;
+  color: #64748b;
+}
+.co-fold-chevron {
+  flex: 0 0 auto;
+  font-size: 18px;
+  line-height: 1;
+  color: #64748b;
+}
+.co-fold-body {
+  padding: 0 12px 12px;
+}
+
+/* ---------- Step 3: map + area assessment share one sticky left column ---------- */
+.co-grid.is-location .co-location-left {
+  position: sticky;
+  top: 88px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+  min-width: 0;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.co-grid.is-location .co-location-left > * {
+  min-width: 0;
+}
+.co-grid.is-location .co-location-left .co-real-map-wrap {
+  position: relative;
+  top: auto;
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 100%;
+}
+.co-grid.is-location .co-location-left .co-real-map {
+  height: clamp(300px, calc(100vh - 430px), 520px);
+  min-height: 300px;
+}
+@media (max-width: 1000px) {
+  .co-grid.is-location .co-location-left {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* ---------- Dates shown in the user's format + summary edit links ---------- */
+.co-date-shown {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+.co-sum-edit {
+  margin-left: auto;
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-primary-text, #1d4ed8);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.co-sum-edit:hover {
+  text-decoration: underline;
 }

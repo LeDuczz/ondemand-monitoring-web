@@ -528,7 +528,7 @@
 
 /* Long lists: the rows scroll inside the card; header and toolbar stay put. */
 .checklist-card.is-compact .checklist-fields {
-  max-height: min(62vh, 520px);
+  max-height: min(48vh, 440px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;

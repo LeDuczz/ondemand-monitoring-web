@@ -7,9 +7,9 @@ import type {
   ServiceOption,
   ServicePricingEstimate,
 } from '../../../api/customerApi'
-import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
-import { ConsultationSummaryCard } from './ConsultationSummaryCard'
+import type { FormErrors, FormState, Step, UpdateField } from '../../../lib/createOrder/types'
 import { DeliverablesCard } from './DeliverablesCard'
+import { DeliveryOptionsCard } from './DeliveryOptionsCard'
 import { PricingEstimateCard } from './PricingEstimateCard'
 import { RequestSummaryCard } from './RequestSummaryCard'
 
@@ -26,6 +26,8 @@ type Props = {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
+  /** Jump back to an earlier step from the summary. */
+  onEdit: (step: Step) => void
   /** Wizard actions, rendered at the bottom of the sticky summary panel. */
   footer?: ReactNode
 }
@@ -42,6 +44,7 @@ export function ReviewStep(p: Props) {
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
         />
+        <DeliveryOptionsCard form={p.form} errors={p.errors} update={p.update} />
       </div>
       <aside className="co-stack co-summary">
         <RequestSummaryCard
@@ -51,17 +54,12 @@ export function ReviewStep(p: Props) {
           deliverable={p.deliverable}
           consultation={p.consultation}
           aiAnalysisRequested={p.aiAnalysisRequested}
+          onEdit={p.onEdit}
         />
         <PricingEstimateCard
           estimate={p.pricingEstimate}
           loading={p.pricingLoading}
           hasService={Boolean(p.service)}
-          aiAnalysisRequested={p.aiAnalysisRequested}
-        />
-        <ConsultationSummaryCard
-          form={p.form}
-          consultation={p.consultation}
-          service={p.service}
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
         {p.footer && <div className="co-summary-cta">{p.footer}</div>}

@@ -13,6 +13,7 @@ import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { localizeTimeslot } from '../../../lib/i18n/timeslots'
 import { PricingEstimateCard } from './PricingEstimateCard'
 import { ScheduleCard } from './ScheduleCard'
+import { ScheduleOptionsCard } from './ScheduleOptionsCard'
 import { scheduleStepMessages } from './ScheduleStep.messages'
 
 type Props = {
@@ -62,6 +63,7 @@ export function ScheduleStep(p: Props) {
             update={p.update}
             preferredTimes={p.preferredTimes}
           />
+          <ScheduleOptionsCard form={form} errors={p.errors} update={p.update} />
         </div>
         <aside className="co-stack co-summary">
           <Card title={t.summaryTitle}>
@@ -102,6 +104,37 @@ export function ScheduleStep(p: Props) {
                 <div className="co-sum-body">
                   <dt>{t.timeWindow}</dt>
                   <dd>{p.time ? localizeTimeslot(p.time, lang) : t.notSelected}</dd>
+                </div>
+              </div>
+              <div className="co-sum-item">
+                <span className="co-sum-icon" aria-hidden="true" />
+                <div className="co-sum-body">
+                  <dt>{t.repeat}</dt>
+                  <dd>
+                    {form.recurrenceType === 'WEEKLY'
+                      ? t.repeatWeekly(form.recurrenceOccurrences)
+                      : form.recurrenceType === 'MONTHLY'
+                        ? t.repeatMonthly(form.recurrenceOccurrences)
+                        : t.repeatNone}
+                  </dd>
+                </div>
+              </div>
+              <div className="co-sum-item">
+                <span className="co-sum-icon" aria-hidden="true" />
+                <div className="co-sum-body">
+                  <dt>{t.weather}</dt>
+                  <dd>{t.weatherValues[form.weatherFallback]}</dd>
+                </div>
+              </div>
+              <div className="co-sum-item">
+                <span className="co-sum-icon" aria-hidden="true" />
+                <div className="co-sum-body">
+                  <dt>{t.deadline}</dt>
+                  <dd>
+                    {form.resultDeadline
+                      ? formatDate(form.resultDeadline, lang)
+                      : t.noDeadline}
+                  </dd>
                 </div>
               </div>
             </dl>

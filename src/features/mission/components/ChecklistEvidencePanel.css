@@ -1,33 +1,44 @@
 .checklist-evidence {
-  margin: 12px 0;
-  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
   background: var(--sf2, #f8fafc);
+  border: 1px solid var(--bd, #e2e8f0);
   border-radius: 10px;
-}
-.checklist-evidence-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
-  margin: 12px 0;
-}
-.checklist-evidence-grid article {
-  border: 1px solid var(--border, #dbe2ea);
-  border-radius: 8px;
-  padding: 10px;
   min-width: 0;
 }
-.checklist-evidence-grid img,
-.checklist-evidence-grid video {
-  width: 100%;
-  height: 130px;
-  object-fit: contain;
-  background: #e2e8f0;
-  border-radius: 6px;
+.checklist-evidence > strong {
+  font-size: 13px;
+  font-weight: 600;
 }
-.checklist-evidence-name {
-  overflow-wrap: anywhere;
+/* Blocking reasons render as compact pills next to the counter, not stacked paragraphs. */
+.checklist-evidence > p {
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
   font-size: 12px;
-  margin: 6px 0;
+}
+.checklist-evidence > p[role='alert'] {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.checklist-evidence > .checklist-evidence-grid,
+.checklist-evidence > button,
+.checklist-evidence > div:not(.checklist-evidence-grid) {
+  flex: 1 1 100%;
+}
+.checklist-evidence h3,
+.checklist-evidence h4 {
+  margin: 0 0 4px;
+  font-family: inherit;
+  letter-spacing: normal;
+  font-size: 14px;
+  font-weight: 600;
 }
 .checklist-evidence small {
   display: block;
@@ -35,4 +46,507 @@
 }
 .checklist-evidence p {
   font-size: 12px;
+}
+
+/* ---------- Attached evidence: one compact row per file ---------- */
+.checklist-evidence-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 0;
+  min-width: 0;
+}
+/* No evidence yet: don't reserve an empty block. */
+.checklist-evidence-grid:empty {
+  display: none;
+}
+.checklist-evidence-grid article {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--bd, #e2e8f0);
+  border-radius: 10px;
+  background: var(--bg, #fff);
+  min-width: 0;
+}
+.checklist-evidence-thumb {
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+.checklist-evidence-thumb a {
+  display: block;
+  height: 100%;
+}
+.checklist-evidence-thumb img,
+.checklist-evidence-thumb video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.checklist-evidence-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.checklist-evidence-name {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.checklist-evidence-note {
+  margin: 0;
+  padding: 2px 8px;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.checklist-evidence-note.is-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.checklist-evidence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.checklist-evidence-actions:empty {
+  display: none;
+}
+.checklist-evidence-actions .odm-btn {
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+/* ---------- "Add media" is a dashed drop-zone style button ---------- */
+.checklist-evidence > .checklist-evidence-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 1px dashed #93c5fd;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+}
+.checklist-evidence > .checklist-evidence-add::before {
+  content: '+';
+  font-size: 18px;
+  line-height: 1;
+}
+.checklist-evidence > .checklist-evidence-add:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+/* ---------- Media picker: modal, so the sidebar never grows a nested scroll ---------- */
+.checklist-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.checklist-picker-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+}
+.checklist-picker-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(560px, 100%);
+  max-height: min(680px, 100%);
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--tx, #172033);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
+}
+.checklist-picker-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.checklist-picker-head > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.checklist-picker-head strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+.checklist-picker-head span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--tx3, #64748b);
+}
+.checklist-picker-close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+.checklist-picker-close:hover {
+  background: #f1f5f9;
+}
+.checklist-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid var(--bd, #cbd5e1);
+  border-radius: 8px;
+  font: inherit;
+}
+.checklist-picker-search:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.checklist-picker-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.checklist-candidates-empty {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--tx3, #64748b);
+}
+.checklist-candidate-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.checklist-picker .checklist-candidate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--bd, #e2e8f0);
+  border-radius: 10px;
+  background: var(--bg, #fff);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.checklist-picker .checklist-candidate:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+}
+.checklist-candidate-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #64748b;
+}
+.checklist-candidate-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.checklist-candidate-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.checklist-candidate-name {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.checklist-candidate-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 11.5px;
+  color: var(--tx3, #64748b);
+}
+.checklist-candidate-status {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+.checklist-candidate-time {
+  font-size: 11.5px;
+  color: var(--tx3, #64748b);
+}
+.checklist-candidate > .odm-btn {
+  flex: none;
+  min-height: 32px;
+  padding: 3px 14px;
+  font-size: 12.5px;
+}
+.checklist-candidate-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.checklist-candidate-pager .odm-btn {
+  flex: 1 1 auto;
+  min-height: 32px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+  justify-content: center;
+}
+
+/* ---------- Compact evidence: flat section, rows separated by hairlines ---------- */
+.checklist-evidence.is-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  background: transparent;
+}
+.ce-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.ce-count {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+.ce-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ce-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.ce-row:last-child {
+  border-bottom: 0;
+}
+.ce-thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+.ce-thumb img,
+.ce-thumb video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ce-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ce-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+}
+.ce-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+.ce-status {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+}
+.ce-status.is-warn {
+  color: #b45309;
+}
+.ce-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ce-view {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: none;
+}
+.ce-view:hover {
+  background: #eff6ff;
+}
+.ce-more {
+  position: relative;
+}
+.ce-more > summary {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  list-style: none;
+}
+.ce-more > summary::-webkit-details-marker {
+  display: none;
+}
+.ce-more > summary:hover,
+.ce-more[open] > summary {
+  background: #f1f5f9;
+}
+.ce-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 150px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+.ce-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: #0f172a;
+  cursor: pointer;
+}
+.ce-menu button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+.ce-ok,
+.ce-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ce-ok {
+  color: #16a34a;
+  font-weight: 500;
+}
+.ce-hint {
+  color: #64748b;
+}
+.ce-add {
+  height: 40px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+.ce-add:hover:not(:disabled) {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #f8fbff;
+}
+.ce-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Compact fixes: let flex children shrink (long filenames) and beat the legacy pill rule on `> p`. */
+.checklist-evidence.is-compact,
+.checklist-evidence.is-compact > *,
+.ce-list,
+.ce-row,
+.ce-info {
+  min-width: 0;
+  max-width: 100%;
+}
+.checklist-evidence.is-compact > p {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 12px;
+}
+.checklist-evidence.is-compact > p.ce-ok {
+  color: #16a34a;
+}
+.checklist-evidence.is-compact > p.ce-hint {
+  color: #64748b;
+}
+.checklist-evidence.is-compact > button.ce-add {
+  flex: none;
+  width: 100%;
+  color: #475569;
+}
+.checklist-evidence.is-compact > button.ce-add:hover:not(:disabled) {
+  color: #2563eb;
 }

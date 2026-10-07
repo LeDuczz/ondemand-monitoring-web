@@ -9,7 +9,9 @@ export function UploadMonitoringChecklist({
   missionId: string
   revision: number
 }) {
-  const query = useMissionMonitoring(missionId, revision)
+  const query = useMissionMonitoring(missionId, revision, {
+    autoRefresh: false,
+  })
   return (
     <MonitoringChecklistSection
       missionId={missionId}
@@ -23,6 +25,7 @@ export function UploadMonitoringChecklist({
       canAttach={query.data?.permissions.canAttachChecklistEvidence}
       canDetach={query.data?.permissions.canDetachChecklistEvidence}
       refresh={query.reload}
+      compact
     />
   )
 }

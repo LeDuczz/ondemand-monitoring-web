@@ -122,7 +122,7 @@ describe('Upload media and monitoring workspace', () => {
   it('shows compact captured images and editable checklist together without granting Pilot/Operator upload', async () => {
     render(<UploadMediaScreen missionId="m" />)
     await screen.findByText('Quan sát hàng rào')
-    expect(screen.getByText('Cập nhật mục')).toBeInTheDocument()
+    expect(screen.getByText('Chỉnh sửa')).toBeInTheDocument()
     const image = await screen.findByAltText('capture.jpg')
     expect(image).toHaveClass('upload-media-preview')
     expect(screen.queryByText('Duyệt & upload')).toBeNull()
@@ -135,11 +135,11 @@ describe('Upload media and monitoring workspace', () => {
       .spyOn(checklistExecutionApi, 'updateMissionChecklistExecution')
       .mockResolvedValue({} as never)
     render(<UploadMediaScreen missionId="m" />)
-    fireEvent.click(await screen.findByText('Cập nhật mục'))
-    fireEvent.change(screen.getByLabelText('Trạng thái thực hiện'), {
+    fireEvent.click(await screen.findByText('Chỉnh sửa'))
+    fireEvent.change(screen.getByLabelText('Trạng thái'), {
       target: { value: 'COMPLETED' },
     })
-    fireEvent.click(screen.getByText('Lưu mục'))
+    fireEvent.click(screen.getByText('Lưu'))
     await waitFor(() =>
       expect(save).toHaveBeenCalledWith(
         'm',

@@ -7,6 +7,7 @@ import { useI18n } from '../../../../shared/i18n'
 import { ConfirmSubmitModal } from '../CreateOrder/components/ConfirmSubmitModal'
 import { CreatedSuccess } from '../CreateOrder/components/CreatedSuccess'
 import { DeliverablesCard } from '../CreateOrder/components/DeliverablesCard'
+import { DeliveryOptionsCard } from '../CreateOrder/components/DeliveryOptionsCard'
 import { LocationStep } from '../CreateOrder/components/LocationStep'
 import { PricingEstimateCard } from '../CreateOrder/components/PricingEstimateCard'
 import { RequestSummaryCard } from '../CreateOrder/components/RequestSummaryCard'
@@ -79,6 +80,7 @@ export function CustomerCreateRequestPage() {
                 error={meta.deliverablesError}
                 onRetry={meta.reloadDeliverables}
               />
+              <DeliveryOptionsCard form={form} errors={errors} update={update} />
             </div>
           </div>
           <div className="co-grid">

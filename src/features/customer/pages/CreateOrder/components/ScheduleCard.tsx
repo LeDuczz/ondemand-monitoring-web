@@ -1,3 +1,4 @@
+import { formatIsoDate } from '../../../lib/createOrder/dateFormat'
 import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { PreferredTimeOption } from '../../../api/customerApi'
@@ -30,6 +31,7 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
             value={form.preferredDateFrom}
             onChange={(e) => update('preferredDateFrom', e.target.value)}
           />
+          <div className="co-date-shown">{formatIsoDate(form.preferredDateFrom, lang)}</div>
         </FormField>
         <FormField id="co-to" label={t.endDate} required error={errors.preferredDateTo}>
           <input
@@ -39,6 +41,7 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
             value={form.preferredDateTo}
             onChange={(e) => update('preferredDateTo', e.target.value)}
           />
+          <div className="co-date-shown">{formatIsoDate(form.preferredDateTo, lang)}</div>
         </FormField>
       </div>
       <FormField id="co-time" label={t.timeWindow} required error={errors.preferredTimeId}>

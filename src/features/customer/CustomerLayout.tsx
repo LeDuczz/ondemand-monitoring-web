@@ -5,7 +5,6 @@ import { LogoutButton } from '../auth/components/LogoutButton'
 import { Icon, type IconName } from '../../shared/components/Icon'
 import { LanguageToggle } from '../../shared/components/LanguageToggle'
 import { useI18n } from '../../shared/i18n'
-import { CustomerChatbot } from './components/CustomerChatbot'
 import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
 import { customerLayoutMessages } from './CustomerLayout.messages'
 import './customer.css'
@@ -200,7 +199,6 @@ export function CustomerLayout({
           <main className="odm-cus-content">
             <div className="odm-cus-content-inner">{children}</div>
           </main>
-          <CustomerChatbot />
         </div>
       </div>
     </div>

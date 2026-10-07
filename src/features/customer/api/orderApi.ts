@@ -99,6 +99,10 @@ export type OrderCreateResponse = {
   preferredDateTo?: string
   preferredTimeId?: string
   preferredTimeName?: string
+  recurrenceType?: 'NONE' | 'WEEKLY' | 'MONTHLY'
+  recurrenceOccurrences?: number
+  weatherFallback?: 'AUTO_RESCHEDULE' | 'CONTACT_CUSTOMER' | 'CANCEL_ORDER'
+  resultDeadline?: string
   orderStatus?: string
   rejectReason?: string
   reviewById?: string

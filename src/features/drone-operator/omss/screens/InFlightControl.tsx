@@ -3430,16 +3430,14 @@ export default function InFlightControl({
     t,
   ])
 
-  const px4BatteryFresh =
-    typeof controlStatus?.freshness?.px4BatteryAgeS === 'number' &&
-    Number.isFinite(controlStatus.freshness.px4BatteryAgeS) &&
-    controlStatus.freshness.px4BatteryAgeS <= 10
   const liveBatteryPercent =
-    px4BatteryFresh &&
-    typeof controlStatus?.rawPx4BatteryPercent === 'number' &&
-    Number.isFinite(controlStatus.rawPx4BatteryPercent)
-      ? controlStatus.rawPx4BatteryPercent
-      : controlStatus?.batteryPercent
+    typeof controlStatus?.batteryPercent === 'number' &&
+    Number.isFinite(controlStatus.batteryPercent)
+      ? controlStatus.batteryPercent
+      : typeof controlStatus?.rawPx4BatteryPercent === 'number' &&
+          Number.isFinite(controlStatus.rawPx4BatteryPercent)
+        ? controlStatus.rawPx4BatteryPercent
+        : undefined
 
   // Camera view reads the SAME GPS telemetry as the main flight map (controlStatus.positionGps).
   const cameraTelemetry = useMemo<DroneCameraTelemetry | null>(() => {

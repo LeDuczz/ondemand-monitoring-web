@@ -154,7 +154,7 @@ describe('MissionDetailScreen', () => {
       await screen.findByRole('button', { name: 'Gửi kết quả giám sát' }),
     ).toBeDisabled()
   })
-  it('refreshes pending → rejected on focus and enables resubmission without a sticky local boolean', async () => {
+  it('keeps mission detail stable on focus and refreshes result status only from the checklist button', async () => {
     vi.spyOn(operatorApi, 'getMission').mockResolvedValue({
       ...mission,
       backendStatus: 'COMPLETED',
@@ -182,6 +182,11 @@ describe('MissionDetailScreen', () => {
       approvalStatus: 'REJECTED',
     })
     act(() => window.dispatchEvent(new Event('focus')))
+    expect(
+      screen.queryByRole('button', { name: 'Gửi kết quả giám sát' }),
+    ).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Làm mới checklist' }))
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Gửi kết quả giám sát' }),

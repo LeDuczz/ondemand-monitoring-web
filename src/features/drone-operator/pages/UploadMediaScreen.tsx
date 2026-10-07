@@ -40,7 +40,38 @@ const visibleAfterControllerDropStatuses = new Set([
   'AVAILABLE',
 ])
 
+const mediaTypeLabel: Record<string, string> = {
+  IMAGE: 'Ảnh',
+  VIDEO: 'Video',
+}
+const mediaSourceLabel: Record<string, string> = {
+  DRONE_CAMERA: 'Camera drone',
+  SATELLITE_SNAPSHOT: 'Ảnh vệ tinh',
+  MANUAL_UPLOAD: 'Upload thủ công',
+  MAPILLARY_REFERENCE: 'Ảnh tham chiếu Mapillary',
+}
+const mediaStatusLabel: Record<string, string> = {
+  REVIEW_PENDING: 'Chờ duyệt',
+  UPLOADING: 'Đang upload',
+  UPLOAD_FAILED: 'Upload thất bại',
+  VALIDATING: 'Đang xác thực',
+  MANUAL_UPLOAD_REQUIRED: 'Cần upload thủ công',
+  UPLOAD_PENDING: 'Chờ upload',
+  RETRY_REQUIRED: 'Cần thử lại',
+  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+  AVAILABLE: 'Đã duyệt',
+  UPLOADED: 'Đã upload',
+}
+
 /** Existing upload layout backed by the selected mission's local media. */
+/** Maps a backend media status to a chip tone. */
+function statusTone(status: string) {
+  if (/FAIL|REJECT|ERROR|MANUAL_UPLOAD_REQUIRED/.test(status)) return 'is-danger'
+  if (/PENDING|VALIDATING|UPLOADING|REVIEW/.test(status)) return 'is-warning'
+  if (/AVAILABLE|UPLOADED|VALIDATED|STORED|COMPLETED|READY/.test(status)) return 'is-success'
+  return ''
+}
+
 export function UploadMediaScreen({
   missionId: routeMissionId,
 }: {
@@ -65,7 +96,9 @@ export function UploadMediaScreen({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [batchUploading, setBatchUploading] = useState(false)
   const [checklistRevision, setChecklistRevision] = useState(0)
-  const monitoring = useMissionMonitoring(missionId ?? '', checklistRevision)
+  const monitoring = useMissionMonitoring(missionId ?? '', checklistRevision, {
+    autoRefresh: false,
+  })
   const [selectedTargets, setSelectedTargets] = useState<Record<string, string[]>>({})
   const [attachFailures, setAttachFailures] = useState<Record<string, string>>({})
   const [preview, setPreview] = useState<LocalMedia | null>(null)
@@ -75,6 +108,9 @@ export function UploadMediaScreen({
   // Reference images (Mapillary) are stored by the backend directly, so they are already "uploaded".
   const [referenceCount, setReferenceCount] = useState(0)
   const [uploadInfo, setUploadInfo] = useState<string | null>(null)
+  const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [sort, setSort] = useState<'newest' | 'oldest'>('newest')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'uploaded'>('all')
   const [completionSubmitting, setCompletionSubmitting] = useState(false)
   const [resultSentLocally, setResultSentLocally] = useState(false)
   const itemsRef = useRef<LocalMedia[]>([])
@@ -182,8 +218,6 @@ export function UploadMediaScreen({
 
   useEffect(() => {
     void refresh()
-    const timer = window.setInterval(() => void refresh(), 10000)
-    return () => window.clearInterval(timer)
   }, [refresh])
 
   async function approve(item: LocalMedia, manual = false) {
@@ -350,6 +384,16 @@ export function UploadMediaScreen({
     readyForMissionCompletion &&
     (!canSubmitMissionResult || readyForSubmission || resultSentToManager)
   const isBusy = !!busyId || batchUploading
+  const visibleItems = items
+    .filter((item) => {
+      if (filter === 'all') return true
+      const done = finishedUploadStatuses.has(effectiveStatus(item))
+      return filter === 'uploaded' ? done : !done
+    })
+    .sort((a, b) => {
+      const diff = (Date.parse(a.capturedAt) || 0) - (Date.parse(b.capturedAt) || 0)
+      return sort === 'newest' ? -diff : diff
+    })
   const backRoute =
     canManageMedia && missionId
       ? operatorHref({ screen: 'missionDetail', missionId })
@@ -443,145 +487,163 @@ export function UploadMediaScreen({
     }
   }
 
+  const totalMedia = files.length + referenceCount
+  const loadedMedia = uploaded + referenceCount
+  const pendingMedia = Math.max(0, totalMedia - loadedMedia)
+  const sendDisabled =
+    resultSentToManager ||
+    completionSubmitting ||
+    (canSubmitMissionResult ? !canSendManagerFromUpload : !canCompleteFromUpload)
+  const missionLabel = activeMission.data?.missionCode ?? missionId ?? t.openingMission
+
   return (
-    <div className="odm-card" style={{ marginBottom: 0 }}>
+    <div className="odm-card upload-media-page" style={{ marginBottom: 0 }}>
       <FlightStepHeader
         title={t.stepTitle}
-        missionId={missionId ?? t.openingMission}
+        missionId={missionLabel}
+        idTitle={missionId ?? undefined}
         active={7}
         right={
-          <span
-            style={{
-              padding: '6px 12px',
-              borderRadius: 16,
-              background: 'var(--sf3)',
-              fontWeight: 700,
-              fontSize: 13,
-            }}
-          >
-            {deviceLabel ?? '—'}
-          </span>
+          <span className="upload-media-device">{deviceLabel ?? '—'}</span>
         }
       />
-      <div style={{ padding: '18px 22px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div className="upload-media-summary">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>
-                {t.summary(
-                  uploaded + referenceCount,
-                  files.length + referenceCount,
-                  uploading,
-                  manual,
-                )}
+      <div className="upload-media-body">
+        <div className="upload-media-stack">
+          <div className="upload-media-bar">
+            <div className="upload-media-bar-main">
+              <div className="upload-media-bar-head">
+                <strong className="upload-media-bar-count">
+                  {loadedMedia} / {totalMedia}
+                </strong>
+                <span>{t.mediaLoaded}</span>
+                <span className="upload-media-chips">
+                  {loadedMedia > 0 && (
+                    <span className="upload-media-status is-success">
+                      {t.uploadedChip(loadedMedia)}
+                    </span>
+                  )}
+                  {pendingMedia > 0 && (
+                    <span className="upload-media-status is-warning">
+                      {t.pendingChip(pendingMedia)}
+                    </span>
+                  )}
+                  {uploading > 0 && (
+                    <span className="upload-media-status is-info">
+                      {t.uploadingChip(uploading)}
+                    </span>
+                  )}
+                  {manual > 0 && (
+                    <span className="upload-media-status is-danger">
+                      {t.manualChip(manual)}
+                    </span>
+                  )}
+                </span>
               </div>
               <div
-                style={{ fontSize: 12.5, color: 'var(--tx3)', marginTop: 2 }}
+                className="upload-media-progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={totalMedia}
+                aria-valuenow={loadedMedia}
+                aria-label={t.summary(loadedMedia, totalMedia, uploading, manual)}
               >
-                {t.summaryNote}
+                <span
+                  style={{
+                    width: totalMedia
+                      ? `${Math.round((loadedMedia / totalMedia) * 100)}%`
+                      : '0%',
+                  }}
+                />
               </div>
+              <small className="upload-media-bar-note">{t.summaryNote}</small>
             </div>
-            <a className="odm-btn" href={backRoute}>
-              {canManageMedia ? t.backToResult : t.backToCockpit}
-            </a>
-            <button
-              type="button"
-              className="odm-btn"
-              onClick={() => {
-                setChecklistRevision((value) => value + 1)
-                void refresh()
-              }}
-            >
-              {t.refresh}
-            </button>
-            {canManageMedia ? (
+            <div className="upload-media-bar-actions">
+              <a className="odm-btn upload-media-btn-ghost" href={backRoute}>
+                <span aria-hidden="true">←</span>
+                {canManageMedia ? t.backToResult : t.backToCockpit}
+              </a>
               <button
                 type="button"
-                className="odm-btn odm-btn-p"
-                disabled={!missionId || isBusy}
+                className="odm-btn upload-media-btn-ghost"
                 onClick={() => {
-                  void (async () => {
-                    setUploadInfo(null)
-                    if (approvable.length === 0) {
-                      await refresh()
-                      setUploadInfo(
-                        referenceCount > 0
-                          ? `Tất cả media đã được lưu (${referenceCount} ảnh tham chiếu). Không còn file nào chờ upload.`
-                          : 'Không có file nào chờ upload.',
-                      )
-                      return
-                    }
-                    setBatchUploading(true)
-                    try {
-                      for (const item of approvable) {
-                        if (!(await approve(item))) return
+                  setChecklistRevision((value) => value + 1)
+                  void refresh()
+                }}
+              >
+                <span aria-hidden="true">↻</span>
+                {t.refresh}
+              </button>
+              {canManageMedia ? (
+                <button
+                  type="button"
+                  className="odm-btn upload-media-btn-accent"
+                  disabled={!missionId || isBusy}
+                  onClick={() => {
+                    void (async () => {
+                      setUploadInfo(null)
+                      if (approvable.length === 0) {
+                        await refresh()
+                        setUploadInfo(
+                          referenceCount > 0
+                            ? `Tất cả media đã được lưu (${referenceCount} ảnh tham chiếu). Không còn file nào chờ upload.`
+                            : 'Không có file nào chờ upload.',
+                        )
+                        return
                       }
-                      setUploadInfo(
-                        'Đã gửi các file đang chờ. Trạng thái lưu/xác thực được cập nhật từ backend.',
-                      )
-                    } finally {
-                      setBatchUploading(false)
-                    }
-                  })()
-                }}
-              >
-                {t.uploadAll}
-              </button>
-            ) : (
-              <span
-                role="status"
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 16,
-                  background: 'var(--sf3)',
-                  color: 'var(--tx2)',
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                }}
-              >
-                {t.viewOnly}
-              </span>
-            )}
-            {canCompleteMission || canSubmitMissionResult || resultSentToManager ? (
-              <button
-                type="button"
-                className="odm-btn odm-btn-p"
-                disabled={
-                  resultSentToManager ||
-                  completionSubmitting ||
-                  (canSubmitMissionResult
-                    ? !canSendManagerFromUpload
-                    : !canCompleteFromUpload)
-                }
-                onClick={() => void completeMissionFromUpload()}
-              >
-                {completionSubmitting
-                  ? t.completing
-                  : resultSentToManager
-                    ? t.submittedToManager
-                    : canSubmitMissionResult
-                    ? t.completeAndSubmit
-                    : t.completeOnly}
-              </button>
-            ) : null}
+                      setBatchUploading(true)
+                      try {
+                        for (const item of approvable) {
+                          if (!(await approve(item))) return
+                        }
+                        setUploadInfo(
+                          'Đã gửi các file đang chờ. Trạng thái lưu/xác thực được cập nhật từ backend.',
+                        )
+                      } finally {
+                        setBatchUploading(false)
+                      }
+                    })()
+                  }}
+                >
+                  {t.uploadAll}
+                </button>
+              ) : (
+                <span role="status" className="upload-media-viewonly">
+                  {t.viewOnly}
+                </span>
+              )}
+              {canCompleteMission || canSubmitMissionResult || resultSentToManager ? (
+                <button
+                  type="button"
+                  className="odm-btn odm-btn-p upload-media-btn-final"
+                  disabled={sendDisabled}
+                  title={sendDisabled && !resultSentToManager ? t.sendBlocked : undefined}
+                  onClick={() => void completeMissionFromUpload()}
+                >
+                  {completionSubmitting
+                    ? t.completing
+                    : resultSentToManager
+                      ? t.submittedToManager
+                      : canSubmitMissionResult
+                        ? t.completeAndSubmit
+                        : t.completeOnly}
+                </button>
+              ) : null}
+            </div>
           </div>
           {!missionId && !loading && <p role="alert">{t.restoringMission}</p>}
           {uploadInfo && (
-            <p
-              role="status"
-              style={{ color: 'var(--green-fg, #15803d)', fontWeight: 600 }}
-            >
+            <p role="status" className="upload-media-notice is-success">
               {uploadInfo}
             </p>
           )}
           {error && (
-            <p role="alert" style={{ color: 'var(--red-fg)' }}>
+            <p role="alert" className="upload-media-notice is-danger">
               {error}
             </p>
           )}
           {loading && <p>{t.loadingMedia}</p>}
           {missionId && !canManageMedia && (
-            <p role="status">
+            <p role="status" className="upload-media-notice">
               {permissions.error
                 ? t.permissionsUnavailable
                 : permissions.loading
@@ -591,162 +653,272 @@ export function UploadMediaScreen({
           )}
           <div className="upload-media-workspace">
             <div className="upload-media-files">
-              <div className="upload-media-grid">
-                {items.map((item) => {
-                  const status = effectiveStatus(item)
-                  const canApprove = approvable.includes(item)
-                  return (
-                    <article
-                      key={item.localMediaId}
-                      className="odm-card"
-                      style={{ overflow: 'hidden', marginBottom: 0 }}
+              <section className="upload-media-panel" aria-label={t.mediaList}>
+                <header className="upload-media-toolbar">
+                  <h2>{t.mediaList}</h2>
+                  <span className="upload-media-count">{t.fileCount(items.length)}</span>
+                  <div className="upload-media-tools">
+                    <select
+                      aria-label={t.filterLabel}
+                      value={filter}
+                      onChange={(event) => setFilter(event.target.value as typeof filter)}
                     >
-                      {item.localAvailable === false ? (
-                        <p style={{ padding: 14 }}>
-                          Bản gốc trên Flight Controller không khả dụng. Chọn
-                          bản sao PC để khôi phục.
-                        </p>
-                      ) : item.mediaType === 'IMAGE' ? (
-                        <img
-                          src={operatorMediaApi.previewUrl(item.localMediaId)}
-                          alt={item.fileName}
-                          className="upload-media-preview"
-                        />
-                      ) : (
-                        <video
-                          src={operatorMediaApi.previewUrl(item.localMediaId)}
-                          controls
-                          preload="metadata"
-                          className="upload-media-preview"
-                        />
-                      )}
-                      <div style={{ padding: 14 }}>
-                        <div
-                          className="odm-mono"
-                          style={{ fontWeight: 700, overflowWrap: 'anywhere' }}
-                        >
-                          {item.fileName}
-                        </div>
-                        <div
-                          style={{
-                            color: 'var(--tx3)',
-                            fontSize: 12,
-                            margin: '6px 0',
-                          }}
-                        >
-                          {item.mediaType} · {item.sourceType ?? 'Unknown/Legacy'} ·{' '}
-                          {(item.fileSize / 1_000_000).toFixed(2)} MB · {status}
-                        </div>
-                        {item.previewError && (
-                          <p role="alert" style={{ color: 'var(--red-fg)' }}>
-                            {item.previewError}
-                          </p>
-                        )}
-                        {item.mediaType === 'IMAGE' &&
-                          item.localAvailable !== false && (
+                      <option value="all">{t.filterAll}</option>
+                      <option value="pending">{t.filterPending}</option>
+                      <option value="uploaded">{t.filterUploaded}</option>
+                    </select>
+                    <select
+                      aria-label={t.sortLabel}
+                      value={sort}
+                      onChange={(event) => setSort(event.target.value as typeof sort)}
+                    >
+                      <option value="newest">{t.sortNewest}</option>
+                      <option value="oldest">{t.sortOldest}</option>
+                    </select>
+                    <span className="upload-media-seg" role="group">
+                      <button
+                        type="button"
+                        aria-pressed={view === 'grid'}
+                        aria-label={t.gridView}
+                        title={t.gridView}
+                        onClick={() => setView('grid')}
+                      >
+                        ▦
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={view === 'list'}
+                        aria-label={t.listView}
+                        title={t.listView}
+                        onClick={() => setView('list')}
+                      >
+                        ☰
+                      </button>
+                    </span>
+                  </div>
+                </header>
+                {!loading && visibleItems.length === 0 && (
+                  <p className="upload-media-empty">{t.emptyMedia}</p>
+                )}
+                <div className={`upload-media-grid${view === 'list' ? ' is-list' : ''}`}>
+                  {visibleItems.map((item) => {
+                    const status = effectiveStatus(item)
+                    const canApprove = approvable.includes(item)
+                    const targetCount = selectedTargets[item.localMediaId]?.length ?? 0
+                    const canDiscard =
+                      ['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status) ||
+                      finishedUploadStatuses.has(status)
+                    return (
+                      <article key={item.localMediaId} className="upload-media-card">
+                        <div className="upload-media-thumb">
+                          {item.localAvailable === false ? (
+                            <p className="upload-media-unavailable">
+                              Bản gốc trên Flight Controller không khả dụng. Chọn
+                              bản sao PC để khôi phục.
+                            </p>
+                          ) : item.mediaType === 'IMAGE' ? (
+                            <img
+                              src={operatorMediaApi.previewUrl(item.localMediaId)}
+                              alt={item.fileName}
+                              className="upload-media-preview"
+                            />
+                          ) : (
+                            <video
+                              src={operatorMediaApi.previewUrl(item.localMediaId)}
+                              controls
+                              preload="metadata"
+                              className="upload-media-preview"
+                            />
+                          )}
+                          {item.mediaType === 'IMAGE' && item.localAvailable !== false && (
                             <button
                               type="button"
-                              className="odm-btn"
+                              className="upload-media-expand"
+                              aria-hidden="true"
+                              tabIndex={-1}
                               onClick={() => setPreview(item)}
                             >
-                              {t.enlargePreview}
+                              ⛶
                             </button>
                           )}
-                        {canManageMedia ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            {status === 'MANUAL_UPLOAD_REQUIRED' && (
+                        </div>
+                        <div className="upload-media-card-body">
+                          <div className="odm-mono upload-media-filename" title={item.fileName}>
+                            {item.fileName}
+                          </div>
+                          <div className="upload-media-meta">
+                            <span>{mediaTypeLabel[item.mediaType] ?? item.mediaType}</span>
+                            <span aria-hidden="true">•</span>
+                            <span>{(item.fileSize / 1_000_000).toFixed(2)} MB</span>
+                            {item.sourceType && (
+                              <>
+                                <span aria-hidden="true">•</span>
+                                <span>{mediaSourceLabel[item.sourceType] ?? item.sourceType}</span>
+                              </>
+                            )}
+                          </div>
+                          <span className={`upload-media-status ${statusTone(status)}`}>
+                            {mediaStatusLabel[status] ?? status}
+                          </span>
+                          {item.previewError && (
+                            <p role="alert" className="upload-media-notice is-danger">
+                              {item.previewError}
+                            </p>
+                          )}
+                          <div className="upload-media-actions">
+                            {canManageMedia && status === 'MANUAL_UPLOAD_REQUIRED' && (
                               <button
                                 type="button"
                                 className="odm-btn odm-btn-p"
-                                disabled={
-                                  isBusy || item.localAvailable === false
-                                }
+                                disabled={isBusy || item.localAvailable === false}
                                 onClick={() => void approve(item, true)}
                               >
                                 Upload thủ công từ bản gốc
                               </button>
                             )}
-                            <button
-                              type="button"
-                              className="odm-btn odm-btn-p"
-                              disabled={
-                                isBusy ||
-                                !canApprove ||
-                                item.localAvailable === false
-                              }
-                              onClick={() => void approve(item)}
-                            >
-                              {busyId === item.localMediaId
-                                ? t.processing
-                                : t.approveUpload}
-                            </button>
-                            <button
-                              type="button"
-                              className="odm-btn"
-                              disabled={
-                                isBusy ||
-                                !(
-                                  ['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(
-                                    item.status,
-                                  ) || finishedUploadStatuses.has(status)
-                                )
-                              }
-                              onClick={() => void discard(item)}
-                            >
-                              {finishedUploadStatuses.has(status)
-                                ? t.deleteLocal
-                                : t.discard}
-                            </button>
+                            {canManageMedia && (
+                              <button
+                                type="button"
+                                className="odm-btn odm-btn-p"
+                                disabled={isBusy || !canApprove || item.localAvailable === false}
+                                onClick={() => void approve(item)}
+                              >
+                                {busyId === item.localMediaId ? t.processing : t.approveUpload}
+                              </button>
+                            )}
+                            {item.mediaType === 'IMAGE' && item.localAvailable !== false && (
+                              <button
+                                type="button"
+                                className="odm-btn"
+                                onClick={() => setPreview(item)}
+                              >
+                                <span aria-hidden="true">{t.viewShort}</span>
+                                <span className="upload-media-sr">{t.enlargePreview}</span>
+                              </button>
+                            )}
+                            {canManageMedia && (
+                              <details className="upload-media-more">
+                                <summary aria-label={t.moreActions} title={t.moreActions}>
+                                  ⋮
+                                </summary>
+                                <div className="upload-media-menu">
+                                  <button
+                                    type="button"
+                                    className="odm-btn"
+                                    disabled={isBusy || !canDiscard}
+                                    onClick={() => void discard(item)}
+                                  >
+                                    {finishedUploadStatuses.has(status)
+                                      ? t.deleteLocal
+                                      : t.discard}
+                                  </button>
+                                </div>
+                              </details>
+                            )}
                           </div>
-                        ) : null}
-                        {monitoring.data?.permissions.canAttachChecklistEvidence === true && !monitoring.loading && !monitoring.error && <fieldset disabled={isBusy}>
-                          <legend>Gắn vào checklist</legend>
-                          {monitoring.data.checklist.executions.map(execution => <label key={execution.id} style={{ display: 'block', fontSize: 12, margin: '6px 0' }}>
-                            <input type="checkbox" checked={(selectedTargets[item.localMediaId] ?? []).includes(execution.id)} onChange={event => setSelectedTargets(previous => {
-                              const current = previous[item.localMediaId] ?? []
-                              return { ...previous, [item.localMediaId]: event.target.checked ? [...current, execution.id] : current.filter(id => id !== execution.id) }
-                            })} /> {execution.content} · {execution.eligibleEvidenceCount ?? 0}/{execution.minimumEvidenceCount ?? 0}
-                          </label>)}
-                          {item.backendMediaId && <button type="button" className="odm-btn" disabled={isBusy || !(selectedTargets[item.localMediaId]?.length)} onClick={() => {
-                            const mediaId = item.backendMediaId
-                            if (!mediaId) return
-                            setBusyId(item.localMediaId)
-                            void attachSelected(item, mediaId).finally(() => setBusyId(null))
-                          }}>Gắn bằng chứng — không upload lại</button>}
-                        </fieldset>}
-                        {attachFailures[item.localMediaId] && <p role="alert">Media đã được giữ. Gắn bằng chứng chưa thành công: {attachFailures[item.localMediaId]}. Chọn “Gắn bằng chứng” để thử lại, không upload lại.</p>}
-                        {canManageMedia &&
-                          item.manualTaskId &&
-                          ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(
-                            status,
-                          ) && (
-                            <PcBackupPicker
-                              contentType={item.contentType}
-                              disabled={isBusy}
-                              onSelect={(file) => void uploadPc(item, file)}
-                            />
+                          {monitoring.data?.permissions.canAttachChecklistEvidence === true &&
+                            !monitoring.loading &&
+                            !monitoring.error && (
+                              <details
+                                className="upload-media-attach-wrap"
+                                open={targetCount > 0}
+                              >
+                                <summary>
+                                  {t.attachToChecklist}
+                                  {targetCount > 0 && (
+                                    <span className="upload-media-chip">
+                                      {t.attachSelected(targetCount)}
+                                    </span>
+                                  )}
+                                </summary>
+                                <fieldset disabled={isBusy} className="upload-media-attach">
+                                  {monitoring.data.checklist.executions.map((execution) => (
+                                    <label key={execution.id} className="upload-media-attach-row">
+                                      <input
+                                        type="checkbox"
+                                        checked={(selectedTargets[item.localMediaId] ?? []).includes(execution.id)}
+                                        onChange={(event) =>
+                                          setSelectedTargets((previous) => {
+                                            const current = previous[item.localMediaId] ?? []
+                                            return {
+                                              ...previous,
+                                              [item.localMediaId]: event.target.checked
+                                                ? [...current, execution.id]
+                                                : current.filter((id) => id !== execution.id),
+                                            }
+                                          })
+                                        }
+                                      />
+                                      <span>{execution.content}</span>
+                                      <em>
+                                        {execution.eligibleEvidenceCount ?? 0}/
+                                        {execution.minimumEvidenceCount ?? 0}
+                                      </em>
+                                    </label>
+                                  ))}
+                                  {item.backendMediaId && (
+                                    <button
+                                      type="button"
+                                      className="odm-btn"
+                                      disabled={isBusy || !targetCount}
+                                      onClick={() => {
+                                        const mediaId = item.backendMediaId
+                                        if (!mediaId) return
+                                        setBusyId(item.localMediaId)
+                                        void attachSelected(item, mediaId).finally(() =>
+                                          setBusyId(null),
+                                        )
+                                      }}
+                                    >
+                                      Gắn bằng chứng — không upload lại
+                                    </button>
+                                  )}
+                                </fieldset>
+                              </details>
+                            )}
+                          {attachFailures[item.localMediaId] && (
+                            <p role="alert" className="upload-media-notice is-danger">
+                              Media đã được giữ. Gắn bằng chứng chưa thành công:{' '}
+                              {attachFailures[item.localMediaId]}. Chọn “Gắn bằng chứng” để thử lại, không upload lại.
+                            </p>
                           )}
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-              {canManageMedia ? (
-                <MediaTable
-                  files={files}
-                  retryingId={busyId}
-                  onRetry={(id) => {
-                    if (isBusy) return
-                    const item = items.find(
-                      (entry) => entry.localMediaId === id,
+                          {canManageMedia &&
+                            item.manualTaskId &&
+                            ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(status) && (
+                              <PcBackupPicker
+                                contentType={item.contentType}
+                                disabled={isBusy}
+                                onSelect={(file) => void uploadPc(item, file)}
+                              />
+                            )}
+                        </div>
+                      </article>
                     )
-                    if (item)
-                      void approve(
-                        item,
-                        effectiveStatus(item) === 'MANUAL_UPLOAD_REQUIRED',
-                      )
-                  }}
-                />
+                  })}
+                </div>
+              </section>
+              {canManageMedia ? (
+                <details className="upload-media-table-wrap">
+                  <summary>{t.fileTable(files.length)}</summary>
+                  <MediaTable
+                    files={files}
+                    retryingId={busyId}
+                    onRetry={(id) => {
+                      if (isBusy) return
+                      const item = items.find((entry) => entry.localMediaId === id)
+                      if (item)
+                        void approve(
+                          item,
+                          effectiveStatus(item) === 'MANUAL_UPLOAD_REQUIRED',
+                        )
+                    }}
+                  />
+                </details>
+              ) : null}
+              {canManageMedia && missionId ? (
+                <div className="upload-media-uploaded">
+                  <MissionUploadedMedia missionId={missionId} />
+                </div>
               ) : null}
             </div>
             {missionId && (
@@ -757,11 +929,6 @@ export function UploadMediaScreen({
               />
             )}
           </div>
-          {canManageMedia && missionId ? (
-            <div style={{ marginTop: 18 }}>
-              <MissionUploadedMedia missionId={missionId} />
-            </div>
-          ) : null}
         </div>
       </div>
       {preview && (

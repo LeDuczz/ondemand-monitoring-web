@@ -1,6 +1,7 @@
 import { Modal } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption, ServicePricingEstimate } from '../../../api/customerApi'
+import { findPermitZone } from '../../../lib/createOrder/airspace'
 import { formatMoney } from '../../../lib/createOrder/format'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import type { FormState } from '../../../lib/createOrder/types'
@@ -20,6 +21,10 @@ type Props = {
 export function ConfirmSubmitModal(p: Props) {
   const { t, locale, lang } = useI18n(confirmSubmitModalMessages)
   const { form } = p
+  const permitZone = findPermitZone(
+    { latitude: Number(form.latitude), longitude: Number(form.longitude) },
+    form.radiusM,
+  )
 
   const footer = (
     <>
@@ -48,6 +53,24 @@ export function ConfirmSubmitModal(p: Props) {
         <dd>{p.service ? localizeServiceName(p.service.id, lang, p.service.name) : '—'}</dd>
         <dt>{t.location}</dt>
         <dd>{form.address || '—'}</dd>
+        <dt>{t.altitude}</dt>
+        <dd>{`${form.altitudeM} m`}</dd>
+        {(form.siteContactName.trim() || form.siteContactPhone.trim()) && (
+          <>
+            <dt>{t.contact}</dt>
+            <dd>{[form.siteContactName.trim(), form.siteContactPhone.trim()].filter(Boolean).join(' · ')}</dd>
+          </>
+        )}
+        {permitZone && form.permitStatus !== 'NONE' && (
+          <>
+            <dt>{t.permit}</dt>
+            <dd>
+              {form.permitStatus === 'HAVE_PERMIT'
+                ? t.permitHave(form.permitNumber.trim())
+                : t.permitSupport}
+            </dd>
+          </>
+        )}
         <dt>{t.dates}</dt>
         <dd className="co-mono">{`${form.preferredDateFrom} → ${form.preferredDateTo}`}</dd>
       </dl>

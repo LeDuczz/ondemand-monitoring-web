@@ -27,6 +27,15 @@ import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicke
 import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetail'
 import { PaymentResultPage } from '../features/finance/PaymentResultPage'
 
+function redirectHash(to: string) {
+  if (window.location.hash !== to) {
+    window.location.hash = to
+  }
+  window.setTimeout(() => {
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  }, 0)
+}
+
 function RoleRoute({
   role,
   children,
@@ -36,11 +45,11 @@ function RoleRoute({
 }) {
   const user = authSession.getUser()
   if (!authSession.getAccessToken() || !user) {
-    window.location.hash = '#auth/login'
+    redirectHash('#auth/login')
     return null
   }
   if (user.role !== role) {
-    window.location.hash = getRoleHomePath(user.role)
+    redirectHash(getRoleHomePath(user.role))
     return null
   }
   return children
@@ -69,7 +78,7 @@ function SupportShell({
 
 function AuthRoute({ children }: { children: ReactNode }) {
   if (!authSession.getAccessToken() || !authSession.getUser()) {
-    window.location.hash = '#auth/login'
+    redirectHash('#auth/login')
     return null
   }
   return children

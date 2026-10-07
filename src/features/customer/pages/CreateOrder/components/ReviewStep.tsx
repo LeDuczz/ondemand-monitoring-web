@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type {
   CustomerConsultation,
   PreferredTimeOption,
@@ -5,13 +7,9 @@ import type {
   ServiceOption,
   ServicePricingEstimate,
 } from '../../../api/customerApi'
-import type {
-  FormErrors,
-  FormState,
-  UpdateField,
-} from '../../../lib/createOrder/types'
-import { ConsultationSummaryCard } from './ConsultationSummaryCard'
+import type { FormErrors, FormState, Step, UpdateField } from '../../../lib/createOrder/types'
 import { DeliverablesCard } from './DeliverablesCard'
+import { DeliveryOptionsCard } from './DeliveryOptionsCard'
 import { PricingEstimateCard } from './PricingEstimateCard'
 import { RequestSummaryCard } from './RequestSummaryCard'
 
@@ -30,12 +28,16 @@ type Props = {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
+  /** Jump back to an earlier step from the summary. */
+  onEdit: (step: Step) => void
+  /** Wizard actions, rendered at the bottom of the sticky summary panel. */
+  footer?: ReactNode
 }
 
-/** Step 4: choose deliverables and review before the confirm dialog. */
+/** Step 5: choose deliverables on the left, review + submit on the right. */
 export function ReviewStep(p: Props) {
   return (
-    <div className="co-grid is-wide">
+    <div className="co-grid is-review">
       <div className="co-stack">
         <DeliverablesCard
           form={p.form}
@@ -46,6 +48,9 @@ export function ReviewStep(p: Props) {
           error={p.deliverablesError}
           onRetry={p.reloadDeliverables}
         />
+        <DeliveryOptionsCard form={p.form} errors={p.errors} update={p.update} />
+      </div>
+      <aside className="co-stack co-summary">
         <RequestSummaryCard
           form={p.form}
           service={p.service}
@@ -53,6 +58,7 @@ export function ReviewStep(p: Props) {
           deliverable={p.deliverable}
           consultation={p.consultation}
           aiAnalysisRequested={p.aiAnalysisRequested}
+          onEdit={p.onEdit}
         />
         <PricingEstimateCard
           estimate={p.pricingEstimate}
@@ -60,12 +66,8 @@ export function ReviewStep(p: Props) {
           hasService={Boolean(p.service)}
           aiAnalysisRequested={p.aiAnalysisRequested}
         />
-      </div>
-      <ConsultationSummaryCard
-        form={p.form}
-        consultation={p.consultation}
-        service={p.service}
-      />
+        {p.footer && <div className="co-summary-cta">{p.footer}</div>}
+      </aside>
     </div>
   )
 }

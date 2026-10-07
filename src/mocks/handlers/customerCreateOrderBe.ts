@@ -55,8 +55,21 @@ export const mockServiceChecklist = (
     : []
 
 const SERVICE_PRICES: Record<string, number> = {
-  'svc-1': 1_500_000,
+  'svc-1': 4_000_000,
   'svc-2': 3_200_000,
+  'svc-3': 2_600_000,
+  'svc-4': 2_800_000,
+  'svc-5': 4_500_000,
+  'svc-6': 4_800_000,
+  'svc-7': 6_500_000,
+  'svc-8': 3_800_000,
+  'svc-9': 3_000_000,
+  'svc-10': 4_200_000,
+  'svc-11': 3_600_000,
+  'svc-12': 3_500_000,
+  'svc-13': 5_000_000,
+  'svc-14': 4_500_000,
+  'svc-15': 2_400_000,
 }
 const DEFAULT_SERVICE_PRICE = 2_000_000
 const AI_ANALYSIS_PRICE = 500_000

@@ -66,8 +66,12 @@ describe('ServicesTab', () => {
     fireEvent.change(screen.getByLabelText(/Tên dịch vụ/), {
       target: { value: 'Dịch vụ thử' },
     })
+    fireEvent.change(screen.getByLabelText(/Đơn giá gói/), {
+      target: { value: '1800000' },
+    })
     fireEvent.click(screen.getByText('Lưu'))
     expect(await screen.findByText('Dịch vụ thử')).toBeTruthy()
+    expect(screen.getByText(/1\.800\.000/)).toBeTruthy()
   })
 
   it('validates the required name and shows BE errors inline', async () => {
@@ -86,6 +90,7 @@ describe('ServicesTab', () => {
       /Tên dịch vụ/,
     )) as HTMLInputElement
     expect(name.value).toBe('Kiểm tra Tháp viễn thông')
+    expect(screen.getByLabelText(/Đơn giá gói/)).toHaveValue(4_000_000)
     expect(
       (screen.getByLabelText(/Mô tả/) as HTMLTextAreaElement).value,
     ).toContain('anten')

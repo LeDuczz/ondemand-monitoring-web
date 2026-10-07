@@ -77,6 +77,8 @@ export function CustomerCreateRequestPage() {
                 update={update}
                 deliverables={meta.deliverables}
                 loading={meta.deliverablesLoading}
+                error={meta.deliverablesError}
+                onRetry={meta.reloadDeliverables}
               />
               <DeliveryOptionsCard form={form} errors={errors} update={update} />
             </div>

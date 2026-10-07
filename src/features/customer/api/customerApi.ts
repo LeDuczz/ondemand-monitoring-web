@@ -70,6 +70,7 @@ export type ServiceOption = {
   id: string
   name: string
   description?: string
+  basePrice: number
   imageUrl?: string | null
   isActive?: boolean
   createdAt?: string

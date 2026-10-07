@@ -22,6 +22,8 @@ type Props = {
   deliverable?: ServiceDeliverableOption
   deliverables: ServiceDeliverableOption[]
   deliverablesLoading: boolean
+  deliverablesError?: unknown
+  reloadDeliverables: () => void
   consultation: CustomerConsultation | null
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
@@ -43,6 +45,8 @@ export function ReviewStep(p: Props) {
           update={p.update}
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
+          error={p.deliverablesError}
+          onRetry={p.reloadDeliverables}
         />
         <DeliveryOptionsCard form={p.form} errors={p.errors} update={p.update} />
       </div>

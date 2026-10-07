@@ -11,6 +11,15 @@
   font-size: 13px;
   line-height: 1.55;
 }
+.checklist-pricing-notice {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid #d97706;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.55;
+}
 .checklist-card .ui-card-actions .checklist-hint {
   padding: 4px 10px;
   border-radius: 999px;
@@ -115,6 +124,11 @@
   border-color: var(--ui-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+.checklist-row.is-removed {
+  background: var(--ui-surface);
+  border-style: dashed;
+  opacity: 0.78;
+}
 .checklist-card .checklist-row textarea[aria-invalid='true'] {
   border-color: var(--ui-danger);
 }
@@ -173,6 +187,10 @@
 .checklist-card .checklist-add:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+.checklist-row-action {
+  min-height: 36px;
+  white-space: nowrap;
 }
 .checklist-lock {
   display: inline-block;

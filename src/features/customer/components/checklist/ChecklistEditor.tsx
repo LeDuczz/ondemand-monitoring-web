@@ -170,6 +170,9 @@ export function ChecklistEditor({
                     {!row.sourceChecklistId && (
                       <span className="checklist-custom-tag">{t.custom}</span>
                     )}
+                    {row.sourceChecklistId && (
+                      <span className="checklist-custom-tag is-default">{t.defaultItem}</span>
+                    )}
                     {!row.sourceChecklistId && (
                       <button
                         type="button"
@@ -177,6 +180,15 @@ export function ChecklistEditor({
                         onClick={() => checklist.remove(row.key)}
                       >
                         {t.remove}
+                      </button>
+                    )}
+                    {row.sourceChecklistId && (
+                      <button
+                        type="button"
+                        className="checklist-remove"
+                        onClick={() => checklist.change(row.key, { selected: !row.selected })}
+                      >
+                        {row.selected ? t.removeDefault : t.restoreDefault}
                       </button>
                     )}
                     {compact && (
@@ -237,6 +249,7 @@ export function ChecklistEditor({
         }
       >
         <p className="checklist-hint">{t.hint}</p>
+        {ready && <p className="checklist-pricing-notice">{t.pricingNotice}</p>}
         {compact && ready && rows.length > 0 && (
           <div className="checklist-toolbar">
             <label className="checklist-selectall">

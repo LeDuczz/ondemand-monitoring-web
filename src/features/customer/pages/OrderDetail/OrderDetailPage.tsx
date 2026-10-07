@@ -1,4 +1,7 @@
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { useI18n } from '../../../../shared/i18n'
 import { ContextAwareHelpWidget } from '../../../support/components/ContextAwareHelpWidget'
 import { CancelOrderModal } from './components/CancelOrderModal'
@@ -12,6 +15,7 @@ import { useOrderDetail } from './hooks/useOrderDetail'
 import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnapshotCard'
 import './OrderDetail.css'
 import { orderDetailPageMessages } from './OrderDetailPage.messages'
+import { CustomerFinancePanel } from '../../../finance/CustomerFinancePanel'
 
 /** Customer order detail backed by `GET /api/orders/{id}`. */
 export function OrderDetailPage({ orderId }: { orderId: string }) {
@@ -21,7 +25,13 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
 
   if (detail.loading && !order) return <LoadingState />
   if (!order) {
-    return <ErrorState title={t.errorTitle} error={detail.error} onRetry={detail.reload} />
+    return (
+      <ErrorState
+        title={t.errorTitle}
+        error={detail.error}
+        onRetry={detail.reload}
+      />
+    )
   }
 
   return (
@@ -32,7 +42,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       <div className="od-grid">
         <div className="od-stack">
           <OrderInfoCard order={order} />
-          <ChecklistSnapshotCard items={order.checklistItems} snapshotAt={order.checklistSnapshotAt} />
+          <ChecklistSnapshotCard
+            items={order.checklistItems}
+            snapshotAt={order.checklistSnapshotAt}
+          />
+          <CustomerFinancePanel orderId={order.id} />
           <DeliverablesCard order={order} />
         </div>
         <div className="od-stack">

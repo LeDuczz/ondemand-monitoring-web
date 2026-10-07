@@ -3,7 +3,9 @@ import { defineMessages } from '../../../../shared/i18n'
 export const checklistMessages = defineMessages({
   vi: {
     title: 'Nội dung giám sát',
-    hint: 'Chọn, chỉnh sửa hoặc bổ sung nội dung cho yêu cầu này. Đổi dịch vụ sẽ đặt lại danh sách; nội dung được chốt khi gửi yêu cầu.',
+    hint: 'Danh sách mặc định của dịch vụ được hiển thị bên dưới. Bạn có thể chỉnh sửa, bỏ mục không cần thiết hoặc thêm nội dung riêng; danh sách được chốt khi gửi yêu cầu.',
+    pricingNotice:
+      'Thay đổi danh sách này có thể làm thay đổi chi phí. Manager sẽ review từng nội dung và gửi báo giá cuối cùng để bạn xác nhận.',
     choose: 'Chọn dịch vụ để xem nội dung giám sát.',
     loading: 'Đang tải nội dung giám sát…',
     empty:
@@ -27,9 +29,12 @@ export const checklistMessages = defineMessages({
     showMore: (n: number) => `Xem thêm ${n} nội dung`,
     showLess: 'Thu gọn',
     remove: 'Xóa nội dung bổ sung',
+    removeDefault: 'Bỏ khỏi yêu cầu',
+    restoreDefault: 'Thêm lại',
     select: (n: number) => `Chọn nội dung ${n}`,
     content: (n: number) => `Nội dung giám sát ${n}`,
     custom: 'Bổ sung của bạn',
+    defaultItem: 'Mặc định của dịch vụ',
     count: (n: number) => `${n}/100 nội dung được chọn`,
     length: 'Mỗi nội dung cần từ 1 đến 500 ký tự sau khi bỏ khoảng trắng thừa.',
     duplicate: 'Các nội dung được chọn không được trùng nhau.',
@@ -55,7 +60,9 @@ export const checklistMessages = defineMessages({
   },
   en: {
     title: 'Monitoring requirements',
-    hint: 'Select, edit or add requirements for this request. Changing service resets this list; requirements are locked when submitted.',
+    hint: 'The service defaults are listed below. You can edit them, remove anything you do not need, or add your own; the list is locked when submitted.',
+    pricingNotice:
+      'Changing this list may change the cost. A manager will review each requirement and send the final quote for your confirmation.',
     choose: 'Select a service to view monitoring requirements.',
     loading: 'Loading monitoring requirements…',
     empty:
@@ -79,9 +86,12 @@ export const checklistMessages = defineMessages({
     showMore: (n: number) => `Show ${n} more`,
     showLess: 'Show less',
     remove: 'Remove custom requirement',
+    removeDefault: 'Remove from request',
+    restoreDefault: 'Add back',
     select: (n: number) => `Select requirement ${n}`,
     content: (n: number) => `Monitoring requirement ${n}`,
     custom: 'Your addition',
+    defaultItem: 'Service default',
     count: (n: number) => `${n}/100 requirements selected`,
     length:
       'Each requirement must contain 1–500 characters after whitespace normalization.',

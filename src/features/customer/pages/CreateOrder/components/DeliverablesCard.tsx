@@ -15,9 +15,19 @@ type Props = {
   update: UpdateField
   deliverables: ServiceDeliverableOption[]
   loading: boolean
+  error?: unknown
+  onRetry: () => void
 }
 
-export function DeliverablesCard({ form, errors, update, deliverables, loading }: Props) {
+export function DeliverablesCard({
+  form,
+  errors,
+  update,
+  deliverables,
+  loading,
+  error,
+  onRetry,
+}: Props) {
   const { t, lang } = useI18n(deliverablesCardMessages)
   return (
     <Card title={t.cardTitle}>
@@ -27,25 +37,43 @@ export function DeliverablesCard({ form, errors, update, deliverables, loading }
           id="co-deliv"
           className="co-input"
           value={form.deliverableTypeId}
+          disabled={loading || Boolean(error)}
           onChange={(e) => update('deliverableTypeId', e.target.value)}
         >
           <option value="">{t.selectDeliverable}</option>
           {deliverables.map((item) => (
             <option key={item.id} value={item.deliverableTypeId}>
-              {localizeDeliverableName(item.deliverableTypeName, lang) || item.deliverableTypeId}
+              {localizeDeliverableName(item.deliverableTypeName, lang) ||
+                item.deliverableTypeId}
             </option>
           ))}
         </select>
       </FormField>
       {loading && <p className="co-hint">{t.loading}</p>}
-      {!loading && deliverables.length === 0 && <p className="co-hint">{t.empty}</p>}
+      {!loading && error ? (
+        <div className="co-notice is-danger" role="alert">
+          <p>{t.loadFailed}</p>
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onRetry}
+          >
+            {t.retry}
+          </button>
+        </div>
+      ) : null}
+      {!loading && !error && deliverables.length === 0 ? (
+        <p className="co-hint">{t.empty}</p>
+      ) : null}
       <div className="co-two co-mt">
         <FormField id="co-media" label={t.media}>
           <select
             id="co-media"
             className="co-input"
             value={form.mediaType}
-            onChange={(e) => update('mediaType', e.target.value as FormState['mediaType'])}
+            onChange={(e) =>
+              update('mediaType', e.target.value as FormState['mediaType'])
+            }
           >
             <option value="IMAGE">{t.photo}</option>
             <option value="VIDEO">{t.video}</option>

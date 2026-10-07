@@ -3,6 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const servicesTableMessages = defineMessages({
   vi: {
     service: 'Dịch vụ',
+    basePrice: 'Đơn giá',
     status: 'Trạng thái',
     updated: 'Cập nhật',
     actions: 'Thao tác',
@@ -14,6 +15,7 @@ export const servicesTableMessages = defineMessages({
   },
   en: {
     service: 'Service',
+    basePrice: 'Price',
     status: 'Status',
     updated: 'Updated',
     actions: 'Actions',

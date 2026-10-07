@@ -152,10 +152,44 @@ describe('CreateOrderPage wizard', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }),
     )
-    expect((await screen.findAllByText(/3\.200\.000/)).length).toBe(2)
+    await waitFor(() =>
+      expect(screen.getAllByText(/3\.200\.000/).length).toBeGreaterThanOrEqual(
+        3,
+      ),
+    )
     fireEvent.click(screen.getByLabelText(/AI phân tích hình ảnh/))
     expect(await screen.findByText(/^\+.*500\.000/)).toBeInTheDocument()
     expect(await screen.findByText(/3\.700\.000/)).toBeInTheDocument()
+  })
+
+  it('shows a retryable error when deliverable types cannot be loaded', async () => {
+    vi.spyOn(customerApi, 'listServiceDeliverables')
+      .mockRejectedValueOnce(new Error('network failed'))
+      .mockResolvedValueOnce([
+        {
+          id: 'sd-progress',
+          serviceId: 'svc-2',
+          serviceName: 'Giám sát Tiến độ Xây dựng',
+          deliverableTypeId: 'dt-progress',
+          deliverableTypeName: 'Báo cáo Tiến độ',
+        },
+      ])
+    render(<CreateOrderPage />)
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+
+    expect(
+      await screen.findByText(
+        'Không thể tải loại kết quả bàn giao. Vui lòng thử lại.',
+      ),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
+      ).toBe('dt-progress'),
+    )
   })
 
   it('walks through all steps and submits via the confirm dialog', async () => {

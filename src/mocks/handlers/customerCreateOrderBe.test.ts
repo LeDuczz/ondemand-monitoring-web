@@ -35,14 +35,14 @@ describe('/api/services/pricing-estimate (BE shape)', () => {
   it('is not swallowed by GET /api/services/:id', async () => {
     const { status, payload } = await call('GET', '/api/services/pricing-estimate?serviceId=svc-1')
     expect(status).toBe(200)
-    expect(payload.data).toMatchObject({ serviceId: 'svc-1', servicePrice: 1_500_000, totalPrice: 1_500_000 })
+    expect(payload.data).toMatchObject({ serviceId: 'svc-1', servicePrice: 4_000_000, totalPrice: 4_000_000 })
     expect(payload.data.additionalRequirements).toEqual([])
   })
 
   it('adds the AI add-on to the total', async () => {
     const { payload } = await call('GET', '/api/services/pricing-estimate?serviceId=svc-1&aiImageAnalysis=true')
     expect(payload.data.additionalRequirements[0]).toMatchObject({ type: 'AI_IMAGE_ANALYSIS', additionalPrice: 500_000 })
-    expect(payload.data.totalPrice).toBe(2_000_000)
+    expect(payload.data.totalPrice).toBe(4_500_000)
   })
 
   it('requires serviceId', async () => {

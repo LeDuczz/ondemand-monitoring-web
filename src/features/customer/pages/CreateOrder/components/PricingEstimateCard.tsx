@@ -13,7 +13,12 @@ type Props = {
 }
 
 /** Pricing estimate from `GET /api/services/pricing-estimate`. */
-export function PricingEstimateCard({ estimate, loading, hasService, aiAnalysisRequested }: Props) {
+export function PricingEstimateCard({
+  estimate,
+  loading,
+  hasService,
+  aiAnalysisRequested,
+}: Props) {
   const { t, locale } = useI18n(pricingEstimateMessages)
 
   let body
@@ -30,13 +35,16 @@ export function PricingEstimateCard({ estimate, loading, hasService, aiAnalysisR
         <div className="co-money-row">
           <span>{t.aiAnalysis}</span>
           <strong>
-            {aiAnalysisRequested ? `+${formatMoney(aiAddonPrice(estimate), locale)}` : formatMoney(0, locale)}
+            {aiAnalysisRequested
+              ? `+${formatMoney(aiAddonPrice(estimate), locale)}`
+              : formatMoney(0, locale)}
           </strong>
         </div>
         <div className="co-money-row co-money-total">
           <span>{t.total}</span>
           <span>{formatMoney(estimate.totalPrice, locale)}</span>
         </div>
+        <p className="co-estimate-notice">{t.estimateNotice}</p>
       </div>
     )
   }

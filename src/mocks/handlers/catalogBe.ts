@@ -12,6 +12,12 @@ import { created, fail, ok, registerMockRoutes } from '../mockServer'
 
 const TIME_CODES = ['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT']
 
+const servicePrices = [
+  4_000_000, 3_200_000, 2_600_000, 2_800_000, 4_500_000,
+  4_800_000, 6_500_000, 3_800_000, 3_000_000, 4_200_000,
+  3_600_000, 3_500_000, 5_000_000, 4_500_000, 2_400_000,
+]
+
 const services = createCollection<ServiceResponse[]>([
   {
     id: 'svc-1',
@@ -148,7 +154,10 @@ const services = createCollection<ServiceResponse[]>([
     createdAt: '2026-01-24T08:00:00Z',
     updatedAt: '2026-02-01T08:00:00Z',
   },
-])
+].map((service, index) => ({
+  ...service,
+  basePrice: servicePrices[index],
+})))
 
 const times = createCollection<PreferredTimeResponse[]>([
   {
@@ -177,7 +186,12 @@ const times = createCollection<PreferredTimeResponse[]>([
 let seq = 100
 const notFound = (what: string) => fail(404, 'NOT_FOUND', `${what} not found`)
 
-type ServiceBody = { name?: string; description?: string; isActive?: boolean }
+type ServiceBody = {
+  name?: string
+  description?: string
+  basePrice?: number
+  isActive?: boolean
+}
 type TimeBody = {
   code?: string
   name?: string
@@ -186,11 +200,14 @@ type TimeBody = {
 }
 
 function validateService(b: ServiceBody) {
-  return b.name?.trim()
-    ? null
-    : fail(400, 'VALIDATION_ERROR', 'Validation failed', {
-        name: 'Name is required',
-      })
+  const errors: Record<string, string> = {}
+  if (!b.name?.trim()) errors.name = 'Name is required'
+  if (!Number.isSafeInteger(b.basePrice) || Number(b.basePrice) <= 0) {
+    errors.basePrice = 'Base price must be a positive whole VND amount'
+  }
+  return Object.keys(errors).length
+    ? fail(400, 'VALIDATION_ERROR', 'Validation failed', errors)
+    : null
 }
 
 function validateTime(b: TimeBody, requireAll: boolean) {
@@ -265,6 +282,7 @@ registerMockRoutes([
         id: `svc-${++seq}`,
         name: b.name!.trim(),
         description: b.description ?? '',
+        basePrice: b.basePrice!,
         isActive: b.isActive ?? true,
         createdAt: now,
         updatedAt: now,
@@ -292,6 +310,7 @@ registerMockRoutes([
       if (invalid) return invalid
       svc.name = b.name!.trim()
       svc.description = b.description ?? ''
+      svc.basePrice = b.basePrice!
       svc.isActive = b.isActive ?? svc.isActive
       svc.updatedAt = new Date().toISOString()
       return ok(svc)

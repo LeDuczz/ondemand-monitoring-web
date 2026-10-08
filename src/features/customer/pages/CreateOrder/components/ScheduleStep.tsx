@@ -65,7 +65,7 @@ export function ScheduleStep(p: Props) {
           />
           <ScheduleOptionsCard form={form} errors={p.errors} update={p.update} />
         </div>
-        <aside className="co-stack co-summary">
+        <aside className="co-stack co-summary is-tall">
           <Card title={t.summaryTitle}>
             <dl className="co-sum-list">
               <div className="co-sum-item">

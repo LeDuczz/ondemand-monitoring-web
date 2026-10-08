@@ -1,8 +1,10 @@
 import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import { Icon } from '../../../../shared/components/Icon'
 import { PageHeader, TableCard } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
 import { customerHref } from '../../routes'
 import { OrdersEmpty } from './components/OrdersEmpty'
+import { OrdersStats } from './components/OrdersStats'
 import { OrdersPager } from './components/OrdersPager'
 import { OrdersTable } from './components/OrdersTable'
 import { OrdersToolbar } from './components/OrdersToolbar'
@@ -23,14 +25,17 @@ export function OrdersPage() {
         title={t.title}
         subtitle={t.subtitle}
         actions={
-          <a className="odm-btn odm-btn-p" href={customerHref({ screen: 'createOrder' })}>
+          <a className="odm-btn odm-btn-p ord-btn" href={customerHref({ screen: 'createOrder' })}>
+            <Icon name="plus" width={16} height={16} aria-hidden="true" />
             {t.createOrder}
           </a>
         }
       />
+      {list.stats && <OrdersStats stats={list.stats} />}
       <OrdersToolbar
         status={list.status}
         query={list.query}
+        stats={list.stats}
         onStatus={list.setStatus}
         onQuery={list.setQuery}
       />

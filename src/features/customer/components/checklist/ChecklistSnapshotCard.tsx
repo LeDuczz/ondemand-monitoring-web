@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
@@ -7,14 +9,17 @@ import './Checklist.css'
 export function ChecklistSnapshotCard({
   items = [],
   snapshotAt,
+  title,
 }: {
   items?: ChecklistSnapshot[]
   snapshotAt?: string | null
+  /** Optional heading node (e.g. with an icon chip); defaults to the plain title. */
+  title?: ReactNode
 }) {
   const { t } = useI18n(checklistMessages)
   return (
     <div role="region" aria-label={t.title}>
-      <Card className="checklist-card" title={t.title}>
+      <Card className="checklist-card" title={title ?? t.title}>
         <p className="checklist-lock">{t.locked}</p>
         <p className="checklist-hint">{t.history}</p>
         {items.length ? (

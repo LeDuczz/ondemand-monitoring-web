@@ -1,4 +1,6 @@
+import { Icon } from '../../../../../shared/components/Icon'
 import { useLanguage, useI18n } from '../../../../../shared/i18n'
+import type { OrderStats } from '../../../lib/orders/types'
 import type { OrderStatus } from '../../../../../shared/types/domain'
 import { getOrderStatusMeta } from '../../../lib/orderStatus'
 import { ordersToolbarMessages } from './OrdersToolbar.messages'
@@ -13,22 +15,33 @@ export const ORDER_FILTERS: readonly OrderStatus[] = [
   'CANCELLED',
 ]
 
+const STAT_KEY = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  IN_PROGRESS: 'inProgress',
+  COMPLETED: 'completed',
+  REJECTED: 'rejected',
+  CANCELLED: 'cancelled',
+} as const satisfies Partial<Record<OrderStatus, keyof OrderStats>>
+
 type Props = {
   status: OrderStatus | ''
   query: string
+  stats?: OrderStats
   onStatus: (status: OrderStatus | '') => void
   onQuery: (query: string) => void
 }
 
 /** Status chips (server-side filter) and a client-side search box. */
-export function OrdersToolbar({ status, query, onStatus, onQuery }: Props) {
+export function OrdersToolbar({ status, query, stats, onStatus, onQuery }: Props) {
   const { t } = useI18n(ordersToolbarMessages)
   const { lang } = useLanguage()
-  const chips: Array<{ value: OrderStatus | ''; label: string }> = [
-    { value: '', label: t.all },
+  const chips: Array<{ value: OrderStatus | ''; label: string; count?: number }> = [
+    { value: '', label: t.all, count: stats?.total },
     ...ORDER_FILTERS.map((value) => ({
       value,
       label: getOrderStatusMeta(value, lang).label,
+      count: stats?.[STAT_KEY[value as keyof typeof STAT_KEY]],
     })),
   ]
 
@@ -44,17 +57,25 @@ export function OrdersToolbar({ status, query, onStatus, onQuery }: Props) {
             onClick={() => onStatus(chip.value)}
           >
             {chip.label}
+            {chip.count !== undefined && (
+              <span className="ord-chip-count" aria-hidden="true">
+                {chip.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
-      <input
-        type="search"
-        className="ord-search"
-        value={query}
-        aria-label={t.searchLabel}
-        placeholder={t.searchPlaceholder}
-        onChange={(e) => onQuery(e.target.value)}
-      />
+      <div className="ord-search-wrap">
+        <Icon className="ord-search-icon" name="search" width={16} height={16} aria-hidden="true" />
+        <input
+          type="search"
+          className="ord-search"
+          value={query}
+          aria-label={t.searchLabel}
+          placeholder={t.searchPlaceholder}
+          onChange={(e) => onQuery(e.target.value)}
+        />
+      </div>
     </div>
   )
 }

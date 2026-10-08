@@ -13,6 +13,8 @@ type ContextAwareHelpWidgetProps = {
     scheduledTime?: string
     description?: string
     orderId?: string
+    /** Localized status text shown in the hint; `status` stays the logic value. */
+    statusLabel?: string
 }
 
 const ORDER_QUESTIONS: ArticleId[] = ['ord-1', 'ord-3', 'ord-4']
@@ -26,6 +28,7 @@ export function ContextAwareHelpWidget({
     id,
     status = 'PENDING_APPROVAL',
     orderId,
+    statusLabel,
 }: ContextAwareHelpWidgetProps) {
     const { t, lang } = useI18n(contextAwareHelpWidgetMessages)
     const [showCreateModal, setShowCreateModal] = useState(false)
@@ -56,7 +59,7 @@ export function ContextAwareHelpWidget({
 
             {showBanner && <div className="hw-banner">{t.preflightFailedBanner}</div>}
 
-            <div className="hw-hint">{t.suggestedFor(status)}</div>
+            <div className="hw-hint">{t.suggestedFor(statusLabel ?? status)}</div>
 
             <ul className="hw-list">
                 {suggestedQuestions.map((item) => {

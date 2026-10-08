@@ -6,6 +6,7 @@ import type {
   ChecklistAssessmentStatus,
   MissionChecklistExecution,
   MissionChecklistResponse,
+  EvidenceCandidate,
 } from '../types/checklistExecution'
 import type { MissionResultApprovalStatus } from '../types/mission'
 import './MonitoringChecklistSection.css'
@@ -91,7 +92,8 @@ export function MonitoringChecklistSection({
   refresh,
   canAttach = false,
   canDetach = false,
-  reviewMedia,
+  loadEvidenceCandidates,
+  attachEvidenceCandidate,
   compact = false,
 }: {
   missionId: string
@@ -105,7 +107,11 @@ export function MonitoringChecklistSection({
   refresh: () => void
   canAttach?: boolean
   canDetach?: boolean
-  reviewMedia?: (mediaId: string, reject: boolean) => Promise<unknown>
+  loadEvidenceCandidates?: (page: number) => Promise<EvidenceCandidate[]>
+  attachEvidenceCandidate?: (
+    media: EvidenceCandidate,
+    item: MissionChecklistExecution,
+  ) => Promise<unknown>
   /** Dense acceptance panel: one line per item, only the active item expands. */
   compact?: boolean
 }) {
@@ -233,7 +239,8 @@ export function MonitoringChecklistSection({
                         canAttach={canAttach && resultKnown && !locked && !loading && !error}
                         canDetach={canDetach && resultKnown && !locked && !loading && !error}
                         refresh={refresh}
-                        reviewMedia={reviewMedia}
+                        loadCandidates={loadEvidenceCandidates}
+                        attachCandidate={attachEvidenceCandidate}
                         compact
                       />
                       {item.updatedAt && (
@@ -316,7 +323,7 @@ export function MonitoringChecklistSection({
               {
                 {
                   DRAFT: 'Nháp — chưa gửi manager',
-                  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+                  PENDING_MANAGER_APPROVAL: 'Đã gửi manager',
                   APPROVED: 'Đã duyệt',
                   REJECTED:
                     'Bị từ chối — có thể chỉnh sửa và gửi lại khi có quyền',
@@ -362,7 +369,7 @@ export function MonitoringChecklistSection({
               rejected={resultStatus === 'REJECTED'}
               refresh={refresh}
             />
-            <ChecklistEvidencePanel missionId={missionId} item={item} canAttach={canAttach && resultKnown && !locked && !loading && !error} canDetach={canDetach && resultKnown && !locked && !loading && !error} refresh={refresh} reviewMedia={reviewMedia} />
+            <ChecklistEvidencePanel missionId={missionId} item={item} canAttach={canAttach && resultKnown && !locked && !loading && !error} canDetach={canDetach && resultKnown && !locked && !loading && !error} refresh={refresh} loadCandidates={loadEvidenceCandidates} attachCandidate={attachEvidenceCandidate} />
             </li>
           ))}
         </ol>

@@ -85,6 +85,7 @@ export type OrderCreateResponse = {
   orderCode?: string | null
   customerId: string
   customerName?: string
+  customerEmail?: string | null
   title?: string
   serviceId?: string
   serviceName?: string

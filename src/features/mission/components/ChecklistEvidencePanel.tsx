@@ -14,7 +14,7 @@ export const evidenceReason: Record<EvidenceBlockingReason, string> = {
   EVIDENCE_TYPE_NOT_ELIGIBLE: 'Loại media không được hỗ trợ.',
   MEDIA_REJECTED: 'Media đã bị từ chối.',
   MEDIA_NOT_VALIDATED: 'Media chưa xác thực thành công.',
-  MEDIA_APPROVAL_REQUIRED: 'Duyệt media bắt buộc trước khi duyệt kết quả.',
+  MEDIA_APPROVAL_REQUIRED: 'Media chưa hoàn tất xác thực.',
   INSUFFICIENT_EVIDENCE: 'Chưa đủ bằng chứng hợp lệ.',
   EXECUTION_NOT_TERMINAL: 'Mục checklist chưa kết thúc.',
   UNABLE_REASON_REQUIRED: 'Cần lý do không thể xác minh.',
@@ -26,7 +26,7 @@ const sourceLabel: Record<string, string> = {
   MANUAL_UPLOAD: 'Upload thủ công',
 }
 const mediaStatusLabel: Record<string, string> = {
-  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+  PENDING_MANAGER_APPROVAL: 'Đã xác thực',
   AVAILABLE: 'Đã duyệt',
   VALIDATING: 'Đang xác thực',
   UPLOADING: 'Đang upload',
@@ -39,7 +39,8 @@ export function ChecklistEvidencePanel({
   canAttach,
   canDetach,
   refresh,
-  reviewMedia,
+  loadCandidates,
+  attachCandidate,
   compact = false,
 }: {
   missionId: string
@@ -47,7 +48,11 @@ export function ChecklistEvidencePanel({
   canAttach: boolean
   canDetach: boolean
   refresh: () => void
-  reviewMedia?: (mediaId: string, reject: boolean) => Promise<unknown>
+  loadCandidates?: (page: number) => Promise<EvidenceCandidate[]>
+  attachCandidate?: (
+    media: EvidenceCandidate,
+    item: MissionChecklistExecution,
+  ) => Promise<unknown>
   /** Flat list layout for narrow side panels: no nested cards, one status per row. */
   compact?: boolean
 }) {
@@ -78,7 +83,11 @@ export function ChecklistEvidencePanel({
     setBusy(true)
     setError(null)
     try {
-      setCandidates(await checklistEvidenceApi.candidates(missionId, nextPage))
+      setCandidates(
+        await (loadCandidates
+          ? loadCandidates(nextPage)
+          : checklistEvidenceApi.candidates(missionId, nextPage)),
+      )
       setPage(nextPage)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không tải được media.')
@@ -96,11 +105,6 @@ export function ChecklistEvidencePanel({
       : (item.minimumEvidenceCount ?? 0)
   const have = item.eligibleEvidenceCount ?? 0
   const links = item.evidence ?? []
-  const needsApproval = links.some(
-    (link) =>
-      !link.eligibleForFinalApproval &&
-      link.mediaStatus === 'PENDING_MANAGER_APPROVAL',
-  )
   const compactBody = (
     <>
       <div className="ce-head">
@@ -112,14 +116,13 @@ export function ChecklistEvidencePanel({
       {links.length > 0 && (
         <ul className="ce-list">
           {links.map((link) => {
-            const pending = link.mediaStatus === 'PENDING_MANAGER_APPROVAL'
             const status =
               !link.eligibleForOperationalReadiness && link.ineligibilityReason
                 ? evidenceReason[link.ineligibilityReason]
                 : (mediaStatusLabel[link.mediaStatus ?? ''] ??
                   link.mediaStatus ??
                   'Legacy')
-            const hasMenu = canDetach || (reviewMedia && pending)
+            const hasMenu = canDetach
             return (
               <li key={link.evidenceId} className="ce-row">
                 <div className="ce-thumb">
@@ -183,28 +186,6 @@ export function ChecklistEvidencePanel({
                             Gỡ bằng chứng
                           </button>
                         )}
-                        {reviewMedia && pending && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                void act(() => reviewMedia(link.mediaId, false))
-                              }
-                            >
-                              Duyệt media
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                void act(() => reviewMedia(link.mediaId, true))
-                              }
-                            >
-                              Từ chối media
-                            </button>
-                          </>
-                        )}
                       </div>
                     </details>
                   )}
@@ -216,11 +197,6 @@ export function ChecklistEvidencePanel({
       )}
       {required > 0 && have >= required && (
         <p className="ce-ok">✓ Đã đủ bằng chứng</p>
-      )}
-      {needsApproval && (
-        <p className="ce-hint">
-          ⓘ Media phải được duyệt trước khi hoàn tất mục.
-        </p>
       )}
       {canAttach && (
         <button
@@ -294,12 +270,6 @@ export function ChecklistEvidencePanel({
                     ? evidenceReason[link.ineligibilityReason]
                     : 'Chưa hợp lệ'}
               </p>
-              {!link.eligibleForFinalApproval &&
-                link.mediaStatus === 'PENDING_MANAGER_APPROVAL' && (
-                  <p className="checklist-evidence-note">
-                    {evidenceReason.MEDIA_APPROVAL_REQUIRED}
-                  </p>
-                )}
               <div className="checklist-evidence-actions">
                 {canDetach && (
                   <button
@@ -320,31 +290,6 @@ export function ChecklistEvidencePanel({
                     Gỡ bằng chứng
                   </button>
                 )}
-                {reviewMedia &&
-                  link.mediaStatus === 'PENDING_MANAGER_APPROVAL' && (
-                    <>
-                      <button
-                        type="button"
-                        className="odm-btn"
-                        disabled={busy}
-                        onClick={() =>
-                          void act(() => reviewMedia(link.mediaId, false))
-                        }
-                      >
-                        Duyệt media
-                      </button>
-                      <button
-                        type="button"
-                        className="odm-btn"
-                        disabled={busy}
-                        onClick={() =>
-                          void act(() => reviewMedia(link.mediaId, true))
-                        }
-                      >
-                        Từ chối media
-                      </button>
-                    </>
-                  )}
               </div>
             </div>
           </article>
@@ -458,12 +403,16 @@ export function ChecklistEvidencePanel({
                         }
                         onClick={() =>
                           void act(async () => {
-                            await checklistEvidenceApi.attach(
-                              missionId,
-                              item.id,
-                              media.mediaId,
-                              item.version,
-                            )
+                            if (attachCandidate) {
+                              await attachCandidate(media, item)
+                            } else {
+                              await checklistEvidenceApi.attach(
+                                missionId,
+                                item.id,
+                                media.mediaId,
+                                item.version,
+                              )
+                            }
                             setCandidates(null)
                           })
                         }

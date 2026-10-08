@@ -32,22 +32,11 @@ const SERVICES: Array<{ ids: string[]; names: Names }> = [
     },
   },
   // Real BE services (ServiceCatalogSeedDataInitializer.seedServices). BE ids are
-  // random UUIDs, so these are matched by normalized name only.
-  { ids: [], names: { vi: 'Giám sát Kho bãi / Logistics', en: 'Warehouse / logistics monitoring' } },
-  { ids: [], names: { vi: 'Giám sát Đập nước / Hồ chứa', en: 'Dam / reservoir monitoring' } },
-  { ids: [], names: { vi: 'Giám sát Rừng / Điểm nhiệt', en: 'Forest / thermal hotspot monitoring' } },
-  { ids: [], names: { vi: 'Giám sát Nông nghiệp / Cây trồng', en: 'Agricultural / crop monitoring' } },
-  { ids: [], names: { vi: 'Kiểm tra Sân bay / Đường băng', en: 'Airport / runway inspection' } },
-  { ids: [], names: { vi: 'Giám sát Kho công nghiệp / Nhà xưởng', en: 'Industrial warehouse / factory monitoring' } },
-  { ids: [], names: { vi: 'Giám sát Mặt nước / Dòng chảy', en: 'Water surface / flow monitoring' } },
-  { ids: [], names: { vi: 'Đo nhiệt độ / Điểm nhiệt', en: 'Temperature / thermal hotspot measurement' } },
-  { ids: [], names: { vi: 'Đo nhiệt độ / Áp suất', en: 'Temperature / pressure measurement' } },
-  { ids: [], names: { vi: 'Kiểm tra Công trình thủy lợi', en: 'Irrigation structure inspection' } },
-  { ids: [], names: { vi: 'Giám sát Tiến độ Xây dựng', en: 'Construction progress monitoring' } },
-  { ids: [], names: { vi: 'Giám sát Sạt lở / Ngập lụt', en: 'Landslide / flood monitoring' } },
-  { ids: [], names: { vi: 'Kiểm tra Tháp viễn thông', en: 'Telecom tower inspection' } },
-  { ids: [], names: { vi: 'Giám sát Mục tiêu xa', en: 'Remote target monitoring' } },
-  { ids: [], names: { vi: 'Giám sát Bãi đáp / Trạm drone', en: 'Landing pad / drone station monitoring' } },
+  // random UUIDs, so these are matched by normalized name too.
+  { ids: ['svc-construction'], names: { vi: 'Giám sát công trình', en: 'Construction monitoring' } },
+  { ids: ['svc-factory'], names: { vi: 'Kiểm tra nhà xưởng', en: 'Factory inspection' } },
+  { ids: ['svc-area'], names: { vi: 'Giám sát khu vực', en: 'Area monitoring' } },
+  { ids: ['svc-forest'], names: { vi: 'Giám sát rừng', en: 'Forest monitoring' } },
 ]
 
 const BY_ID = new Map<string, Names>()

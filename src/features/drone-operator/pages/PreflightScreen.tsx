@@ -626,10 +626,12 @@ export function PreflightChecklistPanel({
     (item) => itemStates[item.key]?.result === 'fail',
   )
   const runtimeItemsReady = nOk === nTotal && failedItems.length === 0
+  const weatherReady =
+    weatherStatus?.safeToFly === true || persistedWeatherPassed
   const isReady =
     runtimeItemsReady &&
-    persistedPreflightStatus === 'PASSED' &&
-    (weatherStatus?.safeToFly === true || persistedWeatherPassed)
+    weatherReady &&
+    persistedPreflightStatus === 'PASSED'
   const progress = runtimeStatus?.progress ?? 0
   const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
   const canContinueToHandover = isReady
@@ -685,6 +687,36 @@ export function PreflightChecklistPanel({
       syncingPersistedItemsRef.current = false
     }
   }
+
+  useEffect(() => {
+    if (!persistedPreflightId || !weatherStatus) return
+
+    const itemStatus: PersistedPreflightItemStatus = weatherStatus.safeToFly
+      ? 'PASSED'
+      : 'FAILED'
+    const syncKey = `WEATHER:${itemStatus}:${weatherStatus.summary}`
+    if (syncedPersistedItemsRef.current.WEATHER === syncKey) return
+
+    let alive = true
+    syncedPersistedItemsRef.current.WEATHER = syncKey
+
+    updatePersistedPreflightItem(persistedPreflightId, 'WEATHER', {
+      status: itemStatus,
+      message: weatherStatus.summary,
+    })
+      .then((persisted) => {
+        if (!alive || persisted.id !== persistedPreflightId) return
+        setPersistedPreflightStatus(persisted.status)
+        setPersistedWeatherPassed(itemStatus === 'PASSED')
+      })
+      .catch(() => {
+        if (alive) delete syncedPersistedItemsRef.current.WEATHER
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [persistedPreflightId, weatherStatus])
 
   async function handleTriggerCheck() {
     setTriggering(true)

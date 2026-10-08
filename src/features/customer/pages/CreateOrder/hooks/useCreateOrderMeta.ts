@@ -55,6 +55,9 @@ export function useCreateOrderMeta(
     if (!base.data) return
     setForm((current) => ({
       ...current,
+      serviceId: base.data!.services.some((service) => service.id === current.serviceId)
+        ? current.serviceId
+        : base.data?.services[0]?.id || '',
       preferredTimeId: current.preferredTimeId || base.data?.times[0]?.id || '',
     }))
   }, [base.data, setForm])

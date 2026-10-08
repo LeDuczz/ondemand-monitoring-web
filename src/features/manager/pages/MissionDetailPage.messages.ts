@@ -4,6 +4,7 @@ export const missionDetailPageMessages = defineMessages({
   vi: {
     tabs: {
       overview: 'Bản đồ & Media',
+      order: 'Thông tin đơn hàng',
       plan: 'Kế hoạch bay',
       checks: 'Kết quả check',
     },
@@ -79,6 +80,7 @@ export const missionDetailPageMessages = defineMessages({
   en: {
     tabs: {
       overview: 'Map & Media',
+      order: 'Order information',
       plan: 'Flight plan',
       checks: 'Check results',
     },

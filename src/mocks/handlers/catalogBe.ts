@@ -12,152 +12,48 @@ import { created, fail, ok, registerMockRoutes } from '../mockServer'
 
 const TIME_CODES = ['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT']
 
-const servicePrices = [
-  4_000_000, 3_200_000, 2_600_000, 2_800_000, 4_500_000,
-  4_800_000, 6_500_000, 3_800_000, 3_000_000, 4_200_000,
-  3_600_000, 3_500_000, 5_000_000, 4_500_000, 2_400_000,
-]
-
 const services = createCollection<ServiceResponse[]>([
   {
-    id: 'svc-1',
-    name: 'Kiểm tra Tháp viễn thông',
+    id: 'svc-construction',
+    name: 'Giám sát công trình',
     description:
-      'Kiểm tra tháp viễn thông, anten, kết cấu cao, thiết bị gắn trên tháp và khu vực xung quanh từ góc nhìn an toàn.',
+      'Chụp ảnh và video hiện trạng công trình, hỗ trợ theo dõi và đối chiếu tiến độ thi công theo từng thời điểm.',
+    basePrice: 3_500_000,
     isActive: true,
     createdAt: '2026-01-10T08:00:00Z',
     updatedAt: '2026-02-01T08:00:00Z',
   },
   {
-    id: 'svc-2',
-    name: 'Giám sát Tiến độ Xây dựng',
+    id: 'svc-factory',
+    name: 'Kiểm tra nhà xưởng',
     description:
-      'Theo dõi công trình xây dựng, công trường, tiến độ thi công và hiện trạng khu vực làm việc bằng ảnh/video.',
+      'Quan sát mái, bề mặt và các khu vực khó tiếp cận của nhà xưởng bằng hình ảnh và video từ drone.',
+    basePrice: 3_000_000,
     isActive: true,
     createdAt: '2026-01-11T08:00:00Z',
     updatedAt: '2026-02-01T08:00:00Z',
   },
   {
-    id: 'svc-3',
-    name: 'Giám sát Nông nghiệp / Cây trồng',
+    id: 'svc-area',
+    name: 'Giám sát khu vực',
     description:
-      'Giám sát khu canh tác, sức khỏe cây trồng, khu vực phát triển không đồng đều, dấu hiệu khô hạn và bất thường mùa vụ.',
-    isActive: false,
+      'Chụp ảnh và video tổng quan một khu vực theo vị trí và phạm vi giám sát do khách hàng yêu cầu.',
+    basePrice: 2_500_000,
+    isActive: true,
     createdAt: '2026-01-12T08:00:00Z',
     updatedAt: '2026-02-01T08:00:00Z',
   },
   {
-    id: 'svc-4',
-    name: 'Giám sát Kho bãi / Logistics',
+    id: 'svc-forest',
+    name: 'Giám sát rừng',
     description:
-      'Giám sát bãi logistics, container, khu bốc xếp, luồng xe ra vào và khu vực lưu trữ ngoài trời bằng drone.',
+      'Chụp ảnh và video khu vực rừng, ghi nhận hiện trạng và hỗ trợ quan sát các khu vực có dấu hiệu bất thường.',
+    basePrice: 4_000_000,
     isActive: true,
     createdAt: '2026-01-13T08:00:00Z',
     updatedAt: '2026-02-01T08:00:00Z',
   },
-  {
-    id: 'svc-5',
-    name: 'Giám sát Đập nước / Hồ chứa',
-    description:
-      'Giám sát khu vực đập nước, hồ chứa, cửa xả, thân đập và vùng thượng/hạ lưu; bàn giao ảnh/video hiện trạng và báo cáo kèm hình.',
-    isActive: true,
-    createdAt: '2026-01-14T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-6',
-    name: 'Giám sát Rừng / Điểm nhiệt',
-    description:
-      'Giám sát khu rừng, thảm thực vật, khu vực tìm kiếm và điểm nhiệt có nguy cơ cháy bằng ảnh/video và dữ liệu nhiệt.',
-    isActive: true,
-    createdAt: '2026-01-15T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-7',
-    name: 'Kiểm tra Sân bay / Đường băng',
-    description:
-      'Kiểm tra đường băng, sân đỗ, khu vực vận hành máy bay và vùng hạn chế để hỗ trợ giám sát an toàn.',
-    isActive: true,
-    createdAt: '2026-01-16T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-8',
-    name: 'Giám sát Kho công nghiệp / Nhà xưởng',
-    description:
-      'Giám sát kho công nghiệp, mái nhà, bồn chứa, sân bãi và tài sản ngoài trời bằng ảnh/video drone.',
-    isActive: true,
-    createdAt: '2026-01-17T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-9',
-    name: 'Giám sát Mặt nước / Dòng chảy',
-    description:
-      'Theo dõi mặt nước, dòng chảy và bờ sông/kênh trên bản đồ mô phỏng; bàn giao ảnh/video và báo cáo giám sát.',
-    isActive: true,
-    createdAt: '2026-01-18T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-10',
-    name: 'Đo nhiệt độ / Điểm nhiệt',
-    description:
-      'Đo nhiệt độ và ghi nhận ảnh nhiệt trong khu vực giám sát; bàn giao ảnh nhiệt và báo cáo phân tích nhiệt.',
-    isActive: true,
-    createdAt: '2026-01-19T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-11',
-    name: 'Đo nhiệt độ / Áp suất',
-    description:
-      'Theo dõi nhiệt độ và áp suất khí quyển theo khu vực bay, hỗ trợ đánh giá điều kiện môi trường và rủi ro vận hành device.',
-    isActive: true,
-    createdAt: '2026-01-20T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-12',
-    name: 'Kiểm tra Công trình thủy lợi',
-    description:
-      'Kiểm tra cầu, kè, cống, đường nội bộ, nhà điều hành và hạng mục kỹ thuật quanh khu vực đập/hồ bằng ảnh/video.',
-    isActive: true,
-    createdAt: '2026-01-21T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-13',
-    name: 'Giám sát Sạt lở / Ngập lụt',
-    description:
-      'Giám sát khu vực sạt lở, ngập lụt, tuyến đường bị chặn, dòng chảy bất thường và thay đổi địa hình sau mưa lũ.',
-    isActive: true,
-    createdAt: '2026-01-22T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-14',
-    name: 'Giám sát Mục tiêu xa',
-    description:
-      'Giám sát mục tiêu ở khoảng cách xa bằng waypoint, bay vòng quan sát, ghi nhận hiện trạng và kiểm tra khu vực khó tiếp cận.',
-    isActive: true,
-    createdAt: '2026-01-23T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-  {
-    id: 'svc-15',
-    name: 'Giám sát Bãi đáp / Trạm drone',
-    description:
-      'Giám sát bãi đáp, khu vực cất hạ cánh, điểm quay về, hành lang an toàn và trạng thái khu vực vận hành drone.',
-    isActive: true,
-    createdAt: '2026-01-24T08:00:00Z',
-    updatedAt: '2026-02-01T08:00:00Z',
-  },
-].map((service, index) => ({
-  ...service,
-  basePrice: servicePrices[index],
-})))
+])
 
 const times = createCollection<PreferredTimeResponse[]>([
   {

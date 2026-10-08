@@ -11,23 +11,15 @@ import { localizeServiceName, translatedServiceNames } from './serviceNames'
 // Vietnamese names seeded by the BE (ServiceCatalogSeedDataInitializer,
 // CategoryServiceDataInitializer). Ids are random UUIDs, so lookup is by name.
 const BE_SERVICES: Array<[string, string]> = [
-  ['Giám sát Kho bãi / Logistics', 'Warehouse / logistics monitoring'],
-  ['Giám sát Đập nước / Hồ chứa', 'Dam / reservoir monitoring'],
-  ['Giám sát Rừng / Điểm nhiệt', 'Forest / thermal hotspot monitoring'],
-  ['Giám sát Nông nghiệp / Cây trồng', 'Agricultural / crop monitoring'],
-  ['Kiểm tra Sân bay / Đường băng', 'Airport / runway inspection'],
-  ['Giám sát Kho công nghiệp / Nhà xưởng', 'Industrial warehouse / factory monitoring'],
-  ['Giám sát Mặt nước / Dòng chảy', 'Water surface / flow monitoring'],
-  ['Đo nhiệt độ / Điểm nhiệt', 'Temperature / thermal hotspot measurement'],
-  ['Đo nhiệt độ / Áp suất', 'Temperature / pressure measurement'],
-  ['Kiểm tra Công trình thủy lợi', 'Irrigation structure inspection'],
-  ['Giám sát Tiến độ Xây dựng', 'Construction progress monitoring'],
-  ['Giám sát Sạt lở / Ngập lụt', 'Landslide / flood monitoring'],
-  ['Kiểm tra Tháp viễn thông', 'Telecom tower inspection'],
-  ['Giám sát Mục tiêu xa', 'Remote target monitoring'],
-  ['Giám sát Bãi đáp / Trạm drone', 'Landing pad / drone station monitoring'],
+  ['Giám sát công trình', 'Construction monitoring'],
+  ['Kiểm tra nhà xưởng', 'Factory inspection'],
+  ['Giám sát khu vực', 'Area monitoring'],
+  ['Giám sát rừng', 'Forest monitoring'],
 ]
 const BE_DELIVERABLES: Array<[string, string]> = [
+  ['Ảnh chụp', 'Photos'],
+  ['Video', 'Video'],
+  ['Báo cáo kết quả', 'Result report'],
   ['Báo cáo Giám sát', 'Monitoring report'],
   ['Hình ảnh Kiểm tra', 'Inspection images'],
   ['Video Ghi hình', 'Recorded video'],
@@ -37,6 +29,9 @@ const BE_DELIVERABLES: Array<[string, string]> = [
 ]
 const BE_CATEGORIES: Array<[string, string]> = [
   ['Giám sát công trình', 'Construction monitoring'],
+  ['Kiểm tra nhà xưởng', 'Factory inspection'],
+  ['Giám sát khu vực', 'Area monitoring'],
+  ['Giám sát rừng', 'Forest monitoring'],
   ['Giám sát nông nghiệp', 'Agricultural monitoring'],
   ['Giám sát khu công nghiệp / nhà máy', 'Industrial zone / factory monitoring'],
   ['Giám sát an ninh khu vực', 'Area security monitoring'],
@@ -82,8 +77,8 @@ import { localizeTimeslot, timeslotCodeFromName } from './timeslots'
 describe('localizeServiceName', () => {
   it('maps by id and by accent-insensitive Vietnamese name in English', () => {
     expect(localizeServiceName('svc-ndvi', 'en')).toBe('Crop monitoring (NDVI)')
-    expect(localizeServiceName('Giám sát công trình', 'en')).toBe('Construction site monitoring')
-    expect(localizeServiceName('  giam sat cong trinh ', 'en')).toBe('Construction site monitoring')
+    expect(localizeServiceName('Giám sát công trình', 'en')).toBe('Construction monitoring')
+    expect(localizeServiceName('  giam sat cong trinh ', 'en')).toBe('Construction monitoring')
     expect(localizeServiceName('uuid-x', 'en', 'Dịch vụ lạ')).toBe('Dịch vụ lạ')
   })
   it('keeps the BE name for unknown services and in Vietnamese', () => {

@@ -39,37 +39,54 @@ import type {
 export const mockServiceChecklist = (
   serviceId: string,
 ): ServiceChecklistItem[] =>
-  serviceId === 'svc-2'
-    ? [
-        {
-          id: 'assignment-progress',
-          serviceId,
-          checklistId: 'check-progress',
-          content: 'Kiểm tra tiến độ thi công',
-          displayOrder: 0,
-          checklistVersion: 1,
-          serviceActive: true,
-          checklistActive: true,
-        },
-      ]
-    : []
+  ({
+    'svc-construction': [
+      'Kiểm tra tình trạng tổng thể công trình',
+      'Ghi nhận tiến độ các khu vực đang thi công',
+      'Kiểm tra mặt ngoài công trình',
+      'Quan sát khu vực khó tiếp cận',
+      'Chụp ảnh tổng quan công trình',
+      'Ghi nhận hiện trạng sau khi hoàn tất kiểm tra',
+    ],
+    'svc-factory': [
+      'Kiểm tra tình trạng tổng thể nhà xưởng',
+      'Kiểm tra mái nhà xưởng',
+      'Kiểm tra bề mặt và kết cấu phía trên',
+      'Quan sát khu vực khó tiếp cận',
+      'Chụp ảnh các vị trí bất thường',
+      'Ghi nhận hiện trạng sau khi hoàn tất kiểm tra',
+    ],
+    'svc-area': [
+      'Ghi nhận toàn cảnh khu vực',
+      'Ghi nhận các khu vực chính',
+      'Quan sát khu vực khó tiếp cận',
+      'Chụp ảnh các vị trí khách hàng yêu cầu',
+      'Ghi nhận hiện trạng khu vực',
+    ],
+    'svc-forest': [
+      'Ghi nhận toàn cảnh khu vực rừng',
+      'Quan sát tình trạng khu vực cây xanh',
+      'Quan sát khu vực có dấu hiệu bất thường',
+      'Quan sát khu vực khó tiếp cận',
+      'Chụp ảnh các vị trí được chỉ định',
+      'Ghi nhận hiện trạng sau khi hoàn tất giám sát',
+    ],
+  }[serviceId] ?? []).map((content, index) => ({
+    id: `assignment-${serviceId}-${index + 1}`,
+    serviceId,
+    checklistId: `check-${serviceId}-${index + 1}`,
+    content,
+    displayOrder: index,
+    checklistVersion: 1,
+    serviceActive: true,
+    checklistActive: true,
+  }))
 
 const SERVICE_PRICES: Record<string, number> = {
-  'svc-1': 4_000_000,
-  'svc-2': 3_200_000,
-  'svc-3': 2_600_000,
-  'svc-4': 2_800_000,
-  'svc-5': 4_500_000,
-  'svc-6': 4_800_000,
-  'svc-7': 6_500_000,
-  'svc-8': 3_800_000,
-  'svc-9': 3_000_000,
-  'svc-10': 4_200_000,
-  'svc-11': 3_600_000,
-  'svc-12': 3_500_000,
-  'svc-13': 5_000_000,
-  'svc-14': 4_500_000,
-  'svc-15': 2_400_000,
+  'svc-construction': 3_500_000,
+  'svc-factory': 3_000_000,
+  'svc-area': 2_500_000,
+  'svc-forest': 4_000_000,
 }
 const DEFAULT_SERVICE_PRICE = 2_000_000
 const AI_ANALYSIS_PRICE = 500_000

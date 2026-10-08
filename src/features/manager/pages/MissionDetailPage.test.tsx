@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { missionsApi } from '../api/missionsApi'
+import { ordersApi } from '../api/ordersApi'
 import { checklistExecutionApi } from '../../mission/api/checklistExecutionApi'
 import { MissionDetailPage } from './MissionDetailPage'
 import type { MissionResponse, MissionResultResponse } from '../types/missions'
+import type { OrderDetail } from '../types/orders'
 
 vi.mock('../../media/components/MissionUploadedMedia', () => ({
   MissionUploadedMedia: () => <div>Thư viện media riêng</div>,
@@ -60,6 +62,31 @@ const result: MissionResultResponse = {
 }
 beforeEach(() => {
   vi.spyOn(missionsApi, 'getMissionResponse').mockResolvedValue(mission)
+  vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
+    id: 'o',
+    code: 'ORD-1',
+    status: 'APPROVED',
+    customer: {
+      fullName: 'Khách hàng',
+      companyName: 'Công ty mẫu',
+      email: 'customer@example.com',
+      phone: '0900000000',
+    },
+    serviceName: 'Kiểm tra nhà xưởng',
+    preferredDate: '2026-10-08',
+    preferredTimeName: 'Buổi sáng',
+    preferredWindow: null,
+    submittedAt: '2026-10-07T00:00:00Z',
+    addressText: 'Đường Long Hậu',
+    center: { lat: 10.63, lon: 106.69 },
+    radiusM: 300,
+    nearestBase: null,
+    mediaRequirements: null,
+    purpose: null,
+    attachments: null,
+    title: 'Đơn giám sát',
+    deliverables: null,
+  } as OrderDetail)
   vi.spyOn(missionsApi, 'getCurrentPreflight').mockRejectedValue(
     new Error('not found'),
   )
@@ -135,6 +162,16 @@ describe('Manager Mission Detail monitoring review', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByText(/ĐIỂM GIÁM SÁT/)).toBeInTheDocument()
+  })
+  it('shows the complete source order in a dedicated tab', async () => {
+    render(<MissionDetailPage missionId="m" />)
+
+    fireEvent.click(
+      await screen.findByRole('tab', { name: 'Thông tin đơn hàng' }),
+    )
+    expect(await screen.findByText('Kiểm tra nhà xưởng')).toBeInTheDocument()
+    expect(screen.getByText('Thông tin khách đã nhập')).toBeInTheDocument()
+    expect(screen.getByText('customer@example.com')).toBeInTheDocument()
   })
   it('hides the flight plan tab after mission completion', async () => {
     render(<MissionDetailPage missionId="m" />)

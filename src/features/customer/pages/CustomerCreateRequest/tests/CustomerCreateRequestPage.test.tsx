@@ -28,12 +28,12 @@ async function fillForm() {
     target: { value: 'Đơn nhanh' },
   })
   fireEvent.click(
-    await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }),
+    await screen.findByRole('button', { name: /Giám sát công trình/ }),
   )
   const deliverable = (await screen.findByLabelText(
     /Loại kết quả/,
   )) as HTMLSelectElement
-  await waitFor(() => expect(deliverable.value).toBe('dt-progress'))
+  await waitFor(() => expect(deliverable.value).toBe('dt-photo'))
   fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
 }
 
@@ -58,7 +58,7 @@ describe('CustomerCreateRequestPage', () => {
   it('lists BE services (not the legacy category list) and price estimate', async () => {
     render(<CustomerCreateRequestPage />)
     expect(
-      await screen.findByRole('button', { name: /Giám sát Tiến độ Xây dựng/ }),
+      await screen.findByRole('button', { name: /Giám sát công trình/ }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Hạ tầng')).not.toBeInTheDocument()
   })
@@ -70,7 +70,6 @@ describe('CustomerCreateRequestPage', () => {
     expect(
       await screen.findByText('Nhập địa chỉ/khu vực cần giám sát.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Chọn dịch vụ giám sát.')).toBeInTheDocument()
     expect(screen.getByText('Nhập tiêu đề yêu cầu.')).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
@@ -89,11 +88,16 @@ describe('CustomerCreateRequestPage', () => {
     expect(createOrder).toHaveBeenCalledTimes(1)
     const payload = createOrder.mock.calls[0][0]
     expect(payload.checklistItems).toEqual([
-      { sourceChecklistId: 'check-progress', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-1', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-2', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-3', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-4', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-5', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-6', expectedChecklistVersion: 1 },
     ])
     expect(payload).toMatchObject({
       title: 'Đơn nhanh',
-      serviceId: 'svc-2',
+      serviceId: 'svc-construction',
       address: 'KCN Long Hậu',
       preferredTimeId: expect.any(String),
     })
@@ -101,7 +105,7 @@ describe('CustomerCreateRequestPage', () => {
     expect(typeof payload.longitude).toBe('number')
     expect(typeof payload.latitude).toBe('number')
     expect(payload.deliverables[0]).toMatchObject({
-      deliverableTypeId: 'dt-progress',
+      deliverableTypeId: 'dt-photo',
     })
     expect(payload.deliverables[0].requirement).toMatchObject({
       mediaType: 'IMAGE',
@@ -135,7 +139,7 @@ describe('CustomerCreateRequestPage', () => {
       target: { value: 'Kiểm tra tầng 1–3' },
     })
     fireEvent.click(screen.getByRole('button', { name: '+ Thêm nội dung' }))
-    fireEvent.change(screen.getByLabelText('Nội dung giám sát 2'), {
+    fireEvent.change(screen.getByLabelText('Nội dung giám sát 7'), {
       target: { value: 'Kiểm tra mũ bảo hộ' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -144,10 +148,15 @@ describe('CustomerCreateRequestPage', () => {
     await screen.findByText('Đã tạo yêu cầu')
     expect(create.mock.calls[0][0].checklistItems).toEqual([
       {
-        sourceChecklistId: 'check-progress',
+        sourceChecklistId: 'check-svc-construction-1',
         expectedChecklistVersion: 1,
         contentOverride: 'Kiểm tra tầng 1–3',
       },
+      { sourceChecklistId: 'check-svc-construction-2', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-3', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-4', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-5', expectedChecklistVersion: 1 },
+      { sourceChecklistId: 'check-svc-construction-6', expectedChecklistVersion: 1 },
       { contentOverride: 'Kiểm tra mũ bảo hộ' },
     ])
   })
@@ -156,7 +165,8 @@ describe('CustomerCreateRequestPage', () => {
     const create = vi.spyOn(customerApi, 'createOrder')
     render(<CustomerCreateRequestPage />)
     await fillForm()
-    fireEvent.click(await screen.findByLabelText('Chọn nội dung 1'))
+    const toggles = await screen.findAllByLabelText(/Chọn nội dung /)
+    toggles.forEach((toggle) => fireEvent.click(toggle))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))

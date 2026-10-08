@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { preferredLabel } from '../../lib/viLabels'
-import { estimatedAreaHa, humanizeMediaRequirement } from './format'
+import { estimatedAreaHa } from './format'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
 import { resolveOrderGpsCenter } from './orderGps'
 
@@ -65,23 +65,9 @@ export function OrderServiceInfo({
       order.preferredWindow,
     ) || null
 
-  const media =
-    order.mediaRequirements == null ? (
-      t.noData
-    ) : order.mediaRequirements.length === 0 ? (
-      '—'
-    ) : (
-      <span className="odm-or-info-lines">
-        {order.mediaRequirements.map((req, i) => (
-          <span key={i}>{humanizeMediaRequirement(req.label, t)}</span>
-        ))}
-      </span>
-    )
-
   const left: InfoRow[] = [
     { icon: 'service', label: t.service, value: order.serviceName },
     { icon: 'clock', label: t.preferredWindow, value: preferred ?? '—' },
-    { icon: 'media', label: t.mediaPackage, value: media },
   ]
   const right: InfoRow[] = [
     { icon: 'pin', label: t.locationLabel, value: locationLabel(order, t) },

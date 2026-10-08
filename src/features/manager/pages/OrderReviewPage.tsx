@@ -8,6 +8,7 @@ import { InternalNoteCard } from '../components/orderReview/InternalNoteCard'
 import { OrderApprovalActions } from '../components/orderReview/OrderApprovalActions'
 import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachmentsCard'
 import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
+import { OrderCustomerRequestDetails } from '../components/orderReview/OrderCustomerRequestDetails'
 import { OrderLocationCard } from '../components/orderReview/OrderLocationCard'
 import { OrderServiceInfo } from '../components/orderReview/OrderServiceInfo'
 import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
@@ -125,38 +126,58 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   }
 
   return (
-    <div className="odm-or">
-      <div className="odm-or-pagehead">
-        <h1 className="odm-or-title">{t.pageTitle}</h1>
-        <p className="odm-or-subtitle">{t.pageSubtitle}</p>
+    <div className="odm-or odm-or-review-page">
+      <div className="odm-or-review-top">
+        <div className="odm-or-pagehead">
+          <h1 className="odm-or-title">{t.pageTitle}</h1>
+          <p className="odm-or-subtitle">{t.pageSubtitle}</p>
+        </div>
+        <OrderWorkflowStepper currentStep={1} />
       </div>
 
-      <OrderWorkflowStepper currentStep={1} />
-
-      <div className="odm-or-grid">
+      {/* Each section owns its own grid so a tall card in one section can
+          never create blank rows in another. */}
+      <section className="odm-or-grid odm-or-review-summary">
         <div className="odm-or-col">
-          <OrderLocationCard order={order} t={t} />
           <OrderServiceInfo order={order} t={t} />
-          <OrderChecklistCard order={order} t={t} />
-          <ManagerPricingPanel orderId={order.id} />
-          <OrderAttachmentsCard order={order} t={t} />
         </div>
         <div className="odm-or-col">
-          <OrderCustomerCard order={order} t={t} />
           <OrderStatusCard order={order} t={t} locale={locale} />
-          <ResourceAvailabilityCard query={previewQuery} t={t} />
+          <OrderCustomerCard order={order} t={t} />
+        </div>
+      </section>
+
+      <section className="odm-or-review-section">
+        <OrderCustomerRequestDetails order={order} t={t} />
+      </section>
+
+      <section className="odm-or-review-section">
+        <ManagerPricingPanel
+          orderId={order.id}
+          decisionActions={
+            <OrderApprovalActions
+              orderId={order.id}
+              orderCode={order.code}
+              t={t}
+              onApproved={handleApproved}
+              onDecisionDone={() => setNavigateHome(true)}
+              showApprove={false}
+            />
+          }
+        />
+      </section>
+
+      <section className="odm-or-grid odm-or-review-more">
+        <div className="odm-or-col odm-or-operational-left">
+          <OrderChecklistCard order={order} t={t} />
+          <OrderAttachmentsCard order={order} t={t} />
           <InternalNoteCard orderId={order.id} t={t} locale={locale} />
         </div>
-      </div>
-
-      <OrderApprovalActions
-        orderId={order.id}
-        orderCode={order.code}
-        t={t}
-        onApproved={handleApproved}
-        onDecisionDone={() => setNavigateHome(true)}
-        showApprove={false}
-      />
+        <div className="odm-or-col odm-or-operational-right">
+          <OrderLocationCard order={order} t={t} />
+          <ResourceAvailabilityCard query={previewQuery} t={t} />
+        </div>
+      </section>
     </div>
   )
 }

@@ -12,6 +12,12 @@ import { missionStatusTone } from '../../../shared/lib/statusTone'
 import { staffMissionMediaReader } from '../api/missionMediaReader'
 import { dronesApi } from '../api/dronesApi'
 import { missionsApi } from '../api/missionsApi'
+import { ordersApi } from '../api/ordersApi'
+import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachmentsCard'
+import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
+import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
+import { OrderCustomerRequestDetails } from '../components/orderReview/OrderCustomerRequestDetails'
+import { OrderServiceInfo } from '../components/orderReview/OrderServiceInfo'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
 import {
   CheckItemsList,
@@ -39,12 +45,14 @@ import { formatOrderCode } from '../components/orderReview/format'
 import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { managerHref } from '../routes'
 import { missionDetailPageMessages } from './MissionDetailPage.messages'
+import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import '../manager.css'
 
-type MissionDetailTab = 'overview' | 'plan' | 'checks'
+type MissionDetailTab = 'overview' | 'order' | 'plan' | 'checks'
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
   const { t, locale } = useI18n(missionDetailPageMessages)
+  const { t: orderT } = useI18n(orderReviewPageMessages)
   const [detail, setDetail] = useState<DetailData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -83,12 +91,24 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
         }
         setDetail({
           mission: fullMission,
+          order: null,
           preflight: unwrapSettled(preflight),
           postcheck: unwrapSettled(postcheck),
           result: unwrapSettled(result),
           media: unwrapSettled(media) ?? [],
           weather: unwrapSettled(weather),
         })
+        ordersApi
+          .getOrder(fullMission.orderId, abort.signal)
+          .then((order) => {
+            if (abort.signal.aborted) return
+            setDetail((current) =>
+              current?.mission?.id === fullMission.id
+                ? { ...current, order }
+                : current,
+            )
+          })
+          .catch(() => undefined)
       })
       .finally(() => {
         if (!abort.signal.aborted) setLoading(false)
@@ -253,6 +273,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
   const activeTab: MissionDetailTab = showPlanTab || tab !== 'plan' ? tab : 'overview'
   const tabs: Array<{ id: MissionDetailTab; label: string }> = [
     { id: 'overview', label: t.tabs.overview },
+    { id: 'order', label: t.tabs.order },
     ...(showPlanTab ? [{ id: 'plan' as const, label: t.tabs.plan }] : []),
     { id: 'checks', label: t.tabs.checks },
   ]
@@ -422,11 +443,6 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 error={checklist.error}
                 resultStatus={detail.result?.approvalStatus}
                 resultNote={detail.result?.reviewNote}
-                reviewMedia={async (mediaId, reject) => {
-                  if (reject) await missionsApi.rejectMissionMedia(mission.id, mediaId)
-                  else await missionsApi.approveMissionMedia(mission.id, mediaId)
-                  refreshDetail()
-                }}
                 refresh={() => {
                   checklist.reload()
                   refreshDetail()
@@ -436,9 +452,6 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 missionId={mission.id}
                 reader={staffMissionMediaReader}
                 reviewStatus={detail.result?.approvalStatus ?? null}
-                approveMedia={(mediaId) =>
-                  missionsApi.approveMissionMedia(missionId, mediaId)
-                }
               />
             </>
           ) : null}
@@ -506,6 +519,24 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
               </section>
 
             </>
+          ) : null}
+
+          {activeTab === 'order' ? (
+            detail.order ? (
+              <div className="odm-or-order-review-stack">
+                <OrderServiceInfo order={detail.order} t={orderT} />
+                <OrderCustomerRequestDetails order={detail.order} t={orderT} />
+                <OrderCustomerCard order={detail.order} t={orderT} />
+                <OrderChecklistCard order={detail.order} t={orderT} />
+                <OrderAttachmentsCard order={detail.order} t={orderT} />
+              </div>
+            ) : (
+              <section className="odm-or-card">
+                <div className="odm-or-card-body odm-or-empty">
+                  {t.loadError}
+                </div>
+              </section>
+            )
           ) : null}
 
           {activeTab === 'checks' ? (

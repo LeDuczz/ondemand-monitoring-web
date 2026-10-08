@@ -242,7 +242,8 @@ function Gallery({
                   </button>
                   <div className="mission-media__card-body">
                     <h4 title={item.fileName}>{item.fileName}</h4>
-                    {approveMedia && <button type="button" className="odm-btn" disabled={approving !== null || approved.includes(item.mediaId)} onClick={() => void approve(item.mediaId)}>{approved.includes(item.mediaId) ? 'Đã duyệt media trong phiên này' : approving === item.mediaId ? 'Đang duyệt media…' : 'Duyệt media cho khách hàng'}</button>}
+                    {approveMedia && (!item.status || item.status === 'PENDING_MANAGER_APPROVAL') ? <button type="button" className="odm-btn" disabled={approving !== null || approved.includes(item.mediaId)} onClick={() => void approve(item.mediaId)}>{approved.includes(item.mediaId) ? 'Đã duyệt media trong phiên này' : approving === item.mediaId ? 'Đang duyệt media…' : 'Duyệt media cho khách hàng'}</button> : null}
+                    {item.status === 'AVAILABLE' || approved.includes(item.mediaId) ? <span className="mission-media__review-badge mission-media__review-badge--approved is-compact">Media đã duyệt</span> : null}
                     {reviewStatus ? (
                       <ReviewStatusBadge status={reviewStatus} compact />
                     ) : null}

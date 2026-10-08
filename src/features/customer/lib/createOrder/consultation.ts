@@ -32,13 +32,11 @@ export function findRecommendedService(
   return services.find((s) => s.id === consultation.recommendedServiceId)
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars -- messages/service kept for API compatibility */
 export function buildDraftFromConsultation(
   consultation: CustomerConsultation,
   _messages: ConsultationMessage[],
   service?: ServiceOption,
 ) {
-  /* eslint-enable @typescript-eslint/no-unused-vars */
   if (
     consultation.status !== 'READY_FOR_CONFIRMATION' &&
     consultation.status !== 'RECOMMENDED'

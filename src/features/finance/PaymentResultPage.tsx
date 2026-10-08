@@ -95,7 +95,7 @@ export function PaymentResultPage({
           {success
             ? payment?.type === 'DEPOSIT'
               ? 'Deposit đã được ghi nhận. Mission đang được chuẩn bị.'
-              : 'Hóa đơn đã được cập nhật với khoản thanh toán cuối.'
+              : 'Thanh toán hoàn tất. Đang chờ Manager bàn giao dữ liệu gốc.'
             : cancelled
               ? 'Chưa có khoản thu nào được xác nhận từ lần quay lại này.'
               : 'Backend đang xác minh IPN hoặc đối soát trực tiếp trạng thái giao dịch với VNPAY.'}

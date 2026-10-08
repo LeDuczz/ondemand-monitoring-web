@@ -16,6 +16,7 @@ import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnaps
 import './OrderDetail.css'
 import { orderDetailPageMessages } from './OrderDetailPage.messages'
 import { CustomerFinancePanel } from '../../../finance/CustomerFinancePanel'
+import { CustomerDeliveryPanel } from '../../../delivery/CustomerDeliveryPanel'
 
 /** Customer order detail backed by `GET /api/orders/{id}`. */
 export function OrderDetailPage({ orderId }: { orderId: string }) {
@@ -47,6 +48,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             snapshotAt={order.checklistSnapshotAt}
           />
           <CustomerFinancePanel orderId={order.id} />
+          <CustomerDeliveryPanel orderId={order.id} />
           <DeliverablesCard order={order} />
         </div>
         <div className="od-stack">

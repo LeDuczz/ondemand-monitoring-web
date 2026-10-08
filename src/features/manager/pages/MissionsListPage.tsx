@@ -10,6 +10,8 @@ import { useI18n } from '../../../shared/i18n'
 import { missionStatusTone } from '../../../shared/lib/statusTone'
 import type { MissionStatus } from '../../../shared/types/domain'
 import { missionsApi } from '../api/missionsApi'
+import { deliveryApi } from '../../delivery/api'
+import type { DeliveryStatus as WorkflowDeliveryStatus } from '../../delivery/types'
 import { ordersApi } from '../api/ordersApi'
 import { formatOrderCode } from '../components/orderReview/format'
 import {
@@ -22,16 +24,12 @@ import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { localizeTimeslot } from '../lib/viLabels'
 import { managerHref } from '../routes'
 import { missionsListPageMessages } from './MissionsListPage.messages'
-import type {
-  MissionCalendarItem,
-  MissionResultApprovalStatus,
-  MissionStaffAssignmentResponse,
-} from '../types/missions'
+import type { MissionCalendarItem, MissionStaffAssignmentResponse } from '../types/missions'
 import type { OrderCreateResponse } from '../types/orders'
 import '../manager.css'
 
 type StatusChip = 'ALL' | MissionStatus
-type DeliveryStatus = MissionResultApprovalStatus | 'NO_RESULT' | 'NOT_READY' | 'LOADING'
+type DeliveryStatus = WorkflowDeliveryStatus | 'NOT_READY' | 'LOADING'
 
 type PageMessages = (typeof missionsListPageMessages)['vi']
 
@@ -71,17 +69,20 @@ function formatStaffSummary(assignments?: MissionStaffAssignmentResponse[]) {
 }
 
 function deliveryTone(status: DeliveryStatus): 'gray' | 'blue' | 'green' | 'red' {
-  if (status === 'APPROVED') return 'green'
-  if (status === 'PENDING_MANAGER_APPROVAL') return 'blue'
-  if (status === 'REJECTED') return 'red'
+  if (status === 'DELIVERED') return 'green'
+  if (status === 'REVISION_REQUESTED') return 'red'
+  if (['CUSTOMER_REVIEW', 'FINAL_PAYMENT_PENDING', 'READY_FOR_DELIVERY'].includes(status)) return 'blue'
   return 'gray'
 }
 
 function deliveryLabel(status: DeliveryStatus, t: PageMessages) {
-  if (status === 'APPROVED') return t.deliveryStatus.delivered
-  if (status === 'PENDING_MANAGER_APPROVAL') return t.deliveryStatus.pending
-  if (status === 'REJECTED') return t.deliveryStatus.rejected
-  if (status === 'NO_RESULT') return t.deliveryStatus.noResult
+  if (status === 'PROCESSING') return t.deliveryStatus.processing
+  if (status === 'READY_FOR_MANAGER_REVIEW') return t.deliveryStatus.readyForPreview
+  if (status === 'CUSTOMER_REVIEW') return t.deliveryStatus.customerReview
+  if (status === 'REVISION_REQUESTED') return t.deliveryStatus.revisionRequested
+  if (status === 'FINAL_PAYMENT_PENDING') return t.deliveryStatus.finalPaymentPending
+  if (status === 'PAYMENT_CONFIRMED' || status === 'READY_FOR_DELIVERY') return t.deliveryStatus.readyForDelivery
+  if (status === 'DELIVERED') return t.deliveryStatus.delivered
   if (status === 'LOADING') return t.deliveryStatus.loading
   return t.deliveryStatus.none
 }
@@ -432,8 +433,11 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
     [],
   )
 
-  const missions = query.data?.items ?? []
-  const approvedOrders = approvedOrdersQuery.data ?? []
+  const missions = useMemo(() => query.data?.items ?? [], [query.data?.items])
+  const approvedOrders = useMemo(
+    () => approvedOrdersQuery.data ?? [],
+    [approvedOrdersQuery.data],
+  )
   const setupOrders = useMemo(
     () => approvedOrders.filter((order) => !hasMissionForOrder(order, missions)),
     [approvedOrders, missions],
@@ -459,10 +463,10 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
     void Promise.allSettled(
       completed.map(async (mission) => {
         try {
-          const result = await missionsApi.getMissionResult(mission.id)
-          return [mission.id, result.approvalStatus] as const
+          const delivery = await deliveryApi.managerGet(mission.orderId)
+          return [mission.id, delivery.deliveryStatus] as const
         } catch {
-          return [mission.id, 'NO_RESULT'] as const
+          return [mission.id, 'NOT_READY'] as const
         }
       }),
     ).then((results) => {

@@ -23,6 +23,7 @@ import {
 } from './OrderReviewPage.messages'
 import type { OrderDetail, OrderMissionBrief } from '../types/orders'
 import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
+import { ManagerDeliveryPanel } from '../../delivery/ManagerDeliveryPanel'
 import '../manager.css'
 
 type PageMessages = OrderReviewMessages
@@ -165,6 +166,10 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
             />
           }
         />
+      </section>
+
+      <section className="odm-or-review-section">
+        <ManagerDeliveryPanel orderId={order.id} />
       </section>
 
       <section className="odm-or-grid odm-or-review-more">

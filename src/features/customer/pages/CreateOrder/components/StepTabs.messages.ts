@@ -3,6 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const stepTabsMessages = defineMessages({
   vi: {
     ariaLabel: 'Các bước tạo yêu cầu',
+    progress: (step: number, total: number) => `Bước ${step} / ${total}`,
     subtitles: {
       1: 'Chọn loại giám sát phù hợp',
       2: 'Chọn và chỉnh nội dung cần kiểm tra',
@@ -13,6 +14,7 @@ export const stepTabsMessages = defineMessages({
   },
   en: {
     ariaLabel: 'Request creation steps',
+    progress: (step: number, total: number) => `Step ${step} of ${total}`,
     subtitles: {
       1: 'Pick the right monitoring type',
       2: 'Choose and edit what to inspect',

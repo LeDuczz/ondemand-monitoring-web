@@ -7,7 +7,7 @@ import type {
   UpdateField,
   WeatherFallback,
 } from '../../../lib/createOrder/types'
-import { formatIsoDate } from '../../../lib/createOrder/dateFormat'
+import { DateEcho } from './DateEcho'
 import { scheduleOptionsCardMessages } from './ScheduleOptionsCard.messages'
 
 type Props = {
@@ -21,7 +21,7 @@ const WEATHER: WeatherFallback[] = ['AUTO_RESCHEDULE', 'CONTACT_CUSTOMER', 'CANC
 
 /** Recurrence, bad-weather fallback and result deadline for the flight schedule. */
 export function ScheduleOptionsCard({ form, errors, update }: Props) {
-  const { t, lang } = useI18n(scheduleOptionsCardMessages)
+  const { t } = useI18n(scheduleOptionsCardMessages)
   const repeating = form.recurrenceType !== 'NONE'
   return (
     <Card title={t.cardTitle}>
@@ -110,7 +110,7 @@ export function ScheduleOptionsCard({ form, errors, update }: Props) {
             onChange={(e) => update('resultDeadline', e.target.value)}
           />
           {form.resultDeadline && (
-            <div className="co-date-shown">{formatIsoDate(form.resultDeadline, lang)}</div>
+            <DateEcho value={form.resultDeadline} />
           )}
         </FormField>
         <p className="co-hint">{t.deadlineHint}</p>

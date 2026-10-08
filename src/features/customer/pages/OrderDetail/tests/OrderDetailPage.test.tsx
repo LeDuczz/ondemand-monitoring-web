@@ -21,12 +21,12 @@ describe('OrderDetailPage', () => {
     expect(screen.getByText('Tuần tra an ninh công trường Sala Riverside')).toBeInTheDocument()
   })
 
-  it('shows the public order code instead of the internal id in order information', async () => {
+  it('shows the public order code instead of the internal id', async () => {
     render(<OrderDetailPage orderId="cus-ord-003" />)
-    const info = (await screen.findByText('Thông tin đơn hàng')).closest('section') as HTMLElement
+    await screen.findByText('Thông tin đơn hàng')
 
-    expect(within(info).getByText('ORD-2609-0149')).toBeInTheDocument()
-    expect(within(info).queryByText('cus-ord-003')).not.toBeInTheDocument()
+    expect(screen.getByText('ORD-2609-0149')).toBeInTheDocument()
+    expect(screen.queryByText('cus-ord-003')).not.toBeInTheDocument()
   })
 
   it('renders the English order-info heading when language is switched', async () => {
@@ -51,6 +51,66 @@ describe('OrderDetailPage', () => {
     render(<OrderDetailPage orderId="cus-ord-005" />)
     await screen.findByText('Thông tin đơn hàng')
     expect(screen.queryByRole('button', { name: 'Huỷ đơn hàng' })).not.toBeInTheDocument()
+  })
+
+  it('uses the od-btn classes on the cancel button, with no odm-btn-gh or odm-btn-de', async () => {
+    render(<OrderDetailPage orderId="cus-ord-003" />)
+    await screen.findByText('Thông tin đơn hàng')
+    const button = screen.getByRole('button', { name: 'Huỷ đơn hàng' })
+    expect(button).toHaveClass('odm-btn', 'od-btn', 'od-btn-cancel')
+    expect(button).not.toHaveClass('odm-btn-gh')
+    expect(button).not.toHaveClass('odm-btn-de')
+  })
+
+  it('shows the order code once, in the header, with a copy button', async () => {
+    render(<OrderDetailPage orderId="cus-ord-003" />)
+    const info = (await screen.findByText('Thông tin đơn hàng')).closest('section') as HTMLElement
+    expect(screen.getAllByText('ORD-2609-0149')).toHaveLength(1)
+    const code = screen.getByText('ORD-2609-0149')
+    expect(code.closest('.od-meta')).not.toBeNull()
+    expect(info.contains(code)).toBe(false)
+    expect(screen.getByRole('button', { name: 'Sao chép mã đơn' })).toBeInTheDocument()
+  })
+
+  it('no longer lists an order-code field in the info card', async () => {
+    render(<OrderDetailPage orderId="cus-ord-003" />)
+    const info = (await screen.findByText('Thông tin đơn hàng')).closest('section') as HTMLElement
+    expect(within(info).queryByText('Mã đơn')).not.toBeInTheDocument()
+    expect(within(info).queryByRole('button', { name: 'Sao chép mã đơn' })).not.toBeInTheDocument()
+  })
+
+  it('shows the localized status in the help hint instead of the raw enum', async () => {
+    render(<OrderDetailPage orderId="cus-ord-003" />)
+    await screen.findByText('Thông tin đơn hàng')
+    const hint = await screen.findByText(/Câu hỏi thường gặp gợi ý cho trạng thái/)
+    expect(hint).not.toHaveTextContent('PENDING')
+    expect(hint).toHaveTextContent(/\(.+\)/)
+  })
+
+  it('shows four progress steps for a pending order with the approval step as current', async () => {
+    render(<OrderDetailPage orderId="cus-ord-003" />)
+    const heading = await screen.findByText('Tiến trình đơn hàng')
+    const list = within(heading.closest('section') as HTMLElement).getByRole('list')
+    const steps = within(list).getAllByRole('listitem')
+    expect(steps).toHaveLength(4)
+    expect(within(steps[0]).getByText('Gửi yêu cầu')).toBeInTheDocument()
+    expect(within(steps[1]).getByText('Duyệt đơn')).toBeInTheDocument()
+    expect(steps[1]).toHaveAttribute('aria-current', 'step')
+    expect(within(steps[1]).getByText('Đang chờ duyệt')).toBeInTheDocument()
+    expect(steps.filter((step) => step.hasAttribute('aria-current'))).toHaveLength(1)
+    expect(steps[2]).toHaveClass('is-upcoming')
+    expect(steps[3]).toHaveClass('is-upcoming')
+  })
+
+  it('ends a rejected order at a failed step with no upcoming steps', async () => {
+    render(<OrderDetailPage orderId="cus-ord-007" />)
+    const heading = await screen.findByText('Tiến trình đơn hàng')
+    const steps = within(within(heading.closest('section') as HTMLElement).getByRole('list')).getAllByRole('listitem')
+    expect(steps).toHaveLength(2)
+    expect(steps[1]).toHaveClass('is-failed')
+    expect(within(steps[1]).getByText('Bị từ chối')).toBeInTheDocument()
+    expect(steps.some((step) => step.classList.contains('is-upcoming'))).toBe(false)
+    expect(steps.some((step) => step.hasAttribute('aria-current'))).toBe(false)
   })
 
   it('cancels a pending order through a danger confirm dialog, marked as sample data', async () => {

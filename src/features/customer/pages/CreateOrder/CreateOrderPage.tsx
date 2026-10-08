@@ -170,7 +170,7 @@ export function CreateOrderPage() {
         </div>
       )}
 
-      {step === 3 && footer}
+      {step === 3 && <div className="co-bottom-bar">{footer}</div>}
 
       {submit.confirmOpen && (
         <ConfirmSubmitModal

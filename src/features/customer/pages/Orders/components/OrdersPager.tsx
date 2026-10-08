@@ -10,13 +10,15 @@ type Props = {
 
 export function OrdersPager({ page, totalPages, totalItems, onPage }: Props) {
   const { t } = useI18n(ordersPagerMessages)
+  const total = <span>{t.total(totalItems)}</span>
+  if (totalPages <= 1) return <div className="ord-pager">{total}</div>
   return (
     <div className="ord-pager">
-      <span>{t.total(totalItems)}</span>
+      {total}
       <div className="ord-pager-nav">
         <button
           type="button"
-          className="odm-btn odm-btn-gh odm-btn-sm"
+          className="odm-btn odm-btn-gh ord-btn is-sm"
           disabled={page <= 0}
           onClick={() => onPage(page - 1)}
         >
@@ -25,7 +27,7 @@ export function OrdersPager({ page, totalPages, totalItems, onPage }: Props) {
         <span>{t.page(page + 1, totalPages)}</span>
         <button
           type="button"
-          className="odm-btn odm-btn-gh odm-btn-sm"
+          className="odm-btn odm-btn-gh ord-btn is-sm"
           disabled={page + 1 >= totalPages}
           onClick={() => onPage(page + 1)}
         >

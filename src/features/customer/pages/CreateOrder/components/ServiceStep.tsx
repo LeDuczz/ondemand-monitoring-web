@@ -45,7 +45,7 @@ export function ServiceStep(p: Props) {
         />
         <ConsultationChat chat={p.chat} />
       </div>
-      <aside className="co-stack co-summary">
+      <aside className="co-stack co-summary is-tall">
         <RequestInfoPanel
           form={p.form}
           errors={p.errors}

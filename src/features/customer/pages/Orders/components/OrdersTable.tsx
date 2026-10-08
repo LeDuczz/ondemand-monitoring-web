@@ -1,3 +1,4 @@
+import { Icon } from '../../../../../shared/components/Icon'
 import { useI18n } from '../../../../../shared/i18n'
 import { OrderStatusBadge } from '../../../components/common/OrderStatusBadge'
 import { formatDateRange } from '../../../lib/orders/format'
@@ -18,12 +19,12 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
     <table className="ord-table">
       <thead>
         <tr>
-          <th>{c.order}</th>
-          <th>{c.location}</th>
+          <th className="ord-col-order">{c.order}</th>
+          <th className="ord-col-location">{c.location}</th>
           <th>{c.schedule}</th>
-          <th>{c.service}</th>
+          <th className="ord-col-service">{c.service}</th>
           <th>{c.status}</th>
-          <th>{c.actions}</th>
+          <th className="ord-col-actions">{c.actions}</th>
         </tr>
       </thead>
       <tbody>
@@ -31,13 +32,13 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
           const href = customerHref({ screen: 'orderDetail', orderId: row.id })
           return (
             <tr key={row.id}>
-              <td>
+              <td className="ord-col-order">
                 <a className="ord-title" href={href}>
                   {row.title}
                 </a>
                 <div className="ord-code">{row.code}</div>
               </td>
-              <td className="ord-muted">{row.address ?? DASH}</td>
+              <td className="ord-muted ord-col-location">{row.address ?? DASH}</td>
               <td className="ord-nowrap">
                 {formatDateRange(row.dateFrom, row.dateTo, locale) ?? DASH}
                 {row.timeName || row.timeId ? (
@@ -46,7 +47,7 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
                   </div>
                 ) : null}
               </td>
-              <td>
+              <td className="ord-col-service">
                 {row.serviceName
                   ? localizeServiceName(row.serviceId ?? row.serviceName, lang, row.serviceName)
                   : DASH}
@@ -54,9 +55,10 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
               <td>
                 <OrderStatusBadge status={row.status} />
               </td>
-              <td>
-                <a className="ord-link" href={href}>
+              <td className="ord-col-actions">
+                <a className="ord-view" href={href}>
                   {t.view}
+                  <Icon name="arrow-right" width={16} height={16} aria-hidden="true" />
                 </a>
               </td>
             </tr>

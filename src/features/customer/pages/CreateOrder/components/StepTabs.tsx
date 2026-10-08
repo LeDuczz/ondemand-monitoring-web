@@ -13,7 +13,12 @@ type Props = {
 export function StepTabs({ step, labels, onSelect }: Props) {
   const { t } = useI18n(stepTabsMessages)
   return (
-    <nav className="co-tabs" aria-label={t.ariaLabel}>
+    <div className="co-steps">
+      {/* On phones the dots drop their titles, so the position is also written out. */}
+      <p className="co-steps-progress">
+        {t.progress(step, STEPS.length)} &middot; <strong>{labels[step]}</strong>
+      </p>
+      <nav className="co-tabs" aria-label={t.ariaLabel}>
       {STEPS.map((item) => {
         const state = item === step ? 'is-active' : item < step ? 'is-done' : ''
         return (
@@ -39,6 +44,7 @@ export function StepTabs({ step, labels, onSelect }: Props) {
           </button>
         )
       })}
-    </nav>
+      </nav>
+    </div>
   )
 }

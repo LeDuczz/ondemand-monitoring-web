@@ -36,6 +36,20 @@ export type OrderTimelineEvent = {
   note: string | null
 }
 
+/** Steps of the order progress stepper; the first four are the happy path. */
+export type OrderStepKey = 'submitted' | 'approved' | 'inProgress' | 'completed' | 'rejected' | 'cancelled'
+
+export type OrderStepState = 'done' | 'current' | 'upcoming' | 'failed' | 'cancelled'
+
+export type OrderStep = {
+  key: OrderStepKey
+  state: OrderStepState
+  /** Only ever copied from a timeline event; null when the BE gave no date. */
+  at: string | null
+  actor: string | null
+  note: string | null
+}
+
 /** `GET /api/orders/{id}` mapped for the detail page. */
 export type OrderDetailView = OrderRow & {
   checklistItems?: ChecklistSnapshot[]

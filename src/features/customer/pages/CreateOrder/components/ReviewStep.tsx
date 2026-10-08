@@ -50,7 +50,7 @@ export function ReviewStep(p: Props) {
         />
         <DeliveryOptionsCard form={p.form} errors={p.errors} update={p.update} />
       </div>
-      <aside className="co-stack co-summary">
+      <aside className="co-stack co-summary is-tall">
         <RequestSummaryCard
           form={p.form}
           service={p.service}

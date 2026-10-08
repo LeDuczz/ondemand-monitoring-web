@@ -1,4 +1,7 @@
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { useI18n } from '../../../../shared/i18n'
 import { ContextAwareHelpWidget } from '../../../support/components/ContextAwareHelpWidget'
 import { CancelOrderModal } from './components/CancelOrderModal'
@@ -10,6 +13,7 @@ import { OrderTimeline } from './components/OrderTimeline'
 import { ReviewNotice } from './components/ReviewNotice'
 import { useOrderDetail } from './hooks/useOrderDetail'
 import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnapshotCard'
+import { CustomerOrderMissionsSection } from '../../components/reports/CustomerOrderMissionsSection'
 import './OrderDetail.css'
 import { orderDetailPageMessages } from './OrderDetailPage.messages'
 
@@ -20,8 +24,14 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
   const { order } = detail
 
   if (detail.loading && !order) return <LoadingState />
-  if (!order) {
-    return <ErrorState title={t.errorTitle} error={detail.error} onRetry={detail.reload} />
+  if (!order || detail.error) {
+    return (
+      <ErrorState
+        title={t.errorTitle}
+        error={undefined}
+        onRetry={detail.reload}
+      />
+    )
   }
 
   return (
@@ -29,10 +39,14 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       <OrderHeader order={order} />
       <ReviewNotice order={order} />
       <OrderActions order={order} onCancel={detail.openCancel} />
+      <CustomerOrderMissionsSection key={order.id} orderId={order.id} />
       <div className="od-grid">
         <div className="od-stack">
           <OrderInfoCard order={order} />
-          <ChecklistSnapshotCard items={order.checklistItems} snapshotAt={order.checklistSnapshotAt} />
+          <ChecklistSnapshotCard
+            items={order.checklistItems}
+            snapshotAt={order.checklistSnapshotAt}
+          />
           <DeliverablesCard order={order} />
         </div>
         <div className="od-stack">

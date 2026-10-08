@@ -1,0 +1,65 @@
+.cr-section,
+.cr-mission {
+  background: var(--sf, #fff);
+  border: 1px solid var(--border, #dbe2ea);
+  border-radius: 14px;
+  padding: 20px;
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+.cr-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cr-heading h1,
+.cr-heading h2,
+.cr-heading h3 {
+  margin: 0;
+}
+.cr-missions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+}
+.cr-missions .cr-mission {
+  margin: 0;
+}
+.cr-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 16px 0;
+}
+.cr-note {
+  color: var(--tx3, #64748b);
+  font-size: 14px;
+}
+.cr-status {
+  background: var(--sf3, #f1f5f9);
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+.cr-checklist {
+  padding-left: 24px;
+}
+.cr-checklist li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border, #dbe2ea);
+}
+.cr-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .cr-section,
+  .cr-mission {
+    padding: 14px;
+  }
+  .cr-heading h1 {
+    font-size: 24px;
+  }
+}

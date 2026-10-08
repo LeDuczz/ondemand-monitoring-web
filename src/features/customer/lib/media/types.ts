@@ -40,6 +40,7 @@ export type PageResponse<T> = {
 export type MediaKind = 'image' | 'video' | 'other'
 
 export type MediaItem = {
+  sourceType?: string | null
   id: string
   missionId: string
   deviceId: string | null

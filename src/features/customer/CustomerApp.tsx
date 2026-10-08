@@ -18,6 +18,7 @@ import { OrderDetailPage } from './pages/OrderDetail'
 import { OrdersPage } from './pages/Orders'
 import { MissionHistoryPage } from './pages/MissionHistory'
 import { MissionHistoryDetailPage } from './pages/MissionHistoryDetail'
+import { CustomerMissionReportPage } from './components/reports/CustomerMissionReportPage'
 import { customerHref, parseCustomerRoute, type CustomerRoute } from './routes'
 
 function useHash(): string {
@@ -29,7 +30,6 @@ function useHash(): string {
   }, [])
   return hash
 }
-
 
 export function CustomerApp() {
   const hash = useHash()
@@ -54,7 +54,15 @@ function renderScreen(
   t: (typeof customerAppMessages)['vi'],
 ) {
   if (route.screen === 'missionHistory') return <MissionHistoryPage />
-  if (route.screen === 'missionHistoryDetail') return <MissionHistoryDetailPage missionId={route.missionId} />
+  if (route.screen === 'missionReport')
+    return (
+      <CustomerMissionReportPage
+        orderId={route.orderId}
+        missionId={route.missionId}
+      />
+    )
+  if (route.screen === 'missionHistoryDetail')
+    return <MissionHistoryDetailPage missionId={route.missionId} />
   if (route.screen === 'dashboard') return <DashboardPage />
   if (route.screen === 'orders') return <OrdersPage />
   if (route.screen === 'createOrder') return <CreateOrderPage />

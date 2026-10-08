@@ -14,6 +14,10 @@ export function MediaCard({ item, onOpen }: Props) {
   const { t: ui } = useI18n(mediaUiMessages)
   const size = formatBytes(item.fileSize)
   const captured = item.capturedAt ? fmtDate(item.capturedAt, locale) : null
+  const source =
+    item.sourceType && Object.hasOwn(ui.source, item.sourceType)
+      ? ui.source[item.sourceType as keyof typeof ui.source]
+      : null
 
   return (
     <button
@@ -36,6 +40,7 @@ export function MediaCard({ item, onOpen }: Props) {
       <span className="md-card-body">
         <span className="md-name">{item.fileName}</span>
         <span className="md-meta">
+          {source && <span>{source}</span>}
           {size && <span>{size}</span>}
           {captured && <span>{captured}</span>}
         </span>

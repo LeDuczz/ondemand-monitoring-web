@@ -179,12 +179,6 @@ function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
     radiusM: order.radiusM ?? null,
     status,
     serviceNames: order.serviceName ? [order.serviceName] : [],
-    missionCount:
-      status === 'APPROVED' ||
-      status === 'IN_PROGRESS' ||
-      status === 'COMPLETED'
-        ? 1
-        : 0,
     hasNewMedia: false,
     submittedAt: order.createdAt ?? null,
     canCancel: status === 'PENDING',

@@ -19,6 +19,7 @@ import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
 import { OrderCustomerRequestDetails } from '../components/orderReview/OrderCustomerRequestDetails'
 import { OrderServiceInfo } from '../components/orderReview/OrderServiceInfo'
 import { MissionUploadedMedia } from '../../media/components/MissionUploadedMedia'
+import { ManagerDeliveryPanel } from '../../delivery/ManagerDeliveryPanel'
 import {
   CheckItemsList,
   DetailSection,
@@ -114,7 +115,6 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
         if (!abort.signal.aborted) setLoading(false)
       })
     return () => abort.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [missionId, revision])
 
   // Completed missions may no longer carry `droneCode`; resolve the device
@@ -452,7 +452,14 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 missionId={mission.id}
                 reader={staffMissionMediaReader}
                 reviewStatus={detail.result?.approvalStatus ?? null}
+                approveMedia={async (mediaId) => {
+                  await missionsApi.approveMissionMedia(mission.id, mediaId)
+                  refreshDetail()
+                }}
               />
+              {mission.status === 'COMPLETED' ? (
+                <ManagerDeliveryPanel orderId={mission.orderId} refreshKey={revision} />
+              ) : null}
             </>
           ) : null}
 

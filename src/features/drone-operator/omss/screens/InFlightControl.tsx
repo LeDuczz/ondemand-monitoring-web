@@ -3241,10 +3241,9 @@ export default function InFlightControl({
           return
         }
       }
-      let gpsRoute: Array<{ latitude: number; longitude: number }> = []
       let routeWaypoints: Array<{ latitude: number; longitude: number }> = []
       if (command === 'gps_target_start' && target) {
-        gpsRoute = buildExecutableFlightRoute(controlStatus?.positionGps ?? null, target, restrictedGpsZones)
+        const gpsRoute = buildExecutableFlightRoute(controlStatus?.positionGps ?? null, target, restrictedGpsZones)
         routeWaypoints = toControllerRouteWaypoints(gpsRoute)
         if (routeWaypoints.length === 0) {
           setLastCommand(getLanguage() === 'en'

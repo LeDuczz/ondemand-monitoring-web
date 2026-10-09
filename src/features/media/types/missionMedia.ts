@@ -3,6 +3,7 @@ export interface UploadedMissionMedia {
   missionId: string
   deviceId: string
   mediaType: string
+  status?: 'UPLOAD_PENDING' | 'UPLOADING' | 'VALIDATING' | 'RETRY_REQUIRED' | 'MANUAL_UPLOAD_REQUIRED' | 'PENDING_MANAGER_APPROVAL' | 'AVAILABLE' | 'REJECTED'
   fileName: string
   contentType: string
   fileSize: number

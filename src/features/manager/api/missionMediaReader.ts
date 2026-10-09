@@ -18,6 +18,7 @@ function toUploaded(item: MediaResponse): UploadedMissionMedia {
     missionId: item.missionId,
     deviceId: deviceId ?? '—',
     mediaType: isVideo ? 'VIDEO' : 'IMAGE',
+    status: item.status,
     fileName: `${isVideo ? 'video' : 'image'}-${item.id.slice(0, 8)}.${extension}`,
     contentType: item.contentType,
     fileSize: item.fileSize,

@@ -4,6 +4,7 @@ export function tabOfMission(
   mission: OperatorMission,
   _now: Date,
 ): OperatorMissionTab {
+  void _now
   if (mission.status === 'PENDING') return 'pending'
   if (
     mission.status === 'COMPLETED' ||

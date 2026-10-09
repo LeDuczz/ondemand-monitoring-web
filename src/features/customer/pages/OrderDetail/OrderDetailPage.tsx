@@ -53,7 +53,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             snapshotAt={order.checklistSnapshotAt}
           />
           <CustomerFinancePanel orderId={order.id} />
-          <CustomerDeliveryPanel orderId={order.id} />
+          {['IN_PROGRESS', 'COMPLETED'].includes(order.status) ? (
+            <CustomerDeliveryPanel orderId={order.id} />
+          ) : null}
           <DeliverablesCard order={order} />
         </div>
         <div className="od-stack">

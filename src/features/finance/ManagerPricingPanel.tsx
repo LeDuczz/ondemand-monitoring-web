@@ -51,6 +51,11 @@ export function ManagerPricingPanel({
   const [openNote, setOpenNote] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [approvalSucceeded, setApprovalSucceeded] = useState(false)
+
+  useEffect(() => {
+    setApprovalSucceeded(false)
+  }, [orderId])
 
   useEffect(() => {
     const quote = query.data?.currentQuote
@@ -86,6 +91,11 @@ export function ManagerPricingPanel({
   )
   const pendingReviewCount = (query.data?.checklistItems ?? []).filter(
     (item) => !item.reviewStatus || item.reviewStatus === 'PENDING',
+  ).length
+  const pendingCustomCount = (query.data?.checklistItems ?? []).filter(
+    (item) =>
+      (!item.reviewStatus || item.reviewStatus === 'PENDING') &&
+      item.sourceType === 'CUSTOMER_CUSTOM',
   ).length
   const checklistCount = query.data?.checklistItems.length ?? 0
   const reviewedCount = checklistCount - pendingReviewCount
@@ -142,24 +152,47 @@ export function ManagerPricingPanel({
   }
 
   async function approve() {
-    if (!reviewComplete) {
+    if (!query.data) return
+    if (pendingCustomCount > 0) {
       setMessage(null)
       setError(
-        `Còn ${pendingReviewCount} nội dung chưa được phân loại. Hãy review toàn bộ checklist trước khi duyệt báo giá.`,
+        `Còn ${pendingCustomCount} yêu cầu bổ sung của khách hàng chưa được phân loại.`,
       )
       return
     }
-    const quote =
-      query.data?.currentQuote?.status === 'DRAFT'
-        ? query.data.currentQuote
-        : await saveDraft()
-    if (!quote) return
     setBusy(true)
     setError(null)
     setMessage(null)
     try {
+      const pendingDefaults = query.data.checklistItems.filter(
+        (item) =>
+          (!item.reviewStatus || item.reviewStatus === 'PENDING') &&
+          item.sourceType === 'SERVICE_TEMPLATE',
+      )
+      await Promise.all(
+        pendingDefaults.map((item) =>
+          financeApi.reviewChecklist(orderId, item.id, {
+            status: 'INCLUDED',
+            managerNote: null,
+          }),
+        ),
+      )
+      const quote = await financeApi.saveDraft(orderId, {
+        packagePrice: amount(draft.packagePrice),
+        discountAmount: amount(draft.discountAmount),
+        adjustmentAmount: amount(draft.adjustmentAmount),
+        managerNote: draft.managerNote.trim() || null,
+        additionalUnitPrices: Object.fromEntries(
+          query.data.checklistItems
+            .filter((item) => item.reviewStatus === 'ADDITIONAL')
+            .map((item) => [item.id, amount(draft.prices[item.id])]),
+        ),
+      })
       await financeApi.approveQuote(orderId, quote.id)
-      setMessage('Báo giá đã được duyệt và sẵn sàng để khách hàng chấp nhận.')
+      setApprovalSucceeded(true)
+      setMessage(
+        'Duyệt báo giá thành công. Báo giá đã sẵn sàng để khách hàng chấp nhận.',
+      )
       query.reload()
     } catch (cause) {
       setError(errorMessage(cause))
@@ -202,7 +235,8 @@ export function ManagerPricingPanel({
         </div>
       </div>
     )
-  const approved = query.data.currentQuote?.status === 'APPROVED'
+  const approved =
+    approvalSucceeded || query.data.currentQuote?.status === 'APPROVED'
   const accepted = query.data.currentQuote?.status === 'ACCEPTED_BY_CUSTOMER'
   const additionalCount = query.data.checklistItems.filter(
     (item) => item.reviewStatus === 'ADDITIONAL',
@@ -494,7 +528,11 @@ export function ManagerPricingPanel({
                 </p>
               ) : null}
               {message ? (
-                <p className="finance-alert is-success" role="status">
+                <p
+                  className="finance-alert is-success"
+                  role="status"
+                  aria-live="polite"
+                >
                   {message}
                 </p>
               ) : null}
@@ -511,15 +549,15 @@ export function ManagerPricingPanel({
                   <button
                     className="odm-btn odm-btn-p"
                     type="button"
-                    disabled={busy || approved || !reviewComplete}
+                    disabled={busy || approved || pendingCustomCount > 0}
                     title={
-                      !reviewComplete
-                        ? 'Review toàn bộ checklist trước khi duyệt báo giá'
+                      pendingCustomCount > 0
+                        ? 'Phân loại các yêu cầu bổ sung trước khi duyệt báo giá'
                         : undefined
                     }
                     onClick={() => void approve()}
                   >
-                    {approved ? 'Đã duyệt báo giá' : 'Duyệt báo giá'}
+                    {approved ? 'Đã duyệt thành công' : 'Duyệt báo giá'}
                   </button>
                 </div>
               ) : null}

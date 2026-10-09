@@ -14,6 +14,21 @@ const REQ_ICONS: Record<string, OrderIconName> = {
   estimatedAreaHa: 'area',
 }
 
+function localizeRequirementValue(
+  key: string,
+  value: string,
+  messages: {
+    mediaTypes: Record<string, string>
+    priorities: Record<string, string>
+    usagePurposes: Record<string, string>
+  },
+) {
+  if (key === 'mediaType') return messages.mediaTypes[value] ?? value
+  if (key === 'priority') return messages.priorities[value] ?? value
+  if (key === 'usagePurpose') return messages.usagePurposes[value] ?? value
+  return value
+}
+
 export function DeliverablesCard({ order }: { order: OrderDetailView }) {
   const { t, lang } = useI18n(orderDeliverablesMessages)
 
@@ -33,7 +48,7 @@ export function DeliverablesCard({ order }: { order: OrderDetailView }) {
                       <OrderIcon name="file" size={14} />
                       {t.format}
                     </dt>
-                    <dd>{item.format}</dd>
+                    <dd>{t.formats[item.format] ?? item.format}</dd>
                   </div>
                 )}
                 {item.requirements.map(({ key, value }) => (
@@ -42,7 +57,7 @@ export function DeliverablesCard({ order }: { order: OrderDetailView }) {
                       <OrderIcon name={REQ_ICONS[key] ?? 'tag'} size={14} />
                       {t.keys[key] ?? key}
                     </dt>
-                    <dd>{key === 'mediaType' ? (t.mediaTypes[value] ?? value) : value}</dd>
+                    <dd>{localizeRequirementValue(key, value, t)}</dd>
                   </div>
                 ))}
               </dl>

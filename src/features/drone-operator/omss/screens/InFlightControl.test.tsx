@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setLanguage } from '../../../../shared/i18n'
@@ -64,6 +64,8 @@ describe('InFlightControl', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+    setLanguage('vi')
   })
 
   it('renders Vietnamese text by default', () => {
@@ -96,5 +98,83 @@ describe('InFlightControl', () => {
     act(() => setLanguage('en'))
     expect(screen.getByText('Drone Operator')).toBeInTheDocument()
     expect(screen.getByText('Waiting for PX4 GPS')).toBeInTheDocument()
+  })
+
+  it('keeps full cockpit termination accessible during safe-stop without reopening preflight', () => {
+    vi.stubEnv('VITE_FLIGHT_MAP_ONLY', 'false')
+    window.localStorage.removeItem(`omss.droneOperator.preflightReady.${mission.id}.${drone.id}`)
+    render(
+      <InFlightControl
+        mission={mission}
+        drone={drone}
+        normalFlightAllowed={false}
+        terminationAllowed={true}
+        operationalMessage="Đang dừng an toàn"
+        onRTB={vi.fn()}
+        onEmergency={vi.fn()}
+        autoStartPlan={false}
+        onAutoStartPlanConsumed={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Đang dừng an toàn')).toBeInTheDocument()
+    expect(screen.queryByText('Kiểm tra thủ công')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cất cánh' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Tiến' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Nhiệt TẮT' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Hạ cánh' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Dừng khẩn' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Hoàn thành bay' })).toBeEnabled()
+  })
+
+  it('fails closed in full cockpit when no normal or termination capability is provided', () => {
+    vi.stubEnv('VITE_FLIGHT_MAP_ONLY', 'false')
+    render(
+      <InFlightControl
+        mission={mission}
+        drone={drone}
+        onRTB={vi.fn()}
+        onEmergency={vi.fn()}
+        autoStartPlan={false}
+        onAutoStartPlanConsumed={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Cất cánh' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Hạ cánh' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Hoàn thành bay' })).toBeDisabled()
+  })
+
+  it('opens Mission detail by backend identity, not the displayed Mission code', () => {
+    vi.stubEnv('VITE_FLIGHT_MAP_ONLY', 'false')
+    render(
+      <InFlightControl
+        mission={{ ...mission, backendId: 'exact-mission-uuid' }}
+        drone={drone}
+        onRTB={vi.fn()}
+        onEmergency={vi.fn()}
+        autoStartPlan={false}
+        onAutoStartPlanConsumed={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Chi tiết' }))
+    expect(window.location.hash).toContain('exact-mission-uuid')
+    expect(window.location.hash).not.toContain('MS-1')
+  })
+
+  it('preserves normal flight and finish actions after preflight is ready', () => {
+    vi.stubEnv('VITE_FLIGHT_MAP_ONLY', 'false')
+    render(
+      <InFlightControl
+        mission={mission}
+        drone={drone}
+        normalFlightAllowed={true}
+        terminationAllowed={false}
+        onRTB={vi.fn()}
+        onEmergency={vi.fn()}
+        autoStartPlan={false}
+        onAutoStartPlanConsumed={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Cất cánh' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Hoàn thành bay' })).toBeEnabled()
   })
 })

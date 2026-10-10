@@ -787,7 +787,7 @@ export function ReportsPage() {
         <StateView
           state="error"
           title={t.loadError}
-          error={query.error}
+          error={new Error(t.loadError)}
           onRetry={query.reload}
         />
       </div>

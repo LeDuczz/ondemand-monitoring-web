@@ -2,13 +2,29 @@ import { defineMessages } from '../../../shared/i18n'
 
 export const liveDispatchPageMessages = defineMessages({
   vi: {
-    selectDroneAndOperator: 'Cần phân công đủ 4 vai trò và ít nhất 1 thiết bị trước khi phân công.',
+    selectDroneAndOperator:
+      'Cần phân công đủ 4 vai trò và ít nhất 1 thiết bị trước khi phân công.',
     assignFailed: 'Không phân công được nguồn lực',
     loadingResources: 'Đang tải nguồn lực khả dụng…',
+    checkingStaff: 'Đang kiểm tra nhân sự khả dụng...',
+    checkingDevices: 'Đang kiểm tra thiết bị khả dụng...',
+    staffAvailabilityHint:
+      'Chỉ hiển thị nhân sự khả dụng trong thời gian thực hiện Mission.',
+    deviceAvailabilityHint:
+      'Chỉ hiển thị thiết bị khả dụng trong thời gian thực hiện Mission.',
+    staffAvailabilityChanged:
+      'Nhân sự không còn khả dụng trong khung giờ Mission này. Danh sách đã được cập nhật; các lựa chọn còn hợp lệ được giữ nguyên.',
+    deviceAvailabilityChanged:
+      'Thiết bị không còn khả dụng trong khung giờ Mission này. Danh sách đã được cập nhật; các lựa chọn còn hợp lệ được giữ nguyên.',
+    resourceAvailabilityChanged:
+      'Nguồn lực đã không còn khả dụng trong khung giờ này. Danh sách đã được cập nhật. Vui lòng chọn lại.',
+    scheduleRequired:
+      'Cần có lịch bắt đầu và kết thúc Mission hợp lệ để kiểm tra nguồn lực.',
     loadError: 'Không tải được dữ liệu phân công',
     title: 'Phân công nguồn lực',
     createMissionTitle: 'Gán nguồn lực',
-    createMissionSubtitle: 'Chọn nhân sự, thiết bị và xác nhận phân công cho nhiệm vụ',
+    createMissionSubtitle:
+      'Chọn nhân sự, thiết bị và xác nhận phân công cho nhiệm vụ',
     missionSummary: (_code: string, order: string) =>
       `Đơn hàng cần triển khai · ${order}`,
     backToQueue: 'Về hàng đợi',
@@ -43,7 +59,8 @@ export const liveDispatchPageMessages = defineMessages({
     alreadyAssigned: (drone: string, operator: string) =>
       `Nhiệm vụ đã được gán: thiết bị ${drone}, nhân sự ${operator}.`,
     step1: 'Phân công nhân sự',
-    roleHelp: 'Chọn đủ 4 vai trò để có người phụ trách từng bước. Một nhân sự có thể kiêm nhiều vai trò nếu cần.',
+    roleHelp:
+      'Chọn đủ 4 vai trò để có người phụ trách từng bước. Một nhân sự có thể kiêm nhiều vai trò nếu cần.',
     roles: {
       PILOT: 'Phi công',
       OPERATOR: 'Vận hành',
@@ -72,7 +89,8 @@ export const liveDispatchPageMessages = defineMessages({
     staffCountSummary: (count: number) => `${count} nhân sự / 4 vai trò`,
     clearAll: 'Xóa tất cả',
     step2: 'Phân công thiết bị',
-    deviceHelp: 'Chọn một hoặc nhiều thiết bị sẵn sàng để gán cho nhiệm vụ. Các thiết bị được chọn sẽ dùng xuyên suốt luồng bay.',
+    deviceHelp:
+      'Chọn một hoặc nhiều thiết bị sẵn sàng để gán cho nhiệm vụ. Các thiết bị được chọn sẽ dùng xuyên suốt luồng bay.',
     selectedDevice: 'Thiết bị đã chọn',
     availableDevice: 'Sẵn sàng',
     clearDevice: 'Bỏ chọn',
@@ -82,16 +100,20 @@ export const liveDispatchPageMessages = defineMessages({
     unknownModel: 'Không rõ mẫu thiết bị',
     chooseDroneAria: 'Chọn thiết bị',
     chooseDroneOption: 'Chọn thiết bị',
-    noAvailableDrones: 'Không có thiết bị sẵn sàng.',
+    noAvailableDrones:
+      'Không có thiết bị khả dụng trong khung giờ Mission này.',
     chooseOperatorAria: (role: string) => `Chọn nhân sự cho ${role}`,
     chooseOperatorOption: 'Chọn nhân sự',
-    noAvailableOperators: 'Không có nhân sự khả dụng.',
-    footerHint: 'Hệ thống sẽ khóa lịch nhân sự, gán thiết bị và chuyển nhiệm vụ sang bước chờ đội bay xác nhận.',
+    noAvailableOperators:
+      'Không có nhân sự phù hợp trong khung giờ Mission này.',
+    footerHint:
+      'Hệ thống sẽ khóa lịch nhân sự, gán thiết bị và chuyển nhiệm vụ sang bước chờ đội bay xác nhận.',
     orderFooterHint: 'Thông tin đơn hàng đã được duyệt, chỉ để đối chiếu.',
     assigning: 'Đang phân công…',
     assign: 'Phân công',
     readyToAssign: 'Sẵn sàng phân công',
-    confirmBody: 'Kiểm tra lại đơn hàng, nhiệm vụ, các vai trò đã phân công và thiết bị trước khi gửi phân công.',
+    confirmBody:
+      'Kiểm tra lại đơn hàng, nhiệm vụ, các vai trò đã phân công và thiết bị trước khi gửi phân công.',
     tabsAria: 'Các mục phân công',
     assignedTitle: 'Đã phân công nguồn lực',
     assignedBody: (code: string, status: string) =>
@@ -105,7 +127,8 @@ export const liveDispatchPageMessages = defineMessages({
     rolesComplete: 'Đã chọn đủ 4 vai trò',
     rolesMissing: (n: number) => `Thiếu ${n} vai trò`,
     staffFooterHint: 'Chọn đủ 4 vai trò rồi sang bước Thiết bị.',
-    deviceFooterHint: 'Chọn ít nhất một thiết bị khả dụng rồi sang bước Xác nhận.',
+    deviceFooterHint:
+      'Chọn ít nhất một thiết bị khả dụng rồi sang bước Xác nhận.',
     missionFooterHint: 'Kiểm tra lịch bay đã tạo rồi sang bước Nhân sự.',
     checklist: 'Kiểm tra trước khi phân công',
     notSelected: 'Chưa chọn',
@@ -122,9 +145,24 @@ export const liveDispatchPageMessages = defineMessages({
     },
   },
   en: {
-    selectDroneAndOperator: 'Assign all 4 mission roles and one device before assigning.',
+    selectDroneAndOperator:
+      'Assign all 4 mission roles and one device before assigning.',
     assignFailed: 'Could not assign the resources',
     loadingResources: 'Loading available resources…',
+    checkingStaff: 'Checking available staff...',
+    checkingDevices: 'Checking available devices...',
+    staffAvailabilityHint:
+      'Only staff available during this Mission interval are shown.',
+    deviceAvailabilityHint:
+      'Only devices available during this Mission interval are shown.',
+    staffAvailabilityChanged:
+      'Staff are no longer available during this Mission interval. Options have been refreshed; valid selections are retained.',
+    deviceAvailabilityChanged:
+      'Devices are no longer available during this Mission interval. Options have been refreshed; valid selections are retained.',
+    resourceAvailabilityChanged:
+      'Resources are no longer available during this interval. Options have been refreshed. Please select again.',
+    scheduleRequired:
+      'Set a valid Mission start and end time to check resource availability.',
     loadError: 'Could not load the assignment data',
     title: 'Resource assignment',
     createMissionTitle: 'Assign resources',
@@ -163,7 +201,8 @@ export const liveDispatchPageMessages = defineMessages({
     alreadyAssigned: (drone: string, operator: string) =>
       `Mission already assigned: device ${drone}, staff ${operator}.`,
     step1: 'Staff assignment',
-    roleHelp: 'Assign all 4 duties. One staff member can cover multiple roles when needed.',
+    roleHelp:
+      'Assign all 4 duties. One staff member can cover multiple roles when needed.',
     roles: {
       PILOT: 'Pilot',
       OPERATOR: 'Operator',
@@ -192,7 +231,8 @@ export const liveDispatchPageMessages = defineMessages({
     staffCountSummary: (count: number) => `${count} staff / 4 roles`,
     clearAll: 'Clear all',
     step2: 'Device assignment',
-    deviceHelp: 'Choose one or more AVAILABLE devices for this mission. Selected devices will be used through the flight flow.',
+    deviceHelp:
+      'Choose one or more AVAILABLE devices for this mission. Selected devices will be used through the flight flow.',
     selectedDevice: 'Selected device',
     availableDevice: 'Available',
     clearDevice: 'Clear',
@@ -202,17 +242,19 @@ export const liveDispatchPageMessages = defineMessages({
     unknownModel: 'Unknown device model',
     chooseDroneAria: 'Choose a device',
     chooseDroneOption: 'Choose a device',
-    noAvailableDrones: 'No AVAILABLE devices.',
+    noAvailableDrones: 'No devices are available during this Mission interval.',
     chooseOperatorAria: (role: string) => `Choose staff for ${role}`,
     chooseOperatorOption: 'Choose staff',
-    noAvailableOperators: 'No available staff.',
+    noAvailableOperators:
+      'No eligible staff are available during this Mission interval.',
     footerHint:
       'The backend will lock staff schedules, assign the device, and move the mission to crew confirmation.',
     orderFooterHint: 'You are creating a mission from the selected order.',
     assigning: 'Assigning…',
     assign: 'Assign',
     readyToAssign: 'Ready to assign',
-    confirmBody: 'Review the order, mission role assignments, and device before submitting the assignment.',
+    confirmBody:
+      'Review the order, mission role assignments, and device before submitting the assignment.',
     tabsAria: 'Assignment sections',
     assignedTitle: 'Resources assigned',
     assignedBody: (code: string, status: string) =>
@@ -226,7 +268,8 @@ export const liveDispatchPageMessages = defineMessages({
     rolesComplete: 'All 4 roles selected',
     rolesMissing: (n: number) => `${n} role(s) still missing`,
     staffFooterHint: 'Pick all 4 staff roles, then continue to Devices.',
-    deviceFooterHint: 'Pick at least one available device, then continue to Confirm.',
+    deviceFooterHint:
+      'Pick at least one available device, then continue to Confirm.',
     missionFooterHint: 'Check the flight schedule, then continue to Staff.',
     checklist: 'Pre-assignment checklist',
     notSelected: 'Not selected',

@@ -84,10 +84,6 @@ const IMPORTANT_ROUTE_REASONS = new Set([
   'HOME',
 ])
 
-function demoFlightToken(missionId: string, deviceId: string) {
-  return `demo-flight-token:${missionId}:${deviceId}:${Date.now()}`
-}
-
 function perpendicularDistance(
   point: RoutePoint,
   start: RoutePoint,
@@ -481,10 +477,9 @@ export default function OperatorWorkspace() {
       return
     }
     try {
-      await flightControlApi.bindSession(
-        mission.backendId ?? mission.id,
-        drone.id,
-      ).catch(() => undefined)
+      await flightControlApi
+        .bindSession(mission.backendId ?? mission.id, drone.id)
+        .catch(() => undefined)
       const updated = await missionApi
         .startMission(mission.backendId ?? mission.id, token.token)
         .catch(() => null)
@@ -532,10 +527,14 @@ export default function OperatorWorkspace() {
       const storedToken = window.sessionStorage.getItem(
         `omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`,
       )
-      const tokenValue = storedToken ?? demoFlightToken(missionId, drone.id)
-      await missionApi
-        .handoverMyMission(mission.backendId ?? mission.id)
-        .catch(() => undefined)
+      if (!storedToken)
+        throw new Error(
+          'Chưa có quyền bay từ preflight. Vui lòng kiểm tra lại.',
+        )
+      const tokenValue = storedToken
+      const updated = await missionApi.handoverMyMission(
+        mission.backendId ?? mission.id,
+      )
       setToken({
         token: tokenValue,
         issuedAt: Date.now(),
@@ -546,9 +545,7 @@ export default function OperatorWorkspace() {
       window.sessionStorage.removeItem(
         `omss.droneOperator.backendPreflightToken.${missionId}.${drone.id}`,
       )
-      setMission((current) =>
-        current ? { ...current, state: 'READY_TO_FLY' } : current,
-      )
+      setMission(adaptBackendMission(updated as unknown as BackendMission))
       setScreen('ready-to-fly')
     } catch (cause) {
       const message =

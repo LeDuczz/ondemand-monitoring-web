@@ -3,9 +3,11 @@ import { defineMessages } from '../../../shared/i18n'
 export const uploadMediaScreenMessages = defineMessages({
   vi: {
     stepTitle: 'Upload media',
-    uploadPermissionNote: 'Upload ảnh cần Inspector đã nhận nhiệm vụ, khi mission ở PENDING_REVIEW hoặc COMPLETED. Pilot xem ảnh đã chụp; checklist chỉ sửa khi backend cấp quyền giám sát.',
+    uploadPermissionNote:
+      'Upload ảnh cần Inspector đã nhận nhiệm vụ. Bạn vẫn có thể xem media và cập nhật checklist nếu được phân công giám sát.',
     checkingPermissions: 'Đang xác nhận quyền upload…',
-    permissionsUnavailable: 'Không tải được quyền upload. Bấm Làm mới để thử lại.',
+    permissionsUnavailable:
+      'Không tải được quyền upload. Bấm Làm mới để thử lại.',
     enlargePreview: 'Xem ảnh lớn',
     closePreview: 'Đóng ảnh',
     openingMission: 'Đang mở mission',
@@ -22,7 +24,8 @@ export const uploadMediaScreenMessages = defineMessages({
     pendingChip: (n: number) => `${n} chờ xử lý`,
     uploadingChip: (n: number) => `${n} đang tải`,
     manualChip: (n: number) => `${n} cần thủ công`,
-    sendBlocked: 'Hoàn tất checklist và upload đủ bằng chứng trước khi gửi manager.',
+    sendBlocked:
+      'Hoàn tất checklist và upload đủ bằng chứng trước khi gửi manager.',
     mediaList: 'Danh sách media',
     fileCount: (n: number) => `${n} file`,
     sortNewest: 'Mới nhất',
@@ -44,14 +47,8 @@ export const uploadMediaScreenMessages = defineMessages({
     backToResult: 'Quay lại kết quả',
     refresh: 'Làm mới',
     uploadAll: 'Upload tất cả',
-    completeAndSubmit: 'Gửi manager',
-    submittedToManager: 'Đã gửi manager',
-    completeOnly: 'Nghiệm thu mission',
-    completing: 'Đang nghiệm thu…',
-    completeSubmitSuccess: 'Đã nghiệm thu và gửi kết quả mission cho manager duyệt.',
-    completeSuccess: 'Đã nghiệm thu mission.',
-    completeSubmitFailed: 'Không thể nghiệm thu hoặc gửi kết quả cho manager.',
-    missingChecklistEvidence: 'Checklist chưa đủ bằng chứng hợp lệ. Upload media trước khi gửi manager.',
+    missingChecklistEvidence:
+      'Checklist chưa đủ bằng chứng hợp lệ. Upload media trước khi gửi manager.',
     viewOnly: 'Chỉ xem media',
     restoringMission: 'Đang khôi phục mission đang mở...',
     loadingMedia: 'Đang tải media…',
@@ -66,9 +63,11 @@ export const uploadMediaScreenMessages = defineMessages({
     deleteFailed: 'Không xóa được media',
   },
   en: {
-    uploadPermissionNote: 'Uploading requires an accepted Inspector assignment and a PENDING_REVIEW or COMPLETED mission. Pilots can preview captures; checklist editing follows the backend monitoring capability.',
+    uploadPermissionNote:
+      'Uploading requires an accepted Inspector assignment. You can still view media and update the checklist if assigned to monitoring.',
     checkingPermissions: 'Checking upload permissions…',
-    permissionsUnavailable: 'Could not load upload permissions. Refresh to retry.',
+    permissionsUnavailable:
+      'Could not load upload permissions. Refresh to retry.',
     enlargePreview: 'Enlarge image',
     closePreview: 'Close image',
     stepTitle: 'Upload media',
@@ -86,7 +85,8 @@ export const uploadMediaScreenMessages = defineMessages({
     pendingChip: (n: number) => `${n} pending`,
     uploadingChip: (n: number) => `${n} uploading`,
     manualChip: (n: number) => `${n} need manual upload`,
-    sendBlocked: 'Complete the checklist and upload enough evidence before sending to the manager.',
+    sendBlocked:
+      'Complete the checklist and upload enough evidence before sending to the manager.',
     mediaList: 'Media',
     fileCount: (n: number) => `${n} file(s)`,
     sortNewest: 'Newest',
@@ -108,14 +108,8 @@ export const uploadMediaScreenMessages = defineMessages({
     backToResult: 'Back to results',
     refresh: 'Refresh',
     uploadAll: 'Upload all',
-    completeAndSubmit: 'Send to manager',
-    submittedToManager: 'Sent to manager',
-    completeOnly: 'Complete mission',
-    completing: 'Completing…',
-    completeSubmitSuccess: 'Mission completed and submitted for manager review.',
-    completeSuccess: 'Mission completed.',
-    completeSubmitFailed: 'Could not complete the mission or submit the result to the manager.',
-    missingChecklistEvidence: 'The checklist does not have enough valid evidence. Upload media before sending to the manager.',
+    missingChecklistEvidence:
+      'The checklist does not have enough valid evidence. Upload media before sending to the manager.',
     viewOnly: 'View only',
     restoringMission: 'Restoring the open mission...',
     loadingMedia: 'Loading media…',

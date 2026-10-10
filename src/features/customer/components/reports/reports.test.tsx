@@ -92,6 +92,89 @@ afterEach(() => {
 })
 
 describe('Customer aggregate/report publication', () => {
+  it('shows compact published summary, actual duration and read-only checklist labels', async () => {
+    setLanguage('vi')
+    const data = report('m1')
+    data.mission.scheduledStartAt = '2026-10-09T07:55:00+07:00'
+    data.mission.scheduledEndAt = '2026-10-09T10:55:00+07:00'
+    data.result!.durationSeconds = 1800
+    vi.mocked(customerMissionReportApi.report).mockResolvedValue(data)
+    render(<CustomerMissionReportPage orderId="o" missionId="m1" />)
+    expect(
+      await screen.findByText('Báo cáo đã được công bố'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Báo cáo phiên giám sát',
+    )
+    expect(screen.getByRole('region', { name: 'Tổng quan' })).toHaveTextContent(
+      '30 phút',
+    )
+    expect(screen.getByRole('region', { name: 'Tổng quan' })).toHaveTextContent(
+      'Scope m1',
+    )
+    expect(
+      screen.getByText('Bạn có thể xem đầy đủ kết quả và media của Mission.'),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('Trạng thái')).toHaveLength(3)
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(
+      screen.queryByText(/COMPLETED|NON_COMPLIANT|CUSTOMER_CUSTOM/),
+    ).toBeNull()
+  })
+  it('refreshes publication and exact-Mission media from the page action', async () => {
+    vi.mocked(customerMissionReportApi.report)
+      .mockResolvedValueOnce(report('m1', false))
+      .mockResolvedValue(report('m1'))
+    render(<CustomerMissionReportPage orderId="o" missionId="m1" />)
+    await screen.findByText('Report is not available yet.')
+    await screen.findByRole('button', { name: 'View photo-m1.jpg' })
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh report' }))
+    await screen.findByText('Report has been published')
+    await screen.findByText('Summary m1')
+    await waitFor(() =>
+      expect(customerMediaApi.listMissionMedia).toHaveBeenCalledTimes(2),
+    )
+    expect(customerMissionReportApi.report).toHaveBeenCalledTimes(2)
+  })
+  it('shows an approved M1 report independently while M2 remains unfinished', async () => {
+    vi.mocked(customerMissionReportApi.list).mockResolvedValue([
+      mission('m1', true),
+      mission('m2', false),
+    ])
+    render(<CustomerMissionReportPage orderId="o" missionId="m1" />)
+    expect(await screen.findByText('Summary m1')).toBeInTheDocument()
+    expect(screen.queryByText('Scope m2')).toBeNull()
+    expect(screen.queryByText('Summary m2')).toBeNull()
+  })
+  it('shows all published media in a gallery without internal review metadata', async () => {
+    vi.mocked(customerMediaApi.listMissionMedia).mockResolvedValue({
+      items: [1, 2, 3, 4].map((i) => ({
+        mediaId: `media-${i}`,
+        missionId: 'm1',
+        fileName: `capture-${i}.jpg`,
+        mediaType: 'IMAGE',
+        fileSize: 456000,
+        capturedAt: '2026-10-09T01:00:00Z',
+        downloadUrl: 'https://example.test/capture.jpg',
+      })),
+      page: 0,
+      totalItems: 4,
+      totalPages: 1,
+      first: true,
+      last: true,
+    })
+    render(<CustomerMissionReportPage orderId="o" missionId="m1" />)
+    const gallery = await screen.findByRole('region', {
+      name: 'Session photos and videos',
+    })
+    await within(gallery).findByRole('button', { name: 'View capture-4.jpg' })
+    expect(
+      within(gallery).getAllByRole('button', { name: /^View capture/ }),
+    ).toHaveLength(4)
+    expect(gallery).not.toHaveTextContent(
+      /PENDING_MANAGER_APPROVAL|REJECTED|revision/,
+    )
+  })
   it('renders zero Missions without a fake count or completion claim', async () => {
     render(<CustomerOrderMissionsSection orderId="o" />)
     expect(

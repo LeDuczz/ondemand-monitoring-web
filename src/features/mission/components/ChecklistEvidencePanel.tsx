@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
 import type {
@@ -10,7 +10,7 @@ import './ChecklistEvidencePanel.css'
 
 export const evidenceReason: Record<EvidenceBlockingReason, string> = {
   EVIDENCE_SOURCE_NOT_ELIGIBLE:
-    'Nguồn media không hợp lệ. Chỉ bằng chứng camera drone được tính.',
+    'Nguồn media không hợp lệ. Bằng chứng hỗ trợ camera drone và ảnh vệ tinh của hệ thống.',
   EVIDENCE_TYPE_NOT_ELIGIBLE: 'Loại media không được hỗ trợ.',
   MEDIA_REJECTED: 'Media đã bị từ chối.',
   MEDIA_NOT_VALIDATED: 'Media chưa xác thực thành công.',
@@ -30,10 +30,24 @@ const mediaStatusLabel: Record<string, string> = {
   AVAILABLE: 'Đã duyệt',
   VALIDATING: 'Đang xác thực',
   UPLOADING: 'Đang upload',
+  UPLOAD_PENDING: 'Chờ upload',
+  RETRY_REQUIRED: 'Cần upload lại',
+  MANUAL_UPLOAD_REQUIRED: 'Chờ upload thủ công',
   REJECTED: 'Bị từ chối',
 }
 
-export function ChecklistEvidencePanel({
+export function ChecklistEvidencePanel(
+  props: Parameters<typeof MissionEvidencePanel>[0],
+) {
+  return (
+    <MissionEvidencePanel
+      key={`${props.missionId}:${props.item.id}`}
+      {...props}
+    />
+  )
+}
+
+function MissionEvidencePanel({
   missionId,
   item,
   canAttach,
@@ -53,6 +67,26 @@ export function ChecklistEvidencePanel({
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const [mediaError, setMediaError] = useState<unknown>(null)
+  const request = useRef<{ number: number; abort?: AbortController }>({
+    number: 0,
+  })
+  useEffect(
+    () => () => {
+      request.current.number++
+      request.current.abort?.abort()
+    },
+    [],
+  )
+  function closePicker() {
+    request.current.number++
+    request.current.abort?.abort()
+    setPickerOpen(false)
+    setMediaLoading(false)
+    setCandidates(null)
+  }
   async function act(operation: () => Promise<unknown>) {
     if (busy) return
     setBusy(true)
@@ -60,11 +94,9 @@ export function ChecklistEvidencePanel({
     try {
       await operation()
       refresh()
-    } catch (cause) {
+    } catch {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Không thể cập nhật bằng chứng.',
+        'Không thể cập nhật bằng chứng. Vui lòng làm mới checklist và thử lại.',
       )
       refresh()
     } finally {
@@ -72,21 +104,45 @@ export function ChecklistEvidencePanel({
     }
   }
   async function load(nextPage: number) {
-    setBusy(true)
-    setError(null)
+    request.current.abort?.abort()
+    const abort = new AbortController()
+    const number = ++request.current.number
+    request.current.abort = abort
+    setPickerOpen(true)
+    setMediaLoading(true)
+    setMediaError(null)
+    setCandidates(null)
+    setPage(nextPage)
     try {
-      setCandidates(await checklistEvidenceApi.candidates(missionId, nextPage))
+      const result = await checklistEvidenceApi.candidates(
+        missionId,
+        nextPage,
+        abort.signal,
+      )
+      if (abort.signal.aborted || request.current.number !== number) return
+      if (!Array.isArray(result))
+        throw new Error('Invalid evidence candidate response')
+      setCandidates(result)
       setPage(nextPage)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Không tải được media.')
+      if (!abort.signal.aborted && request.current.number === number)
+        setMediaError(cause)
     } finally {
-      setBusy(false)
+      if (!abort.signal.aborted && request.current.number === number)
+        setMediaLoading(false)
     }
   }
   const needle = query.trim().toLowerCase()
-  const shown = (candidates ?? []).filter(
+  // Backend attachment eligibility is authoritative, not final-approval readiness.
+  const eligible = (candidates ?? []).filter((media) => media.attachable)
+  const shown = eligible.filter(
     (media) => !needle || media.fileName.toLowerCase().includes(needle),
   )
+  const attached = (media: EvidenceCandidate) =>
+    media.alreadyAttachedExecutionIds.includes(item.id) ||
+    Boolean(item.evidence?.some((link) => link.mediaId === media.mediaId))
+  const allAttached = eligible.length > 0 && eligible.every(attached)
+  const hasNext = (candidates?.length ?? 0) >= 50
   return (
     <section
       className="checklist-evidence"
@@ -124,14 +180,11 @@ export function ChecklistEvidencePanel({
               </div>
               <div className="checklist-candidate-meta">
                 <span>
-                  {sourceLabel[link.sourceType ?? ''] ??
-                    link.sourceType ??
-                    'Unknown/Legacy'}
+                  {sourceLabel[link.sourceType ?? ''] ?? 'Nguồn chưa xác định'}
                 </span>
                 <span className="checklist-candidate-status">
                   {mediaStatusLabel[link.mediaStatus ?? ''] ??
-                    link.mediaStatus ??
-                    'Legacy'}
+                    'Chưa rõ trạng thái'}
                 </span>
               </div>
               <small>{new Date(link.capturedAt).toLocaleString('vi-VN')}</small>
@@ -204,24 +257,32 @@ export function ChecklistEvidencePanel({
         <button
           type="button"
           className="odm-btn checklist-evidence-add"
-          disabled={busy}
-          onClick={() => void load(0)}
+          disabled={busy || mediaLoading}
+          onClick={() => {
+            setQuery('')
+            void load(0)
+          }}
         >
           Thêm bằng chứng từ media Mission
         </button>
       )}
       {canAttach &&
-        candidates &&
+        pickerOpen &&
         createPortal(
           <div
             className="checklist-picker"
             role="dialog"
             aria-modal="true"
             aria-label="Chọn media làm bằng chứng"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && !busy) closePicker()
+            }}
           >
             <div
               className="checklist-picker-backdrop"
-              onClick={() => setCandidates(null)}
+              onClick={() => {
+                if (!busy) closePicker()
+              }}
             />
             <div className="checklist-picker-panel">
               <header className="checklist-picker-head">
@@ -235,7 +296,8 @@ export function ChecklistEvidencePanel({
                   type="button"
                   className="checklist-picker-close"
                   aria-label="Đóng"
-                  onClick={() => setCandidates(null)}
+                  disabled={busy}
+                  onClick={closePicker}
                 >
                   ×
                 </button>
@@ -244,22 +306,60 @@ export function ChecklistEvidencePanel({
                 type="search"
                 className="checklist-picker-search"
                 aria-label="Tìm media"
-                placeholder="Tìm theo tên file…"
+                placeholder="Tìm theo tên file..."
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
               <div className="checklist-picker-body">
-                {shown.length === 0 && (
+                {mediaLoading && <p role="status">Đang tải media...</p>}
+                {mediaError != null && (
+                  <div role="alert">
+                    <p>Không thể tải media của Mission.</p>
+                    <button
+                      className="odm-btn"
+                      type="button"
+                      onClick={() => void load(page)}
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                )}
+                {!mediaLoading && mediaError == null && shown.length === 0 && (
                   <p className="checklist-candidates-empty">
-                    Không có media nào để gắn.
+                    {needle
+                      ? 'Không tìm thấy media phù hợp.'
+                      : 'Mission này chưa có media phù hợp để làm bằng chứng.'}
                   </p>
                 )}
+                {!mediaLoading &&
+                  mediaError == null &&
+                  allAttached &&
+                  shown.length > 0 && (
+                    <p className="checklist-candidates-empty">
+                      {hasNext || page > 0
+                        ? 'Media phù hợp ở trang này đã được gắn vào checklist này.'
+                        : 'Tất cả media phù hợp đã được gắn vào checklist này.'}
+                    </p>
+                  )}
                 <ul className="checklist-candidate-list">
                   {shown.map((media) => (
                     <li key={media.mediaId} className="checklist-candidate">
                       <div className="checklist-candidate-thumb">
-                        {media.previewUrl && media.mediaType !== 'VIDEO' ? (
-                          <img src={media.previewUrl} alt="" loading="lazy" />
+                        {media.previewUrl ? (
+                          media.mediaType === 'VIDEO' ? (
+                            <video
+                              src={media.previewUrl}
+                              controls
+                              preload="metadata"
+                              aria-label={`Xem video ${media.fileName}`}
+                            />
+                          ) : (
+                            <img
+                              src={media.previewUrl}
+                              alt={`Xem trước ${media.fileName}`}
+                              loading="lazy"
+                            />
+                          )
                         ) : (
                           <span aria-hidden="true">
                             {media.mediaType === 'VIDEO' ? '▶' : '▣'}
@@ -276,19 +376,20 @@ export function ChecklistEvidencePanel({
                         <span className="checklist-candidate-meta">
                           <span>
                             {sourceLabel[media.sourceType ?? ''] ??
-                              media.sourceType ??
-                              'Unknown/Legacy'}
+                              'Nguồn chưa xác định'}
                           </span>
                           <span className="checklist-candidate-status">
                             {mediaStatusLabel[media.status ?? ''] ??
-                              media.status ??
-                              'Legacy'}
+                              'Chưa rõ trạng thái'}
                           </span>
                         </span>
+                        <small>
+                          {media.mediaType === 'VIDEO' ? 'Video' : 'Ảnh'}
+                        </small>
                         <small className="checklist-candidate-time">
                           {new Date(media.capturedAt).toLocaleString('vi-VN')}
                         </small>
-                        {!media.attachable && (
+                        {!media.eligibleForOperationalReadiness && (
                           <small>
                             {media.ineligibilityReason
                               ? evidenceReason[media.ineligibilityReason]
@@ -299,11 +400,7 @@ export function ChecklistEvidencePanel({
                       <button
                         type="button"
                         className="odm-btn odm-btn-p"
-                        disabled={
-                          busy ||
-                          !media.attachable ||
-                          media.alreadyAttachedExecutionIds.includes(item.id)
-                        }
+                        disabled={busy || !media.attachable || attached(media)}
                         onClick={() =>
                           void act(async () => {
                             await checklistEvidenceApi.attach(
@@ -312,41 +409,47 @@ export function ChecklistEvidencePanel({
                               media.mediaId,
                               item.version,
                             )
-                            setCandidates(null)
+                            closePicker()
                           })
                         }
                       >
-                        Gắn media
+                        {attached(media) ? 'Đã gắn' : 'Gắn media'}
                       </button>
                     </li>
                   ))}
                 </ul>
               </div>
               <footer className="checklist-candidate-pager">
+                {(hasNext || page > 0) && (
+                  <>
+                    <button
+                      type="button"
+                      className="odm-btn"
+                      disabled={busy || mediaLoading || page === 0}
+                      onClick={() => void load(page - 1)}
+                    >
+                      Trang trước
+                    </button>
+                    <button
+                      type="button"
+                      className="odm-btn"
+                      disabled={busy || mediaLoading || !hasNext}
+                      onClick={() => void load(page + 1)}
+                    >
+                      Trang sau
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   className="odm-btn"
-                  disabled={busy || page === 0}
-                  onClick={() => void load(page - 1)}
-                >
-                  Trang trước
-                </button>
-                <button
-                  type="button"
-                  className="odm-btn"
-                  disabled={busy || candidates.length < 50}
-                  onClick={() => void load(page + 1)}
-                >
-                  Trang sau
-                </button>
-                <button
-                  type="button"
-                  className="odm-btn"
-                  onClick={() => setCandidates(null)}
+                  disabled={busy}
+                  onClick={closePicker}
                 >
                   Đóng chọn media
                 </button>
               </footer>
+              {error && <p role="alert">{error}</p>}
             </div>
           </div>,
           document.body,

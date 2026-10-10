@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 
 import { useI18n } from '../../../shared/i18n'
 import { missionApi } from '../../mission/api/missionApi'
+import type { MissionPermissions } from '../../mission/types/permissions'
+import {
+  missionHasSafeStop,
+  missionStopLabel,
+  missionMayTerminate,
+} from '../../mission/lib/missionOperationalState'
 import {
   getActiveMissionId,
   markActiveMissionFlowStep,
@@ -172,6 +178,9 @@ export function ActiveFlightScreen({
     routeMissionId ?? missionIdFromCurrentFlightHash() ?? getActiveMissionId()
   const [mission, setMission] = useState<BackendMission | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [permissions, setPermissions] = useState<MissionPermissions | null>(
+    null,
+  )
   const autoStart =
     window.sessionStorage.getItem('odm.operator.autoStartSimulation') === 'true'
   const { t } = useI18n(activeFlightScreenMessages)
@@ -179,17 +188,31 @@ export function ActiveFlightScreen({
   useEffect(() => {
     if (!missionId) return
     let active = true
-    void missionApi
-      .getMissionById(missionId)
-      .then((result) => {
-        if (active) setMission(result as BackendMission)
-      })
-      .catch((cause) => {
-        if (active)
-          setError(cause instanceof Error ? cause.message : t.loadMissionFailed)
-      })
+    let timer: number | undefined
+    const refresh = async () => {
+      try {
+        const [result, access] = await Promise.all([
+          missionApi.getMissionById(missionId),
+          missionApi.getPermissions(missionId),
+        ])
+        if (active) {
+          setMission(result as BackendMission)
+          setPermissions(access)
+          setError(null)
+        }
+      } catch {
+        if (active) {
+          setPermissions(null)
+          setError(t.loadMissionFailed)
+        }
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000)
+      }
+    }
+    void refresh()
     return () => {
       active = false
+      window.clearTimeout(timer)
     }
   }, [missionId, t.loadMissionFailed])
 
@@ -206,7 +229,7 @@ export function ActiveFlightScreen({
       />
     )
   }
-  if (!mission) {
+  if (!mission || mission.id !== missionId) {
     return <FlightOpeningShell />
   }
   if (!mission.deviceId) {
@@ -223,7 +246,15 @@ export function ActiveFlightScreen({
     <InFlightControlScreen
       mission={toFlightMission(mission)}
       drone={toFlightDrone(mission)}
-      autoStartPlan={autoStart}
+      normalFlightAllowed={
+        !missionHasSafeStop(mission) && permissions?.canControlFlight === true
+      }
+      terminationAllowed={missionMayTerminate(
+        mission,
+        permissions?.canTerminateFlight,
+      )}
+      operationalMessage={missionStopLabel(mission) ?? undefined}
+      autoStartPlan={autoStart && !missionHasSafeStop(mission)}
       onAutoStartPlanConsumed={() =>
         window.sessionStorage.removeItem('odm.operator.autoStartSimulation')
       }
@@ -238,8 +269,13 @@ export function ActiveFlightScreen({
       onRTB={() => {
         void missionApi
           .markReturning(mission.id)
-          .then(() => missionApi.startPostflight(mission.id))
-          .then(() => {
+          .then(async (returned) => {
+            if (missionHasSafeStop(mission)) {
+              // RTL is a return command, not evidence that the drone has landed.
+              setMission(returned as BackendMission)
+              return
+            }
+            await missionApi.startPostflight(mission.id)
             setActiveMissionId(mission.id)
             window.location.hash = operatorHref({
               screen: 'postflight',

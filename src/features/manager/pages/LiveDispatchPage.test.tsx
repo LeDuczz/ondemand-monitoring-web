@@ -1,5 +1,11 @@
 import { act } from 'react'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { setLanguage } from '../../../shared/i18n'
@@ -13,7 +19,8 @@ afterEach(() => vi.restoreAllMocks())
 
 describe('LiveDispatchPage', () => {
   function clickLastStaffOption(name: RegExp) {
-    const picker = screen.getByPlaceholderText('Tìm theo tên hoặc email...')
+    const picker = screen
+      .getByPlaceholderText('Tìm theo tên hoặc email...')
       .closest('div[style*="position: absolute"]')
     if (!picker) throw new Error('Staff picker is not open')
     fireEvent.click(within(picker as HTMLElement).getByRole('button', { name }))
@@ -25,6 +32,8 @@ describe('LiveDispatchPage', () => {
       missionCode: 'MS-1',
       status: 'RESOURCE_ASSIGNING',
       orderTitle: 'Chụp ảnh',
+      scheduledStartAt: '2026-10-10T03:00:00Z',
+      scheduledEndAt: '2026-10-10T04:00:00Z',
     } as Mission
     vi.spyOn(missionApi, 'getMissionById').mockResolvedValue(mission)
     vi.spyOn(droneApi, 'getAvailable').mockResolvedValue([
@@ -33,9 +42,21 @@ describe('LiveDispatchPage', () => {
     ])
     vi.spyOn(operatorApi, 'getAvailable').mockResolvedValue([
       { id: 'pilot-id', fullName: 'Pilot A', email: 'pilot@example.com' },
-      { id: 'operator-id', fullName: 'Operator B', email: 'operator@example.com' },
-      { id: 'maintainer-id', fullName: 'Maintainer C', email: 'maintainer@example.com' },
-      { id: 'inspector-id', fullName: 'Inspector D', email: 'inspector@example.com' },
+      {
+        id: 'operator-id',
+        fullName: 'Operator B',
+        email: 'operator@example.com',
+      },
+      {
+        id: 'maintainer-id',
+        fullName: 'Maintainer C',
+        email: 'maintainer@example.com',
+      },
+      {
+        id: 'inspector-id',
+        fullName: 'Inspector D',
+        email: 'inspector@example.com',
+      },
     ])
     const assign = vi
       .spyOn(missionApi, 'assignResources')
@@ -82,13 +103,19 @@ describe('LiveDispatchPage', () => {
       missionCode: 'MS-1',
       status: 'RESOURCE_ASSIGNING',
       orderTitle: 'Chụp ảnh',
+      scheduledStartAt: '2026-10-10T03:00:00Z',
+      scheduledEndAt: '2026-10-10T04:00:00Z',
     } as Mission
     vi.spyOn(missionApi, 'getMissionById').mockResolvedValue(mission)
     vi.spyOn(droneApi, 'getAvailable').mockResolvedValue([
       { id: 'drone-db-id', label: 'Drone 48' },
     ])
     vi.spyOn(operatorApi, 'getAvailable').mockResolvedValue([
-      { id: 'seed-staff-1', fullName: 'Seed Staff 1', email: 'seed@example.com' },
+      {
+        id: 'seed-staff-1',
+        fullName: 'Seed Staff 1',
+        email: 'seed@example.com',
+      },
     ])
     const assign = vi
       .spyOn(missionApi, 'assignResources')
@@ -114,16 +141,12 @@ describe('LiveDispatchPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Xác nhận/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
     await waitFor(() =>
-      expect(assign).toHaveBeenCalledWith(
-        'mission-1',
-        ['drone-db-id'],
-        {
-          PILOT: ['seed-staff-1'],
-          OPERATOR: ['seed-staff-1'],
-          MAINTAINER: ['seed-staff-1'],
-          INSPECTOR: ['seed-staff-1'],
-        },
-      ),
+      expect(assign).toHaveBeenCalledWith('mission-1', ['drone-db-id'], {
+        PILOT: ['seed-staff-1'],
+        OPERATOR: ['seed-staff-1'],
+        MAINTAINER: ['seed-staff-1'],
+        INSPECTOR: ['seed-staff-1'],
+      }),
     )
   })
 
@@ -133,6 +156,8 @@ describe('LiveDispatchPage', () => {
       missionCode: 'MS-1',
       status: 'RESOURCE_ASSIGNING',
       orderTitle: 'Chụp ảnh',
+      scheduledStartAt: '2026-10-10T03:00:00Z',
+      scheduledEndAt: '2026-10-10T04:00:00Z',
     } as Mission
     vi.spyOn(missionApi, 'getMissionById').mockResolvedValue(mission)
     vi.spyOn(droneApi, 'getAvailable').mockResolvedValue([
@@ -145,7 +170,9 @@ describe('LiveDispatchPage', () => {
     render(<LiveDispatchPage missionId="mission-1" />)
     act(() => setLanguage('en'))
     await waitFor(() => screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByRole('heading', { name: 'Assign resources' })).toBeTruthy()
+    expect(
+      screen.getByRole('heading', { name: 'Assign resources' }),
+    ).toBeTruthy()
     expect(screen.getByRole('button', { name: /Order/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Confirm/ })).toBeTruthy()
   })

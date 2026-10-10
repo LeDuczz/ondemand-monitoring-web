@@ -17,6 +17,11 @@ import { operatorHref } from '../routes'
 import type { OperatorMission, OperatorMissionTab } from '../types/mission'
 import { MissionListTable } from './MissionListTable'
 import { missionListPageMessages } from './MissionListPage.messages'
+import {
+  missionHasSafeStop,
+  missionStopLabel,
+  missionMayTerminate,
+} from '../../mission/lib/missionOperationalState'
 
 type Messages = (typeof missionListPageMessages)['vi']
 
@@ -66,6 +71,19 @@ function railStatusTone(status: string) {
 function railActionFor(mission: OperatorMission, t: Messages) {
   const status = latestMissionStatus(mission)
   const permissions = mission.permissions
+  if (missionHasSafeStop(mission)) {
+    return {
+      label: missionMayTerminate(mission, permissions?.canTerminateFlight)
+        ? 'Dừng chuyến bay'
+        : 'Xem trạng thái dừng',
+      href: operatorHref({
+        screen: missionMayTerminate(mission, permissions?.canTerminateFlight)
+          ? 'flight'
+          : 'missionDetail',
+        missionId: mission.id,
+      }),
+    }
+  }
   if (
     permissions?.canMaintainDevice &&
     (status === 'RETURNING' || status === 'POSTFLIGHT_CHECKING')
@@ -88,7 +106,9 @@ function railActionFor(mission: OperatorMission, t: Messages) {
   }
   if (
     permissions?.canControlFlight &&
-    (status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING')
+    (status === 'IN_FLIGHT' ||
+      status === 'IN_PROGRESS' ||
+      status === 'RETURNING')
   ) {
     return {
       label: t.openCockpit,
@@ -455,6 +475,7 @@ function NextFlightCard({
   const deviceLabel = formatDeviceLabel(mission)
   const status = latestMissionStatus(mission)
   const statusLabel =
+    missionStopLabel(mission) ??
     (t.statusLabel as Record<string, string>)[status] ??
     (t.statusLabel as Record<string, string>)[mission.status] ??
     status

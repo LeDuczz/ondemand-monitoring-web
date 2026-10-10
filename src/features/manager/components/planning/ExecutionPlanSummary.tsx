@@ -1,5 +1,6 @@
 import type { ExecutionPlan } from '../../types/planning'
 import type { OrderChecklistSnapshot } from '../../types/orders'
+import { planningBlocker } from '../../lib/planningErrors'
 
 export function ExecutionPlanSummary({
   plan,
@@ -11,32 +12,24 @@ export function ExecutionPlanSummary({
   const coverage = plan.coverage
   return (
     <section aria-label="Execution plan summary">
-      <h3>
-        Kế hoạch thực hiện{' '}
-        <span className="odm-or-pill">
-          {plan.planStatus} · revision {plan.revision}
-        </span>
-      </h3>
-      <div className="odm-planning-metrics">
-        <span>
-          Tổng checklist <strong>{coverage.total}</strong>
-        </span>
-        <span>
-          Đã phủ <strong>{coverage.covered}</strong>
-        </span>
-        <span>
-          Chưa phủ <strong>{coverage.uncovered}</strong>
-        </span>
-        <span>
-          Phân công lặp <strong>{coverage.repeated}</strong>
-        </span>
-      </div>
-      <p>
-        {coverage.coverageReady
-          ? 'Coverage sẵn sàng.'
-          : 'Coverage chưa sẵn sàng — còn yêu cầu chưa phân công.'}{' '}
-        Phân công lặp là hợp lệ.
-      </p>
+      <dl className="odm-planning-metrics">
+        <div>
+          <dt>Yêu cầu</dt>
+          <dd>{coverage.total}</dd>
+        </div>
+        <div>
+          <dt>Đã phân công</dt>
+          <dd>{coverage.covered}</dd>
+        </div>
+        <div>
+          <dt>Còn lại</dt>
+          <dd>{coverage.uncovered}</dd>
+        </div>
+        <div>
+          <dt>Phân công lặp</dt>
+          <dd>{coverage.repeated}</dd>
+        </div>
+      </dl>
       {coverage.uncoveredItemIds.length > 0 && (
         <ul aria-label="Checklist chưa phủ">
           {coverage.uncoveredItemIds.map((id) => (
@@ -46,10 +39,10 @@ export function ExecutionPlanSummary({
           ))}
         </ul>
       )}
-      {plan.blockers.length > 0 && (
+      {plan.planStatus === 'DRAFT' && plan.blockers.length > 0 && (
         <ul aria-label="Finalize blockers">
           {plan.blockers.map((blocker) => (
-            <li key={blocker}>{blocker}</li>
+            <li key={blocker}>{planningBlocker(blocker)}</li>
           ))}
         </ul>
       )}

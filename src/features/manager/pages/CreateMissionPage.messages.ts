@@ -78,7 +78,7 @@ export const createMissionPageMessages = defineMessages({
     waypoint: (count: number) => `Điểm bay (${count})`,
     addWaypoint: 'Thêm điểm bay',
     removeWaypointAria: (seq: number) => `Xoá điểm bay ${seq}`,
-    createMission: 'Tạo nhiệm vụ',
+    createMission: 'Tạo Mission',
   },
   en: {
     pageSubtitle: 'Pick the actual flight time, then continue to resource assignment',

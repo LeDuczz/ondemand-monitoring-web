@@ -15,9 +15,29 @@ const permissions: MissionPermissions = {
 afterEach(() => vi.restoreAllMocks())
 
 describe('mission action guard', () => {
+  it('allows stop-only cockpit without allowing connect or preflight', async () => {
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...permissions,
+      canTerminateFlight: true,
+    })
+    render(
+      <MissionActionGuard missionId="m1" action="flight">
+        <div>Stop-only cockpit</div>
+      </MissionActionGuard>,
+    )
+    expect(await screen.findByText('Stop-only cockpit')).toBeInTheDocument()
+  })
   it('allows a monitoring actor into the shared media/checklist workspace without granting upload', async () => {
-    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({ ...permissions, canMaintainDevice: false, canExecuteMonitoringChecklist: true })
-    render(<MissionActionGuard missionId="m1" action="upload"><div>Monitoring workspace</div></MissionActionGuard>)
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...permissions,
+      canMaintainDevice: false,
+      canExecuteMonitoringChecklist: true,
+    })
+    render(
+      <MissionActionGuard missionId="m1" action="upload">
+        <div>Monitoring workspace</div>
+      </MissionActionGuard>,
+    )
     expect(await screen.findByText('Monitoring workspace')).toBeInTheDocument()
   })
   it('does not render a flight screen for a maintainer', async () => {
@@ -86,7 +106,10 @@ describe('mission action guard', () => {
         <div>Upload form</div>
       </MissionActionGuard>,
     )
-    expect(await screen.findByRole('alert')).toHaveTextContent('Forbidden')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Không thể xác nhận quyền Mission.',
+    )
+    expect(screen.queryByText('Forbidden')).toBeNull()
     expect(screen.queryByText('Upload form')).toBeNull()
   })
 })

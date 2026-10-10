@@ -34,9 +34,14 @@ export function CustomerMissionMediaGallery({
     [missionId, page],
   )
   return (
-    <section className="cr-section" aria-label={t.media}>
+    <section className="cr-section cr-gallery" aria-label={t.media}>
       <div className="cr-heading">
-        <h2>{t.media}</h2>
+        <h2>
+          {t.media}
+          {!query.loading && !query.error && query.data ? (
+            <span className="cr-media-count">{query.data.totalItems}</span>
+          ) : null}
+        </h2>
         <button
           className="odm-btn odm-btn-gh"
           disabled={query.loading}
@@ -48,7 +53,6 @@ export function CustomerMissionMediaGallery({
           {t.retry}
         </button>
       </div>
-      <p className="cr-note">{t.mediaNote}</p>
       {query.loading && <p role="status">{t.loading}</p>}
       {query.error ? (
         <p role="alert">{t.error}</p>
@@ -56,23 +60,28 @@ export function CustomerMissionMediaGallery({
         query.data && (
           <>
             {query.data.items.length === 0 ? (
-              <p>{t.noMedia}</p>
+              <div className="cr-media-empty">
+                <span aria-hidden="true">▧</span>
+                <p>{t.noMissionMedia}</p>
+              </div>
             ) : (
               <MediaGrid
                 items={query.data.items.map(toMediaItem)}
                 onOpen={setPreview}
               />
             )}
-            <Pager
-              page={query.data.page}
-              totalPages={query.data.totalPages}
-              totalItems={query.data.totalItems}
-              unit={t.media}
-              onPage={(p) => {
-                setPreview(null)
-                setPage(p)
-              }}
-            />
+            {query.data.totalPages > 1 && (
+              <Pager
+                page={query.data.page}
+                totalPages={query.data.totalPages}
+                totalItems={query.data.totalItems}
+                unit={t.media}
+                onPage={(p) => {
+                  setPreview(null)
+                  setPage(p)
+                }}
+              />
+            )}
           </>
         )
       )}

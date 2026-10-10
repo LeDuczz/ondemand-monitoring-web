@@ -1,7 +1,9 @@
 import type { MissionStatus } from '../../mission/types/mission'
-export type OperatorMissionStatus = MissionStatus | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'UNKNOWN'
+import type { MissionStopMetadata } from '../../mission/lib/missionOperationalState'
+export type OperatorMissionStatus =
+  MissionStatus | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'UNKNOWN'
 
-export type OperatorMission = {
+export type OperatorMission = MissionStopMetadata & {
   id: string
   missionCode?: string
   backendStatus?: string
@@ -24,7 +26,8 @@ export type OperatorMission = {
   droneName: string | null
   flightStartedAt?: string
   completedAt?: string
-  managerSubmissionStatus?: 'NEEDS_SUBMIT' | 'PENDING_MANAGER' | 'SENT_TO_CUSTOMER'
+  managerSubmissionStatus?:
+    'NEEDS_SUBMIT' | 'PENDING_MANAGER' | 'SENT_TO_CUSTOMER'
   permissions?: OperatorMissionPermissions
   rejectReason?: string
   acceptedAt?: string
@@ -52,6 +55,7 @@ export type OperatorMission = {
 }
 
 export type OperatorMissionPermissions = {
+  canTerminateFlight?: boolean
   canAttachChecklistEvidence?: boolean
   canDetachChecklistEvidence?: boolean
   canCompleteMission?: boolean

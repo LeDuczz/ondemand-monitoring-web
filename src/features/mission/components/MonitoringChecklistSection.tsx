@@ -9,7 +9,10 @@ import type {
 } from '../types/checklistExecution'
 import type { MissionResultApprovalStatus } from '../types/mission'
 import './MonitoringChecklistSection.css'
-import { ChecklistEvidencePanel, evidenceReason } from './ChecklistEvidencePanel'
+import {
+  ChecklistEvidencePanel,
+  evidenceReason,
+} from './ChecklistEvidencePanel'
 
 const statuses: Record<ChecklistExecutionStatus, string> = {
   PENDING: 'Chưa thực hiện',
@@ -46,6 +49,8 @@ export function allowedExecutionStatuses(
 
 export function monitoringErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
+    if (error.code === 'MISSION_PERMISSIONS_UNAVAILABLE')
+      return 'Chưa xác minh được quyền thao tác. Vui lòng làm mới hoặc đăng nhập lại.'
     if (error.code === 'CHECKLIST_EXECUTION_PARENT_MISMATCH')
       return 'Mục checklist không thuộc mission này. Vui lòng tải lại đúng mission.'
     if (error.code === 'CONCURRENT_UPDATE')
@@ -64,10 +69,10 @@ export function monitoringErrorMessage(error: unknown) {
       return 'Trạng thái mission đã thay đổi. Vui lòng tải lại.'
     if (error.code === 'CHECKLIST_NOT_READY')
       return 'Checklist chưa sẵn sàng gửi kết quả. Vui lòng kiểm tra các mục còn lại.'
+    if (error.status === 409)
+      return 'Dữ liệu đã thay đổi hoặc thao tác chưa đủ điều kiện. Vui lòng tải lại.'
   }
-  return error instanceof Error
-    ? error.message
-    : 'Không thể tải hoặc lưu checklist. Vui lòng thử lại.'
+  return 'Không thể tải hoặc lưu checklist. Vui lòng thử lại.'
 }
 
 export function MonitoringChecklistSection({
@@ -84,8 +89,10 @@ export function MonitoringChecklistSection({
   canDetach = false,
   reviewMedia,
   compact = false,
+  hideImplementationHints = false,
 }: {
   missionId: string
+  hideImplementationHints?: boolean
   data?: MissionChecklistResponse
   loading: boolean
   error?: unknown
@@ -111,8 +118,13 @@ export function MonitoringChecklistSection({
   if (compact) {
     const firstTodo = rows.find((row) => !terminal(row.executionStatus))
     const activeId =
-      openId === '' ? null : rows.some((row) => row.id === openId) ? openId : (firstTodo ?? rows[0])?.id
-    const canChange = (data?.checklistEvidenceReady ?? data?.readyForSubmission) === true
+      openId === ''
+        ? null
+        : rows.some((row) => row.id === openId)
+          ? openId
+          : (firstTodo ?? rows[0])?.id
+    const canChange =
+      (data?.checklistEvidenceReady ?? data?.readyForSubmission) === true
     return (
       <section
         className="monitoring-checklist odm-card is-compact"
@@ -125,9 +137,17 @@ export function MonitoringChecklistSection({
           </span>
         </header>
         <div className="mc-progress" aria-hidden="true">
-          <span style={{ width: rows.length ? `${(done / rows.length) * 100}%` : '0%' }} />
+          <span
+            style={{
+              width: rows.length ? `${(done / rows.length) * 100}%` : '0%',
+            }}
+          />
         </div>
-        {loading && <p role="status" className="mc-note">Đang tải checklist…</p>}
+        {loading && (
+          <p role="status" className="mc-note">
+            Đang tải checklist…
+          </p>
+        )}
         {error ? (
           <div role="alert" className="mc-note is-danger">
             <p>{monitoringErrorMessage(error)}</p>
@@ -145,21 +165,29 @@ export function MonitoringChecklistSection({
               </p>
             )}
             {data.legacySnapshot && (
-              <p className="mc-note">Mission cũ — không có snapshot checklist giám sát lịch sử.</p>
+              <p className="mc-note">
+                Mission cũ — không có snapshot checklist giám sát lịch sử.
+              </p>
             )}
-            {!rows.length && <p className="mc-note">Không có mục checklist giám sát.</p>}
-            {!editable && rows.length > 0 && (
+            {!rows.length && (
+              <p className="mc-note">Không có mục checklist giám sát.</p>
+            )}
+            {!hideImplementationHints && !editable && rows.length > 0 && (
               <p className="mc-note">
                 {locked
                   ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
                   : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
               </p>
             )}
-            {!canChange && done === rows.length && rows.length > 0 && !data.readyForSubmission && (
-              <p className="mc-note is-warn" role="alert">
-                Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới; nếu vẫn chưa sẵn sàng, liên hệ quản trị viên.
-              </p>
-            )}
+            {!canChange &&
+              done === rows.length &&
+              rows.length > 0 &&
+              !data.readyForSubmission && (
+                <p className="mc-note is-warn" role="alert">
+                  Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới;
+                  nếu vẫn chưa sẵn sàng, liên hệ quản trị viên.
+                </p>
+              )}
           </>
         ) : null}
         {data && (
@@ -170,7 +198,8 @@ export function MonitoringChecklistSection({
               const missing =
                 finished &&
                 item.executionStatus === 'COMPLETED' &&
-                (item.eligibleEvidenceCount ?? 0) < (item.minimumEvidenceCount ?? 0)
+                (item.eligibleEvidenceCount ?? 0) <
+                  (item.minimumEvidenceCount ?? 0)
               const tone =
                 item.executionStatus === 'UNABLE_TO_VERIFY'
                   ? 'is-unable'
@@ -182,7 +211,10 @@ export function MonitoringChecklistSection({
                       ? 'is-current'
                       : ''
               return (
-                <li key={`evidence:${missionId}:${item.id}`} className={`mc-item ${tone}${open ? ' is-open' : ''}`}>
+                <li
+                  key={`evidence:${missionId}:${item.id}`}
+                  className={`mc-item ${tone}${open ? ' is-open' : ''}`}
+                >
                   <button
                     type="button"
                     className="mc-row"
@@ -190,12 +222,22 @@ export function MonitoringChecklistSection({
                     onClick={() => setOpenId(open ? '' : item.id)}
                   >
                     <span className="mc-mark" aria-hidden="true">
-                      {tone === 'is-done' ? '✓' : tone === 'is-unable' ? '!' : index + 1}
+                      {tone === 'is-done'
+                        ? '✓'
+                        : tone === 'is-unable'
+                          ? '!'
+                          : index + 1}
                     </span>
                     <span className="mc-title">{item.content}</span>
-                    {tone === 'is-current' && <span className="mc-chip is-todo">Cần làm</span>}
-                    {tone === 'is-missing' && <span className="mc-chip is-todo">Thiếu bằng chứng</span>}
-                    {tone === 'is-unable' && <span className="mc-chip is-danger">Không xác minh</span>}
+                    {tone === 'is-current' && (
+                      <span className="mc-chip is-todo">Cần làm</span>
+                    )}
+                    {tone === 'is-missing' && (
+                      <span className="mc-chip is-todo">Thiếu bằng chứng</span>
+                    )}
+                    {tone === 'is-unable' && (
+                      <span className="mc-chip is-danger">Không xác minh</span>
+                    )}
                     <span className="mc-caret" aria-hidden="true" />
                   </button>
                   {open && (
@@ -212,8 +254,20 @@ export function MonitoringChecklistSection({
                       <ChecklistEvidencePanel
                         missionId={missionId}
                         item={item}
-                        canAttach={canAttach && resultKnown && !locked && !loading && !error}
-                        canDetach={canDetach && resultKnown && !locked && !loading && !error}
+                        canAttach={
+                          canAttach &&
+                          resultKnown &&
+                          !locked &&
+                          !loading &&
+                          !error
+                        }
+                        canDetach={
+                          canDetach &&
+                          resultKnown &&
+                          !locked &&
+                          !loading &&
+                          !error
+                        }
                         refresh={refresh}
                         reviewMedia={reviewMedia}
                       />
@@ -235,9 +289,12 @@ export function MonitoringChecklistSection({
       <header>
         <div>
           <h2>Checklist giám sát</h2>
-          <p>
-            Yêu cầu lịch sử của đơn hàng · tách biệt kiểm tra kỹ thuật thiết bị.
-          </p>
+          {!hideImplementationHints && (
+            <p>
+              Yêu cầu lịch sử của đơn hàng · tách biệt kiểm tra kỹ thuật thiết
+              bị.
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -285,44 +342,50 @@ export function MonitoringChecklistSection({
             />
           </div>
           <div className="monitoring-notes">
-          {data.blockingReasons?.map(reason => <p key={reason} role="status" className="is-warn">{evidenceReason[reason]}</p>)}
-          {resultStatus && (
-            <p>
-              Trạng thái kết quả:{' '}
-              {
+            {data.blockingReasons?.map((reason) => (
+              <p key={reason} role="status" className="is-warn">
+                {evidenceReason[reason]}
+              </p>
+            ))}
+            {resultStatus && (
+              <p>
+                Trạng thái kết quả:{' '}
                 {
-                  DRAFT: 'Nháp — chưa gửi manager',
-                  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
-                  APPROVED: 'Đã duyệt',
-                  REJECTED:
-                    'Bị từ chối — có thể chỉnh sửa và gửi lại khi có quyền',
-                }[resultStatus]
-              }
-            </p>
-          )}
-          {resultStatus === 'REJECTED' && resultNote && (
-            <p>Nhận xét của manager: {resultNote}</p>
-          )}
-          {!data.readyForSubmission && done === rows.length && (
-            <p role="alert" className="is-warn">
-              Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới; nếu
-              vẫn chưa sẵn sàng, liên hệ quản trị viên.
-            </p>
-          )}
-          {data.legacySnapshot && (
-            <p>
-              Mission cũ — không có snapshot checklist giám sát lịch sử. Không
-              suy diễn yêu cầu từ dịch vụ hiện tại.
-            </p>
-          )}
-          {!rows.length && <p>Không có mục checklist giám sát.</p>}
-          <p className="monitoring-hint">
-            {locked
-              ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
-              : editable
-                ? 'Bạn có thể cập nhật checklist.'
-                : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
-          </p>
+                  {
+                    DRAFT: 'Nháp — chưa gửi manager',
+                    PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+                    APPROVED: 'Đã duyệt',
+                    REJECTED:
+                      'Bị từ chối — có thể chỉnh sửa và gửi lại khi có quyền',
+                  }[resultStatus]
+                }
+              </p>
+            )}
+            {resultStatus === 'REJECTED' && resultNote && (
+              <p>Nhận xét của manager: {resultNote}</p>
+            )}
+            {!data.readyForSubmission && done === rows.length && (
+              <p role="alert" className="is-warn">
+                Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới;
+                nếu vẫn chưa sẵn sàng, liên hệ quản trị viên.
+              </p>
+            )}
+            {data.legacySnapshot && (
+              <p>
+                Mission cũ — không có snapshot checklist giám sát lịch sử. Không
+                suy diễn yêu cầu từ dịch vụ hiện tại.
+              </p>
+            )}
+            {!rows.length && <p>Không có mục checklist giám sát.</p>}
+            {!hideImplementationHints && (
+              <p className="monitoring-hint">
+                {locked
+                  ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
+                  : editable
+                    ? 'Bạn có thể cập nhật checklist.'
+                    : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
+              </p>
+            )}
           </div>
         </>
       ) : null}
@@ -330,15 +393,26 @@ export function MonitoringChecklistSection({
         <ol className="monitoring-list">
           {rows.map((item) => (
             <li key={`evidence:${missionId}:${item.id}`}>
-            <ChecklistExecutionItem
-              key={`${missionId}:${item.id}`}
-              item={item}
-              missionId={missionId}
-              editable={editable}
-              rejected={resultStatus === 'REJECTED'}
-              refresh={refresh}
-            />
-            <ChecklistEvidencePanel missionId={missionId} item={item} canAttach={canAttach && resultKnown && !locked && !loading && !error} canDetach={canDetach && resultKnown && !locked && !loading && !error} refresh={refresh} reviewMedia={reviewMedia} />
+              <ChecklistExecutionItem
+                key={`${missionId}:${item.id}`}
+                item={item}
+                missionId={missionId}
+                editable={editable}
+                rejected={resultStatus === 'REJECTED'}
+                refresh={refresh}
+              />
+              <ChecklistEvidencePanel
+                missionId={missionId}
+                item={item}
+                canAttach={
+                  canAttach && resultKnown && !locked && !loading && !error
+                }
+                canDetach={
+                  canDetach && resultKnown && !locked && !loading && !error
+                }
+                refresh={refresh}
+                reviewMedia={reviewMedia}
+              />
             </li>
           ))}
         </ol>
@@ -423,21 +497,23 @@ function ChecklistExecutionItem({
     <div className="monitoring-item">
       {!compact && <h3>{item.content}</h3>}
       {(!compact || item.assessmentStatus !== 'NOT_ASSESSED') && (
-      <div className="monitoring-meta">
-        {!compact && (
-          <span className={`is-exec-${item.executionStatus.toLowerCase()}`}>
-            {statuses[item.executionStatus]}
+        <div className="monitoring-meta">
+          {!compact && (
+            <span className={`is-exec-${item.executionStatus.toLowerCase()}`}>
+              {statuses[item.executionStatus]}
+            </span>
+          )}
+          <span className={`is-assess-${item.assessmentStatus.toLowerCase()}`}>
+            {assessments[item.assessmentStatus]}
           </span>
-        )}
-        <span className={`is-assess-${item.assessmentStatus.toLowerCase()}`}>
-          {assessments[item.assessmentStatus]}
-        </span>
-        {!compact && (
-          <span className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}>
-            {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
-          </span>
-        )}
-      </div>
+          {!compact && (
+            <span
+              className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}
+            >
+              {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
+            </span>
+          )}
+        </div>
       )}
       {item.observation && (
         <p>

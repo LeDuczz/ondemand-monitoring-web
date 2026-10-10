@@ -7,6 +7,11 @@ import { formatDeadline } from '../lib/formatDeadline'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
 import { missionListTableMessages } from './MissionListTable.messages'
+import {
+  missionHasSafeStop,
+  missionStopLabel,
+  missionMayTerminate,
+} from '../../mission/lib/missionOperationalState'
 
 const STATUS_TONE = {
   ...missionStatusTone,
@@ -30,12 +35,47 @@ type Messages = (typeof missionListTableMessages)['vi']
 function actionFor(mission: OperatorMission, t: Messages) {
   const backendStatus = mission.backendStatus
   const permissions = mission.permissions
-  if (!permissions || backendStatus === 'PENDING_REVIEW' || backendStatus === 'COMPLETED') {
-    return { label: t.action.viewResult, cls: '', href: operatorHref({ screen: 'missionDetail', missionId: mission.id }) }
+  if (missionHasSafeStop(mission) || backendStatus === 'CANCELLED') {
+    return missionMayTerminate(mission, permissions?.canTerminateFlight)
+      ? {
+          label: 'Dừng chuyến bay',
+          cls: 'odm-btn-rd',
+          href: operatorHref({ screen: 'flight', missionId: mission.id }),
+        }
+      : permissions?.canMaintainDevice &&
+          backendStatus === 'POSTFLIGHT_CHECKING'
+        ? {
+            label: t.action.inspect,
+            cls: '',
+            href: operatorHref({ screen: 'postflight', missionId: mission.id }),
+          }
+        : {
+            label: 'Xem trạng thái dừng',
+            cls: '',
+            href: operatorHref({
+              screen: 'missionDetail',
+              missionId: mission.id,
+            }),
+          }
+  }
+  if (
+    !permissions ||
+    backendStatus === 'PENDING_REVIEW' ||
+    backendStatus === 'COMPLETED'
+  ) {
+    return {
+      label: t.action.viewResult,
+      cls: '',
+      href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+    }
   }
   if (permissions) {
-    if (permissions.canCompleteMission || permissions.canSubmitMissionResult ||
-        (backendStatus === 'PENDING_REVIEW' && permissions.canExecuteMonitoringChecklist)) {
+    if (
+      permissions.canCompleteMission ||
+      permissions.canSubmitMissionResult ||
+      (backendStatus === 'PENDING_REVIEW' &&
+        permissions.canExecuteMonitoringChecklist)
+    ) {
       return {
         label: t.action.viewResult,
         cls: '',
@@ -114,91 +154,11 @@ function actionFor(mission: OperatorMission, t: Messages) {
       }
     }
   }
-  if (
-    backendStatus === 'IN_FLIGHT' ||
-    backendStatus === 'IN_PROGRESS' ||
-    backendStatus === 'RETURNING'
-  ) {
-    return {
-      label: t.action.openCockpit,
-      cls: 'odm-btn-bl',
-      href: operatorHref({ screen: 'flight', missionId: mission.id }),
-    }
-  }
-  if (backendStatus === 'READY_TO_FLY') {
-    return {
-      label: t.action.handover,
-      cls: 'odm-btn-ok',
-      href: operatorHref({ screen: 'handover', missionId: mission.id }),
-    }
-  }
-  if (
-    backendStatus === 'PREFLIGHT_CHECKING' ||
-    backendStatus === 'FAILED_PREFLIGHT'
-  ) {
-    return {
-      label: t.action.preflight,
-      cls: 'odm-btn-ok',
-      href: operatorHref({ screen: 'preflight', missionId: mission.id }),
-    }
-  }
-  if (backendStatus === 'CONNECTED') {
-    return {
-      label: t.action.preflight,
-      cls: 'odm-btn-ok',
-      href: operatorHref({ screen: 'preflight', missionId: mission.id }),
-    }
-  }
-
-  switch (mission.status) {
-    case 'PENDING':
-      return {
-        label: t.action.respond,
-        cls: 'odm-btn-p',
-        href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
-      }
-    case 'IN_FLIGHT':
-      return {
-        label: t.action.openCockpit,
-        cls: 'odm-btn-bl',
-        href: operatorHref({ screen: 'flight', missionId: mission.id }),
-      }
-    case 'ACCEPTED': {
-      if (!mission.date || !mission.startTime)
-        return {
-          label: t.action.details,
-          cls: '',
-          href: operatorHref({
-            screen: 'missionDetail',
-            missionId: mission.id,
-          }),
-        }
-      const start = new Date(`${mission.date}T${mission.startTime}:00+07:00`)
-      const soon = start.getTime() - Date.now() < 4 * 60 * 60 * 1000
-      return soon
-        ? {
-            label: t.action.start,
-            cls: 'odm-btn-ok',
-            href: operatorHref({ screen: 'connect', missionId: mission.id }),
-          }
-        : {
-            label: t.action.details,
-            cls: '',
-            href: operatorHref({
-              screen: 'missionDetail',
-              missionId: mission.id,
-            }),
-          }
-    }
-    case 'COMPLETED':
-    case 'FAILED':
-      return {
-        label: t.action.details,
-        cls: '',
-        href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
-      }
-    default:
-      return null
+  // A lifecycle status alone never grants operational permission.
+  return {
+    label: t.action.details,
+    cls: '',
+    href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
   }
 }
 
@@ -255,7 +215,9 @@ export function MissionListTable({
             <th className="odm-opr-mission-service">{t.columns.service}</th>
             <th className="odm-opr-mission-device">{t.columns.drone}</th>
             <th className="odm-opr-mission-status">{t.columns.status}</th>
-            <th className="odm-opr-mission-manager">{t.columns.managerSubmission}</th>
+            <th className="odm-opr-mission-manager">
+              {t.columns.managerSubmission}
+            </th>
             <th className="odm-opr-mission-deadline">{t.columns.deadline}</th>
             <th className="odm-opr-mission-action" />
           </tr>
@@ -285,9 +247,7 @@ export function MissionListTable({
                 </td>
                 <td className="odm-opr-mission-job">
                   <div className="odm-opr-mission-title">{mission.title}</div>
-                  <div
-                    className="odm-opr-mission-location"
-                  >
+                  <div className="odm-opr-mission-location">
                     {mission.location}
                   </div>
                 </td>
@@ -316,13 +276,21 @@ export function MissionListTable({
                 </td>
                 <td>
                   <StatusBadge tone={STATUS_TONE[mission.status]}>
-                    {mission.backendStatus === 'PENDING_REVIEW'
-                      ? (lang === 'vi' ? 'Chờ nghiệm thu' : 'Awaiting review')
-                      : (t.statusLabel as Record<string, string>)[mission.status] ?? mission.backendStatus ?? mission.status}
+                    {missionStopLabel(mission) ??
+                      (mission.backendStatus === 'PENDING_REVIEW'
+                        ? lang === 'vi'
+                          ? 'Chờ nghiệm thu'
+                          : 'Awaiting review'
+                        : ((t.statusLabel as Record<string, string>)[
+                            mission.status
+                          ] ??
+                          mission.backendStatus ??
+                          mission.status))}
                   </StatusBadge>
                 </td>
                 <td>
-                  {mission.status === 'COMPLETED' || mission.status === 'FAILED' ? (
+                  {mission.status === 'COMPLETED' ||
+                  mission.status === 'FAILED' ? (
                     <StatusBadge
                       tone={
                         MANAGER_SUBMISSION_TONE[

@@ -267,9 +267,7 @@ function IncidentModal({
       await missionsApi.createIncident(missionId, { type, description })
       onCreated()
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : t.incidentModal.unknownError,
-      )
+      setError(planningError(err))
     } finally {
       setSaving(false)
     }
@@ -383,15 +381,33 @@ function CancelModal({
   const [step, setStep] = useState<1 | 2>(1)
   const [reason, setReason] = useState('')
   const [confirmCode, setConfirmCode] = useState('')
-  const planQuery = useApiQuery(signal => planningApi.getExecutionPlan(mission.orderId, signal), [mission.orderId])
-  const capabilities = useApiQuery(signal => planningApi.getSafeStop(mission.id, signal), [mission.id])
+  const planQuery = useApiQuery(
+    (signal) => planningApi.getExecutionPlan(mission.orderId, signal),
+    [mission.orderId],
+  )
+  const capabilities = useApiQuery(
+    (signal) => planningApi.getSafeStop(mission.id, signal),
+    [mission.id],
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (capabilities.loading || capabilities.error || capabilities.data?.canCancelMission !== true) { setError('Backend chưa cho phép hủy. Mở kế hoạch Order để yêu cầu safe-stop / cleanup.'); return }
-    if (!planQuery.data || planQuery.loading || planQuery.error) { setError('Cần tải lại plan trước khi hủy.'); return }
+    if (
+      capabilities.loading ||
+      capabilities.error ||
+      capabilities.data?.canCancelMission !== true
+    ) {
+      setError(
+        'Mission chưa đủ điều kiện hủy. Cần hoàn tất xác nhận an toàn và đóng phiên vận hành trước khi hủy.',
+      )
+      return
+    }
+    if (!planQuery.data || planQuery.loading || planQuery.error) {
+      setError('Cần tải lại kế hoạch trước khi hủy.')
+      return
+    }
     if (!reason.trim()) {
       setError(t.cancelModal.reasonRequired)
       return
@@ -403,7 +419,10 @@ function CancelModal({
     setSaving(true)
     setError(null)
     try {
-      await missionsApi.cancelMission(mission.id, { reason, expectedPlanRevision: planQuery.data.revision })
+      await missionsApi.cancelMission(mission.id, {
+        reason,
+        expectedPlanRevision: planQuery.data.revision,
+      })
       onCancelled()
     } catch (err) {
       setError(planningError(err))
@@ -543,7 +562,14 @@ function CancelModal({
                 }}
               >
                 {error}
-                <a href={managerHref({ screen: 'orderReview', orderId: mission.orderId })}>Mở kế hoạch Order / safe-stop</a>
+                <a
+                  href={managerHref({
+                    screen: 'orderReview',
+                    orderId: mission.orderId,
+                  })}
+                >
+                  Xem kế hoạch Order
+                </a>
               </div>
             )}
             <div
@@ -559,7 +585,12 @@ function CancelModal({
               <button
                 type="submit"
                 className="odm-btn odm-btn-rd"
-                disabled={saving || capabilities.loading || Boolean(capabilities.error) || capabilities.data?.canCancelMission !== true}
+                disabled={
+                  saving ||
+                  capabilities.loading ||
+                  Boolean(capabilities.error) ||
+                  capabilities.data?.canCancelMission !== true
+                }
               >
                 {saving
                   ? t.cancelModal.cancelling
@@ -589,13 +620,19 @@ function LiveMainPanel({
 
   const { t, lang, locale } = useI18n(livePageMessages)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const liveRequest = useRef<AbortController | null>(null)
 
   const fetchLive = useCallback(async () => {
+    liveRequest.current?.abort()
+    const abort = new AbortController()
+    liveRequest.current = abort
     try {
-      const data = await missionsApi.getLive(mission.id)
+      const data = await missionsApi.getLive(mission.id, abort.signal)
+      if (abort.signal.aborted) return
       setTelemetry(data)
       setTelemetryError(null)
     } catch (err) {
+      if (abort.signal.aborted) return
       if (err instanceof ApiError) setTelemetryError(err)
     }
   }, [mission.id])
@@ -604,6 +641,7 @@ function LiveMainPanel({
     fetchLive()
     intervalRef.current = setInterval(fetchLive, POLL_INTERVAL_MS)
     return () => {
+      liveRequest.current?.abort()
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
   }, [fetchLive])
@@ -970,12 +1008,17 @@ export function LivePage({ missionId }: { missionId?: string }) {
   // Selected mission: prefer URL param → first active
   const [selectedId, setSelectedId] = useState<string | null>(missionId ?? null)
 
-  const selected =
-    activeMissions.find(
-      (m) => m.id === selectedId || m.missionCode === selectedId,
-    ) ??
-    activeMissions[0] ??
-    null
+  const selected = activeMissions.find((m) => m.id === selectedId) ?? null
+  useEffect(() => {
+    if (!selectedId && !missionId && !listQuery.loading && !listQuery.error)
+      setSelectedId(activeMissions.at(0)?.id ?? null)
+  }, [
+    selectedId,
+    missionId,
+    listQuery.loading,
+    listQuery.error,
+    activeMissions,
+  ])
 
   // When a mission is cancelled, deselect it and reload
   const handleCancelled = useCallback(() => {

@@ -28,7 +28,10 @@ function writeAvailability(
   slots: Record<string, AvailabilityStatus>,
 ) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(availabilityStorageKey(week), JSON.stringify(slots))
+  window.localStorage.setItem(
+    availabilityStorageKey(week),
+    JSON.stringify(slots),
+  )
 }
 
 export const operatorApi = {
@@ -56,6 +59,7 @@ export const operatorApi = {
           .getPermissions(mission.id)
           .then((value) => ({
             canControlFlight: value.canControlFlight,
+            canTerminateFlight: value.canTerminateFlight,
             canOperatePayload: value.canOperatePayload,
             canInspectDevice: value.canInspectDevice,
             canMaintainDevice: value.canMaintainDevice,
@@ -67,8 +71,13 @@ export const operatorApi = {
             canDetachChecklistEvidence: value.canDetachChecklistEvidence,
           }))
           .catch(() => undefined)
-        const itemWithPermissions = permissions ? { ...item, permissions } : item
-        if (itemWithPermissions.status !== 'COMPLETED' && itemWithPermissions.status !== 'FAILED') {
+        const itemWithPermissions = permissions
+          ? { ...item, permissions }
+          : item
+        if (
+          itemWithPermissions.status !== 'COMPLETED' &&
+          itemWithPermissions.status !== 'FAILED'
+        ) {
           return itemWithPermissions
         }
 

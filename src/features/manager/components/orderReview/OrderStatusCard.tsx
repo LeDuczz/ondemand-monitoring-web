@@ -2,6 +2,11 @@ import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { formatOrderCode, formatVn } from './format'
 import { OrderIcon } from './OrderIcon'
+import { StatusBadge, toUiTone } from '../../../../shared/components/ui'
+import {
+  getOrderStatusLabel,
+  orderStatusTone,
+} from '../../../../shared/lib/statusTone'
 
 export function OrderStatusCard({
   order,
@@ -15,7 +20,11 @@ export function OrderStatusCard({
   // The detail payload has no "updated at" field — show a dash instead of
   // inventing a value.
   const rows = [
-    { icon: 'tag' as const, label: t.orderCode, value: formatOrderCode(order.code) },
+    {
+      icon: 'tag' as const,
+      label: t.orderCode,
+      value: formatOrderCode(order.code),
+    },
     {
       icon: 'calendar' as const,
       label: t.createdAt,
@@ -31,10 +40,9 @@ export function OrderStatusCard({
           <OrderIcon name="target" size={18} />
           {t.orderStatus}
         </span>
-        <span className="odm-or-pill odm-or-pill-amber">
-          <OrderIcon name="clock" size={14} />
-          {t.statusPending}
-        </span>
+        <StatusBadge tone={toUiTone(orderStatusTone[order.status])}>
+          {getOrderStatusLabel(order.status, locale === 'en-US' ? 'en' : 'vi')}
+        </StatusBadge>
       </header>
       <dl className="odm-or-card-body odm-or-status-list">
         {rows.map((row) => (

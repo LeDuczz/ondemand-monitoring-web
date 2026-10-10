@@ -38,6 +38,10 @@ export function toMissionCalendarItem(
     orderCode: source.orderCode ?? null,
     missionCode: source.missionCode,
     status: source.status,
+    safeStopStatus: source.safeStopStatus,
+    safeStopRequestedAt: source.safeStopRequestedAt,
+    safeStopConfirmedAt: source.safeStopConfirmedAt,
+    safeStopCleanedAt: source.safeStopCleanedAt,
     attemptNumber: null,
     droneId: source.droneId ?? source.deviceId ?? null,
     operatorId: source.operatorId,
@@ -418,11 +422,11 @@ export const missionsApi = {
   getMissionResult(
     missionId: string,
     signal?: AbortSignal,
-  ): Promise<MissionResultResponse> {
-    return apiRequest<MissionResultResponse>(
+  ): Promise<MissionResultResponse | null> {
+    return apiRequest<MissionResultResponse | null>(
       `/api/missions/${missionId}/result`,
       { signal },
-    )
+    ).then((result) => result ?? null)
   },
 
   /** `POST /api/manager/mission-results/{resultId}/approve` [BE]. Makes the mission result customer-deliverable. */
@@ -436,10 +440,17 @@ export const missionsApi = {
     )
   },
 
-  rejectMissionResult(resultId: string, note: string): Promise<MissionResultResponse> {
-    return apiRequest<MissionResultResponse>(`/api/manager/mission-results/${encodeURIComponent(resultId)}/reject`, {
-      method: 'POST', body: { note: note.trim() || null },
-    })
+  rejectMissionResult(
+    resultId: string,
+    note: string,
+  ): Promise<MissionResultResponse> {
+    return apiRequest<MissionResultResponse>(
+      `/api/manager/mission-results/${encodeURIComponent(resultId)}/reject`,
+      {
+        method: 'POST',
+        body: { note: note.trim() || null },
+      },
+    )
   },
 
   /** `POST /api/manager/missions/{missionId}/media-approvals/{mediaId}/approve` [BE]. Makes one media asset visible to the customer. */
@@ -452,7 +463,10 @@ export const missionsApi = {
     )
   },
   rejectMissionMedia(missionId: string, mediaId: string): Promise<unknown> {
-    return apiRequest<unknown>(`/api/manager/missions/${encodeURIComponent(missionId)}/media-approvals/${encodeURIComponent(mediaId)}/reject`, { method: 'POST' })
+    return apiRequest<unknown>(
+      `/api/manager/missions/${encodeURIComponent(missionId)}/media-approvals/${encodeURIComponent(mediaId)}/reject`,
+      { method: 'POST' },
+    )
   },
 
   /** `POST /api/missions/{id}/connect` [BE]. */

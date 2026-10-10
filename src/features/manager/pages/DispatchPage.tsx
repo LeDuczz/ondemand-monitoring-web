@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { env } from '../../../config/env'
-import { LiveDispatchPage } from './LiveDispatchPage'
+import { MissionScopedAssignmentPage } from './MissionScopedAssignmentPage'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
@@ -39,10 +39,10 @@ export function DispatchPage({
   missionId: string
   setupMode?: boolean
 }) {
-  return env.useMockApi || import.meta.env.MODE === 'test' ? (
+  return env.useMockApi ? (
     <MockDispatchPage missionId={missionId} setupMode={setupMode} />
   ) : (
-    <LiveDispatchPage missionId={missionId} />
+    <MissionScopedAssignmentPage key={missionId} missionId={missionId} />
   )
 }
 

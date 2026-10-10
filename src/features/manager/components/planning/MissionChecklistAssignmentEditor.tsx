@@ -3,6 +3,7 @@ import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { planningApi } from '../../api/planningApi'
 import { planningError } from '../../lib/planningErrors'
 import type { OrderChecklistSnapshot } from '../../types/orders'
+import { OrderIcon } from '../orderReview/OrderIcon'
 
 export function MissionChecklistAssignmentEditor({
   missionId,
@@ -10,12 +11,14 @@ export function MissionChecklistAssignmentEditor({
   editable,
   items,
   onChanged,
+  onDraftState,
 }: {
   missionId: string
   revision: number
   editable: boolean
   items: OrderChecklistSnapshot[]
   onChanged: () => void
+  onDraftState?: (missionId: string, dirty: boolean, busy: boolean) => void
 }) {
   const query = useApiQuery(
     (signal) => planningApi.getAssignments(missionId, signal),
@@ -25,6 +28,7 @@ export function MissionChecklistAssignmentEditor({
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  useEffect(() => { onDraftState?.(missionId, dirty, busy) }, [missionId, dirty, busy, onDraftState])
   useEffect(() => {
     if (query.data && !dirty)
       setSelected(
@@ -63,9 +67,12 @@ export function MissionChecklistAssignmentEditor({
     }
   }
   return (
-    <details className="odm-planning-editor">
+    <details
+      className="odm-planning-editor"
+      open={!editable || dirty || Boolean(message) || undefined}
+    >
       <summary>
-        Phân công checklist —{' '}
+        Checklist ·{' '}
         {query.data?.assignments.filter((a) => a.active).length ?? '…'} mục
       </summary>
       {query.loading && <p role="status">Đang tải phân công…</p>}
@@ -77,45 +84,67 @@ export function MissionChecklistAssignmentEditor({
           </button>
         </p>
       ) : null}
-      {!editable && (
-        <p>Chỉ đọc — Mission đã chốt hoặc không còn ở bước planning.</p>
-      )}
-      <p>
-        Một yêu cầu có thể được phân công cho nhiều Mission; lặp lại không phải
-        lỗi.
-      </p>
-      <fieldset
-        disabled={!editable || busy || query.loading || Boolean(query.error)}
-        aria-label={`Checklist ${missionId}`}
-      >
-        {[...items]
-          .sort((a, b) => a.displayOrder - b.displayOrder)
-          .map((item) => (
-            <label key={item.id} className="odm-planning-item">
-              <input
-                type="checkbox"
-                checked={selected.includes(item.id)}
-                onChange={(event) => {
-                  setDirty(true)
-                  setSelected((current) =>
-                    event.target.checked
-                      ? [...current, item.id]
-                      : current.filter((id) => id !== item.id),
-                  )
-                }}
-              />
-              <span>
+      {!editable && !query.loading && !query.error && (
+        <ul
+          className="odm-mission-checklist"
+          aria-label={`Checklist ${missionId}`}
+        >
+          {query.data?.assignments
+            .filter((a) => a.active)
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .map((item) => (
+              <li key={item.assignmentId}>
+                <span className="odm-mission-check" aria-label="Đã phân công">
+                  <OrderIcon name="check" size={15} />
+                </span>
                 {item.content}
-                <small>
-                  {item.sourceType === 'SERVICE_TEMPLATE'
-                    ? 'Mẫu dịch vụ'
-                    : 'Khách hàng bổ sung'}
-                </small>
-              </span>
-            </label>
-          ))}
-        {items.length === 0 && <p>Order có checklist rỗng.</p>}
-      </fieldset>
+              </li>
+            ))}
+          {!query.data?.assignments.some((a) => a.active) && (
+            <li className="odm-mission-meta">
+              Chưa có checklist được phân công.
+            </li>
+          )}
+        </ul>
+      )}
+      {editable && (
+        <>
+          <fieldset
+            disabled={
+              !editable || busy || query.loading || Boolean(query.error)
+            }
+            aria-label={`Checklist ${missionId}`}
+          >
+            {[...items]
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((item) => (
+                <label key={item.id} className="odm-planning-item">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(item.id)}
+                    onChange={(event) => {
+                      setDirty(true)
+                      setSelected((current) =>
+                        event.target.checked
+                          ? [...current, item.id]
+                          : current.filter((id) => id !== item.id),
+                      )
+                    }}
+                  />
+                  <span>
+                    {item.content}
+                    <small>
+                      {item.sourceType === 'SERVICE_TEMPLATE'
+                        ? 'Mẫu dịch vụ'
+                        : 'Khách hàng bổ sung'}
+                    </small>
+                  </span>
+                </label>
+              ))}
+            {items.length === 0 && <p>Chưa có yêu cầu checklist.</p>}
+          </fieldset>
+        </>
+      )}
       {message && <p role="status">{message}</p>}
       {editable && (
         <button

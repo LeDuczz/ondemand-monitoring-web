@@ -24,6 +24,25 @@ afterEach(() => {
 })
 
 describe('Router - auth hash sync (regression)', () => {
+  it.each(['#portal/manager/missions', '#portal/staff/missions', '#profile'])(
+    'redirects unauthenticated navigation after render without React warnings: %s',
+    async (hash) => {
+      authSession.clear()
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        window.location.hash = '#auth/login'
+        render(<Router />)
+        navigateHash(hash)
+        await waitFor(() => expect(window.location.hash).toBe('#auth/login'))
+        expect(
+          await screen.findByRole('heading', { name: 'Đăng nhập' }),
+        ).toBeInTheDocument()
+        expect(errors).not.toHaveBeenCalled()
+      } finally {
+        errors.mockRestore()
+      }
+    },
+  )
   it('shows the login form for #auth/login and the register form for #auth/register', () => {
     window.location.hash = '#auth/login'
     render(<Router />)
@@ -127,11 +146,16 @@ describe('Router - manager routes (#portal/manager*)', () => {
   })
   it('allows authenticated Admin into Manager planning without granting crew authority', async () => {
     const user = authSession.getUser()!
-    localStorage.setItem('fieldwise.user', JSON.stringify({ ...user, role: 'ADMIN' }))
+    localStorage.setItem(
+      'fieldwise.user',
+      JSON.stringify({ ...user, role: 'ADMIN' }),
+    )
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
     window.location.hash = '#portal/manager'
     render(<Router />)
-    await waitFor(() => expect(screen.getByText('Dashboard điều hành')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByText('Dashboard điều hành')).toBeInTheDocument(),
+    )
   })
 
   it('routes nested #portal/manager/... hashes to the Manager area too', async () => {

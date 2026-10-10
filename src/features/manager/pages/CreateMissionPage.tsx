@@ -18,6 +18,10 @@ import type { OrderMissionBrief } from '../types/orders'
 import { createMissionPageMessages } from './CreateMissionPage.messages'
 import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import '../manager.css'
+import { Button } from '../../../shared/components/Button'
+import { PlanningHeader } from '../components/planning/PlanningHeader'
+import { planningPresentationMessages } from '../components/planning/planningPresentation.messages'
+import '../components/planning/planning.css'
 
 /**
  * MNG-04 "Tạo nhiệm vụ" — create-mission form for an already-APPROVED order.
@@ -31,11 +35,13 @@ export function CreateMissionPage({
   initialBrief,
   now: nowProp,
   replacesMissionId,
+  onCreated,
 }: {
   orderId: string
   initialBrief?: OrderMissionBrief
   now?: Date
   replacesMissionId?: string
+  onCreated?: (missionId: string) => void
 }) {
   const [now] = useState(() => nowProp ?? new Date())
   const briefQuery = useApiQuery(
@@ -52,7 +58,7 @@ export function CreateMissionPage({
   }
 
   return (
-    <CreateMissionForm key={`${orderId}:${replacesMissionId ?? ''}`} orderId={orderId} brief={briefQuery.data} now={now} replacesMissionId={replacesMissionId} />
+    <CreateMissionForm key={`${orderId}:${replacesMissionId ?? ''}`} orderId={orderId} brief={briefQuery.data} now={now} replacesMissionId={replacesMissionId} onCreated={onCreated} />
   )
 }
 
@@ -213,14 +219,17 @@ function CreateMissionForm({
   brief,
   now,
   replacesMissionId,
+  onCreated,
 }: {
   orderId: string
   brief: OrderMissionBrief
   now: Date
   replacesMissionId?: string
+  onCreated?: (missionId: string) => void
 }) {
   const { t } = useI18n(createMissionPageMessages)
   const { t: reviewT } = useI18n(orderReviewPageMessages)
+  const { t: planningT } = useI18n(planningPresentationMessages)
   const localizeMediaLabel = (label: string) =>
     humanizeMediaRequirement(label, reviewT)
   void now
@@ -291,7 +300,7 @@ function CreateMissionForm({
   async function handleSubmit() {
     if (submit.kind === 'submitting' || planQuery.loading || planQuery.error || planQuery.data?.planStatus !== 'DRAFT'
       || replacementQuery.loading || replacementQuery.error || (replacesMissionId && (replacementQuery.data?.status !== 'CANCELLED' || replacementQuery.data.orderId !== orderId))) return
-    if (!scopeLabel.trim()) { setSubmit({ kind: 'validationFailed', message: 'Nhập nhãn phạm vi Mission.' }); return }
+    if (!scopeLabel.trim()) { setSubmit({ kind: 'validationFailed', message: planningT.scopeRequired }); return }
     if (!scheduledStart || !scheduledEnd) {
       setSubmit({
         kind: 'validationFailed',
@@ -322,9 +331,8 @@ function CreateMissionForm({
         expectedPlanRevision: planRevision,
       })
       clearMissionCreationKey(orderId)
-      setNavigateTo(
-        managerHref({ screen: 'missionDetail', missionId: mission.id }),
-      )
+      if (onCreated) onCreated(mission.id)
+      else setNavigateTo(managerHref({ screen: 'orderReview', orderId }))
     } catch (err) {
       if (err instanceof ApiError && err.code === 'EXECUTION_PLAN_REVISION_CONFLICT') {
         try {
@@ -336,7 +344,7 @@ function CreateMissionForm({
       if (err instanceof ApiError && err.status === 422) {
         setSubmit({
           kind: 'planFailed',
-          message: err.message || t.planGenerationFailed,
+          message: t.planGenerationFailed,
         })
         return
       }
@@ -350,7 +358,7 @@ function CreateMissionForm({
   if (submit.kind === 'planFailed') {
     return (
       <div className="odm-or">
-        <OrderWorkflowStepper currentStep={2} />
+        {!onCreated && <OrderWorkflowStepper currentStep={2} />}
         <div className="odm-or-card">
           <div className="odm-mgr-review-error">
             <div className="odm-mgr-review-error-icon" aria-hidden="true">
@@ -365,7 +373,6 @@ function CreateMissionForm({
               {t.planFailedBody}
             </div>
             <div
-              className="odm-mono"
               style={{
                 fontSize: 11.5,
                 color: 'var(--tx3)',
@@ -374,7 +381,7 @@ function CreateMissionForm({
                 borderRadius: 5,
               }}
             >
-              POST /orders/{'{id}'}/missions · 422 FLIGHT_PLAN_GENERATION_FAILED
+              {submit.message}
             </div>
             <div style={{ marginTop: 6, display: 'flex', gap: 8 }}>
               <button
@@ -428,8 +435,8 @@ function CreateMissionForm({
   }
 
   return (
-    <div className="odm-or">
-      <div className="odm-or-pagehead">
+    <div className="odm-or odm-plan-page">
+      {!onCreated && <div className="odm-or-pagehead">
         <h1 className="odm-or-title">{t.title}</h1>
         <p className="odm-or-subtitle">
           {t.fromOrder(
@@ -438,19 +445,42 @@ function CreateMissionForm({
             brief.customerFullName,
           )}
         </p>
-      </div>
+      </div>}
 
-      <OrderWorkflowStepper currentStep={2} />
+      {!onCreated && <OrderWorkflowStepper currentStep={2} />}
 
-      <section className="odm-or-card" style={{ padding: 16 }} aria-label="Mission planning context">
-        <a href={managerHref({ screen: 'orderReview', orderId })}>Kế hoạch Order</a>
-        <p>{planQuery.loading ? 'Đang tải revision…' : `Plan ${planQuery.data?.planStatus ?? 'chưa xác minh'} · revision ${planRevision}`}</p>
-        {planQuery.error ? <p role="alert">{planningError(planQuery.error)} <button type="button" onClick={planQuery.reload}>Tải lại plan</button></p> : null}
-        {planQuery.data?.planStatus === 'FINALIZED' && <p>Cần amendment trước khi tạo Mission mới.</p>}
-        <label>Nhãn phạm vi Mission<input maxLength={255} required value={scopeLabel} onChange={event => setScopeLabel(event.target.value)} /></label>
-        <p>Phạm vi địa lý dùng dữ liệu Order hiện có. Phân công checklist sau khi tạo; chưa hỗ trợ target point/area tùy chỉnh.</p>
-        {replacesMissionId && <p>Replacement của {replacesMissionId}. Chỉ sao chép planning do bạn nhập; không kế thừa evidence hoặc kết quả.</p>}
-        {replacementQuery.error ? <p role="alert">{planningError(replacementQuery.error)}</p> : null}
+      <section className="odm-or-card odm-plan-create" aria-label="Mission planning context">
+        {!onCreated && <PlanningHeader status={planQuery.data?.planStatus} revision={planRevision} loading={planQuery.loading} />}
+        <div className="odm-plan-create-body">
+          {!onCreated && <a className="odm-plan-back" href={managerHref({ screen: 'orderReview', orderId })}>
+            <OrderIcon name="chevron-right" size={16} />{planningT.back}
+          </a>}
+          {planQuery.error ? <div role="alert" className="odm-or-error odm-plan-error">{planningError(planQuery.error)} <Button type="button" variant="secondary" onClick={planQuery.reload}>{planningT.retry}</Button></div> : null}
+          {planQuery.data?.planStatus === 'FINALIZED' && <p className="odm-planning-notice">{planningT.finalized}</p>}
+          <div className="odm-plan-create-grid">
+            <div className="odm-plan-form">
+              <h3>{planningT.createTitle}</h3>
+              <p className="odm-plan-description">{planningT.createDescription}</p>
+              <label className="odm-or-field" htmlFor="mission-work-scope">
+                <span className="odm-or-field-label">{planningT.scopeLabel} <span aria-hidden="true">*</span></span>
+              </label>
+              <input id="mission-work-scope" className="odm-or-input" maxLength={255} required
+                placeholder={planningT.scopePlaceholder}
+                value={scopeLabel === 'Whole Order scope' ? planningT.scopeDefault : scopeLabel}
+                onChange={event => setScopeLabel(event.target.value)}
+                aria-describedby={`mission-scope-help${submit.kind === 'validationFailed' && !scopeLabel.trim() ? ' mission-scope-error' : ''}`}
+                aria-invalid={submit.kind === 'validationFailed' && !scopeLabel.trim() ? true : undefined} />
+              <p id="mission-scope-help" className="odm-plan-field-help">{planningT.scopeHint}</p>
+              {submit.kind === 'validationFailed' && !scopeLabel.trim() && <p id="mission-scope-error" role="alert" className="odm-plan-field-error">{submit.message}</p>}
+            </div>
+            <aside className="odm-plan-geography" aria-labelledby="mission-geography-title">
+              <h3 id="mission-geography-title"><OrderIcon name="info" size={18} />{planningT.geography}</h3>
+              <ul><li>{planningT.geographyOrder}</li><li>{planningT.geographyCustom}</li><li>{planningT.geographyChecklist}</li></ul>
+            </aside>
+          </div>
+          {replacesMissionId && <p className="odm-planning-notice">{planningT.replacement(replacesMissionId)}</p>}
+          {replacementQuery.error ? <p role="alert" className="odm-or-error">{planningError(replacementQuery.error)}</p> : null}
+        </div>
       </section>
 
       <div className="odm-or-grid">
@@ -597,7 +627,7 @@ function CreateMissionForm({
                   {t.scheduleSummary(formatLocalInput(scheduledStart), formatLocalInput(scheduledEnd))}
                 </p>
               ) : null}
-              {submit.kind === 'validationFailed' ? (
+              {submit.kind === 'validationFailed' && scopeLabel.trim() ? (
                 <div role="alert" className="odm-or-error">
                   {submit.message}
                 </div>
@@ -656,7 +686,7 @@ function CreateMissionForm({
           >
             {t.backToOrders}
           </a>
-          <button
+          <Button
             type="button"
             className="odm-or-btn odm-or-btn-primary"
             onClick={handleSubmit}
@@ -664,7 +694,7 @@ function CreateMissionForm({
           >
             {submitting ? t.creating : t.createMission}
             <OrderIcon name="chevron-right" size={16} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

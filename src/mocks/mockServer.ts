@@ -1,4 +1,5 @@
 import { env } from '../config/env'
+import { matchesRealApiRoute } from '../shared/api/realApiRoutes'
 
 export type MockEnvelope<T = unknown> = {
   success: boolean
@@ -72,6 +73,15 @@ export function passThrough(): MockResult {
   return { passThrough: true }
 }
 
+/**
+ * True when `VITE_REAL_API_ROUTES` lists this route. A handler that wants to honour the hybrid
+ * setting returns `passThrough()` in that case, so the request reaches the real network (or an
+ * E2E interceptor) instead of the in-memory mock.
+ */
+export function isRealApiRoute(method: string, pathname: string): boolean {
+  return matchesRealApiRoute(env.realApiRoutes, method, pathname)
+}
+
 /** Builds an error envelope + HTTP status, e.g. `fail(404, 'NOT_FOUND', …)`. */
 export function fail(
   status: number,
@@ -143,6 +153,7 @@ function matchRoute(method: string, pathname: string) {
 function parseBody(init?: RequestInit): unknown {
   const raw = init?.body
   if (raw === undefined || raw === null) return undefined
+  if (raw instanceof FormData) return raw
   if (typeof raw !== 'string') return undefined
   try {
     return JSON.parse(raw)

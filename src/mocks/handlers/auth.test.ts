@@ -46,7 +46,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(payload.data.accessToken).toBe('mock-staff-token')
     expect(payload.data.user).toMatchObject({
       email: 'hang.le@odms.vn',
-      role: 'STAFF',
+      role: 'MANAGER',
       fullName: 'Lê Thị Thanh Hằng',
     })
   })

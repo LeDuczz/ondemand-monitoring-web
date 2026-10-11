@@ -75,7 +75,6 @@ export function HeroMap({ id, className }: { id: string; className?: string }) {
       map.remove()
       mapRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
 
   return <div id={id} ref={ref} className={className} style={{ height: 420 }} />

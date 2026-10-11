@@ -117,7 +117,7 @@ export default function MissionFailed({
           {[
             ['mission', t.fields.mission, mission.id],
             ['failureReason', t.fields.failureReason, reason],
-            ['drone', t.fields.drone, `${drone.name} (${drone.id})`],
+            ['drone', t.fields.drone, drone.name || drone.id],
             [
               'droneStatus',
               t.fields.droneStatus,

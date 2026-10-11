@@ -829,3 +829,395 @@
     transition: none;
   }
 }
+
+/* ======================================================================
+ * Login refresh — clean SaaS card (8px spacing grid)
+ * Overrides earlier rules; keeps the existing blue / navy branding.
+ * ==================================================================== */
+.odm-auth,
+.odm-auth-main {
+  background: #f6f9fe;
+}
+
+.odm-auth-main {
+  justify-content: center;
+  padding: 24px 40px;
+  overflow-y: auto;
+}
+
+.odm-auth-main::before,
+.odm-auth-main::after {
+  border-width: 0;
+  background: rgba(23, 103, 255, 0.07);
+  filter: blur(48px);
+  right: -120px;
+  bottom: -120px;
+  width: 360px;
+  height: 360px;
+  opacity: 1;
+}
+
+.odm-auth-main::after {
+  right: auto;
+  bottom: auto;
+  left: -140px;
+  top: -140px;
+  width: 320px;
+  height: 320px;
+  background: rgba(23, 103, 255, 0.05);
+}
+
+.odm-auth-topbar {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  width: auto;
+  margin: 0;
+}
+
+.odm-auth-card {
+  max-width: 460px;
+  max-height: none;
+  padding: 40px;
+  border: 1px solid #e5edf8;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(23, 60, 120, 0.06);
+}
+
+.odm-auth-logo {
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.odm-auth-aside-brand-mark {
+  width: 48px;
+  height: 48px;
+}
+
+.odm-auth-brand-name {
+  font-size: 18px;
+}
+
+.odm-auth-heading {
+  margin-bottom: 24px;
+}
+
+.odm-auth-heading h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.odm-auth-heading p {
+  font-size: 15px;
+  color: #64748b;
+}
+
+/* Google */
+.odm-auth-google {
+  height: 52px;
+  gap: 12px;
+  border: 1px solid #d9e4f3;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.odm-auth-google:hover {
+  border-color: #b9cdea;
+  background: #f8fbff;
+}
+
+.odm-auth-google:focus-visible,
+.odm-auth-submit:focus-visible,
+.odm-auth-link-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 103, 255, 0.25);
+}
+
+.odm-auth-google svg {
+  width: 20px;
+  height: 20px;
+}
+
+.odm-auth-divider {
+  gap: 16px;
+  margin: 24px 0;
+  font-size: 13px;
+  color: #8190a6;
+}
+
+.odm-auth-divider::before,
+.odm-auth-divider::after {
+  background: #e5edf8;
+}
+
+/* Fields */
+.odm-auth-field {
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.odm-auth-field:has(.has-action) {
+  margin-bottom: 16px;
+}
+
+.odm-auth-field-label-row label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b2a44;
+}
+
+.odm-auth-input-wrap svg {
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  color: #8190a6;
+}
+
+.odm-auth-input-wrap .odm-inp {
+  height: 52px;
+  padding: 0 48px 0 46px;
+  border: 1px solid #d9e4f3;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 15px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.odm-auth-input-wrap .odm-inp::placeholder {
+  color: #9aa7bb;
+}
+
+.odm-auth-input-wrap .odm-inp:hover {
+  border-color: #b9cdea;
+}
+
+.odm-auth-input-wrap .odm-inp:focus-visible,
+.odm-auth-input-wrap .odm-inp:focus {
+  border-color: #1767ff;
+  box-shadow: 0 0 0 3px rgba(23, 103, 255, 0.14);
+}
+
+.odm-auth-input-wrap .odm-inp:disabled {
+  background: #f3f6fb;
+  color: #8190a6;
+  cursor: not-allowed;
+}
+
+.odm-auth-input-wrap:focus-within svg:first-child {
+  color: #1767ff;
+}
+
+.odm-auth-input-action {
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  color: #7283a0;
+}
+
+.odm-auth-input-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 103, 255, 0.25);
+}
+
+.odm-auth-input-action svg {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
+
+/* Options row */
+.odm-auth-row {
+  min-height: 24px;
+  margin-top: 8px;
+  flex-wrap: nowrap;
+}
+
+.odm-auth-checkbox {
+  gap: 8px;
+  font-size: 14px;
+  color: #51627c;
+  cursor: pointer;
+}
+
+.odm-auth-checkbox input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #1767ff;
+  cursor: pointer;
+}
+
+.odm-auth-link-button {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1767ff;
+  border-radius: 6px;
+}
+
+/* Primary button */
+.odm-auth-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  margin-top: 24px;
+  border-radius: 12px;
+  background: #1767ff;
+  box-shadow: 0 4px 12px rgba(23, 103, 255, 0.2);
+  font-size: 16px;
+  font-weight: 600;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.odm-auth-submit svg {
+  width: 18px;
+  height: 18px;
+}
+
+.odm-auth-submit:hover:not(:disabled) {
+  background: #0f5ae6;
+  box-shadow: 0 6px 16px rgba(23, 103, 255, 0.24);
+  transform: none;
+}
+
+.odm-auth-submit:active:not(:disabled) {
+  background: #0c4fcc;
+  transform: translateY(1px);
+}
+
+.odm-auth-submit:disabled {
+  background: #a9c4f5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Register link */
+.odm-auth-switch {
+  margin: 24px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid #eef3fa;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.odm-auth-switch button {
+  font-weight: 600;
+  color: #1767ff;
+}
+
+/* Short viewports: keep the card on screen without the old height rules */
+@media (min-width: 901px) and (max-height: 820px) {
+  .odm-auth-card {
+    padding: 32px 40px;
+  }
+
+  .odm-auth-logo {
+    margin-bottom: 24px;
+  }
+
+  .odm-auth-heading {
+    margin-bottom: 20px;
+  }
+
+  .odm-auth-divider {
+    margin: 20px 0;
+  }
+
+  .odm-auth-field,
+  .odm-auth-field:has(.has-action) {
+    margin-bottom: 12px;
+  }
+
+  .odm-auth-switch {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+
+  .odm-auth-submit {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .odm-auth-main {
+    min-height: 100dvh;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .odm-auth-topbar {
+    right: 16px;
+  }
+
+  .odm-auth-card {
+    width: calc(100% - 32px);
+    max-width: 460px;
+  }
+}
+
+@media (max-width: 600px) {
+  .odm-auth-main {
+    align-items: center;
+    padding: 64px 16px 24px;
+    justify-content: flex-start;
+  }
+
+  .odm-auth-card {
+    width: calc(100% - 32px);
+    padding: 24px;
+    border-radius: 20px;
+  }
+
+  .odm-auth-logo {
+    margin-bottom: 24px;
+  }
+
+  .odm-auth-heading h1 {
+    font-size: 28px;
+  }
+
+  .odm-auth-row {
+    align-items: center;
+  }
+
+  .odm-auth-input-wrap .odm-inp,
+  .odm-auth-google,
+  .odm-auth-submit {
+    height: 52px;
+  }
+}
+
+:root[data-theme='dark'] .odm-auth-main,
+:root[data-theme='dark'] .odm-auth {
+  background: #071225;
+}
+
+:root[data-theme='dark'] .odm-auth-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='dark'] .odm-auth-input-wrap .odm-inp {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+:root[data-theme='dark'] .odm-auth-google:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .odm-auth-switch {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}

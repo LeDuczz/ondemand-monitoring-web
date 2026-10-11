@@ -17,11 +17,11 @@ export const preflightScreenMessages = defineMessages({
     pressTriggerHint: 'Bấm Trigger precheck để gọi API kiểm tra thiết bị.',
     switchingToReady: 'Đang đổi READY_TO_FLY...',
     continueToHandover: 'Tiếp tục tới bàn giao',
-    triggeringAgain: 'Đang trigger...',
-    triggerAgain: 'Trigger lại precheck',
-    triggerPrecheck: 'Trigger precheck',
+    triggeringAgain: 'Đang kiểm...',
+    triggerAgain: 'Kiểm tra lại',
+    triggerPrecheck: 'Bắt đầu kiểm tra',
     weatherTitle: 'Thời tiết bay',
-    weatherNotChecked: 'CHƯA CHECK',
+    weatherNotChecked: 'CHƯA GHI NHẬN',
     weatherSummary: (
       wind: string,
       gust: string,
@@ -30,10 +30,40 @@ export const preflightScreenMessages = defineMessages({
     ) =>
       `Gió ${wind} m/s · Giật ${gust} m/s · Mưa ${rain} mm/h · Tầm nhìn ${visibility} km`,
     weatherHint:
-      'Bấm Check thời tiết để kiểm tra điều kiện gió, mưa và tầm nhìn trước khi bay.',
-    weatherChecking: 'Đang check...',
-    weatherRecheck: 'Check lại thời tiết',
-    weatherCheck: 'Check thời tiết',
+      'Hệ thống có thể lấy thời tiết hiện tại theo tọa độ mission; operator đối chiếu ngoài đời rồi xác nhận biên bản.',
+    weatherSuggest: 'Lấy thời tiết hiện tại',
+    weatherSuggesting: 'Đang lấy thời tiết...',
+    weatherForecastApplied: 'Đã lấy thời tiết hiện tại theo tọa độ mission',
+    weatherForecastUnavailable:
+      'Chưa lấy được gợi ý thời tiết theo tọa độ. Operator có thể nhập từ nguồn quan trắc khác.',
+    weatherCoordinateHint: (lat: string, lon: string) =>
+      `Tọa độ mission: ${lat}, ${lon}. Dữ liệu hiện tại chỉ hỗ trợ quyết định, không thay thế xác nhận của operator.`,
+    weatherNoCoordinates:
+      'Mission chưa có latitude/longitude nên không thể lấy gợi ý tự động.',
+    weatherSaving: 'Đang lưu...',
+    weatherUpdate: 'Cập nhật biên bản',
+    weatherRecord: 'Ghi nhận thời tiết',
+    weatherSource: 'Nguồn kiểm tra',
+    weatherSourcePlaceholder: 'VD: Windy, AccuWeather, trạm khí tượng...',
+    weatherObservedAt: 'Thời điểm xem',
+    weatherWind: 'Gió',
+    weatherGust: 'Gió giật',
+    weatherRain: 'Mưa',
+    weatherVisibility: 'Tầm nhìn',
+    weatherTemperature: 'Nhiệt độ',
+    weatherHumidity: 'Độ ẩm',
+    weatherDecision: 'Kết luận của operator',
+    weatherDecisionPass: 'An toàn để bay',
+    weatherDecisionWarn: 'Cảnh báo, vẫn cho phép bay',
+    weatherDecisionFail: 'Không an toàn, chặn bay',
+    weatherNotes: 'Ghi chú căn cứ',
+    weatherNotesPlaceholder:
+      'VD: trời quang, gió ổn định; đã đối chiếu khu vực bay...',
+    weatherManualSafe: 'Thời tiết ngoài đời phù hợp để bay.',
+    weatherManualCaution: 'Có yếu tố cần chú ý, operator xác nhận vẫn bay được.',
+    weatherManualUnsafe: 'Thời tiết ngoài đời không an toàn để bay.',
+    weatherManualMissing:
+      'Nhập đầy đủ nguồn kiểm tra, thời điểm và các chỉ số thời tiết trước khi lưu.',
     itemFail: 'Không đạt',
     itemPass: 'Đạt',
     itemChecking: 'Đang kiểm',
@@ -41,7 +71,7 @@ export const preflightScreenMessages = defineMessages({
     triggerFailed:
       'Không gọi được API trigger precheck. Hãy mở Drone Stack rồi bấm Trigger lại.',
     weatherApiFailed:
-      'Không gọi được API thời tiết. Kiểm tra backend rồi bấm lại.',
+      'Không lưu được biên bản thời tiết. Kiểm tra dữ liệu rồi thử lại.',
     precheckConnectionLost:
       'Mất kết nối precheck API. Bấm Trigger precheck để chạy lại.',
     confirmingBackendPrecheck: 'Đang xác nhận precheck với backend...',
@@ -72,7 +102,7 @@ export const preflightScreenMessages = defineMessages({
     triggerAgain: 'Trigger precheck again',
     triggerPrecheck: 'Trigger precheck',
     weatherTitle: 'Flight weather',
-    weatherNotChecked: 'NOT CHECKED',
+    weatherNotChecked: 'NOT RECORDED',
     weatherSummary: (
       wind: string,
       gust: string,
@@ -81,10 +111,42 @@ export const preflightScreenMessages = defineMessages({
     ) =>
       `Wind ${wind} m/s · Gust ${gust} m/s · Rain ${rain} mm/h · Visibility ${visibility} km`,
     weatherHint:
-      'Press "Check weather" to check wind, rain, and visibility before flying.',
-    weatherChecking: 'Checking...',
-    weatherRecheck: 'Recheck weather',
-    weatherCheck: 'Check weather',
+      'The system can fetch current weather from mission coordinates; the operator cross-checks and confirms the log.',
+    weatherSuggest: 'Fetch current weather',
+    weatherSuggesting: 'Fetching weather...',
+    weatherForecastApplied:
+      'Current weather loaded from the mission coordinates',
+    weatherForecastUnavailable:
+      'Could not fetch a coordinate-based weather suggestion. The operator can enter another observed source.',
+    weatherCoordinateHint: (lat: string, lon: string) =>
+      `Mission coordinates: ${lat}, ${lon}. This current weather supports the decision and does not replace operator confirmation.`,
+    weatherNoCoordinates:
+      'This mission has no latitude/longitude, so automatic suggestion is unavailable.',
+    weatherSaving: 'Saving...',
+    weatherUpdate: 'Update weather log',
+    weatherRecord: 'Record weather',
+    weatherSource: 'Source checked',
+    weatherSourcePlaceholder: 'Ex: Windy, AccuWeather, weather station...',
+    weatherObservedAt: 'Observed at',
+    weatherWind: 'Wind',
+    weatherGust: 'Gust',
+    weatherRain: 'Rain',
+    weatherVisibility: 'Visibility',
+    weatherTemperature: 'Temperature',
+    weatherHumidity: 'Humidity',
+    weatherDecision: 'Operator decision',
+    weatherDecisionPass: 'Safe to fly',
+    weatherDecisionWarn: 'Caution, allow flight',
+    weatherDecisionFail: 'Unsafe, block flight',
+    weatherNotes: 'Evidence notes',
+    weatherNotesPlaceholder:
+      'Ex: clear sky, stable wind; cross-checked near the flight area...',
+    weatherManualSafe: 'Real-world weather is suitable for flight.',
+    weatherManualCaution:
+      'Weather needs attention; operator confirms flight is still allowed.',
+    weatherManualUnsafe: 'Real-world weather is unsafe for flight.',
+    weatherManualMissing:
+      'Enter the source, observed time, and all weather values before saving.',
     itemFail: 'Failed',
     itemPass: 'Passed',
     itemChecking: 'Checking',
@@ -92,7 +154,7 @@ export const preflightScreenMessages = defineMessages({
     triggerFailed:
       'Could not call the trigger precheck API. Open Drone Stack and trigger again.',
     weatherApiFailed:
-      'Could not call the weather API. Check the backend and try again.',
+      'Could not save the weather log. Check the data and try again.',
     precheckConnectionLost:
       'Lost connection to the precheck API. Press "Trigger precheck" to run it again.',
     confirmingBackendPrecheck: 'Confirming the precheck with the backend...',

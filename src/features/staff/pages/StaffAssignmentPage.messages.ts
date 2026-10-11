@@ -8,7 +8,8 @@ export const staffAssignmentPageMessages = defineMessages({
     refresh: 'Làm mới',
     loadFailed: 'Không tải được danh sách phân công',
     chooseBoth: 'Vui lòng chọn cả thiết bị và staff trước khi phân công.',
-    chooseAll: 'Vui lòng chọn thiết bị và đủ 4 vai trò mission.',
+    chooseAll:
+      'Vui lòng chọn thiết bị và PILOT. Các vai trò còn lại là tùy chọn.',
     assignFailed: 'Phân công thất bại',
     loadingMissions: 'Đang tải mission...',
     noMissions: 'Không có mission nào đang chờ phân công.',
@@ -63,8 +64,10 @@ export const staffAssignmentPageMessages = defineMessages({
     pendingAssignments: 'Pending Assignments',
     refresh: 'Refresh',
     loadFailed: 'Failed to load assignments',
-    chooseBoth: 'Please choose both a device and a staff member before assigning.',
-    chooseAll: 'Please choose a device and all 4 mission roles.',
+    chooseBoth:
+      'Please choose both a device and a staff member before assigning.',
+    chooseAll:
+      'Please choose a device and PILOT. Other mission roles are optional.',
     assignFailed: 'Assignment failed',
     loadingMissions: 'Loading missions...',
     noMissions: 'No missions waiting for assignment.',

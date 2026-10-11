@@ -39,7 +39,7 @@ describe('AuthPage - login', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }))
     })
 
-    await waitFor(() => expect(window.location.hash).toBe('#portal/staff'))
+    await waitFor(() => expect(window.location.hash).toBe('#portal/manager'))
     expect(authSession.getAccessToken()).toBe('mock-staff-token')
   })
 
@@ -83,7 +83,7 @@ describe('AuthPage - login', () => {
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('aria-busy', 'true')
 
-    await waitFor(() => expect(window.location.hash).toBe('#portal/staff'))
+    await waitFor(() => expect(window.location.hash).toBe('#portal/manager'))
   })
 
   it('passes an unknown email through to the real network', async () => {
@@ -148,11 +148,7 @@ describe('AuthPage - language', () => {
     act(() => setLanguage('en'))
 
     expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'Welcome back. Log in to manage your monitoring requests.',
-      ),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Welcome back.')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
   })

@@ -12,7 +12,9 @@ const ready: CustomerConsultation = {
   requestTitle: 'Tiêu đề AI',
   requestSummary: 'Mô tả AI',
 }
-const services = [{ id: 'svc-2', name: 'Giám sát công trình' }]
+const services = [
+  { id: 'svc-2', name: 'Giám sát công trình', basePrice: 3_200_000 },
+]
 
 describe('useCreateOrderForm', () => {
   it('starts at step 1 with defaults and restores a stored step', () => {

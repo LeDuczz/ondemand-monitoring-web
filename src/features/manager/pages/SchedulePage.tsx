@@ -648,7 +648,7 @@ export function SchedulePage() {
                     {t.emptyDescription}
                   </div>
                   <a
-                    href="#portal/staff/orders"
+                    href="#portal/manager/orders"
                     className="odm-btn"
                     style={{ marginTop: 12, display: 'inline-flex' }}
                   >

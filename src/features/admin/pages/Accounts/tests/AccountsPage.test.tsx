@@ -20,15 +20,15 @@ describe('AccountsPage', () => {
   it('sends server-side pagination and role filter queries', async () => {
     render(<AccountsPage />)
     await waitFor(() => expect(screen.getByText(/Trang 1/)).toBeTruthy())
-    expect(requestedUrls.some((u) => /page=0/.test(u) && /size=20/.test(u))).toBe(
-      true,
-    )
+    expect(
+      requestedUrls.some((u) => /page=0/.test(u) && /size=20/.test(u)),
+    ).toBe(true)
 
     fireEvent.change(screen.getByLabelText('Vai trò'), {
-      target: { value: 'STAFF' },
+      target: { value: 'MANAGER' },
     })
     await waitFor(() =>
-      expect(requestedUrls.some((u) => u.includes('role=STAFF'))).toBe(true),
+      expect(requestedUrls.some((u) => u.includes('role=MANAGER'))).toBe(true),
     )
   })
 
@@ -36,13 +36,11 @@ describe('AccountsPage', () => {
     render(<AccountsPage />)
     const buttons = await screen.findAllByLabelText('Xem / sửa thông tin')
     fireEvent.click(buttons[0])
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy())
     await waitFor(() =>
-      expect(screen.getByRole('dialog')).toBeTruthy(),
-    )
-    await waitFor(() =>
-      expect(requestedUrls.some((u) => /\/api\/admin\/users\/[^/?]+$/.test(u))).toBe(
-        true,
-      ),
+      expect(
+        requestedUrls.some((u) => /\/api\/admin\/users\/[^/?]+$/.test(u)),
+      ).toBe(true),
     )
     await screen.findByText('Thời gian')
   })

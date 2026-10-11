@@ -19,8 +19,8 @@ export function RolePortalPage({ role }: { role: UserRole }) {
         <Button
           icon="arrow-up-right"
           onClick={() => {
-            if (role === 'SYSTEM_OPERATOR') {
-              window.location.hash = '#portal/system-operator/maintenance'
+            if (role === 'STAFF') {
+              window.location.hash = '#portal/staff'
             }
           }}
         >

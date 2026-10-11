@@ -4,6 +4,8 @@ export type MaintenanceTicketDto = {
   id: string
   ticketCode: string
   deviceId?: string | null
+  deviceCode?: string | null
+  droneCode?: string | null
   assignedTechnicianId?: string | null
   assignedTechnicianName?: string | null
   reportedBy?: string | null
@@ -41,9 +43,9 @@ export const maintenanceTicketApi = {
     }),
 
   assignTechnician: (id: string, technicianId: string, signal?: AbortSignal) =>
-    apiRequest<MaintenanceTicketDto>(`/api/maintenance-tickets/${id}/assign`, {
+    apiRequest<MaintenanceTicketDto>(`/api/maintenance-tickets/${id}/assign-staff`, {
       method: 'PATCH',
-      body: { technicianId },
+      body: { staffId: technicianId },
       signal,
     }),
 

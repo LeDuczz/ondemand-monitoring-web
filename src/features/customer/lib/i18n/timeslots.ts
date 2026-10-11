@@ -27,6 +27,10 @@ const asCode = (value: string | null | undefined): TimeslotCode | null => {
 export function timeslotCodeFromName(name: string | null | undefined): TimeslotCode | null {
   if (!name) return null
   const key = normalizeKey(name).replace(/^buoi /, '')
+  if (/^morning\b/.test(key)) return 'MORNING'
+  if (/^afternoon\b/.test(key)) return 'AFTERNOON'
+  if (/^evening\b/.test(key)) return 'EVENING'
+  if (/^night\b/.test(key)) return 'NIGHT'
   if (/^(chieu toi|toi)\b/.test(key)) return 'EVENING'
   if (/^chieu\b/.test(key)) return 'AFTERNOON'
   if (/^sang\b/.test(key)) return 'MORNING'
@@ -49,9 +53,8 @@ export function resolveTimeslot(input: TimeslotRef, known: TimeslotRef[] = []): 
 }
 
 /**
- * Localized "label HH:mm–HH:mm" for a preferred-time slot. English uses the
- * label keyed by code (resolved from id, name, or the name's wording) plus
- * the range; Vietnamese shows the BE name. Falls back to the BE name.
+ * Localized "label HH:mm–HH:mm" for a preferred-time slot. It normalizes BE
+ * seed names in either Vietnamese or English, while preserving unknown names.
  */
 export function localizeTimeslot(
   input: TimeslotRef,
@@ -65,8 +68,8 @@ export function localizeTimeslot(
   const end = hhmm(slot.endTime)
   const range = start && end ? `${start}–${end}` : (name.match(RANGE_IN_NAME)?.[0] ?? '')
 
-  if (lang === 'en' && code) {
-    const label = TIMESLOT_LABELS.en[code]
+  if (code) {
+    const label = TIMESLOT_LABELS[lang][code]
     return range ? `${label} ${range.replace(/\s+/g, '').replace('-', '–')}` : label
   }
   if (!name) return code ? [TIMESLOT_LABELS[lang][code], range].filter(Boolean).join(' ') : range

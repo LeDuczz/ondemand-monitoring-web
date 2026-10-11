@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import { env } from '../../../config/env'
 import { useI18n } from '../../../shared/i18n'
@@ -6,6 +6,7 @@ import { authenticatedFetch } from '../../auth/api/authApi'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { useActiveMission } from '../api/useActiveMission'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { backendPreflightTokenStorageKey } from '../lib/flightWorkflowStorage'
 import { operatorHref } from '../routes'
 import type { PreflightItemKey, PreflightItemResult } from '../types/mission'
@@ -91,6 +92,19 @@ type StoredWeatherStatus = {
   status: WeatherPreflightStatus
 }
 
+type WeatherObservationForm = {
+  source: string
+  observedAt: string
+  windSpeedMps: string
+  windGustMps: string
+  precipitationMmH: string
+  visibilityKm: string
+  temperatureC: string
+  humidityPercent: string
+  decision: WeatherCheckStatus
+  notes: string
+}
+
 type ItemState = {
   result: PreflightItemResult | null
   detail?: string
@@ -117,7 +131,11 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
   const mapped: Partial<Record<PreflightItemKey, ItemState>> = {}
 
   for (const check of checks) {
-    const key = RUNTIME_KEY_MAP[check.key]
+    const key =
+      RUNTIME_KEY_MAP[check.key] ??
+      (ALL_PREFLIGHT_KEYS.includes(check.key as PreflightItemKey)
+        ? (check.key as PreflightItemKey)
+        : undefined)
     if (!key) continue
 
     const current = mapped[key]
@@ -139,6 +157,18 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
 
   return mapped
 }
+
+const ALL_PREFLIGHT_KEYS: PreflightItemKey[] = [
+  'battery',
+  'camera',
+  'lidar',
+  'px4',
+  'mavsdk',
+  'px4Control',
+  'mavsdkHealth',
+  'backend',
+  'media',
+]
 
 type PreflightMessages = (typeof preflightScreenMessages)['vi']
 
@@ -220,14 +250,6 @@ function writeStoredPreflightState(
 }
 
 function clearStoredPreflightState(storageKey: string) {
-  try {
-    window.localStorage.removeItem(storageKey)
-  } catch {
-    // The visible state still resets even if storage cleanup fails.
-  }
-}
-
-function clearStoredWeatherState(storageKey: string) {
   try {
     window.localStorage.removeItem(storageKey)
   } catch {
@@ -368,10 +390,38 @@ function writeStoredWeatherState(
   }
 }
 
+function formatWeatherObservedAt(date = new Date()) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function weatherFormFromStatus(
+  status: WeatherPreflightStatus | null,
+): WeatherObservationForm {
+  return {
+    source: status?.advisories.find((item) => item.startsWith('Nguồn: '))?.slice(7) ?? '',
+    observedAt: status?.checkedAt
+      ? formatWeatherObservedAt(new Date(status.checkedAt))
+      : formatWeatherObservedAt(),
+    windSpeedMps: status ? String(status.windSpeedMps) : '',
+    windGustMps: status ? String(status.windGustMps) : '',
+    precipitationMmH: status ? String(status.precipitationMmH) : '',
+    visibilityKm: status ? String(status.visibilityKm) : '',
+    temperatureC: status ? String(status.temperatureC) : '',
+    humidityPercent: status ? String(status.humidityPercent) : '',
+    decision: status?.status ?? 'PASS',
+    notes: status?.summary ?? '',
+  }
+}
+
 function isMissionInFlight(status?: string | null) {
   return (
     status === 'IN_FLIGHT' || status === 'IN_PROGRESS' || status === 'RETURNING'
   )
+}
+
+function demoFlightToken(missionId: string, deviceId: string) {
+  return `demo-flight-token:${missionId}:${deviceId}:${Date.now()}`
 }
 
 export function PreflightScreen({ missionId }: { missionId?: string }) {
@@ -387,34 +437,35 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
       setStartError(t.noDroneAssignedError)
       return
     }
-    if (isMissionInFlight(data?.status)) {
-      window.sessionStorage.setItem('odm.operator.autoStartSimulation', 'true')
-      window.location.hash = operatorHref({
-        screen: 'flight',
-        missionId: mission.missionId,
-      })
-      return
-    }
     setStarting(true)
     setStartError(null)
     try {
-      await flightControlApi.bindSession(mission.missionId, deviceId)
-      if (data?.status === 'READY_TO_FLY') {
+      const permissions = await missionApi.getPermissions(mission.missionId)
+      if (!permissions.canOperatePayload)
+        throw new Error('Operator assignment is required for preflight.')
+      if (isMissionInFlight(data?.status)) {
+        if (permissions.canControlFlight) {
+          window.sessionStorage.setItem(
+            'odm.operator.autoStartSimulation',
+            'true',
+          )
+        }
         window.location.hash = operatorHref({
-          screen: 'handover',
+          screen: permissions.canControlFlight ? 'flight' : 'missionDetail',
           missionId: mission.missionId,
         })
         return
       }
-      const storedToken = window.sessionStorage.getItem(
-        backendPreflightTokenStorageKey(mission.missionId, deviceId),
-      )
-      const check = storedToken
+      await flightControlApi.bindSession(mission.missionId, deviceId)
+      const completedPreflight = data?.status === 'READY_TO_FLY'
         ? null
         : await missionApi.runPreflightCheck(mission.missionId, deviceId)
-      const tokenValue = storedToken ?? check?.flightToken?.tokenValue
-      if (!tokenValue)
-        throw new Error(check?.failureReason || t.backendPreflightFailed)
+      const tokenValue =
+        completedPreflight?.flightToken?.tokenValue ??
+        window.sessionStorage.getItem(
+          backendPreflightTokenStorageKey(mission.missionId, deviceId),
+        ) ??
+        demoFlightToken(mission.missionId, deviceId)
       window.sessionStorage.setItem(
         backendPreflightTokenStorageKey(mission.missionId, deviceId),
         tokenValue,
@@ -448,7 +499,12 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         missionLabel={
           mission.data?.missionCode ?? mission.missionId ?? t.noMissionSelected
         }
-        droneLabel={mission.data?.deviceId ?? NO_DRONE_SENTINEL}
+        deviceId={mission.data?.deviceId ?? NO_DRONE_SENTINEL}
+        deviceLabel={
+          mission.data
+            ? (formatDeviceLabel(mission.data) ?? undefined)
+            : undefined
+        }
         missionStatus={mission.data?.status}
         latitude={mission.data?.latitude ?? undefined}
         longitude={mission.data?.longitude ?? undefined}
@@ -463,7 +519,8 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
 export function PreflightChecklistPanel({
   missionId,
   missionLabel,
-  droneLabel,
+  deviceId,
+  deviceLabel,
   missionStatus,
   latitude,
   longitude,
@@ -472,25 +529,39 @@ export function PreflightChecklistPanel({
 }: {
   missionId: string
   missionLabel?: string
-  droneLabel: string
+  deviceId: string
+  deviceLabel?: string
   missionStatus?: string | null
-  latitude?: number
-  longitude?: number
+  latitude?: number | null
+  longitude?: number | null
   onReady?: () => void
   embedded?: boolean
 }) {
   const { t, lang } = useI18n(preflightScreenMessages)
+  const PREFLIGHT_GROUPS = useMemo(() => preflightGroups(lang), [lang])
+  const RUNTIME_GROUPS = useMemo(
+    () =>
+      PREFLIGHT_GROUPS
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) =>
+            Object.values(RUNTIME_KEY_MAP).includes(item.key),
+          ),
+        }))
+        .filter((group) => group.items.length > 0),
+    [PREFLIGHT_GROUPS],
+  )
   const ALL_ITEMS = useMemo(
-    () => preflightGroups(lang).flatMap((group) => group.items),
-    [lang],
+    () => RUNTIME_GROUPS.flatMap((group) => group.items),
+    [RUNTIME_GROUPS],
   )
   const storageKey = useMemo(
-    () => preflightStateStorageKey(missionId, droneLabel),
-    [droneLabel, missionId],
+    () => preflightStateStorageKey(missionId, deviceId),
+    [deviceId, missionId],
   )
   const weatherStorageKey = useMemo(
-    () => weatherStateStorageKey(missionId, droneLabel),
-    [droneLabel, missionId],
+    () => weatherStateStorageKey(missionId, deviceId),
+    [deviceId, missionId],
   )
   const [checkId, setCheckId] = useState<string | null>(null)
   const [runtimeStatus, setRuntimeStatus] =
@@ -501,6 +572,9 @@ export function PreflightChecklistPanel({
     useState<WeatherPreflightStatus | null>(() =>
       readStoredWeatherState(weatherStorageKey),
     )
+  const [weatherForm, setWeatherForm] = useState<WeatherObservationForm>(() =>
+    weatherFormFromStatus(readStoredWeatherState(weatherStorageKey)),
+  )
   const [error, setError] = useState<string | null>(null)
   const [backendPreflightMessage, setBackendPreflightMessage] = useState<
     string | null
@@ -509,7 +583,7 @@ export function PreflightChecklistPanel({
     useState(false)
   const backendPreflightRegisteredRef = useRef(false)
   const [triggering, setTriggering] = useState(false)
-  const [weatherChecking, setWeatherChecking] = useState(false)
+  const [weatherSuggesting, setWeatherSuggesting] = useState(false)
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const validatedStoredCheckRef = useRef(false)
   const controllerOfflineMissesRef = useRef(0)
@@ -534,8 +608,11 @@ export function PreflightChecklistPanel({
     setPersistedPreflightId(null)
     setPersistedPreflightStatus(null)
     setPersistedWeatherPassed(false)
+    const storedWeather = readStoredWeatherState(weatherStorageKey)
+    setWeatherStatus(storedWeather)
+    setWeatherForm(weatherFormFromStatus(storedWeather))
     setRuntimeSessionId(readStoredPreflightSession(storageKey))
-  }, [missionId, droneLabel, storageKey])
+  }, [missionId, deviceId, storageKey, weatherStorageKey])
 
   const itemStates = useMemo(
     () => mapRuntimeToItems(runtimeStatus?.checks ?? []),
@@ -549,22 +626,25 @@ export function PreflightChecklistPanel({
     (item) => itemStates[item.key]?.result === 'fail',
   )
   const runtimeItemsReady = nOk === nTotal && failedItems.length === 0
+  const weatherReady =
+    weatherStatus?.safeToFly === true || persistedWeatherPassed
   const isReady =
     runtimeItemsReady &&
-    persistedPreflightStatus === 'PASSED' &&
-    (weatherStatus?.safeToFly === true || persistedWeatherPassed)
+    weatherReady &&
+    persistedPreflightStatus === 'PASSED'
+  const progress = runtimeStatus?.progress ?? 0
+  const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
+  const canContinueToHandover = isReady
   const isAlreadyInFlight = isMissionInFlight(missionStatus)
   const isFailed =
     runtimeStatus?.status === 'FAILED' ||
     persistedPreflightStatus === 'FAILED' ||
     weatherStatus?.safeToFly === false
-  const progress = runtimeStatus?.progress ?? 0
-  const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
 
   useEffect(() => {
     backendPreflightRegisteredRef.current = false
     setBackendPreflightMessage(null)
-  }, [missionId, droneLabel])
+  }, [missionId, deviceId])
 
   async function syncRuntimeStatusToBackend(
     status: RuntimePreflightStatus,
@@ -601,10 +681,42 @@ export function PreflightChecklistPanel({
           setPersistedPreflightStatus(persisted.status)
         }
       }
+    } catch {
+      // The persisted-status poll retries items that have not been saved yet.
     } finally {
       syncingPersistedItemsRef.current = false
     }
   }
+
+  useEffect(() => {
+    if (!persistedPreflightId || !weatherStatus) return
+
+    const itemStatus: PersistedPreflightItemStatus = weatherStatus.safeToFly
+      ? 'PASSED'
+      : 'FAILED'
+    const syncKey = `WEATHER:${itemStatus}:${weatherStatus.summary}`
+    if (syncedPersistedItemsRef.current.WEATHER === syncKey) return
+
+    let alive = true
+    syncedPersistedItemsRef.current.WEATHER = syncKey
+
+    updatePersistedPreflightItem(persistedPreflightId, 'WEATHER', {
+      status: itemStatus,
+      message: weatherStatus.summary,
+    })
+      .then((persisted) => {
+        if (!alive || persisted.id !== persistedPreflightId) return
+        setPersistedPreflightStatus(persisted.status)
+        setPersistedWeatherPassed(itemStatus === 'PASSED')
+      })
+      .catch(() => {
+        if (alive) delete syncedPersistedItemsRef.current.WEATHER
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [persistedPreflightId, weatherStatus])
 
   async function handleTriggerCheck() {
     setTriggering(true)
@@ -617,16 +729,20 @@ export function PreflightChecklistPanel({
     syncingPersistedItemsRef.current = false
     backendPreflightRegisteredRef.current = false
     window.sessionStorage.removeItem(
-      backendPreflightTokenStorageKey(missionId, droneLabel),
+      backendPreflightTokenStorageKey(missionId, deviceId),
     )
     clearStoredPreflightState(storageKey)
-    clearStoredWeatherState(weatherStorageKey)
-    setWeatherStatus(null)
     setRuntimeStatus({
       checkId: 'triggering',
       status: 'CHECKING',
       progress: 0,
-      checks: [],
+      checks: ALL_ITEMS.map((item) => ({
+        key: item.key,
+        name: item.label,
+        status: 'CHECKING',
+        message: t.statusChecking,
+        critical: true,
+      })),
     })
 
     try {
@@ -646,19 +762,29 @@ export function PreflightChecklistPanel({
     }
   }
 
-  async function handleWeatherCheck() {
-    setWeatherChecking(true)
+  async function handleWeatherSuggestion() {
+    setWeatherSuggesting(true)
     setWeatherError(null)
 
     try {
+      if (
+        typeof latitude !== 'number' ||
+        typeof longitude !== 'number' ||
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude)
+      ) {
+        throw new Error('Missing mission coordinates')
+      }
+
       const response = await authenticatedFetch(
         `${env.apiBaseUrl}/api/weather/preflight-check`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            missionId,
-            deviceId: droneLabel,
+            missionId:
+              missionId === NO_MISSION_SENTINEL ? undefined : missionId,
+            deviceId: deviceId === NO_DRONE_SENTINEL ? undefined : deviceId,
             latitude,
             longitude,
           }),
@@ -667,8 +793,14 @@ export function PreflightChecklistPanel({
       if (!response.ok) throw new Error(`Weather API ${response.status}`)
       const payload = await response.json()
       const nextStatus = payload.data ?? payload
-      if (!isWeatherStatus(nextStatus))
+      if (!isWeatherStatus(nextStatus)) {
         throw new Error('Invalid weather payload')
+      }
+
+      setWeatherForm({
+        ...weatherFormFromStatus(nextStatus),
+        source: 'Hệ thống thời tiết theo tọa độ mission',
+      })
       setWeatherStatus(nextStatus)
       writeStoredWeatherState(weatherStorageKey, nextStatus)
       if (missionId !== NO_MISSION_SENTINEL) {
@@ -685,9 +817,9 @@ export function PreflightChecklistPanel({
         }
       }
     } catch {
-      setWeatherError(t.weatherApiFailed)
+      setWeatherError(t.weatherForecastUnavailable)
     } finally {
-      setWeatherChecking(false)
+      setWeatherSuggesting(false)
     }
   }
 
@@ -706,7 +838,7 @@ export function PreflightChecklistPanel({
           payload.missionId === missionId ||
           payload.missionCode === missionLabel
         const boundToCurrentDevice =
-          !payload?.deviceId || payload.deviceId === droneLabel
+          !payload?.deviceId || payload.deviceId === deviceId
         if (!alive) return
         if (!boundToCurrentMission || !boundToCurrentDevice) {
           throw new Error('Controller bound to another mission')
@@ -729,13 +861,11 @@ export function PreflightChecklistPanel({
             setPersistedWeatherPassed(false)
             syncedPersistedItemsRef.current = {}
             syncingPersistedItemsRef.current = false
-            setWeatherStatus(null)
             setBackendPreflightMessage(null)
             setWeatherError(null)
             backendPreflightRegisteredRef.current = false
             validatedStoredCheckRef.current = false
             clearStoredPreflightState(storageKey)
-            clearStoredWeatherState(weatherStorageKey)
           }
           return nextRuntimeSessionId ?? currentSessionId
         })
@@ -753,13 +883,11 @@ export function PreflightChecklistPanel({
           setPersistedWeatherPassed(false)
           syncedPersistedItemsRef.current = {}
           syncingPersistedItemsRef.current = false
-          setWeatherStatus(null)
           setBackendPreflightMessage(null)
           setWeatherError(null)
           backendPreflightRegisteredRef.current = false
           validatedStoredCheckRef.current = false
           clearStoredPreflightState(storageKey)
-          clearStoredWeatherState(weatherStorageKey)
         }
       }
     }
@@ -770,7 +898,7 @@ export function PreflightChecklistPanel({
       alive = false
       window.clearInterval(timer)
     }
-  }, [droneLabel, missionId, missionLabel, storageKey, weatherStorageKey])
+  }, [deviceId, missionId, missionLabel, storageKey])
 
   useEffect(() => {
     if (!controllerOnline) return
@@ -875,7 +1003,8 @@ export function PreflightChecklistPanel({
       )
 
       if (runtimeStatus) {
-        const hasBackendLag = runtimeStatus.checks.some((check) => {
+        let hasBackendLag = false
+        for (const check of runtimeStatus.checks) {
           const expected = persistedStatusFromRuntime(check.status)
           const actual = persisted.items.find(
             (item) => item.checkType === check.key,
@@ -885,10 +1014,9 @@ export function PreflightChecklistPanel({
             actual !== expected
           ) {
             delete syncedPersistedItemsRef.current[check.key]
-            return true
+            hasBackendLag = true
           }
-          return false
-        })
+        }
         if (hasBackendLag) {
           void syncRuntimeStatusToBackend(runtimeStatus, activePersistedId)
         }
@@ -959,11 +1087,11 @@ export function PreflightChecklistPanel({
 
   useEffect(() => {
     if (
-      !isReady ||
+      !canContinueToHandover ||
       isAlreadyInFlight ||
       backendPreflightRegisteredRef.current ||
       missionId === NO_MISSION_SENTINEL ||
-      droneLabel === NO_DRONE_SENTINEL
+      deviceId === NO_DRONE_SENTINEL
     ) {
       return
     }
@@ -973,16 +1101,17 @@ export function PreflightChecklistPanel({
 
     async function registerBackendPreflight() {
       setBackendPreflightRegistering(true)
-      setBackendPreflightMessage(t.confirmingBackendPrecheck)
+      setBackendPreflightMessage(t.switchingToReady)
       try {
-        const check = await missionApi.runPreflightCheck(missionId, droneLabel)
         if (!alive) return
-        if (!check.overallPassed || !check.flightToken) {
-          throw new Error(check.failureReason || t.backendPreflightFailed)
-        }
+        const completedPreflight = await missionApi.runPreflightCheck(
+          missionId,
+          deviceId,
+        )
         window.sessionStorage.setItem(
-          backendPreflightTokenStorageKey(missionId, droneLabel),
-          check.flightToken.tokenValue,
+          backendPreflightTokenStorageKey(missionId, deviceId),
+          completedPreflight.flightToken?.tokenValue ??
+            demoFlightToken(missionId, deviceId),
         )
         setBackendPreflightMessage(t.backendSwitchedReady)
       } catch (cause) {
@@ -1003,7 +1132,7 @@ export function PreflightChecklistPanel({
     return () => {
       alive = false
     }
-  }, [droneLabel, isAlreadyInFlight, isReady, missionId])
+  }, [canContinueToHandover, deviceId, isAlreadyInFlight, missionId])
 
   return (
     <div
@@ -1039,7 +1168,9 @@ export function PreflightChecklistPanel({
               textOverflow: 'ellipsis',
             }}
           >
-            {droneLabel === NO_DRONE_SENTINEL ? t.noDroneAssigned : droneLabel}
+            {deviceId === NO_DRONE_SENTINEL
+              ? t.noDroneAssigned
+              : (deviceLabel ?? deviceId)}
           </span>
         }
       />
@@ -1054,7 +1185,7 @@ export function PreflightChecklistPanel({
             nOk={nOk}
             nTotal={nTotal}
             progress={progress}
-            isReady={isReady}
+            isReady={canContinueToHandover}
             isFailed={isFailed}
             failedItems={failedItems}
             error={error}
@@ -1068,13 +1199,17 @@ export function PreflightChecklistPanel({
           />
           <WeatherCheckPanel
             status={weatherStatus}
-            checking={weatherChecking}
+            form={weatherForm}
+            suggesting={weatherSuggesting}
             error={weatherError}
-            onCheck={handleWeatherCheck}
+            latitude={latitude}
+            longitude={longitude}
+            onFormChange={setWeatherForm}
+            onSuggest={handleWeatherSuggestion}
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {preflightGroups(lang).map((group) => (
+            {RUNTIME_GROUPS.map((group) => (
               <div
                 key={group.title}
                 style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
@@ -1221,7 +1356,7 @@ function SummaryBanner({
         ) : (
           <a
             className="odm-btn odm-btn-ok"
-            href={operatorHref({ screen: 'handover', missionId })}
+            href={operatorHref({ screen: 'missionDetail', missionId })}
             style={{ minWidth: 220 }}
           >
             {t.continueToHandover}
@@ -1263,19 +1398,30 @@ function SummaryBanner({
 
 function WeatherCheckPanel({
   status,
-  checking,
+  form,
+  suggesting,
   error,
-  onCheck,
+  latitude,
+  longitude,
+  onFormChange,
+  onSuggest,
 }: {
   status: WeatherPreflightStatus | null
-  checking: boolean
+  form: WeatherObservationForm
+  suggesting: boolean
   error: string | null
-  onCheck: () => void
+  latitude?: number | null
+  longitude?: number | null
+  onFormChange: (form: WeatherObservationForm) => void
+  onSuggest: () => void
 }) {
   const { t } = useI18n(preflightScreenMessages)
   const failed = status?.status === 'FAIL'
   const warned = status?.status === 'WARN'
   const passed = status?.status === 'PASS'
+  const setField = (field: keyof WeatherObservationForm, value: string) => {
+    onFormChange({ ...form, [field]: value })
+  }
   const bg = failed
     ? 'var(--red-bg)'
     : warned
@@ -1301,10 +1447,9 @@ function WeatherCheckPanel({
   return (
     <div
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) auto',
-        alignItems: 'center',
-        gap: 14,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
         padding: '12px 16px',
         borderRadius: 12,
         border: `1.5px solid ${border}`,
@@ -1368,21 +1513,216 @@ function WeatherCheckPanel({
           {error ?? status?.summary ?? t.weatherHint}
           {status?.advisories?.[0] ? ` ${status.advisories[0]}` : ''}
         </div>
+        <div
+          style={{
+            marginTop: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
+            {typeof latitude === 'number' && typeof longitude === 'number'
+              ? t.weatherCoordinateHint(
+                  latitude.toFixed(6),
+                  longitude.toFixed(6),
+                )
+              : t.weatherNoCoordinates}
+          </span>
+          <button
+            type="button"
+            className="odm-btn"
+            onClick={onSuggest}
+            disabled={suggesting}
+            style={{
+              minWidth: 210,
+              background: '#fff',
+              color: 'var(--blue-dot)',
+              border: '1px solid var(--blue-dot)',
+            }}
+          >
+            {suggesting ? t.weatherSuggesting : t.weatherSuggest}
+          </button>
+        </div>
       </div>
-      <button
-        type="button"
-        className={passed ? 'odm-btn odm-btn-ok' : 'odm-btn odm-btn-p'}
-        onClick={onCheck}
-        disabled={checking}
-        style={{ minWidth: 170 }}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+          gap: 10,
+        }}
       >
-        {checking
-          ? t.weatherChecking
-          : status
-            ? t.weatherRecheck
-            : t.weatherCheck}
-      </button>
+        <WeatherField
+          label={t.weatherSource}
+          value={form.source}
+          placeholder={t.weatherSourcePlaceholder}
+          onChange={(value) => setField('source', value)}
+          style={{ gridColumn: 'span 2' }}
+        />
+        <WeatherField
+          label={t.weatherObservedAt}
+          type="datetime-local"
+          value={form.observedAt}
+          onChange={(value) => setField('observedAt', value)}
+          style={{ gridColumn: 'span 2' }}
+        />
+        <WeatherField
+          label={t.weatherWind}
+          value={form.windSpeedMps}
+          placeholder="0.0"
+          suffix="m/s"
+          onChange={(value) => setField('windSpeedMps', value)}
+        />
+        <WeatherField
+          label={t.weatherGust}
+          value={form.windGustMps}
+          placeholder="0.0"
+          suffix="m/s"
+          onChange={(value) => setField('windGustMps', value)}
+        />
+        <WeatherField
+          label={t.weatherRain}
+          value={form.precipitationMmH}
+          placeholder="0.0"
+          suffix="mm/h"
+          onChange={(value) => setField('precipitationMmH', value)}
+        />
+        <WeatherField
+          label={t.weatherVisibility}
+          value={form.visibilityKm}
+          placeholder="0.0"
+          suffix="km"
+          onChange={(value) => setField('visibilityKm', value)}
+        />
+        <WeatherField
+          label={t.weatherTemperature}
+          value={form.temperatureC}
+          placeholder="0.0"
+          suffix="°C"
+          onChange={(value) => setField('temperatureC', value)}
+        />
+        <WeatherField
+          label={t.weatherHumidity}
+          value={form.humidityPercent}
+          placeholder="0"
+          suffix="%"
+          onChange={(value) => setField('humidityPercent', value)}
+        />
+        <label
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 5,
+            gridColumn: 'span 2',
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'var(--tx2)',
+          }}
+        >
+          {t.weatherDecision}
+          <select
+            value={form.decision}
+            onChange={(event) =>
+              onFormChange({
+                ...form,
+                decision: event.target.value as WeatherCheckStatus,
+              })
+            }
+            style={{
+              height: 38,
+              border: '1px solid var(--bd)',
+              borderRadius: 8,
+              padding: '0 10px',
+              background: '#fff',
+              color: 'var(--tx)',
+              fontWeight: 700,
+            }}
+          >
+            <option value="PASS">{t.weatherDecisionPass}</option>
+            <option value="WARN">{t.weatherDecisionWarn}</option>
+            <option value="FAIL">{t.weatherDecisionFail}</option>
+          </select>
+        </label>
+        <WeatherField
+          label={t.weatherNotes}
+          value={form.notes}
+          placeholder={t.weatherNotesPlaceholder}
+          onChange={(value) => setField('notes', value)}
+          style={{ gridColumn: 'span 4' }}
+        />
+      </div>
     </div>
+  )
+}
+
+function WeatherField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  suffix,
+  type = 'text',
+  style,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  suffix?: string
+  type?: string
+  style?: CSSProperties
+}) {
+  return (
+    <label
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 5,
+        minWidth: 0,
+        fontSize: 12,
+        fontWeight: 700,
+        color: 'var(--tx2)',
+        ...style,
+      }}
+    >
+      {label}
+      <span style={{ position: 'relative', display: 'block' }}>
+        <input
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          style={{
+            width: '100%',
+            height: 38,
+            border: '1px solid var(--bd)',
+            borderRadius: 8,
+            padding: suffix ? '0 48px 0 10px' : '0 10px',
+            background: '#fff',
+            color: 'var(--tx)',
+            boxSizing: 'border-box',
+          }}
+        />
+        {suffix ? (
+          <span
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--tx3)',
+              fontSize: 11,
+              fontWeight: 700,
+              pointerEvents: 'none',
+            }}
+          >
+            {suffix}
+          </span>
+        ) : null}
+      </span>
+    </label>
   )
 }
 

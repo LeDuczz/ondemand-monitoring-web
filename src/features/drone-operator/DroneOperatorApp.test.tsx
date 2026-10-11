@@ -13,13 +13,13 @@ afterEach(() => {
 // title (operatorActiveLabel returns '' for `notFound`).
 describe('DroneOperatorApp', () => {
   it('renders the vietnamese not-found placeholder for an unknown route', () => {
-    window.location.hash = '#portal/drone-operator/does-not-exist'
+    window.location.hash = '#portal/staff/does-not-exist'
     render(<DroneOperatorApp />)
     expect(screen.getByText('Không tìm thấy')).toBeTruthy()
   })
 
   it('renders the english not-found placeholder when language is switched', () => {
-    window.location.hash = '#portal/drone-operator/does-not-exist'
+    window.location.hash = '#portal/staff/does-not-exist'
     render(<DroneOperatorApp />)
     act(() => setLanguage('en'))
     expect(screen.getByText('Not found')).toBeTruthy()

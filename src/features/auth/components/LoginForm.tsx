@@ -50,7 +50,6 @@ export function LoginForm({
         id="password"
         value={password}
         onChange={onPasswordChange}
-        hint={t.passwordHint}
         error={fieldErrors.password}
       />
       <div className="odm-auth-row">
@@ -76,7 +75,8 @@ export function LoginForm({
         disabled={isSubmitting}
         aria-busy={isSubmitting}
       >
-        {isSubmitting ? t.signingIn : t.signIn}
+        <span>{isSubmitting ? t.signingIn : t.signIn}</span>
+        {isSubmitting ? null : <Icon name="arrow-right" />}
       </button>
     </>
   )

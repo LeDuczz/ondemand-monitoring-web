@@ -12,7 +12,6 @@ export const handoverBannersMessages = defineMessages({
     confirmedText:
       'Bạn đã xác nhận bàn giao quyền điều khiển · control_handover.status = CONFIRMED',
     continueToCockpit: 'Tiếp tục tới buồng lái',
-    demoRevoke: '(Demo) Giả lập quản lý thu hồi quyền',
   },
   en: {
     revokedTitle: 'Control access has been revoked.',
@@ -25,6 +24,5 @@ export const handoverBannersMessages = defineMessages({
     confirmedText:
       'You confirmed the control handover · control_handover.status = CONFIRMED',
     continueToCockpit: 'Continue to cockpit',
-    demoRevoke: '(Demo) Simulate a manager revoking access',
   },
 })

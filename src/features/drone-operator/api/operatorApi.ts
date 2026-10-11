@@ -33,6 +33,7 @@ function writeAvailability(
 
 export const operatorApi = {
   getProfile: async (_signal?: AbortSignal): Promise<OperatorProfile> => {
+    void _signal
     const user = authSession.getUser()
     if (!user) throw new Error('Please sign in as a drone operator')
     return {
@@ -46,9 +47,52 @@ export const operatorApi = {
   },
 
   listMissions: async (tab?: OperatorMissionTab, _signal?: AbortSignal) => {
+    void _signal
     const missions =
       (await missionApi.getMyMissions()) as unknown as BackendMission[]
-    const items = missions.map(toOperatorMission)
+    const currentUserId = authSession.getUser()?.id
+    const items = await Promise.all(
+      missions.map(async (mission) => {
+        const item = toOperatorMission(mission, currentUserId)
+        const permissions = await missionApi
+          .getPermissions(mission.id)
+          .then((value) => ({
+            canControlFlight: value.canControlFlight,
+            canOperatePayload: value.canOperatePayload,
+            canInspectDevice: value.canInspectDevice,
+            canMaintainDevice: value.canMaintainDevice,
+            canUploadMedia: value.canUploadMedia,
+            canCompleteMission: value.canCompleteMission,
+            canSubmitMissionResult: value.canSubmitMissionResult,
+            canExecuteMonitoringChecklist: value.canExecuteMonitoringChecklist,
+            canAttachChecklistEvidence: value.canAttachChecklistEvidence,
+            canDetachChecklistEvidence: value.canDetachChecklistEvidence,
+          }))
+          .catch(() => undefined)
+        const itemWithPermissions = permissions ? { ...item, permissions } : item
+        if (itemWithPermissions.status !== 'COMPLETED' && itemWithPermissions.status !== 'FAILED') {
+          return itemWithPermissions
+        }
+
+        try {
+          const result = await missionApi.getMissionResult(mission.id)
+          return {
+            ...itemWithPermissions,
+            managerSubmissionStatus:
+              result?.approvalStatus === 'APPROVED'
+                ? 'SENT_TO_CUSTOMER'
+                : result?.approvalStatus === 'PENDING_MANAGER_APPROVAL'
+                  ? 'PENDING_MANAGER'
+                  : 'NEEDS_SUBMIT',
+          } satisfies OperatorMission
+        } catch {
+          return {
+            ...itemWithPermissions,
+            managerSubmissionStatus: 'NEEDS_SUBMIT',
+          } satisfies OperatorMission
+        }
+      }),
+    )
     if (!tab) return { items }
     const statuses: Record<OperatorMissionTab, OperatorMission['status'][]> = {
       pending: ['PENDING'],
@@ -61,28 +105,31 @@ export const operatorApi = {
   },
 
   getMission: async (missionId: string, _signal?: AbortSignal) =>
-    toOperatorMission(
+    (void _signal, toOperatorMission(
       (await missionApi.getMissionById(missionId)) as unknown as BackendMission,
-    ),
+      authSession.getUser()?.id,
+    )),
 
   acceptMission: async (missionId: string, _signal?: AbortSignal) =>
-    toOperatorMission(
+    (void _signal, toOperatorMission(
       (await missionApi.acceptMyMission(
         missionId,
       )) as unknown as BackendMission,
-    ),
+      authSession.getUser()?.id,
+    )),
 
   rejectMission: async (
     missionId: string,
     body: { reason: string; notes?: string },
     _signal?: AbortSignal,
   ) =>
-    toOperatorMission(
+    (void _signal, toOperatorMission(
       (await missionApi.rejectMyMission(
         missionId,
         body.reason,
       )) as unknown as BackendMission,
-    ),
+      authSession.getUser()?.id,
+    )),
 
   getAvailability: async (week: string, signal?: AbortSignal) => {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')

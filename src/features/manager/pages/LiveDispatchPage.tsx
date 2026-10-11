@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { env } from '../../../config/env'
 import { StateView } from '../../../shared/components/odm/StateView'
@@ -7,13 +7,16 @@ import { useI18n } from '../../../shared/i18n'
 import { displayOrderCode } from '../../../shared/lib/orderCode'
 import {
   SIMULATION_MAP_DEFAULT_CROP,
+  simulationMapAspectRatio,
   simulationMapImageStyle,
   worldToViewportPercent,
 } from '../../../shared/lib/simulationMapProjection'
 import { missionApi } from '../../mission/api/missionApi'
 import { droneApi, type AvailableDrone } from '../../staff/api/droneApi'
 import { operatorApi, type AvailableOperator } from '../../staff/api/operatorApi'
-import { ManagerIcon, type ManagerIconName } from '../components/ManagerIcon'
+import { ManagerIcon } from '../components/ManagerIcon'
+import { OrderIcon } from '../components/orderReview/OrderIcon'
+import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
 import { managerHref } from '../routes'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import type { MissionStaffRole } from '../../mission/types/mission'
@@ -96,45 +99,6 @@ function requestedWindow(current: { orderPreferredDateFrom?: string | null; orde
 function fmtRadius(value?: number | null) {
   if (value == null || Number.isNaN(value)) return '—'
   return `${Number.isInteger(value) ? value : value.toFixed(1)} m`
-}
-
-function OrderInfoItem({
-  icon,
-  tone,
-  label,
-  children,
-}: {
-  icon: ManagerIconName
-  tone: string
-  label: string
-  children: ReactNode
-}) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '42px minmax(0, 1fr)', gap: 13 }}>
-      <span
-        aria-hidden="true"
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 10,
-          display: 'grid',
-          placeItems: 'center',
-          background: tone,
-          color: '#1d4ed8',
-        }}
-      >
-        <ManagerIcon name={icon} size={20} />
-      </span>
-      <div>
-        <div className="odm-mgr-review-hint" style={{ fontSize: 12.5, fontWeight: 550 }}>
-          {label}
-        </div>
-        <div style={{ fontSize: 15.5, fontWeight: 650, lineHeight: 1.35, color: '#111827' }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 function staffInitials(staff: AvailableOperator) {
@@ -912,14 +876,14 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
     [missionId],
   )
   const drones = useApiQuery(() => droneApi.getAvailable(), [missionId])
-  const operators = useApiQuery(() => operatorApi.getAvailable(), [missionId])
+  const operators = useApiQuery(() => operatorApi.getAvailable(missionId), [missionId])
   const [droneIds, setDroneIds] = useState<string[]>([])
   const [staffByRole, setStaffByRole] = useState<
     Partial<Record<MissionStaffRole, string[]>>
   >({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeStep, setActiveStep] = useState<DispatchStep>('order')
+  const [activeStep, setActiveStep] = useState<DispatchStep>('staff')
   const [openStaffRole, setOpenStaffRole] = useState<MissionStaffRole | null>(null)
   const [devicePickerOpen, setDevicePickerOpen] = useState(false)
 
@@ -970,6 +934,10 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
     current.status === 'RESOURCE_ASSIGNING' || current.status === 'CREATED'
   const activeStepIndex = dispatchSteps.indexOf(activeStep)
   const selectedDrones = (drones.data ?? []).filter((drone) => droneIds.includes(drone.id))
+  const assignedDeviceText =
+    selectedDrones.length > 0
+      ? selectedDrones.map((drone) => drone.label).join(', ')
+      : current.droneCode ?? current.deviceCode ?? current.deviceId ?? current.droneId ?? '—'
   const hasTarget = current.latitude != null && current.longitude != null
   const target = hasTarget
     ? worldToViewportPercent(
@@ -993,488 +961,422 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
   const goPrevious = () => {
     setActiveStep(dispatchSteps[Math.max(activeStepIndex - 1, 0)])
   }
+  const globalStep = activeStep === 'confirm' ? 4 : 3
+  const roleSummary = missionRoles.map((role) => ({
+    role,
+    names: (staffByRole[role] ?? [])
+      .map((id) => (operators.data ?? []).find((item) => item.id === id)?.fullName)
+      .filter(Boolean) as string[],
+  }))
+  const missingRoles = roleSummary.filter((item) => item.names.length === 0).length
+  const stepHint: Record<DispatchStep, string> = {
+    order: t.orderFooterHint,
+    mission: t.missionFooterHint,
+    staff: t.staffFooterHint,
+    device: t.deviceFooterHint,
+    confirm: t.footerHint,
+  }
+  const scheduleText = `${fmtDateTime(current.scheduledStartAt)}${
+    current.scheduledEndAt ? ` → ${fmtDateTime(current.scheduledEndAt)}` : ''
+  }`
+
   return (
-    <div className="odm-mgr-dash" style={{ padding: '28px 32px', background: '#f7f9fc' }}>
-      <div className="odm-mgr-dash-head" style={{ marginBottom: 20 }}>
+    <div className="odm-or">
+      <div className="odm-or-pagehead odm-or-pagehead-row">
         <div>
-          <h1 className="odm-mgr-dash-title" style={{ fontSize: 24, fontWeight: 700 }}>
-            {t.createMissionTitle}
-          </h1>
-          <div className="odm-mgr-dash-date" style={{ fontSize: 14 }}>
-            {t.createMissionSubtitle}
-          </div>
+          <h1 className="odm-or-title">{t.createMissionTitle}</h1>
+          <p className="odm-or-subtitle">{t.createMissionSubtitle}</p>
         </div>
         <a
-          className="odm-btn"
+          className="odm-or-btn-outline"
           href={managerHref({ screen: 'orderQueue' })}
-          style={{
-            background: '#fff',
-            borderColor: '#d8dee9',
-            borderRadius: 9,
-            minHeight: 38,
-            padding: '0 14px',
-          }}
         >
-          {t.backToQueue}
+          {t.backToOrders}
         </a>
       </div>
+
       {!assignable ? (
-        <div className="odm-card">
-          <div className="odm-card-body">
-            {t.alreadyAssigned(
-              current.droneCode ?? '—',
-              current.operatorId ?? '—',
-            )}
-          </div>
-        </div>
+        <>
+          <OrderWorkflowStepper currentStep={5} />
+          <section className="odm-or-card">
+            <div className="odm-or-card-body odm-or-result">
+              <span className="odm-or-result-icon" aria-hidden="true">
+                <OrderIcon name="check" size={26} />
+              </span>
+              <h2 className="odm-or-result-title">{t.assignedTitle}</h2>
+              <p className="odm-or-muted">
+                {t.assignedBody(
+                  current.missionCode,
+                  missionStatusLabel(current.status, t.missionStatuses),
+                )}
+              </p>
+              <dl className="odm-or-summary-list odm-or-result-list">
+                <div>
+                  <dt>
+                    <OrderIcon name="calendar" size={16} />
+                    {t.scheduleLabel}
+                  </dt>
+                  <dd>{scheduleText}</dd>
+                </div>
+                <div>
+                  <dt>
+                    <OrderIcon name="drone" size={16} />
+                    {t.assignedDevice}
+                  </dt>
+                  <dd>{assignedDeviceText}</dd>
+                </div>
+              </dl>
+              <div className="odm-or-result-actions">
+                <a
+                  className="odm-or-btn odm-or-btn-ghost"
+                  href={managerHref({ screen: 'orderQueue' })}
+                >
+                  {t.backToOrders}
+                </a>
+                <a
+                  className="odm-or-btn odm-or-btn-primary"
+                  href={managerHref({ screen: 'missions', missionId: current.id })}
+                >
+                  {t.viewMission}
+                  <OrderIcon name="chevron-right" size={16} />
+                </a>
+              </div>
+            </div>
+          </section>
+        </>
       ) : (
         <>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-              gap: 0,
-              marginBottom: 18,
-              minHeight: 72,
-              padding: 6,
-              border: '1px solid #e5e7eb',
-              borderRadius: 14,
-              background: '#fff',
-              boxShadow: '0 8px 22px rgba(15, 23, 42, 0.04)',
-            }}
-          >
+          <OrderWorkflowStepper currentStep={globalStep} />
+
+          <nav className="odm-or-card odm-or-tabs" aria-label={t.tabsAria}>
             {dispatchSteps.map((step, index) => (
               <button
                 key={step}
                 type="button"
+                className={`odm-or-tab${activeStep === step ? ' is-active' : ''}${
+                  index < activeStepIndex ? ' is-done' : ''
+                }`}
+                aria-current={activeStep === step ? 'step' : undefined}
                 onClick={() => setActiveStep(step)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  minHeight: 60,
-                  padding: '0 18px',
-                  border: 0,
-                  borderRadius: 12,
-                  background: activeStep === step ? '#eff6ff' : 'transparent',
-                  color: activeStep === step ? '#2563eb' : '#111827',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
               >
-                <span
-                  style={{
-                    display: 'inline-grid',
-                    placeItems: 'center',
-                    width: 32,
-                    height: 32,
-                    borderRadius: 999,
-                    background: activeStep === step ? '#2563eb' : '#f3f4f6',
-                    color: activeStep === step ? '#fff' : '#111827',
-                    fontWeight: 800,
-                    boxShadow: activeStep === step ? '0 8px 18px rgba(37, 99, 235, 0.22)' : 'none',
-                  }}
-                >
-                  {index + 1}
+                <span className="odm-or-tab-dot">
+                  {index < activeStepIndex ? (
+                    <OrderIcon name="check" size={14} />
+                  ) : (
+                    index + 1
+                  )}
                 </span>
-                <span>
-                  <span style={{ display: 'block', fontSize: 14, fontWeight: 750 }}>
-                    {stepLabels[step]}
-                  </span>
-                  <span style={{ display: 'block', marginTop: 2, fontSize: 12, color: activeStep === step ? '#2563eb' : '#64748b' }}>
+                <span className="odm-or-tab-text">
+                  <span className="odm-or-tab-label">{stepLabels[step]}</span>
+                  <span className="odm-or-tab-hint">
                     {t[stepSubtitles[step]] as string}
                   </span>
                 </span>
               </button>
             ))}
-          </div>
+          </nav>
 
           {activeStep === 'order' && (
-            <>
-            <div
-              className="odm-card"
-              style={{
-                marginBottom: 18,
-                borderRadius: 16,
-                border: '1px solid #e5e7eb',
-                boxShadow: '0 12px 28px rgba(15, 23, 42, 0.05)',
-                overflow: 'hidden',
-                background: '#fff',
-              }}
-            >
-              <div
-                className="odm-card-header"
-                style={{
-                  minHeight: 52,
-                  padding: '0 24px',
-                  fontSize: 18,
-                  fontWeight: 700,
-                }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                  <ManagerIcon name="order-queue" size={18} />
+            <section className="odm-or-card">
+              <header className="odm-or-card-head">
+                <span className="odm-or-card-title">
+                  <OrderIcon name="doc" size={18} />
                   {t.orderInfoTitle}
                 </span>
-                {current.orderId && (
-                  <a
-                    className="odm-btn odm-btn-sm"
-                    href={managerHref({
-                      screen: 'orderReview',
-                      orderId: current.orderId,
-                    })}
-                    style={{
-                      background: '#eff6ff',
-                      borderColor: '#dbeafe',
-                      color: '#2563eb',
-                      borderRadius: 9,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    {t.viewOrderDetail}
-                  </a>
-                )}
-              </div>
+              </header>
               <div
-                className="odm-card-body"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: target
-                    ? 'minmax(0, 65fr) minmax(360px, 35fr)'
-                    : '1fr',
-                  gap: 24,
-                  alignItems: 'start',
-                  padding: '20px 24px 24px',
-                }}
+                className={`odm-or-card-body odm-or-order-body${target ? ' has-map' : ''}`}
               >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, minmax(220px, 1fr))',
-                    gap: '26px 28px',
-                    padding: '4px 0',
-                  }}
-                >
-                  <OrderInfoItem icon="dashboard" tone="#e8f0ff" label={t.orderId}>
-                    <span className="odm-mono" style={{ wordBreak: 'break-word' }}>
-                      {currentOrderCode}
-                    </span>
-                  </OrderInfoItem>
-                  <OrderInfoItem icon="maintenance" tone="#dcfce7" label={t.customer}>
-                    {current.customerName ?? '—'}
-                  </OrderInfoItem>
-                  <OrderInfoItem icon="mission" tone="#f3e8ff" label={t.service}>
-                    {current.serviceName ?? '—'}
-                  </OrderInfoItem>
-                  <OrderInfoItem icon="live" tone="#ffe4ec" label={t.areaRadius}>
-                    <strong>{fmtRadius(current.radiusM)}</strong>
-                  </OrderInfoItem>
-                  <OrderInfoItem icon="schedule" tone="#ffedd5" label={t.customerDeadline}>
-                    <strong>{requestedWindow(current)}</strong>
-                  </OrderInfoItem>
-                  <OrderInfoItem icon="media" tone="#eef2ff" label={t.orderTitle}>
-                    <span style={{ fontWeight: 600, color: 'var(--tx2)' }}>
-                      {current.orderTitle ?? '—'}
-                    </span>
-                  </OrderInfoItem>
-                </div>
+                <dl className="odm-or-summary-list">
+                  <div>
+                    <dt>
+                      <OrderIcon name="tag" size={16} />
+                      {t.orderId}
+                    </dt>
+                    <dd>{currentOrderCode}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="user" size={16} />
+                      {t.customer}
+                    </dt>
+                    <dd>{current.customerName ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="service" size={16} />
+                      {t.service}
+                    </dt>
+                    <dd>{current.serviceName ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="radius" size={16} />
+                      {t.areaRadius}
+                    </dt>
+                    <dd>{fmtRadius(current.radiusM)}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="calendar" size={16} />
+                      {t.customerDeadline}
+                    </dt>
+                    <dd>{requestedWindow(current)}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="media" size={16} />
+                      {t.orderTitle}
+                    </dt>
+                    <dd>{current.orderTitle ?? '—'}</dd>
+                  </div>
+                </dl>
                 {target && (
                   <div
-                    className="odm-mgr-review-map"
-                    style={{
-                      minHeight: 0,
-                      height: 286,
-                      borderRadius: 14,
-                      border: '1px solid var(--bd)',
-                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.3)',
-                    }}
+                    className="odm-or-map odm-or-map-compact"
+                    style={{ aspectRatio: simulationMapAspectRatio(SIMULATION_MAP_IMAGE_CROP) }}
                   >
-                    <img
-                      className="odm-mgr-review-map-image"
-                      src={mapImageUrl}
-                      alt=""
-                      style={imageStyle}
-                    />
-                    <svg
-                      viewBox="0 0 100 100"
-                      preserveAspectRatio="none"
-                      role="img"
-                      aria-label={t.mapAriaLabel}
-                    >
-                      <circle
-                        cx={target.x}
-                        cy={target.y}
-                        r="14"
-                        className="odm-mgr-map-radius"
-                        vectorEffect="non-scaling-stroke"
-                      />
-                      <g transform={`translate(${target.x},${target.y})`}>
-                        <path
-                          d="M0 0 C-2.6 -3.1 -3.5 -4.7 -3.5 -6 a3.5 3.5 0 017 0 C3.5 -4.7 2.6 -3.1 0 0z"
-                          className="odm-mgr-map-pin"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                        <circle
-                          cy="-6"
-                          r="1.2"
-                          className="odm-mgr-map-pin-dot"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                      </g>
-                      <text
-                        x={target.x}
-                        y={Math.min(97, target.y + 9)}
-                        textAnchor="middle"
-                        className="odm-mgr-map-label"
-                      >
-                        X {current.longitude?.toFixed(1) ?? '—'} · Y {current.latitude?.toFixed(1) ?? '—'}
-                      </text>
-                    </svg>
                     <div
-                      style={{
-                        position: 'absolute',
-                        left: 14,
-                        right: 14,
-                        bottom: 14,
-                        borderRadius: 10,
-                        padding: '11px 12px',
-                        background: 'rgba(15, 23, 42, 0.82)',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                      }}
+                      className="odm-or-map-layer"
+                      style={{ left: 0, top: 0, width: '100%', height: '100%' }}
                     >
-                      <div>
-                        <div style={{ fontWeight: 800 }}>{t.mapAriaLabel}</div>
-                        <div style={{ fontSize: 12, opacity: 0.82, marginTop: 2 }}>
-                          X {current.longitude?.toFixed(4) ?? '—'}, Y {current.latitude?.toFixed(4) ?? '—'}
-                        </div>
-                      </div>
-                      <a
-                        className="odm-btn odm-btn-sm"
-                        href={managerHref({
-                          screen: 'orderReview',
-                          orderId: current.orderId ?? '',
-                        })}
-                        style={{ background: '#fff', color: '#0f172a' }}
+                      <img
+                        className="odm-or-map-image"
+                        src={mapImageUrl}
+                        alt=""
+                        style={imageStyle}
+                      />
+                      <svg
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                        role="img"
+                        aria-label={t.mapAriaLabel}
                       >
-                        {t.openMap}
-                      </a>
+                        <circle
+                          cx={target.x}
+                          cy={target.y}
+                          r="14"
+                          className="odm-or-map-radius"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      </svg>
+                      <span
+                        className="odm-or-map-pin"
+                        style={{ left: `${target.x}%`, top: `${target.y}%` }}
+                        aria-hidden="true"
+                      >
+                        <svg width="26" height="33" viewBox="0 0 30 38">
+                          <path
+                            d="M15 37C15 37 3 24.5 3 14.5a12 12 0 0 1 24 0C27 24.5 15 37 15 37z"
+                            fill="#1677ff"
+                            stroke="#fff"
+                            strokeWidth="2"
+                          />
+                          <circle cx="15" cy="14.5" r="4.5" fill="#fff" />
+                        </svg>
+                      </span>
+                      <span
+                        className="odm-or-map-badge"
+                        style={{ left: `${target.x}%`, top: `${target.y}%` }}
+                      >
+                        X {current.longitude?.toFixed(1) ?? '—'} · Y{' '}
+                        {current.latitude?.toFixed(1) ?? '—'}
+                      </span>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-            </>
+            </section>
           )}
 
           {activeStep === 'mission' && (
-            <div className="odm-card" style={{ marginBottom: 14 }}>
-              <div className="odm-card-header">{t.missionImplementation}</div>
-              <div className="odm-card-body odm-mgr-review-location-grid">
+            <section className="odm-or-card">
+              <header className="odm-or-card-head">
+                <span className="odm-or-card-title">
+                  <OrderIcon name="service" size={18} />
+                  {t.missionImplementation}
+                </span>
+              </header>
+              <dl className="odm-or-card-body odm-or-summary-list">
                 <div>
-                  <div className="odm-mgr-review-hint">{t.missionHeader(current.missionCode)}</div>
-                  <div className="odm-mono" style={{ fontWeight: 700 }}>
-                    {current.missionCode}
-                  </div>
+                  <dt>
+                    <OrderIcon name="tag" size={16} />
+                    {t.missionHeader(current.missionCode)}
+                  </dt>
+                  <dd>{current.missionCode}</dd>
                 </div>
                 <div>
-                  <div className="odm-mgr-review-hint">{t.status}</div>
-                  {missionStatusLabel(current.status, t.missionStatuses)}
+                  <dt>
+                    <OrderIcon name="info" size={16} />
+                    {t.status}
+                  </dt>
+                  <dd>
+                    <span className="odm-or-pill odm-or-pill-blue">
+                      {missionStatusLabel(current.status, t.missionStatuses)}
+                    </span>
+                  </dd>
                 </div>
                 <div>
-                  <div className="odm-mgr-review-hint">{t.actualSchedule}</div>
-                  <strong>
-                    {fmtDateTime(current.scheduledStartAt)}
-                    {current.scheduledEndAt ? ` → ${fmtDateTime(current.scheduledEndAt)}` : ''}
-                  </strong>
+                  <dt>
+                    <OrderIcon name="calendar" size={16} />
+                    {t.actualSchedule}
+                  </dt>
+                  <dd>{scheduleText}</dd>
                 </div>
-              </div>
-            </div>
+              </dl>
+            </section>
           )}
 
           {activeStep === 'staff' && (
-            <div className="odm-card" style={{ marginBottom: 14 }}>
-              <div className="odm-card-header">{t.step1}</div>
-              <div className="odm-card-body" style={{ display: 'grid', gap: 12 }}>
-              <p style={{ margin: 0, color: 'var(--tx3)' }}>{t.roleHelp}</p>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: 12,
-                }}
-              >
-                {missionRoles.map((role) => {
-                  const selected = staffByRole[role] ?? []
-                  return (
-                  <section
-                    key={role}
-                    style={{
-                      display: 'grid',
-                      alignContent: 'start',
-                      gap: 10,
-                      minHeight: 190,
-                      padding: 14,
-                      border: '1px solid var(--bd)',
-                      borderRadius: 12,
-                      background: selected.length > 0 ? '#f8fbff' : '#fff',
-                      boxShadow: '0 8px 20px rgba(15,23,42,0.04)',
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <span style={{ fontWeight: 800 }}>{t.roleIcons[role]} {t.roles[role]}</span>
-                      {selected.length > 0 && <span style={{ color: '#16a34a', fontWeight: 900 }}>✓</span>}
-                    </span>
-                    <span style={{ color: 'var(--tx3)', fontSize: 12 }}>
-                      {t.roleDescriptions[role]}
-                    </span>
-                    <StaffCombobox
-                      role={role}
-                      staff={operators.data ?? []}
-                      selectedIds={selected}
-                      staffByRole={staffByRole}
-                      open={openStaffRole === role}
-                      t={t}
-                      onOpen={() => setOpenStaffRole(role)}
-                      onClose={() => setOpenStaffRole(null)}
-                      onToggle={(staffId) => {
-                        setStaffByRole((cur) => {
-                          const current = cur[role] ?? []
-                          const nextRoleStaff = current.includes(staffId)
-                            ? current.filter((id) => id !== staffId)
-                            : [...current, staffId]
-                          return {
-                            ...cur,
-                            [role]: nextRoleStaff,
-                          }
-                        })
-                        setError(null)
-                      }}
-                      onRemove={(staffId) => {
-                        setStaffByRole((cur) => ({
-                          ...cur,
-                          [role]: (cur[role] ?? []).filter((id) => id !== staffId),
-                        }))
-                        setError(null)
-                      }}
-                    />
-                  </section>
-                  )
-                })}
-              </div>
-              {!operators.data?.length && <p>{t.noAvailableOperators}</p>}
-              {selectedStaffIds.length > 0 && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: 8,
-                    color: 'var(--tx3)',
-                  }}
+            <section className="odm-or-card">
+              <header className="odm-or-card-head">
+                <span className="odm-or-card-title">
+                  <OrderIcon name="users" size={18} />
+                  {t.step1}
+                </span>
+                <span
+                  className={`odm-or-pill ${missingRoles === 0 ? 'odm-or-pill-green' : 'odm-or-pill-amber'}`}
                 >
-                  <strong style={{ color: 'var(--tx)' }}>{t.selectedStaff}</strong>
-                  {missionRoles.flatMap((role) =>
-                    (staffByRole[role] ?? []).map((selectedId) => {
-                      const staff = (operators.data ?? []).find((item) => item.id === selectedId)
-                      if (!staff) return null
-                      return (
-                        <span
-                          key={`${role}-${selectedId}`}
-                          className="odm-tn"
-                          style={{
-                            display: 'inline-flex',
-                            gap: 6,
-                            alignItems: 'center',
-                            border: '1px solid var(--bd)',
-                            borderRadius: 999,
-                            padding: '4px 10px',
-                            background: '#fff',
-                          }}
-                        >
-                          <b>{t.roles[role]}</b>
-                          {staff.fullName}
-                          <button
-                            type="button"
-                            className="odm-btn odm-btn-gh odm-btn-sm"
-                            style={{ padding: '0 6px', minHeight: 22 }}
-                            onClick={() =>
-                              setStaffByRole((cur) => ({
-                                ...cur,
-                                [role]: (cur[role] ?? []).filter((id) => id !== selectedId),
-                              }))
-                            }
-                            aria-label={`${t.clearStaff} ${staff.fullName}`}
-                          >
-                            ×
-                          </button>
+                  {missingRoles === 0 ? t.rolesComplete : t.rolesMissing(missingRoles)}
+                </span>
+              </header>
+              <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
+                <p className="odm-or-muted" style={{ margin: 0 }}>
+                  {t.roleHelp}
+                </p>
+                <div className="odm-or-role-grid">
+                  {missionRoles.map((role) => {
+                    const selected = staffByRole[role] ?? []
+                    return (
+                      <section
+                        key={role}
+                        className={`odm-or-role-card${selected.length > 0 ? ' is-filled' : ''}`}
+                      >
+                        <span className="odm-or-role-head">
+                          <span>
+                            {t.roleIcons[role]} {t.roles[role]}
+                          </span>
+                          {selected.length > 0 && (
+                            <span className="odm-or-role-check">
+                              <OrderIcon name="check" size={16} />
+                            </span>
+                          )}
                         </span>
-                      )
-                    }),
-                  )}
-                  <button
-                    type="button"
-                    className="odm-btn odm-btn-gh odm-btn-sm"
-                    onClick={() => setStaffByRole({})}
-                  >
-                    {t.clearAll}
-                  </button>
+                        <span className="odm-or-muted" style={{ fontSize: 12 }}>
+                          {t.roleDescriptions[role]}
+                        </span>
+                        <StaffCombobox
+                          role={role}
+                          staff={operators.data ?? []}
+                          selectedIds={selected}
+                          staffByRole={staffByRole}
+                          open={openStaffRole === role}
+                          t={t}
+                          onOpen={() => setOpenStaffRole(role)}
+                          onClose={() => setOpenStaffRole(null)}
+                          onToggle={(staffId) => {
+                            setStaffByRole((cur) => {
+                              const currentIds = cur[role] ?? []
+                              const nextRoleStaff = currentIds.includes(staffId)
+                                ? currentIds.filter((id) => id !== staffId)
+                                : [...currentIds, staffId]
+                              return { ...cur, [role]: nextRoleStaff }
+                            })
+                            setError(null)
+                          }}
+                          onRemove={(staffId) => {
+                            setStaffByRole((cur) => ({
+                              ...cur,
+                              [role]: (cur[role] ?? []).filter((id) => id !== staffId),
+                            }))
+                            setError(null)
+                          }}
+                        />
+                      </section>
+                    )
+                  })}
                 </div>
-              )}
+                {!operators.data?.length && (
+                  <p className="odm-or-empty">{t.noAvailableOperators}</p>
+                )}
+                {selectedStaffIds.length > 0 && (
+                  <div className="odm-or-chips">
+                    <strong>{t.selectedStaff}</strong>
+                    {missionRoles.flatMap((role) =>
+                      (staffByRole[role] ?? []).map((selectedId) => {
+                        const staff = (operators.data ?? []).find(
+                          (item) => item.id === selectedId,
+                        )
+                        if (!staff) return null
+                        return (
+                          <span key={`${role}-${selectedId}`} className="odm-or-chip">
+                            <b>{t.roles[role]}</b>
+                            {staff.fullName}
+                            <button
+                              type="button"
+                              className="odm-or-chip-x"
+                              onClick={() =>
+                                setStaffByRole((cur) => ({
+                                  ...cur,
+                                  [role]: (cur[role] ?? []).filter((id) => id !== selectedId),
+                                }))
+                              }
+                              aria-label={`${t.clearStaff} ${staff.fullName}`}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        )
+                      }),
+                    )}
+                    <button
+                      type="button"
+                      className="odm-or-link-btn"
+                      onClick={() => setStaffByRole({})}
+                    >
+                      {t.clearAll}
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+            </section>
           )}
 
           {activeStep === 'device' && (
-            <div
-              className="odm-card"
-              style={{
-                marginBottom: 14,
-                borderRadius: 16,
-                border: '1px solid #e5e7eb',
-                boxShadow: '0 10px 24px rgba(15, 23, 42, 0.04)',
-              }}
-            >
-              <div className="odm-card-header">
-                <span>{t.step2}</span>
+            <section className="odm-or-card">
+              <header className="odm-or-card-head">
+                <span className="odm-or-card-title">
+                  <OrderIcon name="drone" size={18} />
+                  {t.step2}
+                </span>
                 {selectedDrones.length > 0 && (
-                  <span
-                    style={{
-                      borderRadius: 999,
-                      background: '#eff6ff',
-                      color: '#2563eb',
-                      padding: '5px 10px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                    }}
-                  >
-                    {selectedDrones.length} {t.selectedDevice}
+                  <span className="odm-or-pill odm-or-pill-blue">
+                    {t.deviceSelectedCount(selectedDrones.length)}
                   </span>
                 )}
-              </div>
-              <div className="odm-card-body" style={{ display: 'grid', gap: 14 }}>
-                <p style={{ margin: 0, color: '#64748b' }}>{t.deviceHelp}</p>
+              </header>
+              <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
+                <p className="odm-or-muted" style={{ margin: 0 }}>
+                  {t.deviceHelp}
+                </p>
                 {!drones.data?.length ? (
-                  <p>{t.noAvailableDrones}</p>
+                  <p className="odm-or-empty">{t.noAvailableDrones}</p>
                 ) : (
-                  <section
-                    style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 14,
-                      padding: 16,
-                      background: '#f8fafc',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-                      <div>
-                        <div style={{ fontWeight: 800 }}>{t.selectedDevice}</div>
-                        <div style={{ color: '#64748b', fontSize: 13 }}>
-                          {selectedDrones.length > 0 ? `${selectedDrones.length} ${t.device}` : t.chooseDroneOption}
-                        </div>
-                      </div>
-                      {selectedDrones.length > 0 && <span style={{ color: '#16a34a', fontWeight: 900 }}>✓</span>}
+                  <section className="odm-or-device-box">
+                    <div className="odm-or-role-head" style={{ marginBottom: 10 }}>
+                      <span>
+                        <b>{t.selectedDevice}</b>
+                        <span className="odm-or-muted" style={{ display: 'block', fontSize: 13 }}>
+                          {selectedDrones.length > 0
+                            ? t.deviceSelectedCount(selectedDrones.length)
+                            : t.chooseDroneOption}
+                        </span>
+                      </span>
+                      {selectedDrones.length > 0 && (
+                        <span className="odm-or-role-check">
+                          <OrderIcon name="check" size={16} />
+                        </span>
+                      )}
                     </div>
                     <DeviceCombobox
                       devices={drones.data ?? []}
@@ -1506,119 +1408,125 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                   </section>
                 )}
               </div>
-            </div>
+            </section>
           )}
 
           {activeStep === 'confirm' && (
-            <div className="odm-card" style={{ marginBottom: 14 }}>
-              <div className="odm-card-header">{t.readyToAssign}</div>
-              <div className="odm-card-body odm-mgr-review-location-grid">
-                <div>
-                  <div className="odm-mgr-review-hint">{t.orderTitle}</div>
-                  <strong>{current.orderTitle ?? '—'}</strong>
-                </div>
-                <div>
-                  <div className="odm-mgr-review-hint">{t.missionImplementation}</div>
-                  <strong>{current.missionCode}</strong>
-                </div>
-                <div>
-                  <div className="odm-mgr-review-hint">{t.selectedStaff}</div>
-                  <strong>{t.staffCountSummary(selectedStaffIds.length)}</strong>
-                </div>
-                <div>
-                  <div className="odm-mgr-review-hint">{t.step2}</div>
-                  <strong>
-                    {selectedDrones.length > 0
-                      ? selectedDrones.map((drone) => drone.label).join(', ')
-                      : '—'}
-                  </strong>
-                </div>
-                <div style={{ gridColumn: '1 / -1', color: 'var(--tx3)' }}>
+            <section className="odm-or-card">
+              <header className="odm-or-card-head">
+                <span className="odm-or-card-title">
+                  <OrderIcon name="check" size={18} />
+                  {t.readyToAssign}
+                </span>
+              </header>
+              <div className="odm-or-card-body" style={{ display: 'grid', gap: 16 }}>
+                <p className="odm-or-muted" style={{ margin: 0 }}>
                   {t.confirmBody}
-                </div>
+                </p>
+                <dl className="odm-or-summary-list">
+                  <div>
+                    <dt>
+                      <OrderIcon name="doc" size={16} />
+                      {t.orderTitle}
+                    </dt>
+                    <dd>{current.orderTitle ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="service" size={16} />
+                      {t.missionImplementation}
+                    </dt>
+                    <dd>{current.missionCode}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <OrderIcon name="calendar" size={16} />
+                      {t.scheduleLabel}
+                    </dt>
+                    <dd>{scheduleText}</dd>
+                  </div>
+                  {roleSummary.map((item) => (
+                    <div key={item.role}>
+                      <dt>
+                        <OrderIcon name="user" size={16} />
+                        {t.roles[item.role]}
+                      </dt>
+                      <dd>{item.names.length > 0 ? item.names.join(', ') : t.notSelected}</dd>
+                    </div>
+                  ))}
+                  <div>
+                    <dt>
+                      <OrderIcon name="drone" size={16} />
+                      {t.step2}
+                    </dt>
+                    <dd>
+                      {selectedDrones.length > 0
+                        ? selectedDrones.map((drone) => drone.label).join(', ')
+                        : t.notSelected}
+                    </dd>
+                  </div>
+                </dl>
+                <ul className="odm-or-checklist" aria-label={t.checklist}>
+                  <li className={missingRoles === 0 ? 'is-ok' : 'is-bad'}>
+                    <OrderIcon name={missingRoles === 0 ? 'check' : 'alert'} size={16} />
+                    {missingRoles === 0 ? t.rolesComplete : t.rolesMissing(missingRoles)}
+                  </li>
+                  <li className={selectedDrones.length > 0 ? 'is-ok' : 'is-bad'}>
+                    <OrderIcon
+                      name={selectedDrones.length > 0 ? 'check' : 'alert'}
+                      size={16}
+                    />
+                    {selectedDrones.length > 0
+                      ? t.deviceSelectedCount(selectedDrones.length)
+                      : t.deviceMissing}
+                  </li>
+                </ul>
               </div>
-            </div>
+            </section>
           )}
 
           {error && (
-            <div role="alert" className="odm-mgr-modal-error">
+            <div role="alert" className="odm-or-error">
               {error}
             </div>
           )}
-          <div className="odm-mgr-dispatch-bottombar">
-            <button
-              type="button"
-              className="odm-btn"
-              disabled={activeStepIndex === 0}
-              onClick={goPrevious}
-              style={{
-                minHeight: 42,
-                padding: '0 20px',
-                borderRadius: 9,
-                background: '#fff',
-                borderColor: '#d8dee9',
-              }}
-            >
-              {t.previous}
-            </button>
-            <span
-              style={{
-                flex: 1,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                color: '#64748b',
-                fontSize: 14,
-              }}
-            >
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-grid',
-                  placeItems: 'center',
-                  width: 18,
-                  height: 18,
-                  borderRadius: 999,
-                  background: '#eff6ff',
-                  color: '#2563eb',
-                  fontSize: 12,
-                  fontWeight: 800,
-                }}
-              >
-                i
+
+          <div className="odm-or-actionbar">
+            <div className="odm-or-actionbar-hint">
+              <span className="odm-or-actionbar-hint-icon">
+                <OrderIcon name="info" size={18} />
               </span>
-              {activeStep === 'order' ? t.orderFooterHint : t.footerHint}
-            </span>
-            {activeStep !== 'confirm' ? (
+              <span>{stepHint[activeStep]}</span>
+            </div>
+            <div className="odm-or-actionbar-actions">
               <button
                 type="button"
-                className="odm-btn odm-btn-p"
-                onClick={goNext}
-                style={{
-                  minHeight: 42,
-                  padding: '0 22px',
-                  borderRadius: 9,
-                  background: '#2563eb',
-                }}
+                className="odm-or-btn odm-or-btn-ghost"
+                disabled={activeStepIndex === 0}
+                onClick={goPrevious}
               >
-                {t.next}
+                {t.previous}
               </button>
-            ) : (
-              <button
-                type="button"
-                className="odm-btn odm-btn-ok"
-                disabled={busy || droneIds.length === 0 || !hasAllRoles}
-                onClick={() => void assign()}
-                style={{
-                  minHeight: 42,
-                  padding: '0 22px',
-                  borderRadius: 9,
-                }}
-              >
-                {busy ? t.assigning : t.assign}
-              </button>
-            )}
+              {activeStep !== 'confirm' ? (
+                <button
+                  type="button"
+                  className="odm-or-btn odm-or-btn-blue"
+                  onClick={goNext}
+                >
+                  {t.next}
+                  <OrderIcon name="chevron-right" size={16} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="odm-or-btn odm-or-btn-primary"
+                  disabled={busy || droneIds.length === 0 || !hasAllRoles}
+                  onClick={() => void assign()}
+                >
+                  {busy ? t.assigning : t.assign}
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}

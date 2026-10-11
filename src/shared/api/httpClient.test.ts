@@ -19,6 +19,21 @@ afterEach(() => {
 })
 
 describe('apiRequest', () => {
+  it('sends multipart bodies intact and lets the browser supply the boundary', async () => {
+    const body = new FormData()
+    body.append('file', new Blob(['image'], { type: 'image/png' }), 'image.png')
+    setHttpTransport(async (_url, init) => {
+      expect(init?.body).toBe(body)
+      expect(new Headers(init?.headers).has('Content-Type')).toBe(false)
+      return jsonResponse({
+        success: true,
+        data: { imageUrl: 'https://example.test/image' },
+      })
+    })
+    await expect(
+      apiRequest('/api/services/1/image', { method: 'PUT', body }),
+    ).resolves.toEqual({ imageUrl: 'https://example.test/image' })
+  })
   it('returns the envelope data on success', async () => {
     setHttpTransport(async () =>
       jsonResponse({ success: true, code: 'OK', data: { id: '1' } }),

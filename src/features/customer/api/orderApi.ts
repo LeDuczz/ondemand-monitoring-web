@@ -1,6 +1,7 @@
 import { env } from '../../../config/env'
 import { getLanguage } from '../../../shared/i18n'
 import { authenticatedFetch } from '../../auth/api/authApi'
+import type { ChecklistSnapshot } from '../lib/checklist/types'
 
 const errorText = {
   vi: {
@@ -78,13 +79,17 @@ export type OrderDeliverableResponse = {
 
 /** Backend `OrderCreateResponse` (POST /api/orders, GET /api/orders/pending). */
 export type OrderCreateResponse = {
+  checklistItems?: ChecklistSnapshot[]
+  checklistSnapshotAt?: string | null
   id: string
   orderCode?: string | null
   customerId: string
   customerName?: string
+  customerEmail?: string | null
   title?: string
   serviceId?: string
   serviceName?: string
+  serviceBasePriceSnapshot?: number
   description?: string
   address?: string
   longitude?: number
@@ -95,6 +100,10 @@ export type OrderCreateResponse = {
   preferredDateTo?: string
   preferredTimeId?: string
   preferredTimeName?: string
+  recurrenceType?: 'NONE' | 'WEEKLY' | 'MONTHLY'
+  recurrenceOccurrences?: number
+  weatherFallback?: 'AUTO_RESCHEDULE' | 'CONTACT_CUSTOMER' | 'CANCEL_ORDER'
+  resultDeadline?: string
   orderStatus?: string
   rejectReason?: string
   reviewById?: string

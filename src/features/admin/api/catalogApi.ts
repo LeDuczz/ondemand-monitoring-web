@@ -5,6 +5,8 @@ export type ServiceResponse = {
   id: string
   name: string
   description?: string
+  basePrice: number
+  imageUrl?: string | null
   isActive: boolean
   createdAt?: string
   updatedAt?: string
@@ -14,6 +16,7 @@ export type ServiceResponse = {
 export type ServiceRequest = {
   name: string
   description?: string
+  basePrice: number
   isActive?: boolean
 }
 
@@ -70,6 +73,21 @@ export const catalogApi = {
     return apiRequest<ServiceResponse>(`/api/services/${enc(id)}`, {
       method: 'PUT',
       body,
+    })
+  },
+  /** `PUT /api/services/{id}/image` [BE]: multipart illustration upload. */
+  uploadServiceImage(id: string, file: File) {
+    const body = new FormData()
+    body.append('file', file)
+    return apiRequest<ServiceResponse>(`/api/services/${enc(id)}/image`, {
+      method: 'PUT',
+      body,
+    })
+  },
+  /** `DELETE /api/services/{id}/image` [BE]. */
+  removeServiceImage(id: string) {
+    return apiRequest<ServiceResponse>(`/api/services/${enc(id)}/image`, {
+      method: 'DELETE',
     })
   },
   /** `DELETE /api/services/{id}` [BE]. */

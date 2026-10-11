@@ -203,7 +203,7 @@ export default function ReadyToFly({
         >
           {[
             [t.fields.mission, mission.id, true],
-            [t.fields.drone, `${drone.name} (${drone.id})`, true],
+            [t.fields.drone, drone.name || drone.id, true],
             [t.fields.location, mission.location, false],
             [t.fields.battery, `${drone.battery}%`, false],
           ].map(([l, v, isData]) => (

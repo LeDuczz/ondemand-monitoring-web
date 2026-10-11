@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   EmptyState,
@@ -7,12 +7,12 @@ import {
 import { useI18n } from '../../../shared/i18n'
 import type { Language } from '../../../shared/i18n/languageStore'
 import { missionApi } from '../../mission/api/missionApi'
-import { clearActiveMissionId } from '../api/liveMission'
 import { useActiveMission } from '../api/useActiveMission'
 import {
   flightControlApi,
   type FlightControlStatus,
 } from '../omss/api/flightControlApi'
+import { formatDeviceLabel } from '../lib/deviceLabel'
 import { postflightSummary } from '../lib/postflightSummary'
 import { operatorHref } from '../routes'
 import type {
@@ -25,7 +25,6 @@ import type {
 import { postflightScreenMessages } from '../i18n/postflightScreen.messages'
 import { FlightStepHeader } from './FlightStepper'
 import { MaintenanceTicketDialog } from './MaintenanceTicketDialog'
-
 
 type PostflightCategoryDef = {
   title: string
@@ -114,6 +113,18 @@ function readPostflightTelemetry(
   }
 }
 
+function isUsablePostflightTelemetry(
+  status: FlightControlStatus,
+  missionId: string,
+) {
+  const matchesMission = !status.missionId || status.missionId === missionId
+  return (
+    matchesMission &&
+    typeof status.batteryPercent === 'number' &&
+    Number.isFinite(status.batteryPercent)
+  )
+}
+
 function removeStorageByPrefix(storage: Storage, prefix: string) {
   for (let index = storage.length - 1; index >= 0; index -= 1) {
     const key = storage.key(index)
@@ -126,7 +137,6 @@ function clearCompletedMissionState(
   missionLabel: string,
   deviceId: string,
 ) {
-  clearActiveMissionId(missionId)
   window.sessionStorage.removeItem(postflightTelemetryKey(missionId))
   window.sessionStorage.removeItem(
     `fieldwise.operator.handoverAcknowledged.${missionId}`,
@@ -159,6 +169,9 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   const missionLabel =
     activeData?.missionCode || effectiveMissionId || t.defaultMissionLabel
   const deviceId = activeData?.deviceId ?? 'DEVICE'
+  const deviceLabel = activeData
+    ? (formatDeviceLabel(activeData) ?? deviceId)
+    : deviceId
   const categories = useMemo(() => postflightCategories(lang), [lang])
 
   const [error, setError] = useState<string | null>(null)
@@ -168,6 +181,8 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   const [showTicketDialog, setShowTicketDialog] = useState(false)
   const [ticketSubmitting, setTicketSubmitting] = useState(false)
   const [ticketCreated, setTicketCreated] = useState(false)
+  const [liveTelemetrySnapshot, setLiveTelemetrySnapshot] =
+    useState<FlightControlStatus | null>(null)
   const [completed, setCompleted] = useState<{
     overallOk: boolean
     ticketCreated: boolean
@@ -184,10 +199,37 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
   )
 
   const summary = postflightSummary(items, ALL_KEYS.length)
-  const telemetrySnapshot = useMemo(
+  const storedTelemetrySnapshot = useMemo(
     () => readPostflightTelemetry(effectiveMissionId),
     [effectiveMissionId],
   )
+  const telemetrySnapshot = liveTelemetrySnapshot ?? storedTelemetrySnapshot
+
+  useEffect(() => {
+    if (!effectiveMissionId || !deviceId) {
+      setLiveTelemetrySnapshot(null)
+      return
+    }
+    let cancelled = false
+    flightControlApi
+      .status()
+      .then((status) => {
+        if (cancelled) return
+        if (isUsablePostflightTelemetry(status, effectiveMissionId)) {
+          setLiveTelemetrySnapshot(status)
+          window.sessionStorage.setItem(
+            postflightTelemetryKey(effectiveMissionId),
+            JSON.stringify(status),
+          )
+        }
+      })
+      .catch(() => {
+        // Postflight can still be recorded manually if the controller is offline.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [deviceId, effectiveMissionId])
   const failItems = useMemo(
     () => ALL_KEYS.filter((k) => results[k] === 'fail'),
     [results],
@@ -258,14 +300,10 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         telemetrySnapshot,
       )
 
-      // Try marking mission completed if not automatically completed by BE
-      await missionApi.completeMission(effectiveMissionId).catch(() => {
-        // Ignored if BE already auto-completed on status submit
-      })
       await missionApi
-        .disconnectGcs(effectiveMissionId, 'MISSION_COMPLETED')
+        .disconnectGcs(effectiveMissionId, 'POSTFLIGHT_COMPLETED')
         .catch(() => {
-          // The mission is complete; local cleanup must still happen even if the session was already closed.
+          // Postcheck is complete; local cleanup must still happen even if the session was already closed.
         })
       await flightControlApi.releaseSession(effectiveMissionId).catch(() => {
         // Controller may be offline after landing; local cleanup still allows the operator flow to reset.
@@ -322,7 +360,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
         <FlightStepHeader
           title={t.completedStepTitle}
           missionId={missionLabel}
-          active={7}
+          active={6}
         />
         <div style={{ padding: '32px 24px', maxWidth: 680, margin: '0 auto' }}>
           <div
@@ -363,7 +401,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   style={{ fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}
                 >
                   {t.missionCodeLabel} <b>{missionLabel}</b> · {t.deviceLabel}{' '}
-                  <b>{deviceId}</b>
+                  <b>{deviceLabel}</b>
                 </div>
               </div>
             </div>
@@ -390,7 +428,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 }
               />
               <Row
-                label={t.droneStatusLabel(deviceId)}
+                label={t.droneStatusLabel(deviceLabel)}
                 value={
                   completed.overallOk
                     ? t.droneStatusAvailable
@@ -440,7 +478,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
       <FlightStepHeader
         title={t.stepTitle}
         missionId={missionLabel}
-        active={7}
+        active={6}
         right={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {postflightMissions.length > 0 && (
@@ -474,8 +512,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                   {postflightMissions.map((m) => (
                     <option key={m.id} value={m.id}>
                       🎯 {m.missionCode || m.id} (
-                      {m.deviceId || 'DEVICE'}) —{' '}
-                      {m.status}
+                      {formatDeviceLabel(m) || 'DEVICE'}) — {m.status}
                     </option>
                   ))}
                 </select>
@@ -495,7 +532,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 border: '1px solid var(--bd, #cbd5e1)',
               }}
             >
-              🚁 {deviceId}
+              🚁 {deviceLabel}
             </span>
           </div>
         }
@@ -534,19 +571,19 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
             >
               <TelemetryMetric
                 label={t.landingBattery}
-                value={`${telemetrySnapshot.batteryPercent ?? '--'}%`}
+                value={formatMetric(telemetrySnapshot.batteryPercent, '%', 1)}
               />
               <TelemetryMetric
                 label={t.altitude}
-                value={`${telemetrySnapshot.altitudeM ?? '--'} m`}
+                value={formatMetric(telemetrySnapshot.altitudeM, ' m', 1)}
               />
               <TelemetryMetric
                 label={t.speed}
-                value={`${telemetrySnapshot.speedMps ?? '--'} m/s`}
+                value={formatMetric(telemetrySnapshot.speedMps, ' m/s', 1)}
               />
               <TelemetryMetric
                 label={t.heading}
-                value={`${telemetrySnapshot.headingDeg ?? '--'}°`}
+                value={formatMetric(telemetrySnapshot.headingDeg, '°', 0)}
               />
             </div>
           )}
@@ -829,7 +866,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
                 </div>
                 <div style={{ fontSize: 13, color: '#78350f', marginTop: 4 }}>
                   {t.autoTicketNotePrefix} <b>{t.autoTicketNoteBold}</b>{' '}
-                  {t.autoTicketNoteMid} <b>{deviceId}</b>{' '}
+                  {t.autoTicketNoteMid} <b>{deviceLabel}</b>{' '}
                   {t.autoTicketNoteSuffix}
                 </div>
               </div>
@@ -914,7 +951,7 @@ export function PostflightScreen({ missionId }: { missionId?: string }) {
 
       {showTicketDialog && (
         <MaintenanceTicketDialog
-          droneCode={deviceId}
+          droneCode={deviceLabel}
           missionId={missionLabel}
           defaultIssueType="PHYSICAL_DAMAGE"
           defaultDescription={t.failedItemsDescription(failItems.join(', '))}
@@ -946,9 +983,19 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
+/** Rounds raw telemetry (e.g. 0.0016679763793945312) to a readable value. */
+function formatMetric(
+  value: number | null | undefined,
+  unit: string,
+  digits: number,
+): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return `--${unit}`
+  return `${value.toFixed(digits)}${unit}`
+}
+
 function TelemetryMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div style={{ minWidth: 0 }}>
       <div
         style={{ fontSize: 11, color: 'var(--tx3, #64748b)', fontWeight: 800 }}
       >
@@ -960,7 +1007,11 @@ function TelemetryMetric({ label, value }: { label: string; value: string }) {
           fontSize: 17,
           color: 'var(--tx, #0f172a)',
           fontWeight: 900,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
+        title={value}
       >
         {value}
       </div>

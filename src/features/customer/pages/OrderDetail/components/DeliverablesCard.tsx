@@ -2,13 +2,38 @@ import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { OrderDetailView } from '../../../lib/orders/types'
 import { localizeDeliverableName } from '../../../lib/i18n/catalogNames'
+import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
+import { CardTitle } from './CardTitle'
 import { orderDeliverablesMessages } from './DeliverablesCard.messages'
+
+const REQ_ICONS: Record<string, OrderIconName> = {
+  mediaType: 'stack',
+  quantity: 'stack',
+  resolution: 'resolution',
+  radiusM: 'target',
+  estimatedAreaHa: 'area',
+}
+
+function localizeRequirementValue(
+  key: string,
+  value: string,
+  messages: {
+    mediaTypes: Record<string, string>
+    priorities: Record<string, string>
+    usagePurposes: Record<string, string>
+  },
+) {
+  if (key === 'mediaType') return messages.mediaTypes[value] ?? value
+  if (key === 'priority') return messages.priorities[value] ?? value
+  if (key === 'usagePurpose') return messages.usagePurposes[value] ?? value
+  return value
+}
 
 export function DeliverablesCard({ order }: { order: OrderDetailView }) {
   const { t, lang } = useI18n(orderDeliverablesMessages)
 
   return (
-    <Card title={t.title}>
+    <Card title={<CardTitle icon="media">{t.title}</CardTitle>}>
       {order.deliverables.length === 0 ? (
         <p className="od-hint">{t.empty}</p>
       ) : (
@@ -19,14 +44,20 @@ export function DeliverablesCard({ order }: { order: OrderDetailView }) {
               <dl className="od-req">
                 {item.format && (
                   <div>
-                    <dt>{t.format}</dt>
-                    <dd>{item.format}</dd>
+                    <dt>
+                      <OrderIcon name="file" size={14} />
+                      {t.format}
+                    </dt>
+                    <dd>{t.formats[item.format] ?? item.format}</dd>
                   </div>
                 )}
                 {item.requirements.map(({ key, value }) => (
                   <div key={key}>
-                    <dt>{t.keys[key] ?? key}</dt>
-                    <dd>{key === 'mediaType' ? (t.mediaTypes[value] ?? value) : value}</dd>
+                    <dt>
+                      <OrderIcon name={REQ_ICONS[key] ?? 'tag'} size={14} />
+                      {t.keys[key] ?? key}
+                    </dt>
+                    <dd>{localizeRequirementValue(key, value, t)}</dd>
                   </div>
                 ))}
               </dl>

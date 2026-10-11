@@ -3,8 +3,7 @@ import { defineMessages } from '../../../shared/i18n'
 export const loginFormMessages = defineMessages({
   vi: {
     continueWithGoogle: 'Tiếp tục với Google',
-    orDivider: 'hoặc dùng email công việc',
-    passwordHint: 'Tối thiểu 8 ký tự',
+    orDivider: 'hoặc đăng nhập bằng email',
     rememberMe: 'Ghi nhớ đăng nhập',
     forgotPassword: 'Quên mật khẩu?',
     signingIn: 'Đang đăng nhập...',
@@ -12,8 +11,7 @@ export const loginFormMessages = defineMessages({
   },
   en: {
     continueWithGoogle: 'Continue with Google',
-    orDivider: 'or use your work email',
-    passwordHint: 'At least 8 characters',
+    orDivider: 'or log in with email',
     rememberMe: 'Remember me',
     forgotPassword: 'Forgot password?',
     signingIn: 'Signing in...',

@@ -3,7 +3,6 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const orderInfoCardMessages = defineMessages({
   vi: {
     title: 'Thông tin đơn hàng',
-    orderId: 'Mã đơn',
     createdAt: 'Ngày gửi',
     address: 'Địa điểm',
     coordinates: 'Toạ độ',
@@ -14,7 +13,6 @@ export const orderInfoCardMessages = defineMessages({
   },
   en: {
     title: 'Order information',
-    orderId: 'Order ID',
     createdAt: 'Submitted on',
     address: 'Location',
     coordinates: 'Coordinates',

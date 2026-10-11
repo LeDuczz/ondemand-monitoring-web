@@ -78,7 +78,8 @@ describe('InFlightControl', () => {
       />,
     )
     expect(screen.getByText('Phi công drone')).toBeInTheDocument()
-    expect(screen.getAllByText('Tiến độ Mission').length).toBeGreaterThan(0)
+    expect(screen.getByRole('application', { name: 'Live satellite flight map' })).toBeInTheDocument()
+    expect(screen.getByText('Đang chờ GPS từ PX4')).toBeInTheDocument()
   })
 
   it('renders English text after switching language', () => {
@@ -94,6 +95,6 @@ describe('InFlightControl', () => {
     )
     act(() => setLanguage('en'))
     expect(screen.getByText('Drone Operator')).toBeInTheDocument()
-    expect(screen.getAllByText('Mission Progress').length).toBeGreaterThan(0)
+    expect(screen.getByText('Waiting for PX4 GPS')).toBeInTheDocument()
   })
 })

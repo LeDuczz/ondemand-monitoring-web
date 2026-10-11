@@ -6,7 +6,10 @@ import type {
 import { calcArea } from './payload'
 import type { FormState, MapPoint } from './types'
 
-export const CONSULTATION_REQUEST_TIMEOUT_MS = 18_000
+// RAG retrieval plus the model response can take more than 18 seconds on the
+// first request after indexing. Keep one request alive long enough to receive
+// the recommendation instead of triggering a duplicate retry.
+export const CONSULTATION_REQUEST_TIMEOUT_MS = 35_000
 
 /** A consultation can be resumed only if it is a real, still-open BE session. */
 export function isReusableConsultation(
@@ -29,13 +32,11 @@ export function findRecommendedService(
   return services.find((s) => s.id === consultation.recommendedServiceId)
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars -- messages/service kept for API compatibility */
 export function buildDraftFromConsultation(
   consultation: CustomerConsultation,
   _messages: ConsultationMessage[],
-  _service?: ServiceOption,
+  service?: ServiceOption,
 ) {
-  /* eslint-enable @typescript-eslint/no-unused-vars */
   if (
     consultation.status !== 'READY_FOR_CONFIRMATION' &&
     consultation.status !== 'RECOMMENDED'
@@ -43,9 +44,86 @@ export function buildDraftFromConsultation(
     return { title: '', description: '' }
   }
   return {
-    title: consultation.requestTitle?.trim() || '',
-    description: consultation.requestSummary?.trim() || '',
+    title: buildReadableRequestTitle(consultation, service),
+    description: buildReadableRequestDescription(consultation, service),
   }
+}
+
+function buildReadableRequestTitle(
+  consultation: CustomerConsultation,
+  service?: ServiceOption,
+) {
+  const rawTitle = consultation.requestTitle?.trim() || ''
+  const serviceName =
+    service?.name?.trim() || consultation.recommendedServiceName?.trim()
+  if (
+    rawTitle &&
+    rawTitle.length <= 80 &&
+    !isSystemDraftSummary(rawTitle) &&
+    !/^tôi muốn\b/i.test(rawTitle) &&
+    !/^tư vấn\b/i.test(rawTitle)
+  ) {
+    return rawTitle
+  }
+  if (serviceName) {
+    return /^giám sát\b/i.test(serviceName) ? serviceName : `Giám sát ${serviceName}`
+  }
+
+  const need = extractNeed(consultation.requestSummary?.trim() || '').trim()
+  return shortenTitle(cleanupSentence(need).replace(/[.!?]$/, ''))
+}
+
+function buildReadableRequestDescription(
+  consultation: CustomerConsultation,
+  service?: ServiceOption,
+) {
+  const raw = consultation.requestSummary?.trim() || ''
+  if (!raw) return ''
+
+  const serviceName =
+    service?.name?.trim() || consultation.recommendedServiceName?.trim()
+  const need = extractNeed(raw).trim() || consultation.requirementSummary?.trim()
+
+  if (!isSystemDraftSummary(raw)) return cleanupSentence(raw)
+
+  return [
+    need ? `Nhu cầu giám sát: ${cleanupSentence(need)}` : '',
+    serviceName ? `Dịch vụ phù hợp: ${serviceName}.` : '',
+    'Mục tiêu: ghi nhận dữ liệu khu vực giám sát và bàn giao kết quả theo loại đã chọn.',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+function shortenTitle(text: string) {
+  if (!text) return ''
+  return text.length <= 80 ? text : `${text.slice(0, 77).trim()}...`
+}
+
+function isSystemDraftSummary(text: string) {
+  const normalized = text.toLowerCase()
+  return (
+    normalized.includes('gợi ý service') ||
+    normalized.includes('deliverable') ||
+    normalized.includes('dựa trên nhu cầu:')
+  )
+}
+
+function extractNeed(text: string) {
+  const afterNeed = text.match(/dựa trên nhu cầu:\s*(.*?)(?:\.\s*Ghi nhận|\.\s*Dữ liệu|\s*$)/i)
+  if (afterNeed?.[1]) return afterNeed[1]
+  return text
+}
+
+function cleanupSentence(text: string) {
+  const cleaned = text
+    .replace(/\s+/g, ' ')
+    .replace(/\.\.+/g, '.')
+    .replace(/\s+([,.])/g, '$1')
+    .trim()
+
+  if (!cleaned) return ''
+  return /[.!?]$/.test(cleaned) ? cleaned : `${cleaned}.`
 }
 
 const KNOWN_STATUSES = [
@@ -92,10 +170,17 @@ export function parseAiAnalysisAnswer(text: string): boolean | undefined {
 export function buildConsultationRequestContext(input: {
   form: FormState
   mapPoint: MapPoint
+  services?: ServiceOption[]
   serviceName?: string
   latestMessage?: string
 }) {
   const { form, mapPoint } = input
+  const serviceCatalog = (input.services ?? [])
+    .filter((service) => service.isActive !== false)
+    .map(
+      (service) =>
+        `- ${service.id} | ${service.name} | ${service.description || ''}`,
+    )
   return [
     'Thông tin vị trí/phạm vi từ Step 1:',
     `- Địa chỉ/khu vực: ${form.address || 'chưa nhập'}.`,
@@ -113,15 +198,8 @@ export function buildConsultationRequestContext(input: {
     `- Mô tả đang có: ${form.description || 'chưa nhập'}.`,
     `- Service customer đang chọn: ${input.serviceName || 'chưa chọn'}.`,
     '- Khung giờ, loại kết quả và media do biểu mẫu bên ngoài quản lý; AI không hỏi lại các thông tin này.',
+    '',
+    'Danh sách service active từ BE:',
+    serviceCatalog.length ? serviceCatalog.join('\n') : '- chưa tải được catalog',
   ].join('\n')
-}
-
-export function buildInitialConsultationMessage(input: {
-  form: FormState
-  mapPoint: MapPoint
-}) {
-  const place = input.form.address?.trim()
-  return place
-    ? `Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực ${place}.`
-    : 'Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực đã chọn trên bản đồ.'
 }

@@ -8,6 +8,7 @@ export type MissionRow = {
   address: string | null
   status: MissionStatus
   scheduledStartAt: string | null
+  scheduledEndAt: string | null
   startedAt: string | null
   completedAt: string | null
   description: string | null

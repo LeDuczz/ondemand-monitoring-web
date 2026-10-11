@@ -23,20 +23,14 @@ describe('resolveCreateRequestTarget', () => {
     )
   })
 
-  it('sends a STAFF user to their own role home, not the request form', () => {
+  it('sends a MANAGER user to their own role home, not the request form', () => {
+    expect(resolveCreateRequestTarget(userWith('MANAGER'))).toBe(
+      '#portal/manager',
+    )
+  })
+
+  it('sends a STAFF user to their own role home', () => {
     expect(resolveCreateRequestTarget(userWith('STAFF'))).toBe('#portal/staff')
-  })
-
-  it('sends a DRONE_OPERATOR user to their own role home', () => {
-    expect(resolveCreateRequestTarget(userWith('DRONE_OPERATOR'))).toBe(
-      '#portal/drone-operator',
-    )
-  })
-
-  it('sends a SYSTEM_OPERATOR user to their own role home', () => {
-    expect(resolveCreateRequestTarget(userWith('SYSTEM_OPERATOR'))).toBe(
-      '#portal/system-operator',
-    )
   })
 
   it('sends an ADMIN user to their own role home', () => {

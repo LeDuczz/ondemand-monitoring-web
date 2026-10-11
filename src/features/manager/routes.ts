@@ -1,5 +1,5 @@
-// Manager (role STAFF) client-side routing. All manager screens live under
-// the `#portal/staff` hash prefix. `parseManagerRoute` is a pure function so
+// Manager (role MANAGER) client-side routing. All manager screens live under
+// the `#portal/manager` hash prefix. `parseManagerRoute` is a pure function so
 // it can be unit-tested exhaustively without mounting the router; it plans
 // for all 12 MNG-* screens up front so later phases only need to add pages,
 // never touch routing shape.
@@ -10,7 +10,7 @@
 //  live             MNG-07   missions        MNG-08   drones        MNG-09
 //  maintenance      MNG-10   media           MNG-11   reports       MNG-12
 
-export const MANAGER_ROOT = '#portal/staff'
+export const MANAGER_ROOT = '#portal/manager'
 
 export type ManagerRoute =
   | { screen: 'dashboard' }
@@ -18,6 +18,8 @@ export type ManagerRoute =
   | { screen: 'orderReview'; orderId: string }
   | { screen: 'missionCreate'; orderId: string }
   | { screen: 'missionDispatch'; missionId: string }
+  | { screen: 'missionSetup'; missionId: string }
+  | { screen: 'missionDetail'; missionId: string }
   | { screen: 'schedule' }
   | { screen: 'live'; missionId?: string }
   | { screen: 'missions'; missionId?: string }
@@ -37,6 +39,8 @@ export const managerScreenCode: Record<ManagerScreen, string> = {
   orderReview: 'MNG-03',
   missionCreate: 'MNG-04',
   missionDispatch: 'MNG-05',
+  missionSetup: 'MNG-05',
+  missionDetail: 'MNG-08',
   schedule: 'MNG-06',
   live: 'MNG-07',
   missions: 'MNG-08',
@@ -50,7 +54,7 @@ export const managerScreenCode: Record<ManagerScreen, string> = {
 
 /**
  * Parses a `window.location.hash`-style string into a `ManagerRoute`. Any
- * hash that doesn't start with `#portal/staff` (or doesn't match one of the
+ * hash that doesn't start with `#portal/manager` (or doesn't match one of the
  * known screen shapes) resolves to `notFound`.
  */
 export function parseManagerRoute(hash: string): ManagerRoute {
@@ -76,6 +80,10 @@ export function parseManagerRoute(hash: string): ManagerRoute {
     case 'missions': {
       if (tail.length === 0) return { screen: 'missions' }
       if (tail.length === 1) return { screen: 'missions', missionId: tail[0] }
+      if (tail.length === 2 && tail[1] === 'setup')
+        return { screen: 'missionSetup', missionId: tail[0] }
+      if (tail.length === 2 && tail[1] === 'detail')
+        return { screen: 'missionDetail', missionId: tail[0] }
       if (tail.length === 2 && tail[1] === 'dispatch')
         return { screen: 'missionDispatch', missionId: tail[0] }
       return { screen: 'notFound' }
@@ -107,7 +115,7 @@ export function parseManagerRoute(hash: string): ManagerRoute {
   }
 }
 
-/** Builds the `#portal/staff/...` href for a given route. Inverse of `parseManagerRoute`. */
+/** Builds the `#portal/manager/...` href for a given route. Inverse of `parseManagerRoute`. */
 export function managerHref(route: ManagerRoute): string {
   switch (route.screen) {
     case 'dashboard':
@@ -120,6 +128,10 @@ export function managerHref(route: ManagerRoute): string {
       return `${MANAGER_ROOT}/orders/${route.orderId}/mission`
     case 'missionDispatch':
       return `${MANAGER_ROOT}/missions/${route.missionId}/dispatch`
+    case 'missionSetup':
+      return `${MANAGER_ROOT}/missions/${route.missionId}/setup`
+    case 'missionDetail':
+      return `${MANAGER_ROOT}/missions/${route.missionId}/detail`
     case 'schedule':
       return `${MANAGER_ROOT}/schedule`
     case 'live':

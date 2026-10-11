@@ -5,7 +5,11 @@ import { RoleBadge } from '../../../components/common/RoleBadge'
 import type { AccountStats } from '../accountStats'
 import { adminDashboardPageMessages } from '../AdminDashboardPage.messages'
 
-export function RoleBreakdown({ stats }: { stats: AccountStats | null | undefined }) {
+export function RoleBreakdown({
+  stats,
+}: {
+  stats: AccountStats | null | undefined
+}) {
   const { t } = useI18n(adminDashboardPageMessages)
   return (
     <Card title={t.byRole}>
@@ -42,12 +46,5 @@ export function RoleBreakdown({ stats }: { stats: AccountStats | null | undefine
 }
 
 function roleToken(role: string): string {
-  switch (role) {
-    case 'SYSTEM_OPERATOR':
-      return 'sysop'
-    case 'DRONE_OPERATOR':
-      return 'drone'
-    default:
-      return role.toLowerCase()
-  }
+  return role.toLowerCase()
 }

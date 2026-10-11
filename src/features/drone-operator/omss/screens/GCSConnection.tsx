@@ -54,7 +54,7 @@ export default function GCSConnection({
       ) {
         throw new Error(t.errors.mavsdkNotConnected)
       }
-      addLog(t.log.controllerOnline(drone.id))
+      addLog(t.log.controllerOnline(drone.name || drone.id))
       setPhase('handshake')
       const missionId = mission.backendId ?? mission.id
       let bound: Awaited<ReturnType<typeof flightControlApi.bindSession>>
@@ -154,7 +154,7 @@ export default function GCSConnection({
           {t.title}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px' }}>
-          {t.connectingTo} <strong>{drone.name}</strong> ({drone.id}){' '}
+          {t.connectingTo} <strong>{drone.name || drone.id}</strong>{' '}
           {t.forMission} <strong>{mission.id}</strong>.
         </p>
 

@@ -1,11 +1,12 @@
-export type OperatorMissionStatus =
-  'PENDING' | 'ACCEPTED' | 'IN_FLIGHT' | 'COMPLETED' | 'REJECTED' | 'FAILED'
+import type { MissionStatus } from '../../mission/types/mission'
+export type OperatorMissionStatus = MissionStatus | 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'UNKNOWN'
 
 export type OperatorMission = {
   id: string
   missionCode?: string
   backendStatus?: string
   status: OperatorMissionStatus
+  myResponseStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED'
   title: string
   description?: string
   location: string
@@ -14,10 +15,17 @@ export type OperatorMission = {
   endTime: string
   serviceLabel: string
   deviceId?: string | null
+  deviceCode?: string | null
+  deviceSerialNumber?: string | null
+  deviceStatus?: string | null
+  deviceModelCode?: string | null
+  deviceManufacturer?: string | null
   droneCode: string | null
   droneName: string | null
   flightStartedAt?: string
   completedAt?: string
+  managerSubmissionStatus?: 'NEEDS_SUBMIT' | 'PENDING_MANAGER' | 'SENT_TO_CUSTOMER'
+  permissions?: OperatorMissionPermissions
   rejectReason?: string
   acceptedAt?: string
   managerNote?: string
@@ -25,6 +33,8 @@ export type OperatorMission = {
   respondBy?: string
   radiusMeters?: number
   ceilingMeters?: number
+  latitude?: number | null
+  longitude?: number | null
   targetX?: number | null
   targetY?: number | null
   photoCount?: number
@@ -39,6 +49,19 @@ export type OperatorMission = {
   droneReadinessPct?: number
   droneHoursSinceMaintenance?: number
   planSummary?: OperatorMissionPlanSummary
+}
+
+export type OperatorMissionPermissions = {
+  canAttachChecklistEvidence?: boolean
+  canDetachChecklistEvidence?: boolean
+  canCompleteMission?: boolean
+  canSubmitMissionResult?: boolean
+  canExecuteMonitoringChecklist?: boolean
+  canControlFlight: boolean
+  canOperatePayload: boolean
+  canInspectDevice: boolean
+  canMaintainDevice: boolean
+  canUploadMedia: boolean
 }
 
 export type OperatorMissionPlanSummary = {

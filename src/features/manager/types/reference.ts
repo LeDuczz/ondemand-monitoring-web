@@ -2,6 +2,7 @@ export type ServiceResponse = {
   id: string
   name: string
   description: string
+  basePrice: number
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -44,6 +45,7 @@ export type DeliverableTypeRequest = {
 export type ServiceRequest = {
   name: string
   description: string
+  basePrice: number
   isActive: boolean
 }
 

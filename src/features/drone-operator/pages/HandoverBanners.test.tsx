@@ -22,13 +22,25 @@ describe('RevokedBanner', () => {
 
 describe('ConfirmedBanner', () => {
   it('renders vietnamese text', () => {
-    render(<ConfirmedBanner missionId="MSN-1" onRevoke={vi.fn()} />)
-    expect(screen.getByText('Tiếp tục tới buồng lái')).toBeTruthy()
+    render(<ConfirmedBanner />)
+    expect(
+      screen.getByText(
+        'Bạn đã xác nhận bàn giao quyền điều khiển · control_handover.status = CONFIRMED',
+      ),
+    ).toBeTruthy()
+    expect(screen.queryByText('Tiếp tục tới buồng lái')).toBeNull()
+    expect(screen.queryByText('(Demo) Giả lập quản lý thu hồi quyền')).toBeNull()
   })
 
   it('renders english text when language is switched', () => {
-    render(<ConfirmedBanner missionId="MSN-1" onRevoke={vi.fn()} />)
+    render(<ConfirmedBanner />)
     act(() => setLanguage('en'))
-    expect(screen.getByText('Continue to cockpit')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'You confirmed the control handover · control_handover.status = CONFIRMED',
+      ),
+    ).toBeTruthy()
+    expect(screen.queryByText('Continue to cockpit')).toBeNull()
+    expect(screen.queryByText('(Demo) Simulate a manager revoking access')).toBeNull()
   })
 })

@@ -17,6 +17,16 @@ const response = (data: unknown) => Promise.resolve(new Response(JSON.stringify(
   { status: 200, headers: { 'Content-Type': 'application/json' } }))
 
 describe('operator media retry workflow', () => {
+  it('propagates satellite provenance and leaves unknown legacy capture unclassified', async () => {
+    vi.mocked(authenticatedFetch).mockImplementation(() => response(plan('AVAILABLE')))
+    await operatorMediaApi.transfer({ ...item, sourceType: 'SATELLITE_SNAPSHOT' }, false)
+    let body = JSON.parse(String(vi.mocked(authenticatedFetch).mock.calls[0][1]?.body))
+    expect(body.sourceType).toBe('SATELLITE_SNAPSHOT')
+    vi.clearAllMocks()
+    await operatorMediaApi.transfer(item, false)
+    body = JSON.parse(String(vi.mocked(authenticatedFetch).mock.calls[0][1]?.body))
+    expect(body.sourceType).toBeNull()
+  })
   beforeEach(() => { vi.clearAllMocks(); localStorage.clear() })
   afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 

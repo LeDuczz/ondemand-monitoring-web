@@ -21,6 +21,8 @@ import { AccountsPage } from './pages/Accounts'
 import { AccountDetailPage } from './pages/AccountDetail'
 import { RolesPage } from './pages/Roles'
 import { CatalogPage } from './pages/Catalog'
+import { ChecklistCatalogPage } from './pages/Checklists/ChecklistCatalogPage'
+import { ServiceChecklistPage } from './pages/Checklists/ServiceChecklistPage'
 import { OperatingConfigPage } from './pages/OperatingConfig'
 import { AiKnowledgePage } from './pages/AiKnowledge'
 import { AuditLogPage } from './pages/AuditLog'
@@ -40,6 +42,10 @@ function renderScreen(route: AdminRoute, notFoundText: string) {
       return <RolesPage />
     case 'catalog':
       return <CatalogPage />
+    case 'checklists':
+      return <ChecklistCatalogPage />
+    case 'serviceChecklists':
+      return <ServiceChecklistPage serviceId={route.serviceId} />
     case 'operatingConfig':
       return <OperatingConfigPage />
     case 'aiKnowledge':

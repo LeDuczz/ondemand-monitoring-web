@@ -9,9 +9,9 @@ export const rolesPageMessages = defineMessages({
     retry: 'Thử lại',
     descriptions: {
       ADMIN: 'Toàn quyền quản trị hệ thống, tài khoản và cấu hình.',
-      SYSTEM_OPERATOR: 'Giám sát và vận hành hạ tầng, cấu hình hệ thống.',
-      DRONE_OPERATOR: 'Thực hiện nhiệm vụ bay và thu thập dữ liệu.',
-      STAFF: 'Điều phối đơn hàng, nhiệm vụ và tài nguyên.',
+      STAFF:
+        'Thực hiện nhiệm vụ theo phân công: bay, dữ liệu, kiểm tra, bảo trì hoặc hỗ trợ.',
+      MANAGER: 'Điều phối đơn hàng, nhiệm vụ và tài nguyên.',
       CUSTOMER: 'Đặt dịch vụ và theo dõi kết quả giám sát.',
     } as Record<string, string>,
   },
@@ -23,9 +23,9 @@ export const rolesPageMessages = defineMessages({
     retry: 'Retry',
     descriptions: {
       ADMIN: 'Full control over the system, accounts and configuration.',
-      SYSTEM_OPERATOR: 'Monitors and operates infrastructure and system settings.',
-      DRONE_OPERATOR: 'Flies missions and collects monitoring data.',
-      STAFF: 'Coordinates orders, missions and resources.',
+      STAFF:
+        'Performs assigned flight, payload, inspection, maintenance or support duties.',
+      MANAGER: 'Coordinates orders, missions and resources.',
       CUSTOMER: 'Orders services and follows monitoring results.',
     } as Record<string, string>,
   },

@@ -5,6 +5,10 @@ import type { RawAnalysis } from '../lib/analysis/types'
 import type { CustomerOrderItem } from '../types/orders'
 import { normalizeStatus } from '../lib/orders/mapOrder'
 import type { OrderCreateResponse } from './orderApi'
+import type {
+  ChecklistInput,
+  ServiceChecklistItem,
+} from '../lib/checklist/types'
 
 export type FindingDecision = {
   findingId: string
@@ -12,6 +16,7 @@ export type FindingDecision = {
 }
 
 export type CreateOrderPayload = {
+  checklistItems?: ChecklistInput[] | null
   title: string
   description?: string
   serviceId: string
@@ -22,6 +27,23 @@ export type CreateOrderPayload = {
   preferredDateFrom: string
   preferredDateTo: string
   preferredTimeId: string
+  recurrenceType?: string
+  recurrenceOccurrences?: number
+  weatherFallback?: string
+  resultDeadline?: string
+  usagePurpose?: string
+  priority?: string
+  altitudeM?: number
+  estimatedLengthM?: number
+  siteContactName?: string
+  siteContactPhone?: string
+  accessNotes?: string
+  permitStatus?: string
+  permitNumber?: string
+  resultFormats?: string[]
+  deliveryMethods?: string[]
+  dataRetentionDays?: number
+  termsAccepted?: boolean
   deliverables: Array<{
     deliverableTypeId: string
     requirement: Record<string, unknown>
@@ -48,9 +70,117 @@ export type ServiceOption = {
   id: string
   name: string
   description?: string
+  basePrice: number
+  imageUrl?: string | null
   isActive?: boolean
   createdAt?: string
   updatedAt?: string
+}
+
+export type WeatherSuitability = 'GOOD' | 'CAUTION' | 'POOR'
+
+/**
+ * `GET /api/weather/forecast` data. `FORECAST_NOT_AVAILABLE` is a normal 200
+ * response (date outside the provider range); every measurement is then absent.
+ * Advisory only - it never blocks creating an order.
+ */
+export type WeatherForecast = {
+  status: 'AVAILABLE' | 'FORECAST_NOT_AVAILABLE'
+  latitude: number
+  longitude: number
+  forecastTime?: string
+  temperatureC?: number
+  relativeHumidityPercent?: number
+  precipitationProbabilityPercent?: number
+  precipitationMm?: number
+  windSpeedKmh?: number
+  windGustKmh?: number
+  cloudCoverPercent?: number
+  visibilityMeters?: number
+  weatherCode?: number
+  weatherLabel?: string
+  suitability?: WeatherSuitability
+  warnings?: string[]
+}
+
+/** Level wording is fixed: never "safe". The text is advisory; final conditions are confirmed at planning/pre-flight. */
+export type FlightAreaRiskLevel = 'FAVORABLE' | 'NEEDS_REVIEW' | 'HIGH_RISK'
+export type FlightAreaFindingSeverity = 'INFO' | 'WARNING' | 'HIGH'
+
+export type FlightAreaNearbyFeature = {
+  type: string
+  name?: string | null
+  distanceMeters?: number | null
+  /** Only ever a height OpenStreetMap actually carries. */
+  heightMeters?: number | null
+  latitude?: number | null
+  longitude?: number | null
+  source?: string
+}
+
+export type FlightAreaAssessment = {
+  location: { latitude: number; longitude: number; radiusMeters: number }
+  elevation: {
+    available: boolean
+    /** Metres above mean sea level (AMSL). */
+    terrainElevationMeters?: number | null
+    reference?: string
+    /** Metres above ground level (AGL). */
+    requestedAltitudeAglMeters?: number | null
+    estimatedFlightAltitudeAmslMeters?: number | null
+    provider?: string
+    errorCode?: string | null
+  }
+  restrictedZones: {
+    dataAvailable: boolean
+    pointInsideRestrictedZone: boolean
+    monitoringAreaIntersectsRestrictedZone: boolean
+    nearestRestrictedZoneDistanceMeters?: number | null
+    affectedZones: Array<{
+      id: string
+      code: string
+      name: string
+      zoneType?: string
+      purpose?: string | null
+      restricted: boolean
+      distanceMeters?: number | null
+      intersectsMonitoringArea: boolean
+    }>
+  }
+  osmContext: {
+    available: boolean
+    errorCode?: string | null
+    queryRadiusMeters?: number | null
+    buildingCount: number
+    towerCount: number
+    mastCount: number
+    powerTowerCount: number
+    aerodromeNearby: boolean
+    helipadNearby: boolean
+    importantFeatures: FlightAreaNearbyFeature[]
+  }
+  assessment: {
+    level: FlightAreaRiskLevel
+    findings: Array<{ code: string; severity: FlightAreaFindingSeverity; message: string }>
+    disclaimer: string
+  }
+}
+
+export type FlightAreaAssessmentQuery = {
+  latitude: number
+  longitude: number
+  radiusMeters: number
+  /** Desired altitude above ground level, metres. */
+  requestedAltitudeAgl?: number
+}
+
+export type WeatherForecastQuery = {
+  latitude: number
+  longitude: number
+  /** yyyy-MM-dd, local date at the location. */
+  date: string
+  /** HH:mm, local time at the location. */
+  time: string
 }
 
 export type PreferredTimeOption = {
@@ -151,6 +281,11 @@ function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
 }
 
 export const customerApi = {
+  getServiceChecklist: (serviceId: string, signal?: AbortSignal) =>
+    apiRequest<ServiceChecklistItem[]>(
+      `/api/services/${encodeURIComponent(serviceId)}/checklists`,
+      { signal },
+    ),
   /** `GET /api/orders/mine[?status]` [BE]: the whole list, no paging. */
   listMyOrders: (params: { status?: OrderStatus; signal?: AbortSignal } = {}) =>
     apiRequest<OrderCreateResponse[]>('/api/orders/mine', {
@@ -188,6 +323,29 @@ export const customerApi = {
 
   listPreferredTimes: (signal?: AbortSignal) =>
     apiRequest<PreferredTimeOption[]>('/api/preferred-times', { signal }),
+
+  getWeatherForecast: (query: WeatherForecastQuery, signal?: AbortSignal) =>
+    apiRequest<WeatherForecast>('/api/weather/forecast', {
+      query: {
+        latitude: query.latitude.toFixed(6),
+        longitude: query.longitude.toFixed(6),
+        date: query.date,
+        time: query.time,
+      },
+      signal,
+    }),
+
+  /** `GET /api/flight-area-assessment` [BE]: advisory aggregate, never approves or rejects an order. */
+  getFlightAreaAssessment: (query: FlightAreaAssessmentQuery, signal?: AbortSignal) =>
+    apiRequest<FlightAreaAssessment>('/api/flight-area-assessment', {
+      query: {
+        latitude: query.latitude.toFixed(7),
+        longitude: query.longitude.toFixed(7),
+        radiusMeters: Math.round(query.radiusMeters),
+        requestedAltitudeAgl: query.requestedAltitudeAgl,
+      },
+      signal,
+    }),
 
   listServiceDeliverables: (serviceId: string, signal?: AbortSignal) =>
     apiRequest<ServiceDeliverableOption[]>('/api/service-deliverables', {

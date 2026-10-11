@@ -108,11 +108,14 @@ export function FlightStepHeader({
   missionId,
   active,
   right,
+  idTitle,
 }: {
   title: string
   missionId: string
   active: number
   right?: React.ReactNode
+  /** Full identifier shown as a tooltip when `missionId` is a short code. */
+  idTitle?: string
 }) {
   return (
     <header
@@ -150,6 +153,7 @@ export function FlightStepHeader({
         </div>
         <div
           className="odm-mono"
+          title={idTitle}
           style={{
             fontSize: 12,
             color: 'var(--tx3)',

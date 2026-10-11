@@ -9,27 +9,37 @@ export function OperatorTopbar({
   onToggleDark,
   searchQuery,
   onSearchChange,
+  onOpenMenu,
 }: {
   breadcrumb: string
   dark: boolean
   onToggleDark: () => void
   searchQuery: string
   onSearchChange: (value: string) => void
+  onOpenMenu?: () => void
 }) {
   const { t } = useI18n(operatorTopbarMessages)
   return (
     <header className="odm-opr-topbar">
-      <a className="odm-opr-brand" href={operatorHref({ screen: 'missions' })}>
-        <img
-          src="/images/logo-new.png"
-          alt="OnDemand Monitor"
-          className="odm-opr-brand-mark"
-        />
-        <span className="odm-opr-brand-name">
-          <span className="odm-opr-brand-primary">OnDemand</span>
-          <span className="odm-opr-brand-accent">Monitor</span>
-        </span>
-      </a>
+      <button
+        type="button"
+        className="odm-opr-menu-toggle"
+        aria-label={t.openMenu}
+        onClick={onOpenMenu}
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
 
       <div className="odm-opr-breadcrumb">
         <span>{t.pilotLabel}</span>
@@ -40,14 +50,7 @@ export function OperatorTopbar({
       <div className="odm-opr-topbar-actions">
         <a
           href={operatorHref({ screen: 'maintenance' })}
-          className="odm-btn"
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            padding: '6px 14px',
-            borderRadius: 8,
-            textDecoration: 'none',
-          }}
+          className="odm-btn odm-opr-maint-link"
         >
           {t.maintenanceLink}
         </a>

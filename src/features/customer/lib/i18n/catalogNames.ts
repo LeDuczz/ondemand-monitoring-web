@@ -5,6 +5,9 @@ type Names = { vi: string; en: string }
 
 /** Deliverable types (ServiceCatalogSeedDataInitializer.seedDeliverableTypes) plus legacy mock names. */
 const DELIVERABLES: Names[] = [
+  { vi: 'Ảnh chụp', en: 'Photos' },
+  { vi: 'Video', en: 'Video' },
+  { vi: 'Báo cáo kết quả', en: 'Result report' },
   { vi: 'Báo cáo Giám sát', en: 'Monitoring report' },
   { vi: 'Hình ảnh Kiểm tra', en: 'Inspection images' },
   { vi: 'Video Ghi hình', en: 'Recorded video' },
@@ -20,6 +23,9 @@ const DELIVERABLES: Names[] = [
 /** Category services (CategoryServiceDataInitializer.DEFAULT_SERVICES) plus mock names. */
 const CATEGORIES: Names[] = [
   { vi: 'Giám sát công trình', en: 'Construction monitoring' },
+  { vi: 'Kiểm tra nhà xưởng', en: 'Factory inspection' },
+  { vi: 'Giám sát khu vực', en: 'Area monitoring' },
+  { vi: 'Giám sát rừng', en: 'Forest monitoring' },
   { vi: 'Giám sát nông nghiệp', en: 'Agricultural monitoring' },
   { vi: 'Giám sát khu công nghiệp / nhà máy', en: 'Industrial zone / factory monitoring' },
   { vi: 'Giám sát an ninh khu vực', en: 'Area security monitoring' },

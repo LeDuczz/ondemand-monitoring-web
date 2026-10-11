@@ -1,4 +1,5 @@
 import { ApiError, apiRequest } from '../../../shared/api/httpClient'
+import { readOrderChecklistSnapshot } from '../lib/orderChecklistSnapshot'
 import type {
   ApprovalRequest,
   OrderAnalysis,
@@ -38,8 +39,9 @@ function numberValue(value: unknown) {
 
 function radiusFromDeliverables(order: OrderCreateResponse) {
   for (const deliverable of order.deliverables ?? []) {
-    const radius = numberValue(deliverable.requirement?.radiusM)
-      ?? numberValue(deliverable.requirement?.radius_m)
+    const radius =
+      numberValue(deliverable.requirement?.radiusM) ??
+      numberValue(deliverable.requirement?.radius_m)
     if (radius != null) return radius
   }
   return null
@@ -52,23 +54,53 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     status: order.orderStatus,
     customer: {
       fullName: order.customerName || order.customerId,
-      companyName: '', email: null, phone: null,
+      companyName: '',
+      email: order.customerEmail ?? null,
+      phone: null,
     },
     serviceName: order.serviceName,
     preferredDate: order.preferredDateFrom,
+    preferredDateFrom: order.preferredDateFrom,
+    preferredDateTo: order.preferredDateTo,
     preferredTimeName: order.preferredTimeName,
     preferredWindow: order.preferredTimeName || null,
     submittedAt: order.createdAt,
     addressText: order.address || null,
-    center: order.latitude != null && order.longitude != null
-      ? { lat: order.latitude, lon: order.longitude } : null,
+    center:
+      order.latitude != null && order.longitude != null
+        ? { lat: order.latitude, lon: order.longitude }
+        : null,
     radiusM: order.radiusM ?? radiusFromDeliverables(order),
     nearestBase: null,
-    mediaRequirements: order.deliverables?.map((item) => ({
-      label: `${item.deliverableTypeName}${formatRequirement(item.requirement)}`,
-    })) ?? null,
+    mediaRequirements:
+      order.deliverables?.map((item) => ({
+        label: `${item.deliverableTypeName}${formatRequirement(item.requirement)}`,
+      })) ?? null,
     purpose: order.description || null,
     attachments: null,
+    title: order.title,
+    description: order.description,
+    usagePurpose: order.usagePurpose ?? null,
+    priority: order.priority ?? null,
+    altitudeM: order.altitudeM ?? null,
+    estimatedLengthM: order.estimatedLengthM ?? null,
+    siteContactName: order.siteContactName ?? null,
+    siteContactPhone: order.siteContactPhone ?? null,
+    accessNotes: order.accessNotes ?? null,
+    permitStatus: order.permitStatus ?? null,
+    permitNumber: order.permitNumber ?? null,
+    permitRequired: order.permitRequired ?? null,
+    permitZoneName: order.permitZoneName ?? null,
+    recurrenceType: order.recurrenceType ?? null,
+    recurrenceOccurrences: order.recurrenceOccurrences ?? null,
+    weatherFallback: order.weatherFallback ?? null,
+    resultDeadline: order.resultDeadline ?? null,
+    resultFormats: order.resultFormats ?? null,
+    deliveryMethods: order.deliveryMethods ?? null,
+    dataRetentionDays: order.dataRetentionDays ?? null,
+    termsAcceptedAt: order.termsAcceptedAt ?? null,
+    termsVersion: order.termsVersion ?? null,
+    deliverables: order.deliverables ?? null,
   }
 }
 
@@ -79,6 +111,8 @@ function toOrderMissionBrief(order: OrderDetail): OrderMissionBrief {
     serviceName: order.serviceName,
     customerFullName: order.customer.fullName,
     preferredDate: order.preferredDate,
+    preferredDateFrom: order.preferredDateFrom ?? order.preferredDate,
+    preferredDateTo: order.preferredDateTo ?? order.preferredDate,
     preferredTimeName: order.preferredTimeName,
     addressText: order.addressText,
     center: order.center,
@@ -97,10 +131,21 @@ export const ordersApi = {
     })
   },
 
+  /** `GET /api/orders/approved` [BE]. */
+  getApproved(signal?: AbortSignal): Promise<OrderCreateResponse[]> {
+    return apiRequest<OrderCreateResponse[]>('/api/orders/approved', {
+      signal,
+    })
+  },
+
   /** `GET /api/orders/{id}` [TK]. */
   getOrder(id: string, signal?: AbortSignal): Promise<OrderDetail> {
-    return apiRequest<OrderCreateResponse | OrderDetail>(`/api/orders/${id}`, { signal })
-      .then((order) => 'customer' in order ? order : toOrderDetail(order))
+    return apiRequest<OrderCreateResponse | OrderDetail>(`/api/orders/${id}`, {
+      signal,
+    }).then((order) => ({
+      ...('customer' in order ? order : toOrderDetail(order)),
+      ...readOrderChecklistSnapshot(order, id),
+    }))
   },
 
   /** `GET /api/orders/{id}/analysis/latest` [BRIEF C4]. */
@@ -134,7 +179,9 @@ export const ordersApi = {
 
   /** `POST /api/orders/{id}/approve` [BE] — approves only; staff schedules the mission later. */
   approve(id: string): Promise<OrderCreateResponse | void> {
-    return apiRequest<OrderCreateResponse | void>(`/api/orders/${id}/approve`, { method: 'POST' })
+    return apiRequest<OrderCreateResponse | void>(`/api/orders/${id}/approve`, {
+      method: 'POST',
+    })
   },
 
   /** `POST /api/orders/{id}/approval` [BRIEF C4] `{decision, reason}`. */
@@ -163,9 +210,12 @@ export const ordersApi = {
       })
       .catch((error) => {
         if (error instanceof ApiError && error.status === 409) {
-          return apiRequest<OrderMissionBrief>(`/api/orders/${id}/mission-brief`, {
-            signal,
-          })
+          return apiRequest<OrderMissionBrief>(
+            `/api/orders/${id}/mission-brief`,
+            {
+              signal,
+            },
+          )
         }
         throw error
       })

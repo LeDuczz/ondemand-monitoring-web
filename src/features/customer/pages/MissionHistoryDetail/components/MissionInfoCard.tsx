@@ -12,7 +12,8 @@ export function MissionInfoCard({ mission }: { mission: MissionRow }) {
   const when = (iso: string | null) => (iso ? fmtDateTime(iso, locale) : DASH)
   const rows: Array<[string, string]> = [
     [t.address, mission.address ?? DASH],
-    [t.scheduled, when(mission.scheduledStartAt)],
+    [t.scheduledStart, when(mission.scheduledStartAt)],
+    [t.scheduledEnd, when(mission.scheduledEndAt)],
     [t.started, when(mission.startedAt)],
     [t.completed, when(mission.completedAt)],
   ]

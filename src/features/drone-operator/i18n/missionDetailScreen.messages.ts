@@ -43,7 +43,6 @@ export const missionDetailScreenMessages = defineMessages({
     monitoringZoneValue: (radius: string, ceiling: string) =>
       `Bán kính ${radius} · trần bay ${ceiling}`,
     mediaRequest: 'Yêu cầu media',
-    planningTitle: 'Mission planning A*',
     algorithm: 'Thuật toán',
     planStatus: 'Trạng thái',
     planStatusCreated: 'Đã tạo',
@@ -167,7 +166,6 @@ export const missionDetailScreenMessages = defineMessages({
     monitoringZoneValue: (radius: string, ceiling: string) =>
       `Radius ${radius} · ceiling ${ceiling}`,
     mediaRequest: 'Media request',
-    planningTitle: 'A* mission planning',
     algorithm: 'Algorithm',
     planStatus: 'Status',
     planStatusCreated: 'Created',

@@ -14,58 +14,50 @@ type PortalNavItem = { label: NavKey; icon: IconName; href: string }
 const navItems: Record<UserRole, PortalNavItem[]> = {
   CUSTOMER: [
     { label: 'customerOverview', icon: 'chart', href: '#portal/customer' },
-    { label: 'customerRequest', icon: 'plus', href: '#portal/customer/request' },
-    { label: 'customerRequests', icon: 'ticket', href: '#portal/customer/requests' },
+    {
+      label: 'customerRequest',
+      icon: 'plus',
+      href: '#portal/customer/request',
+    },
+    {
+      label: 'customerRequests',
+      icon: 'ticket',
+      href: '#portal/customer/requests',
+    },
     { label: 'customerHelp', icon: 'shield', href: '#help' },
-    { label: 'customerReports', icon: 'file-text', href: '#portal/customer/reports' },
+    {
+      label: 'customerReports',
+      icon: 'file-text',
+      href: '#portal/customer/reports',
+    },
+  ],
+  MANAGER: [
+    { label: 'staffOverview', icon: 'chart', href: '#portal/manager' },
+    { label: 'staffQueue', icon: 'ticket', href: '#portal/manager/queue' },
+    {
+      label: 'staffAssignments',
+      icon: 'users',
+      href: '#portal/manager/assignments',
+    },
+    { label: 'staffSupport', icon: 'shield', href: '#portal/manager/support' },
+    { label: 'staffSchedule', icon: 'clock', href: '#portal/manager/schedule' },
   ],
   STAFF: [
-    { label: 'staffOverview', icon: 'chart', href: '#portal/staff' },
-    { label: 'staffQueue', icon: 'ticket', href: '#portal/staff/queue' },
-    { label: 'staffAssignments', icon: 'users', href: '#portal/staff/assignments' },
     { label: 'staffSupport', icon: 'shield', href: '#portal/staff/support' },
-    { label: 'staffSchedule', icon: 'clock', href: '#portal/staff/schedule' },
-  ],
-  DRONE_OPERATOR: [
-    { label: 'missionConsole', icon: 'route', href: '#portal/drone-operator' },
+    { label: 'systemOverview', icon: 'chart', href: '#portal/staff/technical' },
+    { label: 'missionConsole', icon: 'route', href: '#portal/staff' },
     {
       label: 'preflightChecks',
       icon: 'shield',
-      href: '#portal/drone-operator/preflight',
+      href: '#portal/staff/preflight',
     },
-    { label: 'telemetry', icon: 'activity', href: '#portal/drone-operator' },
-  ],
-  SYSTEM_OPERATOR: [
-    {
-      label: 'systemOverview',
-      icon: 'chart',
-      href: '#portal/system-operator',
-    },
-    {
-      label: 'maintenance',
-      icon: 'ticket',
-      href: '#portal/system-operator/maintenance',
-    },
-    {
-      label: 'devices',
-      icon: 'radio',
-      href: '#portal/system-operator/devices',
-    },
-    {
-      label: 'telemetry',
-      icon: 'activity',
-      href: '#portal/system-operator/telemetry',
-    },
-    { label: 'alerts', icon: 'shield', href: '#portal/system-operator/alerts' },
+    { label: 'telemetry', icon: 'activity', href: '#portal/staff' },
   ],
   ADMIN: [
     { label: 'adminOverview', icon: 'chart', href: '#portal/admin' },
     { label: 'users', icon: 'users', href: '#portal/admin/accounts/new' },
     { label: 'missions', icon: 'route', href: '#portal/admin/missions' },
     { label: 'auditLogs', icon: 'clipboard', href: '#portal/admin/audit' },
-  ],
-  AUDITOR: [
-    { label: 'auditLog', icon: 'clipboard', href: '#portal/admin/audit-log' },
   ],
 }
 
@@ -116,6 +108,7 @@ export function PortalLayout({
           ))}
         </nav>
         <div className="portal-sidebar-footer">
+          <a href="#profile">{t.profile}</a>
           <button
             type="button"
             className="portal-utility-button"

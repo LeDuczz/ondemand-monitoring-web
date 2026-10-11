@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react'
 
-import { useI18n } from '../../../shared/i18n'
-import { RolePortalPage } from '../../portal/pages/RolePortalPage'
-import { PortalLayout } from '../../../shared/components/portal/PortalLayout'
+import { useLanguage } from '../../../shared/i18n'
+import { SystemOperatorLayout } from '../SystemOperatorLayout'
+import { SystemOperatorOverview } from '../SystemOperatorOverview'
 import { OperatorMaintenanceScreen } from '../../drone-operator/pages/OperatorMaintenanceScreen'
 import { SystemOperatorDevicesScreen } from './SystemOperatorDevicesScreen'
-import { systemOperatorHomePageMessages } from './SystemOperatorHomePage.messages'
 
 export function SystemOperatorHomePage() {
   const [hash, setHash] = useState(() => window.location.hash)
-  const { t } = useI18n(systemOperatorHomePageMessages)
+  const { lang } = useLanguage()
+  const overview =
+    lang === 'vi'
+      ? {
+          title: 'Kỹ thuật & bảo trì',
+          subtitle:
+            'Theo dõi thiết bị và xử lý công việc bảo trì theo profile nhân viên.',
+        }
+      : {
+          title: 'Technical & maintenance',
+          subtitle:
+            'Monitor devices and handle maintenance according to staff profiles.',
+        }
 
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash)
@@ -17,29 +28,25 @@ export function SystemOperatorHomePage() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  if (hash === '#portal/system-operator/maintenance') {
+  if (hash === '#portal/staff/technical/maintenance') {
     return (
-      <PortalLayout
-        role="SYSTEM_OPERATOR"
-        title={t.maintenanceTitle}
-        subtitle={t.maintenanceSubtitle}
-      >
+      <SystemOperatorLayout>
         <OperatorMaintenanceScreen />
-      </PortalLayout>
+      </SystemOperatorLayout>
     )
   }
 
-  if (hash === '#portal/system-operator/devices') {
+  if (hash === '#portal/staff/technical/devices') {
     return (
-      <PortalLayout
-        role="SYSTEM_OPERATOR"
-        title={t.devicesTitle}
-        subtitle={t.devicesSubtitle}
-      >
+      <SystemOperatorLayout>
         <SystemOperatorDevicesScreen />
-      </PortalLayout>
+      </SystemOperatorLayout>
     )
   }
 
-  return <RolePortalPage role="SYSTEM_OPERATOR" />
+  return (
+    <SystemOperatorLayout title={overview.title} subtitle={overview.subtitle}>
+      <SystemOperatorOverview />
+    </SystemOperatorLayout>
+  )
 }

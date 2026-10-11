@@ -3,6 +3,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import type { PreferredTimeOption } from '../../../api/customerApi'
 import { localizeTimeslot } from '../../../lib/i18n/timeslots'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import { DateEcho } from './DateEcho'
 import { scheduleCardMessages } from './ScheduleCard.messages'
 
 type Props = {
@@ -17,6 +18,10 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
   return (
     <Card title={t.cardTitle}>
       <p className="co-hint">{t.dateRangeHint}</p>
+      <div className="co-notice is-info co-mt" role="note">
+        <strong>{t.advanceNoticeTitle}</strong>
+        <span>{t.advanceNoticeBody}</span>
+      </div>
       <div className="co-two co-mt">
         <FormField id="co-from" label={t.startDate} required error={errors.preferredDateFrom}>
           <input
@@ -26,6 +31,7 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
             value={form.preferredDateFrom}
             onChange={(e) => update('preferredDateFrom', e.target.value)}
           />
+          <DateEcho value={form.preferredDateFrom} />
         </FormField>
         <FormField id="co-to" label={t.endDate} required error={errors.preferredDateTo}>
           <input
@@ -35,6 +41,7 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
             value={form.preferredDateTo}
             onChange={(e) => update('preferredDateTo', e.target.value)}
           />
+          <DateEcho value={form.preferredDateTo} />
         </FormField>
       </div>
       <FormField id="co-time" label={t.timeWindow} required error={errors.preferredTimeId}>

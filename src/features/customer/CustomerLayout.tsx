@@ -5,15 +5,14 @@ import { LogoutButton } from '../auth/components/LogoutButton'
 import { Icon, type IconName } from '../../shared/components/Icon'
 import { LanguageToggle } from '../../shared/components/LanguageToggle'
 import { useI18n } from '../../shared/i18n'
-import { CustomerChatbot } from './components/CustomerChatbot'
 import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
 import { customerLayoutMessages } from './CustomerLayout.messages'
 import './customer.css'
 
-type NavItemKey = keyof typeof customerLayoutMessages.vi.navItems
+export type CustomerNavItemKey = keyof typeof customerLayoutMessages.vi.navItems
 
 type NavItem = {
-  key: NavItemKey
+  key: CustomerNavItemKey
   icon: IconName
   route?: CustomerRoute
   href?: string
@@ -36,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'notifications', icon: 'bell', route: { screen: 'notifications' } },
 ]
 
-const activeNavKey: Record<CustomerScreen, NavItemKey | null> = {
+const activeNavKey: Record<CustomerScreen, CustomerNavItemKey | null> = {
   missionHistory: 'missionHistory',
   missionHistoryDetail: 'missionHistory',
   dashboard: 'dashboard',
@@ -63,11 +62,13 @@ function initialsOf(fullName: string | undefined): string {
 export function CustomerLayout({
   route,
   breadcrumb,
+  activeNavItem,
   newMediaCount,
   children,
 }: {
   route: CustomerRoute
   breadcrumb: string
+  activeNavItem?: CustomerNavItemKey
   newMediaCount?: number
   children: ReactNode
 }) {
@@ -82,7 +83,7 @@ export function CustomerLayout({
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
   }, [dark])
 
-  const activeKey = activeNavKey[route.screen]
+  const activeKey = activeNavItem ?? activeNavKey[route.screen]
 
   return (
     <div className="odm odm-cus">
@@ -117,7 +118,9 @@ export function CustomerLayout({
               return (
                 <a
                   key={item.key}
-                  href={item.href || (item.route ? customerHref(item.route) : '#')}
+                  href={
+                    item.href || (item.route ? customerHref(item.route) : '#')
+                  }
                   className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
@@ -135,7 +138,11 @@ export function CustomerLayout({
             })}
           </div>
 
-          <div className="odm-cus-user">
+          <a
+            href="#profile"
+            className="odm-cus-user"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
             <span className="odm-cus-avatar" aria-hidden="true">
               {initialsOf(user?.fullName)}
             </span>
@@ -145,7 +152,7 @@ export function CustomerLayout({
               </span>
               <span className="odm-cus-user-email">{user?.email ?? ''}</span>
             </span>
-          </div>
+          </a>
           <LogoutButton className="odm-cus-logout" />
         </nav>
 
@@ -171,7 +178,12 @@ export function CustomerLayout({
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
             <a href="#help" className="odm-btn odm-btn-gh odm-cus-help-link">
-              <Icon name="file-text" width={15} height={15} aria-hidden="true" />
+              <Icon
+                name="file-text"
+                width={15}
+                height={15}
+                aria-hidden="true"
+              />
               {t.helpLink}
             </a>
             <LanguageToggle />
@@ -187,7 +199,6 @@ export function CustomerLayout({
           <main className="odm-cus-content">
             <div className="odm-cus-content-inner">{children}</div>
           </main>
-          <CustomerChatbot />
         </div>
       </div>
     </div>

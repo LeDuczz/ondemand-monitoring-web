@@ -14,6 +14,7 @@ const service: ServiceOption = {
   id: 'svc-building',
   name: 'Giám sát Tòa nhà / Cơ sở hạ tầng',
   description: 'Giám sát công trình',
+  basePrice: 3_200_000,
 }
 
 const consultation: CustomerConsultation = {
@@ -82,6 +83,33 @@ describe('buildDraftFromConsultation', () => {
       'Giám sát mặt ngoài công trình bằng drone, tập trung phát hiện vết nứt, bong tróc và khu vực hư hỏng.',
     )
   })
+
+  it('rewrites backend service suggestion text into a customer-facing description', () => {
+    const readyConsultation: CustomerConsultation = {
+      ...consultation,
+      status: 'READY_FOR_CONFIRMATION',
+      requestTitle: 'Tư vấn giám sát khu vực đập nước',
+      recommendedServiceName: 'Giám sát Đập nước / Hồ chứa',
+      requestSummary:
+        'Gợi ý service Giám sát Đập nước / Hồ chứa dựa trên nhu cầu: Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực Đập nước.. Ghi nhận dữ liệu khu vực giám sát và bàn giao theo các deliverable đã chọn.',
+    }
+
+    const draft = buildDraftFromConsultation(readyConsultation, [], {
+      id: 'svc-dam',
+      name: 'Giám sát Đập nước / Hồ chứa',
+      description: '',
+      basePrice: 4_500_000,
+    })
+
+    expect(draft.title).toBe('Giám sát Đập nước / Hồ chứa')
+    expect(draft.description).toBe(
+      [
+        'Nhu cầu giám sát: Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực Đập nước.',
+        'Dịch vụ phù hợp: Giám sát Đập nước / Hồ chứa.',
+        'Mục tiêu: ghi nhận dữ liệu khu vực giám sát và bàn giao kết quả theo loại đã chọn.',
+      ].join('\n'),
+    )
+  })
 })
 
 describe('findRecommendedService', () => {
@@ -92,6 +120,7 @@ describe('findRecommendedService', () => {
         id: 'svc-progress',
         name: 'Giám sát Tiến độ Xây dựng',
         description: 'Theo dõi tiến độ thi công',
+        basePrice: 3_200_000,
       },
     ]
 

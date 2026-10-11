@@ -13,7 +13,8 @@ const errorText = {
   },
   en: {
     unreachable: 'Unable to reach the server. Please try again.',
-    sessionExpired: 'Your session has expired or the token is invalid. Please sign in again.',
+    sessionExpired:
+      'Your session has expired or the token is invalid. Please sign in again.',
     requestFailed: 'Request failed. Please try again.',
   },
 } as const
@@ -122,11 +123,19 @@ export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { method = 'GET', body, query, signal, headers: customHeaders } = options
+  const {
+    method = 'GET',
+    body,
+    query,
+    signal,
+    headers: customHeaders,
+  } = options
   const url = buildUrl(path, query)
   const headers = new Headers()
   headers.set('Accept', 'application/json')
-  if (body !== undefined) headers.set('Content-Type', 'application/json')
+  const multipart = body instanceof FormData
+  if (body !== undefined && !multipart)
+    headers.set('Content-Type', 'application/json')
   if (customHeaders) {
     for (const [key, value] of Object.entries(customHeaders)) {
       headers.set(key, value)
@@ -140,7 +149,12 @@ export async function apiRequest<T>(
     response = await transport(url, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : multipart
+            ? body
+            : JSON.stringify(body),
       signal,
     })
   } catch (error) {
@@ -164,7 +178,7 @@ export async function apiRequest<T>(
     throw new ApiError(
       response.status === 401
         ? errorText[getLanguage()].sessionExpired
-        : payload?.message ?? errorText[getLanguage()].requestFailed,
+        : (payload?.message ?? errorText[getLanguage()].requestFailed),
       {
         status: response.status,
         code: payload?.code,

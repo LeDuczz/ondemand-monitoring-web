@@ -1,9 +1,13 @@
-import { ErrorState, LoadingState } from '../../../../shared/components/odm/StateView'
+import {
+  ErrorState,
+  LoadingState,
+} from '../../../../shared/components/odm/StateView'
 import { PortalLayout } from '../../../../shared/components/portal/PortalLayout'
 import { useI18n } from '../../../../shared/i18n'
 import { ConfirmSubmitModal } from '../CreateOrder/components/ConfirmSubmitModal'
 import { CreatedSuccess } from '../CreateOrder/components/CreatedSuccess'
 import { DeliverablesCard } from '../CreateOrder/components/DeliverablesCard'
+import { DeliveryOptionsCard } from '../CreateOrder/components/DeliveryOptionsCard'
 import { LocationStep } from '../CreateOrder/components/LocationStep'
 import { PricingEstimateCard } from '../CreateOrder/components/PricingEstimateCard'
 import { RequestSummaryCard } from '../CreateOrder/components/RequestSummaryCard'
@@ -14,6 +18,7 @@ import { RequestBasicsCard } from './components/RequestBasicsCard'
 import { SubmitBar } from './components/SubmitBar'
 import { customerCreateRequestPageMessages } from './CustomerCreateRequestPage.messages'
 import { useCreateRequest } from './hooks/useCreateRequest'
+import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
 
 /**
  * Quick single-page variant of the create-order wizard, routed outside the
@@ -27,22 +32,22 @@ export function CustomerCreateRequestPage() {
   return (
     <PortalLayout role="CUSTOMER" title={t.pageTitle} subtitle={t.pageSubtitle}>
       {submit.createdId ? (
-        <CreatedSuccess orderId={submit.createdId} orderCode={submit.createdCode} />
+        <CreatedSuccess
+          orderId={submit.createdId}
+          orderCode={submit.createdCode}
+        />
       ) : (
         <div className="co-page">
           {meta.loading && !meta.services.length && <LoadingState />}
           {Boolean(meta.error) && (
-            <ErrorState title={t.metaErrorTitle} error={meta.error} onRetry={meta.reload} />
+            <ErrorState
+              title={t.metaErrorTitle}
+              error={meta.error}
+              onRetry={meta.reload}
+            />
           )}
 
-          <LocationStep
-            form={form}
-            errors={errors}
-            update={update}
-            mapPoint={r.mapPoint}
-            setMapPoint={r.setMapPoint}
-            map={r.map}
-          />
+          <LocationStep form={form} errors={errors} update={update} />
           <div className="co-grid">
             <div className="co-stack">
               <RequestBasicsCard form={form} errors={errors} update={update} />
@@ -52,6 +57,11 @@ export function CustomerCreateRequestPage() {
                 selectedId={form.serviceId}
                 error={errors.serviceId}
                 onSelect={(id) => update('serviceId', id)}
+              />
+              <ChecklistEditor
+                checklist={r.checklist}
+                disabled={submit.submitting}
+                onReload={r.clearSubmitError}
               />
             </div>
             <div className="co-stack">
@@ -67,7 +77,10 @@ export function CustomerCreateRequestPage() {
                 update={update}
                 deliverables={meta.deliverables}
                 loading={meta.deliverablesLoading}
+                error={meta.deliverablesError}
+                onRetry={meta.reloadDeliverables}
               />
+              <DeliveryOptionsCard form={form} errors={errors} update={update} />
             </div>
           </div>
           <div className="co-grid">
@@ -89,7 +102,11 @@ export function CustomerCreateRequestPage() {
 
           <SubmitBar
             error={submit.confirmOpen ? null : r.submitError}
-            disabled={meta.loading}
+            disabled={
+              meta.loading ||
+              submit.submitting ||
+              (Boolean(form.serviceId) && !r.checklist.valid)
+            }
             onSubmit={submit.openConfirm}
           />
           {submit.confirmOpen && (

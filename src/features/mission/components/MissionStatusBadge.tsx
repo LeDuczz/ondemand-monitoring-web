@@ -12,14 +12,22 @@ export function MissionStatusBadge({ status }: MissionStatusBadgeProps) {
 
   const getBadgeConfig = () => {
     switch (status) {
+      case 'WAITING_DEPOSIT':
+        return {
+          bg: '#fff7ed',
+          color: '#9a3412',
+          label: t.mission.WAITING_DEPOSIT,
+          icon: 'lock' as const,
+        }
       case 'WAITING_OPERATOR_ACCEPTANCE':
       case 'WAITING_CREW_CONFIRMATION':
         return {
           bg: '#fef3c7',
           color: '#92400e',
-          label: status === 'WAITING_CREW_CONFIRMATION'
-            ? t.mission.WAITING_CREW_CONFIRMATION
-            : t.mission.WAITING_OPERATOR_ACCEPTANCE,
+          label:
+            status === 'WAITING_CREW_CONFIRMATION'
+              ? t.mission.WAITING_CREW_CONFIRMATION
+              : t.mission.WAITING_OPERATOR_ACCEPTANCE,
           icon: 'clock' as const,
         }
       case 'SCHEDULED':

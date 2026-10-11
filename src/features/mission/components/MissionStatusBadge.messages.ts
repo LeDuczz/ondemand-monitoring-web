@@ -3,7 +3,8 @@ import { defineMessages } from '../../../shared/i18n'
 export const missionStatusBadgeMessages = defineMessages({
   vi: {
     mission: {
-      WAITING_CREW_CONFIRMATION: 'Chờ crew xác nhận',
+      WAITING_DEPOSIT: 'Chờ xác nhận tiền cọc',
+      WAITING_CREW_CONFIRMATION: 'Chờ đội bay xác nhận',
       WAITING_OPERATOR_ACCEPTANCE: 'Chờ Operator tiếp nhận',
       SCHEDULED: 'Đã lên lịch (Scheduled)',
       CONNECTED: 'GCS App Connected',
@@ -25,6 +26,7 @@ export const missionStatusBadgeMessages = defineMessages({
   },
   en: {
     mission: {
+      WAITING_DEPOSIT: 'Waiting for deposit',
       WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
       WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator acceptance',
       SCHEDULED: 'Scheduled',

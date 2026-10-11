@@ -304,7 +304,7 @@ export function SystemOperatorDevicesScreen() {
                 </span>
                 {device.status === 'MAINTENANCE' && (
                   <a
-                    href="#portal/system-operator/maintenance"
+                    href="#portal/staff/technical/maintenance"
                     style={{
                       color: '#2563eb',
                       fontWeight: 600,

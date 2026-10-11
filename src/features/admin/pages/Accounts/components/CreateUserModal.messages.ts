@@ -10,9 +10,8 @@ export const createUserModalMessages = defineMessages({
     role: 'Vai trò',
     roleDescriptions: {
       ADMIN: 'Quản trị người dùng, danh mục và cấu hình hệ thống.',
-      STAFF: 'Duyệt đơn, điều phối mission, giao kết quả.',
-      DRONE_OPERATOR: 'Thực hiện bay, ghi nhận dữ liệu mission.',
-      SYSTEM_OPERATOR: 'Giám sát thiết bị, telemetry, cảnh báo hệ thống.',
+      MANAGER: 'Duyệt đơn, điều phối mission, giao kết quả.',
+      STAFF: 'Thực hiện công việc theo profile và phân công trong mission.',
     } as Record<string, string>,
     required: 'Bắt buộc',
     invalidEmail: 'Email không hợp lệ',
@@ -31,9 +30,8 @@ export const createUserModalMessages = defineMessages({
     role: 'Role',
     roleDescriptions: {
       ADMIN: 'Manage users, catalog and system configuration.',
-      STAFF: 'Review requests, coordinate missions, deliver results.',
-      DRONE_OPERATOR: 'Fly missions and record mission data.',
-      SYSTEM_OPERATOR: 'Monitor devices, telemetry, and system alerts.',
+      MANAGER: 'Review requests, coordinate missions, deliver results.',
+      STAFF: 'Perform duties according to profile and mission assignment.',
     } as Record<string, string>,
     required: 'Required',
     invalidEmail: 'Invalid email',

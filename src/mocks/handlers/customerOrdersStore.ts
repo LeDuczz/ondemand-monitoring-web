@@ -52,6 +52,7 @@ export function toBeOrder(o: SeedOrder): OrderCreateResponse {
   const status = toBeStatus(o.status as OrderStatus)
   return {
     id: o.id,
+    orderCode: o.orderCode,
     customerId: 'usr-customer',
     customerName: 'Khách hàng',
     title: o.title,

@@ -38,6 +38,7 @@ export function toMissionRow(dto: CustomerMissionHistory): MissionRow {
     address: dto.address ?? null,
     status: normalizeMissionStatus(dto.status),
     scheduledStartAt: dto.scheduledStartAt ?? null,
+    scheduledEndAt: dto.scheduledEndAt ?? null,
     startedAt: dto.startedAt ?? null,
     completedAt: dto.completedAt ?? null,
     description: dto.description?.trim() || null,

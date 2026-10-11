@@ -3,6 +3,13 @@ import { env } from '../../../../config/env'
 
 const baseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
+// Short cache: dedupes simultaneous callers but keeps live flight telemetry fresh (was 2s).
+const STATUS_CACHE_MS = 300
+
+let statusCache:
+  | { fetchedAt: number; value: FlightControlStatus }
+  | null = null
+let statusRequest: Promise<FlightControlStatus> | null = null
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl}${path}`, options)
@@ -24,14 +31,32 @@ export type FlightControlStatus = {
   altitudeM?: number
   speedMps?: number
   batteryPercent?: number
+  rawPx4BatteryPercent?: number | null
   batteryState?: 'NORMAL' | 'LOW' | 'CRITICAL' | 'EMERGENCY'
   headingDeg?: number
   connection?: { grpcConnected?: boolean; px4Connected?: boolean }
+  freshness?: { px4BatteryAgeS?: number | null }
 }
 
 export const flightControlApi = {
   baseUrl,
-  status: () => request<FlightControlStatus>('/api/control/status'),
+  status: () => {
+    const now = Date.now()
+    if (statusCache && now - statusCache.fetchedAt < STATUS_CACHE_MS) {
+      return Promise.resolve(statusCache.value)
+    }
+    if (statusRequest) return statusRequest
+
+    statusRequest = request<FlightControlStatus>('/api/control/status')
+      .then((value) => {
+        statusCache = { fetchedAt: Date.now(), value }
+        return value
+      })
+      .finally(() => {
+        statusRequest = null
+      })
+    return statusRequest
+  },
   bindSession: async (missionId: string, deviceId: string) => {
     const authorization = await authenticatedFetch(
       `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}`,

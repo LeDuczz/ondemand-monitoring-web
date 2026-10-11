@@ -924,7 +924,7 @@ export default function MissionDetail({
                 marginTop: 2,
               }}
             >
-              {drone.id}
+              {drone.name || drone.id}
             </div>
             <div style={{ marginTop: 8 }}>
               <DroneBadge state={drone.state} />

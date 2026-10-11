@@ -12,7 +12,7 @@ beforeEach(() => {
       id: '1',
       fullName: 'Lê Thị Thanh Hằng',
       email: 'hang.le@odms.vn',
-      role: 'STAFF',
+      role: 'MANAGER',
     }),
   )
 })
@@ -34,7 +34,7 @@ describe('ManagerLayout', () => {
     }
 
     for (const item of [
-      'Đơn hàng & Nhiệm vụ',
+      'Đơn hàng',
       'Nhiệm vụ',
       'Lịch nhiệm vụ',
       'Giám sát realtime',
@@ -79,7 +79,7 @@ describe('ManagerLayout', () => {
         <div>content</div>
       </ManagerLayout>,
     )
-    const ordersLink = screen.getByRole('link', { name: /Đơn hàng & Nhiệm vụ/ })
+    const ordersLink = screen.getByRole('link', { name: /Đơn hàng/ })
     expect(ordersLink).toHaveTextContent('6')
   })
 

@@ -1,5 +1,6 @@
 export type MissionStatus =
   | 'CREATED'
+  | 'WAITING_DEPOSIT'
   | 'RESOURCE_ASSIGNING'
   | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
@@ -13,6 +14,7 @@ export type MissionStatus =
   | 'IN_PROGRESS'
   | 'RETURNING'
   | 'POSTFLIGHT_CHECKING'
+  | 'PENDING_REVIEW'
   | 'COMPLETED'
   | 'FAILED'
   | 'CANCELLED'
@@ -97,6 +99,65 @@ export interface Mission {
   rejectionReason?: string
   mediaType?: MediaType
   plan?: MissionPlan | null
+}
+
+export type MissionResultStatus =
+  'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+
+export type MissionResultApprovalStatus =
+  'DRAFT' | 'PENDING_MANAGER_APPROVAL' | 'APPROVED' | 'REJECTED'
+
+export interface MissionResult {
+  id: string
+  missionId: string
+  missionCode: string
+  status: MissionResultStatus
+  approvalStatus: MissionResultApprovalStatus
+  submittedAt?: string | null
+  approvedAt?: string | null
+  rejectedAt?: string | null
+  reviewNote?: string | null
+  mediaFiles?: MissionResultMedia[] | null
+}
+
+export interface MissionResultMedia {
+  id: string
+  missionId: string
+  deviceId?: string | null
+  droneId?: string | null
+  type?: string | null
+  url: string
+  expiresIn?: number | null
+  contentType?: string | null
+  fileSize?: number | null
+  capturedAt?: string | null
+  /** DRONE_CAMERA | MANUAL_UPLOAD | MAPILLARY_REFERENCE; absent on legacy media. */
+  sourceType?: string | null
+  sourceReferenceId?: string | null
+  sourceCapturedAt?: string | null
+  sourceLatitude?: number | null
+  sourceLongitude?: number | null
+  captureLatitude?: number | null
+  captureLongitude?: number | null
+  captureAltitudeM?: number | null
+  sourceDistanceMeters?: number | null
+}
+
+export interface ReferenceCaptureResult {
+  mediaAssetId: string
+  missionId: string
+  sourceType: string
+  dronePosition: {
+    lat: number | null
+    lon: number | null
+    altitude: number | null
+  }
+  sourcePosition: { lat: number | null; lon: number | null }
+  distanceMeters: number | null
+  mapillaryImageId: string | null
+  capturedAt: string | null
+  mediaUrl: string | null
+  duplicate?: boolean
 }
 
 export type MissionStaffRole = 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'

@@ -4,26 +4,21 @@ import { useI18n } from '../../../../../shared/i18n'
 import { createDefaultForm } from '../../../lib/createOrder/draftStorage'
 import { buildOrderPayload } from '../../../lib/createOrder/payload'
 import { scoreRequest } from '../../../lib/createOrder/scoring'
-import type {
-  FormErrors,
-  FormState,
-  MapPoint,
-} from '../../../lib/createOrder/types'
+import type { FormErrors, FormState } from '../../../lib/createOrder/types'
 import { validateStep } from '../../../lib/createOrder/validators'
 import { createOrderPageMessages } from '../../CreateOrder/CreateOrderPage.messages'
 import { useCreateOrderMeta } from '../../CreateOrder/hooks/useCreateOrderMeta'
-import { useSimulationMap } from '../../CreateOrder/hooks/useSimulationMap'
 import { useRequestSubmit } from './useRequestSubmit'
+import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
 
 /** Single-page create-request form; reuses the wizard's map, meta and validators. */
 export function useCreateRequest() {
   const { t } = useI18n(createOrderPageMessages)
   const [form, setForm] = useState<FormState>(createDefaultForm)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [mapPoint, setMapPoint] = useState<MapPoint>({ x: 50, y: 50 })
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const checklist = useOrderChecklist(form.serviceId)
 
-  const map = useSimulationMap(form)
   const meta = useCreateOrderMeta(form.serviceId, false, setForm)
   const service = meta.services.find((s) => s.id === form.serviceId)
   const time = meta.preferredTimes.find((x) => x.id === form.preferredTimeId)
@@ -42,11 +37,11 @@ export function useCreateRequest() {
 
   const validate = () => {
     const found = validateStep(
-      3,
+      5,
       form,
       {
-        monitoringValid: map.monitoring.valid,
-        blockedZoneNames: map.restricted.blockedZones.map((z) => z.name),
+        monitoringValid: true,
+        blockedZoneNames: [],
       },
       t.validation,
     )
@@ -54,27 +49,32 @@ export function useCreateRequest() {
     return Object.keys(found).length === 0
   }
 
-  const score = useMemo(() => scoreRequest(form, t.scoreNotes), [form, t.scoreNotes])
+  const score = useMemo(
+    () => scoreRequest(form, t.scoreNotes),
+    [form, t.scoreNotes],
+  )
   const submit = useRequestSubmit({
-    validate,
+    validate: () => validate() && checklist.valid,
+    onTemplateChanged: checklist.markStale,
     onError: setSubmitError,
-    buildPayload: () =>
-      buildOrderPayload({
+    buildPayload: () => ({
+      ...buildOrderPayload({
         form,
         score,
         aiAnalysisRequested: false,
         pricingEstimate: meta.pricingEstimate,
       }),
+      checklistItems: checklist.serialize(),
+    }),
   })
 
   return {
+    checklist,
+    clearSubmitError: () => setSubmitError(null),
     form,
     errors,
     update,
-    mapPoint,
-    setMapPoint,
     submitError,
-    map,
     meta,
     service,
     time,

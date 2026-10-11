@@ -16,6 +16,8 @@ const brief: OrderMissionBrief = {
   serviceName: 'Kiểm tra nhiệt mái nhà xưởng KCN Hiệp Phước',
   customerFullName: 'Trần Thị Thu Hà',
   preferredDate: '24/09',
+  preferredDateFrom: '2026-09-24T07:00:00+07:00',
+  preferredDateTo: '2026-09-26T11:00:00+07:00',
   preferredTimeName: 'Sáng',
   addressText: 'KCN Hiệp Phước, Nhà Bè',
   center: { lat: 10.6402, lon: 106.74 },
@@ -74,11 +76,15 @@ describe('CreateMissionPage', () => {
     expect(screen.getByText('Đang tải…')).toBeInTheDocument()
     await waitFor(() =>
       expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
+        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
     )
     expect(screen.getByText('Khoảng thời gian khách yêu cầu')).toBeTruthy()
     expect(screen.getByText('24/09 · Sáng')).toBeTruthy()
+    expect(screen.getByText('Dự báo thời tiết theo khoảng khách yêu cầu')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('24/09/2026')).toBeInTheDocument())
+    expect(screen.getByText('25/09/2026')).toBeInTheDocument()
+    expect(screen.getByText('26/09/2026')).toBeInTheDocument()
     const startInput = screen.getByLabelText('Giờ cất cánh') as HTMLInputElement
     const endInput = screen.getByLabelText(
       'Giờ kết thúc dự kiến',
@@ -87,7 +93,9 @@ describe('CreateMissionPage', () => {
     expect(endInput.value).toBe('')
     expect(screen.queryByText('Flight plan')).not.toBeInTheDocument()
     expect(screen.queryByText('Kiểu bay')).not.toBeInTheDocument()
-    expect(screen.queryByRole('img', { name: 'Xem trước đường bay' })).toBeNull()
+    expect(
+      screen.queryByRole('img', { name: 'Xem trước đường bay' }),
+    ).toBeNull()
   })
 
   it('shows the error state with a mono debug line when the brief fails to load', async () => {
@@ -101,7 +109,7 @@ describe('CreateMissionPage', () => {
     render(<CreateMissionPage orderId="ord-2609-0153" />)
     await waitFor(() =>
       expect(
-        screen.getByText('Không tải được đơn để tạo mission'),
+        screen.getByText('Không tải được đơn để tạo nhiệm vụ'),
       ).toBeInTheDocument(),
     )
     expect(screen.getByText(/mission-brief · 409/)).toBeInTheDocument()
@@ -115,7 +123,7 @@ describe('CreateMissionPage', () => {
     )
     await waitFor(() =>
       expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
+        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
@@ -124,23 +132,19 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
       target: { value: '2026-09-24T09:30' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo mission' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
     await waitFor(() =>
       expect(missionsApi.createMission).toHaveBeenCalledWith(
         'ord-2609-0153',
         expect.objectContaining({
           scheduledStart: '2026-09-24T01:00:00.000Z',
           scheduledEnd: '2026-09-24T02:30:00.000Z',
-          flightPlan: expect.objectContaining({
-            planType: 'ORBIT',
-            generatedBy: 'SYSTEM',
-          }),
         }),
       ),
     )
     await waitFor(() =>
       expect(window.location.hash).toBe(
-        '#portal/staff/missions/msn-2609-0153-1/dispatch',
+        '#portal/manager/missions/msn-2609-0153-1/setup',
       ),
     )
   })
@@ -153,7 +157,7 @@ describe('CreateMissionPage', () => {
     )
     await waitFor(() =>
       expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
+        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
@@ -162,7 +166,7 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
       target: { value: '2026-09-10T15:58' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo mission' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
     expect(
       await screen.findByText('Giờ kết thúc phải sau giờ cất cánh.'),
     ).toBeInTheDocument()
@@ -184,7 +188,7 @@ describe('CreateMissionPage', () => {
     )
     await waitFor(() =>
       expect(
-        screen.getByRole('heading', { name: 'Tạo mission' }),
+        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
@@ -193,10 +197,10 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
       target: { value: '2026-09-24T09:30' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo mission' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
     await waitFor(() =>
       expect(
-        screen.getByText('Không sinh được flight plan'),
+        screen.getByText('Không tạo được kế hoạch bay'),
       ).toBeInTheDocument(),
     )
     expect(
@@ -205,9 +209,7 @@ describe('CreateMissionPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Thêm waypoint' }),
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Thử lại' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
   })
 
   it('renders English title and labels when language is switched', async () => {

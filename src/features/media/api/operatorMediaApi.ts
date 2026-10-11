@@ -15,7 +15,8 @@ export type LocalMedia = {
   fileSize: number
   checksumSha256: string
   capturedAt: string
-  status: 'REVIEW_PENDING' | 'UPLOADING' | 'UPLOAD_FAILED' | 'VALIDATING' | 'MANUAL_UPLOAD_REQUIRED' | 'UPLOAD_PENDING' | 'AVAILABLE'
+  sourceType?: 'DRONE_CAMERA' | 'SATELLITE_SNAPSHOT' | 'MANUAL_UPLOAD' | null
+  status: 'REVIEW_PENDING' | 'UPLOADING' | 'UPLOAD_FAILED' | 'VALIDATING' | 'MANUAL_UPLOAD_REQUIRED' | 'UPLOAD_PENDING' | 'RETRY_REQUIRED' | 'PENDING_MANAGER_APPROVAL' | 'AVAILABLE'
   previewError?: string
   backendMediaId?: string
   manualTaskId?: string
@@ -39,6 +40,7 @@ type UploadPlan = {
 class RetryableTransferError extends Error {}
 const activeUploads = new Map<string, Promise<string>>()
 const delay = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds))
+const terminalUploadedStatuses = new Set(['AVAILABLE', 'VALIDATING', 'PENDING_MANAGER_APPROVAL'])
 const referenceKey = (item: Pick<LocalMedia, 'missionId' | 'localMediaId'>) =>
   `odms.media-upload:${item.missionId}:${item.localMediaId}`
 
@@ -77,9 +79,13 @@ export const operatorMediaApi = {
   previewUrl(id: string) {
     return `${controllerUrl}/api/media/local/${encodeURIComponent(id)}/preview`
   },
-  async list(missionId: string): Promise<LocalMedia[]> {
-    const response = await controller<{ media: LocalMedia[] }>('/api/media/local')
-    return response.media.filter((item) => item.missionId === missionId)
+  async list(missionId: string, missionAliases: string[] = []): Promise<LocalMedia[]> {
+    const params = new URLSearchParams()
+    params.set('missionId', missionId)
+    missionAliases.filter(Boolean).forEach((alias) => params.append('missionAlias', alias))
+    const response = await controller<{ media: LocalMedia[] }>(`/api/media/local?${params.toString()}`)
+    const keys = new Set([missionId, ...missionAliases].filter(Boolean))
+    return response.media.filter((item) => keys.has(item.missionId) || (item.missionCode ? keys.has(item.missionCode) : false))
       .map((item) => ({ ...item, backendMediaId: item.backendMediaId ?? storedMediaId(item) }))
   },
   async manualTasks(missionId: string) {
@@ -89,9 +95,9 @@ export const operatorMediaApi = {
       return []
     }
   },
-  async reviewItems(missionId: string): Promise<LocalMedia[]> {
+  async reviewItems(missionId: string, missionAliases: string[] = []): Promise<LocalMedia[]> {
     const [local, tasks] = await Promise.all([
-      operatorMediaApi.list(missionId).catch(() => [] as LocalMedia[]),
+      operatorMediaApi.list(missionId, missionAliases).catch(() => [] as LocalMedia[]),
       operatorMediaApi.manualTasks(missionId),
     ])
     const merged = new Map(local.map((item) => [item.localMediaId, { ...item, localAvailable: true }]))
@@ -111,7 +117,7 @@ export const operatorMediaApi = {
       const plan = await backend<UploadPlan>(`${mediaPath}/manual-file-upload`, 'POST', {
         fileSize: file.size, contentType: item.contentType, checksumSha256,
       })
-      if (['AVAILABLE', 'VALIDATING'].includes(plan.status)) return plan.mediaId
+      if (terminalUploadedStatuses.has(plan.status)) return plan.mediaId
       const attemptPath = `${mediaPath}/upload-attempts/${encodeURIComponent(plan.attemptId)}`
       let parts: Array<{ partNumber: number; eTag: string }>
       try {
@@ -121,7 +127,7 @@ export const operatorMediaApi = {
         const result = await backend<UploadPlan>(`${attemptPath}/failures`, 'POST', {
           code: 'PC_TRANSFER_FAILED', message: error instanceof Error ? error.message.slice(0, 400) : 'PC transfer failed',
         })
-        if (['AVAILABLE', 'VALIDATING'].includes(result.status)) return plan.mediaId
+        if (terminalUploadedStatuses.has(result.status)) return plan.mediaId
         throw error
       }
       // An ambiguous completion response is not a failed transfer; retain this attempt for recovery.
@@ -168,12 +174,12 @@ export const operatorMediaApi = {
       fileSize: item.fileSize,
       checksumSha256: item.checksumSha256,
       capturedAt: item.capturedAt,
+      sourceType: item.sourceType ?? null,
     })
     // Persist only the correlation ID, never credentials or signed URLs.
     try { window.localStorage.setItem(referenceKey(item), plan.mediaId) } catch { /* Storage may be disabled. */ }
     const mediaPath = `/media/${encodeURIComponent(plan.mediaId)}`
-    if (plan.status === 'AVAILABLE') return plan.mediaId
-    if (plan.status === 'VALIDATING') return plan.mediaId
+    if (terminalUploadedStatuses.has(plan.status)) return plan.mediaId
     if (plan.status === 'MANUAL_UPLOAD_REQUIRED' && !manual) {
       throw new Error('Đã hết 3 lần upload tự động. Hãy chọn upload thủ công; bản gốc vẫn được giữ trên Flight Controller.')
     }
@@ -202,11 +208,11 @@ export const operatorMediaApi = {
       const failure = await backend<UploadPlan>(`${attemptPath}/failures`, 'POST', {
         code: 'TRANSFER_FAILED', message: error instanceof Error ? error.message.slice(0, 400) : 'Transfer failed',
       })
-      if (failure.status === 'AVAILABLE' || failure.status === 'VALIDATING') return plan.mediaId
+      if (terminalUploadedStatuses.has(failure.status)) return plan.mediaId
       if (failure.status === 'RETRY_REQUIRED') {
         throw new RetryableTransferError(error instanceof Error ? error.message : 'Transfer failed')
       }
-      throw new Error('Upload thất bại. Task upload thủ công đã được tạo; bản gốc vẫn được giữ trên Flight Controller.')
+      throw new Error('Upload thất bại. Task upload thủ công đã được tạo; bản gốc vẫn được giữ trên Flight Controller.', { cause: error })
     }
     // An acknowledgement failure is not an S3 transfer failure. The object may
     // already be in S3 (and its ObjectCreated event may already be processing).

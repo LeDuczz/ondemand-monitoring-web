@@ -37,6 +37,7 @@ export const orderStatusTone: Record<OrderStatus, StatusTone> = {
 
 export const missionStatusTone: Record<MissionStatus, StatusTone> = {
   CREATED: 'gray', // brief: CREATED → gray
+  WAITING_DEPOSIT: 'yellow',
   // mapping by meaning: system is still matching drone/operator, nothing to
   // act on yet — closer to "waiting" than "in progress".
   RESOURCE_ASSIGNING: 'yellow',
@@ -60,6 +61,7 @@ export const missionStatusTone: Record<MissionStatus, StatusTone> = {
   RETURNING: 'blue',
   // mapping by meaning: checklist actively running.
   POSTFLIGHT_CHECKING: 'blue',
+  PENDING_REVIEW: 'yellow',
   COMPLETED: 'green', // brief: COMPLETED → green
   FAILED: 'red', // brief: FAILED → red
   // mapping by meaning: terminal, non-error stop, same as OrderStatus.CANCELLED.
@@ -139,8 +141,9 @@ export const orderStatusLabel: Record<OrderStatus, string> = {
 
 export const missionStatusLabel: Record<MissionStatus, string> = {
   CREATED: 'Mới tạo',
+  WAITING_DEPOSIT: 'Chờ thanh toán tiền cọc',
   RESOURCE_ASSIGNING: 'Đang gán nguồn lực',
-  WAITING_CREW_CONFIRMATION: 'Chờ crew xác nhận',
+  WAITING_CREW_CONFIRMATION: 'Chờ đội bay xác nhận',
   WAITING_OPERATOR_ACCEPTANCE: 'Chờ operator nhận',
   SCHEDULED: 'Đã lên lịch',
   CONNECTED: 'Đã kết nối',
@@ -152,6 +155,7 @@ export const missionStatusLabel: Record<MissionStatus, string> = {
   IN_PROGRESS: 'Đang bay',
   RETURNING: 'Đang trở về',
   POSTFLIGHT_CHECKING: 'Đang kiểm tra sau bay',
+  PENDING_REVIEW: 'Chờ nghiệm thu',
   COMPLETED: 'Hoàn thành',
   FAILED: 'Thất bại',
   CANCELLED: 'Đã huỷ',
@@ -241,6 +245,7 @@ export const orderStatusLabelEn: Record<OrderStatus, string> = {
 
 export const missionStatusLabelEn: Record<MissionStatus, string> = {
   CREATED: 'Created',
+  WAITING_DEPOSIT: 'Waiting for deposit',
   RESOURCE_ASSIGNING: 'Assigning resources',
   WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
   WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',
@@ -254,6 +259,7 @@ export const missionStatusLabelEn: Record<MissionStatus, string> = {
   IN_PROGRESS: 'In flight',
   RETURNING: 'Returning',
   POSTFLIGHT_CHECKING: 'Postflight check running',
+  PENDING_REVIEW: 'Awaiting inspection',
   COMPLETED: 'Completed',
   FAILED: 'Failed',
   CANCELLED: 'Cancelled',

@@ -3,6 +3,7 @@ import type {
   GeoJsonPolygon,
   ServicePricingEstimate,
 } from '../../api/customerApi'
+import { findPermitZone } from './airspace'
 import { toNumber, truncateText } from './format'
 import type { AiScore, FormState } from './types'
 
@@ -86,17 +87,39 @@ export function buildOrderPayload(input: {
   const { form, aiAnalysisRequested } = input
   const latitude = toNumber(form.latitude, DEFAULT_LATITUDE)
   const longitude = toNumber(form.longitude, DEFAULT_LONGITUDE)
+  const permitZone = findPermitZone({ latitude, longitude }, form.radiusM)
+  const permitStatus = permitZone ? form.permitStatus : 'NONE'
+  const lengthM = toNumber(form.estimatedLengthM, 0)
   return {
     title: truncateText(form.title, ORDER_TITLE_MAX_LENGTH),
     description: form.description.trim() || undefined,
     serviceId: form.serviceId,
+    usagePurpose: form.usagePurpose || undefined,
+    priority: form.priority,
     address: form.address.trim(),
     longitude,
     latitude,
+    altitudeM: form.altitudeM,
+    estimatedLengthM: lengthM > 0 ? lengthM : undefined,
+    siteContactName: form.siteContactName.trim() || undefined,
+    siteContactPhone: form.siteContactPhone.trim() || undefined,
+    accessNotes: form.accessNotes.trim() || undefined,
+    permitStatus,
+    permitNumber:
+      permitStatus === 'HAVE_PERMIT' ? form.permitNumber.trim() || undefined : undefined,
     coverageArea: buildCoverageArea(longitude, latitude, form.radiusM),
     preferredDateFrom: form.preferredDateFrom,
     preferredDateTo: form.preferredDateTo,
     preferredTimeId: form.preferredTimeId,
+    recurrenceType: form.recurrenceType,
+    recurrenceOccurrences:
+      form.recurrenceType === 'NONE' ? undefined : form.recurrenceOccurrences,
+    weatherFallback: form.weatherFallback,
+    resultDeadline: form.resultDeadline || undefined,
+    resultFormats: form.resultFormats,
+    deliveryMethods: form.deliveryMethods,
+    dataRetentionDays: form.dataRetentionDays,
+    termsAccepted: form.termsAccepted,
     deliverables: [
       {
         deliverableTypeId: form.deliverableTypeId,
@@ -106,6 +129,13 @@ export function buildOrderPayload(input: {
           resolution: form.resolution,
           radiusM: form.radiusM,
           estimatedAreaHa: Number(calcArea(form.radiusM)),
+          areaFiles: form.areaFiles.map((file) => ({
+            id: file.id,
+            fileName: file.fileName,
+            contentType: file.contentType,
+            sizeBytes: file.sizeBytes,
+            dataUrl: file.dataUrl,
+          })),
           customerAttachments: form.attachments.map((attachment) => ({
             id: attachment.id,
             fileName: attachment.fileName,
@@ -113,6 +143,8 @@ export function buildOrderPayload(input: {
             sizeBytes: attachment.sizeBytes,
             dataUrl: attachment.dataUrl,
           })),
+          usagePurpose: form.usagePurpose || undefined,
+          priority: form.priority,
           consultationId: input.consultationId,
           readinessScore: input.score.score,
           aiAnalysisRequested,

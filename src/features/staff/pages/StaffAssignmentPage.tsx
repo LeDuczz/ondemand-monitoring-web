@@ -9,7 +9,12 @@ import { operatorApi, type AvailableOperator } from '../api/operatorApi'
 import { staffAssignmentPageMessages } from './StaffAssignmentPage.messages'
 import type { MissionStaffRole } from '../../mission/types/mission'
 
-const missionRoles: MissionStaffRole[] = ['PILOT', 'OPERATOR', 'MAINTAINER', 'INSPECTOR']
+const missionRoles: MissionStaffRole[] = [
+  'PILOT',
+  'OPERATOR',
+  'MAINTAINER',
+  'INSPECTOR',
+]
 
 type StaffPickerTarget = {
   missionId: string
@@ -67,14 +72,13 @@ export function StaffAssignmentPage() {
 
   useEffect(() => {
     fetchAssignments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleAssign = async (missionId: string) => {
     const droneId = selectedDrone[missionId]
     const staffAssignments = selectedStaffByRole[missionId] ?? {}
 
-    if (!droneId || missionRoles.some((role) => !staffAssignments[role])) {
+    if (!droneId || !staffAssignments.PILOT) {
       setError(t.chooseAll)
       return
     }
@@ -124,7 +128,9 @@ export function StaffAssignmentPage() {
     const query = staffSearch.trim().toLowerCase()
     return operators.filter((operator) => {
       if (!query) return true
-      return `${operator.fullName} ${operator.email}`.toLowerCase().includes(query)
+      return `${operator.fullName} ${operator.email}`
+        .toLowerCase()
+        .includes(query)
     })
   }, [operators, staffSearch])
 
@@ -134,7 +140,7 @@ export function StaffAssignmentPage() {
   )
 
   return (
-    <PortalLayout role="STAFF" title={t.title} subtitle={t.subtitle}>
+    <PortalLayout role="MANAGER" title={t.title} subtitle={t.subtitle}>
       <section className="portal-panel">
         <div
           style={{
@@ -161,8 +167,11 @@ export function StaffAssignmentPage() {
           <div style={{ display: 'grid', gap: 18 }}>
             {missions.map((m) => {
               const staffAssignments = selectedStaffByRole[m.id] ?? {}
-              const assignedCount = missionRoles.filter((role) => staffAssignments[role]).length
+              const assignedCount = missionRoles.filter(
+                (role) => staffAssignments[role],
+              ).length
               const missing = missionRoles
+                .filter((role) => role === 'PILOT')
                 .filter((role) => !staffAssignments[role])
                 .map((role) => t.roles[role])
               return (
@@ -179,23 +188,34 @@ export function StaffAssignmentPage() {
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'minmax(220px, 1.2fr) minmax(220px, 0.8fr)',
+                      gridTemplateColumns:
+                        'minmax(220px, 1.2fr) minmax(220px, 0.8fr)',
                       gap: 18,
                       padding: 18,
                       borderBottom: '1px solid var(--border)',
                     }}
                   >
                     <div>
-                      <div style={{ color: 'var(--text-3)', fontSize: 12, fontWeight: 700 }}>
+                      <div
+                        style={{
+                          color: 'var(--text-3)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
                         {t.missionId}
                       </div>
-                      <h3 style={{ margin: '4px 0 6px' }}>{m.orderTitle ?? m.id}</h3>
+                      <h3 style={{ margin: '4px 0 6px' }}>
+                        {m.orderTitle ?? m.id}
+                      </h3>
                       <div style={{ color: 'var(--text-3)', fontSize: 13 }}>
                         {m.id} · {m.customerName}
                       </div>
                     </div>
                     <label style={{ display: 'grid', gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>{t.selectDrone}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>
+                        {t.selectDrone}
+                      </span>
                       <select
                         value={selectedDrone[m.id] || ''}
                         onChange={(e) =>
@@ -234,14 +254,26 @@ export function StaffAssignmentPage() {
                     >
                       <div>
                         <h4 style={{ margin: 0 }}>{t.staffSectionTitle}</h4>
-                        <p style={{ margin: '4px 0 0', color: 'var(--text-3)' }}>
+                        <p
+                          style={{ margin: '4px 0 0', color: 'var(--text-3)' }}
+                        >
                           {t.staffSectionSubtitle}
                         </p>
                       </div>
                       <div style={{ textAlign: 'right', fontSize: 13 }}>
-                        <strong>{t.assignedCount(assignedCount, missionRoles.length)}</strong>
-                        <div style={{ color: missing.length ? 'var(--red-text)' : 'var(--green-text)' }}>
-                          {missing.length ? t.missingRoles(missing.join(', ')) : t.noMissingRoles}
+                        <strong>
+                          {t.assignedCount(assignedCount, missionRoles.length)}
+                        </strong>
+                        <div
+                          style={{
+                            color: missing.length
+                              ? 'var(--red-text)'
+                              : 'var(--green-text)',
+                          }}
+                        >
+                          {missing.length
+                            ? t.missingRoles(missing.join(', '))
+                            : t.noMissingRoles}
                         </div>
                       </div>
                     </div>
@@ -249,7 +281,8 @@ export function StaffAssignmentPage() {
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                        gridTemplateColumns:
+                          'repeat(auto-fit, minmax(210px, 1fr))',
                         gap: 12,
                       }}
                     >
@@ -266,7 +299,9 @@ export function StaffAssignmentPage() {
                                 : '1px solid var(--border)',
                               borderRadius: 10,
                               padding: 14,
-                              background: staff ? 'rgba(22, 163, 74, 0.06)' : 'var(--bg)',
+                              background: staff
+                                ? 'rgba(22, 163, 74, 0.06)'
+                                : 'var(--bg)',
                               minHeight: 190,
                               display: 'flex',
                               flexDirection: 'column',
@@ -274,22 +309,41 @@ export function StaffAssignmentPage() {
                             }}
                           >
                             <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  gap: 8,
+                                }}
+                              >
                                 <strong>{t.roles[role]}</strong>
                                 {staff && (
-                                  <span style={{ color: 'var(--green-text)', fontSize: 12 }}>
+                                  <span
+                                    style={{
+                                      color: 'var(--green-text)',
+                                      fontSize: 12,
+                                    }}
+                                  >
                                     ✓
                                   </span>
                                 )}
                               </div>
-                              <div style={{ color: 'var(--text-3)', fontSize: 12 }}>
+                              <div
+                                style={{ color: 'var(--text-3)', fontSize: 12 }}
+                              >
                                 {t.roleDescriptions[role]}
                               </div>
                             </div>
 
                             {staff ? (
                               <div style={{ display: 'grid', gap: 8 }}>
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    gap: 10,
+                                    alignItems: 'center',
+                                  }}
+                                >
                                   <span
                                     style={{
                                       width: 34,
@@ -308,7 +362,9 @@ export function StaffAssignmentPage() {
                                     {initials(staff.fullName)}
                                   </span>
                                   <div style={{ minWidth: 0 }}>
-                                    <div style={{ fontWeight: 700 }}>{staff.fullName}</div>
+                                    <div style={{ fontWeight: 700 }}>
+                                      {staff.fullName}
+                                    </div>
                                     <div
                                       style={{
                                         color: 'var(--text-3)',
@@ -321,17 +377,30 @@ export function StaffAssignmentPage() {
                                     </div>
                                   </div>
                                 </div>
-                                <span style={{ color: 'var(--green-text)', fontSize: 12 }}>
+                                <span
+                                  style={{
+                                    color: 'var(--green-text)',
+                                    fontSize: 12,
+                                  }}
+                                >
                                   ● {t.available}
                                 </span>
                               </div>
                             ) : (
-                              <div style={{ color: 'var(--text-3)', fontSize: 13 }}>
+                              <div
+                                style={{ color: 'var(--text-3)', fontSize: 13 }}
+                              >
                                 {t.unassigned}
                               </div>
                             )}
 
-                            <div style={{ marginTop: 'auto', display: 'flex', gap: 8 }}>
+                            <div
+                              style={{
+                                marginTop: 'auto',
+                                display: 'flex',
+                                gap: 8,
+                              }}
+                            >
                               <button
                                 type="button"
                                 className="odm-btn odm-btn-sm"
@@ -426,7 +495,9 @@ export function StaffAssignmentPage() {
               }}
             >
               <div>
-                <h3 style={{ margin: 0 }}>{t.pickerTitle(t.roles[staffPicker.role])}</h3>
+                <h3 style={{ margin: 0 }}>
+                  {t.pickerTitle(t.roles[staffPicker.role])}
+                </h3>
                 <div style={{ color: 'var(--text-3)', fontSize: 13 }}>
                   {t.roleDescriptions[staffPicker.role]}
                 </div>
@@ -457,14 +528,22 @@ export function StaffAssignmentPage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   type="button"
-                  className={availableOnly ? 'odm-btn odm-btn-p odm-btn-sm' : 'odm-btn odm-btn-sm'}
+                  className={
+                    availableOnly
+                      ? 'odm-btn odm-btn-p odm-btn-sm'
+                      : 'odm-btn odm-btn-sm'
+                  }
                   onClick={() => setAvailableOnly(true)}
                 >
                   ✓ {t.onlyAvailable}
                 </button>
                 <button
                   type="button"
-                  className={!availableOnly ? 'odm-btn odm-btn-p odm-btn-sm' : 'odm-btn odm-btn-sm'}
+                  className={
+                    !availableOnly
+                      ? 'odm-btn odm-btn-p odm-btn-sm'
+                      : 'odm-btn odm-btn-sm'
+                  }
                   onClick={() => setAvailableOnly(false)}
                 >
                   {t.showAll}
@@ -472,7 +551,14 @@ export function StaffAssignmentPage() {
               </div>
             </div>
 
-            <div style={{ overflowY: 'auto', padding: '0 18px 18px', display: 'grid', gap: 10 }}>
+            <div
+              style={{
+                overflowY: 'auto',
+                padding: '0 18px 18px',
+                display: 'grid',
+                gap: 10,
+              }}
+            >
               {pickerStaff.length === 0 ? (
                 <div
                   style={{
@@ -489,7 +575,8 @@ export function StaffAssignmentPage() {
                 pickerStaff.map((staff) => {
                   const assignedRoles = missionRoles.filter(
                     (role) =>
-                      selectedStaffByRole[staffPicker.missionId]?.[role] === staff.id,
+                      selectedStaffByRole[staffPicker.missionId]?.[role] ===
+                      staff.id,
                   )
                   return (
                     <article
@@ -522,16 +609,33 @@ export function StaffAssignmentPage() {
                           {initials(staff.fullName)}
                         </span>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 800 }}>{staff.fullName}</div>
+                          <div style={{ fontWeight: 800 }}>
+                            {staff.fullName}
+                          </div>
                           <div style={{ color: 'var(--text-3)', fontSize: 13 }}>
                             {staff.email}
                           </div>
-                          <div style={{ color: 'var(--green-text)', fontSize: 12, marginTop: 4 }}>
+                          <div
+                            style={{
+                              color: 'var(--green-text)',
+                              fontSize: 12,
+                              marginTop: 4,
+                            }}
+                          >
                             ● {t.available}
                           </div>
                           {assignedRoles.length > 0 && (
-                            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                              <span style={{ color: 'var(--text-3)', fontSize: 12 }}>
+                            <div
+                              style={{
+                                marginTop: 8,
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 6,
+                              }}
+                            >
+                              <span
+                                style={{ color: 'var(--text-3)', fontSize: 12 }}
+                              >
                                 {t.alreadyAssigned}:
                               </span>
                               {assignedRoles.map((role) => (
@@ -557,7 +661,11 @@ export function StaffAssignmentPage() {
                         type="button"
                         className="odm-btn odm-btn-p odm-btn-sm"
                         onClick={() =>
-                          selectStaff(staffPicker.missionId, staffPicker.role, staff.id)
+                          selectStaff(
+                            staffPicker.missionId,
+                            staffPicker.role,
+                            staff.id,
+                          )
                         }
                       >
                         {assignedRoles.length

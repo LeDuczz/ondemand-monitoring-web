@@ -1,4 +1,5 @@
 export type MissionState =
+  | 'WAITING_DEPOSIT'
   | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'
   | 'RESOURCE_ASSIGNING'
@@ -65,6 +66,8 @@ export interface Mission {
   state: MissionState
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
   droneId: string
+  droneCode?: string
+  droneName?: string
   operatorId: string
   customer: string
   location: string

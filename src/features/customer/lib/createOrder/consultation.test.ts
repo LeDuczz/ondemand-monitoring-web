@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildConsultationRequestContext,
-  buildInitialConsultationMessage,
   consultationStatusKey,
   isReusableConsultation,
   parseAiAnalysisAnswer,
@@ -52,26 +51,6 @@ describe('buildConsultationRequestContext', () => {
     expect(text).toContain('x=10.0%')
     expect(text).toContain('hello')
     expect(text).toContain('Mái nhà')
-  })
-})
-
-describe('buildInitialConsultationMessage', () => {
-  it('keeps the visible chat message customer-friendly', () => {
-    const text = buildInitialConsultationMessage({
-      form: {
-        ...createDefaultForm(),
-        address: 'Công trường xây dựng',
-        latitude: '10.1',
-        longitude: '106.2',
-      },
-      mapPoint: { x: 76.6, y: 55.7 },
-    })
-    expect(text).toBe(
-      'Tôi muốn được tư vấn dịch vụ giám sát phù hợp cho khu vực Công trường xây dựng.',
-    )
-    expect(text).not.toContain('Step 1')
-    expect(text).not.toContain('latitude')
-    expect(text).not.toContain('map x=')
   })
 })
 

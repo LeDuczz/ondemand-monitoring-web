@@ -6,14 +6,15 @@ import {
   BE_USER_ROLES,
   adminUsersApi,
   type ManagedAccountResponse,
-  type ManagedUserRole,
 } from '../../../api/adminUsersApi'
 import { Modal } from '../../../../../shared/components/ui'
 import { RoleBadge } from '../../../components/common/RoleBadge'
 import { createUserModalMessages } from './CreateUserModal.messages'
 
 // CUSTOMER accounts self-register; admins only create internal accounts.
-const CREATABLE_ROLES = BE_USER_ROLES.filter((r) => r !== 'CUSTOMER')
+const CREATABLE_ROLES = BE_USER_ROLES.filter(
+  (r): r is 'MANAGER' | 'STAFF' => r === 'MANAGER' || r === 'STAFF',
+)
 
 type FormErrors = Partial<Record<'fullName' | 'email', string>>
 
@@ -27,7 +28,7 @@ export function CreateUserModal({
   const { t } = useI18n(createUserModalMessages)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<ManagedUserRole>('STAFF')
+  const [role, setRole] = useState<'MANAGER' | 'STAFF'>('MANAGER')
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -72,7 +73,11 @@ export function CreateUserModal({
       onClose={onClose}
       footer={
         <>
-          <button type="button" className="odm-btn odm-btn-gh" onClick={onClose}>
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onClose}
+          >
             {t.cancel}
           </button>
           <button
@@ -123,7 +128,9 @@ export function CreateUserModal({
             }}
             aria-invalid={!!errors.email}
           />
-          {errors.email && <div className="adm-field-error">{errors.email}</div>}
+          {errors.email && (
+            <div className="adm-field-error">{errors.email}</div>
+          )}
         </div>
         <div className="adm-form-field">
           <span className="adm-label">{t.role}</span>

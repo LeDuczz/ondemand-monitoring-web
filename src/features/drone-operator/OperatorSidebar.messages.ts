@@ -2,10 +2,18 @@ import { defineMessages } from '../../shared/i18n'
 
 export const operatorSidebarMessages = defineMessages({
   vi: {
-    ariaNav: 'Điều hướng phi công',
-    groups: { work: 'Công việc', flight: 'Chuyến bay', account: 'Tài khoản' },
+    ariaNav: 'Điều hướng nhân viên',
+    groups: {
+      work: 'Công việc',
+      technical: 'Kỹ thuật',
+      flight: 'Chuyến bay',
+      account: 'Tài khoản',
+    },
     nav: {
       missions: 'Mission của tôi',
+      technical: 'Tổng quan kỹ thuật',
+      devices: 'Thiết bị',
+      support: 'Hỗ trợ khách hàng',
       maintenance: 'Bảo trì & Sự cố',
       availability: 'Lịch rảnh',
       zoneMap: 'Zone map',
@@ -22,6 +30,9 @@ export const operatorSidebarMessages = defineMessages({
       flight: 'Buồng lái',
       upload: 'Upload media',
       postflight: 'Postflight',
+      technical: 'Tổng quan kỹ thuật',
+      devices: 'Thiết bị',
+      support: 'Hỗ trợ khách hàng',
       maintenance: 'Bảo trì & Sự cố',
       zoneMap: 'Zone map',
       notifications: 'Thông báo',
@@ -33,9 +44,17 @@ export const operatorSidebarMessages = defineMessages({
   },
   en: {
     ariaNav: 'Pilot navigation',
-    groups: { work: 'Work', flight: 'Flight', account: 'Account' },
+    groups: {
+      work: 'Work',
+      technical: 'Technical',
+      flight: 'Flight',
+      account: 'Account',
+    },
     nav: {
       missions: 'My missions',
+      technical: 'Technical overview',
+      devices: 'Devices',
+      support: 'Customer support',
       maintenance: 'Maintenance & incidents',
       availability: 'Availability',
       zoneMap: 'Zone map',
@@ -52,6 +71,9 @@ export const operatorSidebarMessages = defineMessages({
       flight: 'Cockpit',
       upload: 'Upload media',
       postflight: 'Postflight',
+      technical: 'Technical overview',
+      devices: 'Devices',
+      support: 'Customer support',
       maintenance: 'Maintenance & incidents',
       zoneMap: 'Zone map',
       notifications: 'Notifications',

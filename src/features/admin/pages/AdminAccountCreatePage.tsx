@@ -12,29 +12,19 @@ const employeeRoles: Array<{
   description: string
 }> = [
   {
+    value: 'MANAGER',
+    label: 'Manager',
+    description: 'Review requests and coordinate missions and resources.',
+  },
+  {
     value: 'STAFF',
     label: 'Staff',
-    description:
-      'Review requests, coordinate assignments, and follow service delivery.',
-  },
-  {
-    value: 'DRONE_OPERATOR',
-    label: 'Drone operator',
-    description: 'Run assigned remote inspections and submit mission evidence.',
-  },
-  {
-    value: 'SYSTEM_OPERATOR',
-    label: 'System operator',
-    description:
-      'Monitor devices, telemetry, system health, and operational alerts.',
+    description: 'Perform assigned mission, support and technical duties.',
   },
 ]
-
 const roleLabels: Record<EmployeeRole, string> = {
+  MANAGER: 'Manager',
   STAFF: 'Staff',
-  DRONE_OPERATOR: 'Drone operator',
-  SYSTEM_OPERATOR: 'System operator',
-  AUDITOR: 'Auditor',
 }
 
 type FormErrors = Partial<Record<'email' | 'fullName' | 'role', string>>

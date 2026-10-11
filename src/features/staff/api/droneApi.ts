@@ -7,6 +7,7 @@ interface DroneResponse {
   id: string
   serialNumber: string
   name?: string
+  status?: string | null
   deviceModel?: { modelCode?: string; name?: string } | null
   droneModel?: { modelCode?: string; name?: string } | null
 }
@@ -23,6 +24,12 @@ interface ApiResponse<T> {
 export interface AvailableDrone {
   id: string
   label: string
+  status?: string | null
+}
+
+function isAvailableDrone(device: DroneResponse) {
+  const status = device.status?.trim().toUpperCase()
+  return !status || status === 'AVAILABLE'
 }
 
 export const droneApi = {
@@ -38,12 +45,15 @@ export const droneApi = {
     }
 
     const payload: ApiResponse<DronePage> = await response.json()
-    return payload.data.items.map((device) => {
-      const model = device.deviceModel ?? device.droneModel
-      return {
-        id: device.id,
-        label: `${device.serialNumber || device.name || device.id} (${model?.modelCode ?? model?.name ?? t.unknownModel})`,
-      }
-    })
+    return payload.data.items
+      .filter(isAvailableDrone)
+      .map((device) => {
+        const model = device.deviceModel ?? device.droneModel
+        return {
+          id: device.id,
+          label: `${device.serialNumber || device.name || device.id} (${model?.modelCode ?? model?.name ?? t.unknownModel})`,
+          status: device.status,
+        }
+      })
   },
 }

@@ -8,6 +8,8 @@ export type BackendMaintenanceTicket = {
   title?: string | null
   deviceId?: string | null
   deviceCode?: string | null
+  assignedStaffId?: string | null
+  assignedStaffName?: string | null
   assignedTechnicianId?: string | null
   assignedTechnicianName?: string | null
   reportedBy?: string | null
@@ -35,7 +37,12 @@ function mapToTicket(item: BackendMaintenanceTicket): MaintenanceTicket {
     description: item.description ?? null,
     missionId: null,
     reportedBy: item.reportedBy ?? null,
-    assignedTo: item.assignedTechnicianName ?? item.assignedTechnicianId ?? null,
+    assignedTo:
+      item.assignedStaffName ??
+      item.assignedTechnicianName ??
+      item.assignedStaffId ??
+      item.assignedTechnicianId ??
+      null,
     downtime_hours: null,
     resolutionNotes: item.resolutionNotes ?? null,
     openedAt: item.openedAt,
@@ -82,11 +89,11 @@ export const maintenanceApi = {
     return mapToTicket(raw)
   },
 
-  /** `PATCH /api/maintenance-tickets/{id}/assign` */
+  /** `PATCH /api/maintenance-tickets/{id}/assign-staff` */
   assignTechnician: async (ticketId: string, technicianId: string): Promise<MaintenanceTicket> => {
-    const raw = await apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}/assign`, {
+    const raw = await apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}/assign-staff`, {
       method: 'PATCH',
-      body: { technicianId },
+      body: { staffId: technicianId },
     })
     return mapToTicket(raw)
   },
@@ -109,7 +116,7 @@ export const maintenanceApi = {
     if (status === 'RESOLVED') {
       return maintenanceApi.resolveTicket(ticketId, 'Đã hoàn tất xử lý bảo trì', 'AVAILABLE')
     }
-    const raw = await apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}/assign`, {
+    const raw = await apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}/assign-staff`, {
       method: 'PATCH',
       body: { status },
     }).catch(() => apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}`, { method: 'GET' }))

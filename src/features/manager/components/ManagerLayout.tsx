@@ -24,7 +24,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Dashboard', icon: 'dashboard', route: { screen: 'dashboard' } },
       {
-        label: 'Đơn hàng & Nhiệm vụ',
+        label: 'Đơn hàng',
         icon: 'order-queue',
         route: { screen: 'orderQueue' },
         countKey: 'pendingOrders',
@@ -48,7 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
       {
         label: 'Support Center',
         icon: 'reports',
-        href: '#portal/staff/support',
+        href: '#portal/manager/support',
       },
     ],
   },
@@ -83,10 +83,12 @@ const NAV_GROUPS: NavGroup[] = [
 // create/dispatch) highlight the item their flow started from.
 const activeNavLabel: Record<ManagerScreen, string> = {
   dashboard: 'Dashboard',
-  orderQueue: 'Đơn hàng & Nhiệm vụ',
-  orderReview: 'Đơn hàng & Nhiệm vụ',
-  missionCreate: 'Đơn hàng & Nhiệm vụ',
+  orderQueue: 'Đơn hàng',
+  orderReview: 'Đơn hàng',
+  missionCreate: 'Đơn hàng',
   missionDispatch: 'Nhiệm vụ',
+  missionSetup: 'Nhiệm vụ',
+  missionDetail: 'Nhiệm vụ',
   schedule: 'Lịch nhiệm vụ',
   live: 'Giám sát realtime',
   missions: 'Nhiệm vụ',
@@ -145,7 +147,11 @@ export function ManagerLayout({
             className="odm-mgr-brand"
             href={managerHref({ screen: 'dashboard' })}
           >
-            <img src="/images/logo-new.png" alt="OnDemand Monitor" className="odm-mgr-brand-mark" />
+            <img
+              src="/images/logo-new.png"
+              alt="OnDemand Monitor"
+              className="odm-mgr-brand-mark"
+            />
             <span className="odm-mgr-brand-name">
               <span className="odm-mgr-brand-primary">OnDemand</span>
               <span className="odm-mgr-brand-accent">Monitor</span>
@@ -164,7 +170,10 @@ export function ManagerLayout({
                   return (
                     <a
                       key={item.label}
-                      href={item.href || (item.route ? managerHref(item.route) : '#')}
+                      href={
+                        item.href ||
+                        (item.route ? managerHref(item.route) : '#')
+                      }
                       className={`odm-mgr-navi ${active ? 'is-active' : ''}`}
                       aria-current={active ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
@@ -181,7 +190,11 @@ export function ManagerLayout({
             ))}
           </div>
 
-          <div className="odm-mgr-user">
+          <a
+            href="#profile"
+            className="odm-mgr-user"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
             <span className="odm-mgr-avatar" aria-hidden="true">
               {initialsOf(user?.fullName)}
             </span>
@@ -191,7 +204,7 @@ export function ManagerLayout({
               </span>
               <span className="odm-mgr-user-email">{user?.email ?? ''}</span>
             </span>
-          </div>
+          </a>
           <LogoutButton className="odm-mgr-logout" />
         </nav>
 
@@ -217,9 +230,18 @@ export function ManagerLayout({
             <div className="odm-mgr-breadcrumb">{breadcrumb}</div>
             <div className="odm-mgr-topbar-spacer" />
             <a
-              href="#portal/staff/support"
+              href="#portal/manager/support"
               className="odm-btn odm-btn-gh"
-              style={{ fontSize: 13, textDecoration: 'none', padding: '6px 12px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 8 }}
+              style={{
+                fontSize: 13,
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: 8,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                marginRight: 8,
+              }}
             >
               🎧 Support Center
             </a>

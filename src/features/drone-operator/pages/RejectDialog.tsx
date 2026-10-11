@@ -22,7 +22,6 @@ export function RejectDialog({
   // is open (reasons are re-translated, so re-pick the first one by default).
   useEffect(() => {
     if (!t.reasons.includes(reason)) setReason(t.reasons[0])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t.reasons])
 
   return (

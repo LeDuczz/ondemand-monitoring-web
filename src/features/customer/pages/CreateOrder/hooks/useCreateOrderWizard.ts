@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
 import {
   buildConsultationRequestContext,
-  buildInitialConsultationMessage,
   isReusableConsultation,
 } from '../../../lib/createOrder/consultation'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
@@ -15,9 +14,9 @@ import { useCreateOrderForm } from './useCreateOrderForm'
 import { useCreateOrderMeta } from './useCreateOrderMeta'
 import { useDraftPersistence } from './useDraftPersistence'
 import { useRecommendedService } from './useRecommendedService'
-import { useSimulationMap } from './useSimulationMap'
 import { useSubmitOrder } from './useSubmitOrder'
 import { useWizard } from './useWizard'
+import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
 
 /** Wires every wizard hook together; the page only renders the result. */
 export function useCreateOrderWizard() {
@@ -25,25 +24,24 @@ export function useCreateOrderWizard() {
   const stored = useMemo(readStoredDraft, [])
   const f = useCreateOrderForm(stored)
   const { form, step } = f
-  const map = useSimulationMap(form)
-  const meta = useCreateOrderMeta(form.serviceId, f.aiAnalysisRequested, f.setForm)
+  const checklist = useOrderChecklist(form.serviceId)
+  const meta = useCreateOrderMeta(
+    form.serviceId,
+    f.aiAnalysisRequested,
+    f.setForm,
+  )
   const service = meta.services.find((s) => s.id === form.serviceId)
 
   const chat = useConsultation({
-    active: step === 2,
     initialConsultation: stored?.consultation ?? null,
     initialMessages: stored?.chatMessages ?? [],
     buildContext: (latestMessage) =>
       buildConsultationRequestContext({
         form,
         mapPoint: f.mapPoint,
+        services: meta.services,
         serviceName: service?.name,
         latestMessage,
-      }),
-    buildInitialMessage: () =>
-      buildInitialConsultationMessage({
-        form,
-        mapPoint: f.mapPoint,
       }),
     onReceive: (c) => f.applyConsultation(c, meta.services),
     onAiAnswer: f.setAiAnalysisRequested,
@@ -52,7 +50,9 @@ export function useCreateOrderWizard() {
   })
 
   useRecommendedService(chat.consultation, meta.services, (serviceId) => {
-    f.setForm((cur) => (cur.serviceId === serviceId ? cur : { ...cur, serviceId }))
+    f.setForm((cur) =>
+      cur.serviceId === serviceId ? cur : { ...cur, serviceId },
+    )
     f.setErrors((cur) => ({ ...cur, serviceId: undefined }))
   })
 
@@ -62,28 +62,35 @@ export function useCreateOrderWizard() {
     form,
     setErrors: f.setErrors,
     location: {
-      monitoringValid: map.monitoring.valid,
-      blockedZoneNames: map.restricted.blockedZones.map((z) => z.name),
+      monitoringValid: true,
+      blockedZoneNames: [],
     },
     messages: t.validation,
+    canAdvance: (current) => current !== 2 || checklist.valid,
   })
 
-  const score = useMemo(() => scoreRequest(form, t.scoreNotes), [form, t.scoreNotes])
+  const score = useMemo(
+    () => scoreRequest(form, t.scoreNotes),
+    [form, t.scoreNotes],
+  )
   const consultationId = isReusableConsultation(chat.consultation)
     ? chat.consultation.id
     : undefined
 
   const submit = useSubmitOrder({
-    validate: () => wizard.validate(4),
+    validate: () => wizard.validate(5) && checklist.valid,
+    onTemplateChanged: checklist.markStale,
     onError: f.setSubmitError,
-    buildPayload: () =>
-      buildOrderPayload({
+    buildPayload: () => ({
+      ...buildOrderPayload({
         form,
         score,
         consultationId,
         aiAnalysisRequested: f.aiAnalysisRequested,
         pricingEstimate: meta.pricingEstimate,
       }),
+      checklistItems: checklist.serialize(),
+    }),
   })
 
   useDraftPersistence(
@@ -100,8 +107,8 @@ export function useCreateOrderWizard() {
   )
 
   return {
+    checklist,
     f,
-    map,
     meta,
     chat,
     wizard,

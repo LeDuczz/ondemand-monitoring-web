@@ -3,6 +3,7 @@ export interface UploadedMissionMedia {
   missionId: string
   deviceId: string
   mediaType: string
+  status?: 'UPLOAD_PENDING' | 'UPLOADING' | 'VALIDATING' | 'RETRY_REQUIRED' | 'MANUAL_UPLOAD_REQUIRED' | 'PENDING_MANAGER_APPROVAL' | 'AVAILABLE' | 'REJECTED'
   fileName: string
   contentType: string
   fileSize: number
@@ -10,6 +11,13 @@ export interface UploadedMissionMedia {
   availableAt: string | null
   downloadUrl: string
   urlExpiresAt?: string
+  /** Capture provenance; null/undefined means unknown legacy source. */
+  sourceType?: string | null
+  sourceReferenceId?: string | null
+  sourceCapturedAt?: string | null
+  captureLatitude?: number | null
+  captureLongitude?: number | null
+  sourceDistanceMeters?: number | null
 }
 
 export interface UploadedMissionMediaPage {
@@ -20,6 +28,12 @@ export interface UploadedMissionMediaPage {
   first: boolean
   last: boolean
 }
+
+export type MissionMediaReviewStatus =
+  | 'DRAFT'
+  | 'PENDING_MANAGER_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
 
 export interface MissionMediaReader {
   list(

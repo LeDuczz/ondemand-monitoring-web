@@ -1,3 +1,4 @@
+import { Icon } from '../../../../../shared/components/Icon'
 import { useI18n } from '../../../../../shared/i18n'
 import { STEPS, type Step } from '../../../lib/createOrder/types'
 import { stepTabsMessages } from './StepTabs.messages'
@@ -12,7 +13,12 @@ type Props = {
 export function StepTabs({ step, labels, onSelect }: Props) {
   const { t } = useI18n(stepTabsMessages)
   return (
-    <nav className="co-tabs" aria-label={t.ariaLabel}>
+    <div className="co-steps">
+      {/* On phones the dots drop their titles, so the position is also written out. */}
+      <p className="co-steps-progress">
+        {t.progress(step, STEPS.length)} &middot; <strong>{labels[step]}</strong>
+      </p>
+      <nav className="co-tabs" aria-label={t.ariaLabel}>
       {STEPS.map((item) => {
         const state = item === step ? 'is-active' : item < step ? 'is-done' : ''
         return (
@@ -24,11 +30,21 @@ export function StepTabs({ step, labels, onSelect }: Props) {
             disabled={item > step}
             onClick={() => onSelect(item)}
           >
-            <span className="co-tab-num">{item}</span>
-            {labels[item]}
+            <span className="co-tab-num">
+              {item < step ? (
+                <Icon name="check" width={14} height={14} aria-hidden="true" />
+              ) : (
+                item
+              )}
+            </span>
+            <span className="co-tab-text">
+              <span className="co-tab-title">{labels[item]}</span>
+              <span className="co-tab-sub">{t.subtitles[item]}</span>
+            </span>
           </button>
         )
       })}
-    </nav>
+      </nav>
+    </div>
   )
 }

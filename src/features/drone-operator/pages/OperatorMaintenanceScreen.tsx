@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { formatTicketDescription, formatTicketTitle } from '../../manager/lib/ticketText'
 
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
@@ -8,6 +9,10 @@ import {
   type MaintenanceTicketDto,
 } from '../api/maintenanceTicketApi'
 import { operatorMaintenanceScreenMessages } from './OperatorMaintenanceScreen.messages'
+
+function maintenanceDeviceLabel(ticket: MaintenanceTicketDto) {
+  return ticket.deviceCode || ticket.droneCode || ticket.deviceId || 'DEVICE'
+}
 
 export function OperatorMaintenanceScreen() {
   const { t, locale } = useI18n(operatorMaintenanceScreenMessages)
@@ -76,7 +81,7 @@ export function OperatorMaintenanceScreen() {
       setSuccessMsg(
         t.resolveSuccess(
           selectedTicket.ticketCode,
-          selectedTicket.deviceId || '',
+          maintenanceDeviceLabel(selectedTicket),
           targetDroneStatus,
         ),
       )
@@ -375,7 +380,7 @@ export function OperatorMaintenanceScreen() {
                     color: '#0f172a',
                   }}
                 >
-                  {ticket.description || ticket.issueType || t.defaultIssue}
+                  {formatTicketTitle(ticket.description || ticket.issueType || t.defaultIssue)}
                 </h3>
 
                 <div
@@ -389,7 +394,7 @@ export function OperatorMaintenanceScreen() {
                 >
                   <div>
                     {t.droneLabel}{' '}
-                    <b>{ticket.deviceId || 'DEVICE'}</b>
+                    <b>{maintenanceDeviceLabel(ticket)}</b>
                   </div>
                   <div>
                     {t.technicianLabel}{' '}
@@ -541,10 +546,10 @@ export function OperatorMaintenanceScreen() {
                 {t.modalTicketPrefix}{' '}
                 <b className="odm-mono">{selectedTicket.ticketCode}</b> ·{' '}
                 {t.modalDronePrefix}{' '}
-                <b>{selectedTicket.deviceId || 'DEVICE'}</b>
+                <b>{maintenanceDeviceLabel(selectedTicket)}</b>
               </div>
-              <div style={{ color: '#64748b', marginTop: 2 }}>
-                {selectedTicket.description}
+              <div style={{ color: '#64748b', marginTop: 2, whiteSpace: 'pre-line' }}>
+                {formatTicketDescription(selectedTicket.description ?? '')}
               </div>
             </div>
 

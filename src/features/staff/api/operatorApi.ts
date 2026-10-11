@@ -15,10 +15,10 @@ interface ApiResponse<T> {
 }
 
 export const operatorApi = {
-  async getAvailable(): Promise<AvailableOperator[]> {
-    const response = await authenticatedFetch(
-      `${env.apiBaseUrl}/api/operators/available`,
-    )
+  async getAvailable(missionId?: string): Promise<AvailableOperator[]> {
+    const url = new URL(`${env.apiBaseUrl}/api/operators/available`)
+    if (missionId) url.searchParams.set('missionId', missionId)
+    const response = await authenticatedFetch(url.toString())
     const payload = (await response.json().catch(() => ({}))) as Partial<
       ApiResponse<AvailableOperator[]>
     >

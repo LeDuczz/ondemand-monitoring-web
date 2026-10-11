@@ -25,11 +25,9 @@ const controlBaseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
 
 const PENDING_CHECK_KEYS: [string, boolean][] = [
-  ['GAZEBO', true],
   ['PX4', true],
   ['MAVSDK', true],
   ['PX4_CONTROL', true],
-  ['LOCAL_POSITION', true],
   ['MAVSDK_HEALTH', true],
   ['BATTERY', true],
   ['LIDAR', false],
@@ -38,6 +36,8 @@ const PENDING_CHECK_KEYS: [string, boolean][] = [
   ['MEDIA', false],
   ['MODULES', false],
 ]
+
+const HIDDEN_CHECK_KEYS = new Set(['GAZEBO', 'LOCAL_POSITION'])
 
 function statusColor(status: PreflightItemStatus) {
   if (status === 'PASS') return '#4ade80'
@@ -108,11 +108,27 @@ export default function RuntimePreflightCheck({
     }
   }
 
-  const checks = status?.checks?.length ? status.checks : pendingChecks
-  const progress = status?.progress ?? 0
-  const ready = status?.status === 'READY'
-  const failed = status?.status === 'FAILED'
-  const okEnabled = ready && displayProgress >= 100
+  const checks = (status?.checks?.length ? status.checks : pendingChecks).filter(
+    (item) => !HIDDEN_CHECK_KEYS.has(item.key),
+  )
+  const passedCount = checks.filter((item) => item.status === 'PASS').length
+  const failedCount = checks.filter((item) => item.status === 'FAIL').length
+  const finishedCount = checks.filter((item) =>
+    ['PASS', 'WARN', 'FAIL'].includes(item.status),
+  ).length
+  const allVisiblePassed =
+    checks.length > 0 && passedCount === checks.length && failedCount === 0
+  const effectiveStatus: PreflightOverallStatus = allVisiblePassed
+    ? 'READY'
+    : failedCount > 0
+      ? 'FAILED'
+      : status?.status ?? 'CHECKING'
+  const progress = allVisiblePassed
+    ? 100
+    : status?.progress ?? Math.round((finishedCount / checks.length) * 100)
+  const ready = effectiveStatus === 'READY'
+  const failed = effectiveStatus === 'FAILED'
+  const okEnabled = ready
   const visibleReady = ready && displayProgress >= 100
   const visibleFailed = failed && displayProgress >= progress
   const criticalFailures = useMemo(

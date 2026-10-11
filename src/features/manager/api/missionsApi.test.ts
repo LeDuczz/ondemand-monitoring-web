@@ -15,27 +15,23 @@ import type { CreateMissionRequest } from '../types/missions'
 const validRequest: CreateMissionRequest = {
   scheduledStart: '2026-09-26T08:00:00+07:00',
   scheduledEnd: '2026-09-26T09:00:00+07:00',
-  flightPlan: {
-    planType: 'ORBIT',
-    centerLat: 10.77,
-    centerLon: 106.7,
-    radiusM: 200,
-    altitudeM: 60,
-    speedMs: 8,
-    estimatedDurationSec: 600,
-    generatedBy: 'SYSTEM',
-  },
-  waypoints: [{ seq: 1, action: 'TAKEOFF', lat: 10.77, lon: 106.7, altM: 0 }],
 }
 
 describe('Staff mission response mapping', () => {
   it('keeps unavailable schedule and assignment details unknown', () => {
     const item = toMissionCalendarItem({
-      id: 'mission-1', orderId: 'order-1', orderTitle: 'Survey',
-      missionCode: 'MS-001', status: 'SCHEDULED',
+      id: 'mission-1',
+      orderId: 'order-1',
+      orderTitle: 'Survey',
+      missionCode: 'MS-001',
+      status: 'SCHEDULED',
       scheduledStartAt: '2026-09-24T03:00:00Z',
-      droneId: 'drone-1', droneCode: 'DRN-001', operatorId: 'operator-1',
-      address: 'Site A', latitude: 10.5, longitude: 106.5,
+      droneId: 'drone-1',
+      droneCode: 'DRN-001',
+      operatorId: 'operator-1',
+      address: 'Site A',
+      latitude: 10.5,
+      longitude: 106.5,
     } as MissionResponse)
 
     expect(item.missionCode).toBe('MS-001')
@@ -60,7 +56,7 @@ describe('missionsApi (mock mode)', () => {
       validRequest,
     )
     expect(mission.missionCode).toBe('MSN-2609-0157-1')
-    expect(mission.flightPlan?.planType).toBe('ORBIT')
+    expect(mission.flightPlan).toBeNull()
     expect(mission.scheduledStartAt).toBe(validRequest.scheduledStart)
   })
 
@@ -240,5 +236,17 @@ describe('missionsApi.cancelMission', () => {
       reason: 'Thời tiết xấu',
     })
     expect(m.status).toBe('CANCELLED')
+  })
+})
+
+describe('mission staff assignment contract', () => {
+  it('assigns the selected flight operator as PILOT, not payload OPERATOR', async () => {
+    let submitted: unknown
+    setHttpTransport(async (_url, init) => {
+      submitted = JSON.parse(String(init?.body))
+      return Response.json({ success: true, data: { id: 'mission-1' } })
+    })
+    await missionsApi.assignOperator('mission-1', 'staff-1')
+    expect(submitted).toEqual({ staffId: 'staff-1', assignedRole: 'PILOT' })
   })
 })

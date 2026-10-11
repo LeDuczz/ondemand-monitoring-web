@@ -3,6 +3,11 @@ import type { SVGProps } from 'react'
 export type IconName =
   | 'arrow-up-right'
   | 'arrow-right'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'trash'
+  | 'edit'
+  | 'more'
   | 'check'
   | 'chevron-down'
   | 'activity'
@@ -43,6 +48,35 @@ type IconProps = SVGProps<SVGSVGElement> & { name: IconName }
 
 export function Icon({ name, ...props }: IconProps) {
   const paths: Record<IconName, React.ReactNode> = {
+    'arrow-up': (
+      <>
+        <path d="M12 19V5" />
+        <path d="m5 12 7-7 7 7" />
+      </>
+    ),
+    'arrow-down': (
+      <>
+        <path d="M12 5v14" />
+        <path d="m5 12 7 7 7-7" />
+      </>
+    ),
+    trash: (
+      <>
+        <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+      </>
+    ),
+    edit: (
+      <>
+        <path d="m16 3 5 5-12 12-6 1 1-6zM14 5l5 5" />
+      </>
+    ),
+    more: (
+      <>
+        <circle cx="12" cy="5" r="1" />
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="12" cy="19" r="1" />
+      </>
+    ),
     'arrow-up-right': (
       <>
         <path d="M7 17 17 7" />

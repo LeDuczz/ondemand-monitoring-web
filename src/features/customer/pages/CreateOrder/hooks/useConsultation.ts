@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { useI18n } from '../../../../../shared/i18n'
@@ -20,12 +20,9 @@ import { clearStoredDraft } from '../../../lib/createOrder/draftStorage'
 import { consultationHookMessages } from './useConsultation.messages'
 
 type Options = {
-  /** True while the consultation UI is visible (step 2); auto-starts a session. */
-  active: boolean
   initialConsultation: CustomerConsultation | null
   initialMessages: ConsultationMessage[]
   buildContext: (latestMessage: string) => string
-  buildInitialMessage?: () => string
   onReceive: (consultation: CustomerConsultation) => void
   onAiAnswer: (requested: boolean) => void
   onError: (message: string | null) => void
@@ -47,6 +44,7 @@ export function useConsultation(options: Options) {
   )
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const requestInFlight = useRef(false)
 
   const notice = (message: string) =>
     setMessages((cur) => [
@@ -69,7 +67,24 @@ export function useConsultation(options: Options) {
 
   function receive(next: CustomerConsultation) {
     setConsultation(next)
-    if (next.messages?.length) setMessages(next.messages)
+    if (next.messages?.length) {
+      const seen = new Set<string>()
+      const cleaned = next.messages.filter((message) => {
+        const key = `${message.senderType}:${message.message.trim()}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      setMessages(cleaned)
+    } else {
+      const fallback = next.recommendedServiceName
+        ? `Mình gợi ý dịch vụ ${next.recommendedServiceName} vì phù hợp với nhu cầu bạn vừa mô tả. Bạn kiểm tra thông tin bên phải rồi bổ sung mục tiêu hoặc kết quả cần nhận nếu cần.`
+        : 'Mình chưa đủ thông tin để chọn đúng dịch vụ. Bạn mô tả thêm đối tượng cần giám sát và mục tiêu chính muốn kiểm tra nhé.'
+      setMessages((current) => [
+        ...current,
+        { id: `local-ai-${Date.now()}`, senderType: 'ASSISTANT', message: fallback },
+      ])
+    }
     options.onReceive(next)
   }
 
@@ -93,25 +108,14 @@ export function useConsultation(options: Options) {
   }
 
   async function start() {
+    if (requestInFlight.current) return
     if (!authSession.getAccessToken()) return notice(t.loginRequired)
+    requestInFlight.current = true
     setBusy(true)
     try {
       const session = await withConsultationTimeout((s) => customerApi.startConsultation(s))
       setConsultation(session)
       setMessages(session.messages ?? [])
-      const initialMessage = options.buildInitialMessage?.().trim()
-      if (initialMessage && !(session.messages?.length)) {
-        setMessages([
-          { id: `local-${Date.now()}`, senderType: 'CUSTOMER', message: initialMessage },
-        ])
-        const seeded = await withConsultationTimeout((signal) =>
-          customerApi.sendConsultationMessage(session.id, initialMessage, {
-            signal,
-            requestContext: options.buildContext(initialMessage),
-          }),
-        )
-        receive(seeded)
-      }
       options.onError(null)
     } catch (error) {
       const message = t.startFailed(describe(error))
@@ -119,13 +123,16 @@ export function useConsultation(options: Options) {
       options.onError(message)
     } finally {
       setBusy(false)
+      requestInFlight.current = false
     }
   }
 
   async function send(override?: string) {
+    if (requestInFlight.current) return
     const body = (override ?? text).trim()
     if (!body) return
     if (!authSession.getAccessToken()) return notice(t.loginRequired)
+    requestInFlight.current = true
     const current = isReusableConsultation(consultation) ? consultation : null
     let activeId = current?.id
     setBusy(true)
@@ -161,20 +168,15 @@ export function useConsultation(options: Options) {
       }
     } finally {
       setBusy(false)
+      requestInFlight.current = false
     }
   }
-
-  useEffect(() => {
-    if (options.active && !isReusableConsultation(consultation) && !busy) {
-      void start()
-    }
-    // Only when the step becomes active, not on every busy/consultation change.
-  }, [options.active])
 
   function clear() {
     setConsultation(null)
     setMessages([])
     setText('')
+    clearStoredDraft()
     options.onReset()
   }
 

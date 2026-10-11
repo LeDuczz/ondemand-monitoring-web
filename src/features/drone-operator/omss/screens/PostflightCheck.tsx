@@ -165,8 +165,8 @@ export default function PostflightCheck({
               {t.title}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--text-2)', margin: 0 }}>
-              {t.physicalInspectionOf} <strong>{drone.id}</strong> —{' '}
-              {drone.name}
+              {t.physicalInspectionOf}{' '}
+              <strong>{drone.name || drone.id}</strong>
             </p>
             {telemetrySnapshot && (
               <p

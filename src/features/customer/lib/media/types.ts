@@ -5,6 +5,8 @@ export type CustomerMediaResponse = {
   deviceId?: string
   /** BE enum `MediaType`: IMAGE | VIDEO | STREAMING. */
   mediaType?: string
+  /** Null/undefined denotes unknown legacy capture provenance. */
+  sourceType?: string | null
   fileName?: string
   contentType?: string
   fileSize?: number

@@ -53,11 +53,6 @@ export function MissionExecutionPanel({
         resultStatus={matchingResult?.approvalStatus}
         resultNote={matchingResult?.reviewNote}
         refresh={refresh}
-        reviewMedia={async (mediaId, reject) => {
-          if (reject) await missionsApi.rejectMissionMedia(mission.id, mediaId)
-          else await missionsApi.approveMissionMedia(mission.id, mediaId)
-          refresh()
-        }}
       />
       {result.error ? (
         <p role="alert">

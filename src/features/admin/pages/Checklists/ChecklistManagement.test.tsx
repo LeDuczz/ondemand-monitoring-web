@@ -62,7 +62,7 @@ beforeEach(() => {
   vi.spyOn(checklistsApi, 'remove').mockResolvedValue(undefined)
   vi.spyOn(checklistsApi, 'reorder').mockResolvedValue([...rows].reverse())
   vi.spyOn(catalogApi, 'listServices').mockResolvedValue([
-    { id: 's', name: 'Dịch vụ test', isActive: true },
+    { id: 's', name: 'Dịch vụ test', basePrice: 3_200_000, isActive: true },
   ])
 })
 afterEach(() => {
@@ -312,7 +312,7 @@ describe('Admin service template', () => {
   })
   it('disables assignment to an inactive service', async () => {
     vi.mocked(catalogApi.listServices).mockResolvedValue([
-      { id: 's', name: 'Dịch vụ test', isActive: false },
+      { id: 's', name: 'Dịch vụ test', basePrice: 3_200_000, isActive: false },
     ])
     render(<ServiceChecklistPage serviceId="s" />)
     expect(
@@ -333,8 +333,8 @@ describe('Admin service template', () => {
   })
   it('routes the selector to the chosen service', async () => {
     vi.mocked(catalogApi.listServices).mockResolvedValue([
-      { id: 's', name: 'First', isActive: true },
-      { id: 'second', name: 'Second', isActive: true },
+      { id: 's', name: 'First', basePrice: 3_200_000, isActive: true },
+      { id: 'second', name: 'Second', basePrice: 4_000_000, isActive: true },
     ])
     render(<ServiceChecklistPage serviceId="s" />)
     await screen.findByText(definition.content)

@@ -6,6 +6,8 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { planningApi } from '../api/planningApi'
+import { financeApi } from '../../finance/api'
+import type { Quote } from '../../finance/types'
 import type {
   OrderAnalysis,
   OrderDetail,
@@ -122,7 +124,38 @@ const preview: OrderResourcePreview = {
   ],
 }
 
+const quote: Quote = {
+  id: 'quote',
+  orderId: order.id,
+  version: 1,
+  status: 'DRAFT',
+  packagePrice: 1000000,
+  additionalAmount: 0,
+  discountAmount: 0,
+  adjustmentAmount: 0,
+  totalAmount: 1000000,
+  managerNote: null,
+  approvedByName: null,
+  approvedAt: null,
+  acceptedAt: null,
+  items: [],
+}
+function mockPricing() {
+  vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
+    orderId: order.id,
+    orderCode: order.code,
+    customerName: 'Customer',
+    serviceName: order.serviceName,
+    basePackagePrice: 1000000,
+    checklistItems: [],
+    currentQuote: null,
+    quoteHistory: [],
+  })
+  vi.spyOn(financeApi, 'saveDraft').mockResolvedValue(quote)
+}
+
 function mockHappyPath(analysis: OrderAnalysis) {
+  mockPricing()
   vi.spyOn(ordersApi, 'getOrder').mockResolvedValue(order)
   vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(analysis)
   vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
@@ -171,14 +204,12 @@ describe('OrderReviewPage', () => {
   })
   it('approval stays in Order planning even when a legacy response contains a Mission identity', async () => {
     mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'approve').mockImplementation(async () => {
+    vi.spyOn(financeApi, 'approveQuote').mockImplementation(async () => {
       vi.mocked(ordersApi.getOrder).mockResolvedValue({
         ...order,
         status: 'APPROVED',
       })
-      return { missionId: 'legacy-mission' } as unknown as Awaited<
-        ReturnType<typeof ordersApi.approve>
-      >
+      return { ...quote, status: 'APPROVED' }
     })
     vi.spyOn(planningApi, 'getOrderMissions').mockResolvedValue([])
     vi.spyOn(planningApi, 'getExecutionPlan').mockResolvedValue({
@@ -199,9 +230,8 @@ describe('OrderReviewPage', () => {
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId={order.id} />)
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Duyệt & lên lịch' }),
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & tiếp tục' }))
     await screen.findByRole('heading', { name: 'Kế hoạch thực thi', level: 1 })
     expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
     expect(
@@ -267,6 +297,7 @@ describe('OrderReviewPage', () => {
   })
 
   it('cleans legacy raw JSON media labels before rendering', async () => {
+    mockPricing()
     vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
       ...order,
       mediaRequirements: [
@@ -344,23 +375,22 @@ describe('OrderReviewPage', () => {
     )
   })
 
-  it('requires confirmation before approving and entering inline Order planning', async () => {
+  it('approves the quote before entering inline Order planning', async () => {
     mockHappyPath(feasibleAnalysis)
     const approveSpy = vi
-      .spyOn(ordersApi, 'approve')
+      .spyOn(financeApi, 'approveQuote')
       .mockImplementation(async () => {
         mockApprovedPlanning()
-        return undefined
+        return { ...quote, status: 'APPROVED' }
       })
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Lê Quốc Bảo'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(approveSpy).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & tiếp tục' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
+    )
 
     expect(
       await screen.findByRole('heading', {
@@ -368,25 +398,24 @@ describe('OrderReviewPage', () => {
         level: 1,
       }),
     ).toBeInTheDocument()
-    expect(approveSpy).toHaveBeenCalledExactlyOnceWith(order.id)
+    expect(approveSpy).toHaveBeenCalledExactlyOnceWith(order.id, quote.id)
     expect(briefSpy).not.toHaveBeenCalled()
     expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
   })
 
   it('does not automatically dispatch a legacy Mission returned by approval', async () => {
     mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'approve').mockImplementation(async () => {
+    vi.spyOn(financeApi, 'approveQuote').mockImplementation(async () => {
       mockApprovedPlanning()
-      return { missionId: 'mission-real' } as unknown as Awaited<
-        ReturnType<typeof ordersApi.approve>
-      >
+      return { ...quote, status: 'APPROVED' }
     })
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & tiếp tục' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
+    )
     expect(
       await screen.findByRole('heading', {
         name: 'Kế hoạch thực thi',
@@ -425,6 +454,7 @@ describe('OrderReviewPage', () => {
   })
 
   it('renders an order without detail/analysis/resource-preview source without crashing, showing empty markers', async () => {
+    mockPricing()
     vi.spyOn(ordersApi, 'getOrder').mockResolvedValue(unsourcedOrder)
     vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(
       unsourcedAnalysis,
@@ -447,7 +477,7 @@ describe('OrderReviewPage', () => {
     expect(screen.getByText('Không có email')).toBeInTheDocument()
     // Action bar still renders — the page didn't crash on null fields.
     expect(
-      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     ).toBeInTheDocument()
   })
 
@@ -482,8 +512,6 @@ describe('OrderReviewPage', () => {
     expect(screen.getByRole('heading', { name: 'Orders' })).toBeInTheDocument()
     expect(screen.getByText('Review order')).toBeInTheDocument()
     expect(screen.getByText('Customer')).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Approve & schedule' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
   })
 })

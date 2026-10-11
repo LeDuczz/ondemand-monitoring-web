@@ -458,3 +458,236 @@
   padding: 10px;
   background: #fff;
 }
+
+/* ---------- Compact panel, round 2: bordered items, flat expanded body (no nested cards) ---------- */
+.mc-list {
+  gap: 8px;
+}
+.mc-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.mc-item.is-open {
+  background: #f8fbff;
+  border-color: #bfdbfe;
+  box-shadow: none;
+}
+.mc-row {
+  align-items: flex-start;
+  min-height: 52px;
+  padding: 10px 14px;
+}
+.mc-row .mc-mark,
+.mc-row .mc-chip,
+.mc-row .mc-caret {
+  margin-top: 2px;
+}
+.mc-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mc-title {
+  flex: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.mc-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+.mc-chip.is-pending {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.mc-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 14px 14px 48px;
+}
+.mc-detail .monitoring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.mc-detail .monitoring-item p {
+  margin: 0;
+  font-size: 12.5px;
+}
+.mc-detail .monitoring-item form {
+  align-self: stretch;
+  border: 1px solid #e2e8f0;
+}
+.mc-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+}
+.mc-link:hover {
+  text-decoration: underline;
+}
+.mc-updated {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+@media (max-width: 380px) {
+  .mc-detail {
+    padding-left: 14px;
+  }
+}
+
+.mc-item,
+.mc-detail,
+.mc-detail > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.mc-detail {
+  overflow: hidden;
+}
+
+/* ---------- Compact item: view mode (read-only fields) and edit mode (flat form) ---------- */
+.mc-item-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.mc-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin: 0;
+}
+.mc-fields > div {
+  min-width: 0;
+}
+.mc-fields > .is-wide {
+  grid-column: 1 / -1;
+}
+.mc-fields dt {
+  font-size: 11.5px;
+  color: #64748b;
+}
+.mc-fields dd {
+  margin: 1px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+.mc-fields dd.is-empty {
+  font-weight: 400;
+  color: #94a3b8;
+}
+.mc-edit {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 4px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #2563eb;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-edit:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+.mc-edit:focus-visible,
+.mc-cancel:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.mc-detail .monitoring-item form.mc-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.mc-form fieldset {
+  gap: 0;
+}
+.mc-form label {
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.mc-form select,
+.mc-form textarea {
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13.5px;
+  font-weight: 400;
+}
+.mc-form textarea {
+  height: auto;
+  min-height: 72px;
+  max-height: 120px;
+  padding: 8px 12px;
+  resize: vertical;
+}
+.mc-form .mc-help {
+  margin: -6px 0 12px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+.mc-form .mc-counter {
+  display: block;
+  margin: -8px 0 12px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  text-align: right;
+}
+.mc-form label .mc-counter {
+  margin: 0;
+}
+.mc-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.mc-form-actions .odm-btn {
+  min-height: 38px;
+  padding: 0 22px;
+}
+.mc-cancel {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: #64748b;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-cancel:hover {
+  color: #0f172a;
+}

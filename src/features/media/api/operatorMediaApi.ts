@@ -212,7 +212,7 @@ export const operatorMediaApi = {
       if (failure.status === 'RETRY_REQUIRED') {
         throw new RetryableTransferError(error instanceof Error ? error.message : 'Transfer failed')
       }
-      throw new Error('Upload thất bại. Task upload thủ công đã được tạo; bản gốc vẫn được giữ trên Flight Controller.')
+      throw new Error('Upload thất bại. Task upload thủ công đã được tạo; bản gốc vẫn được giữ trên Flight Controller.', { cause: error })
     }
     // An acknowledgement failure is not an S3 transfer failure. The object may
     // already be in S3 (and its ObjectCreated event may already be processing).

@@ -24,6 +24,7 @@ export function MediaCard({ item, onOpen }: Props) {
       type="button"
       className="md-card"
       aria-label={t.open(item.fileName)}
+      disabled={!item.url}
       onClick={() => onOpen(item)}
     >
       <span className="md-thumb">
@@ -35,7 +36,7 @@ export function MediaCard({ item, onOpen }: Props) {
         <span className={`md-kind md-kind--${item.kind}`}>
           {ui.kind[item.kind]}
         </span>
-        <span className="md-open-label">{t.view}</span>
+        <span className="md-open-label">{item.url ? t.view : t.locked}</span>
       </span>
       <span className="md-card-body">
         <span className="md-name">{item.fileName}</span>

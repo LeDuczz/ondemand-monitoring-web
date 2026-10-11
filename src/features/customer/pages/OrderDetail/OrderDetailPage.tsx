@@ -12,14 +12,20 @@ import { OrderInfoCard } from './components/OrderInfoCard'
 import { OrderTimeline } from './components/OrderTimeline'
 import { ReviewNotice } from './components/ReviewNotice'
 import { useOrderDetail } from './hooks/useOrderDetail'
+import { checklistMessages } from '../../lib/checklist/messages'
+import { getOrderStatusMeta } from '../../lib/orderStatus'
+import { CardTitle } from './components/CardTitle'
 import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnapshotCard'
 import { CustomerOrderMissionsSection } from '../../components/reports/CustomerOrderMissionsSection'
 import './OrderDetail.css'
 import { orderDetailPageMessages } from './OrderDetailPage.messages'
+import { CustomerFinancePanel } from '../../../finance/CustomerFinancePanel'
+import { CustomerDeliveryPanel } from '../../../delivery/CustomerDeliveryPanel'
 
 /** Customer order detail backed by `GET /api/orders/{id}`. */
 export function OrderDetailPage({ orderId }: { orderId: string }) {
-  const { t } = useI18n(orderDetailPageMessages)
+  const { t, lang } = useI18n(orderDetailPageMessages)
+  const { t: checklistT } = useI18n(checklistMessages)
   const detail = useOrderDetail(orderId)
   const { order } = detail
 
@@ -44,17 +50,23 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
         <div className="od-stack">
           <OrderInfoCard order={order} />
           <ChecklistSnapshotCard
+            title={<CardTitle icon="drone">{checklistT.title}</CardTitle>}
             items={order.checklistItems}
             snapshotAt={order.checklistSnapshotAt}
           />
+          <CustomerFinancePanel orderId={order.id} />
+          {['IN_PROGRESS', 'COMPLETED'].includes(order.status) ? (
+            <CustomerDeliveryPanel orderId={order.id} />
+          ) : null}
           <DeliverablesCard order={order} />
         </div>
         <div className="od-stack">
-          <OrderTimeline events={order.timeline} />
+          <OrderTimeline status={order.status} events={order.timeline} />
           <ContextAwareHelpWidget
             type="ORDER"
             id={order.code}
             status={order.status}
+            statusLabel={getOrderStatusMeta(order.status, lang).label}
             orderId={order.id}
           />
         </div>

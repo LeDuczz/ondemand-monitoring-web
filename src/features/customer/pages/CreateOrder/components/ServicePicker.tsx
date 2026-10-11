@@ -6,6 +6,10 @@ import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption } from '../../../api/customerApi'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { servicePickerMessages } from './ServicePicker.messages'
+import { formatMoney } from '../../../lib/createOrder/format'
+
+/** Services shown before "show more": two rows of the 3-column grid. */
+const SERVICE_LIMIT = 6
 
 type Props = {
   services: ServiceOption[]
@@ -24,8 +28,9 @@ export function ServicePicker({
   error,
   onSelect,
 }: Props) {
-  const { t, lang } = useI18n(servicePickerMessages)
+  const { t, lang, locale } = useI18n(servicePickerMessages)
   const [query, setQuery] = useState('')
+  const [expanded, setExpanded] = useState(false)
   const needle = query.trim().toLowerCase()
   const visible = needle
     ? services.filter((service) =>
@@ -34,6 +39,13 @@ export function ServicePicker({
           .includes(needle),
       )
     : services
+  // Searching, or a selection further down, keeps everything visible.
+  const selectedHidden =
+    !needle &&
+    visible.findIndex((service) => service.id === selectedId) >= SERVICE_LIMIT
+  const showAll = expanded || Boolean(needle) || selectedHidden
+  const shown = showAll ? visible : visible.slice(0, SERVICE_LIMIT)
+  const hiddenCount = visible.length - shown.length
 
   return (
     <Card
@@ -70,6 +82,7 @@ export function ServicePicker({
             <div className="co-service-desc">
               {suggested.description || t.defaultDescription}
             </div>
+            <strong>{formatMoney(suggested.basePrice, locale)}</strong>
             <button
               type="button"
               className="odm-btn odm-btn-sm"
@@ -92,7 +105,7 @@ export function ServicePicker({
         <p className="co-hint co-mt">{t.noMatch}</p>
       )}
       <div className="co-service-grid co-mt">
-        {visible.map((service) => {
+        {shown.map((service) => {
           const cls = [
             'co-service',
             selectedId === service.id ? 'is-active' : '',
@@ -141,11 +154,30 @@ export function ServicePicker({
               <span className="co-service-desc">
                 {service.description || t.defaultDescription}
               </span>
+              <strong>{formatMoney(service.basePrice, locale)}</strong>
             </button>
           )
         })}
       </div>
-      {error && <div className="ui-field-error">{error}</div>}
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          className="co-service-more"
+          onClick={() => setExpanded(true)}
+        >
+          {t.showMore(hiddenCount)}
+        </button>
+      )}
+      {showAll && !needle && !selectedHidden && visible.length > SERVICE_LIMIT && (
+        <button
+          type="button"
+          className="co-service-more"
+          onClick={() => setExpanded(false)}
+        >
+          {t.showLess}
+        </button>
+      )}
+      {error &&<div className="ui-field-error">{error}</div>}
     </Card>
   )
 }

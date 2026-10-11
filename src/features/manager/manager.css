@@ -5,7 +5,10 @@
  */
 
 .odm-mgr {
-  height: 100vh;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: auto;
   overflow: hidden;
   background: var(--bg);
 }
@@ -1719,6 +1722,116 @@
 
 @media (max-width: 767px) {
   .odm-or-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Order review page: every section (overview / review / operational) owns its
+   own grid. Columns inside a section flow independently, so a tall card never
+   creates blank rows in a sibling column or section. */
+.odm-or-review-page {
+  /* Shared right-column width so the column edges line up across sections. */
+  --odm-side-col: 400px;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.odm-or-review-page *,
+.odm-or-review-page *::before,
+.odm-or-review-page *::after {
+  box-sizing: border-box;
+}
+.odm-or-review-page .odm-or-grid > *,
+.odm-or-review-page .odm-or-review-top > *,
+.odm-or-review-section {
+  min-width: 0;
+}
+.odm-or-review-page .odm-or-card {
+  box-shadow: none;
+  overflow-wrap: anywhere;
+}
+.odm-or-review-page .odm-or-card-head {
+  min-height: 50px;
+  padding: 10px 16px;
+}
+.odm-or-review-page .odm-or-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.odm-or-review-page .odm-or-card-body {
+  padding: 12px 16px;
+}
+.odm-or-review-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 550px);
+  align-items: center;
+  gap: 24px;
+}
+.odm-or-review-page .odm-or-title {
+  font-size: 26px;
+}
+.odm-or-review-page .odm-or-step {
+  gap: 8px;
+  padding: 10px 8px;
+}
+.odm-or-review-page .odm-or-step-dot {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+}
+.odm-or-review-page .odm-or-step-label {
+  font-size: 12.5px;
+}
+.odm-or-review-page .odm-or-step-hint {
+  font-size: 11px;
+}
+.odm-or-review-summary,
+.odm-or-review-more {
+  grid-template-columns: minmax(0, 1fr) var(--odm-side-col);
+}
+/* Only the two overview cards are equal-height so their bottom edge is flush. */
+.odm-or-review-summary {
+  align-items: stretch;
+}
+.odm-or-review-more {
+  align-items: start;
+}
+.odm-or-review-more .odm-or-col {
+  align-self: start;
+}
+.odm-or-review-more .odm-or-card {
+  height: auto;
+  min-height: 0;
+}
+.odm-or-review-more .odm-or-empty {
+  min-height: 0;
+  padding-block: 12px;
+  font-size: 13px;
+}
+.odm-or-review-more .odm-or-map {
+  height: 320px;
+  min-height: 300px;
+  border-radius: 0 0 12px 12px;
+}
+.odm-or-review-more .odm-or-textarea {
+  min-height: 90px;
+  height: 100px;
+  max-height: 120px;
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .odm-or-review-page {
+    --odm-side-col: 340px;
+  }
+  .odm-or-review-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+    gap: 16px;
+  }
+}
+@media (max-width: 899px) {
+  .odm-or-review-top,
+  .odm-or-review-summary,
+  .odm-or-review-more {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -3521,12 +3634,28 @@ a.odm-or-btn-outline {
   gap: 8px;
 }
 
+.odm-or-review-section .odm-or-detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .odm-or-detail-metric {
-  min-height: 58px;
+  min-height: 52px;
   padding: 9px 10px;
   border: 1px solid var(--or-border);
   border-radius: 8px;
   background: var(--or-tile);
+}
+
+@media (max-width: 1199px) {
+  .odm-or-review-section .odm-or-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .odm-or-review-section .odm-or-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .odm-or-detail-metric span {
@@ -3548,6 +3677,49 @@ a.odm-or-btn-outline {
   margin: 10px 0 0;
   color: var(--or-tx2);
   font-size: 13px;
+  line-height: 1.45;
+}
+
+.odm-or-package-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.odm-or-package-summary span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid #cfe0ff;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #0f3f91;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.odm-or-addon-list {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: #fffbeb;
+}
+
+.odm-or-addon-list > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.odm-or-addon-list p {
+  margin: 0;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.45;
 }
 
@@ -3846,6 +4018,12 @@ a.odm-or-btn-outline {
 }
 
 .odm-or-md-grid > .odm-or-col {
+  min-width: 0;
+}
+
+.odm-or-order-review-stack {
+  display: grid;
+  gap: 16px;
   min-width: 0;
 }
 

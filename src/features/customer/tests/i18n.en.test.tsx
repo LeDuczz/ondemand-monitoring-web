@@ -160,8 +160,8 @@ const ROUTES: Route[] = [
   {
     name: 'CreateOrder',
     hash: '#portal/customer/orders/new',
-    vi: 'Địa chỉ/khu vực',
-    en: 'Address/area',
+    vi: 'Chọn dịch vụ giám sát',
+    en: 'Choose a monitoring service',
   },
   {
     name: 'Analysis',

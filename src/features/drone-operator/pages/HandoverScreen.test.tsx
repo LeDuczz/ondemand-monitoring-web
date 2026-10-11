@@ -64,7 +64,7 @@ describe('HandoverScreen', () => {
       postflightMissions: [],
       selectMission: vi.fn(),
     } as unknown as ReturnType<typeof useActiveMission>)
-    vi.spyOn(flightControlApi, 'bindSession').mockResolvedValue(undefined)
+    vi.spyOn(flightControlApi, 'bindSession').mockResolvedValue({ ok: true, missionId: 'mission-1', deviceId: 'drone-1' })
     vi.spyOn(missionApi, 'handoverMyMission').mockResolvedValue({} as never)
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
       canRespond: true,
@@ -112,7 +112,7 @@ describe('HandoverScreen', () => {
       postflightMissions: [],
       selectMission: vi.fn(),
     } as unknown as ReturnType<typeof useActiveMission>)
-    vi.spyOn(flightControlApi, 'bindSession').mockResolvedValue(undefined)
+    vi.spyOn(flightControlApi, 'bindSession').mockResolvedValue({ ok: true, missionId: 'mission-1', deviceId: 'drone-1' })
     vi.spyOn(missionApi, 'handoverMyMission').mockResolvedValue({} as never)
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
       canRespond: true,

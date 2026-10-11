@@ -244,15 +244,25 @@ describe('Order checklist state and editor', () => {
     expect(load).toHaveBeenCalledTimes(2)
   })
 
-  it('supports accessible select/edit/add/remove controls', async () => {
+  it('shows service defaults and supports remove, restore, edit and custom controls', async () => {
     vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
     function Editor() {
       return <ChecklistEditor checklist={useOrderChecklist('A')} />
     }
     render(<Editor />)
     await screen.findByLabelText('Nội dung giám sát 1')
-    fireEvent.click(screen.getByLabelText('Chọn nội dung 1'))
+    expect(
+      screen.getByText(/Thay đổi danh sách này có thể làm thay đổi chi phí/),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText(/Mặc định của dịch vụ/)).toHaveLength(2)
+    expect(screen.getByLabelText('Nội dung giám sát 1')).toHaveValue('First')
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Bỏ khỏi yêu cầu' })[0],
+    )
     expect(screen.getByLabelText('Nội dung giám sát 1')).toBeDisabled()
+    expect(screen.getByLabelText('Nội dung giám sát 1')).toHaveValue('First')
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm lại' }))
+    expect(screen.getByLabelText('Nội dung giám sát 1')).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: '+ Thêm nội dung' }))
     fireEvent.change(screen.getByLabelText('Nội dung giám sát 3'), {
       target: { value: 'Custom' },

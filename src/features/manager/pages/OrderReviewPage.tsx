@@ -8,6 +8,7 @@ import { InternalNoteCard } from '../components/orderReview/InternalNoteCard'
 import { OrderApprovalActions } from '../components/orderReview/OrderApprovalActions'
 import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachmentsCard'
 import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
+import { OrderCustomerRequestDetails } from '../components/orderReview/OrderCustomerRequestDetails'
 import { OrderLocationCard } from '../components/orderReview/OrderLocationCard'
 import { OrderServiceInfo } from '../components/orderReview/OrderServiceInfo'
 import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
@@ -21,6 +22,7 @@ import {
   orderReviewPageMessages,
   type OrderReviewMessages,
 } from './OrderReviewPage.messages'
+import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
 import '../manager.css'
 
 type PageMessages = OrderReviewMessages
@@ -102,16 +104,16 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   }
 
   return (
-    <div className="odm-or">
+    <div className="odm-or odm-or-review-page">
       {!showExecutionPlan && (
-        <div className="odm-or-pagehead">
-          <h1 className="odm-or-title">{t.pageTitle}</h1>
-          <p className="odm-or-subtitle">{t.pageSubtitle}</p>
+        <div className="odm-or-review-top">
+          <div className="odm-or-pagehead">
+            <h1 className="odm-or-title">{t.pageTitle}</h1>
+            <p className="odm-or-subtitle">{t.pageSubtitle}</p>
+          </div>
+          <OrderWorkflowStepper currentStep={1} />
         </div>
       )}
-
-      {!showExecutionPlan && <OrderWorkflowStepper currentStep={1} />}
-
       {showExecutionPlan && (
         <OrderMissionPlanningSection
           orderId={order.id}
@@ -119,31 +121,50 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
           onAssignResources={setAssigningMissionId}
         />
       )}
-
-      <div className="odm-or-grid">
+      <section className="odm-or-grid odm-or-review-summary">
         <div className="odm-or-col">
-          <OrderLocationCard order={order} t={t} />
           <OrderServiceInfo order={order} t={t} />
+        </div>
+        <div className="odm-or-col">
+          <OrderStatusCard order={order} t={t} locale={locale} />
+          <OrderCustomerCard order={order} t={t} />
+        </div>
+      </section>
+
+      <section className="odm-or-review-section">
+        <OrderCustomerRequestDetails order={order} t={t} />
+      </section>
+
+      <section className="odm-or-review-section">
+        <ManagerPricingPanel
+          orderId={order.id}
+          onApproved={handleApproved}
+          decisionActions={
+            !showExecutionPlan ? (
+              <OrderApprovalActions
+                orderId={order.id}
+                orderCode={order.code}
+                t={t}
+                onApproved={handleApproved}
+                onDecisionDone={() => setNavigateHome(true)}
+                showApprove={false}
+              />
+            ) : undefined
+          }
+        />
+      </section>
+
+      <section className="odm-or-grid odm-or-review-more">
+        <div className="odm-or-col odm-or-operational-left">
           <OrderChecklistCard order={order} t={t} />
           <OrderAttachmentsCard order={order} t={t} />
-        </div>
-        <div className="odm-or-col">
-          <OrderCustomerCard order={order} t={t} />
-          <OrderStatusCard order={order} t={t} locale={locale} />
-          <ResourceAvailabilityCard query={previewQuery} t={t} />
           <InternalNoteCard orderId={order.id} t={t} locale={locale} />
         </div>
-      </div>
-
-      {!showExecutionPlan && (
-        <OrderApprovalActions
-          orderId={order.id}
-          orderCode={order.code}
-          t={t}
-          onApproved={handleApproved}
-          onDecisionDone={() => setNavigateHome(true)}
-        />
-      )}
+        <div className="odm-or-col odm-or-operational-right">
+          <OrderLocationCard order={order} t={t} />
+          <ResourceAvailabilityCard query={previewQuery} t={t} />
+        </div>
+      </section>
     </div>
   )
 }

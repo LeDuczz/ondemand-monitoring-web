@@ -1,0 +1,93 @@
+import { act } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+
+import { resetMockDb } from '../../../../../mocks/db'
+import '../../../../../mocks/index'
+import { setLanguage } from '../../../../../shared/i18n'
+import { DateEcho, weekdayOf } from '../components/DateEcho'
+import { StepTabs } from '../components/StepTabs'
+import { CreateOrderPage } from '../CreateOrderPage'
+
+const labels = {
+  1: 'Dịch vụ & mục tiêu',
+  2: 'Nội dung giám sát',
+  3: 'Vị trí & vùng giám sát',
+  4: 'Thời gian',
+  5: 'Kết quả bàn giao & xác nhận',
+} as const
+
+beforeEach(() => resetMockDb())
+afterEach(() => {
+  resetMockDb()
+  act(() => setLanguage('vi'))
+})
+
+describe('StepTabs', () => {
+  it('exposes five steps with their full titles, the current one marked and later ones disabled', () => {
+    render(<StepTabs step={3} labels={labels} onSelect={() => {}} />)
+    const nav = screen.getByRole('navigation')
+    const tabs = within(nav).getAllByRole('button')
+    expect(tabs).toHaveLength(5)
+    // Full text is in the DOM (CSS wraps or hides it, never truncates), so the accessible names are complete.
+    expect(tabs[4].textContent).toContain('Kết quả bàn giao & xác nhận')
+    expect(within(nav).getByRole('button', { name: /Kết quả bàn giao & xác nhận/ })).toBeTruthy()
+    expect(tabs.map((tab) => tab.getAttribute('aria-current'))).toEqual([null, null, 'step', null, null])
+    expect(tabs.map((tab) => (tab as HTMLButtonElement).disabled)).toEqual([false, false, false, true, true])
+  })
+
+  it('lets finished steps be reopened but not later ones', () => {
+    const onSelect = vi.fn()
+    render(<StepTabs step={3} labels={labels} onSelect={onSelect} />)
+    const nav = screen.getByRole('navigation')
+    fireEvent.click(within(nav).getByRole('button', { name: /Nội dung giám sát/ }))
+    fireEvent.click(within(nav).getByRole('button', { name: /Thời gian/ }))
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith(2)
+  })
+
+  it('writes the position out as text for narrow screens', () => {
+    render(<StepTabs step={2} labels={labels} onSelect={() => {}} />)
+    expect(screen.getByText(/Bước 2 \/ 5/)).toBeTruthy()
+  })
+})
+
+describe('CreateOrderPage header', () => {
+  it('keeps Cancel as a link to the orders page', async () => {
+    render(<CreateOrderPage />)
+    await screen.findByText('Tạo yêu cầu giám sát')
+    const cancel = screen.getByRole('link', { name: 'Hủy' })
+    expect(cancel.getAttribute('href')).toContain('orders')
+    expect(cancel.className).toContain('odm-btn')
+  })
+
+  it('still asks for confirmation before leaving', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<CreateOrderPage />)
+    await screen.findByText('Tạo yêu cầu giám sát')
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    screen.getByRole('link', { name: 'Hủy' }).dispatchEvent(click)
+    expect(confirm).toHaveBeenCalled()
+    expect(click.defaultPrevented).toBe(true)
+    confirm.mockRestore()
+  })
+})
+
+describe('DateEcho', () => {
+  it('shows only the weekday, which the native date input does not show', () => {
+    const { container } = render(<DateEcho value="2026-11-12" />)
+    expect(container.textContent).toBe('Thứ Năm')
+    expect(container.textContent).not.toContain('12/11/2026')
+  })
+
+  it('follows the interface language', () => {
+    act(() => setLanguage('en'))
+    const { container } = render(<DateEcho value="2026-11-12" />)
+    expect(container.textContent).toBe('Thursday')
+  })
+
+  it('renders nothing for an empty or impossible date', () => {
+    expect(render(<DateEcho value="" />).container.textContent).toBe('')
+    expect(weekdayOf('2026-02-31', 'en')).toBe('')
+  })
+})

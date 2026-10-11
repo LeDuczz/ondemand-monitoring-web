@@ -47,6 +47,19 @@ const page = (items: UploadedMissionMedia[]) => ({
 })
 
 describe('uploaded mission media gallery', () => {
+  it('keeps AVAILABLE metadata visible without exposing an unreleased original', async () => {
+    vi.mocked(operatorMissionMediaApi.list).mockResolvedValue(
+      page([{ ...image, status: 'AVAILABLE', downloadUrl: null }]),
+    )
+    render(<MissionUploadedMedia missionId="mission" />)
+    await screen.findByText('capture.jpg')
+    expect(screen.getByText('Bản gốc chưa được bàn giao')).toBeInTheDocument()
+    const preview = screen.getByRole('button', { name: 'Xem capture.jpg' })
+    expect(preview).toBeDisabled()
+    fireEvent.click(preview)
+    expect(operatorMissionMediaApi.get).not.toHaveBeenCalled()
+    expect(document.querySelector('img')).toBeNull()
+  })
   it('refreshes media from a workspace revision without losing Mission identity', async () => {
     vi.mocked(operatorMissionMediaApi.list).mockResolvedValue(page([image]))
     const view = render(

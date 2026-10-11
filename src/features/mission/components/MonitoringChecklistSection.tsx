@@ -6,6 +6,7 @@ import type {
   ChecklistAssessmentStatus,
   MissionChecklistExecution,
   MissionChecklistResponse,
+  EvidenceCandidate,
 } from '../types/checklistExecution'
 import type { MissionResultApprovalStatus } from '../types/mission'
 import './MonitoringChecklistSection.css'
@@ -24,6 +25,18 @@ const assessments: Record<ChecklistAssessmentStatus, string> = {
   NOT_ASSESSED: 'Chưa đánh giá',
   COMPLIANT: 'Đạt yêu cầu',
   NON_COMPLIANT: 'Không đạt yêu cầu',
+}
+/** Time only for today, otherwise day/month + time. */
+function formatUpdated(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const time = date.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return date.toDateString() === new Date().toDateString()
+    ? time
+    : `${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} ${time}`
 }
 const terminal = (status: ChecklistExecutionStatus) =>
   status === 'COMPLETED' || status === 'UNABLE_TO_VERIFY'
@@ -87,7 +100,8 @@ export function MonitoringChecklistSection({
   refresh,
   canAttach = false,
   canDetach = false,
-  reviewMedia,
+  loadEvidenceCandidates,
+  attachEvidenceCandidate,
   compact = false,
   hideImplementationHints = false,
 }: {
@@ -103,7 +117,11 @@ export function MonitoringChecklistSection({
   refresh: () => void
   canAttach?: boolean
   canDetach?: boolean
-  reviewMedia?: (mediaId: string, reject: boolean) => Promise<unknown>
+  loadEvidenceCandidates?: (page: number) => Promise<EvidenceCandidate[]>
+  attachEvidenceCandidate?: (
+    media: EvidenceCandidate,
+    item: MissionChecklistExecution,
+  ) => Promise<unknown>
   /** Dense acceptance panel: one line per item, only the active item expands. */
   compact?: boolean
 }) {
@@ -228,12 +246,23 @@ export function MonitoringChecklistSection({
                           ? '!'
                           : index + 1}
                     </span>
-                    <span className="mc-title">{item.content}</span>
+                    <span className="mc-text">
+                      <span className="mc-title">{item.content}</span>
+                      <span className="mc-sub">
+                        {item.eligibleEvidenceCount ?? 0}/
+                        {item.executionStatus === 'UNABLE_TO_VERIFY'
+                          ? 0
+                          : (item.minimumEvidenceCount ?? 0)}{' '}
+                        bằng chứng
+                      </span>
+                    </span>
                     {tone === 'is-current' && (
                       <span className="mc-chip is-todo">Cần làm</span>
                     )}
                     {tone === 'is-missing' && (
-                      <span className="mc-chip is-todo">Thiếu bằng chứng</span>
+                      <span className="mc-chip is-pending">
+                        Thiếu bằng chứng
+                      </span>
                     )}
                     {tone === 'is-unable' && (
                       <span className="mc-chip is-danger">Không xác minh</span>
@@ -269,8 +298,15 @@ export function MonitoringChecklistSection({
                           !error
                         }
                         refresh={refresh}
-                        reviewMedia={reviewMedia}
+                        loadCandidates={loadEvidenceCandidates}
+                        attachCandidate={attachEvidenceCandidate}
+                        compact
                       />
+                      {item.updatedAt && (
+                        <small className="mc-updated">
+                          Cập nhật {formatUpdated(item.updatedAt)}
+                        </small>
+                      )}
                     </div>
                   )}
                 </li>
@@ -353,7 +389,7 @@ export function MonitoringChecklistSection({
                 {
                   {
                     DRAFT: 'Nháp — chưa gửi manager',
-                    PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
+                    PENDING_MANAGER_APPROVAL: 'Đã gửi manager',
                     APPROVED: 'Đã duyệt',
                     REJECTED:
                       'Bị từ chối — có thể chỉnh sửa và gửi lại khi có quyền',
@@ -411,7 +447,8 @@ export function MonitoringChecklistSection({
                   canDetach && resultKnown && !locked && !loading && !error
                 }
                 refresh={refresh}
-                reviewMedia={reviewMedia}
+                loadCandidates={loadEvidenceCandidates}
+                attachCandidate={attachEvidenceCandidate}
               />
             </li>
           ))}
@@ -493,6 +530,145 @@ function ChecklistExecutionItem({
       setBusy(false)
     }
   }
+  if (compact) {
+    return (
+      <div className="monitoring-item mc-item-body">
+        {error && <p role="alert">{error}</p>}
+        {!editing ? (
+          <>
+            <dl className="mc-fields">
+              <div>
+                <dt>Trạng thái</dt>
+                <dd>{statuses[item.executionStatus]}</dd>
+              </div>
+              <div>
+                <dt>Đánh giá</dt>
+                <dd>{assessments[item.assessmentStatus]}</dd>
+              </div>
+              <div className="is-wide">
+                <dt>Ghi chú</dt>
+                <dd className={item.observation ? undefined : 'is-empty'}>
+                  {item.observation || 'Chưa có ghi chú'}
+                </dd>
+              </div>
+              {item.unableToVerifyReason && (
+                <div className="is-wide">
+                  <dt>Lý do không thể xác minh</dt>
+                  <dd>{item.unableToVerifyReason}</dd>
+                </div>
+              )}
+            </dl>
+            {editable && (
+              <button
+                type="button"
+                className="mc-edit"
+                onClick={() => {
+                  reset()
+                  setEditing(true)
+                }}
+              >
+                Chỉnh sửa
+              </button>
+            )}
+          </>
+        ) : (
+          <form
+            className="mc-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void save()
+            }}
+          >
+            <fieldset disabled={!editable || busy}>
+              <label>
+                Trạng thái
+                <select
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value as ChecklistExecutionStatus)
+                    if (event.target.value !== 'UNABLE_TO_VERIFY') setReason('')
+                  }}
+                >
+                  {allowedExecutionStatuses(base.executionStatus, rejected).map(
+                    (value) => (
+                      <option key={value} value={value}>
+                        {statuses[value]}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <label>
+                Đánh giá
+                <select
+                  value={assessment}
+                  onChange={(event) =>
+                    setAssessment(
+                      event.target.value as ChecklistAssessmentStatus,
+                    )
+                  }
+                >
+                  {(
+                    Object.keys(assessments) as ChecklistAssessmentStatus[]
+                  ).map((value) => (
+                    <option key={value} value={value}>
+                      {assessments[value]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="mc-help">
+                ⓘ Đánh giá không đạt không tự động làm mission thất bại.
+              </p>
+              <label>
+                Ghi chú
+                <textarea
+                  maxLength={2000}
+                  placeholder="Thêm ghi chú nếu cần..."
+                  value={observation}
+                  onChange={(event) => setObservation(event.target.value)}
+                />
+              </label>
+              <small className="mc-counter">{observation.length} / 2000</small>
+              {status === 'UNABLE_TO_VERIFY' && (
+                <label>
+                  Lý do không thể xác minh
+                  <textarea
+                    aria-label="Lý do không thể xác minh"
+                    maxLength={1000}
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                  />
+                  <small className="mc-counter">{reason.length} / 1000</small>
+                </label>
+              )}
+              {conflict && (
+                <button type="button" className="odm-btn" onClick={reset}>
+                  Dùng dữ liệu mới (bỏ chỉnh sửa chưa lưu)
+                </button>
+              )}
+              <div className="mc-form-actions">
+                <button
+                  type="button"
+                  className="mc-cancel"
+                  onClick={() => setEditing(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="odm-btn odm-btn-p"
+                  type="submit"
+                  disabled={conflict || busy}
+                >
+                  Lưu
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        )}
+      </div>
+    )
+  }
   return (
     <div className="monitoring-item">
       {!compact && <h3>{item.content}</h3>}
@@ -525,7 +701,7 @@ function ChecklistExecutionItem({
           <strong>Lý do không thể xác minh:</strong> {item.unableToVerifyReason}
         </p>
       )}
-      {item.updatedAt && (
+      {!compact && item.updatedAt && (
         <small>
           Cập nhật: {new Date(item.updatedAt).toLocaleString('vi-VN')}
         </small>
@@ -534,7 +710,7 @@ function ChecklistExecutionItem({
       {editable && !editing && (
         <button
           type="button"
-          className="odm-btn"
+          className={compact ? 'mc-link' : 'odm-btn'}
           onClick={() => {
             reset()
             setEditing(true)

@@ -13,7 +13,7 @@ export type CustomerMediaResponse = {
   capturedAt?: string | null
   availableAt?: string | null
   /** Presigned, short-lived viewing URL. */
-  downloadUrl?: string
+  downloadUrl?: string | null
 }
 
 /** `CustomerMediaNotificationResponse`. */

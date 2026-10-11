@@ -83,6 +83,29 @@ export type OrderDetail = {
   mediaRequirements: OrderMediaRequirement[] | null
   purpose: string | null
   attachments: OrderAttachment[] | null
+  title?: string | null
+  description?: string | null
+  usagePurpose?: string | null
+  priority?: string | null
+  altitudeM?: number | null
+  estimatedLengthM?: number | null
+  siteContactName?: string | null
+  siteContactPhone?: string | null
+  accessNotes?: string | null
+  permitStatus?: string | null
+  permitNumber?: string | null
+  permitRequired?: boolean | null
+  permitZoneName?: string | null
+  recurrenceType?: string | null
+  recurrenceOccurrences?: number | null
+  weatherFallback?: string | null
+  resultDeadline?: string | null
+  resultFormats?: string[] | null
+  deliveryMethods?: string[] | null
+  dataRetentionDays?: number | null
+  termsAcceptedAt?: string | null
+  termsVersion?: string | null
+  deliverables?: OrderDeliverableResponse[] | null
 }
 
 export type FindingCustomerAction = 'ACCEPTED' | 'IGNORED' | 'AUTO_FIXED' | null
@@ -192,10 +215,23 @@ export type OrderCreateResponse = {
   orderCode?: string | null
   customerId: string
   customerName: string
+  customerEmail?: string | null
   title: string
   serviceId: string
   serviceName: string
+  serviceBasePriceSnapshot?: number | string | null
   description: string
+  usagePurpose?: string | null
+  priority?: string | null
+  altitudeM?: number | null
+  estimatedLengthM?: number | null
+  siteContactName?: string | null
+  siteContactPhone?: string | null
+  accessNotes?: string | null
+  permitStatus?: string | null
+  permitNumber?: string | null
+  permitRequired?: boolean | null
+  permitZoneName?: string | null
   address: string
   longitude: number
   latitude: number
@@ -205,6 +241,15 @@ export type OrderCreateResponse = {
   preferredDateTo: string
   preferredTimeId: string
   preferredTimeName: string
+  recurrenceType?: string | null
+  recurrenceOccurrences?: number | null
+  weatherFallback?: string | null
+  resultDeadline?: string | null
+  resultFormats?: string[] | null
+  deliveryMethods?: string[] | null
+  dataRetentionDays?: number | null
+  termsAcceptedAt?: string | null
+  termsVersion?: string | null
   orderStatus: OrderStatus
   rejectReason: string | null
   reviewById: string | null

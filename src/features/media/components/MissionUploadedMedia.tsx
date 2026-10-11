@@ -137,7 +137,13 @@ function Gallery({
     setError(null)
     try {
       const fresh = await reader.get(missionId, item.mediaId, abort.signal)
-      if (!abort.signal.aborted) setSelected(fresh)
+      if (!abort.signal.aborted) {
+        if (fresh.downloadUrl) setSelected(fresh)
+        else
+          setError(
+            'Bản gốc chưa được bàn giao. Vui lòng xem bản xem trước đã phát hành.',
+          )
+      }
     } catch {
       if (!abort.signal.aborted)
         setError('Không thể mở ảnh/video của Mission này. Vui lòng thử lại.')
@@ -244,11 +250,15 @@ function Gallery({
                   <button
                     type="button"
                     className="mission-media__preview"
-                    disabled={opening}
+                    disabled={opening || !item.downloadUrl}
                     aria-label={`Xem ${item.fileName}`}
                     onClick={() => void open(item)}
                   >
-                    {item.mediaType === 'IMAGE' ? (
+                    {!item.downloadUrl ? (
+                      <span className="mission-media__video-placeholder">
+                        Bản gốc chưa được bàn giao
+                      </span>
+                    ) : item.mediaType === 'IMAGE' ? (
                       <img src={item.downloadUrl} alt="" loading="lazy" />
                     ) : (
                       <span className="mission-media__video-placeholder">
@@ -272,11 +282,15 @@ function Gallery({
                                 ? 'Ảnh'
                                 : 'Video'}
                     </span>
-                    <span className="mission-media__open-label">Xem media</span>
+                    <span className="mission-media__open-label">
+                      {item.downloadUrl ? 'Xem media' : 'Chờ bàn giao'}
+                    </span>
                   </button>
                   <div className="mission-media__card-body">
                     <h4 title={item.fileName}>{item.fileName}</h4>
-                    {approveMedia && (
+                    {approveMedia &&
+                    (!item.status ||
+                      item.status === 'PENDING_MANAGER_APPROVAL') ? (
                       <button
                         type="button"
                         className="odm-btn"
@@ -291,7 +305,13 @@ function Gallery({
                             ? 'Đang duyệt media…'
                             : 'Duyệt media cho khách hàng'}
                       </button>
-                    )}
+                    ) : null}
+                    {item.status === 'AVAILABLE' ||
+                    approved.includes(item.mediaId) ? (
+                      <span className="mission-media__review-badge mission-media__review-badge--approved is-compact">
+                        Media đã duyệt
+                      </span>
+                    ) : null}
                     {reviewStatus ? (
                       <ReviewStatusBadge status={reviewStatus} compact />
                     ) : null}
@@ -367,7 +387,7 @@ function Gallery({
           aria-label="Xem media"
           className="mission-media__dialog"
         >
-          {selected ? (
+          {selected?.downloadUrl ? (
             <>
               <header className="mission-media__dialog-header">
                 <div>

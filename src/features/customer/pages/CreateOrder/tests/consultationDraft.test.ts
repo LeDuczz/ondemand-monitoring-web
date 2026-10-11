@@ -14,6 +14,7 @@ const service: ServiceOption = {
   id: 'svc-building',
   name: 'Giám sát Tòa nhà / Cơ sở hạ tầng',
   description: 'Giám sát công trình',
+  basePrice: 3_200_000,
 }
 
 const consultation: CustomerConsultation = {
@@ -97,6 +98,7 @@ describe('buildDraftFromConsultation', () => {
       id: 'svc-dam',
       name: 'Giám sát Đập nước / Hồ chứa',
       description: '',
+      basePrice: 4_500_000,
     })
 
     expect(draft.title).toBe('Giám sát Đập nước / Hồ chứa')
@@ -118,6 +120,7 @@ describe('findRecommendedService', () => {
         id: 'svc-progress',
         name: 'Giám sát Tiến độ Xây dựng',
         description: 'Theo dõi tiến độ thi công',
+        basePrice: 3_200_000,
       },
     ]
 

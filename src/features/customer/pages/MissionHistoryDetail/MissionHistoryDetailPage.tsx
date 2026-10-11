@@ -4,6 +4,7 @@ import {
 } from '../../../../shared/components/odm/StateView'
 import { PageHeader } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
+import { CustomerDeliveryPanel } from '../../../delivery/CustomerDeliveryPanel'
 import { MissionStatusBadge } from '../../components/common/MissionStatusBadge'
 import { customerHref } from '../../routes'
 import { MissionInfoCard } from './components/MissionInfoCard'
@@ -57,6 +58,7 @@ function Detail({ missionId }: { missionId: string }) {
         missionId={mission.id}
         showMedia={false}
       />
+      <CustomerDeliveryPanel orderId={mission.orderId} />
       <MissionResults detail={detail} missionCode={mission.code} />
     </div>
   )

@@ -20,12 +20,14 @@ export function OrderApprovalActions({
   t,
   onApproved,
   onDecisionDone,
+  showApprove = true,
 }: {
   orderId: string
   orderCode: string
   t: OrderReviewMessages
   onApproved: (result: ApproveResult) => void
   onDecisionDone: () => void
+  showApprove?: boolean
 }) {
   const [modal, setModal] = useState<ModalKind>(null)
   const infoDisabled = !env.useMockApi && import.meta.env.MODE !== 'test'
@@ -58,7 +60,9 @@ export function OrderApprovalActions({
             <OrderIcon name="x" size={16} />
             {t.reject}
           </button>
-          <ApproveButton orderId={orderId} t={t} onApproved={onApproved} />
+          {showApprove ? (
+            <ApproveButton orderId={orderId} t={t} onApproved={onApproved} />
+          ) : null}
         </div>
       </div>
 

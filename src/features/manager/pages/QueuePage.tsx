@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
@@ -12,6 +14,16 @@ import '../manager.css'
 export function QueuePage() {
   const { t, locale } = useI18n(queuePageMessages)
   const query = useApiQuery((signal) => ordersApi.getQueue(signal), [])
+
+  useEffect(() => {
+    const refresh = () => query.reload()
+    window.addEventListener('focus', refresh)
+    const interval = window.setInterval(refresh, 15_000)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      window.clearInterval(interval)
+    }
+  }, [query.reload])
 
   if (query.loading) return <QueueSkeleton />
 

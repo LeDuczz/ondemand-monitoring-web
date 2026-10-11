@@ -10,6 +10,9 @@ import { missionStatusTone } from '../../../shared/lib/statusTone'
 import type { MissionStatus } from '../../../shared/types/domain'
 import { missionsApi } from '../api/missionsApi'
 import { assignmentReadiness } from '../lib/assignmentReadiness'
+import { deliveryApi } from '../../delivery/api'
+import type { DeliveryStatus as WorkflowDeliveryStatus } from '../../delivery/types'
+import { ordersApi } from '../api/ordersApi'
 import { formatOrderCode } from '../components/orderReview/format'
 import {
   STAFF_RESPONSE_LABELS,
@@ -29,7 +32,11 @@ import '../manager.css'
 
 type StatusChip = 'ALL' | MissionStatus
 type DeliveryStatus =
-  MissionResultApprovalStatus | 'NO_RESULT' | 'NOT_READY' | 'LOADING'
+  | WorkflowDeliveryStatus
+  | MissionResultApprovalStatus
+  | 'NO_RESULT'
+  | 'NOT_READY'
+  | 'LOADING'
 
 type PageMessages = (typeof missionsListPageMessages)['vi']
 
@@ -69,14 +76,32 @@ function deliveryTone(
   if (status === 'APPROVED') return 'green'
   if (status === 'PENDING_MANAGER_APPROVAL') return 'blue'
   if (status === 'REJECTED') return 'red'
+  if (status === 'DELIVERED') return 'green'
+  if (status === 'REVISION_REQUESTED') return 'red'
+  if (
+    ['CUSTOMER_REVIEW', 'FINAL_PAYMENT_PENDING', 'READY_FOR_DELIVERY'].includes(
+      status,
+    )
+  )
+    return 'blue'
   return 'gray'
 }
 
 function deliveryLabel(status: DeliveryStatus, t: PageMessages) {
-  if (status === 'APPROVED') return t.deliveryStatus.delivered
-  if (status === 'PENDING_MANAGER_APPROVAL') return t.deliveryStatus.pending
-  if (status === 'REJECTED') return t.deliveryStatus.rejected
-  if (status === 'NO_RESULT') return t.deliveryStatus.noResult
+  if (status === 'APPROVED') return 'Kết quả đã duyệt'
+  if (status === 'PENDING_MANAGER_APPROVAL') return 'Kết quả chờ duyệt'
+  if (status === 'REJECTED') return 'Kết quả bị từ chối'
+  if (status === 'NO_RESULT') return 'Chưa có kết quả'
+  if (status === 'PROCESSING') return t.deliveryStatus.processing
+  if (status === 'READY_FOR_MANAGER_REVIEW')
+    return t.deliveryStatus.readyForPreview
+  if (status === 'CUSTOMER_REVIEW') return t.deliveryStatus.customerReview
+  if (status === 'REVISION_REQUESTED') return t.deliveryStatus.revisionRequested
+  if (status === 'FINAL_PAYMENT_PENDING')
+    return t.deliveryStatus.finalPaymentPending
+  if (status === 'PAYMENT_CONFIRMED' || status === 'READY_FOR_DELIVERY')
+    return t.deliveryStatus.readyForDelivery
+  if (status === 'DELIVERED') return t.deliveryStatus.delivered
   if (status === 'LOADING') return t.deliveryStatus.loading
   return t.deliveryStatus.none
 }
@@ -304,9 +329,48 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
       }),
     [statusFilter],
   )
-  const missions = useMemo(() => query.data?.items ?? [], [query.data])
+  const approvedOrdersQuery = useApiQuery(
+    (signal) => ordersApi.getApproved(signal),
+    [],
+  )
+
+  const missions = useMemo(() => query.data?.items ?? [], [query.data?.items])
+  const approvedOrders = useMemo(
+    () => approvedOrdersQuery.data ?? [],
+    [approvedOrdersQuery.data],
+  )
+  const setupOrders = approvedOrders
+  const showApprovedOrders =
+    statusFilter === 'ALL' || statusFilter === 'CREATED'
   const selected =
     missions.find((mission) => mission.id === selectedMission) ?? null
+  const [orderDeliveryStatuses, setOrderDeliveryStatuses] = useState<
+    Record<string, WorkflowDeliveryStatus>
+  >({})
+  useEffect(() => {
+    let cancelled = false
+    const orderIds = [...new Set(missions.map((m) => m.orderId))]
+    void Promise.allSettled(
+      orderIds.map(
+        async (orderId) =>
+          [
+            orderId,
+            (await deliveryApi.managerGet(orderId)).deliveryStatus,
+          ] as const,
+      ),
+    ).then((results) => {
+      if (cancelled) return
+      const next: Record<string, WorkflowDeliveryStatus> = {}
+      results.forEach((result) => {
+        if (result.status === 'fulfilled')
+          next[result.value[0]] = result.value[1]
+      })
+      setOrderDeliveryStatuses(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [missions])
 
   useEffect(() => {
     const completed = missions.filter(
@@ -332,7 +396,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
           const result = await missionsApi.getMissionResult(mission.id)
           return [mission.id, result?.approvalStatus ?? 'NO_RESULT'] as const
         } catch {
-          return [mission.id, 'NO_RESULT'] as const
+          return [mission.id, 'NOT_READY'] as const
         }
       }),
     ).then((results) => {
@@ -400,6 +464,22 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
           </button>
         ))}
       </div>
+
+      {showApprovedOrders && setupOrders.length > 0 && (
+        <section className="odm-card" aria-label={t.approvedOrders.title}>
+          <h2>{t.approvedOrders.title}</h2>
+          {setupOrders.map((order) => (
+            <a
+              key={order.id}
+              className="odm-btn"
+              href={managerHref({ screen: 'orderReview', orderId: order.id })}
+            >
+              {formatOrderCode(order.orderCode ?? order.id)} ·{' '}
+              {t.approvedOrders.action}
+            </a>
+          ))}
+        </section>
+      )}
 
       <div
         className={`odm-or-list-layout${selectedMission ? ' has-panel' : ''}`}
@@ -522,6 +602,14 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                               t,
                             )}
                           </StatusBadge>
+                          {orderDeliveryStatuses[m.orderId] && (
+                            <small className="odm-mission-meta">
+                              {deliveryLabel(
+                                orderDeliveryStatuses[m.orderId],
+                                t,
+                              )}
+                            </small>
+                          )}
                         </td>
                         <td className="odm-or-table-action">
                           <a

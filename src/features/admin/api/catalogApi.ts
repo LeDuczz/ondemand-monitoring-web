@@ -5,6 +5,7 @@ export type ServiceResponse = {
   id: string
   name: string
   description?: string
+  basePrice: number
   imageUrl?: string | null
   isActive: boolean
   createdAt?: string
@@ -15,6 +16,7 @@ export type ServiceResponse = {
 export type ServiceRequest = {
   name: string
   description?: string
+  basePrice: number
   isActive?: boolean
 }
 

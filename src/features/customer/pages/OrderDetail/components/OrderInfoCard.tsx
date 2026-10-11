@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
@@ -17,16 +15,14 @@ function Field({
   icon,
   label,
   value,
-  mono,
+  num,
   wide,
-  action,
 }: {
   icon: OrderIconName
   label: string
   value: string
-  mono?: boolean
+  num?: boolean
   wide?: boolean
-  action?: React.ReactNode
 }) {
   return (
     <div className={wide ? 'od-field is-wide' : 'od-field'}>
@@ -35,30 +31,9 @@ function Field({
       </span>
       <div className="od-field-body">
         <dt>{label}</dt>
-        <dd className={mono ? 'od-mono' : undefined}>
-          <span>{value}</span>
-          {action}
-        </dd>
+        <dd className={num ? 'od-num' : undefined}>{value}</dd>
       </div>
     </div>
-  )
-}
-
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false)
-  const copy = () => {
-    try {
-      void navigator.clipboard?.writeText(value)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // Clipboard may be unavailable (insecure context); the id stays selectable.
-    }
-  }
-  return (
-    <button type="button" className="od-copy" onClick={copy} aria-label={label} title={label}>
-      <OrderIcon name={copied ? 'check' : 'copy'} size={14} />
-    </button>
   )
 }
 
@@ -77,19 +52,6 @@ export function OrderInfoCard({ order }: { order: OrderDetailView }) {
     <Card title={<CardTitle icon="doc">{t.title}</CardTitle>}>
       <dl className="od-fields">
         <Field
-          icon="doc"
-          label={t.orderId}
-          value={order.code}
-          mono
-          wide
-          action={<CopyButton value={order.code} label={t.copyId} />}
-        />
-        <Field
-          icon="calendar"
-          label={t.createdAt}
-          value={order.createdAt ? fmtDateTime(order.createdAt, locale) : DASH}
-        />
-        <Field
           icon="stack"
           label={t.service}
           value={
@@ -98,14 +60,19 @@ export function OrderInfoCard({ order }: { order: OrderDetailView }) {
               : DASH
           }
         />
-        <Field icon="pin" label={t.address} value={order.address ?? DASH} wide />
-        <Field icon="locate" label={t.coordinates} value={coordinates} mono wide />
+        <Field
+          icon="calendar"
+          label={t.createdAt}
+          value={order.createdAt ? fmtDateTime(order.createdAt, locale) : DASH}
+        />
         <Field
           icon="calendar"
           label={t.schedule}
           value={[schedule, time].filter(Boolean).join(' · ') || DASH}
         />
-        <Field icon="target" label={t.radius} value={order.radiusM != null ? `${order.radiusM} m` : DASH} mono />
+        <Field icon="target" label={t.radius} value={order.radiusM != null ? `${order.radiusM} m` : DASH} num />
+        <Field icon="pin" label={t.address} value={order.address ?? DASH} wide />
+        <Field icon="locate" label={t.coordinates} value={coordinates} num wide />
       </dl>
       {order.description && (
         <div className="od-desc">

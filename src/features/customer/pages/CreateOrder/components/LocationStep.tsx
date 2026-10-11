@@ -9,8 +9,15 @@ import {
   hcmcServicePolygonLatLngs,
   isInsideHcmcServiceArea,
 } from '../../../../../shared/lib/serviceArea'
+import type { FlightAreaNearbyFeature } from '../../../api/customerApi'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import { useFlightAreaAssessment } from '../hooks/useFlightAreaAssessment'
+import { useRestrictedZoneOverlay, type RestrictedZoneOverlay } from '../hooks/useRestrictedZoneOverlay'
+import { FlightAreaAssessmentCard } from './FlightAreaAssessmentCard'
+import { flightAreaAssessmentCardMessages } from './FlightAreaAssessmentCard.messages'
+import { AirspaceNotice } from './AirspaceNotice'
 import { LocationPanel } from './LocationPanel'
+import { SiteDetailsPanel } from './SiteDetailsPanel'
 import { locationStepMessages } from './LocationStep.messages'
 
 type Props = {
@@ -31,18 +38,29 @@ type ApiResponse<T> = {
   data?: T
 }
 
-function RealLocationMap({ latitude, longitude, radiusM, label, onPick }: {
+function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, zones, features }: {
   latitude: string
   longitude: string
   radiusM: number
   label: string
+  labels: { street: string; satellite: string }
   onPick: (latitude: number, longitude: number) => void
+  /** Restricted zones with real coordinates (from the existing zones list). */
+  zones: RestrictedZoneOverlay[]
+  /** Only the few important OpenStreetMap features from the assessment, never every building. */
+  features: FlightAreaNearbyFeature[]
 }) {
+  const { t: legend } = useI18n(flightAreaAssessmentCardMessages)
+  const zoneLayer = useRef<L.LayerGroup | null>(null)
+  const featureLayer = useRef<L.LayerGroup | null>(null)
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const circle = useRef<L.Circle | null>(null)
   const marker = useRef<L.Marker | null>(null)
   const serviceArea = useRef<L.Polygon | null>(null)
+  const baseLayers = useRef<{ street: L.Layer; satellite: L.Layer } | null>(null)
+  const layersControl = useRef<L.Control.Layers | null>(null)
+  const [mapReady, setMapReady] = useState(false)
   const onPickRef = useRef(onPick)
   const [tilesFailed, setTilesFailed] = useState(false)
   const loadedTileCount = useRef(0)
@@ -105,16 +123,8 @@ function RealLocationMap({ latitude, longitude, radiusM, label, onPick }: {
       .on('tileload', markTileLoaded)
       .on('tileerror', (event: L.TileErrorEvent) => markTileFailed('Satellite', event))
 
-    L.control
-      .layers(
-        {
-          'Bản đồ': streetLayer,
-          'Vệ tinh': satelliteLayer,
-        },
-        undefined,
-        { position: 'topright', collapsed: false },
-      )
-      .addTo(instance)
+    baseLayers.current = { street: streetLayer, satellite: satelliteLayer }
+    setMapReady(true)
 
     serviceArea.current = L.polygon(hcmcServicePolygonLatLngs(), {
       color: '#16a34a',
@@ -138,8 +148,27 @@ function RealLocationMap({ latitude, longitude, radiusM, label, onPick }: {
       circle.current = null
       marker.current = null
       serviceArea.current = null
+      baseLayers.current = null
+      layersControl.current = null
+      setMapReady(false)
     }
   }, [])
+
+  // Re-create the layer switcher when the UI language changes so its labels follow it.
+  useEffect(() => {
+    if (!mapReady || !map.current || !baseLayers.current) return
+    layersControl.current?.remove()
+    layersControl.current = L.control
+      .layers(
+        {
+          [labels.street]: baseLayers.current.street,
+          [labels.satellite]: baseLayers.current.satellite,
+        },
+        undefined,
+        { position: 'topright', collapsed: false },
+      )
+      .addTo(map.current)
+  }, [mapReady, labels.street, labels.satellite])
 
   useEffect(() => {
     const lat = Number(latitude)
@@ -164,6 +193,44 @@ function RealLocationMap({ latitude, longitude, radiusM, label, onPick }: {
     map.current.setView(center, 16)
   }, [latitude, longitude, radiusM])
 
+  useEffect(() => {
+    if (!map.current) return
+    zoneLayer.current?.remove()
+    zoneLayer.current = L.layerGroup(
+      zones.map((zone) =>
+        L.polygon(zone.latLngs, {
+          color: '#dc2626',
+          fillColor: '#dc2626',
+          fillOpacity: 0.18,
+          weight: 2,
+          dashArray: '6 4',
+        }).bindTooltip(zone.name),
+      ),
+    ).addTo(map.current)
+  }, [zones])
+
+  useEffect(() => {
+    if (!map.current) return
+    featureLayer.current?.remove()
+    featureLayer.current = L.layerGroup(
+      features
+        .filter((item) => item.latitude != null && item.longitude != null)
+        .map((item) =>
+          L.circleMarker([item.latitude as number, item.longitude as number], {
+            radius: 6,
+            color: '#b45309',
+            fillColor: '#f59e0b',
+            fillOpacity: 0.9,
+            weight: 1.5,
+          }).bindTooltip(
+            [item.type, item.name, item.heightMeters != null ? `${item.heightMeters} m` : null]
+              .filter(Boolean)
+              .join(' · '),
+          ),
+        ),
+    ).addTo(map.current)
+  }, [features])
+
   const lat = Number(latitude)
   const lng = Number(longitude)
   const invalidCoordinates =
@@ -185,6 +252,11 @@ function RealLocationMap({ latitude, longitude, radiusM, label, onPick }: {
         role="application"
         aria-label={label}
       />
+      <div className="co-map-key" aria-label={legend.legendTitle}>
+        <span><i className="co-map-key-area" />{legend.legendArea}</span>
+        <span><i className="co-map-key-zone" />{legend.legendRestricted}</span>
+        <span><i className="co-map-key-point" />{legend.legendPoint}</span>
+      </div>
       {invalidCoordinates ? (
         <div className="co-real-map-notice">Vĩ độ phải từ -90 đến 90, kinh độ từ -180 đến 180.</div>
       ) : null}
@@ -201,6 +273,13 @@ export function LocationStep({ form, errors, update }: Props) {
   const [locatingAddress, setLocatingAddress] = useState(false)
   const [addressLookupError, setAddressLookupError] = useState<string | null>(null)
   const reverseLookupId = useRef(0)
+  const assessment = useFlightAreaAssessment({
+    latitude: form.latitude,
+    longitude: form.longitude,
+    radiusM: form.radiusM,
+    altitudeM: form.altitudeM,
+  })
+  const restrictedZones = useRestrictedZoneOverlay()
 
   async function locateAddress() {
     const query = form.address.trim()
@@ -287,24 +366,34 @@ export function LocationStep({ form, errors, update }: Props) {
 
   return (
     <div className="co-stack">
-      <div className="co-grid">
+      <div className="co-grid is-location">
+        <div className="co-location-left">
         <RealLocationMap
           latitude={form.latitude}
           longitude={form.longitude}
           radiusM={form.radiusM}
           label={t.mapLabel}
+          labels={{ street: t.layerStreet, satellite: t.layerSatellite }}
           onPick={(latitude, longitude) => {
             void updateAddressFromPoint(latitude, longitude)
           }}
+          zones={restrictedZones}
+          features={assessment.data?.osmContext.importantFeatures ?? []}
         />
-        <LocationPanel
-          form={form}
-          errors={errors}
-          update={update}
-          locatingAddress={locatingAddress}
-          addressLookupError={addressLookupError}
-          onLocateAddress={locateAddress}
-        />
+        <FlightAreaAssessmentCard state={assessment} requestedAltitudeAglM={form.altitudeM} />
+        </div>
+        <div className="co-stack">
+          <LocationPanel
+            form={form}
+            errors={errors}
+            update={update}
+            locatingAddress={locatingAddress}
+            addressLookupError={addressLookupError}
+            onLocateAddress={locateAddress}
+          />
+          <AirspaceNotice form={form} errors={errors} update={update} />
+          <SiteDetailsPanel form={form} errors={errors} update={update} />
+        </div>
       </div>
     </div>
   )

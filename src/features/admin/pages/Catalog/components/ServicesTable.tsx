@@ -4,6 +4,7 @@ import { fmtDateTime } from '../../../lib/accountStatus'
 import type { AdminService } from '../../../types/catalog'
 import { ServiceRowActions } from './ServiceRowActions'
 import { servicesTableMessages } from './ServicesTable.messages'
+import { formatVnd } from '../../../../../shared/lib/formatVnd'
 
 export function ServicesTable({
   items,
@@ -20,6 +21,7 @@ export function ServicesTable({
       <thead>
         <tr>
           <th>{t.service}</th>
+          <th>{t.basePrice}</th>
           <th>{t.status}</th>
           <th>{t.updated}</th>
           <th className="adm-text-right">{t.actions}</th>
@@ -44,6 +46,7 @@ export function ServicesTable({
                 </div>
               )}
             </td>
+            <td className="adm-cell-mono adm-strong">{formatVnd(s.basePrice)}</td>
             <td>
               <StatusBadge tone={s.isActive ? 'success' : 'neutral'}>
                 {s.isActive ? t.active : t.inactive}

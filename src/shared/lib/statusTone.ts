@@ -37,6 +37,7 @@ export const orderStatusTone: Record<OrderStatus, StatusTone> = {
 
 export const missionStatusTone: Record<MissionStatus, StatusTone> = {
   CREATED: 'gray', // brief: CREATED → gray
+  WAITING_DEPOSIT: 'yellow',
   // mapping by meaning: system is still matching drone/operator, nothing to
   // act on yet — closer to "waiting" than "in progress".
   RESOURCE_ASSIGNING: 'yellow',
@@ -140,6 +141,7 @@ export const orderStatusLabel: Record<OrderStatus, string> = {
 
 export const missionStatusLabel: Record<MissionStatus, string> = {
   CREATED: 'Mới tạo',
+  WAITING_DEPOSIT: 'Chờ thanh toán tiền cọc',
   RESOURCE_ASSIGNING: 'Đang gán nguồn lực',
   WAITING_CREW_CONFIRMATION: 'Chờ đội bay xác nhận',
   WAITING_OPERATOR_ACCEPTANCE: 'Chờ operator nhận',
@@ -243,6 +245,7 @@ export const orderStatusLabelEn: Record<OrderStatus, string> = {
 
 export const missionStatusLabelEn: Record<MissionStatus, string> = {
   CREATED: 'Created',
+  WAITING_DEPOSIT: 'Waiting for deposit',
   RESOURCE_ASSIGNING: 'Assigning resources',
   WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
   WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',

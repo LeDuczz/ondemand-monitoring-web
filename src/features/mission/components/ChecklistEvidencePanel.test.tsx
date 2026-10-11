@@ -90,7 +90,8 @@ describe('Checklist evidence', () => {
     expect(screen.getByAltText('capture.jpg')).toBeInTheDocument()
     expect(screen.getByText(/Camera drone/)).toBeInTheDocument()
     expect(screen.getByText('Bằng chứng hợp lệ: 1 / 1')).toBeInTheDocument()
-    expect(screen.getByText(/Duyệt media bắt buộc/)).toBeInTheDocument()
+    expect(screen.getByText('Chờ manager duyệt')).toBeInTheDocument()
+    expect(screen.queryByText(/Duyệt media bắt buộc/)).toBeNull()
   })
   it('attaches stable backend media id with expected execution version', async () => {
     vi.spyOn(checklistEvidenceApi, 'candidates').mockResolvedValue([candidate])
@@ -204,20 +205,12 @@ describe('Checklist evidence', () => {
       expect(screen.queryByText('Thêm bằng chứng từ media Mission')).toBeNull()
     },
   )
-  it('Manager media review remains a separate action', async () => {
-    const review = vi.fn().mockResolvedValue({})
+  it('does not expose per-media manager approval', () => {
     render(
-      <ChecklistEvidencePanel
-        {...props}
-        canAttach={false}
-        canDetach={false}
-        reviewMedia={review}
-      />,
+      <ChecklistEvidencePanel {...props} canAttach={false} canDetach={false} />,
     )
-    fireEvent.click(screen.getByText('Duyệt media'))
-    await waitFor(() =>
-      expect(review).toHaveBeenCalledWith('backend-media', false),
-    )
+    expect(screen.queryByText('Duyệt media')).toBeNull()
+    expect(screen.queryByText('Từ chối media')).toBeNull()
     expect(screen.queryByText('Duyệt kết quả')).toBeNull()
   })
 })

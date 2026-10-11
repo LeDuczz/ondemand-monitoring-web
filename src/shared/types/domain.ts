@@ -23,6 +23,7 @@ export type OrderStatus =
 
 export type MissionStatus =
   | 'CREATED'
+  | 'WAITING_DEPOSIT'
   | 'RESOURCE_ASSIGNING'
   | 'WAITING_CREW_CONFIRMATION'
   | 'WAITING_OPERATOR_ACCEPTANCE'

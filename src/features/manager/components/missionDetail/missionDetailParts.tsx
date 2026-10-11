@@ -13,6 +13,7 @@ import type {
   PreflightCheckItem,
   WeatherPreflightCheckResponse,
 } from '../../types/missions'
+import type { OrderDetail } from '../../types/orders'
 
 export function formatDateTime(
   value: string | null | undefined,
@@ -102,6 +103,7 @@ export function initialsOf(name: string): string {
 
 export type DetailData = {
   mission: MissionResponse | null
+  order: OrderDetail | null
   preflight: PersistedPreflightCheckResponse | null
   postcheck: PersistedPostDeviceCheckResponse | null
   result: MissionResultResponse | null

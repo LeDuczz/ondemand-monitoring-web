@@ -3,6 +3,11 @@ import { ApiError } from '../../../shared/api/httpClient'
 export function planningBlocker(code: string): string {
   const advice: Record<string, string> = {
     ORDER_NOT_APPROVED: 'Order chưa ở trạng thái cho phép chốt kế hoạch.',
+    INVOICE_NOT_PAYABLE:
+      'Khách hàng cần chấp nhận báo giá trước khi tạo Mission.',
+    FINAL_PAYMENT_REQUIRED:
+      'Khách hàng cần thanh toán đủ trước khi nhận bản gốc.',
+    DELIVERABLE_NOT_RELEASED: 'Bản gốc chưa được bàn giao cho khách hàng.',
     NO_EFFECTIVE_MISSIONS:
       'Thêm ít nhất một Mission vào kế hoạch trước khi chốt.',
     CHECKLIST_ASSIGNMENT_NOT_FINALIZED: 'Phân công checklist chưa được chốt.',

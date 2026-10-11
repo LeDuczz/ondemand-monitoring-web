@@ -96,6 +96,54 @@ describe('OrdersPage', () => {
     )
   })
 
+  it('keeps accessible names with decorative icons and a searchbox', async () => {
+    render(<OrdersPage />)
+    await screen.findByRole('table')
+    const create = screen.getByRole('link', { name: 'Tạo yêu cầu' })
+    expect(create.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    const views = within(screen.getByRole('table')).getAllByRole('link', { name: 'Xem chi tiết' })
+    expect(views).toHaveLength(9)
+    views.forEach((link) => expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true'))
+    expect(screen.getByRole('searchbox', { name: 'Tìm đơn hàng' })).toBeInTheDocument()
+  })
+
+  it('shows summary stats for the seeded orders and counts on chips without changing their names', async () => {
+    render(<OrdersPage />)
+    await screen.findByRole('table')
+    const stats = await waitFor(() => {
+      const el = document.querySelector('.ord-stats')
+      expect(el).not.toBeNull()
+      return el as HTMLElement
+    })
+    expect(within(stats).getByText('Tổng số đơn').nextElementSibling).toHaveTextContent('9')
+    expect(stats.querySelectorAll('.ui-stat')).toHaveLength(4)
+    expect(screen.getByRole('button', { name: 'Hoàn thành' }).querySelector('.ord-chip-count')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByRole('button', { name: 'Tất cả' }).querySelector('.ord-chip-count')).toHaveTextContent('9')
+  })
+
+  it('hides the pager nav on a single page and shows it with several pages', async () => {
+    render(<OrdersPage />)
+    await screen.findByRole('table')
+    expect(screen.getByText('Tổng 9 đơn')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sau' })).not.toBeInTheDocument()
+  })
+
+  it('shows a no-match title when a search finds nothing', async () => {
+    render(<OrdersPage />)
+    await screen.findByRole('table')
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm đơn hàng' }), { target: { value: 'không có đơn nào như vậy' } })
+    expect(screen.getByText('Không tìm thấy đơn phù hợp')).toBeInTheDocument()
+    expect(screen.queryByText('Chưa có đơn hàng')).not.toBeInTheDocument()
+  })
+
+  it('shows the pager nav with 25 orders', async () => {
+    vi.spyOn(customerApi, 'listMyOrders').mockResolvedValue(Array.from({ length: 25 }, (_, i) => makeOrder(i + 1)))
+    render(<OrdersPage />)
+    await screen.findByRole('table')
+    expect(screen.getByRole('button', { name: 'Trước' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sau' })).toBeEnabled()
+  })
+
   it('shows an error with retry and recovers', async () => {
     vi.spyOn(customerApi, 'listMyOrders').mockRejectedValueOnce(new Error('boom'))
     render(<OrdersPage />)

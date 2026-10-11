@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { OrderDetail } from '../../types/orders'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { ordersApi } from '../../api/ordersApi'
 import { planningApi } from '../../api/planningApi'
@@ -22,15 +23,18 @@ import { ApiError } from '../../../../shared/api/httpClient'
 
 export function OrderMissionPlanningSection({
   orderId,
+  initialOrder,
   onAssignResources,
 }: {
   orderId: string
+  initialOrder?: OrderDetail
   onAssignResources?: (missionId: string) => void
 }) {
   return (
     <OrderPlanningWorkspace
       key={orderId}
       orderId={orderId}
+      initialOrder={initialOrder}
       onAssignResources={onAssignResources}
     />
   )
@@ -38,20 +42,28 @@ export function OrderMissionPlanningSection({
 
 function OrderPlanningWorkspace({
   orderId,
+  initialOrder,
   onAssignResources,
 }: {
   orderId: string
+  initialOrder?: OrderDetail
   onAssignResources?: (missionId: string) => void
 }) {
   const { t } = useI18n(planningPresentationMessages)
   const confirmation = usePlanningConfirmation()
+  const initialOrderRef = useRef(
+    initialOrder?.id === orderId ? initialOrder : undefined,
+  )
   const query = useApiQuery(
     async (signal) => {
       const [plan, missions, order] = await Promise.all([
         planningApi.getExecutionPlan(orderId, signal),
         planningApi.getOrderMissions(orderId, signal),
-        ordersApi.getOrder(orderId, signal),
+        initialOrderRef.current ?? ordersApi.getOrder(orderId, signal),
       ])
+      // Reuse only the initial exact-Order read. Every later refresh remains authoritative.
+      // An aborted StrictMode/dependency request must not consume the initial snapshot.
+      if (!signal.aborted) initialOrderRef.current = undefined
       return { plan, missions, order }
     },
     [orderId],

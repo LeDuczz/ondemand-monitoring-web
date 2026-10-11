@@ -5,6 +5,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest'
 import { OrderMissionPlanningSection } from './OrderMissionPlanningSection'
 import { ordersApi } from '../../api/ordersApi'
@@ -58,6 +59,54 @@ function choose(id: string) {
     screen.getByRole('button', { name: new RegExp(`^${id.toUpperCase()}`) }),
   )
 }
+
+it('reuses only the initial Order snapshot and fetches authoritative Order on refresh', async () => {
+  render(
+    <OrderMissionPlanningSection
+      orderId="o"
+      initialOrder={
+        { id: 'o', status: 'APPROVED', checklistItems: items } as OrderDetail
+      }
+    />,
+  )
+  await screen.findByRole('button', { name: /^M1/ })
+  expect(ordersApi.getOrder).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Tải lại kế hoạch' }))
+  await waitFor(() => expect(ordersApi.getOrder).toHaveBeenCalledTimes(1))
+})
+
+it('never reuses an initial snapshot belonging to a sibling Order', async () => {
+  render(
+    <OrderMissionPlanningSection
+      orderId="o"
+      initialOrder={
+        {
+          id: 'foreign',
+          status: 'APPROVED',
+          checklistItems: [],
+        } as unknown as OrderDetail
+      }
+    />,
+  )
+  await screen.findByRole('button', { name: /^M1/ })
+  expect(ordersApi.getOrder).toHaveBeenCalledTimes(1)
+  expect(ordersApi.getOrder).toHaveBeenCalledWith('o', expect.any(AbortSignal))
+})
+
+it('does not consume the initial snapshot in an aborted StrictMode request', async () => {
+  render(
+    <StrictMode>
+      <OrderMissionPlanningSection
+        orderId="o"
+        initialOrder={
+          { id: 'o', status: 'APPROVED', checklistItems: items } as OrderDetail
+        }
+      />
+    </StrictMode>,
+  )
+  await screen.findByRole('button', { name: /^M1/ })
+  expect(ordersApi.getOrder).not.toHaveBeenCalled()
+})
 beforeEach(() => {
   missions = ['m1', 'm2'].map(
     (id) =>

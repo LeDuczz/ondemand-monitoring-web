@@ -157,6 +157,18 @@ afterEach(() => {
 })
 
 describe('OrderReviewPage', () => {
+  it('reuses the initial exact Order read when the planning workspace mounts', async () => {
+    mockHappyPath(feasibleAnalysis)
+    mockApprovedPlanning()
+    render(<OrderReviewPage orderId={order.id} />)
+    await waitFor(() =>
+      expect(planningApi.getExecutionPlan).toHaveBeenCalledTimes(1),
+    )
+    await waitFor(() =>
+      expect(planningApi.getOrderMissions).toHaveBeenCalledTimes(1),
+    )
+    expect(ordersApi.getOrder).toHaveBeenCalledTimes(1)
+  })
   it('approval stays in Order planning even when a legacy response contains a Mission identity', async () => {
     mockHappyPath(feasibleAnalysis)
     vi.spyOn(ordersApi, 'approve').mockImplementation(async () => {

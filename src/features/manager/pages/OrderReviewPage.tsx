@@ -115,6 +115,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       {showExecutionPlan && (
         <OrderMissionPlanningSection
           orderId={order.id}
+          initialOrder={order}
           onAssignResources={setAssigningMissionId}
         />
       )}

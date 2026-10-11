@@ -1,17 +1,19 @@
 // MNG-08: Mission detail & result page (opened from the mission list).
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { checklistExecutionApi } from '../../mission/api/checklistExecutionApi'
 import { MonitoringChecklistSection } from '../../mission/components/MonitoringChecklistSection'
-import { MissionResultReviewActions } from '../components/missionDetail/MissionResultReviewActions'
+import { MissionResultReviewCard } from '../components/missionDetail/MissionResultReviewCard'
 
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
+import { missionStopLabel } from '../../mission/lib/missionOperationalState'
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useI18n } from '../../../shared/i18n'
 import { missionStatusTone } from '../../../shared/lib/statusTone'
 import { staffMissionMediaReader } from '../api/missionMediaReader'
 import { dronesApi } from '../api/dronesApi'
 import { missionsApi } from '../api/missionsApi'
+import { assignmentReadiness } from '../lib/assignmentReadiness'
 import { ordersApi } from '../api/ordersApi'
 import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachmentsCard'
 import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
@@ -25,7 +27,6 @@ import {
   DetailSection,
   MetricTile,
   PlanDetail,
-  ResultDetail,
   STAFF_RESPONSE_LABELS,
   STAFF_ROLE_LABELS,
   WeatherResultDetail,
@@ -38,9 +39,7 @@ import {
   unwrapSettled,
   type DetailData,
 } from '../components/missionDetail/missionDetailParts'
-import {
-  waypointReasonLabel,
-} from '../components/missionDetail/MissionRouteMap'
+import { waypointReasonLabel } from '../components/missionDetail/MissionRouteMap'
 import { MissionSatelliteMap } from '../components/missionDetail/MissionSatelliteMap'
 import { formatOrderCode } from '../components/orderReview/format'
 import { OrderIcon } from '../components/orderReview/OrderIcon'
@@ -52,6 +51,10 @@ import '../manager.css'
 type MissionDetailTab = 'overview' | 'order' | 'plan' | 'checks'
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
+  return <MissionDetail key={missionId} missionId={missionId} />
+}
+
+function MissionDetail({ missionId }: { missionId: string }) {
   const { t, locale } = useI18n(missionDetailPageMessages)
   const { t: orderT } = useI18n(orderReviewPageMessages)
   const [detail, setDetail] = useState<DetailData | null>(null)
@@ -66,6 +69,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
   )
   const refreshDetail = () => setRevision((value) => value + 1)
   const [tab, setTab] = useState<MissionDetailTab>('overview')
+  const mediaLibrary = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const abort = new AbortController()
@@ -82,12 +86,8 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
       .then(([mission, preflight, postcheck, result, media, weather]) => {
         if (abort.signal.aborted) return
         const fullMission = unwrapSettled(mission)
-        if (!fullMission) {
-          setError(
-            mission.status === 'rejected' && mission.reason instanceof Error
-              ? mission.reason.message
-              : t.loadError,
-          )
+        if (!fullMission || fullMission.id !== missionId) {
+          setError(t.loadError)
           return
         }
         setDetail({
@@ -95,8 +95,13 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           order: null,
           preflight: unwrapSettled(preflight),
           postcheck: unwrapSettled(postcheck),
-          result: unwrapSettled(result),
-          media: unwrapSettled(media) ?? [],
+          result:
+            unwrapSettled(result)?.missionId === missionId
+              ? unwrapSettled(result)
+              : null,
+          media: (unwrapSettled(media) ?? []).filter(
+            (item) => item.missionId === missionId,
+          ),
           weather: unwrapSettled(weather),
         })
         ordersApi
@@ -115,7 +120,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
         if (!abort.signal.aborted) setLoading(false)
       })
     return () => abort.abort()
-  }, [missionId, revision])
+  }, [missionId, revision, t.loadError])
 
   // Completed missions may no longer carry `droneCode`; resolve the device
   // from the post-check, then from the drone that captured the media.
@@ -182,8 +187,7 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
   const { preflight, postcheck } = detail
   const staff = mission.staffAssignments ?? []
   const accepted = staff.filter((s) => s.responseStatus === 'ACCEPTED').length
-  const canSetup =
-    mission.status === 'CREATED' || mission.status === 'RESOURCE_ASSIGNING'
+  const canSetup = assignmentReadiness(mission).needsSetup
   const deviceCode =
     mission.deviceCode ??
     mission.droneCode ??
@@ -270,7 +274,8 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
     },
   ]
   const showPlanTab = mission.status !== 'COMPLETED'
-  const activeTab: MissionDetailTab = showPlanTab || tab !== 'plan' ? tab : 'overview'
+  const activeTab: MissionDetailTab =
+    showPlanTab || tab !== 'plan' ? tab : 'overview'
   const tabs: Array<{ id: MissionDetailTab; label: string }> = [
     { id: 'overview', label: t.tabs.overview },
     { id: 'order', label: t.tabs.order },
@@ -290,11 +295,15 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           <p className="odm-or-subtitle">{mission.orderTitle}</p>
         </div>
         <div className="odm-or-md-actions">
-          <StatusBadge
-            kind="mission"
-            status={mission.status}
-            tone={missionStatusTone[mission.status]}
-          />
+          {missionStopLabel(mission) ? (
+            <StatusBadge tone="yellow">{missionStopLabel(mission)}</StatusBadge>
+          ) : (
+            <StatusBadge
+              kind="mission"
+              status={mission.status}
+              tone={missionStatusTone[mission.status]}
+            />
+          )}
           {canSetup ? (
             <a
               className="odm-or-btn odm-or-btn-blue"
@@ -317,6 +326,13 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
           </div>
         ))}
       </div>
+
+      <a
+        className="odm-or-btn-outline"
+        href={managerHref({ screen: 'orderReview', orderId: mission.orderId })}
+      >
+        Mở kế hoạch Order
+      </a>
 
       <div className="odm-or-md-grid">
         <div className="odm-or-col">
@@ -402,45 +418,52 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                 </div>
               </section>
 
-              <section className="odm-or-card">
-                <div className="odm-or-card-body">
-                  <DetailSection title={t.resultCard}>
-                    <ResultDetail
-                      result={detail.result}
-                      media={[]}
-                      locale={locale}
-                    />
-                    {detail.result && (
-                      <MissionResultReviewActions
-                        resultId={detail.result.id}
-                        status={detail.result.approvalStatus}
-                        refreshing={loading}
-                        ready={
-                          !loading &&
-                          !checklist.loading &&
-                          !checklist.error &&
-                          checklist.data?.readyForFinalApproval === true
-                        }
-                        onReviewed={refreshDetail}
-                      />
-                    )}
-                  </DetailSection>
-                </div>
-              </section>
+              <MissionResultReviewCard
+                mission={mission}
+                result={detail.result}
+                checklist={checklist.data}
+                checklistLoading={checklist.loading}
+                checklistFailed={!!checklist.error}
+                refreshing={loading}
+                mediaCount={detail.media.length}
+                locale={locale}
+                onReviewed={refreshDetail}
+                onViewMedia={() => {
+                  mediaLibrary.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  })
+                  mediaLibrary.current?.focus({ preventScroll: true })
+                }}
+              />
 
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
                   <DetailSection title={t.weatherResultCard}>
-                    <WeatherResultDetail weather={detail.weather} locale={locale} />
+                    <WeatherResultDetail
+                      weather={detail.weather}
+                      locale={locale}
+                    />
                   </DetailSection>
                 </div>
               </section>
 
               <MonitoringChecklistSection
+                hideImplementationHints
                 missionId={mission.id}
-                data={checklist.data}
+                data={
+                  checklist.data?.missionId === missionId
+                    ? checklist.data
+                    : undefined
+                }
                 loading={checklist.loading}
-                error={checklist.error}
+                error={
+                  checklist.error
+                    ? new Error(
+                        'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+                      )
+                    : undefined
+                }
                 resultStatus={detail.result?.approvalStatus}
                 resultNote={detail.result?.reviewNote}
                 refresh={() => {
@@ -448,17 +471,27 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                   refreshDetail()
                 }}
               />
-              <MissionUploadedMedia
-                missionId={mission.id}
-                reader={staffMissionMediaReader}
-                reviewStatus={detail.result?.approvalStatus ?? null}
-                approveMedia={async (mediaId) => {
-                  await missionsApi.approveMissionMedia(mission.id, mediaId)
-                  refreshDetail()
-                }}
-              />
+              <section
+                ref={mediaLibrary}
+                tabIndex={-1}
+                aria-label="Thư viện media"
+              >
+                <MissionUploadedMedia
+                  missionId={mission.id}
+                  missionStatus={mission.status}
+                  reader={staffMissionMediaReader}
+                  reviewStatus={detail.result?.approvalStatus ?? null}
+                  approveMedia={async (mediaId) => {
+                    await missionsApi.approveMissionMedia(missionId, mediaId)
+                    refreshDetail()
+                  }}
+                />
+              </section>
               {mission.status === 'COMPLETED' ? (
-                <ManagerDeliveryPanel orderId={mission.orderId} refreshKey={revision} />
+                <ManagerDeliveryPanel
+                  orderId={mission.orderId}
+                  refreshKey={revision}
+                />
               ) : null}
             </>
           ) : null}
@@ -524,7 +557,6 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                   </DetailSection>
                 </div>
               </section>
-
             </>
           ) : null}
 
@@ -553,10 +585,15 @@ export function MissionDetailPage({ missionId }: { missionId: string }) {
                   <DetailSection
                     title={t.weatherResultCard}
                     badge={
-                      detail.weather ? checkLabel(detail.weather.status) : undefined
+                      detail.weather
+                        ? checkLabel(detail.weather.status)
+                        : undefined
                     }
                   >
-                    <WeatherResultDetail weather={detail.weather} locale={locale} />
+                    <WeatherResultDetail
+                      weather={detail.weather}
+                      locale={locale}
+                    />
                   </DetailSection>
                 </div>
               </section>

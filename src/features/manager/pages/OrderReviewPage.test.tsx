@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../shared/api/httpClient'
 import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
+import { planningApi } from '../api/planningApi'
+import { financeApi } from '../../finance/api'
+import type { Quote } from '../../finance/types'
 import type {
   OrderAnalysis,
   OrderDetail,
@@ -121,10 +124,64 @@ const preview: OrderResourcePreview = {
   ],
 }
 
+const quote: Quote = {
+  id: 'quote',
+  orderId: order.id,
+  version: 1,
+  status: 'DRAFT',
+  packagePrice: 1000000,
+  additionalAmount: 0,
+  discountAmount: 0,
+  adjustmentAmount: 0,
+  totalAmount: 1000000,
+  managerNote: null,
+  approvedByName: null,
+  approvedAt: null,
+  acceptedAt: null,
+  items: [],
+}
+function mockPricing() {
+  vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
+    orderId: order.id,
+    orderCode: order.code,
+    customerName: 'Customer',
+    serviceName: order.serviceName,
+    basePackagePrice: 1000000,
+    checklistItems: [],
+    currentQuote: null,
+    quoteHistory: [],
+  })
+  vi.spyOn(financeApi, 'saveDraft').mockResolvedValue(quote)
+}
+
 function mockHappyPath(analysis: OrderAnalysis) {
+  mockPricing()
   vi.spyOn(ordersApi, 'getOrder').mockResolvedValue(order)
   vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(analysis)
   vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
+}
+
+function mockApprovedPlanning() {
+  vi.mocked(ordersApi.getOrder).mockResolvedValue({
+    ...order,
+    status: 'APPROVED',
+  })
+  vi.spyOn(planningApi, 'getOrderMissions').mockResolvedValue([])
+  vi.spyOn(planningApi, 'getExecutionPlan').mockResolvedValue({
+    orderId: order.id,
+    planStatus: 'DRAFT',
+    revision: 1,
+    missions: [],
+    coverage: {
+      total: 0,
+      covered: 0,
+      uncovered: 0,
+      repeated: 0,
+      coverageReady: true,
+      uncoveredItemIds: [],
+    },
+    blockers: [],
+  })
 }
 
 afterEach(() => {
@@ -133,6 +190,98 @@ afterEach(() => {
 })
 
 describe('OrderReviewPage', () => {
+  it('reuses the initial exact Order read when the planning workspace mounts', async () => {
+    mockHappyPath(feasibleAnalysis)
+    mockApprovedPlanning()
+    render(<OrderReviewPage orderId={order.id} />)
+    await waitFor(() =>
+      expect(planningApi.getExecutionPlan).toHaveBeenCalledTimes(1),
+    )
+    await waitFor(() =>
+      expect(planningApi.getOrderMissions).toHaveBeenCalledTimes(1),
+    )
+    expect(ordersApi.getOrder).toHaveBeenCalledTimes(1)
+  })
+  it('approval stays in Order planning even when a legacy response contains a Mission identity', async () => {
+    mockHappyPath(feasibleAnalysis)
+    vi.spyOn(financeApi, 'approveQuote').mockImplementation(async () => {
+      vi.mocked(ordersApi.getOrder).mockResolvedValue({
+        ...order,
+        status: 'APPROVED',
+      })
+      return { ...quote, status: 'APPROVED' }
+    })
+    vi.spyOn(planningApi, 'getOrderMissions').mockResolvedValue([])
+    vi.spyOn(planningApi, 'getExecutionPlan').mockResolvedValue({
+      orderId: order.id,
+      planStatus: 'DRAFT',
+      revision: 1,
+      missions: [],
+      coverage: {
+        total: 0,
+        covered: 0,
+        uncovered: 0,
+        repeated: 0,
+        coverageReady: true,
+        uncoveredItemIds: [],
+      },
+      blockers: [],
+    })
+    window.location.hash = '#portal/manager/orders/' + order.id
+    render(<OrderReviewPage orderId={order.id} />)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
+    )
+    await screen.findByRole('heading', { name: 'Kế hoạch thực thi', level: 1 })
+    expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
+    expect(
+      screen.queryByRole('heading', { name: 'Gán nguồn lực' }),
+    ).not.toBeInTheDocument()
+  })
+  it.each(['APPROVED', 'IN_PROGRESS', 'COMPLETED'] as const)(
+    'uses the execution plan as the sole primary heading for %s Orders',
+    async (status) => {
+      mockHappyPath(feasibleAnalysis)
+      vi.mocked(ordersApi.getOrder).mockResolvedValue({ ...order, status })
+      vi.spyOn(planningApi, 'getOrderMissions').mockResolvedValue([])
+      vi.spyOn(planningApi, 'getExecutionPlan').mockResolvedValue({
+        orderId: order.id,
+        planStatus: 'FINALIZED',
+        revision: 3,
+        missions: [],
+        coverage: {
+          total: 0,
+          covered: 0,
+          uncovered: 0,
+          repeated: 0,
+          coverageReady: true,
+          uncoveredItemIds: [],
+        },
+        blockers: [],
+      })
+      render(<OrderReviewPage orderId={order.id} />)
+      expect(
+        await screen.findByRole('heading', {
+          name: 'Kế hoạch thực thi',
+          level: 1,
+        }),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('navigation', { name: 'Các bước xử lý đơn hàng' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Duyệt & lên lịch' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Từ chối' }),
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Chờ duyệt')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('heading', { name: 'Đơn hàng' }),
+      ).not.toBeInTheDocument()
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    },
+  )
   it('renders FEASIBLE order data', async () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
@@ -142,12 +291,13 @@ describe('OrderReviewPage', () => {
     expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
     expect(screen.getByText('Khách hàng doanh nghiệp')).toBeInTheDocument()
     expect(screen.getByText('Xem đơn hàng')).toBeInTheDocument()
-    expect(
-      screen.getByText('drone đủ điều kiện', { exact: false }),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('thiết bị khả dụng')).toBeInTheDocument()
+    expect(screen.getByText('DRN-06 Cú Mèo')).toBeInTheDocument()
+    expect(screen.getByText('Bùi Anh Tuấn')).toBeInTheDocument()
   })
 
   it('cleans legacy raw JSON media labels before rendering', async () => {
+    mockPricing()
     vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
       ...order,
       mediaRequirements: [
@@ -170,15 +320,28 @@ describe('OrderReviewPage', () => {
     expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
   })
 
-  it('renders RISKY analysis for a different order', async () => {
+  it('shows resource shortage for a different order without obsolete analysis copy', async () => {
     mockHappyPath(riskyAnalysis)
+    vi.mocked(ordersApi.getOrder).mockResolvedValue({
+      ...order,
+      id: 'ord-2609-0160',
+      code: 'ORD-2609-0160',
+    })
+    vi.mocked(ordersApi.getResourcePreview).mockResolvedValue({
+      ...preview,
+      eligiblePilotCount: 0,
+      topPilots: [],
+    })
     render(<OrderReviewPage orderId="ord-2609-0160" />)
 
-    await waitFor(() => screen.getByText('RỦI RO'))
-    expect(screen.getByText('2 WARNING')).toBeInTheDocument()
-    expect(
-      screen.getByText('Chỉ còn 1 phi công đủ điều kiện khung chiều 25/09.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Thiếu nguồn lực')).toBeInTheDocument()
+    expect(screen.getByText('#ORD-2609-0160')).toBeInTheDocument()
+    expect(ordersApi.getOrder).toHaveBeenCalledWith(
+      'ord-2609-0160',
+      expect.any(AbortSignal),
+    )
+    expect(ordersApi.getLatestAnalysis).not.toHaveBeenCalled()
+    expect(screen.queryByText('RỦI RO')).not.toBeInTheDocument()
   })
 
   it('requires a reason before confirming reject, and a chip fills it in', async () => {
@@ -212,40 +375,57 @@ describe('OrderReviewPage', () => {
     )
   })
 
-  it('opens the schedule/create-mission form inline after approve', async () => {
+  it('approves the quote before entering inline Order planning', async () => {
     mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'approve').mockResolvedValue(undefined)
+    const approveSpy = vi
+      .spyOn(financeApi, 'approveQuote')
+      .mockImplementation(async () => {
+        mockApprovedPlanning()
+        return { ...quote, status: 'APPROVED' }
+      })
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
+    window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Lê Quốc Bảo'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
+    )
 
-    await waitFor(() =>
-      expect(
-        screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
-      ).toBeInTheDocument(),
-    )
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Kế hoạch thực thi',
+        level: 1,
+      }),
+    ).toBeInTheDocument()
+    expect(approveSpy).toHaveBeenCalledExactlyOnceWith(order.id, quote.id)
     expect(briefSpy).not.toHaveBeenCalled()
-    expect(window.location.hash).not.toBe(
-      '#portal/manager/orders/ord-2609-0157/mission',
-    )
+    expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
   })
 
-  it('opens the dispatch wizard when approve returns a mission id', async () => {
+  it('does not automatically dispatch a legacy Mission returned by approval', async () => {
     mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'approve').mockResolvedValue({
-      missionId: 'mission-real',
-    } as unknown as Awaited<ReturnType<typeof ordersApi.approve>>)
+    vi.spyOn(financeApi, 'approveQuote').mockImplementation(async () => {
+      mockApprovedPlanning()
+      return { ...quote, status: 'APPROVED' }
+    })
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
+    window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Duyệt & lên lịch' }))
-    await waitFor(() =>
-      expect(window.location.hash).toBe(
-        '#portal/manager/missions/mission-real/dispatch',
-      ),
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     )
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Kế hoạch thực thi',
+        level: 1,
+      }),
+    ).toBeInTheDocument()
+    expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
+    expect(
+      screen.queryByRole('heading', { name: 'Gán nguồn lực' }),
+    ).not.toBeInTheDocument()
     expect(briefSpy).not.toHaveBeenCalled()
   })
 
@@ -274,6 +454,7 @@ describe('OrderReviewPage', () => {
   })
 
   it('renders an order without detail/analysis/resource-preview source without crashing, showing empty markers', async () => {
+    mockPricing()
     vi.spyOn(ordersApi, 'getOrder').mockResolvedValue(unsourcedOrder)
     vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(
       unsourcedAnalysis,
@@ -296,7 +477,7 @@ describe('OrderReviewPage', () => {
     expect(screen.getByText('Không có email')).toBeInTheDocument()
     // Action bar still renders — the page didn't crash on null fields.
     expect(
-      screen.getByRole('button', { name: 'Duyệt & lên lịch' }),
+      await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     ).toBeInTheDocument()
   })
 
@@ -331,8 +512,6 @@ describe('OrderReviewPage', () => {
     expect(screen.getByRole('heading', { name: 'Orders' })).toBeInTheDocument()
     expect(screen.getByText('Review order')).toBeInTheDocument()
     expect(screen.getByText('Customer')).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Approve & schedule' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
   })
 })

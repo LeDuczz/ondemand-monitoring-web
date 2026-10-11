@@ -1,7 +1,8 @@
 import type { Drone, Mission } from '../omss/types'
 import type { OperatorMission, OperatorMissionStatus } from '../types/mission'
+import type { MissionStopMetadata } from '../../mission/lib/missionOperationalState'
 
-export type BackendMission = {
+export type BackendMission = MissionStopMetadata & {
   id: string
   missionCode?: string | null
   orderId?: string | null
@@ -188,6 +189,10 @@ export function toOperatorMission(
     id: source.id,
     missionCode: source.missionCode ?? source.id,
     backendStatus: source.status,
+    safeStopStatus: source.safeStopStatus,
+    safeStopRequestedAt: source.safeStopRequestedAt,
+    safeStopConfirmedAt: source.safeStopConfirmedAt,
+    safeStopCleanedAt: source.safeStopCleanedAt,
     status: operatorStatusForAssignment(source.status, myResponseStatus),
     myResponseStatus:
       myResponseStatus === 'ACCEPTED' || myResponseStatus === 'REJECTED'

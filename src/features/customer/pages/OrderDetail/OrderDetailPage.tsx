@@ -16,6 +16,7 @@ import { checklistMessages } from '../../lib/checklist/messages'
 import { getOrderStatusMeta } from '../../lib/orderStatus'
 import { CardTitle } from './components/CardTitle'
 import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnapshotCard'
+import { CustomerOrderMissionsSection } from '../../components/reports/CustomerOrderMissionsSection'
 import './OrderDetail.css'
 import { orderDetailPageMessages } from './OrderDetailPage.messages'
 import { CustomerFinancePanel } from '../../../finance/CustomerFinancePanel'
@@ -29,11 +30,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
   const { order } = detail
 
   if (detail.loading && !order) return <LoadingState />
-  if (!order) {
+  if (!order || detail.error) {
     return (
       <ErrorState
         title={t.errorTitle}
-        error={detail.error}
+        error={undefined}
         onRetry={detail.reload}
       />
     )
@@ -44,6 +45,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       <OrderHeader order={order} />
       <ReviewNotice order={order} />
       <OrderActions order={order} onCancel={detail.openCancel} />
+      <CustomerOrderMissionsSection key={order.id} orderId={order.id} />
       <div className="od-grid">
         <div className="od-stack">
           <OrderInfoCard order={order} />

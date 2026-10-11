@@ -95,17 +95,34 @@ function renderScreen(route: ManagerRoute) {
   if (route.screen === 'dashboard') return <DashboardPage />
   if (route.screen === 'orderQueue') return <QueuePage />
   if (route.screen === 'orderReview')
-    return <OrderReviewPage orderId={route.orderId} />
+    return <OrderReviewPage key={route.orderId} orderId={route.orderId} />
   if (route.screen === 'missionCreate')
-    return <CreateMissionPage orderId={route.orderId} />
+    return (
+      <CreateMissionPage
+        orderId={route.orderId}
+        replacesMissionId={route.replacesMissionId}
+      />
+    )
   if (route.screen === 'missionDispatch')
-    return <DispatchPage missionId={route.missionId} />
+    return <DispatchPage key={route.missionId} missionId={route.missionId} />
   if (route.screen === 'missionSetup')
-    return <DispatchPage missionId={route.missionId} setupMode />
+    return (
+      <DispatchPage
+        key={route.missionId}
+        missionId={route.missionId}
+        setupMode
+      />
+    )
   if (route.screen === 'missionDetail')
     return <MissionDetailPage missionId={route.missionId} />
   if (route.screen === 'schedule') return <SchedulePage />
-  if (route.screen === 'live') return <LivePage missionId={route.missionId} />
+  if (route.screen === 'live')
+    return (
+      <LivePage
+        key={route.missionId ?? 'generic'}
+        missionId={route.missionId}
+      />
+    )
   if (route.screen === 'missions')
     return <MissionsListPage missionId={route.missionId} />
   if (route.screen === 'drones') return <DronesPage droneId={route.droneId} />

@@ -1,11 +1,12 @@
 import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
+import { planningApi } from '../api/planningApi'
 import type { Mission } from '../types/missions'
 import type { OrderMissionBrief } from '../types/orders'
 import { CreateMissionPage } from './CreateMissionPage'
@@ -28,6 +29,10 @@ const brief: OrderMissionBrief = {
     { label: 'PHOTO × 30 · 640×512' },
   ],
 }
+
+beforeEach(() => {
+  vi.spyOn(planningApi, 'getExecutionPlan').mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 0, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+})
 
 const createdMission: Mission = {
   id: 'msn-2609-0153-1',
@@ -64,10 +69,61 @@ const createdMission: Mission = {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  sessionStorage.clear()
   window.location.hash = ''
 })
 
 describe('CreateMissionPage', () => {
+  it('associates empty scope validation with the field without creating a Mission', async () => {
+    const create = vi.spyOn(missionsApi, 'createMission')
+    render(<CreateMissionPage orderId={brief.id} initialBrief={brief} />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled())
+    const scope = screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/)
+    fireEvent.change(scope, { target: { value: ' ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
+    expect(scope).toHaveAttribute('aria-invalid', 'true')
+    expect(scope).toHaveAttribute('aria-describedby', 'mission-scope-help mission-scope-error')
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+    expect(create).not.toHaveBeenCalled()
+  })
+  it('presents a localized scope default without exposing the internal request default', async () => {
+    render(<CreateMissionPage orderId={brief.id} initialBrief={brief} />)
+    expect(await screen.findByText('Phiên bản 0')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Kế hoạch thực thi' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/)).toHaveValue('Toàn bộ phạm vi Order')
+    expect(screen.getByText('Mission sẽ sử dụng phạm vi địa lý hiện có của Order.')).toBeInTheDocument()
+    expect(screen.queryByDisplayValue('Whole Order scope')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/)).toHaveAttribute('aria-describedby', 'mission-scope-help')
+  })
+  it('localizes the planning card and scope display in English', async () => {
+    setLanguage('en')
+    try {
+      render(<CreateMissionPage orderId={brief.id} initialBrief={brief} />)
+      expect(await screen.findByText('Version 0')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Order execution plan' })).toBeInTheDocument()
+      expect(screen.getByLabelText(/Mission name \/ work scope/)).toHaveValue('Entire Order scope')
+    } finally { setLanguage('vi') }
+  })
+  it('creates a second planning Mission using authoritative revision, not sibling count', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 4, missions: [{ missionId: 'existing', scopeLabel: 'First', assignmentCount: 0, finalizedPlanRevision: null }], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+    const create = vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
+    render(<CreateMissionPage orderId={brief.id} />)
+    const start = await screen.findByLabelText('Giờ cất cánh')
+    fireEvent.change(start, { target: { value: '2026-09-24T09:00' } })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), { target: { value: '2026-09-24T10:00' } })
+    fireEvent.change(screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/), { target: { value: 'Second scope' } })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
+    await waitFor(() => expect(create).toHaveBeenCalledWith(brief.id, expect.objectContaining({ scopeLabel: 'Second scope', expectedPlanRevision: 4, idempotencyKey: expect.any(String) })))
+  })
+  it('locks new creation when the server plan is finalized', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({ orderId: brief.id, planStatus: 'FINALIZED', revision: 4, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+    render(<CreateMissionPage orderId={brief.id} />)
+    expect(await screen.findByText('Cần điều chỉnh kế hoạch trước khi tạo Mission mới.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeDisabled()
+  })
   it('shows the customer window but leaves the flight schedule for staff to choose', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     render(
@@ -115,7 +171,7 @@ describe('CreateMissionPage', () => {
     expect(screen.getByText(/mission-brief · 409/)).toBeInTheDocument()
   })
 
-  it('submits and navigates to the dispatch page on success', async () => {
+  it('sends the idempotent planning contract and navigates to detail on success', async () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
     render(
@@ -132,11 +188,14 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
       target: { value: '2026-09-24T09:30' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
     await waitFor(() =>
       expect(missionsApi.createMission).toHaveBeenCalledWith(
         'ord-2609-0153',
         expect.objectContaining({
+          idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/i),
+          expectedPlanRevision: 0,
+          scopeLabel: 'Whole Order scope',
           scheduledStart: '2026-09-24T01:00:00.000Z',
           scheduledEnd: '2026-09-24T02:30:00.000Z',
         }),
@@ -144,9 +203,30 @@ describe('CreateMissionPage', () => {
     )
     await waitFor(() =>
       expect(window.location.hash).toBe(
-        '#portal/manager/missions/msn-2609-0153-1/setup',
+        '#portal/manager/orders/ord-2609-0153',
       ),
     )
+  })
+
+  it('keeps the key while refreshing a stale plan revision for the next retry', async () => {
+    vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValueOnce({ orderId: brief.id, planStatus: 'DRAFT', revision: 0, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] }).mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 1, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
+    const create = vi.spyOn(missionsApi, 'createMission').mockRejectedValueOnce(new ApiError('Plan revision changed', {
+      status: 409, code: 'EXECUTION_PLAN_REVISION_CONFLICT', method: 'POST', path: '/api/orders/o/missions',
+    })).mockResolvedValue(createdMission)
+    render(<CreateMissionPage orderId="ord-2609-0153" now={new Date(2026, 8, 19)} />)
+    await screen.findByRole('heading', { name: 'Tạo nhiệm vụ' })
+    fireEvent.change(screen.getByLabelText('Giờ cất cánh'), { target: { value: '2026-09-24T08:00' } })
+    fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), { target: { value: '2026-09-24T09:30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
+    await screen.findByText(/Kế hoạch đã được thay đổi/)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(2))
+    const first = create.mock.calls[0][1], retry = create.mock.calls[1][1]
+    expect(retry.idempotencyKey).toBe(first.idempotencyKey)
+    expect(first.expectedPlanRevision).toBe(0)
+    expect(retry.expectedPlanRevision).toBe(1)
   })
 
   it('blocks submit when the finish time is before takeoff time', async () => {
@@ -166,7 +246,7 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
       target: { value: '2026-09-10T15:58' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
     expect(
       await screen.findByText('Giờ kết thúc phải sau giờ cất cánh.'),
     ).toBeInTheDocument()
@@ -197,7 +277,7 @@ describe('CreateMissionPage', () => {
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
       target: { value: '2026-09-24T09:30' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo nhiệm vụ' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo Mission' }))
     await waitFor(() =>
       expect(
         screen.getByText('Không tạo được kế hoạch bay'),
@@ -210,6 +290,7 @@ describe('CreateMissionPage', () => {
       screen.queryByRole('button', { name: 'Thêm waypoint' }),
     ).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
+    expect(screen.queryByText(/FLIGHT_PLAN_GENERATION_FAILED/)).not.toBeInTheDocument()
   })
 
   it('renders English title and labels when language is switched', async () => {

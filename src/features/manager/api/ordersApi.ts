@@ -49,6 +49,7 @@ function radiusFromDeliverables(order: OrderCreateResponse) {
 
 function toOrderDetail(order: OrderCreateResponse): OrderDetail {
   return {
+    executionPlanRevision: order.executionPlanRevision,
     id: order.id,
     code: order.id,
     status: order.orderStatus,
@@ -106,6 +107,7 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
 
 function toOrderMissionBrief(order: OrderDetail): OrderMissionBrief {
   return {
+    executionPlanRevision: order.executionPlanRevision,
     id: order.id,
     code: order.code,
     serviceName: order.serviceName,
@@ -199,7 +201,7 @@ export const ordersApi = {
   ): Promise<OrderMissionBrief> {
     return this.getOrder(id, signal)
       .then((order) => {
-        if (order.status !== 'APPROVED') {
+        if (order.status !== 'APPROVED' && order.status !== 'IN_PROGRESS') {
           throw new ApiError('Đơn không còn ở trạng thái đã duyệt.', {
             status: 409,
             method: 'GET',

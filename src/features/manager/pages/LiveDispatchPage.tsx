@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 
 import { env } from '../../../config/env'
 import { StateView } from '../../../shared/components/odm/StateView'
@@ -13,11 +20,19 @@ import {
 } from '../../../shared/lib/simulationMapProjection'
 import { missionApi } from '../../mission/api/missionApi'
 import { droneApi, type AvailableDrone } from '../../staff/api/droneApi'
-import { operatorApi, type AvailableOperator } from '../../staff/api/operatorApi'
+import {
+  operatorApi,
+  type AvailableOperator,
+} from '../../staff/api/operatorApi'
 import { ManagerIcon } from '../components/ManagerIcon'
 import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
 import { managerHref } from '../routes'
+import {
+  planningError,
+  resourceAssignmentConflict,
+} from '../lib/planningErrors'
+import { ApiError } from '../../../shared/api/httpClient'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import type { MissionStaffRole } from '../../mission/types/mission'
 
@@ -39,9 +54,18 @@ const SIMULATION_MAP_BOUNDS = {
 const SIMULATION_MAP_IMAGE_CROP = SIMULATION_MAP_DEFAULT_CROP
 
 type DispatchStep = 'order' | 'mission' | 'staff' | 'device' | 'confirm'
-const dispatchSteps: DispatchStep[] = ['order', 'mission', 'staff', 'device', 'confirm']
+const dispatchSteps: DispatchStep[] = [
+  'order',
+  'mission',
+  'staff',
+  'device',
+  'confirm',
+]
 
-const stepSubtitles: Record<DispatchStep, keyof (typeof liveDispatchPageMessages)['vi']> = {
+const stepSubtitles: Record<
+  DispatchStep,
+  keyof (typeof liveDispatchPageMessages)['vi']
+> = {
   order: 'orderStepHint',
   mission: 'missionStepHint',
   staff: 'staffStepHint',
@@ -88,7 +112,11 @@ function missionStatusLabel(
   return labels[status as keyof typeof labels] ?? status
 }
 
-function requestedWindow(current: { orderPreferredDateFrom?: string | null; orderPreferredDateTo?: string | null; orderPreferredTimeName?: string | null }) {
+function requestedWindow(current: {
+  orderPreferredDateFrom?: string | null
+  orderPreferredDateTo?: string | null
+  orderPreferredTimeName?: string | null
+}) {
   const from = fmtDate(current.orderPreferredDateFrom)
   const to = fmtDate(current.orderPreferredDateTo)
   const dateText = from === to ? from : `${from} → ${to}`
@@ -104,7 +132,8 @@ function fmtRadius(value?: number | null) {
 function staffInitials(staff: AvailableOperator) {
   const source = staff.fullName || staff.email || '?'
   const parts = source.trim().split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+  if (parts.length >= 2)
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
   return source.slice(0, 2).toUpperCase()
 }
 
@@ -246,7 +275,9 @@ function StaffCombobox({
     }
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setActiveIndex((index) => Math.min(index + 1, Math.max(0, filtered.length - 1)))
+      setActiveIndex((index) =>
+        Math.min(index + 1, Math.max(0, filtered.length - 1)),
+      )
       return
     }
     if (event.key === 'ArrowUp') {
@@ -261,7 +292,10 @@ function StaffCombobox({
   }
 
   return (
-    <div ref={rootRef} style={{ position: 'relative', display: 'grid', gap: 8 }}>
+    <div
+      ref={rootRef}
+      style={{ position: 'relative', display: 'grid', gap: 8 }}
+    >
       {selectedStaff.length > 0 ? (
         <>
           <button
@@ -296,45 +330,61 @@ function StaffCombobox({
                 >
                   <StaffAvatar staff={selected} />
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#0f172a',
+                      }}
+                    >
                       {selected.fullName}
                     </span>
-                    <span style={{ display: 'block', marginTop: 2, fontSize: 12, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        marginTop: 2,
+                        fontSize: 12,
+                        color: '#64748b',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
                       {selected.email}
                     </span>
                     <span style={{ display: 'block', marginTop: 5 }}>
                       <StaffStatusBadge />
                     </span>
                   </span>
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label={t.clearStaff}
-              onClick={(event) => {
-                event.stopPropagation()
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t.clearStaff}
+                    onClick={(event) => {
+                      event.stopPropagation()
                       onRemove(selected.id)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  event.stopPropagation()
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        event.stopPropagation()
                         onRemove(selected.id)
-                }
-              }}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 999,
-                display: 'inline-grid',
-                placeItems: 'center',
-                color: '#64748b',
-                background: '#fff',
-                border: '1px solid #dbeafe',
-                fontSize: 18,
-              }}
-            >
-              ×
-            </span>
+                      }
+                    }}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 999,
+                      display: 'inline-grid',
+                      placeItems: 'center',
+                      color: '#64748b',
+                      background: '#fff',
+                      border: '1px solid #dbeafe',
+                      fontSize: 18,
+                    }}
+                  >
+                    ×
+                  </span>
                 </span>
               ))}
             </span>
@@ -346,7 +396,7 @@ function StaffCombobox({
             onClick={openPicker}
             style={{ justifySelf: 'start', minHeight: 30, borderRadius: 8 }}
           >
-                    {t.changeStaff}
+            {t.changeStaff}
           </button>
         </>
       ) : (
@@ -371,11 +421,15 @@ function StaffCombobox({
             cursor: 'pointer',
           }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
             <ManagerIcon name="maintenance" size={16} />
             {t.chooseStaff}
           </span>
-          <span aria-hidden="true" style={{ color: '#94a3b8' }}>⌄</span>
+          <span aria-hidden="true" style={{ color: '#94a3b8' }}>
+            ⌄
+          </span>
         </button>
       )}
 
@@ -429,7 +483,16 @@ function StaffCombobox({
               />
             </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <span style={{ borderRadius: 999, padding: '4px 9px', background: '#eff6ff', color: '#2563eb', fontSize: 12, fontWeight: 700 }}>
+              <span
+                style={{
+                  borderRadius: 999,
+                  padding: '4px 9px',
+                  background: '#eff6ff',
+                  color: '#2563eb',
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
                 {t.availableFilter}
               </span>
             </div>
@@ -460,15 +523,34 @@ function StaffCombobox({
                       padding: '8px 10px',
                       border: 0,
                       borderRadius: 10,
-                      background: isSelected ? '#eff6ff' : isActive ? '#f8fafc' : '#fff',
+                      background: isSelected
+                        ? '#eff6ff'
+                        : isActive
+                          ? '#f8fafc'
+                          : '#fff',
                       textAlign: 'left',
                       cursor: 'pointer',
                     }}
                   >
                     <StaffAvatar staff={item} />
                     <span style={{ minWidth: 0 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          minWidth: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: '#0f172a',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
                           {item.fullName}
                         </span>
                         {usedRoles.map((usedRole) => (
@@ -488,14 +570,29 @@ function StaffCombobox({
                           </span>
                         ))}
                       </span>
-                      <span style={{ display: 'block', marginTop: 2, fontSize: 12, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          marginTop: 2,
+                          fontSize: 12,
+                          color: '#64748b',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
                         {item.email}
                       </span>
                       <span style={{ display: 'block', marginTop: 5 }}>
                         <StaffStatusBadge />
                       </span>
                     </span>
-                    <span style={{ color: isSelected ? '#2563eb' : 'transparent', fontSize: 18, fontWeight: 900 }}>
+                    <span
+                      style={{
+                        color: isSelected ? '#2563eb' : 'transparent',
+                        fontSize: 18,
+                        fontWeight: 900,
+                      }}
+                    >
                       ✓
                     </span>
                   </button>
@@ -583,7 +680,9 @@ function DeviceCombobox({
     }
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setActiveIndex((index) => Math.min(index + 1, Math.max(0, filtered.length - 1)))
+      setActiveIndex((index) =>
+        Math.min(index + 1, Math.max(0, filtered.length - 1)),
+      )
       return
     }
     if (event.key === 'ArrowUp') {
@@ -598,7 +697,10 @@ function DeviceCombobox({
   }
 
   return (
-    <div ref={rootRef} style={{ position: 'relative', display: 'grid', gap: 10 }}>
+    <div
+      ref={rootRef}
+      style={{ position: 'relative', display: 'grid', gap: 10 }}
+    >
       {selectedDevices.length > 0 ? (
         <>
           <button
@@ -620,7 +722,9 @@ function DeviceCombobox({
           >
             {selectedDevices.map((device) => {
               const [serial, modelPart] = device.label.split(' (')
-              const model = modelPart ? modelPart.replace(/\)$/, '') : t.unknownModel
+              const model = modelPart
+                ? modelPart.replace(/\)$/, '')
+                : t.unknownModel
               return (
                 <span
                   key={device.id}
@@ -646,10 +750,26 @@ function DeviceCombobox({
                     <ManagerIcon name="drones" size={18} />
                   </span>
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#0f172a',
+                      }}
+                    >
                       {serial || t.device}
                     </span>
-                    <span style={{ display: 'block', marginTop: 2, fontSize: 12, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        marginTop: 2,
+                        fontSize: 12,
+                        color: '#64748b',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
                       {model}
                     </span>
                     <span style={{ display: 'block', marginTop: 5 }}>
@@ -731,11 +851,15 @@ function DeviceCombobox({
             cursor: 'pointer',
           }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
             <ManagerIcon name="drones" size={16} />
             {t.chooseDroneOption}
           </span>
-          <span aria-hidden="true" style={{ color: '#94a3b8' }}>⌄</span>
+          <span aria-hidden="true" style={{ color: '#94a3b8' }}>
+            ⌄
+          </span>
         </button>
       )}
 
@@ -789,12 +913,25 @@ function DeviceCombobox({
               />
             </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <span style={{ borderRadius: 999, padding: '4px 9px', background: '#eff6ff', color: '#2563eb', fontSize: 12, fontWeight: 700 }}>
+              <span
+                style={{
+                  borderRadius: 999,
+                  padding: '4px 9px',
+                  background: '#eff6ff',
+                  color: '#2563eb',
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
                 {t.availableFilter}
               </span>
             </div>
           </div>
-          <div role="listbox" aria-label={t.chooseDroneAria} style={{ maxHeight: 210, overflowY: 'auto', padding: 6 }}>
+          <div
+            role="listbox"
+            aria-label={t.chooseDroneAria}
+            style={{ maxHeight: 210, overflowY: 'auto', padding: 6 }}
+          >
             {filtered.length === 0 ? (
               <div style={{ padding: 16, color: '#64748b', fontSize: 14 }}>
                 {t.noAvailableDrones}
@@ -804,7 +941,9 @@ function DeviceCombobox({
                 const isSelected = selectedIds.includes(item.id)
                 const isActive = activeIndex === index
                 const [serial, modelPart] = item.label.split(' (')
-                const model = modelPart ? modelPart.replace(/\)$/, '') : t.unknownModel
+                const model = modelPart
+                  ? modelPart.replace(/\)$/, '')
+                  : t.unknownModel
                 return (
                   <button
                     key={item.id}
@@ -824,7 +963,11 @@ function DeviceCombobox({
                       padding: '8px 10px',
                       border: 0,
                       borderRadius: 10,
-                      background: isSelected ? '#eff6ff' : isActive ? '#f8fafc' : '#fff',
+                      background: isSelected
+                        ? '#eff6ff'
+                        : isActive
+                          ? '#f8fafc'
+                          : '#fff',
                       textAlign: 'left',
                       cursor: 'pointer',
                     }}
@@ -844,17 +987,41 @@ function DeviceCombobox({
                       <ManagerIcon name="drones" size={18} />
                     </span>
                     <span style={{ minWidth: 0 }}>
-                      <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
                         {serial || t.device}
                       </span>
-                      <span style={{ display: 'block', marginTop: 2, fontSize: 12, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          marginTop: 2,
+                          fontSize: 12,
+                          color: '#64748b',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
                         {model}
                       </span>
                       <span style={{ display: 'block', marginTop: 5 }}>
                         <StaffStatusBadge />
                       </span>
                     </span>
-                    <span style={{ color: isSelected ? '#2563eb' : 'transparent', fontSize: 18, fontWeight: 900 }}>
+                    <span
+                      style={{
+                        color: isSelected ? '#2563eb' : 'transparent',
+                        fontSize: 18,
+                        fontWeight: 900,
+                      }}
+                    >
                       ✓
                     </span>
                   </button>
@@ -868,30 +1035,225 @@ function DeviceCombobox({
   )
 }
 
+export function DispatchWizardTabs({
+  activeStep,
+  onStep,
+  selectionOnly = false,
+}: {
+  activeStep: DispatchStep
+  onStep: (step: DispatchStep) => void
+  selectionOnly?: boolean
+}) {
+  const { t } = useI18n(liveDispatchPageMessages)
+  const activeStepIndex = dispatchSteps.indexOf(activeStep)
+  const stepLabels: Record<DispatchStep, string> = {
+    order: t.orderTab,
+    mission: t.missionTab,
+    staff: t.staffTab,
+    device: t.deviceTab,
+    confirm: t.confirmTab,
+  }
+  return (
+    <nav className="odm-or-card odm-or-tabs" aria-label={t.tabsAria}>
+      {dispatchSteps.map((step, index) => (
+        <button
+          key={step}
+          type="button"
+          className={`odm-or-tab${activeStep === step ? ' is-active' : ''}${
+            index < activeStepIndex ? ' is-done' : ''
+          }`}
+          aria-current={activeStep === step ? 'step' : undefined}
+          disabled={
+            selectionOnly && ['staff', 'device', 'confirm'].includes(step)
+          }
+          onClick={() => onStep(step)}
+        >
+          <span className="odm-or-tab-dot">
+            {index < activeStepIndex ? (
+              <OrderIcon name="check" size={14} />
+            ) : (
+              index + 1
+            )}
+          </span>
+          <span className="odm-or-tab-text">
+            <span className="odm-or-tab-label">{stepLabels[step]}</span>
+            <span className="odm-or-tab-hint">
+              {t[stepSubtitles[step]] as string}
+            </span>
+          </span>
+        </button>
+      ))}
+    </nav>
+  )
+}
+export type OrderDispatchContext = {
+  orderId: string
+  missionScoped: boolean
+  returnLabel: string
+  initialStep: 'staff' | 'device' | 'confirm'
+  canAssign: boolean
+  missionSelection: ReactNode
+  onMissionNext: () => boolean
+  onReturn: (toOrigin?: boolean) => void
+  onAssigned: () => void
+  onChanged: () => void
+  onDraftState: (dirty: boolean, busy: boolean) => void
+  initialDevices: string[]
+  initialStaff: Partial<Record<MissionStaffRole, string[]>>
+  assignedPeople: AvailableOperator[]
+  assignedDevices: AvailableDrone[]
+  scheduledStartAt?: string | null
+  scheduledEndAt?: string | null
+}
+
 /** Real resource assignment in the existing manager shell; no invented ranking data. */
-export function LiveDispatchPage({ missionId }: { missionId: string }) {
+export function LiveDispatchPage(props: {
+  missionId: string
+  orderContext?: OrderDispatchContext
+}) {
+  return <LiveDispatchContent key={props.missionId} {...props} />
+}
+
+function LiveDispatchContent({
+  missionId,
+  orderContext,
+}: {
+  missionId: string
+  orderContext?: OrderDispatchContext
+}) {
   const { t } = useI18n(liveDispatchPageMessages)
   const mission = useApiQuery(
     () => missionApi.getMissionById(missionId),
-    [missionId],
+    [missionId, orderContext?.scheduledStartAt, orderContext?.scheduledEndAt],
   )
-  const drones = useApiQuery(() => droneApi.getAvailable(), [missionId])
-  const operators = useApiQuery(() => operatorApi.getAvailable(missionId), [missionId])
-  const [droneIds, setDroneIds] = useState<string[]>([])
+  const currentMission =
+    mission.data?.id === missionId ? mission.data : undefined
+  const start = currentMission?.scheduledStartAt
+  const end = currentMission?.scheduledEndAt
+  const scope = JSON.stringify([missionId, start, end])
+  const validWindow = Boolean(
+    start && end && new Date(start).getTime() < new Date(end).getTime(),
+  )
+  const availability = useApiQuery(async () => {
+    if (!validWindow) return null
+    const [devices, people] = await Promise.all([
+      droneApi.getAvailable(missionId),
+      operatorApi.getAvailable(missionId),
+    ])
+    return { scope, devices, people }
+  }, [scope, validWindow])
+  const resourcesReady =
+    !mission.loading &&
+    !mission.error &&
+    validWindow &&
+    !availability.loading &&
+    !availability.error &&
+    availability.data?.scope === scope
+  const drones = {
+    data: resourcesReady ? availability.data?.devices : undefined,
+    reload: availability.reload,
+  }
+  const operators = {
+    data: resourcesReady ? availability.data?.people : undefined,
+    reload: availability.reload,
+  }
+  const [droneIds, setDroneIds] = useState<string[]>(
+    orderContext?.initialDevices ?? [],
+  )
   const [staffByRole, setStaffByRole] = useState<
     Partial<Record<MissionStaffRole, string[]>>
-  >({})
+  >(orderContext?.initialStaff ?? {})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeStep, setActiveStep] = useState<DispatchStep>('staff')
-  const [openStaffRole, setOpenStaffRole] = useState<MissionStaffRole | null>(null)
+  const [activeStep, setActiveStep] = useState<DispatchStep>(
+    orderContext?.initialStep ?? 'staff',
+  )
+  const [openStaffRole, setOpenStaffRole] = useState<MissionStaffRole | null>(
+    null,
+  )
   const [devicePickerOpen, setDevicePickerOpen] = useState(false)
+  const conflictStep = useRef<'staff' | 'device' | null>(null)
+  useEffect(() => {
+    if (!resourcesReady) return
+    const deviceSet = new Set(availability.data?.devices.map((item) => item.id))
+    const staffSet = new Set(availability.data?.people.map((item) => item.id))
+    const deviceInvalid = droneIds.some((id) => !deviceSet.has(id))
+    const staffInvalid = missionRoles.some((role) =>
+      (staffByRole[role] ?? []).some((id) => !staffSet.has(id)),
+    )
+    if (deviceInvalid)
+      setDroneIds((ids) => ids.filter((id) => deviceSet.has(id)))
+    if (staffInvalid)
+      setStaffByRole((crew) =>
+        Object.fromEntries(
+          missionRoles.map((role) => [
+            role,
+            (crew[role] ?? []).filter((id) => staffSet.has(id)),
+          ]),
+        ),
+      )
+    if (deviceInvalid || staffInvalid || conflictStep.current) {
+      const step =
+        conflictStep.current === 'device'
+          ? 'device'
+          : staffInvalid
+            ? 'staff'
+            : deviceInvalid
+              ? 'device'
+              : conflictStep.current!
+      setActiveStep(step)
+      setOpenStaffRole(null)
+      setDevicePickerOpen(false)
+      setError(
+        deviceInvalid || staffInvalid
+          ? step === 'staff'
+            ? t.staffAvailabilityChanged
+            : t.deviceAvailabilityChanged
+          : t.resourceAvailabilityChanged,
+      )
+      conflictStep.current = null
+    }
+  }, [
+    resourcesReady,
+    availability.data,
+    droneIds,
+    staffByRole,
+    t.staffAvailabilityChanged,
+    t.deviceAvailabilityChanged,
+    t.resourceAvailabilityChanged,
+  ])
 
-  const selectedStaffIds = missionRoles
-    .flatMap((role) => staffByRole[role] ?? [])
-  const hasAllRoles = missionRoles.every((role) => (staffByRole[role] ?? []).length > 0)
+  const selectedStaffIds = missionRoles.flatMap(
+    (role) => staffByRole[role] ?? [],
+  )
+  const hasAllRoles = missionRoles.every(
+    (role) => (staffByRole[role] ?? []).length > 0,
+  )
+
+  const dirty = Boolean(
+    orderContext &&
+    (JSON.stringify(droneIds) !== JSON.stringify(orderContext.initialDevices) ||
+      missionRoles.some(
+        (role) =>
+          JSON.stringify(staffByRole[role] ?? []) !==
+          JSON.stringify(orderContext.initialStaff[role] ?? []),
+      )),
+  )
+  const draftCallback = orderContext?.onDraftState
+  useEffect(() => {
+    draftCallback?.(dirty, busy)
+  }, [dirty, busy, draftCallback])
 
   async function assign() {
+    if (
+      busy ||
+      !resourcesReady ||
+      (orderContext &&
+        (!orderContext.canAssign ||
+          mission.data?.id !== missionId ||
+          mission.data.orderId !== orderContext.orderId))
+    )
+      return
     if (droneIds.length === 0 || !hasAllRoles) {
       setError(t.selectDroneAndOperator)
       return
@@ -900,44 +1262,100 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
     setError(null)
     try {
       await missionApi.assignResources(missionId, droneIds, staffByRole)
+      orderContext?.onAssigned()
       mission.reload()
-      drones.reload()
-      operators.reload()
+      availability.reload()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t.assignFailed)
+      setError(planningError(cause))
+      if (resourceAssignmentConflict(cause)) {
+        conflictStep.current =
+          cause instanceof ApiError && cause.path.includes('assign-device')
+            ? 'device'
+            : 'staff'
+        setActiveStep(conflictStep.current)
+      }
+      orderContext?.onChanged()
+      availability.reload()
+      mission.reload()
     } finally {
       setBusy(false)
     }
   }
 
-  if (mission.loading || drones.loading || operators.loading) {
-    return <div className="odm-mgr-dash">{t.loadingResources}</div>
+  if (
+    mission.loading ||
+    availability.loading ||
+    (validWindow && !availability.error && availability.data?.scope !== scope)
+  ) {
+    return (
+      <div className="odm-mgr-dash" role="status">
+        {activeStep === 'device' ? t.checkingDevices : t.checkingStaff}
+      </div>
+    )
   }
-  if (mission.error || drones.error || operators.error || !mission.data) {
+  if (mission.error || availability.error || !mission.data || !resourcesReady) {
     return (
       <StateView
         state="error"
         title={t.loadError}
-        error={mission.error ?? drones.error ?? operators.error}
+        error={
+          new Error(
+            !validWindow
+              ? t.scheduleRequired
+              : 'Không thể tải nguồn lực của nhiệm vụ này. Vui lòng thử lại.',
+          )
+        }
         onRetry={() => {
           mission.reload()
-          drones.reload()
-          operators.reload()
+          availability.reload()
         }}
       />
     )
   }
 
   const current = mission.data
+  if (
+    orderContext &&
+    (current.id !== missionId ||
+      current.orderId !== orderContext.orderId ||
+      !['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+        current.status,
+      ))
+  )
+    return (
+      <section className="odm-or-card odm-or-card-body">
+        <p role="alert">
+          Nhiệm vụ không còn đủ điều kiện phân công trong Order này. Vui lòng
+          chọn lại nhiệm vụ.
+        </p>
+        <button
+          className="odm-or-btn-outline"
+          onClick={() => orderContext.onReturn()}
+        >
+          {orderContext.missionScoped
+            ? orderContext.returnLabel
+            : 'Chọn nhiệm vụ khác'}
+        </button>
+      </section>
+    )
   const currentOrderCode = displayOrderCode(current.orderCode, current.orderId)
-  const assignable =
-    current.status === 'RESOURCE_ASSIGNING' || current.status === 'CREATED'
+  const assignable = orderContext
+    ? ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+        current.status,
+      )
+    : current.status === 'RESOURCE_ASSIGNING' || current.status === 'CREATED'
   const activeStepIndex = dispatchSteps.indexOf(activeStep)
-  const selectedDrones = (drones.data ?? []).filter((drone) => droneIds.includes(drone.id))
+  const selectedDrones = (drones.data ?? []).filter((drone) =>
+    droneIds.includes(drone.id),
+  )
   const assignedDeviceText =
     selectedDrones.length > 0
       ? selectedDrones.map((drone) => drone.label).join(', ')
-      : current.droneCode ?? current.deviceCode ?? current.deviceId ?? current.droneId ?? '—'
+      : (current.droneCode ??
+        current.deviceCode ??
+        current.deviceId ??
+        current.droneId ??
+        '—')
   const hasTarget = current.latitude != null && current.longitude != null
   const target = hasTarget
     ? worldToViewportPercent(
@@ -948,27 +1366,34 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
     : null
   const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}?v=${SIMULATION_MAP_VERSION}`
   const imageStyle = simulationMapImageStyle(SIMULATION_MAP_IMAGE_CROP)
-  const stepLabels: Record<DispatchStep, string> = {
-    order: t.orderTab,
-    mission: t.missionTab,
-    staff: t.staffTab,
-    device: t.deviceTab,
-    confirm: t.confirmTab,
-  }
   const goNext = () => {
-    setActiveStep(dispatchSteps[Math.min(activeStepIndex + 1, dispatchSteps.length - 1)])
+    if (activeStep === 'mission' && orderContext) {
+      if (orderContext.onMissionNext()) setActiveStep('staff')
+      return
+    }
+    setActiveStep(
+      dispatchSteps[Math.min(activeStepIndex + 1, dispatchSteps.length - 1)],
+    )
   }
   const goPrevious = () => {
+    if (activeStep === 'staff' && orderContext) {
+      orderContext.onReturn()
+      return
+    }
     setActiveStep(dispatchSteps[Math.max(activeStepIndex - 1, 0)])
   }
   const globalStep = activeStep === 'confirm' ? 4 : 3
   const roleSummary = missionRoles.map((role) => ({
     role,
     names: (staffByRole[role] ?? [])
-      .map((id) => (operators.data ?? []).find((item) => item.id === id)?.fullName)
+      .map(
+        (id) => (operators.data ?? []).find((item) => item.id === id)?.fullName,
+      )
       .filter(Boolean) as string[],
   }))
-  const missingRoles = roleSummary.filter((item) => item.names.length === 0).length
+  const missingRoles = roleSummary.filter(
+    (item) => item.names.length === 0,
+  ).length
   const stepHint: Record<DispatchStep, string> = {
     order: t.orderFooterHint,
     mission: t.missionFooterHint,
@@ -986,13 +1411,30 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
         <div>
           <h1 className="odm-or-title">{t.createMissionTitle}</h1>
           <p className="odm-or-subtitle">{t.createMissionSubtitle}</p>
+          {orderContext && (
+            <span className="odm-or-pill odm-or-pill-blue">
+              {current.missionCode}
+            </span>
+          )}
         </div>
-        <a
-          className="odm-or-btn-outline"
-          href={managerHref({ screen: 'orderQueue' })}
-        >
-          {t.backToOrders}
-        </a>
+        {orderContext ? (
+          <button
+            className="odm-or-btn-outline"
+            disabled={busy}
+            onClick={() => orderContext.onReturn()}
+          >
+            {orderContext.missionScoped
+              ? orderContext.returnLabel
+              : 'Chọn nhiệm vụ khác'}
+          </button>
+        ) : (
+          <a
+            className="odm-or-btn-outline"
+            href={managerHref({ screen: 'orderQueue' })}
+          >
+            {t.backToOrders}
+          </a>
+        )}
       </div>
 
       {!assignable ? (
@@ -1035,7 +1477,10 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                 </a>
                 <a
                   className="odm-or-btn odm-or-btn-primary"
-                  href={managerHref({ screen: 'missions', missionId: current.id })}
+                  href={managerHref({
+                    screen: 'missions',
+                    missionId: current.id,
+                  })}
                 >
                   {t.viewMission}
                   <OrderIcon name="chevron-right" size={16} />
@@ -1048,33 +1493,14 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
         <>
           <OrderWorkflowStepper currentStep={globalStep} />
 
-          <nav className="odm-or-card odm-or-tabs" aria-label={t.tabsAria}>
-            {dispatchSteps.map((step, index) => (
-              <button
-                key={step}
-                type="button"
-                className={`odm-or-tab${activeStep === step ? ' is-active' : ''}${
-                  index < activeStepIndex ? ' is-done' : ''
-                }`}
-                aria-current={activeStep === step ? 'step' : undefined}
-                onClick={() => setActiveStep(step)}
-              >
-                <span className="odm-or-tab-dot">
-                  {index < activeStepIndex ? (
-                    <OrderIcon name="check" size={14} />
-                  ) : (
-                    index + 1
-                  )}
-                </span>
-                <span className="odm-or-tab-text">
-                  <span className="odm-or-tab-label">{stepLabels[step]}</span>
-                  <span className="odm-or-tab-hint">
-                    {t[stepSubtitles[step]] as string}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </nav>
+          <DispatchWizardTabs
+            activeStep={activeStep}
+            onStep={(step) => {
+              if (orderContext && (step === 'order' || step === 'mission'))
+                orderContext.onReturn(step === 'order')
+              else setActiveStep(step)
+            }}
+          />
 
           {activeStep === 'order' && (
             <section className="odm-or-card">
@@ -1134,7 +1560,11 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                 {target && (
                   <div
                     className="odm-or-map odm-or-map-compact"
-                    style={{ aspectRatio: simulationMapAspectRatio(SIMULATION_MAP_IMAGE_CROP) }}
+                    style={{
+                      aspectRatio: simulationMapAspectRatio(
+                        SIMULATION_MAP_IMAGE_CROP,
+                      ),
+                    }}
                   >
                     <div
                       className="odm-or-map-layer"
@@ -1189,7 +1619,10 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
             </section>
           )}
 
-          {activeStep === 'mission' && (
+          {activeStep === 'mission' &&
+            orderContext &&
+            orderContext.missionSelection}
+          {activeStep === 'mission' && !orderContext && (
             <section className="odm-or-card">
               <header className="odm-or-card-head">
                 <span className="odm-or-card-title">
@@ -1237,12 +1670,17 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                 <span
                   className={`odm-or-pill ${missingRoles === 0 ? 'odm-or-pill-green' : 'odm-or-pill-amber'}`}
                 >
-                  {missingRoles === 0 ? t.rolesComplete : t.rolesMissing(missingRoles)}
+                  {missingRoles === 0
+                    ? t.rolesComplete
+                    : t.rolesMissing(missingRoles)}
                 </span>
               </header>
-              <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
+              <div
+                className="odm-or-card-body"
+                style={{ display: 'grid', gap: 14 }}
+              >
                 <p className="odm-or-muted" style={{ margin: 0 }}>
-                  {t.roleHelp}
+                  {t.roleHelp} {t.staffAvailabilityHint}
                 </p>
                 <div className="odm-or-role-grid">
                   {missionRoles.map((role) => {
@@ -1287,7 +1725,9 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                           onRemove={(staffId) => {
                             setStaffByRole((cur) => ({
                               ...cur,
-                              [role]: (cur[role] ?? []).filter((id) => id !== staffId),
+                              [role]: (cur[role] ?? []).filter(
+                                (id) => id !== staffId,
+                              ),
                             }))
                             setError(null)
                           }}
@@ -1309,7 +1749,10 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                         )
                         if (!staff) return null
                         return (
-                          <span key={`${role}-${selectedId}`} className="odm-or-chip">
+                          <span
+                            key={`${role}-${selectedId}`}
+                            className="odm-or-chip"
+                          >
                             <b>{t.roles[role]}</b>
                             {staff.fullName}
                             <button
@@ -1318,7 +1761,9 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                               onClick={() =>
                                 setStaffByRole((cur) => ({
                                   ...cur,
-                                  [role]: (cur[role] ?? []).filter((id) => id !== selectedId),
+                                  [role]: (cur[role] ?? []).filter(
+                                    (id) => id !== selectedId,
+                                  ),
                                 }))
                               }
                               aria-label={`${t.clearStaff} ${staff.fullName}`}
@@ -1355,18 +1800,27 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                   </span>
                 )}
               </header>
-              <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
+              <div
+                className="odm-or-card-body"
+                style={{ display: 'grid', gap: 14 }}
+              >
                 <p className="odm-or-muted" style={{ margin: 0 }}>
-                  {t.deviceHelp}
+                  {t.deviceHelp} {t.deviceAvailabilityHint}
                 </p>
                 {!drones.data?.length ? (
                   <p className="odm-or-empty">{t.noAvailableDrones}</p>
                 ) : (
                   <section className="odm-or-device-box">
-                    <div className="odm-or-role-head" style={{ marginBottom: 10 }}>
+                    <div
+                      className="odm-or-role-head"
+                      style={{ marginBottom: 10 }}
+                    >
                       <span>
                         <b>{t.selectedDevice}</b>
-                        <span className="odm-or-muted" style={{ display: 'block', fontSize: 13 }}>
+                        <span
+                          className="odm-or-muted"
+                          style={{ display: 'block', fontSize: 13 }}
+                        >
                           {selectedDrones.length > 0
                             ? t.deviceSelectedCount(selectedDrones.length)
                             : t.chooseDroneOption}
@@ -1397,7 +1851,9 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                         setError(null)
                       }}
                       onRemove={(deviceId) => {
-                        setDroneIds((currentIds) => currentIds.filter((id) => id !== deviceId))
+                        setDroneIds((currentIds) =>
+                          currentIds.filter((id) => id !== deviceId),
+                        )
                         setError(null)
                       }}
                       onClear={() => {
@@ -1419,7 +1875,10 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                   {t.readyToAssign}
                 </span>
               </header>
-              <div className="odm-or-card-body" style={{ display: 'grid', gap: 16 }}>
+              <div
+                className="odm-or-card-body"
+                style={{ display: 'grid', gap: 16 }}
+              >
                 <p className="odm-or-muted" style={{ margin: 0 }}>
                   {t.confirmBody}
                 </p>
@@ -1451,7 +1910,11 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                         <OrderIcon name="user" size={16} />
                         {t.roles[item.role]}
                       </dt>
-                      <dd>{item.names.length > 0 ? item.names.join(', ') : t.notSelected}</dd>
+                      <dd>
+                        {item.names.length > 0
+                          ? item.names.join(', ')
+                          : t.notSelected}
+                      </dd>
                     </div>
                   ))}
                   <div>
@@ -1468,10 +1931,17 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                 </dl>
                 <ul className="odm-or-checklist" aria-label={t.checklist}>
                   <li className={missingRoles === 0 ? 'is-ok' : 'is-bad'}>
-                    <OrderIcon name={missingRoles === 0 ? 'check' : 'alert'} size={16} />
-                    {missingRoles === 0 ? t.rolesComplete : t.rolesMissing(missingRoles)}
+                    <OrderIcon
+                      name={missingRoles === 0 ? 'check' : 'alert'}
+                      size={16}
+                    />
+                    {missingRoles === 0
+                      ? t.rolesComplete
+                      : t.rolesMissing(missingRoles)}
                   </li>
-                  <li className={selectedDrones.length > 0 ? 'is-ok' : 'is-bad'}>
+                  <li
+                    className={selectedDrones.length > 0 ? 'is-ok' : 'is-bad'}
+                  >
                     <OrderIcon
                       name={selectedDrones.length > 0 ? 'check' : 'alert'}
                       size={16}
@@ -1520,7 +1990,12 @@ export function LiveDispatchPage({ missionId }: { missionId: string }) {
                 <button
                   type="button"
                   className="odm-or-btn odm-or-btn-primary"
-                  disabled={busy || droneIds.length === 0 || !hasAllRoles}
+                  disabled={
+                    busy ||
+                    droneIds.length === 0 ||
+                    !hasAllRoles ||
+                    (orderContext && !orderContext.canAssign)
+                  }
                   onClick={() => void assign()}
                 >
                   {busy ? t.assigning : t.assign}

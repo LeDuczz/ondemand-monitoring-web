@@ -38,6 +38,10 @@ export function toMissionCalendarItem(
     orderCode: source.orderCode ?? null,
     missionCode: source.missionCode,
     status: source.status,
+    safeStopStatus: source.safeStopStatus,
+    safeStopRequestedAt: source.safeStopRequestedAt,
+    safeStopConfirmedAt: source.safeStopConfirmedAt,
+    safeStopCleanedAt: source.safeStopCleanedAt,
     attemptNumber: null,
     droneId: source.droneId ?? source.deviceId ?? null,
     operatorId: source.operatorId,
@@ -67,11 +71,8 @@ export function toMissionCalendarItem(
 /** MNG-04 / MNG-05 mission-creation + dispatch APIs. See evd/00-PLAN.md §3-5. */
 export const missionsApi = {
   /**
-   * `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. Attaches a flight
-   * plan + schedule to the order's mission (created by `POST
-   * /orders/{id}/approve` [BE]). See `evd/P5-manager-mission-dispatch.md`
-   * for the conflict-resolution note on how this coexists with the
-   * backend already creating a mission on approve.
+   * Canonical planning-only creation command. Requires an idempotency key
+   * and public plan revision; replay returns the original Mission.
    */
   createMission(
     orderId: string,
@@ -421,11 +422,11 @@ export const missionsApi = {
   getMissionResult(
     missionId: string,
     signal?: AbortSignal,
-  ): Promise<MissionResultResponse> {
-    return apiRequest<MissionResultResponse>(
+  ): Promise<MissionResultResponse | null> {
+    return apiRequest<MissionResultResponse | null>(
       `/api/missions/${missionId}/result`,
       { signal },
-    )
+    ).then((result) => result ?? null)
   },
 
   /** `POST /api/manager/mission-results/{resultId}/approve` [BE]. Makes the mission result customer-deliverable. */
@@ -439,10 +440,17 @@ export const missionsApi = {
     )
   },
 
-  rejectMissionResult(resultId: string, note: string): Promise<MissionResultResponse> {
-    return apiRequest<MissionResultResponse>(`/api/manager/mission-results/${encodeURIComponent(resultId)}/reject`, {
-      method: 'POST', body: { note: note.trim() || null },
-    })
+  rejectMissionResult(
+    resultId: string,
+    note: string,
+  ): Promise<MissionResultResponse> {
+    return apiRequest<MissionResultResponse>(
+      `/api/manager/mission-results/${encodeURIComponent(resultId)}/reject`,
+      {
+        method: 'POST',
+        body: { note: note.trim() || null },
+      },
+    )
   },
 
   /** `POST /api/manager/missions/{missionId}/media-approvals/{mediaId}/approve` [BE]. Makes one media asset visible to the customer. */
@@ -455,7 +463,10 @@ export const missionsApi = {
     )
   },
   rejectMissionMedia(missionId: string, mediaId: string): Promise<unknown> {
-    return apiRequest<unknown>(`/api/manager/missions/${encodeURIComponent(missionId)}/media-approvals/${encodeURIComponent(mediaId)}/reject`, { method: 'POST' })
+    return apiRequest<unknown>(
+      `/api/manager/missions/${encodeURIComponent(missionId)}/media-approvals/${encodeURIComponent(mediaId)}/reject`,
+      { method: 'POST' },
+    )
   },
 
   /** `POST /api/missions/{id}/connect` [BE]. */

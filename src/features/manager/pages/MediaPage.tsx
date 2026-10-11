@@ -1,7 +1,7 @@
 // MNG-11 · Media và giao kết quả
 import { useState } from 'react'
 
-import { ApiError } from '../../../shared/api/httpClient'
+import { planningError } from '../lib/planningErrors'
 import { StatusBadge } from '../../../shared/components/odm/StatusBadge'
 import { StateView } from '../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
@@ -106,7 +106,7 @@ function ReassignModal({
       await mediaApi.reassignTask(task.id, selectedId)
       onSuccess()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t.genericError)
+      setError(planningError(err))
     } finally {
       setSubmitting(false)
     }
@@ -224,7 +224,7 @@ function ReuploadModal({
       await mediaApi.requestReupload(_media.id, reason)
       onSuccess()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t.genericError)
+      setError(planningError(err))
     } finally {
       setSubmitting(false)
     }
@@ -330,7 +330,7 @@ function DeliverModal({ mission, onClose, onSuccess }: DeliverModalProps) {
       await mediaApi.deliverOrder(mission.orderId, note || undefined)
       onSuccess()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t.genericError)
+      setError(planningError(err))
     } finally {
       setSubmitting(false)
     }
@@ -517,7 +517,7 @@ export function MediaPage() {
         <StateView
           state="error"
           title={t.loadError}
-          error={query.error}
+          error={new Error(t.loadError)}
           onRetry={reload}
         />
       </div>

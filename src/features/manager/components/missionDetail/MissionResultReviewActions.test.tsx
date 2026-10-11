@@ -54,10 +54,9 @@ describe('MissionResultReviewActions', () => {
         onReviewed={refresh}
       />,
     )
-    fireEvent.change(
-      screen.getByLabelText('Nhận xét từ chối (không bắt buộc)'),
-      { target: { value: 'Cần kiểm tra lại' } },
-    )
+    fireEvent.change(screen.getByLabelText('Lý do từ chối'), {
+      target: { value: 'Cần kiểm tra lại' },
+    })
     fireEvent.click(screen.getByText('Từ chối kết quả'))
     await waitFor(() =>
       expect(reject).toHaveBeenCalledWith('r', 'Cần kiểm tra lại'),

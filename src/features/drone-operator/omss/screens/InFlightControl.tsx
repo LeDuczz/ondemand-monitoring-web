@@ -18,6 +18,11 @@ import { inFlightControlMessages } from '../i18n/inFlightControl.messages'
 import { captureSatelliteSnapshot } from './satelliteSnapshot'
 import { flightControlApi } from '../api/flightControlApi'
 import { missionApi } from '../../../mission/api/missionApi'
+import {
+  maySendFlightCommand,
+  missionHasSafeStop,
+  missionMayTerminate,
+} from '../../../mission/lib/missionOperationalState'
 import { SatelliteFlightMap } from './SatelliteFlightMap'
 import { DroneCameraView, type DroneCameraTelemetry } from './DroneCameraView'
 import { FlightCockpit } from './FlightCockpit'
@@ -36,6 +41,9 @@ import {
 } from '../../../../shared/lib/simulationMapProjection'
 
 interface Props {
+  normalFlightAllowed?: boolean
+  terminationAllowed?: boolean
+  operationalMessage?: string
   mission: Mission
   drone: Drone
   onRTB: () => void
@@ -128,7 +136,12 @@ type ControlStatus = {
   positionGazebo?: { x: number; y: number }
   positionNed?: { northM: number; eastM: number; downM: number }
   velocityNed?: { northMps: number; eastMps: number; downMps: number }
-  positionGps?: { latitude: number; longitude: number; absoluteAltitudeM: number; relativeAltitudeM: number } | null
+  positionGps?: {
+    latitude: number
+    longitude: number
+    absoluteAltitudeM: number
+    relativeAltitudeM: number
+  } | null
   inAir?: boolean
   yawDeg?: number
   altitudeM?: number
@@ -854,38 +867,51 @@ function useRestrictedZones() {
 }
 
 function useRestrictedGpsZones() {
-  const [zones, setZones] = useState<RestrictedGpsZone[]>(() => withDefaultRestrictedGpsZones([]))
+  const [zones, setZones] = useState<RestrictedGpsZone[]>(() =>
+    withDefaultRestrictedGpsZones([]),
+  )
 
   useEffect(() => {
     let alive = true
 
     async function loadZones() {
       try {
-        const response = await fetch(`${env.apiBaseUrl}/api/zones`, { cache: 'no-store' })
+        const response = await fetch(`${env.apiBaseUrl}/api/zones`, {
+          cache: 'no-store',
+        })
         const payload = await response.json()
         const items = Array.isArray(payload?.data)
           ? payload.data
           : Array.isArray(payload)
             ? payload
             : []
-        const restrictedGps = withDefaultRestrictedGpsZones((items as Array<{
-          id?: string
-          code?: string
-          name?: string
-          restricted?: boolean
-          zoneType?: string
-          coordinates?: number[][]
-        }>)
-          .filter(isRestrictedGpsZonePayload)
-          .map((zone) => ({
-            id: String(zone.id ?? zone.code ?? zone.name ?? 'restricted-zone'),
-            code: zone.code,
-            name: zone.name,
-            coordinates: (zone.coordinates ?? [])
-              .map((point) => ({ longitude: Number(point[0]), latitude: Number(point[1]) }))
-              .filter(isValidGps),
-          }))
-          .filter((zone) => zone.coordinates.length >= 3))
+        const restrictedGps = withDefaultRestrictedGpsZones(
+          (
+            items as Array<{
+              id?: string
+              code?: string
+              name?: string
+              restricted?: boolean
+              zoneType?: string
+              coordinates?: number[][]
+            }>
+          )
+            .filter(isRestrictedGpsZonePayload)
+            .map((zone) => ({
+              id: String(
+                zone.id ?? zone.code ?? zone.name ?? 'restricted-zone',
+              ),
+              code: zone.code,
+              name: zone.name,
+              coordinates: (zone.coordinates ?? [])
+                .map((point) => ({
+                  longitude: Number(point[0]),
+                  latitude: Number(point[1]),
+                }))
+                .filter(isValidGps),
+            }))
+            .filter((zone) => zone.coordinates.length >= 3),
+        )
         if (alive) setZones(restrictedGps)
       } catch {
         if (alive) setZones(withDefaultRestrictedGpsZones([]))
@@ -957,14 +983,18 @@ function statusToSimulationPoint(
   return null
 }
 
-function toControllerRouteWaypoints(route: Array<{ latitude: number; longitude: number }>) {
+function toControllerRouteWaypoints(
+  route: Array<{ latitude: number; longitude: number }>,
+) {
   const waypoints = route.slice(1)
   if (waypoints.length <= MAX_GPS_ROUTE_WAYPOINTS) return waypoints
 
   const target = waypoints[waypoints.length - 1]
   const step = (waypoints.length - 1) / (MAX_GPS_ROUTE_WAYPOINTS - 1)
-  const sampled = Array.from({ length: MAX_GPS_ROUTE_WAYPOINTS - 1 }, (_, index) =>
-    waypoints[Math.floor(index * step)])
+  const sampled = Array.from(
+    { length: MAX_GPS_ROUTE_WAYPOINTS - 1 },
+    (_, index) => waypoints[Math.floor(index * step)],
+  )
   return [...sampled, target]
 }
 
@@ -1009,8 +1039,8 @@ const RealMiniMap = memo(function RealMiniMap({
     .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
     .join(' ')
   const routeTargetPoint =
-    routeScreenPoints.find(
-      (point) => ['TARGET', 'ORDER'].includes(point.reason?.toUpperCase()),
+    routeScreenPoints.find((point) =>
+      ['TARGET', 'ORDER'].includes(point.reason?.toUpperCase()),
     ) ?? routeScreenPoints[routeScreenPoints.length - 1]
   const orderTargetPoint =
     typeof mission.targetSimX === 'number' &&
@@ -2669,6 +2699,8 @@ const toolbarGroupStyle: CSSProperties = {
 }
 
 const FlightControls = memo(function FlightControls({
+  canFly,
+  canTerminate,
   busyCommand,
   lidarDetailsOpen,
   moreOpen,
@@ -2682,6 +2714,8 @@ const FlightControls = memo(function FlightControls({
   onReferenceCapture,
   referenceBusy,
 }: {
+  canFly: boolean
+  canTerminate: boolean
   referenceBusy?: boolean
   onReferenceCapture?: () => void
   onFinishFlight?: () => void
@@ -2701,6 +2735,8 @@ const FlightControls = memo(function FlightControls({
   const thermalLabel = thermalEnabled
     ? t.toolbar.thermalOn
     : t.toolbar.thermalOff
+  const commandDisabled = (command: FlightCommand) =>
+    busyCommand !== null || !maySendFlightCommand(command, canFly, canTerminate)
   const controlButton = (item: {
     command: FlightCommand
     labelKey: keyof ControlsText
@@ -2720,7 +2756,7 @@ const FlightControls = memo(function FlightControls({
       <button
         key={`${item.command}-${item.labelKey}`}
         onClick={() => onCommand(item.command)}
-        disabled={busyCommand !== null}
+        disabled={commandDisabled(item.command)}
         style={{
           ...buttonStyle(
             (isThermal && thermalEnabled) || (isLidar && lidarDetailsOpen)
@@ -2772,7 +2808,7 @@ const FlightControls = memo(function FlightControls({
           {flightControls.map(controlButton)}
           <button
             onClick={() => onCommand('stop')}
-            disabled={busyCommand !== null}
+            disabled={commandDisabled('stop')}
             style={{
               ...buttonStyle(),
               background: 'rgba(20,83,45,.82)',
@@ -2810,7 +2846,7 @@ const FlightControls = memo(function FlightControls({
           <button
             key={item.labelKey}
             onClick={() => onCommand(item.command)}
-            disabled={busyCommand !== null}
+            disabled={commandDisabled(item.command)}
             style={{
               width: 46,
               height: 29,
@@ -2838,7 +2874,7 @@ const FlightControls = memo(function FlightControls({
           <button
             key={item.labelKey}
             onClick={() => onCommand(item.command)}
-            disabled={busyCommand !== null}
+            disabled={commandDisabled(item.command)}
             style={{
               ...buttonStyle(),
               width: 46,
@@ -2889,22 +2925,30 @@ const FlightControls = memo(function FlightControls({
         {onReferenceCapture && (
           <button
             onClick={onReferenceCapture}
-            disabled={busyCommand !== null || referenceBusy}
+            disabled={!canFly || busyCommand !== null || referenceBusy}
             style={{ ...buttonStyle(), width: 62 }}
-            title={getLanguage() === 'en' ? 'Capture real-world reference image (Mapillary)' : 'Chụp ảnh tham chiếu thực tế (Mapillary)'}
+            title={
+              getLanguage() === 'en'
+                ? 'Capture real-world reference image (Mapillary)'
+                : 'Chụp ảnh tham chiếu thực tế (Mapillary)'
+            }
           >
             <Icon name="photo" size={14} />
             <span>
               {referenceBusy
-                ? getLanguage() === 'en' ? 'Fetching…' : 'Đang lấy…'
-                : getLanguage() === 'en' ? 'Ref. photo' : 'Ảnh TT'}
+                ? getLanguage() === 'en'
+                  ? 'Fetching…'
+                  : 'Đang lấy…'
+                : getLanguage() === 'en'
+                  ? 'Ref. photo'
+                  : 'Ảnh TT'}
             </span>
           </button>
         )}
         {onFinishFlight && (
           <button
             onClick={onFinishFlight}
-            disabled={busyCommand !== null || finishFlightBusy}
+            disabled={commandDisabled('return_to_base') || finishFlightBusy}
             style={{
               ...buttonStyle(),
               width: 86,
@@ -2921,7 +2965,7 @@ const FlightControls = memo(function FlightControls({
         )}
         <button
           onClick={() => onCommand('thermal_toggle')}
-          disabled={busyCommand !== null}
+          disabled={commandDisabled('thermal_toggle')}
           style={{
             ...buttonStyle(thermalEnabled ? 'amber' : undefined),
             width: 62,
@@ -2973,7 +3017,7 @@ const FlightControls = memo(function FlightControls({
             <button
               key={item.preset}
               onClick={() => onWeatherPreset(item.preset)}
-              disabled={busyCommand !== null}
+              disabled={!canFly || busyCommand !== null}
               style={{
                 ...buttonStyle(item.tone),
                 width: 'auto',
@@ -2998,7 +3042,11 @@ const manualPreflightItems = [
   { key: 'gps', vi: 'GPS đã sẵn sàng', en: 'GPS ready' },
   { key: 'battery', vi: 'Pin đủ bay demo', en: 'Battery ready for demo' },
   { key: 'propeller', vi: 'Cánh quạt an toàn', en: 'Propellers safe' },
-  { key: 'area', vi: 'Khu vực cất cánh thông thoáng', en: 'Takeoff area clear' },
+  {
+    key: 'area',
+    vi: 'Khu vực cất cánh thông thoáng',
+    en: 'Takeoff area clear',
+  },
 ]
 
 function ManualCockpitPreflight({
@@ -3013,7 +3061,9 @@ function ManualCockpitPreflight({
   const lang = getLanguage()
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [submitting, setSubmitting] = useState(false)
-  const doneCount = manualPreflightItems.filter((item) => checked[item.key]).length
+  const doneCount = manualPreflightItems.filter(
+    (item) => checked[item.key],
+  ).length
   const allDone = doneCount === manualPreflightItems.length
 
   async function handleContinue() {
@@ -3034,7 +3084,9 @@ function ManualCockpitPreflight({
           <h2>{missionLabel}</h2>
           <span>{deviceLabel}</span>
         </div>
-        <strong>{doneCount}/{manualPreflightItems.length}</strong>
+        <strong>
+          {doneCount}/{manualPreflightItems.length}
+        </strong>
       </div>
       <div className="satellite-manual-preflight__list">
         {manualPreflightItems.map((item) => (
@@ -3046,7 +3098,8 @@ function ManualCockpitPreflight({
                 setChecked((current) => ({
                   ...current,
                   [item.key]: event.target.checked,
-                }))}
+                }))
+              }
             />
             <span>{lang === 'en' ? item.en : item.vi}</span>
           </label>
@@ -3059,14 +3112,21 @@ function ManualCockpitPreflight({
         onClick={handleContinue}
       >
         {submitting
-          ? lang === 'en' ? 'Continuing...' : 'Đang qua bước...'
-          : lang === 'en' ? 'Skip to flight' : 'Qua bước này'}
+          ? lang === 'en'
+            ? 'Continuing...'
+            : 'Đang qua bước...'
+          : lang === 'en'
+            ? 'Skip to flight'
+            : 'Qua bước này'}
       </button>
     </div>
   )
 }
 
 export default function InFlightControl({
+  normalFlightAllowed = false,
+  terminationAllowed = false,
+  operationalMessage,
   mission,
   drone,
   onRTB,
@@ -3220,35 +3280,78 @@ export default function InFlightControl({
 
   const sendCommand = useCallback(
     async (command: FlightCommand) => {
-      if (!preflightReady) {
+      if (
+        !maySendFlightCommand(command, normalFlightAllowed, terminationAllowed)
+      ) {
+        setLastCommand(
+          operationalMessage ??
+            'Chưa có quyền vận hành Mission. Làm mới trạng thái.',
+        )
+        return
+      }
+      if (!preflightReady && !terminationAllowed) {
         setLastCommand(t.status.preflightRequired)
         return
       }
-      const target = Number.isFinite(mission.lat) && Number.isFinite(mission.lng)
-        ? { latitude: mission.lat, longitude: mission.lng }
-        : null
+      // Recheck exact Mission before dispatch; a cockpit may stay open across a stop request.
+      try {
+        const id = mission.backendId ?? mission.id
+        const [current, access] = await Promise.all([
+          missionApi.getMissionById(id),
+          missionApi.getPermissions(id),
+        ])
+        if (
+          !maySendFlightCommand(
+            command,
+            !missionHasSafeStop(current) && access.canControlFlight,
+            missionMayTerminate(current, access.canTerminateFlight),
+          )
+        ) {
+          setLastCommand(
+            'Mission đang dừng hoặc chưa có quyền thực hiện lệnh này.',
+          )
+          return
+        }
+      } catch {
+        setLastCommand('Không thể xác nhận quyền Mission. Chưa gửi lệnh.')
+        return
+      }
+      const target =
+        Number.isFinite(mission.lat) && Number.isFinite(mission.lng)
+          ? { latitude: mission.lat, longitude: mission.lng }
+          : null
       if (command === 'gps_target_start') {
         if (!target) {
-          setLastCommand(getLanguage() === 'en'
-            ? 'Mission has no GPS target'
-            : 'Mission chưa có tọa độ GPS mục tiêu')
+          setLastCommand(
+            getLanguage() === 'en'
+              ? 'Mission has no GPS target'
+              : 'Mission chưa có tọa độ GPS mục tiêu',
+          )
           return
         }
         if (!isInsideHcmcServiceArea(target)) {
-          setLastCommand(getLanguage() === 'en'
-            ? 'Target is outside Ho Chi Minh City service area'
-            : 'Mục tiêu nằm ngoài vùng phục vụ TP.HCM')
+          setLastCommand(
+            getLanguage() === 'en'
+              ? 'Target is outside Ho Chi Minh City service area'
+              : 'Mục tiêu nằm ngoài vùng phục vụ TP.HCM',
+          )
           return
         }
       }
       let routeWaypoints: Array<{ latitude: number; longitude: number }> = []
       if (command === 'gps_target_start' && target) {
-        const gpsRoute = buildExecutableFlightRoute(controlStatus?.positionGps ?? null, target, restrictedGpsZones)
+        const gpsRoute = buildExecutableFlightRoute(
+          controlStatus?.positionGps ?? null,
+          target,
+          restrictedGpsZones,
+        )
         routeWaypoints = toControllerRouteWaypoints(gpsRoute)
         if (routeWaypoints.length === 0) {
-          setLastCommand(getLanguage() === 'en'
-            ? 'Waiting for current GPS before starting route flight'
-            : 'Chưa có GPS hiện tại để tạo đường bay né vùng cấm')
+          setLastCommand(
+            getLanguage() === 'en'
+              ? 'Waiting for current GPS before starting route flight'
+              : 'Chưa có GPS hiện tại để tạo đường bay né vùng cấm',
+          )
           return
         }
       }
@@ -3266,12 +3369,18 @@ export default function InFlightControl({
           // Bind on the ground too (takeoff), so the session already belongs to this
           // mission before the drone is airborne and "Fly to point" never needs a mid-air switch.
           // Photo / video also bind on demand instead of failing when the status poll is stale.
-          (command === 'gps_target_start' || command === 'takeoff' || command === 'photo' || command === 'video_toggle') &&
-          (controlStatus?.missionId !== missionKey || controlStatus?.deviceId !== drone.id)
+          (command === 'gps_target_start' ||
+            command === 'takeoff' ||
+            command === 'photo' ||
+            command === 'video_toggle') &&
+          (controlStatus?.missionId !== missionKey ||
+            controlStatus?.deviceId !== drone.id)
         ) {
-          setLastCommand(getLanguage() === 'en'
-            ? 'Binding drone controller...'
-            : 'Đang kết nối bộ điều khiển drone...')
+          setLastCommand(
+            getLanguage() === 'en'
+              ? 'Binding drone controller...'
+              : 'Đang kết nối bộ điều khiển drone...',
+          )
           await flightControlApi.bindSession(missionKey, drone.id)
         }
         if (command === 'photo') {
@@ -3279,7 +3388,8 @@ export default function InFlightControl({
           // and hand it to the controller's local media library for review/upload.
           const gps = controlStatus?.positionGps
           if (gps) {
-            const altitudeForView = gps.relativeAltitudeM ?? controlStatus?.altitudeM ?? null
+            const altitudeForView =
+              gps.relativeAltitudeM ?? controlStatus?.altitudeM ?? null
             const stamp = new Date()
             const blob = await captureSatelliteSnapshot({
               latitude: gps.latitude,
@@ -3288,26 +3398,38 @@ export default function InFlightControl({
               altitudeM: altitudeForView,
               caption: `${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}  ALT ${altitudeForView === null ? '--' : Math.round(altitudeForView)}m  ${stamp.toLocaleTimeString()}`,
             })
-            const upload = await fetch(`${controlBaseUrl}/api/media/local/capture`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'image/jpeg', 'X-Media-Source-Type': 'SATELLITE_SNAPSHOT' },
-              body: blob,
-            })
+            const upload = await fetch(
+              `${controlBaseUrl}/api/media/local/capture`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'image/jpeg',
+                  'X-Media-Source-Type': 'SATELLITE_SNAPSHOT',
+                },
+                body: blob,
+              },
+            )
             if (!upload.ok) {
-              const payload = await upload.json().catch(() => null) as { error?: string } | null
+              const payload = (await upload.json().catch(() => null)) as {
+                error?: string
+              } | null
               throw new Error(payload?.error ?? `HTTP ${upload.status}`)
             }
-            setLastCommand(getLanguage() === 'en'
-              ? 'Photo saved — open Review to approve it'
-              : 'Đã chụp ảnh — bấm Xem lại để duyệt và upload')
+            setLastCommand(
+              getLanguage() === 'en'
+                ? 'Photo saved — open Review to approve it'
+                : 'Đã chụp ảnh — bấm Xem lại để duyệt và upload',
+            )
             setIsOnline(true)
             return
           }
         }
         const currentAltitudeM =
-          controlStatus?.positionGps?.relativeAltitudeM ?? controlStatus?.altitudeM
+          controlStatus?.positionGps?.relativeAltitudeM ??
+          controlStatus?.altitudeM
         const targetAltitudeM =
-          typeof currentAltitudeM === 'number' && Number.isFinite(currentAltitudeM)
+          typeof currentAltitudeM === 'number' &&
+          Number.isFinite(currentAltitudeM)
             ? Math.max(8, Math.min(50, currentAltitudeM))
             : 25
         const response = await fetch(`${controlBaseUrl}/api/control/command`, {
@@ -3347,7 +3469,9 @@ export default function InFlightControl({
         })
 
         if (!response.ok) {
-          const payload = await response.json().catch(() => null) as { error?: string } | null
+          const payload = (await response.json().catch(() => null)) as {
+            error?: string
+          } | null
           throw new Error(payload?.error ?? `HTTP ${response.status}`)
         }
         setLastCommand(
@@ -3357,9 +3481,9 @@ export default function InFlightControl({
               ? getLanguage() === 'en'
                 ? 'GPS target flight started'
                 : 'Đã bắt đầu bay tới mục tiêu GPS'
-            : command === 'camera_front'
-              ? t.status.cameraReset
-              : t.status.commandSent(command.replaceAll('_', ' ')),
+              : command === 'camera_front'
+                ? t.status.cameraReset
+                : t.status.commandSent(command.replaceAll('_', ' ')),
         )
         setIsOnline(true)
 
@@ -3391,6 +3515,9 @@ export default function InFlightControl({
       mission.routePoints,
       onEmergency,
       onRTB,
+      normalFlightAllowed,
+      terminationAllowed,
+      operationalMessage,
       preflightReady,
       restrictedGpsZones,
       t,
@@ -3406,9 +3533,11 @@ export default function InFlightControl({
   useEffect(() => {
     if (!autoStartPlan) return
     if (import.meta.env.VITE_FLIGHT_MAP_ONLY !== 'false') {
-      setLastCommand(getLanguage() === 'en'
-        ? 'Legacy simulation waypoints are unavailable in GPS map mode'
-        : 'Đường bay mô phỏng cũ không dùng được trong chế độ bản đồ GPS')
+      setLastCommand(
+        getLanguage() === 'en'
+          ? 'Legacy simulation waypoints are unavailable in GPS map mode'
+          : 'Đường bay mô phỏng cũ không dùng được trong chế độ bản đồ GPS',
+      )
       onAutoStartPlanConsumed()
       return
     }
@@ -3534,18 +3663,51 @@ export default function InFlightControl({
     setFinishFlightBusy(true)
     setLastCommand(t.status.finishingFlight)
     try {
-      await missionApi.markReturning(missionId).catch(() => undefined)
+      const current = await missionApi.getMissionById(missionId)
+      const stopping = missionHasSafeStop(current)
+      if (stopping) {
+        const latest = await flightControlApi.status()
+        if (
+          latest.missionId !== missionId ||
+          latest.deviceId !== drone.id ||
+          latest.inAir !== false
+        )
+          throw new Error(
+            'Cần hạ cánh và kiểm tra đúng phiên Mission trước khi kết thúc vận hành.',
+          )
+        if (current.status === 'IN_FLIGHT' || current.status === 'IN_PROGRESS')
+          await missionApi.markReturning(missionId)
+        await flightControlApi.releaseSession(missionId)
+      } else {
+        await missionApi.markReturning(missionId).catch(() => undefined)
+      }
       await missionApi.startPostflight(missionId)
       markActiveMissionFlowStep(missionId, 5)
       setLastCommand(t.status.flightFinished)
-      navigateOperator(operatorHref({ screen: 'missions' }))
+      navigateOperator(
+        operatorHref(
+          stopping
+            ? { screen: 'missionDetail', missionId }
+            : { screen: 'missions' },
+        ),
+      )
     } catch (error) {
-      setLastCommand(error instanceof Error ? error.message : t.status.controllerOffline)
+      setLastCommand(
+        error instanceof Error ? error.message : t.status.controllerOffline,
+      )
     } finally {
       setFinishFlightBusy(false)
     }
-  }, [finishFlightBusy, mission.backendId, mission.id, onReviewMedia, t])
+  }, [
+    finishFlightBusy,
+    mission.backendId,
+    mission.id,
+    drone.id,
+    onReviewMedia,
+    t,
+  ])
   const handleReferenceCapture = useCallback(async () => {
+    if (!normalFlightAllowed) return
     if (referenceBusyRef.current) return
     referenceBusyRef.current = true
     setReferenceBusy(true)
@@ -3555,13 +3717,19 @@ export default function InFlightControl({
       const missionKey = mission.backendId ?? mission.id
       // The telemetry sender only publishes GPS once the flight controller is bound to this mission.
       let justBound = false
-      if (controlStatus?.missionId !== missionKey || controlStatus?.deviceId !== drone.id) {
+      if (
+        controlStatus?.missionId !== missionKey ||
+        controlStatus?.deviceId !== drone.id
+      ) {
         await flightControlApi.bindSession(missionKey, drone.id)
         justBound = true
       }
-      const waitMs = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
+      const waitMs = (ms: number) =>
+        new Promise((resolve) => window.setTimeout(resolve, ms))
       if (justBound) await waitMs(3000)
-      let result: Awaited<ReturnType<typeof missionApi.captureReferenceImage>> | null = null
+      let result: Awaited<
+        ReturnType<typeof missionApi.captureReferenceImage>
+      > | null = null
       for (let attempt = 0; attempt < 4 && !result; attempt += 1) {
         try {
           result = await missionApi.captureReferenceImage(missionKey)
@@ -3572,8 +3740,14 @@ export default function InFlightControl({
           await waitMs(2500)
         }
       }
-      if (!result) throw new Error(en ? 'Cannot capture reference image.' : 'Không thể chụp ảnh tham chiếu.')
-      const distance = result.distanceMeters == null ? null : Math.round(result.distanceMeters)
+      if (!result)
+        throw new Error(
+          en
+            ? 'Cannot capture reference image.'
+            : 'Không thể chụp ảnh tham chiếu.',
+        )
+      const distance =
+        result.distanceMeters == null ? null : Math.round(result.distanceMeters)
       setLastCommand(
         en
           ? `Reference image saved${distance == null ? '' : ` (${distance} m from drone)`}.`
@@ -3583,13 +3757,22 @@ export default function InFlightControl({
       setLastCommand(
         error instanceof Error && error.message
           ? error.message
-          : en ? 'Cannot capture reference image.' : 'Không thể chụp ảnh tham chiếu.',
+          : en
+            ? 'Cannot capture reference image.'
+            : 'Không thể chụp ảnh tham chiếu.',
       )
     } finally {
       referenceBusyRef.current = false
       setReferenceBusy(false)
     }
-  }, [controlStatus?.missionId, controlStatus?.deviceId, drone.id, mission.backendId, mission.id])
+  }, [
+    normalFlightAllowed,
+    controlStatus?.missionId,
+    controlStatus?.deviceId,
+    drone.id,
+    mission.backendId,
+    mission.id,
+  ])
   const handleCommand = useCallback(
     (command: FlightCommand) => {
       if (command === 'lidar_monitor_toggle') {
@@ -3634,6 +3817,8 @@ export default function InFlightControl({
     [t],
   )
   const handlePreflightReady = useCallback(async () => {
+    if (!normalFlightAllowed)
+      throw new Error('Mission đang dừng hoặc chưa có quyền bay.')
     await onPreflightReady?.()
     try {
       window.localStorage.setItem(preflightStorageKey, 'true')
@@ -3642,27 +3827,29 @@ export default function InFlightControl({
     }
     setPreflightReady(true)
     setLastCommand(t.status.preflightCompleted)
-  }, [onPreflightReady, preflightStorageKey, t])
+  }, [normalFlightAllowed, onPreflightReady, preflightStorageKey, t])
 
   if (import.meta.env.VITE_FLIGHT_MAP_ONLY !== 'false') {
-    const target = Number.isFinite(mission.lat) && Number.isFinite(mission.lng)
-      ? { latitude: mission.lat, longitude: mission.lng }
-      : null
-    const gpsTargetReady = Boolean(
-      target &&
-      isInsideHcmcServiceArea(target),
-    )
+    const target =
+      Number.isFinite(mission.lat) && Number.isFinite(mission.lng)
+        ? { latitude: mission.lat, longitude: mission.lng }
+        : null
+    const gpsTargetReady = Boolean(target && isInsideHcmcServiceArea(target))
     const droneGps = controlStatus?.positionGps ?? null
-    const altitudeM = droneGps?.relativeAltitudeM ?? controlStatus?.altitudeM ?? null
-    const verticalMps = controlStatus?.velocityNed?.downMps == null
-      ? null
-      : -controlStatus.velocityNed.downMps
+    const altitudeM =
+      droneGps?.relativeAltitudeM ?? controlStatus?.altitudeM ?? null
+    const verticalMps =
+      controlStatus?.velocityNed?.downMps == null
+        ? null
+        : -controlStatus.velocityNed.downMps
     const baseDistanceKm = controlStatus?.positionNed
-      ? Math.hypot(controlStatus.positionNed.northM, controlStatus.positionNed.eastM) / 1000
+      ? Math.hypot(
+          controlStatus.positionNed.northM,
+          controlStatus.positionNed.eastM,
+        ) / 1000
       : null
-    const targetDistanceKm = droneGps && target
-      ? gpsDistanceMeters(droneGps, target) / 1000
-      : null
+    const targetDistanceKm =
+      droneGps && target ? gpsDistanceMeters(droneGps, target) / 1000 : null
     const language = getLanguage() === 'en' ? 'en' : 'vi'
     return (
       <FlightCockpit
@@ -3671,8 +3858,10 @@ export default function InFlightControl({
         roleLabel={t.header.droneOperator}
         liveLabel={isOnline ? t.header.live : t.header.offline}
         online={isOnline}
-        waitingGpsLabel={language === 'en' ? 'Waiting for PX4 GPS' : 'Đang chờ GPS từ PX4'}
-        statusMessage={lastCommand}
+        waitingGpsLabel={
+          language === 'en' ? 'Waiting for PX4 GPS' : 'Đang chờ GPS từ PX4'
+        }
+        statusMessage={operationalMessage ?? lastCommand}
         telemetry={{
           latitude: droneGps?.latitude ?? null,
           longitude: droneGps?.longitude ?? null,
@@ -3686,10 +3875,19 @@ export default function InFlightControl({
           baseDistanceKm,
           targetDistanceKm,
         }}
-        camera={<DroneCameraView telemetry={cameraTelemetry} language={language} />}
-        map={<SatelliteFlightMap missionId={mission.backendId ?? mission.id} target={target} drone={droneGps} />}
+        camera={
+          <DroneCameraView telemetry={cameraTelemetry} language={language} />
+        }
+        map={
+          <SatelliteFlightMap
+            missionId={mission.backendId ?? mission.id}
+            target={target}
+            drone={droneGps}
+          />
+        }
         busy={busyCommand !== null}
-        canFly={preflightReady}
+        canFly={normalFlightAllowed && preflightReady}
+        canTerminate={terminationAllowed}
         canFlyToTarget={gpsTargetReady}
         referenceBusy={referenceBusy}
         onCommand={handleCommand}
@@ -3697,15 +3895,17 @@ export default function InFlightControl({
         onFinishFlight={handleFinishFlight}
         finishingFlight={finishFlightBusy}
         onReferenceCapture={() => void handleReferenceCapture()}
-        overlay={!preflightReady ? (
-          <div className="satellite-flight-preflight">
-            <ManualCockpitPreflight
-              missionLabel={mission.id}
-              deviceLabel={drone.name || drone.id}
-              onReady={handlePreflightReady}
-            />
-          </div>
-        ) : null}
+        overlay={
+          !preflightReady && normalFlightAllowed ? (
+            <div className="satellite-flight-preflight">
+              <ManualCockpitPreflight
+                missionLabel={mission.id}
+                deviceLabel={drone.name || drone.id}
+                onReady={handlePreflightReady}
+              />
+            </div>
+          ) : null
+        }
       />
     )
   }
@@ -4065,7 +4265,7 @@ export default function InFlightControl({
                 fontSize: 11,
               }}
             >
-              {lastCommand}
+              {operationalMessage ?? lastCommand}
             </GlassPanel>
 
             {geofenceAlertActive && (
@@ -4152,6 +4352,8 @@ export default function InFlightControl({
           }}
         >
           <FlightControls
+            canFly={normalFlightAllowed && preflightReady}
+            canTerminate={terminationAllowed}
             busyCommand={busyCommand}
             lidarDetailsOpen={lidarDetailsOpen}
             moreOpen={moreOpen}
@@ -4195,7 +4397,7 @@ export default function InFlightControl({
           <RealMiniMap status={controlStatus} mission={mission} />
         </aside>
 
-        {!preflightReady && (
+        {!preflightReady && normalFlightAllowed && (
           <div
             style={{
               position: 'absolute',
@@ -4265,7 +4467,7 @@ export default function InFlightControl({
             label: t.footer.detail,
             href: operatorHref({
               screen: 'missionDetail',
-              missionId: mission.id,
+              missionId: mission.backendId ?? mission.id,
             }),
           },
           {

@@ -67,11 +67,7 @@ export function MissionActionGuard({
         <GuardStateCard
           tone="blue"
           eyebrow={lang === 'vi' ? 'Sẵn sàng bay' : 'Ready to fly'}
-          title={
-            lang === 'vi'
-              ? 'Đang mở buồng lái'
-              : 'Opening the cockpit'
-          }
+          title={lang === 'vi' ? 'Đang mở buồng lái' : 'Opening the cockpit'}
           description={
             lang === 'vi'
               ? 'Operator đã hoàn tất kiểm tra và bàn giao. Pilot có thể tiếp tục bay trong buồng lái.'
@@ -82,7 +78,11 @@ export function MissionActionGuard({
       )
     }
     const message =
-      (query.error instanceof Error ? query.error.message : undefined) ??
+      (query.error
+        ? lang === 'vi'
+          ? 'Không thể xác nhận quyền Mission. Vui lòng kiểm tra lại hoặc đăng nhập lại.'
+          : 'Unable to confirm Mission access. Retry or sign in again.'
+        : undefined) ??
       (pilotOnOperatorStep
         ? lang === 'vi'
           ? 'Bước này dành cho operator kết nối thiết bị, preflight và bàn giao. Pilot tiếp tục ở buồng lái sau khi operator bàn giao.'

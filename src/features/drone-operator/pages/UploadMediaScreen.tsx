@@ -23,7 +23,12 @@ import type { MediaFile } from '../types/mission'
 import { FlightStepHeader } from './FlightStepper'
 import { MediaTable } from './MediaTable'
 import { uploadMediaScreenMessages } from './UploadMediaScreen.messages'
-import { UploadMonitoringChecklist } from './UploadMonitoringChecklist'
+import { MonitoringChecklistSection } from '../../mission/components/MonitoringChecklistSection'
+import {
+  MissionResultActions,
+  missionResultActions,
+  staffResultError,
+} from '../components/MissionResultActions'
 import './UploadMediaScreen.css'
 import { useMissionMonitoring } from '../../mission/hooks/useMissionMonitoring'
 import { checklistEvidenceApi } from '../../mission/api/checklistEvidenceApi'
@@ -62,7 +67,7 @@ const mediaStatusLabel: Record<string, string> = {
   MANUAL_UPLOAD_REQUIRED: 'Cần upload thủ công',
   UPLOAD_PENDING: 'Chờ upload',
   RETRY_REQUIRED: 'Cần thử lại',
-  PENDING_MANAGER_APPROVAL: 'Đã xác thực',
+  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
   AVAILABLE: 'Đã duyệt',
   UPLOADED: 'Đã upload',
 }
@@ -70,13 +75,21 @@ const mediaStatusLabel: Record<string, string> = {
 /** Existing upload layout backed by the selected mission's local media. */
 /** Maps a backend media status to a chip tone. */
 function statusTone(status: string) {
-  if (/FAIL|REJECT|ERROR|MANUAL_UPLOAD_REQUIRED/.test(status)) return 'is-danger'
+  if (/FAIL|REJECT|ERROR|MANUAL_UPLOAD_REQUIRED/.test(status))
+    return 'is-danger'
   if (/PENDING|VALIDATING|UPLOADING|REVIEW/.test(status)) return 'is-warning'
-  if (/AVAILABLE|UPLOADED|VALIDATED|STORED|COMPLETED|READY/.test(status)) return 'is-success'
+  if (/AVAILABLE|UPLOADED|VALIDATED|STORED|COMPLETED|READY/.test(status))
+    return 'is-success'
   return ''
 }
 
-export function UploadMediaScreen({
+export function UploadMediaScreen({ missionId }: { missionId?: string }) {
+  return (
+    <UploadMediaContent key={missionId ?? 'active'} missionId={missionId} />
+  )
+}
+
+function UploadMediaContent({
   missionId: routeMissionId,
 }: {
   missionId?: string
@@ -103,8 +116,12 @@ export function UploadMediaScreen({
   const monitoring = useMissionMonitoring(missionId ?? '', checklistRevision, {
     autoRefresh: false,
   })
-  const [selectedTargets, setSelectedTargets] = useState<Record<string, string[]>>({})
-  const [attachFailures, setAttachFailures] = useState<Record<string, string>>({})
+  const [selectedTargets, setSelectedTargets] = useState<
+    Record<string, string[]>
+  >({})
+  const [attachFailures, setAttachFailures] = useState<Record<string, string>>(
+    {},
+  )
   const [preview, setPreview] = useState<LocalMedia | null>(null)
   const previewDialog = useRef<HTMLDialogElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -116,11 +133,15 @@ export function UploadMediaScreen({
   const [sort, setSort] = useState<'newest' | 'oldest'>('newest')
   const [filter, setFilter] = useState<'all' | 'pending' | 'uploaded'>('all')
   const [completionSubmitting, setCompletionSubmitting] = useState(false)
-  const [resultSentLocally, setResultSentLocally] = useState(false)
+  const [resultError, setResultError] = useState<unknown>(null)
   const itemsRef = useRef<LocalMedia[]>([])
   const uploadedMediaIds = useRef<Record<string, string>>({})
   useEffect(() => {
-    setSelectedTargets({}); setAttachFailures({}); setItems([]); setResultSentLocally(false); itemsRef.current = []; uploadedMediaIds.current = {}
+    setSelectedTargets({})
+    setAttachFailures({})
+    setItems([])
+    itemsRef.current = []
+    uploadedMediaIds.current = {}
   }, [missionId])
   useEffect(() => {
     if (preview) previewDialog.current?.showModal()
@@ -178,10 +199,19 @@ export function UploadMediaScreen({
         const next = { ...previous, ...refreshedStatuses }
         return next
       })
-      const merged = new Map<string, LocalMedia>(media.map((item) => [item.localMediaId, {
-        ...item,
-        backendMediaId: item.backendMediaId ?? uploadedMediaIds.current[item.localMediaId] ?? previous.find(old => old.localMediaId === item.localMediaId)?.backendMediaId,
-      }]))
+      const merged = new Map<string, LocalMedia>(
+        media.map((item) => [
+          item.localMediaId,
+          {
+            ...item,
+            backendMediaId:
+              item.backendMediaId ??
+              uploadedMediaIds.current[item.localMediaId] ??
+              previous.find((old) => old.localMediaId === item.localMediaId)
+                ?.backendMediaId,
+          },
+        ]),
+      )
       for (const item of previous) {
         if (merged.has(item.localMediaId) || !item.backendMediaId) continue
         const status = refreshedStatuses[item.backendMediaId] ?? item.status
@@ -252,7 +282,7 @@ export function UploadMediaScreen({
         return next
       })
       await attachSelected(item, mediaId)
-      await refresh()
+      refreshWorkspace()
       return true
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.uploadFailed)
@@ -267,17 +297,28 @@ export function UploadMediaScreen({
     if (!missionId || ids.length === 0) return
     try {
       // Fetch fresh package/versions for an explicit attach retry, never re-transfer the file.
-      const latest = await checklistExecutionApi.getMissionChecklistExecutions(missionId)
-      const targets = ids.map(id => {
-        const row = latest.executions.find(execution => execution.id === id)
+      const latest =
+        await checklistExecutionApi.getMissionChecklistExecutions(missionId)
+      const targets = ids.map((id) => {
+        const row = latest.executions.find((execution) => execution.id === id)
         if (!row) throw new Error('Mục checklist không còn thuộc Mission này.')
         return { executionId: id, expectedVersion: row.version }
       })
       await checklistEvidenceApi.batch(missionId, mediaId, targets)
-      setAttachFailures(previous => { const next = { ...previous }; delete next[item.localMediaId]; return next })
+      setAttachFailures((previous) => {
+        const next = { ...previous }
+        delete next[item.localMediaId]
+        return next
+      })
     } catch (cause) {
-      setAttachFailures(previous => ({ ...previous, [item.localMediaId]: cause instanceof Error ? cause.message : 'Không gắn được bằng chứng.' }))
-    } finally { monitoring.reload(); setChecklistRevision(value => value + 1) }
+      setAttachFailures((previous) => ({
+        ...previous,
+        [item.localMediaId]:
+          cause instanceof Error ? cause.message : 'Không gắn được bằng chứng.',
+      }))
+    } finally {
+      refreshWorkspace()
+    }
   }
 
   async function loadEvidenceCandidates(page: number) {
@@ -293,8 +334,7 @@ export function UploadMediaScreen({
     )
     const localCandidates: EvidenceCandidate[] = itemsRef.current
       .filter(
-        (item) =>
-          !item.backendMediaId || !backendIds.has(item.backendMediaId),
+        (item) => !item.backendMediaId || !backendIds.has(item.backendMediaId),
       )
       .map((item) => {
         const status = effectiveStatus(item)
@@ -360,7 +400,11 @@ export function UploadMediaScreen({
         setItems((previous) => {
           const next = previous.map((entry) =>
             entry.localMediaId === item.localMediaId
-              ? { ...entry, backendMediaId: mediaId, status: 'VALIDATING' as const }
+              ? {
+                  ...entry,
+                  backendMediaId: mediaId,
+                  status: 'VALIDATING' as const,
+                }
               : entry,
           )
           itemsRef.current = next
@@ -372,10 +416,9 @@ export function UploadMediaScreen({
     try {
       const latest =
         await checklistExecutionApi.getMissionChecklistExecutions(missionId)
-      const current = latest.executions.find(
-        (item) => item.id === execution.id,
-      )
-      if (!current) throw new Error('Mục checklist không còn thuộc Mission này.')
+      const current = latest.executions.find((item) => item.id === execution.id)
+      if (!current)
+        throw new Error('Mục checklist không còn thuộc Mission này.')
       await checklistEvidenceApi.attach(
         missionId,
         current.id,
@@ -396,7 +439,7 @@ export function UploadMediaScreen({
     setBusyId(item.localMediaId)
     try {
       await operatorMediaApi.discard(item.localMediaId)
-      await refresh()
+      refreshWorkspace()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.deleteFailed)
     } finally {
@@ -414,7 +457,7 @@ export function UploadMediaScreen({
         file,
       )
       await attachSelected(item, mediaId)
-      await refresh()
+      refreshWorkspace()
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Không upload được bản sao PC',
@@ -475,29 +518,18 @@ export function UploadMediaScreen({
     !permissions.loading &&
     !permissions.error &&
     permissions.data?.canUploadMedia === true
-  const resultApprovalStatus = monitoring.data?.result?.approvalStatus ?? null
-  const resultSubmitted =
-    resultApprovalStatus === 'PENDING_MANAGER_APPROVAL' ||
-    resultApprovalStatus === 'APPROVED'
-  const resultSentToManager = resultSubmitted || resultSentLocally
-  const canCompleteMission =
-    monitoring.data?.permissions.canCompleteMission === true
-  const canSubmitMissionResult =
-    monitoring.data?.permissions.canSubmitMissionResult === true
-  const readyForMissionCompletion =
-    monitoring.data?.checklist.readyForMissionCompletion === true
-  const readyForSubmission =
-    monitoring.data?.checklist.readyForSubmission === true
-  const canSendManagerFromUpload =
-    !!missionId &&
-    canSubmitMissionResult &&
-    !resultSentToManager
-  const canCompleteFromUpload =
-    !!missionId &&
-    canCompleteMission &&
-    readyForMissionCompletion &&
-    (!canSubmitMissionResult || readyForSubmission || resultSentToManager)
-  const isBusy = !!busyId || batchUploading
+  const missionStatus =
+    activeMission.loading ||
+    activeMission.error ||
+    activeMission.data?.id !== missionId
+      ? undefined
+      : activeMission.data?.status
+  const actions = missionResultActions(
+    missionId ?? '',
+    missionStatus,
+    monitoring,
+  )
+  const isBusy = !!busyId || batchUploading || completionSubmitting
   const visibleItems = items
     .filter((item) => {
       if (filter === 'all') return true
@@ -505,13 +537,13 @@ export function UploadMediaScreen({
       return filter === 'uploaded' ? done : !done
     })
     .sort((a, b) => {
-      const diff = (Date.parse(a.capturedAt) || 0) - (Date.parse(b.capturedAt) || 0)
+      const diff =
+        (Date.parse(a.capturedAt) || 0) - (Date.parse(b.capturedAt) || 0)
       return sort === 'newest' ? -diff : diff
     })
-  const backRoute =
-    canManageMedia && missionId
-      ? operatorHref({ screen: 'missionDetail', missionId })
-      : operatorHref({ screen: 'flight', missionId: missionId ?? undefined })
+  const backRoute = missionId
+    ? operatorHref({ screen: 'missionDetail', missionId })
+    : operatorHref({ screen: 'flight', missionId: missionId ?? undefined })
 
   function buildMissionResultPayload() {
     const mission = activeMission.data
@@ -528,75 +560,39 @@ export function UploadMediaScreen({
     }
   }
 
-  function uploadedBackendMediaIds() {
-    return [
-      ...new Set(
-        itemsRef.current
-          .filter((item) => {
-            if (!item.backendMediaId) return false
-            const status = statuses[item.backendMediaId] ?? item.status
-            return finishedUploadStatuses.has(status)
-          })
-          .map((item) => item.backendMediaId as string),
-      ),
-    ]
-  }
-
-  async function attachUploadedEvidenceForMissingChecklist() {
-    if (
-      !missionId ||
-      monitoring.data?.checklist.readyForSubmission === true ||
-      monitoring.data?.permissions.canAttachChecklistEvidence !== true
-    )
-      return
-    const latest = await checklistExecutionApi.getMissionChecklistExecutions(missionId)
-    const targets = latest.executions
-      .filter((execution) => {
-        const required = execution.minimumEvidenceCount ?? 0
-        const current = execution.eligibleEvidenceCount ?? 0
-        return execution.executionStatus === 'COMPLETED' && required > current
-      })
-      .map((execution) => ({
-        executionId: execution.id,
-        expectedVersion: execution.version,
-      }))
-    if (targets.length === 0) return
-    const mediaId = uploadedBackendMediaIds()[0]
-    if (!mediaId) throw new Error(t.missingChecklistEvidence)
-    await checklistEvidenceApi.batch(missionId, mediaId, targets)
-    setChecklistRevision((value) => value + 1)
+  function refreshWorkspace(clearError = true) {
+    if (clearError) setResultError(null)
+    activeMission.reload()
     monitoring.reload()
+    permissions.reload()
+    setChecklistRevision((value) => value + 1)
+    void refresh()
   }
 
-  async function completeMissionFromUpload() {
+  async function runResultAction(operation: 'complete' | 'submit') {
     if (
       !missionId ||
       completionSubmitting ||
-      (!canCompleteFromUpload && !canSendManagerFromUpload)
+      isBusy ||
+      (operation === 'complete' ? !actions.completeReady : !actions.submitReady)
     )
       return
     setCompletionSubmitting(true)
-    setError(null)
+    setResultError(null)
     setUploadInfo(null)
     try {
-      await attachUploadedEvidenceForMissingChecklist()
-      if (canCompleteMission) {
+      if (operation === 'complete') {
         await missionApi.completeMission(missionId)
-      }
-      if (canSubmitMissionResult && !resultSentToManager) {
-        await missionApi.submitMissionResult(missionId, buildMissionResultPayload())
-        setResultSentLocally(true)
-        setUploadInfo(t.completeSubmitSuccess)
       } else {
-        setUploadInfo(t.completeSuccess)
+        await missionApi.submitMissionResult(
+          missionId,
+          buildMissionResultPayload(),
+        )
       }
-      setChecklistRevision((value) => value + 1)
-      monitoring.reload()
-      await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t.completeSubmitFailed)
-      monitoring.reload()
+      setResultError(cause)
     } finally {
+      refreshWorkspace(false)
       setCompletionSubmitting(false)
     }
   }
@@ -604,11 +600,8 @@ export function UploadMediaScreen({
   const totalMedia = files.length + referenceCount
   const loadedMedia = uploaded + referenceCount
   const pendingMedia = Math.max(0, totalMedia - loadedMedia)
-  const sendDisabled =
-    resultSentToManager ||
-    completionSubmitting ||
-    (canSubmitMissionResult ? !canSendManagerFromUpload : !canCompleteFromUpload)
-  const missionLabel = activeMission.data?.missionCode ?? missionId ?? t.openingMission
+  const missionLabel =
+    activeMission.data?.missionCode ?? missionId ?? t.openingMission
 
   return (
     <div className="odm-card upload-media-page" style={{ marginBottom: 0 }}>
@@ -659,7 +652,12 @@ export function UploadMediaScreen({
                 aria-valuemin={0}
                 aria-valuemax={totalMedia}
                 aria-valuenow={loadedMedia}
-                aria-label={t.summary(loadedMedia, totalMedia, uploading, manual)}
+                aria-label={t.summary(
+                  loadedMedia,
+                  totalMedia,
+                  uploading,
+                  manual,
+                )}
               >
                 <span
                   style={{
@@ -674,14 +672,13 @@ export function UploadMediaScreen({
             <div className="upload-media-bar-actions">
               <a className="odm-btn upload-media-btn-ghost" href={backRoute}>
                 <span aria-hidden="true">←</span>
-                {canManageMedia ? t.backToResult : t.backToCockpit}
+                {missionId ? t.backToResult : t.backToCockpit}
               </a>
               <button
                 type="button"
                 className="odm-btn upload-media-btn-ghost"
                 onClick={() => {
-                  setChecklistRevision((value) => value + 1)
-                  void refresh()
+                  refreshWorkspace()
                 }}
               >
                 <span aria-hidden="true">↻</span>
@@ -690,7 +687,7 @@ export function UploadMediaScreen({
               {canManageMedia ? (
                 <button
                   type="button"
-                  className="odm-btn upload-media-btn-accent"
+                  className="odm-btn upload-media-btn-ghost"
                   disabled={!missionId || isBusy}
                   onClick={() => {
                     void (async () => {
@@ -725,26 +722,24 @@ export function UploadMediaScreen({
                   {t.viewOnly}
                 </span>
               )}
-              {canCompleteMission || canSubmitMissionResult || resultSentToManager ? (
-                <button
-                  type="button"
-                  className="odm-btn odm-btn-p upload-media-btn-final"
-                  disabled={sendDisabled}
-                  title={sendDisabled && !resultSentToManager ? t.sendBlocked : undefined}
-                  onClick={() => void completeMissionFromUpload()}
-                >
-                  {completionSubmitting
-                    ? t.completing
-                    : resultSentToManager
-                      ? t.submittedToManager
-                      : canSubmitMissionResult
-                        ? t.completeAndSubmit
-                        : t.completeOnly}
-                </button>
-              ) : null}
             </div>
           </div>
           {!missionId && !loading && <p role="alert">{t.restoringMission}</p>}
+          {missionId && (
+            <MissionResultActions
+              missionId={missionId}
+              status={missionStatus}
+              monitoring={monitoring}
+              busy={completionSubmitting || isBusy}
+              onComplete={() => void runResultAction('complete')}
+              onSubmit={() => void runResultAction('submit')}
+            />
+          )}
+          {resultError ? (
+            <p role="alert" className="upload-media-notice is-danger">
+              {staffResultError(resultError)}
+            </p>
+          ) : null}
           {uploadInfo && (
             <p role="status" className="upload-media-notice is-success">
               {uploadInfo}
@@ -770,12 +765,16 @@ export function UploadMediaScreen({
               <section className="upload-media-panel" aria-label={t.mediaList}>
                 <header className="upload-media-toolbar">
                   <h2>{t.mediaList}</h2>
-                  <span className="upload-media-count">{t.fileCount(items.length)}</span>
+                  <span className="upload-media-count">
+                    {t.fileCount(items.length)}
+                  </span>
                   <div className="upload-media-tools">
                     <select
                       aria-label={t.filterLabel}
                       value={filter}
-                      onChange={(event) => setFilter(event.target.value as typeof filter)}
+                      onChange={(event) =>
+                        setFilter(event.target.value as typeof filter)
+                      }
                     >
                       <option value="all">{t.filterAll}</option>
                       <option value="pending">{t.filterPending}</option>
@@ -784,7 +783,9 @@ export function UploadMediaScreen({
                     <select
                       aria-label={t.sortLabel}
                       value={sort}
-                      onChange={(event) => setSort(event.target.value as typeof sort)}
+                      onChange={(event) =>
+                        setSort(event.target.value as typeof sort)
+                      }
                     >
                       <option value="newest">{t.sortNewest}</option>
                       <option value="oldest">{t.sortOldest}</option>
@@ -814,105 +815,147 @@ export function UploadMediaScreen({
                 {!loading && visibleItems.length === 0 && (
                   <p className="upload-media-empty">{t.emptyMedia}</p>
                 )}
-                <div className={`upload-media-grid${view === 'list' ? ' is-list' : ''}`}>
+                <div
+                  className={`upload-media-grid${view === 'list' ? ' is-list' : ''}`}
+                >
                   {visibleItems.map((item) => {
                     const status = effectiveStatus(item)
                     const canApprove = approvable.includes(item)
-                    const targetCount = selectedTargets[item.localMediaId]?.length ?? 0
+                    const targetCount =
+                      selectedTargets[item.localMediaId]?.length ?? 0
                     const canDiscard =
-                      ['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(item.status) ||
-                      finishedUploadStatuses.has(status)
+                      ['REVIEW_PENDING', 'UPLOAD_FAILED'].includes(
+                        item.status,
+                      ) || finishedUploadStatuses.has(status)
                     return (
-                      <article key={item.localMediaId} className="upload-media-card">
+                      <article
+                        key={item.localMediaId}
+                        className="upload-media-card"
+                      >
                         <div className="upload-media-thumb">
                           {item.localAvailable === false ? (
                             <p className="upload-media-unavailable">
-                              Bản gốc trên Flight Controller không khả dụng. Chọn
-                              bản sao PC để khôi phục.
+                              Bản gốc trên Flight Controller không khả dụng.
+                              Chọn bản sao PC để khôi phục.
                             </p>
                           ) : item.mediaType === 'IMAGE' ? (
                             <img
-                              src={operatorMediaApi.previewUrl(item.localMediaId)}
+                              src={operatorMediaApi.previewUrl(
+                                item.localMediaId,
+                              )}
                               alt={item.fileName}
                               className="upload-media-preview"
                             />
                           ) : (
                             <video
-                              src={operatorMediaApi.previewUrl(item.localMediaId)}
+                              src={operatorMediaApi.previewUrl(
+                                item.localMediaId,
+                              )}
                               controls
                               preload="metadata"
                               className="upload-media-preview"
                             />
                           )}
-                          {item.mediaType === 'IMAGE' && item.localAvailable !== false && (
-                            <button
-                              type="button"
-                              className="upload-media-expand"
-                              aria-hidden="true"
-                              tabIndex={-1}
-                              onClick={() => setPreview(item)}
-                            >
-                              ⛶
-                            </button>
-                          )}
+                          {item.mediaType === 'IMAGE' &&
+                            item.localAvailable !== false && (
+                              <button
+                                type="button"
+                                className="upload-media-expand"
+                                aria-hidden="true"
+                                tabIndex={-1}
+                                onClick={() => setPreview(item)}
+                              >
+                                ⛶
+                              </button>
+                            )}
                         </div>
                         <div className="upload-media-card-body">
-                          <div className="odm-mono upload-media-filename" title={item.fileName}>
+                          <div
+                            className="odm-mono upload-media-filename"
+                            title={item.fileName}
+                          >
                             {item.fileName}
                           </div>
                           <div className="upload-media-meta">
-                            <span>{mediaTypeLabel[item.mediaType] ?? item.mediaType}</span>
+                            <span>
+                              {mediaTypeLabel[item.mediaType] ?? item.mediaType}
+                            </span>
                             <span aria-hidden="true">•</span>
-                            <span>{(item.fileSize / 1_000_000).toFixed(2)} MB</span>
+                            <span>
+                              {(item.fileSize / 1_000_000).toFixed(2)} MB
+                            </span>
                             {item.sourceType && (
                               <>
                                 <span aria-hidden="true">•</span>
-                                <span>{mediaSourceLabel[item.sourceType] ?? item.sourceType}</span>
+                                <span>
+                                  {mediaSourceLabel[item.sourceType] ??
+                                    item.sourceType}
+                                </span>
                               </>
                             )}
                           </div>
-                          <span className={`upload-media-status ${statusTone(status)}`}>
+                          <span
+                            className={`upload-media-status ${statusTone(status)}`}
+                          >
                             {mediaStatusLabel[status] ?? status}
                           </span>
                           {item.previewError && (
-                            <p role="alert" className="upload-media-notice is-danger">
+                            <p
+                              role="alert"
+                              className="upload-media-notice is-danger"
+                            >
                               {item.previewError}
                             </p>
                           )}
                           <div className="upload-media-actions">
-                            {canManageMedia && status === 'MANUAL_UPLOAD_REQUIRED' && (
-                              <button
-                                type="button"
-                                className="odm-btn odm-btn-p"
-                                disabled={isBusy || item.localAvailable === false}
-                                onClick={() => void approve(item, true)}
-                              >
-                                Upload thủ công từ bản gốc
-                              </button>
-                            )}
+                            {canManageMedia &&
+                              status === 'MANUAL_UPLOAD_REQUIRED' && (
+                                <button
+                                  type="button"
+                                  className="odm-btn odm-btn-p"
+                                  disabled={
+                                    isBusy || item.localAvailable === false
+                                  }
+                                  onClick={() => void approve(item, true)}
+                                >
+                                  Upload thủ công từ bản gốc
+                                </button>
+                              )}
                             {canManageMedia && (
                               <button
                                 type="button"
                                 className="odm-btn odm-btn-p"
-                                disabled={isBusy || !canApprove || item.localAvailable === false}
+                                disabled={
+                                  isBusy ||
+                                  !canApprove ||
+                                  item.localAvailable === false
+                                }
                                 onClick={() => void approve(item)}
                               >
-                                {busyId === item.localMediaId ? t.processing : t.approveUpload}
+                                {busyId === item.localMediaId
+                                  ? t.processing
+                                  : t.approveUpload}
                               </button>
                             )}
-                            {item.mediaType === 'IMAGE' && item.localAvailable !== false && (
-                              <button
-                                type="button"
-                                className="odm-btn"
-                                onClick={() => setPreview(item)}
-                              >
-                                <span aria-hidden="true">{t.viewShort}</span>
-                                <span className="upload-media-sr">{t.enlargePreview}</span>
-                              </button>
-                            )}
+                            {item.mediaType === 'IMAGE' &&
+                              item.localAvailable !== false && (
+                                <button
+                                  type="button"
+                                  className="odm-btn"
+                                  onClick={() => setPreview(item)}
+                                >
+                                  <span aria-hidden="true">{t.viewShort}</span>
+                                  <span className="upload-media-sr">
+                                    {t.enlargePreview}
+                                  </span>
+                                </button>
+                              )}
                             {canManageMedia && (
                               <details className="upload-media-more">
-                                <summary aria-label={t.moreActions} title={t.moreActions}>
+                                <summary
+                                  aria-label={t.moreActions}
+                                  title={t.moreActions}
+                                >
                                   ⋮
                                 </summary>
                                 <div className="upload-media-menu">
@@ -930,7 +973,8 @@ export function UploadMediaScreen({
                               </details>
                             )}
                           </div>
-                          {monitoring.data?.permissions.canAttachChecklistEvidence === true &&
+                          {monitoring.data?.permissions
+                            .canAttachChecklistEvidence === true &&
                             !monitoring.loading &&
                             !monitoring.error && (
                               <details
@@ -945,31 +989,49 @@ export function UploadMediaScreen({
                                     </span>
                                   )}
                                 </summary>
-                                <fieldset disabled={isBusy} className="upload-media-attach">
-                                  {monitoring.data.checklist.executions.map((execution) => (
-                                    <label key={execution.id} className="upload-media-attach-row">
-                                      <input
-                                        type="checkbox"
-                                        checked={(selectedTargets[item.localMediaId] ?? []).includes(execution.id)}
-                                        onChange={(event) =>
-                                          setSelectedTargets((previous) => {
-                                            const current = previous[item.localMediaId] ?? []
-                                            return {
-                                              ...previous,
-                                              [item.localMediaId]: event.target.checked
-                                                ? [...current, execution.id]
-                                                : current.filter((id) => id !== execution.id),
-                                            }
-                                          })
-                                        }
-                                      />
-                                      <span>{execution.content}</span>
-                                      <em>
-                                        {execution.eligibleEvidenceCount ?? 0}/
-                                        {execution.minimumEvidenceCount ?? 0}
-                                      </em>
-                                    </label>
-                                  ))}
+                                <fieldset
+                                  disabled={isBusy}
+                                  className="upload-media-attach"
+                                >
+                                  {monitoring.data.checklist.executions.map(
+                                    (execution) => (
+                                      <label
+                                        key={execution.id}
+                                        className="upload-media-attach-row"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={(
+                                            selectedTargets[
+                                              item.localMediaId
+                                            ] ?? []
+                                          ).includes(execution.id)}
+                                          onChange={(event) =>
+                                            setSelectedTargets((previous) => {
+                                              const current =
+                                                previous[item.localMediaId] ??
+                                                []
+                                              return {
+                                                ...previous,
+                                                [item.localMediaId]: event
+                                                  .target.checked
+                                                  ? [...current, execution.id]
+                                                  : current.filter(
+                                                      (id) =>
+                                                        id !== execution.id,
+                                                    ),
+                                              }
+                                            })
+                                          }
+                                        />
+                                        <span>{execution.content}</span>
+                                        <em>
+                                          {execution.eligibleEvidenceCount ?? 0}
+                                          /{execution.minimumEvidenceCount ?? 0}
+                                        </em>
+                                      </label>
+                                    ),
+                                  )}
                                   {item.backendMediaId && (
                                     <button
                                       type="button"
@@ -979,9 +1041,10 @@ export function UploadMediaScreen({
                                         const mediaId = item.backendMediaId
                                         if (!mediaId) return
                                         setBusyId(item.localMediaId)
-                                        void attachSelected(item, mediaId).finally(() =>
-                                          setBusyId(null),
-                                        )
+                                        void attachSelected(
+                                          item,
+                                          mediaId,
+                                        ).finally(() => setBusyId(null))
                                       }}
                                     >
                                       Gắn bằng chứng — không upload lại
@@ -991,14 +1054,21 @@ export function UploadMediaScreen({
                               </details>
                             )}
                           {attachFailures[item.localMediaId] && (
-                            <p role="alert" className="upload-media-notice is-danger">
+                            <p
+                              role="alert"
+                              className="upload-media-notice is-danger"
+                            >
                               Media đã được giữ. Gắn bằng chứng chưa thành công:{' '}
-                              {attachFailures[item.localMediaId]}. Chọn “Gắn bằng chứng” để thử lại, không upload lại.
+                              {attachFailures[item.localMediaId]}. Chọn “Gắn
+                              bằng chứng” để thử lại, không upload lại.
                             </p>
                           )}
                           {canManageMedia &&
                             item.manualTaskId &&
-                            ['MANUAL_UPLOAD_REQUIRED', 'UPLOAD_PENDING'].includes(status) && (
+                            [
+                              'MANUAL_UPLOAD_REQUIRED',
+                              'UPLOAD_PENDING',
+                            ].includes(status) && (
                               <PcBackupPicker
                                 contentType={item.contentType}
                                 disabled={isBusy}
@@ -1019,7 +1089,9 @@ export function UploadMediaScreen({
                     retryingId={busyId}
                     onRetry={(id) => {
                       if (isBusy) return
-                      const item = items.find((entry) => entry.localMediaId === id)
+                      const item = items.find(
+                        (entry) => entry.localMediaId === id,
+                      )
                       if (item)
                         void approve(
                           item,
@@ -1031,15 +1103,35 @@ export function UploadMediaScreen({
               ) : null}
               {canManageMedia && missionId ? (
                 <div className="upload-media-uploaded">
-                  <MissionUploadedMedia missionId={missionId} />
+                  <MissionUploadedMedia
+                    missionId={missionId}
+                    onChanged={refreshWorkspace}
+                    refreshKey={checklistRevision}
+                  />
                 </div>
               ) : null}
             </div>
             {missionId && (
-              <UploadMonitoringChecklist
+              <MonitoringChecklistSection
                 key={missionId}
                 missionId={missionId}
-                revision={checklistRevision}
+                data={monitoring.data?.checklist}
+                loading={monitoring.loading}
+                error={monitoring.error}
+                resultKnown={actions.known}
+                resultStatus={monitoring.data?.result?.approvalStatus}
+                resultNote={monitoring.data?.result?.reviewNote}
+                canExecute={
+                  monitoring.data?.permissions.canExecuteMonitoringChecklist
+                }
+                canAttach={
+                  monitoring.data?.permissions.canAttachChecklistEvidence
+                }
+                canDetach={
+                  monitoring.data?.permissions.canDetachChecklistEvidence
+                }
+                refresh={refreshWorkspace}
+                compact
                 loadEvidenceCandidates={loadEvidenceCandidates}
                 attachEvidenceCandidate={attachEvidenceCandidate}
               />

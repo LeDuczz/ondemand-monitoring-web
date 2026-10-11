@@ -16,12 +16,12 @@ import { OrderStatusCard } from '../components/orderReview/OrderStatusCard'
 import { ResourceAvailabilityCard } from '../components/orderReview/ResourceAvailabilityCard'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
 import { managerHref } from '../routes'
-import { CreateMissionPage } from './CreateMissionPage'
+import { OrderMissionPlanningSection } from '../components/planning/OrderMissionPlanningSection'
+import { OrderResourceAssignmentWizard } from '../components/planning/OrderResourceAssignmentWizard'
 import {
   orderReviewPageMessages,
   type OrderReviewMessages,
 } from './OrderReviewPage.messages'
-import type { OrderDetail, OrderMissionBrief } from '../types/orders'
 import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
 import '../manager.css'
 
@@ -39,7 +39,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   )
 
   const [navigateHome, setNavigateHome] = useState(false)
-  const [scheduleBrief, setScheduleBrief] = useState<OrderMissionBrief | null>(
+  const [assigningMissionId, setAssigningMissionId] = useState<string | null>(
     null,
   )
 
@@ -48,15 +48,18 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     return null
   }
 
-  if (scheduleBrief) {
+  if (assigningMissionId)
     return (
-      <CreateMissionPage
-        orderId={scheduleBrief.id}
-        initialBrief={scheduleBrief}
+      <OrderResourceAssignmentWizard
+        orderId={orderId}
+        initialMissionId={assigningMissionId}
+        onClose={() => {
+          setAssigningMissionId(null)
+          orderQuery.reload()
+          previewQuery.reload()
+        }}
       />
     )
-  }
-
   if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} t={t} />
 
   if (orderQuery.error) {
@@ -76,24 +79,6 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
             >
               {is409 ? t.error409 : t.errorGeneric}
             </div>
-            <div
-              className="odm-mono"
-              style={{
-                fontSize: 11.5,
-                color: 'var(--tx3)',
-                background: 'var(--sf3)',
-                padding: '3px 8px',
-                borderRadius: 5,
-              }}
-            >
-              {orderQuery.error instanceof ApiError
-                ? `${orderQuery.error.method} ${orderQuery.error.path}${
-                    orderQuery.error.status
-                      ? ` · ${orderQuery.error.status}`
-                      : ''
-                  }${orderQuery.error.code ? ` ${orderQuery.error.code}` : ''}`
-                : t.debugFallback}
-            </div>
             <a
               className="odm-btn odm-btn-p"
               href={managerHref({ screen: 'orderQueue' })}
@@ -108,35 +93,34 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
   const order = orderQuery.data
   if (!order) return null
+  const showExecutionPlan = ['APPROVED', 'IN_PROGRESS', 'COMPLETED'].includes(
+    order.status,
+  )
 
-  const handleApproved = (
-    result: Awaited<ReturnType<typeof ordersApi.approve>>,
-  ) => {
-    // Approve → straight into step 2 (schedule/setup), never back to the list.
-    const missionId = getApprovedMissionId(result, order.id)
-    if (missionId) {
-      window.location.hash = managerHref({
-        screen: 'missionSetup',
-        missionId,
-      })
-      return
-    }
-
-    setScheduleBrief(toMissionBrief(order))
+  const handleApproved = () => {
+    // Approval enters Order planning. A legacy missionId must not skip checklist/finalization.
+    orderQuery.reload()
+    previewQuery.reload()
   }
 
   return (
     <div className="odm-or odm-or-review-page">
-      <div className="odm-or-review-top">
-        <div className="odm-or-pagehead">
-          <h1 className="odm-or-title">{t.pageTitle}</h1>
-          <p className="odm-or-subtitle">{t.pageSubtitle}</p>
+      {!showExecutionPlan && (
+        <div className="odm-or-review-top">
+          <div className="odm-or-pagehead">
+            <h1 className="odm-or-title">{t.pageTitle}</h1>
+            <p className="odm-or-subtitle">{t.pageSubtitle}</p>
+          </div>
+          <OrderWorkflowStepper currentStep={1} />
         </div>
-        <OrderWorkflowStepper currentStep={1} />
-      </div>
-
-      {/* Each section owns its own grid so a tall card in one section can
-          never create blank rows in another. */}
+      )}
+      {showExecutionPlan && (
+        <OrderMissionPlanningSection
+          orderId={order.id}
+          initialOrder={order}
+          onAssignResources={setAssigningMissionId}
+        />
+      )}
       <section className="odm-or-grid odm-or-review-summary">
         <div className="odm-or-col">
           <OrderServiceInfo order={order} t={t} />
@@ -154,15 +138,18 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       <section className="odm-or-review-section">
         <ManagerPricingPanel
           orderId={order.id}
+          onApproved={handleApproved}
           decisionActions={
-            <OrderApprovalActions
-              orderId={order.id}
-              orderCode={order.code}
-              t={t}
-              onApproved={handleApproved}
-              onDecisionDone={() => setNavigateHome(true)}
-              showApprove={false}
-            />
+            !showExecutionPlan ? (
+              <OrderApprovalActions
+                orderId={order.id}
+                orderCode={order.code}
+                t={t}
+                onApproved={handleApproved}
+                onDecisionDone={() => setNavigateHome(true)}
+                showApprove={false}
+              />
+            ) : undefined
           }
         />
       </section>
@@ -180,53 +167,6 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       </section>
     </div>
   )
-}
-
-function getApprovedMissionId(
-  result: Awaited<ReturnType<typeof ordersApi.approve>>,
-  orderId: string,
-): string | null {
-  if (!result || typeof result !== 'object') return null
-
-  const record = result as Record<string, unknown>
-  if (typeof record.missionId === 'string' && record.missionId.trim()) {
-    return record.missionId
-  }
-
-  const mission = record.mission
-  if (mission && typeof mission === 'object') {
-    const missionRecord = mission as Record<string, unknown>
-    if (typeof missionRecord.id === 'string' && missionRecord.id.trim()) {
-      return missionRecord.id
-    }
-  }
-
-  if (
-    typeof record.id === 'string' &&
-    record.id.trim() &&
-    record.id !== orderId &&
-    !('orderStatus' in record)
-  ) {
-    return record.id
-  }
-
-  return null
-}
-
-function toMissionBrief(order: OrderDetail): OrderMissionBrief {
-  return {
-    id: order.id,
-    code: order.code,
-    serviceName: order.serviceName,
-    customerFullName: order.customer.fullName,
-    preferredDate: order.preferredDate,
-    preferredTimeName: order.preferredTimeName,
-    addressText: order.addressText,
-    center: order.center,
-    radiusM: order.radiusM,
-    nearestBase: order.nearestBase,
-    mediaRequirements: order.mediaRequirements,
-  }
 }
 
 function ReviewBreadcrumbHeader({

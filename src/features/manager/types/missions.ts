@@ -4,6 +4,7 @@
 // `mission_operator_assignment` tables [BRIEF §A6] where they overlap.
 import type { DroneStatus, MissionStatus } from '../../../shared/types/domain'
 import type { WaypointAction } from '../lib/waypoints'
+import type { MissionStopMetadata } from '../../mission/lib/missionOperationalState'
 
 // Re-exported for consumers of BE-aligned mission types that also need
 // DroneStatus (e.g. MissionResponse.droneCode pairs with a drone's status).
@@ -48,7 +49,7 @@ export type MissionMediaRequirement =
  * itself has no matching field — needed by MNG-04/05 but not present on
  * the backend DTO we read.
  */
-export type Mission = {
+export type Mission = MissionStopMetadata & {
   id: string
   orderId: string
   orderCode: string | null
@@ -156,11 +157,16 @@ export type CreateIncidentRequest = {
 
 /** Body of `POST /api/missions/{id}/cancel` [ĐỀ XUẤT]. */
 export type CancelMissionRequest = {
+  expectedPlanRevision: number
   reason: string
 }
 
 /** Body of `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. */
 export type CreateMissionRequest = {
+  replacesMissionId?: string
+  idempotencyKey: string
+  expectedPlanRevision: number
+  scopeLabel: string
   scheduledStart: string
   scheduledEnd: string
 }
@@ -305,7 +311,8 @@ export type PlanWaypointResponse = {
     | 'RETURN'
 }
 
-export type MissionResponse = {
+export type MissionResponse = MissionStopMetadata & {
+  replacesMissionId?: string | null
   id: string
   orderId: string
   orderCode?: string | null
@@ -370,7 +377,8 @@ export type FlightTokenResponse = {
   revoked: boolean
 }
 
-export type PreflightCheckItemStatus = 'PENDING' | 'CHECKING' | 'PASSED' | 'FAILED'
+export type PreflightCheckItemStatus =
+  'PENDING' | 'CHECKING' | 'PASSED' | 'FAILED'
 export type PreflightCheckItemLevel = 'CRITICAL' | 'WARNING' | 'INFO'
 
 export type PreflightCheckItem = {
@@ -427,17 +435,10 @@ export type PersistedPostDeviceCheckResponse = {
 }
 
 export type MissionResultStatus =
-  | 'DRAFT'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED'
+  'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
 
 export type MissionResultApprovalStatus =
-  | 'DRAFT'
-  | 'PENDING_MANAGER_APPROVAL'
-  | 'APPROVED'
-  | 'REJECTED'
+  'DRAFT' | 'PENDING_MANAGER_APPROVAL' | 'APPROVED' | 'REJECTED'
 
 export type MissionResultResponse = {
   id: string

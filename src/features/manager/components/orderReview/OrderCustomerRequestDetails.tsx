@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import type { OrderDetail } from '../../types/orders'
 import { OrderIcon } from './OrderIcon'
+import { humanizeMediaRequirement } from './format'
 
 type DetailItem = {
   label: string
@@ -41,7 +42,7 @@ const enumLabels: Record<string, string> = {
 function text(value: unknown): string | null {
   if (typeof value === 'string') {
     const trimmed = value.trim()
-    return trimmed ? enumLabels[trimmed] ?? trimmed : null
+    return trimmed ? (enumLabels[trimmed] ?? trimmed) : null
   }
   if (typeof value === 'number' && Number.isFinite(value)) return String(value)
   if (typeof value === 'boolean') return value ? 'Có' : 'Không'
@@ -96,7 +97,9 @@ function requirementValue(value: unknown): string | null {
     const parts = [
       text(record.type),
       text(record.description),
-      record.additionalPrice != null ? `${text(record.additionalPrice)} đ` : null,
+      record.additionalPrice != null
+        ? `${text(record.additionalPrice)} đ`
+        : null,
       text(record.fileName ?? record.name),
     ].filter(Boolean)
     return parts.length ? parts.join(' · ') : null
@@ -143,7 +146,8 @@ function deliverableSummary(
   deliverableName?: string | null,
 ) {
   if (!requirement) return []
-  const type = mediaTypeFromTitle(deliverableName) ?? text(requirement.mediaType)
+  const type =
+    mediaTypeFromTitle(deliverableName) ?? text(requirement.mediaType)
   return [
     type,
     numberText(requirement.quantity)
@@ -225,7 +229,9 @@ function requirementItems(
       const suffix =
         key === 'radiusM' ? ' m' : key === 'estimatedAreaHa' ? ' ha' : ''
       const finalValue =
-        key === 'additionalPrice' ? (formatMoney(value) ?? formatted) : formatted
+        key === 'additionalPrice'
+          ? (formatMoney(value) ?? formatted)
+          : formatted
       return {
         label: labels[key] ?? key,
         value: `${finalValue}${suffix}`,
@@ -242,8 +248,9 @@ export function OrderCustomerRequestDetails({
   t: OrderReviewMessages
 }) {
   const contact =
-    [order.siteContactName, order.siteContactPhone].filter(Boolean).join(' · ') ||
-    null
+    [order.siteContactName, order.siteContactPhone]
+      .filter(Boolean)
+      .join(' · ') || null
   const recurrence =
     order.recurrenceType && order.recurrenceOccurrences
       ? `${text(order.recurrenceType)} · ${order.recurrenceOccurrences} lần`
@@ -294,7 +301,8 @@ export function OrderCustomerRequestDetails({
 
   const hasDetails =
     visibleItems(summaryItems).length > 0 ||
-    (order.deliverables != null && order.deliverables.length > 0)
+    (order.deliverables != null && order.deliverables.length > 0) ||
+    (order.mediaRequirements != null && order.mediaRequirements.length > 0)
 
   if (!hasDetails) return null
 
@@ -307,6 +315,15 @@ export function OrderCustomerRequestDetails({
         </span>
       </header>
       <div className="odm-or-card-body odm-or-detail-stack">
+        {!order.deliverables?.length && order.mediaRequirements?.length ? (
+          <section className="odm-or-detail-section">
+            {order.mediaRequirements.map((requirement, index) => (
+              <p key={index}>
+                {humanizeMediaRequirement(requirement.label, t)}
+              </p>
+            ))}
+          </section>
+        ) : null}
         <section className="odm-or-detail-section">
           <div className="odm-or-detail-section-head">
             <h3>{t.customerEnteredInfo}</h3>
@@ -323,18 +340,21 @@ export function OrderCustomerRequestDetails({
           const addOns = addOnItems(deliverable.requirement)
           return (
             <section
-              key={deliverable.id || `${deliverable.deliverableTypeId}-${index}`}
+              key={
+                deliverable.id || `${deliverable.deliverableTypeId}-${index}`
+              }
               className="odm-or-detail-section"
             >
               <div className="odm-or-detail-section-head">
                 <h3>
-                  {deliverable.deliverableTypeName ||
-                    `${t.mediaN(index + 1)}`}
+                  {deliverable.deliverableTypeName || `${t.mediaN(index + 1)}`}
                 </h3>
                 {deliverable.defaultFormat &&
-                deliverable.defaultFormat !== deliverable.deliverableTypeName ? (
+                deliverable.defaultFormat !==
+                  deliverable.deliverableTypeName ? (
                   <span className="odm-or-pill">
-                    {text(deliverable.defaultFormat) ?? deliverable.defaultFormat}
+                    {text(deliverable.defaultFormat) ??
+                      deliverable.defaultFormat}
                   </span>
                 ) : null}
               </div>
@@ -354,7 +374,9 @@ export function OrderCustomerRequestDetails({
                 </div>
               ) : null}
               {items.length > 0 ? <DetailGrid items={items} /> : null}
-              {summary.length === 0 && addOns.length === 0 && items.length === 0 ? (
+              {summary.length === 0 &&
+              addOns.length === 0 &&
+              items.length === 0 ? (
                 <p className="odm-or-detail-note">{t.noData}</p>
               ) : null}
             </section>

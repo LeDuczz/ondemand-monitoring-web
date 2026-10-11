@@ -69,6 +69,10 @@ export interface MissionPlan {
 }
 
 export interface Mission {
+  safeStopStatus?: string | null
+  safeStopRequestedAt?: string | null
+  safeStopConfirmedAt?: string | null
+  safeStopCleanedAt?: string | null
   id: string
   orderId?: string
   orderCode?: string | null

@@ -40,19 +40,20 @@ function RoleRoute({
   role,
   children,
 }: {
-  role: UserRole
+  role: UserRole | readonly UserRole[]
   children: ReactNode
 }) {
   const user = authSession.getUser()
-  if (!authSession.getAccessToken() || !user) {
-    redirectHash('#auth/login')
-    return null
-  }
-  if (user.role !== role) {
-    redirectHash(getRoleHomePath(user.role))
-    return null
-  }
-  return children
+  const redirectTo =
+    !authSession.getAccessToken() || !user
+      ? '#auth/login'
+      : !(Array.isArray(role) ? role.includes(user.role) : user.role === role)
+        ? getRoleHomePath(user.role)
+        : null
+  useEffect(() => {
+    if (redirectTo) redirectHash(redirectTo)
+  }, [redirectTo])
+  return redirectTo ? null : children
 }
 
 function SupportShell({
@@ -77,11 +78,13 @@ function SupportShell({
 }
 
 function AuthRoute({ children }: { children: ReactNode }) {
-  if (!authSession.getAccessToken() || !authSession.getUser()) {
-    redirectHash('#auth/login')
-    return null
-  }
-  return children
+  const authenticated = Boolean(
+    authSession.getAccessToken() && authSession.getUser(),
+  )
+  useEffect(() => {
+    if (!authenticated) redirectHash('#auth/login')
+  }, [authenticated])
+  return authenticated ? children : null
 }
 
 export function Router() {
@@ -163,7 +166,7 @@ export function Router() {
     )
   if (hash === '#portal/manager' || hash.startsWith('#portal/manager/'))
     return (
-      <RoleRoute role="MANAGER">
+      <RoleRoute role={['MANAGER', 'ADMIN']}>
         <ManagerApp />
       </RoleRoute>
     )

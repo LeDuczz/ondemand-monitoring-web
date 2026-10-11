@@ -8,6 +8,7 @@ export type CustomerRoute =
   | { screen: 'createOrder' }
   | { screen: 'analysis'; orderId: string }
   | { screen: 'orderDetail'; orderId: string }
+  | { screen: 'missionReport'; orderId: string; missionId: string }
   | { screen: 'live'; orderId: string }
   | { screen: 'liveHub' }
   | { screen: 'mediaLibrary' }
@@ -33,12 +34,15 @@ export function parseCustomerRoute(hash: string): CustomerRoute {
   switch (head) {
     case 'mission-history':
       if (tail.length === 0) return { screen: 'missionHistory' }
-      if (tail.length === 1) return { screen: 'missionHistoryDetail', missionId: tail[0] }
+      if (tail.length === 1)
+        return { screen: 'missionHistoryDetail', missionId: tail[0] }
       return { screen: 'notFound' }
     case 'orders': {
       if (tail.length === 0) return { screen: 'orders' }
       if (tail[0] === 'new') return { screen: 'createOrder' }
       if (tail.length === 1) return { screen: 'orderDetail', orderId: tail[0] }
+      if (tail.length === 4 && tail[1] === 'missions' && tail[3] === 'report')
+        return { screen: 'missionReport', orderId: tail[0], missionId: tail[2] }
       if (tail.length === 2 && tail[1] === 'analysis')
         return { screen: 'analysis', orderId: tail[0] }
       if (tail.length === 2 && tail[1] === 'live')
@@ -77,6 +81,8 @@ export function customerHref(route: CustomerRoute): string {
       return `${CUSTOMER_ROOT}/orders/${route.orderId}/analysis`
     case 'orderDetail':
       return `${CUSTOMER_ROOT}/orders/${route.orderId}`
+    case 'missionReport':
+      return `${CUSTOMER_ROOT}/orders/${encodeURIComponent(route.orderId)}/missions/${encodeURIComponent(route.missionId)}/report`
     case 'live':
       return `${CUSTOMER_ROOT}/orders/${route.orderId}/live`
     case 'liveHub':

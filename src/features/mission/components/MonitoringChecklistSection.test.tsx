@@ -5,6 +5,7 @@ import { checklistExecutionApi } from '../api/checklistExecutionApi'
 import {
   MonitoringChecklistSection,
   allowedExecutionStatuses,
+  monitoringErrorMessage,
 } from './MonitoringChecklistSection'
 import type {
   MissionChecklistExecution,
@@ -45,6 +46,35 @@ const props = {
 afterEach(() => vi.restoreAllMocks())
 
 describe('MonitoringChecklistSection', () => {
+  it.each([401, 403, 404, 409, 500])(
+    'localizes API failure %s without showing diagnostics',
+    (status) => {
+      const error = new ApiError('INTERNAL_DIAGNOSTIC', {
+        status,
+        code: 'INTERNAL_DIAGNOSTIC',
+        method: 'GET',
+        path: '/fixture',
+      })
+      const message = monitoringErrorMessage(error)
+      expect(message).not.toContain('INTERNAL_DIAGNOSTIC')
+      expect(message).toMatch(/quyền|Vui lòng/)
+    },
+  )
+  it('keeps missing-capability and network errors user-facing', () => {
+    expect(
+      monitoringErrorMessage(
+        new ApiError('Mission permissions unavailable', {
+          status: 503,
+          code: 'MISSION_PERMISSIONS_UNAVAILABLE',
+          method: 'GET',
+          path: '/fixture',
+        }),
+      ),
+    ).toContain('Chưa xác minh được quyền')
+    expect(
+      monitoringErrorMessage(new TypeError('Failed to fetch')),
+    ).not.toContain('Failed to fetch')
+  })
   it('uses the refreshed version on the next edit', async () => {
     const updated = {
       ...item,

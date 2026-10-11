@@ -142,6 +142,22 @@ beforeEach(() => {
 })
 afterEach(() => vi.restoreAllMocks())
 describe('Manager Mission Detail monitoring review', () => {
+  it('opens the media library in place without changing the active route', async () => {
+    render(<MissionDetailPage missionId="m" />)
+    const link = await screen.findByRole('button', {
+      name: 'Xem thư viện media',
+    })
+    const library = screen.getByRole('region', { name: 'Thư viện media' })
+    library.scrollIntoView = vi.fn()
+    const route = window.location.hash
+    fireEvent.click(link)
+    expect(library.scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    })
+    expect(library).toHaveFocus()
+    expect(window.location.hash).toBe(route)
+  })
   it('renders per-item historical outcomes read-only', async () => {
     render(<MissionDetailPage missionId="m" />)
     expect(
@@ -178,15 +194,21 @@ describe('Manager Mission Detail monitoring review', () => {
 
     await screen.findByRole('tab', { name: 'Bản đồ & Media' })
     expect(screen.queryByRole('tab', { name: 'Kế hoạch bay' })).toBeNull()
-    expect(screen.getByRole('tab', { name: 'Kết quả check' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('tab', { name: 'Kết quả check' }),
+    ).toBeInTheDocument()
   })
   it('shows the recorded weather result on manager review', async () => {
     render(<MissionDetailPage missionId="m" />)
 
     expect(await screen.findByText('Kết quả thời tiết')).toBeInTheDocument()
-    expect(screen.getByText('Thời tiết phù hợp để cất cánh.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Thời tiết phù hợp để cất cánh.'),
+    ).toBeInTheDocument()
     expect(screen.getByText('4,2 m/s')).toBeInTheDocument()
-    expect(screen.getByText('Thời tiết ổn định, đủ điều kiện bay mô phỏng.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Thời tiết ổn định, đủ điều kiện bay mô phỏng.'),
+    ).toBeInTheDocument()
   })
   it.each(['DRAFT', 'REJECTED', 'APPROVED'] as const)(
     '%s cannot be approved/rejected',
@@ -216,7 +238,7 @@ describe('Manager Mission Detail monitoring review', () => {
     render(<MissionDetailPage missionId="m" />)
     fireEvent.click(await screen.findByText('Từ chối kết quả'))
     await screen.findByText(
-      'Kết quả đã bị từ chối. Monitoring actor cần chỉnh sửa và gửi lại.',
+      'Kết quả đã bị từ chối. Nhân sự thực hiện cần chỉnh sửa và gửi lại.',
     )
     await waitFor(() =>
       expect(missionsApi.getMissionResponse).toHaveBeenCalledTimes(2),

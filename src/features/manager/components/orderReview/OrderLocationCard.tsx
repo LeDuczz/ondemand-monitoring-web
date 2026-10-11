@@ -49,8 +49,9 @@ function useLeafletOrderMap(order: OrderDetail) {
     }).addTo(instance)
 
     map.current = instance
-    window.setTimeout(() => instance.invalidateSize(), 0)
+    const resizeTimer = window.setTimeout(() => instance.invalidateSize(), 0)
     return () => {
+      window.clearTimeout(resizeTimer)
       instance.remove()
       map.current = null
       marker.current = null
@@ -60,11 +61,16 @@ function useLeafletOrderMap(order: OrderDetail) {
 
   useEffect(() => {
     if (!map.current || !resolved) return
-    const target: L.LatLngExpression = [resolved.center.lat, resolved.center.lon]
+    const target: L.LatLngExpression = [
+      resolved.center.lat,
+      resolved.center.lon,
+    ]
     if (marker.current) {
       marker.current.setLatLng(target)
     } else {
-      marker.current = L.marker(target).addTo(map.current).bindTooltip('GPS target')
+      marker.current = L.marker(target)
+        .addTo(map.current)
+        .bindTooltip('GPS target')
     }
     if (order.radiusM != null) {
       if (circle.current) {
@@ -112,9 +118,7 @@ export function OrderLocationCard({
     return (
       <section className="odm-or-card">
         {header()}
-        <div className="odm-or-card-body odm-or-empty">
-          {t.noLocationData}
-        </div>
+        <div className="odm-or-card-body odm-or-empty">{t.noLocationData}</div>
       </section>
     )
   }

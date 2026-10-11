@@ -35,9 +35,11 @@ const emptyDraft: Draft = {
 export function ManagerPricingPanel({
   orderId,
   decisionActions,
+  onApproved,
 }: {
   orderId: string
   decisionActions?: ReactNode
+  onApproved?: () => void
 }) {
   const query = useApiQuery(
     (signal) => financeApi.getPricingReview(orderId, signal),
@@ -190,6 +192,7 @@ export function ManagerPricingPanel({
       })
       await financeApi.approveQuote(orderId, quote.id)
       setApprovalSucceeded(true)
+      onApproved?.()
       setMessage(
         'Duyệt báo giá thành công. Báo giá đã sẵn sàng để khách hàng chấp nhận.',
       )

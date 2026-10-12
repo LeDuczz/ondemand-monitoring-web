@@ -3,7 +3,6 @@ import type {
   GeoJsonPolygon,
   ServicePricingEstimate,
 } from '../../api/customerApi'
-import { findPermitZone } from './airspace'
 import { toNumber, truncateText } from './format'
 import type { AiScore, FormState } from './types'
 
@@ -87,14 +86,14 @@ export function buildOrderPayload(input: {
   const { form, aiAnalysisRequested } = input
   const latitude = toNumber(form.latitude, DEFAULT_LATITUDE)
   const longitude = toNumber(form.longitude, DEFAULT_LONGITUDE)
-  const permitZone = findPermitZone({ latitude, longitude }, form.radiusM)
-  const permitStatus = permitZone ? form.permitStatus : 'NONE'
+  const permitStatus = form.permitStatus
   const lengthM = toNumber(form.estimatedLengthM, 0)
   return {
     title: truncateText(form.title, ORDER_TITLE_MAX_LENGTH),
     description: form.description.trim() || undefined,
     serviceId: form.serviceId,
     usagePurpose: form.usagePurpose || undefined,
+    flightPurpose: form.flightPurpose,
     priority: form.priority,
     address: form.address.trim(),
     longitude,
@@ -107,6 +106,34 @@ export function buildOrderPayload(input: {
     permitStatus,
     permitNumber:
       permitStatus === 'HAVE_PERMIT' ? form.permitNumber.trim() || undefined : undefined,
+    permitExpiresOn:
+      permitStatus === 'HAVE_PERMIT' ? form.permitExpiresOn || undefined : undefined,
+    permitDocuments:
+      permitStatus === 'HAVE_PERMIT'
+        ? form.permitDocuments.map((file) => ({
+            id: file.id,
+            fileName: file.fileName,
+            contentType: file.contentType,
+            sizeBytes: file.sizeBytes,
+            dataUrl: file.dataUrl,
+          }))
+        : undefined,
+    monitoringRelationship: form.monitoringRelationship || undefined,
+    monitoringAuthorizationConfirmed:
+      form.monitoringAuthorizationConfirmed,
+    monitoringAuthorizationDocuments:
+      form.monitoringAuthorizationDocuments.length > 0
+        ? form.monitoringAuthorizationDocuments.map((document) => ({
+            id: document.id,
+            documentType: document.documentType,
+            documentName: document.documentName.trim(),
+            fileName: document.fileName,
+            contentType: document.contentType,
+            sizeBytes: document.sizeBytes,
+            dataUrl: document.dataUrl,
+            notes: document.notes.trim() || undefined,
+          }))
+        : undefined,
     coverageArea: buildCoverageArea(longitude, latitude, form.radiusM),
     preferredDateFrom: form.preferredDateFrom,
     preferredDateTo: form.preferredDateTo,

@@ -10,26 +10,30 @@ export const deliveryOptionsCardMessages = defineMessages({
       PHOTO: 'Ảnh',
       VIDEO: 'Video',
       PDF_REPORT: 'Báo cáo PDF',
-      ORTHOMOSAIC: 'Bản đồ ortho',
-      MODEL_3D: 'Mô hình 3D',
     },
     methodsLabel: 'Phương thức nhận',
     methods: {
       DOWNLOAD: 'Tải về',
       EMAIL: 'Email',
-      API: 'API',
     },
     retentionLabel: 'Thời hạn lưu trữ dữ liệu',
     retentionHint: 'Tính từ khi bàn giao kết quả.',
     days: (n: number) => `${n} ngày`,
     termsHeading: 'Điều khoản và cam kết bảo mật',
-    termsLabel: 'Tôi đã đọc và đồng ý với điều khoản sử dụng dịch vụ và cam kết bảo mật dữ liệu.',
+    termsRequired: 'Bắt buộc',
+    termsLabel:
+      'Tôi đã đọc và đồng ý với điều khoản sử dụng dịch vụ, chính sách bảo mật dữ liệu và xác nhận có quyền yêu cầu giám sát tại khu vực đã chọn.',
     commitmentsToggle: 'Xem nội dung cam kết',
-    commitmentUse: 'Dữ liệu giám sát chỉ được dùng để thực hiện và bàn giao yêu cầu này.',
-    commitmentRetention: (retentionDays: number) =>
-      `Dữ liệu kết quả được lưu trữ ${retentionDays} ngày kể từ khi bàn giao.`,
+    commitmentUse:
+      'Dữ liệu giám sát chỉ được sử dụng để thực hiện và bàn giao dịch vụ theo yêu cầu đã thống nhất.',
+    commitmentRetention:
+      'Dữ liệu kết quả được lưu trữ tối đa 90 ngày kể từ khi bàn giao, sau đó được xử lý theo chính sách lưu trữ và xóa dữ liệu của ODMS.',
     commitmentResponsibility:
-      'Bạn chịu trách nhiệm về quyền giám sát khu vực đã chọn, kể cả giấy phép bay khi khu vực yêu cầu.',
+      'Khách hàng cam kết có quyền yêu cầu giám sát tại khu vực đã chọn và cung cấp giấy chấp thuận của chủ sở hữu hoặc đơn vị quản lý khi cần thiết.',
+    commitmentPermit:
+      'ODMS phụ trách thủ tục xin giấy phép bay đối với hoạt động do ODMS tổ chức, khai thác. Nhiệm vụ chỉ được thực hiện khi đáp ứng đầy đủ điều kiện bay theo quy định.',
+    commitmentPrivacy:
+      'Hoạt động giám sát có thể ghi nhận hình ảnh người và công trình lân cận. ODMS sẽ áp dụng biện pháp bảo vệ quyền riêng tư, bao gồm làm mờ hoặc xử lý hình ảnh không cần thiết trước khi bàn giao, khi phù hợp.',
   },
   en: {
     cardTitle: 'Result delivery & commitments',
@@ -40,25 +44,29 @@ export const deliveryOptionsCardMessages = defineMessages({
       PHOTO: 'Photos',
       VIDEO: 'Video',
       PDF_REPORT: 'PDF report',
-      ORTHOMOSAIC: 'Orthomosaic map',
-      MODEL_3D: '3D model',
     },
     methodsLabel: 'Delivery method',
     methods: {
       DOWNLOAD: 'Download',
       EMAIL: 'Email',
-      API: 'API',
     },
     retentionLabel: 'Data retention period',
     retentionHint: 'Counted from the day the result is handed over.',
     days: (n: number) => `${n} days`,
     termsHeading: 'Terms and security commitment',
-    termsLabel: 'I have read and accept the service terms and the data-security commitment.',
+    termsRequired: 'Required',
+    termsLabel:
+      'I have read and agree to the service terms and data privacy policy, and confirm that I have the right to request monitoring in the selected area.',
     commitmentsToggle: 'View the commitment',
-    commitmentUse: 'Monitoring data is only used to carry out and hand over this request.',
-    commitmentRetention: (retentionDays: number) =>
-      `Result data is retained for ${retentionDays} days after handover.`,
+    commitmentUse:
+      'Monitoring data is used only to perform and deliver the service in accordance with the agreed request.',
+    commitmentRetention:
+      'Result data is retained for up to 90 days after delivery and is then handled in accordance with ODMS data retention and deletion policies.',
     commitmentResponsibility:
-      'You are responsible for the right to monitor the chosen area, including a flight permit where one is required.',
+      'The customer confirms that they have the right to request monitoring in the selected area and will provide consent from the owner or managing entity when required.',
+    commitmentPermit:
+      'ODMS is responsible for flight permit procedures for operations organized and conducted by ODMS. A mission will only proceed when all applicable flight requirements have been met.',
+    commitmentPrivacy:
+      'Monitoring activities may capture images of people and nearby property. Where appropriate, ODMS will protect privacy by blurring or otherwise processing unnecessary imagery before delivery.',
   },
 })

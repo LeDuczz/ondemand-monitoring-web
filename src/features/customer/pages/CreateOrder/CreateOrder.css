@@ -973,6 +973,8 @@ textarea.co-input {
 .co-summary.is-tall,
 .co-grid.is-service > .co-summary.is-tall {
   position: static;
+  max-height: none;
+  overflow: visible;
 }
 
 @media (max-height: 760px) {
@@ -1873,6 +1875,10 @@ ul.co-help {
   max-height: calc(100vh - 100px);
 }
 
+.co-grid.is-service > .co-summary.is-tall {
+  max-height: none;
+}
+
 /* Sticky action bar: calmer, blurred, and clear of the floating assistant button. */
 .co-bottom-bar {
   bottom: 16px;
@@ -2220,19 +2226,145 @@ ul.co-help {
 
 /* ---------- Step 3: map + area assessment share one sticky left column ---------- */
 .co-grid.is-location .co-location-left {
-  position: sticky;
-  top: 88px;
+  position: static;
   align-self: start;
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-3);
   min-width: 0;
-  max-height: calc(100vh - 190px);
-  overflow-y: auto;
-  scrollbar-width: thin;
+  max-height: none;
+  overflow: visible;
 }
 .co-grid.is-location .co-location-left > * {
   min-width: 0;
+}
+
+.co-authz {
+  padding: 18px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+}
+.co-authz-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.co-authz-head p,
+.co-authz-note {
+  margin: 6px 0 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+.co-authz-fieldset {
+  margin: 18px 0;
+  padding: 0;
+  border: 0;
+}
+.co-authz-fieldset legend,
+.co-authz-docs-head strong {
+  margin-bottom: 9px;
+  font-weight: 700;
+}
+.co-authz-relationships {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.co-authz-relationships label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.co-authz-relationships label:has(input:checked) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.co-authz-docs-head,
+.co-authz-document-title,
+.co-authz-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.co-authz-docs-head > div {
+  display: grid;
+  gap: 3px;
+}
+.co-authz-docs-head span,
+.co-authz-document label > span {
+  color: #64748b;
+  font-size: 13px;
+}
+.co-authz-documents {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.co-authz-document {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+.co-authz-document-title button,
+.co-authz-file button {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
+}
+.co-authz-document-title button {
+  color: #b91c1c;
+}
+.co-authz-document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.co-authz-document label {
+  display: grid;
+  gap: 6px;
+}
+.co-authz-file {
+  padding: 10px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 9px;
+  color: #475569;
+}
+.co-authz-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.co-authz-confirm input {
+  margin-top: 3px;
+  accent-color: #2563eb;
+}
+@media (max-width: 640px) {
+  .co-authz {
+    padding: 16px;
+  }
+  .co-authz-document-grid {
+    grid-template-columns: 1fr;
+  }
+  .co-authz-docs-head {
+    align-items: flex-start;
+  }
 }
 .co-grid.is-location .co-location-left .co-real-map-wrap {
   position: relative;
@@ -2349,4 +2481,161 @@ ul.co-help {
   .co-service:hover {
     transform: none;
   }
+}
+.airspace-status{display:grid;gap:6px;padding:12px 14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e3a5f;font-size:13px}.airspace-status.is-warning{border-color:#fdba74;background:#fff7ed;color:#7c2d12}.airspace-status strong{font-size:14px}.airspace-status small{display:block}.airspace-status a{color:#075fd8;font-weight:600;text-decoration:none;width:max-content}
+.airspace-status .airspace-check-button{width:max-content;margin:4px 0 2px}
+.airspace-status.airspace-self-check .airspace-check-button{display:inline-flex;align-items:center;justify-content:center;color:#fff;text-decoration:none}
+
+/* Terms & commitments: an important, hard-to-miss panel */
+.co-terms-important {
+  margin-top: var(--ui-space-4);
+  padding: 16px 18px;
+  border: 1px solid #f5c26b;
+  border-left: 5px solid #f59e0b;
+  border-radius: 12px;
+  background: #fff8e6;
+}
+.co-terms-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.co-terms-icon {
+  flex: none;
+  color: #d97706;
+}
+.co-terms-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #7a4a00;
+}
+.co-terms-badge {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.co-terms-list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  color: #5b4a2a;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.co-terms-list li + li {
+  margin-top: 4px;
+}
+.co-terms-list li.is-key {
+  color: #7a2e0b;
+  font-weight: 700;
+}
+.co-terms-check {
+  padding: 12px 14px;
+  border: 1px solid #f5c26b;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.co-terms-check.has-error {
+  border-color: var(--ui-danger, #d92d20);
+}
+.co-terms-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: #d97706;
+}
+:root[data-theme='dark'] .co-terms-important {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+:root[data-theme='dark'] .co-terms-title,
+:root[data-theme='dark'] .co-terms-list,
+:root[data-theme='dark'] .co-terms-list li.is-key {
+  color: inherit;
+}
+:root[data-theme='dark'] .co-terms-check {
+  background: transparent;
+}
+
+/* Request summary: compact rows with an icon badge, one headline + one muted line */
+.co-summary .co-sum-item {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 0;
+}
+.co-summary .co-sum-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 0;
+  border-radius: 9px;
+  background: var(--ui-primary-soft, #e8f1ff);
+  color: var(--ui-primary);
+}
+.co-summary .co-sum-body dt {
+  margin-bottom: 1px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.co-summary .co-sum-body dd {
+  font-size: 14px;
+  line-height: 1.35;
+}
+.co-summary .co-sum-body dd.is-sub {
+  margin-top: 1px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.co-summary .co-sum-edit {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.co-summary .co-sum-edit:hover {
+  background: var(--ui-primary-soft, #e8f1ff);
+  text-decoration: none;
+}
+.co-sum-title {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ui-primary-soft, #e8f1ff);
+}
+
+/* Step 3: both columns end on the same line (no notch under the shorter one),
+   and the authorization section below shares the same left/right edges. */
+@media (min-width: 1001px) {
+  .co-grid.is-location {
+    align-items: stretch;
+  }
+  .co-grid.is-location > .co-location-left,
+  .co-grid.is-location > .co-stack {
+    align-self: stretch;
+    min-height: 0;
+  }
+  .co-grid.is-location > .co-location-left > :last-child,
+  .co-grid.is-location > .co-stack > :last-child {
+    flex: 1 1 auto;
+  }
+}
+.co-grid.is-location > .co-location-left,
+.co-grid.is-location > .co-stack {
+  min-width: 0;
+}
+.co-stack > .co-authz {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Summary rows without an icon (e.g. the schedule step) must not show an empty badge. */
+.co-summary .co-sum-icon:empty {
+  display: none;
 }

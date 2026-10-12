@@ -109,7 +109,7 @@ describe('FlightAreaAssessmentCard', () => {
     ])
   })
 
-  it('says "no data" instead of inventing values when sources are unavailable', () => {
+  it('hides source groups that have no data', () => {
     render(
       <FlightAreaAssessmentCard
         state={state({
@@ -132,10 +132,11 @@ describe('FlightAreaAssessmentCard', () => {
       />,
     )
 
-    expect(screen.getByText('Độ cao địa hình').nextSibling).toHaveTextContent('Không có dữ liệu')
-    expect(screen.getByText('Cao độ bay ước tính').nextSibling).toHaveTextContent('Không có dữ liệu')
-    expect(screen.getByText('Công trình').nextSibling).toHaveTextContent('Không có dữ liệu')
-    expect(screen.getByText('Sân bay gần khu vực').nextSibling).toHaveTextContent('Không có dữ liệu')
+    expect(screen.queryByText('Độ cao địa hình')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cao độ bay ước tính')).not.toBeInTheDocument()
+    expect(screen.queryByText('Công trình')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sân bay gần khu vực')).not.toBeInTheDocument()
+    expect(screen.getByText('Vùng hạn chế')).toBeInTheDocument()
   })
 
   it('reports an intersecting restricted zone plainly', () => {
@@ -159,14 +160,14 @@ describe('FlightAreaAssessmentCard', () => {
     expect(screen.getByText('Vùng hạn chế').nextSibling).toHaveTextContent('Vùng giám sát giao vùng hạn chế')
   })
 
-  it('shows a skeleton on the first load and a prompt when there is no valid point', () => {
+  it('stays hidden before useful data is available', () => {
     const { rerender } = render(
       <FlightAreaAssessmentCard state={state({ status: 'loading' })} requestedAltitudeAglM={60} />,
     )
-    expect(screen.getByRole('status', { name: 'Đang đánh giá khu vực…' })).toBeInTheDocument()
+    expect(screen.queryByText('Đánh giá khu vực bay')).not.toBeInTheDocument()
 
     rerender(<FlightAreaAssessmentCard state={state({ status: 'idle' })} requestedAltitudeAglM={60} />)
-    expect(screen.getByText(/Chọn một điểm hợp lệ/)).toBeInTheDocument()
+    expect(screen.queryByText('Đánh giá khu vực bay')).not.toBeInTheDocument()
   })
 
   it('keeps showing the last result while refreshing', () => {
@@ -178,12 +179,8 @@ describe('FlightAreaAssessmentCard', () => {
     expect(screen.getByText('Đang cập nhật…')).toBeInTheDocument()
   })
 
-  it('offers a retry after a failure', () => {
-    const retry = vi.fn()
-    render(<FlightAreaAssessmentCard state={state({ status: 'error', retry })} requestedAltitudeAglM={60} />)
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Không thể tải đánh giá khu vực bay.')
-    screen.getByRole('button', { name: 'Thử lại' }).click()
-    expect(retry).toHaveBeenCalledOnce()
+  it('stays hidden after a failure without cached data', () => {
+    render(<FlightAreaAssessmentCard state={state({ status: 'error' })} requestedAltitudeAglM={60} />)
+    expect(screen.queryByText('Đánh giá khu vực bay')).not.toBeInTheDocument()
   })
 })

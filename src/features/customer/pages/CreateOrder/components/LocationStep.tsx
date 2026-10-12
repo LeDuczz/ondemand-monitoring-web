@@ -12,11 +12,10 @@ import {
 import type { FlightAreaNearbyFeature } from '../../../api/customerApi'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
 import { useFlightAreaAssessment } from '../hooks/useFlightAreaAssessment'
-import { useRestrictedZoneOverlay, type RestrictedZoneOverlay } from '../hooks/useRestrictedZoneOverlay'
 import { FlightAreaAssessmentCard } from './FlightAreaAssessmentCard'
 import { flightAreaAssessmentCardMessages } from './FlightAreaAssessmentCard.messages'
-import { AirspaceNotice } from './AirspaceNotice'
 import { LocationPanel } from './LocationPanel'
+import { MonitoringAuthorizationSection } from './MonitoringAuthorizationSection'
 import { SiteDetailsPanel } from './SiteDetailsPanel'
 import { locationStepMessages } from './LocationStep.messages'
 
@@ -38,20 +37,17 @@ type ApiResponse<T> = {
   data?: T
 }
 
-function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, zones, features }: {
+function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, features }: {
   latitude: string
   longitude: string
   radiusM: number
   label: string
   labels: { street: string; satellite: string }
   onPick: (latitude: number, longitude: number) => void
-  /** Restricted zones with real coordinates (from the existing zones list). */
-  zones: RestrictedZoneOverlay[]
   /** Only the few important OpenStreetMap features from the assessment, never every building. */
   features: FlightAreaNearbyFeature[]
 }) {
   const { t: legend } = useI18n(flightAreaAssessmentCardMessages)
-  const zoneLayer = useRef<L.LayerGroup | null>(null)
   const featureLayer = useRef<L.LayerGroup | null>(null)
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
@@ -195,22 +191,6 @@ function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, 
 
   useEffect(() => {
     if (!map.current) return
-    zoneLayer.current?.remove()
-    zoneLayer.current = L.layerGroup(
-      zones.map((zone) =>
-        L.polygon(zone.latLngs, {
-          color: '#dc2626',
-          fillColor: '#dc2626',
-          fillOpacity: 0.18,
-          weight: 2,
-          dashArray: '6 4',
-        }).bindTooltip(zone.name),
-      ),
-    ).addTo(map.current)
-  }, [zones])
-
-  useEffect(() => {
-    if (!map.current) return
     featureLayer.current?.remove()
     featureLayer.current = L.layerGroup(
       features
@@ -254,7 +234,7 @@ function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, 
       />
       <div className="co-map-key" aria-label={legend.legendTitle}>
         <span><i className="co-map-key-area" />{legend.legendArea}</span>
-        <span><i className="co-map-key-zone" />{legend.legendRestricted}</span>
+        <span><i className="co-map-key-zone" />Vùng sân bay Tân Sơn Nhất</span>
         <span><i className="co-map-key-point" />{legend.legendPoint}</span>
       </div>
       {invalidCoordinates ? (
@@ -279,7 +259,6 @@ export function LocationStep({ form, errors, update }: Props) {
     radiusM: form.radiusM,
     altitudeM: form.altitudeM,
   })
-  const restrictedZones = useRestrictedZoneOverlay()
 
   async function locateAddress() {
     const query = form.address.trim()
@@ -377,9 +356,27 @@ export function LocationStep({ form, errors, update }: Props) {
           onPick={(latitude, longitude) => {
             void updateAddressFromPoint(latitude, longitude)
           }}
-          zones={restrictedZones}
           features={assessment.data?.osmContext.importantFeatures ?? []}
         />
+        <section className="airspace-status airspace-self-check">
+          <strong>Tự kiểm tra vùng bay</strong>
+          <span>
+            ODMS không tự xác nhận quyền bay. Bạn hãy nhập vùng yêu cầu trên
+            cổng thông tin chính thức để tự kiểm tra.
+          </span>
+          <a
+            className="odm-btn odm-btn-p airspace-check-button"
+            href="https://cambay.mod.gov.vn/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Mở cổng kiểm tra vùng bay ↗
+          </a>
+          <small>
+            Sau khi kiểm tra, quay lại ODMS và khai báo giấy phép hoặc chọn cần
+            hỗ trợ xin phép.
+          </small>
+        </section>
         <FlightAreaAssessmentCard state={assessment} requestedAltitudeAglM={form.altitudeM} />
         </div>
         <div className="co-stack">
@@ -391,10 +388,14 @@ export function LocationStep({ form, errors, update }: Props) {
             addressLookupError={addressLookupError}
             onLocateAddress={locateAddress}
           />
-          <AirspaceNotice form={form} errors={errors} update={update} />
           <SiteDetailsPanel form={form} errors={errors} update={update} />
         </div>
       </div>
+      <MonitoringAuthorizationSection
+        form={form}
+        errors={errors}
+        update={update}
+      />
     </div>
   )
 }

@@ -356,6 +356,7 @@ function MissionDetail({ missionId }: { missionId: string }) {
               <section className="odm-or-card odm-rm-card">
                 <div className="odm-rm-stage">
                   <MissionSatelliteMap
+                    missionId={mission.id}
                     latitude={mission.latitude}
                     longitude={mission.longitude}
                   />

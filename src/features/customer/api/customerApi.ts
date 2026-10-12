@@ -32,6 +32,7 @@ export type CreateOrderPayload = {
   weatherFallback?: string
   resultDeadline?: string
   usagePurpose?: string
+  flightPurpose?: string
   priority?: string
   altitudeM?: number
   estimatedLengthM?: number
@@ -40,6 +41,26 @@ export type CreateOrderPayload = {
   accessNotes?: string
   permitStatus?: string
   permitNumber?: string
+  permitExpiresOn?: string
+  permitDocuments?: Array<{
+    id: string
+    fileName: string
+    contentType: string
+    sizeBytes: number
+    dataUrl: string
+  }>
+  monitoringRelationship?: string
+  monitoringAuthorizationConfirmed?: boolean
+  monitoringAuthorizationDocuments?: Array<{
+    id: string
+    documentType: string
+    documentName: string
+    fileName: string
+    contentType: string
+    sizeBytes: number
+    dataUrl: string
+    notes?: string
+  }>
   resultFormats?: string[]
   deliveryMethods?: string[]
   dataRetentionDays?: number
@@ -159,6 +180,15 @@ export type FlightAreaAssessment = {
     helipadNearby: boolean
     importantFeatures: FlightAreaNearbyFeature[]
   }
+  ministryFlightBan?: {
+    available: boolean
+    totalAreaSquareMeters?: number | null
+    violatedAreaSquareMeters?: number | null
+    safeAreaSquareMeters?: number | null
+    violatedZones: string[]
+    sourceUrl: string
+    errorCode?: string | null
+  }
   assessment: {
     level: FlightAreaRiskLevel
     findings: Array<{ code: string; severity: FlightAreaFindingSeverity; message: string }>
@@ -172,6 +202,8 @@ export type FlightAreaAssessmentQuery = {
   radiusMeters: number
   /** Desired altitude above ground level, metres. */
   requestedAltitudeAgl?: number
+  /** Set false for manager checks that only need authoritative/local zone data. */
+  includeOsm?: boolean
 }
 
 export type WeatherForecastQuery = {
@@ -337,6 +369,7 @@ export const customerApi = {
         longitude: query.longitude.toFixed(7),
         radiusMeters: Math.round(query.radiusMeters),
         requestedAltitudeAgl: query.requestedAltitudeAgl,
+        includeOsm: query.includeOsm,
       },
       signal,
     }),

@@ -6,6 +6,7 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import { planningApi } from '../api/planningApi'
+import { customerApi } from '../../customer/api/customerApi'
 import { financeApi } from '../../finance/api'
 import type { Quote } from '../../finance/types'
 import type {
@@ -184,6 +185,10 @@ function mockApprovedPlanning() {
   })
 }
 
+async function openPricingStep() {
+  fireEvent.click(await screen.findByText('Checklist & báo giá'))
+}
+
 afterEach(() => {
   vi.restoreAllMocks()
   window.location.hash = ''
@@ -229,6 +234,7 @@ describe('OrderReviewPage', () => {
     })
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId={order.id} />)
+    await openPricingStep()
     fireEvent.click(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     )
@@ -290,10 +296,69 @@ describe('OrderReviewPage', () => {
     expect(screen.getByText('Lê Quốc Bảo')).toBeInTheDocument()
     expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
     expect(screen.getByText('Khách hàng doanh nghiệp')).toBeInTheDocument()
-    expect(screen.getByText('Xem đơn hàng')).toBeInTheDocument()
-    expect(await screen.findByText('thiết bị khả dụng')).toBeInTheDocument()
-    expect(screen.getByText('DRN-06 Cú Mèo')).toBeInTheDocument()
-    expect(screen.getByText('Bùi Anh Tuấn')).toBeInTheDocument()
+    expect(screen.getByText('Thông tin đơn')).toBeInTheDocument()
+    expect(screen.queryByText('Tình trạng nguồn lực')).not.toBeInTheDocument()
+  })
+
+  it('shows the area address directly below the map', async () => {
+    mockHappyPath(feasibleAnalysis)
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+
+    expect(screen.queryByText('Địa chỉ khu vực')).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByText('Kiểm tra vùng'))
+
+    expect(screen.getByText('Địa chỉ khu vực')).toBeInTheDocument()
+    expect(
+      screen.getByText('Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức'),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps the area assessment when switching steps instead of requesting it again', async () => {
+    mockHappyPath(feasibleAnalysis)
+    vi.mocked(ordersApi.getOrder).mockResolvedValue({
+      ...order,
+      center: { lat: 10.712345, lon: 106.612345 },
+    })
+    const assessmentSpy = vi
+      .spyOn(customerApi, 'getFlightAreaAssessment')
+      .mockResolvedValue({
+        location: {
+          latitude: 10.712345,
+          longitude: 106.612345,
+          radiusMeters: 600,
+        },
+        elevation: { available: true, terrainElevationMeters: 4 },
+        restrictedZones: {
+          dataAvailable: true,
+          pointInsideRestrictedZone: false,
+          monitoringAreaIntersectsRestrictedZone: false,
+          affectedZones: [],
+        },
+        osmContext: {
+          available: true,
+          buildingCount: 0,
+          towerCount: 0,
+          mastCount: 0,
+          powerTowerCount: 0,
+          aerodromeNearby: false,
+          helipadNearby: false,
+          importantFeatures: [],
+        },
+        assessment: {
+          level: 'FAVORABLE',
+          findings: [],
+          disclaimer: 'Kết quả tham khảo.',
+        },
+      })
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+
+    fireEvent.click(await screen.findByText('Kiểm tra vùng'))
+    await screen.findByText('Thuận lợi')
+    fireEvent.click(screen.getByText('Thông tin đơn'))
+    fireEvent.click(screen.getByText('Kiểm tra vùng'))
+    await screen.findByText('Thuận lợi')
+
+    expect(assessmentSpy).toHaveBeenCalledTimes(1)
   })
 
   it('cleans legacy raw JSON media labels before rendering', async () => {
@@ -320,7 +385,7 @@ describe('OrderReviewPage', () => {
     expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
   })
 
-  it('shows resource shortage for a different order without obsolete analysis copy', async () => {
+  it('shows a different order without obsolete analysis copy', async () => {
     mockHappyPath(riskyAnalysis)
     vi.mocked(ordersApi.getOrder).mockResolvedValue({
       ...order,
@@ -334,8 +399,8 @@ describe('OrderReviewPage', () => {
     })
     render(<OrderReviewPage orderId="ord-2609-0160" />)
 
-    expect(await screen.findByText('Thiếu nguồn lực')).toBeInTheDocument()
-    expect(screen.getByText('#ORD-2609-0160')).toBeInTheDocument()
+    expect(await screen.findByText('#ORD-2609-0160')).toBeInTheDocument()
+    expect(screen.queryByText('Tình trạng nguồn lực')).not.toBeInTheDocument()
     expect(ordersApi.getOrder).toHaveBeenCalledWith(
       'ord-2609-0160',
       expect.any(AbortSignal),
@@ -349,6 +414,7 @@ describe('OrderReviewPage', () => {
     vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Lê Quốc Bảo'))
+    await openPricingStep()
 
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
@@ -365,6 +431,7 @@ describe('OrderReviewPage', () => {
     vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Lê Quốc Bảo'))
+    await openPricingStep()
 
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Vùng cấm bay' }))
@@ -387,6 +454,7 @@ describe('OrderReviewPage', () => {
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByText('Lê Quốc Bảo'))
+    await openPricingStep()
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
@@ -413,6 +481,7 @@ describe('OrderReviewPage', () => {
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await openPricingStep()
     fireEvent.click(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     )
@@ -466,15 +535,11 @@ describe('OrderReviewPage', () => {
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
     expect(screen.getByText('Nguyễn Minh Khoa')).toBeInTheDocument()
     expect(
-      screen.getByText('Chưa có dữ liệu vị trí cho đơn này.'),
-    ).toBeInTheDocument()
-    expect(
       screen.getByText('Chưa có dữ liệu tệp đính kèm cho đơn này.'),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText('Chưa có dữ liệu nguồn lực cho đơn này.'),
-    ).toBeInTheDocument()
+    expect(screen.queryByText('Tình trạng nguồn lực')).not.toBeInTheDocument()
     expect(screen.getByText('Không có email')).toBeInTheDocument()
+    await openPricingStep()
     // Action bar still renders — the page didn't crash on null fields.
     expect(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
@@ -506,12 +571,11 @@ describe('OrderReviewPage', () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
     await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await openPricingStep()
 
     act(() => setLanguage('en'))
 
     expect(screen.getByRole('heading', { name: 'Orders' })).toBeInTheDocument()
-    expect(screen.getByText('Review order')).toBeInTheDocument()
-    expect(screen.getByText('Customer')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
   })
 })

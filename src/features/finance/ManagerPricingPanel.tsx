@@ -36,10 +36,15 @@ export function ManagerPricingPanel({
   orderId,
   decisionActions,
   onApproved,
+  onChecklistReviewChanged,
+  approveBlockedReason,
 }: {
   orderId: string
   decisionActions?: ReactNode
   onApproved?: () => void
+  onChecklistReviewChanged?: () => void
+  /** Why approving is not allowed yet (approval criteria not met); null/undefined = allowed. */
+  approveBlockedReason?: string | null
 }) {
   const query = useApiQuery(
     (signal) => financeApi.getPricingReview(orderId, signal),
@@ -120,6 +125,7 @@ export function ManagerPricingPanel({
         managerNote: managerNote.trim() || null,
       })
       query.reload()
+      onChecklistReviewChanged?.()
     } catch (cause) {
       setError(errorMessage(cause))
     }
@@ -550,13 +556,19 @@ export function ManagerPricingPanel({
                     Lưu nháp
                   </button>
                   <button
+                    id="manager-approve-quote"
                     className="odm-btn odm-btn-p"
                     type="button"
-                    disabled={busy || approved || pendingCustomCount > 0}
+                    disabled={
+                      busy ||
+                      approved ||
+                      pendingCustomCount > 0 ||
+                      Boolean(approveBlockedReason)
+                    }
                     title={
                       pendingCustomCount > 0
                         ? 'Phân loại các yêu cầu bổ sung trước khi duyệt báo giá'
-                        : undefined
+                        : (approveBlockedReason ?? undefined)
                     }
                     onClick={() => void approve()}
                   >

@@ -97,12 +97,15 @@ function useLeafletOrderMap(order: OrderDetail) {
 export function OrderLocationCard({
   order,
   t,
+  showAreaAddress = false,
 }: {
   order: OrderDetail
   t: OrderReviewMessages
+  showAreaAddress?: boolean
 }) {
   const mapRef = useLeafletOrderMap(order)
   const resolved = resolveOrderGpsCenter(order.center)
+  const areaAddress = order.addressText?.trim() || null
 
   const header = (action?: ReactNode) => (
     <header className="odm-or-card-head">
@@ -151,7 +154,9 @@ export function OrderLocationCard({
   return (
     <section className="odm-or-card">
       {header(openButton)}
-      <div className="odm-or-map odm-or-real-map">
+      <div
+        className={`odm-or-map odm-or-real-map${showAreaAddress && areaAddress ? ' has-area-address' : ''}`}
+      >
         <div
           ref={mapRef}
           className="odm-or-real-map-canvas"
@@ -184,6 +189,17 @@ export function OrderLocationCard({
           </div>
         ) : null}
       </div>
+      {showAreaAddress && areaAddress ? (
+        <div className="odm-or-area-address">
+          <span className="odm-or-area-address-icon" aria-hidden="true">
+            <OrderIcon name="pin" size={18} />
+          </span>
+          <span>
+            <span className="odm-or-area-address-label">Địa chỉ khu vực</span>
+            <strong>{areaAddress}</strong>
+          </span>
+        </div>
+      ) : null}
     </section>
   )
 }

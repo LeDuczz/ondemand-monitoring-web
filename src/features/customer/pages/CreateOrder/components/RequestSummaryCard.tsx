@@ -10,7 +10,6 @@ import type {
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { localizeDeliverableName } from '../../../lib/i18n/catalogNames'
 import { localizeTimeslot } from '../../../lib/i18n/timeslots'
-import { findPermitZone } from '../../../lib/createOrder/airspace'
 import { calcArea } from '../../../lib/createOrder/payload'
 import type { FormState, Step } from '../../../lib/createOrder/types'
 import { deliveryOptionsCardMessages } from './DeliveryOptionsCard.messages'
@@ -33,6 +32,8 @@ type Item = {
   label: string
   lines: string[]
   clamp?: boolean
+  /** How many leading lines form the bold headline; the rest are joined into one muted line. */
+  lead?: number
   /** Wizard step where this value is edited. */
   step?: Step
 }
@@ -41,6 +42,15 @@ type Item = {
 function formatDate(value: string, lang: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   return match && lang === 'vi' ? `${match[3]}/${match[2]}/${match[1]}` : value
+}
+
+/** Bold headline line(s) first, everything else folded into one muted line. */
+function summaryLines(item: Item) {
+  if (item.clamp) return item.lines
+  const lead = item.lead ?? 1
+  const head = item.lines.slice(0, lead).join(' · ')
+  const rest = item.lines.slice(lead).join(' · ')
+  return [head, rest].filter(Boolean)
 }
 
 /** Read-only, scannable summary of everything the customer entered. */
@@ -56,12 +66,9 @@ export function RequestSummaryCard(p: Props) {
     : dateTo && dateTo !== dateFrom
       ? `${dateFrom} → ${dateTo}`
       : dateFrom
-  const permitZone = findPermitZone(
-    { latitude: Number(form.latitude), longitude: Number(form.longitude) },
-    form.radiusM,
-  )
   const timeWindow = p.time ? localizeTimeslot(p.time, lang) : ''
-  const quantity = Number.isFinite(form.quantity) && form.quantity > 0 ? form.quantity : 0
+  const quantity =
+    Number.isFinite(form.quantity) && form.quantity > 0 ? form.quantity : 0
   const result = [
     t[form.mediaType],
     form.resolution,
@@ -76,7 +83,9 @@ export function RequestSummaryCard(p: Props) {
       icon: 'clipboard',
       label: t.service,
       lines: [
-        p.service ? localizeServiceName(p.service.id, lang, p.service.name) : t.noValue,
+        p.service
+          ? localizeServiceName(p.service.id, lang, p.service.name)
+          : t.noValue,
         [
           form.usagePurpose ? info.purposes[form.usagePurpose] : '',
           form.priority !== 'NORMAL' ? info.priorities[form.priority] : '',
@@ -106,39 +115,51 @@ export function RequestSummaryCard(p: Props) {
           : form.recurrenceType === 'MONTHLY'
             ? t.repeatMonthly(form.recurrenceOccurrences)
             : '',
-        form.resultDeadline ? t.deadline(formatDate(form.resultDeadline, lang)) : '',
+        form.resultDeadline
+          ? t.deadline(formatDate(form.resultDeadline, lang))
+          : '',
         t.fallbackValues[form.weatherFallback],
       ].filter(Boolean),
+      lead: 2,
       step: 4,
     },
     {
       key: 'area',
+      icon: 'radio',
       label: t.area,
       lines: [
         `${t.radius} ${form.radiusM} m · ${calcArea(form.radiusM)} ha`,
         t.altitude(form.altitudeM),
-        Number(form.estimatedLengthM) > 0 ? t.length(Number(form.estimatedLengthM)) : '',
+        Number(form.estimatedLengthM) > 0
+          ? t.length(Number(form.estimatedLengthM))
+          : '',
         form.areaFiles.length ? t.areaFiles(form.areaFiles.length) : '',
       ].filter(Boolean),
       step: 3,
     },
-    ...(form.siteContactName.trim() || form.siteContactPhone.trim() || form.accessNotes.trim()
+    ...(form.siteContactName.trim() ||
+    form.siteContactPhone.trim() ||
+    form.accessNotes.trim()
       ? [
           {
             key: 'contact',
+            icon: 'users' as const,
             label: t.contact,
             lines: [
-              [form.siteContactName.trim(), form.siteContactPhone.trim()].filter(Boolean).join(' · '),
+              [form.siteContactName.trim(), form.siteContactPhone.trim()]
+                .filter(Boolean)
+                .join(' · '),
               form.accessNotes.trim(),
             ].filter(Boolean),
             step: 3 as Step,
           },
         ]
       : []),
-    ...(permitZone && form.permitStatus !== 'NONE'
+    ...(form.permitStatus !== 'NONE'
       ? [
           {
             key: 'permit',
+            icon: 'shield' as const,
             label: t.permit,
             lines: [
               form.permitStatus === 'HAVE_PERMIT'
@@ -154,13 +175,14 @@ export function RequestSummaryCard(p: Props) {
       icon: 'camera',
       label: t.deliverable,
       lines: [
-        localizeDeliverableName(p.deliverable?.deliverableTypeName, lang) || t.noValue,
+        localizeDeliverableName(p.deliverable?.deliverableTypeName, lang) ||
+          t.noValue,
         result,
       ].filter(Boolean),
     },
     {
       key: 'delivery',
-      icon: 'file-text',
+      icon: 'mail',
       label: t.delivery,
       lines: [
         form.resultFormats.map((format) => d.formats[format]).join(', '),
@@ -176,15 +198,14 @@ export function RequestSummaryCard(p: Props) {
       step: 1,
     },
     {
-      key: 'addOns',
-      label: t.addOns,
-      lines: [p.aiAnalysisRequested ? t.aiAnalysis : t.none],
-      step: 1,
-    },
-    {
       key: 'attachments',
+      icon: 'file-text',
       label: t.attachments,
-      lines: [form.attachments.length ? t.attachmentCount(form.attachments.length) : t.none],
+      lines: [
+        form.attachments.length
+          ? t.attachmentCount(form.attachments.length)
+          : t.none,
+      ],
       step: 1,
     },
   ]
@@ -203,7 +224,7 @@ export function RequestSummaryCard(p: Props) {
             </span>
             <div className="co-sum-body">
               <dt>{item.label}</dt>
-              {item.lines.map((line, index) => (
+              {summaryLines(item).map((line, index) => (
                 <dd
                   key={index}
                   className={`${index > 0 ? 'is-sub ' : ''}${item.clamp ? 'is-clamp' : ''}`}
@@ -231,7 +252,9 @@ export function RequestSummaryCard(p: Props) {
         <div className="co-sum-tech-row">
           <span>{t.coordinates}</span>
           <span className="co-mono">
-            {form.latitude && form.longitude ? `${form.latitude}, ${form.longitude}` : '—'}
+            {form.latitude && form.longitude
+              ? `${form.latitude}, ${form.longitude}`
+              : '—'}
           </span>
         </div>
       </details>

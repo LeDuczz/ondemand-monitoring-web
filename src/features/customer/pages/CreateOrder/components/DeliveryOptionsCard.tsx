@@ -83,9 +83,34 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
         <p className="co-hint">{t.retentionHint}</p>
       </FormField>
 
-      <div className="co-terms">
-        <div className="co-block-title">{t.termsHeading}</div>
-        <label className="co-check">
+      <div className="co-terms co-terms-important">
+        <div className="co-terms-head">
+          <svg
+            className="co-terms-icon"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+            <path d="M12 8.5v4M12 15.5h.01" />
+          </svg>
+          <div className="co-terms-title">{t.termsHeading}</div>
+          <span className="co-terms-badge">{t.termsRequired}</span>
+        </div>
+        <ul className="co-terms-list">
+          <li>{t.commitmentUse}</li>
+          <li>{t.commitmentRetention}</li>
+          <li>{t.commitmentResponsibility}</li>
+          <li>{t.commitmentPermit}</li>
+          <li className="is-key">{t.commitmentPrivacy}</li>
+        </ul>
+        <label className={`co-check co-terms-check${errors.termsAccepted ? ' has-error' : ''}`}>
           <input
             type="checkbox"
             checked={form.termsAccepted}
@@ -95,14 +120,6 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
           <span>{t.termsLabel}</span>
         </label>
         {errors.termsAccepted && <div className="ui-field-error">{errors.termsAccepted}</div>}
-        <details className="co-terms-details">
-          <summary>{t.commitmentsToggle}</summary>
-          <ul>
-            <li>{t.commitmentUse}</li>
-            <li>{t.commitmentRetention(form.dataRetentionDays)}</li>
-            <li>{t.commitmentResponsibility}</li>
-          </ul>
-        </details>
       </div>
     </Card>
   )

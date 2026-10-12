@@ -1,6 +1,5 @@
 import type { FormErrors, FormState, Step } from './types'
 import { isInsideHcmcServiceArea } from '../../../../shared/lib/serviceArea'
-import { findPermitZone } from './airspace'
 
 export const ALTITUDE_MIN = 10
 export const ALTITUDE_MAX = 120
@@ -30,6 +29,12 @@ export type ValidationMessages = {
   siteContactPhone: string
   permitStatus: (zoneName: string) => string
   permitNumber: string
+  permitDocuments: string
+  permitExpiresOn: string
+  permitExpired: string
+  monitoringRelationship: string
+  monitoringAuthorizationConfirmed: string
+  monitoringAuthorizationDocuments: string
 }
 
 export type LocationCheck = {
@@ -88,14 +93,12 @@ export function validateStep(
     }
     const phone = form.siteContactPhone.trim()
     if (phone && !PHONE_PATTERN.test(phone)) errors.siteContactPhone = msg.siteContactPhone
-    if (validLatitude && validLongitude) {
-      const zone = findPermitZone({ latitude, longitude }, form.radiusM)
-      if (zone) {
-        if (form.permitStatus === 'NONE') {
-          errors.permitStatus = msg.permitStatus(zone.name)
-        } else if (form.permitStatus === 'HAVE_PERMIT' && !form.permitNumber.trim()) {
-          errors.permitNumber = msg.permitNumber
-        }
+    if (validLatitude && validLongitude && form.permitStatus === 'HAVE_PERMIT') {
+      if (!form.permitNumber.trim()) errors.permitNumber = msg.permitNumber
+      if (form.permitDocuments.length === 0) errors.permitDocuments = msg.permitDocuments
+      if (!form.permitExpiresOn) errors.permitExpiresOn = msg.permitExpiresOn
+      else if (form.preferredDateTo && form.permitExpiresOn < form.preferredDateTo) {
+        errors.permitExpiresOn = msg.permitExpired
       }
     }
   }
@@ -129,6 +132,24 @@ export function validateStep(
     }
   }
   if (targetStep >= 5) {
+    if (!form.monitoringRelationship) {
+      errors.monitoringRelationship = msg.monitoringRelationship
+    }
+    if (!form.monitoringAuthorizationConfirmed) {
+      errors.monitoringAuthorizationConfirmed =
+        msg.monitoringAuthorizationConfirmed
+    }
+    if (
+      form.monitoringAuthorizationDocuments.some(
+        (document) =>
+          !document.documentName.trim() ||
+          !document.fileName ||
+          !document.dataUrl,
+      )
+    ) {
+      errors.monitoringAuthorizationDocuments =
+        msg.monitoringAuthorizationDocuments
+    }
     if (!form.deliverableTypeId) {
       errors.deliverableTypeId = msg.deliverableTypeId
     }

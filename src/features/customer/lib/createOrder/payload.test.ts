@@ -96,20 +96,52 @@ describe('buildOrderPayload', () => {
     })
   })
 
+  it('sends the flight purpose, defaulting to surveying and monitoring', () => {
+    const base = { score, aiAnalysisRequested: false, pricingEstimate: null }
+    expect(createDefaultForm().flightPurpose).toBe('SURVEY_MONITORING')
+    expect(buildOrderPayload({ ...base, form }).flightPurpose).toBe(
+      'SURVEY_MONITORING',
+    )
+    expect(
+      buildOrderPayload({
+        ...base,
+        form: { ...form, flightPurpose: 'AGRICULTURE' },
+      }).flightPurpose,
+    ).toBe('AGRICULTURE')
+  })
+
   it('sends schedule preferences and drops the count when not repeating', () => {
     const base = { score, aiAnalysisRequested: false, pricingEstimate: null }
     const once = buildOrderPayload({
       ...base,
-      form: { ...form, recurrenceType: 'NONE', recurrenceOccurrences: 9, weatherFallback: 'AUTO_RESCHEDULE', resultDeadline: '' },
+      form: {
+        ...form,
+        recurrenceType: 'NONE',
+        recurrenceOccurrences: 9,
+        weatherFallback: 'AUTO_RESCHEDULE',
+        resultDeadline: '',
+      },
     })
-    expect(once).toMatchObject({ recurrenceType: 'NONE', weatherFallback: 'AUTO_RESCHEDULE' })
+    expect(once).toMatchObject({
+      recurrenceType: 'NONE',
+      weatherFallback: 'AUTO_RESCHEDULE',
+    })
     expect(once.recurrenceOccurrences).toBeUndefined()
     expect(once.resultDeadline).toBeUndefined()
     const weekly = buildOrderPayload({
       ...base,
-      form: { ...form, recurrenceType: 'WEEKLY', recurrenceOccurrences: 4, resultDeadline: '2026-10-20' },
+      form: {
+        ...form,
+        recurrenceType: 'WEEKLY',
+        recurrenceOccurrences: 4,
+        resultDeadline: '2026-10-20',
+      },
     })
-    expect(weekly).toMatchObject({ recurrenceType: 'WEEKLY', recurrenceOccurrences: 4, resultDeadline: '2026-10-20' })
+    expect(weekly).toMatchObject({
+      recurrenceType: 'WEEKLY',
+      recurrenceOccurrences: 4,
+      resultDeadline: '2026-10-20',
+    })
   })
 
   it('includes the AI add-on price when requested', () => {

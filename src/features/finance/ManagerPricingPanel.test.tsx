@@ -7,6 +7,52 @@ import { ManagerPricingPanel } from './ManagerPricingPanel'
 afterEach(() => vi.restoreAllMocks())
 
 describe('ManagerPricingPanel', () => {
+  it('refreshes readiness after a checklist item is reviewed', async () => {
+    vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
+      orderId: 'order-1',
+      orderCode: 'ORD-1',
+      customerName: 'Customer',
+      serviceName: 'Site monitoring',
+      basePackagePrice: 5_000_000,
+      checklistItems: [
+        {
+          id: 'pending-1',
+          sourceChecklistId: 'template-1',
+          content: 'Requirement awaiting review',
+          displayOrder: 1,
+          sourceType: 'SERVICE_TEMPLATE',
+          reviewStatus: 'PENDING',
+          managerNote: null,
+        },
+      ],
+      currentQuote: null,
+      quoteHistory: [],
+    })
+    vi.spyOn(financeApi, 'reviewChecklist').mockResolvedValue({
+      id: 'pending-1',
+      sourceChecklistId: 'template-1',
+      content: 'Requirement awaiting review',
+      displayOrder: 1,
+      sourceType: 'SERVICE_TEMPLATE',
+      reviewStatus: 'INCLUDED',
+      managerNote: null,
+    })
+    const onChecklistReviewChanged = vi.fn()
+
+    render(
+      <ManagerPricingPanel
+        orderId="order-1"
+        onChecklistReviewChanged={onChecklistReviewChanged}
+      />,
+    )
+    await screen.findByText('Requirement awaiting review')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Phân loại' }), {
+      target: { value: 'INCLUDED' },
+    })
+
+    await waitFor(() => expect(onChecklistReviewChanged).toHaveBeenCalled())
+  })
+
   it('submits package and additional prices as separate backend inputs', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',

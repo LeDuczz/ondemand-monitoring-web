@@ -42,6 +42,15 @@ export type OrderMediaRequirement = {
   label: string
 }
 
+/** A flight-permit file the customer attached; `dataUrl` is the base64 content. */
+export type OrderPermitDocument = {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  dataUrl: string
+}
+
 /** `order.attachments[]` item [BRIEF] — brief-only field. */
 export type OrderAttachment = {
   name: string
@@ -66,6 +75,8 @@ export type OrderDetail = {
   status: OrderStatus
   customer: OrderCustomerContact
   serviceName: string
+  /** Optional: only present if the order API supplies the service description. */
+  serviceDescription?: string | null
   preferredDate: string
   preferredDateFrom?: string | null
   preferredDateTo?: string | null
@@ -86,6 +97,7 @@ export type OrderDetail = {
   title?: string | null
   description?: string | null
   usagePurpose?: string | null
+  flightPurpose?: string | null
   priority?: string | null
   altitudeM?: number | null
   estimatedLengthM?: number | null
@@ -94,6 +106,8 @@ export type OrderDetail = {
   accessNotes?: string | null
   permitStatus?: string | null
   permitNumber?: string | null
+  permitExpiresOn?: string | null
+  permitDocuments?: OrderPermitDocument[] | null
   permitRequired?: boolean | null
   permitZoneName?: string | null
   recurrenceType?: string | null
@@ -220,8 +234,10 @@ export type OrderCreateResponse = {
   serviceId: string
   serviceName: string
   serviceBasePriceSnapshot?: number | string | null
+  serviceDescription?: string | null
   description: string
   usagePurpose?: string | null
+  flightPurpose?: string | null
   priority?: string | null
   altitudeM?: number | null
   estimatedLengthM?: number | null
@@ -230,6 +246,8 @@ export type OrderCreateResponse = {
   accessNotes?: string | null
   permitStatus?: string | null
   permitNumber?: string | null
+  permitExpiresOn?: string | null
+  permitDocuments?: OrderPermitDocument[] | null
   permitRequired?: boolean | null
   permitZoneName?: string | null
   address: string

@@ -1,7 +1,6 @@
 import { Modal } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { ServiceOption, ServicePricingEstimate } from '../../../api/customerApi'
-import { findPermitZone } from '../../../lib/createOrder/airspace'
 import { formatMoney } from '../../../lib/createOrder/format'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import type { FormState } from '../../../lib/createOrder/types'
@@ -21,10 +20,6 @@ type Props = {
 export function ConfirmSubmitModal(p: Props) {
   const { t, locale, lang } = useI18n(confirmSubmitModalMessages)
   const { form } = p
-  const permitZone = findPermitZone(
-    { latitude: Number(form.latitude), longitude: Number(form.longitude) },
-    form.radiusM,
-  )
 
   const footer = (
     <>
@@ -61,7 +56,7 @@ export function ConfirmSubmitModal(p: Props) {
             <dd>{[form.siteContactName.trim(), form.siteContactPhone.trim()].filter(Boolean).join(' · ')}</dd>
           </>
         )}
-        {permitZone && form.permitStatus !== 'NONE' && (
+        {form.permitStatus !== 'NONE' && (
           <>
             <dt>{t.permit}</dt>
             <dd>

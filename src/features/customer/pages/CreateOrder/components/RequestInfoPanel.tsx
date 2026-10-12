@@ -1,8 +1,19 @@
 import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
-import type { CustomerConsultation, ServiceOption } from '../../../api/customerApi'
+import type {
+  CustomerConsultation,
+  ServiceOption,
+} from '../../../api/customerApi'
 import { consultationStatusKey } from '../../../lib/createOrder/consultation'
-import type { FormErrors, FormState, RequestPriority, UpdateField, UsagePurpose } from '../../../lib/createOrder/types'
+import {
+  FLIGHT_PURPOSES,
+  type FlightPurpose,
+  type FormErrors,
+  type FormState,
+  type RequestPriority,
+  type UpdateField,
+  type UsagePurpose,
+} from '../../../lib/createOrder/types'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { AttachmentsField } from './AttachmentsField'
 import { Metric } from './Metric'
@@ -21,7 +32,14 @@ type Props = {
   selected?: ServiceOption
 }
 
-export function RequestInfoPanel({ form, errors, update, consultation, recommended, selected }: Props) {
+export function RequestInfoPanel({
+  form,
+  errors,
+  update,
+  consultation,
+  recommended,
+  selected,
+}: Props) {
   const { t, lang } = useI18n(requestInfoPanelMessages)
   const waiting = consultation?.status === 'READY_FOR_CONFIRMATION' && !selected
   const status = waiting
@@ -30,7 +48,12 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
 
   return (
     <Card title={t.cardTitle}>
-      <FormField id="co-title" label={t.titleLabel} required error={errors.title}>
+      <FormField
+        id="co-title"
+        label={t.titleLabel}
+        required
+        error={errors.title}
+      >
         <input
           id="co-title"
           className="co-input"
@@ -39,17 +62,40 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
           onChange={(e) => update('title', e.target.value)}
         />
       </FormField>
+      <div className="co-mt">
+        <FormField id="co-flight-purpose" label={t.flightPurposeLabel} required>
+          <select
+            id="co-flight-purpose"
+            className="co-input"
+            value={form.flightPurpose}
+            onChange={(e) =>
+              update('flightPurpose', e.target.value as FlightPurpose)
+            }
+          >
+            {FLIGHT_PURPOSES.map((p) => (
+              <option key={p} value={p}>
+                {t.flightPurposes[p]}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <div className="co-help">{t.flightPurposeHint}</div>
+      </div>
       <div className="co-two co-mt co-compact">
         <FormField id="co-purpose" label={t.purposeLabel}>
           <select
             id="co-purpose"
             className="co-input"
             value={form.usagePurpose}
-            onChange={(e) => update('usagePurpose', e.target.value as UsagePurpose)}
+            onChange={(e) =>
+              update('usagePurpose', e.target.value as UsagePurpose)
+            }
           >
             <option value="">{t.purposePlaceholder}</option>
             {PURPOSES.map((p) => (
-              <option key={p} value={p}>{t.purposes[p]}</option>
+              <option key={p} value={p}>
+                {t.purposes[p]}
+              </option>
             ))}
           </select>
         </FormField>
@@ -58,10 +104,14 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
             id="co-priority"
             className="co-input"
             value={form.priority}
-            onChange={(e) => update('priority', e.target.value as RequestPriority)}
+            onChange={(e) =>
+              update('priority', e.target.value as RequestPriority)
+            }
           >
             {PRIORITIES.map((p) => (
-              <option key={p} value={p}>{t.priorities[p]}</option>
+              <option key={p} value={p}>
+                {t.priorities[p]}
+              </option>
             ))}
           </select>
         </FormField>
@@ -70,7 +120,9 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
         <div className="co-ai-insight-title">
           <span aria-hidden="true">✦</span> {t.understood}
         </div>
-        <div className="co-pre">{consultation?.requirementSummary || t.noSummary}</div>
+        <div className="co-pre">
+          {consultation?.requirementSummary || t.noSummary}
+        </div>
       </div>
       <div className="co-two co-mt co-compact">
         <Metric
@@ -78,12 +130,20 @@ export function RequestInfoPanel({ form, errors, update, consultation, recommend
           value={
             recommended
               ? localizeServiceName(recommended.id, lang, recommended.name)
-              : localizeServiceName(consultation?.recommendedServiceName, lang) || t.noSuggestion
+              : localizeServiceName(
+                  consultation?.recommendedServiceName,
+                  lang,
+                ) || t.noSuggestion
           }
         />
-        <Metric label={t.selectedService} value={
-            selected ? localizeServiceName(selected.id, lang, selected.name) : t.notSelected
-          } />
+        <Metric
+          label={t.selectedService}
+          value={
+            selected
+              ? localizeServiceName(selected.id, lang, selected.name)
+              : t.notSelected
+          }
+        />
       </div>
       <div className="co-mt">
         <Metric label={t.consultationStatus} value={status} />

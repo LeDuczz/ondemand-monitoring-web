@@ -589,8 +589,8 @@ textarea.co-input {
 }
 
 .co-chat-list {
-  min-height: 120px;
-  max-height: 260px;
+  min-height: 280px;
+  max-height: 420px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -714,9 +714,9 @@ textarea.co-input {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 140px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--ui-surface-2);
   color: var(--ui-text-3);
 }
@@ -726,7 +726,7 @@ textarea.co-input {
   height: 100%;
   object-fit: cover;
 }
-.co-service-image { max-height: 160px; border-radius: 8px; }
+.co-service-image { border-radius: 12px; }
 
 .co-service-noimg {
   display: flex;
@@ -2639,3 +2639,66 @@ ul.co-help {
 .co-summary .co-sum-icon:empty {
   display: none;
 }
+
+/* ---------- Step 1: service cards (compact, equal height, full description) ---------- */
+.co-service-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 1180px) {
+  .co-service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .co-service-grid { grid-template-columns: minmax(0, 1fr); }
+}
+.co-service-grid .co-service {
+  height: 100%;
+  gap: 0;
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  overflow-wrap: break-word;
+}
+.co-service-grid .co-service:hover {
+  transform: none;
+  border-color: #93c5fd;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+.co-service-grid .co-service.is-active {
+  /* Same border width as the idle state so the card never changes size. */
+  padding: 14px;
+  border-color: #2563eb;
+  background: #f8faff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.14);
+}
+.co-service-grid .co-service-illustration {
+  height: 120px;
+  border-radius: 10px;
+}
+.co-service-grid .co-service-image { border-radius: 10px; }
+.co-service-grid .co-service-name {
+  margin-top: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.co-service-grid .co-service-desc {
+  display: block;
+  margin-top: 6px;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  text-overflow: clip;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
+}
+.co-service-grid .co-service > strong {
+  margin-top: auto;
+  padding-top: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.co-service-card { padding-bottom: 8px; }

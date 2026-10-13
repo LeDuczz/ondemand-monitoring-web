@@ -93,6 +93,7 @@ export type ServiceOption = {
   description?: string
   basePrice: number
   imageUrl?: string | null
+  fallbackImageUrl?: string | null
   isActive?: boolean
   createdAt?: string
   updatedAt?: string

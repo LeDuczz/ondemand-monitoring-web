@@ -11,6 +11,36 @@ import { formatMoney } from '../../../lib/createOrder/format'
 /** Services shown before "show more": two rows of the 3-column grid. */
 const SERVICE_LIMIT = 6
 
+function ServiceImage({
+  imageUrl,
+  fallbackImageUrl,
+  noImage,
+}: {
+  imageUrl?: string | null
+  fallbackImageUrl?: string | null
+  noImage: string
+}) {
+  const [failedUrls, setFailedUrls] = useState<string[]>([])
+  const source = [imageUrl, fallbackImageUrl].find(
+    (candidate): candidate is string => Boolean(candidate) && !failedUrls.includes(candidate!),
+  )
+
+  return source ? (
+    <img
+      className="co-service-image"
+      src={source}
+      alt=""
+      loading="lazy"
+      onError={() => setFailedUrls((current) => [...current, source])}
+    />
+  ) : (
+    <span className="co-service-noimg">
+      <Icon name="camera" width={20} height={20} aria-hidden="true" />
+      {noImage}
+    </span>
+  )
+}
+
 type Props = {
   services: ServiceOption[]
   loading: boolean
@@ -68,14 +98,13 @@ export function ServicePicker({
           <strong>{t.aiSuggested}</strong>
           <div className="co-hint">{t.aiSuggestedHint}</div>
           <div className="co-service">
-            {suggested.imageUrl && (
-              <img
-                className="co-service-image"
-                src={suggested.imageUrl}
-                alt=""
-                loading="lazy"
+            <span className="co-service-illustration">
+              <ServiceImage
+                imageUrl={suggested.imageUrl}
+                fallbackImageUrl={suggested.fallbackImageUrl}
+                noImage={t.noImage}
               />
-            )}
+            </span>
             <div className="co-service-name">
               {localizeServiceName(suggested.id, lang, suggested.name)}
             </div>
@@ -120,19 +149,11 @@ export function ServicePicker({
               onClick={() => onSelect(service.id)}
             >
               <span className="co-service-illustration">
-                {service.imageUrl ? (
-                  <img src={service.imageUrl} alt="" loading="lazy" />
-                ) : (
-                  <span className="co-service-noimg">
-                    <Icon
-                      name="camera"
-                      width={20}
-                      height={20}
-                      aria-hidden="true"
-                    />
-                    {t.noImage}
-                  </span>
-                )}
+                <ServiceImage
+                  imageUrl={service.imageUrl}
+                  fallbackImageUrl={service.fallbackImageUrl}
+                  noImage={t.noImage}
+                />
                 {selectedId === service.id && (
                   <span className="co-service-check" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14">

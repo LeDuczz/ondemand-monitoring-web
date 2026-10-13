@@ -7,9 +7,10 @@ import { MockDataBadge } from '../../../../shared/components/ui'
 import { PageHeader } from '../../../../shared/components/ui'
 import { NoFlyZonesTab } from './components/NoFlyZonesTab'
 import { PolicyTab } from './components/PolicyTab'
+import { PricingPolicyTab } from './components/PricingPolicyTab'
 import { operatingConfigPageMessages } from './OperatingConfigPage.messages'
 
-type Tab = 'policy' | 'nfz'
+type Tab = 'policy' | 'pricing' | 'nfz'
 
 export function OperatingConfigPage() {
   const { t } = useI18n(operatingConfigPageMessages)
@@ -30,9 +31,11 @@ export function OperatingConfigPage() {
   const counts: Record<Tab, number> = {
     policy: (policyData?.items.length ?? 0) + (weightsData?.items.length ?? 0),
     nfz: nfzData?.items.length ?? 0,
+    pricing: 0,
   }
   const tabs: Array<{ key: Tab; label: string }> = [
     { key: 'policy', label: t.policyTab },
+    { key: 'pricing', label: 'Định giá' },
     { key: 'nfz', label: t.nfzTab },
   ]
 
@@ -59,6 +62,7 @@ export function OperatingConfigPage() {
         ))}
       </div>
       {tab === 'policy' && <PolicyTab />}
+      {tab === 'pricing' && <PricingPolicyTab />}
       {tab === 'nfz' && <NoFlyZonesTab />}
     </div>
   )

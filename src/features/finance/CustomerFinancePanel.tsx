@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
 import { formatVnd } from '../../shared/lib/formatVnd'
+import {
+  pricingDescription,
+  pricingLabel,
+} from '../../shared/lib/pricingPresentation'
 import { financeApi } from './api'
 import type { Invoice, Quote } from './types'
 import './finance.css'
@@ -57,7 +61,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
           ? await financeApi.createDeposit(invoice.id)
           : await financeApi.createFinalPayment(invoice.id)
       if (!payment.paymentUrl)
-        throw new Error('Cổng thanh toán chưa trả về checkout URL.')
+        throw new Error('Cổng thanh toán chưa trả về đường dẫn thanh toán.')
       window.location.assign(payment.paymentUrl)
     } catch (cause) {
       setError(messageOf(cause))
@@ -81,7 +85,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
       <header className="customer-finance-head">
         <div>
           <h2 id="customer-quote-title">Báo giá và thanh toán</h2>
-          <p>Giá được manager xác nhận theo phạm vi yêu cầu của đơn.</p>
+          <p>Giá được quản lý xác nhận theo phạm vi yêu cầu của đơn.</p>
         </div>
         {quote ? (
           <span className="finance-status">Báo giá v{quote.version}</span>
@@ -98,14 +102,18 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
                   <span>
                     <b>
                       {item.type === 'INCLUDED' ? '✓ ' : ''}
-                      {item.description}
+                      {pricingDescription(item.description)}
                     </b>
                     <small>
                       {item.type === 'ADDITIONAL'
                         ? 'Yêu cầu bổ sung'
                         : item.type === 'PACKAGE'
                           ? 'Gói dịch vụ'
-                          : 'Đã bao gồm'}
+                          : item.type === 'MANAGER_ADJUSTMENT'
+                            ? 'Điều chỉnh đã được phê duyệt'
+                            : item.type === 'DISCOUNT'
+                              ? 'Ưu đãi tự động'
+                              : 'Đã bao gồm'}
                     </small>
                   </span>
                   <strong>{formatVnd(item.amount)}</strong>
@@ -121,7 +129,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
           </dl>
           {quote.managerNote ? (
             <p className="customer-manager-note">
-              <b>Ghi chú của manager:</b> {quote.managerNote}
+              <b>Ghi chú của quản lý:</b> {quote.managerNote}
             </p>
           ) : null}
           {quote.status === 'APPROVED' && !invoice ? (
@@ -150,7 +158,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <span
               className={`finance-status is-${invoice.status.toLowerCase()}`}
             >
-              {invoice.status}
+              {pricingLabel(invoice.status)}
             </span>
           </div>
           <div className="customer-payment-stats">
@@ -166,14 +174,14 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <div className="customer-deposit-notice">
               <b>Đang chờ đặt cọc</b>
               <span>
-                Mission đã được tạo nhưng chỉ bắt đầu phân bổ nguồn lực sau khi
+                Nhiệm vụ đã được tạo nhưng chỉ bắt đầu phân bổ nguồn lực sau khi
                 khoản đặt cọc được xác nhận.
               </span>
             </div>
           ) : invoice.status !== 'PAID' ? (
             <div className="customer-deposit-notice is-ready">
               <b>Đã nhận tiền đặt cọc</b>
-              <span>Mission đã được mở khóa cho quy trình vận hành.</span>
+              <span>Nhiệm vụ đã được mở khóa cho quy trình vận hành.</span>
             </div>
           ) : null}
           <div className="finance-actions customer-payment-actions">
@@ -239,8 +247,21 @@ function isNotFound(error: unknown) {
   return error instanceof ApiError && error.status === 404
 }
 function messageOf(error: unknown) {
-  if (error instanceof ApiError && error.code === 'PAYMENT_PROVIDER_ERROR') {
-    return 'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.'
+  if (error instanceof ApiError) {
+    const messages: Record<string, string> = {
+      PAYMENT_PROVIDER_ERROR:
+        'Không thể khởi tạo thanh toán VNPAY. Vui lòng thử lại sau.',
+      INVOICE_ALREADY_PAID: 'Hóa đơn này đã được thanh toán đầy đủ.',
+      INVOICE_NOT_PAYABLE: 'Hóa đơn hiện không thể thanh toán.',
+      DEPOSIT_ALREADY_SATISFIED: 'Khoản đặt cọc đã được thanh toán.',
+      ACTIVE_PAYMENT_EXISTS: 'Đang có một giao dịch thanh toán chưa hoàn tất.',
+      QUOTE_NOT_APPROVED: 'Báo giá chưa được phê duyệt.',
+      QUOTE_NOT_CURRENT: 'Báo giá này không còn là phiên bản hiện hành.',
+    }
+    return error.code
+      ? (messages[error.code] ??
+          'Không thể xử lý yêu cầu tài chính. Vui lòng thử lại.')
+      : 'Không thể xử lý yêu cầu tài chính. Vui lòng thử lại.'
   }
   return error instanceof Error
     ? error.message

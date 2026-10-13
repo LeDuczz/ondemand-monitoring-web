@@ -6,7 +6,6 @@ import type {
 } from '../../../api/customerApi'
 import { consultationStatusKey } from '../../../lib/createOrder/consultation'
 import {
-  FLIGHT_PURPOSES,
   type FlightPurpose,
   type FormErrors,
   type FormState,
@@ -20,6 +19,14 @@ import { Metric } from './Metric'
 import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
 
 const DESCRIPTION_MAX = 2000
+const FLIGHT_PURPOSE_OPTIONS = [
+  'SURVEY_MONITORING',
+  'CONSTRUCTION_MONITORING',
+  'INDUSTRIAL_INSPECTION',
+  'AREA_MONITORING',
+  'FOREST_MONITORING',
+  'OTHER',
+] as const satisfies readonly FlightPurpose[]
 const PURPOSES = ['INTERNAL', 'LEGAL', 'PARTNER_REPORT', 'OTHER'] as const
 const PRIORITIES = ['NORMAL', 'HIGH', 'URGENT'] as const
 
@@ -72,7 +79,7 @@ export function RequestInfoPanel({
               update('flightPurpose', e.target.value as FlightPurpose)
             }
           >
-            {FLIGHT_PURPOSES.map((p) => (
+            {FLIGHT_PURPOSE_OPTIONS.map((p) => (
               <option key={p} value={p}>
                 {t.flightPurposes[p]}
               </option>

@@ -36,8 +36,8 @@ export function createDefaultForm(): FormState {
     permitDocuments: [],
     areaFiles: [],
     serviceId: '',
-    preferredDateFrom: todayPlus(1),
-    preferredDateTo: todayPlus(1),
+    preferredDateFrom: todayPlus(7),
+    preferredDateTo: todayPlus(7),
     preferredTimeId: '',
     recurrenceType: 'NONE',
     recurrenceOccurrences: 4,
@@ -71,7 +71,10 @@ export function readStoredDraft(): StoredCreateOrderDraft | null {
       form: {
         ...draft.form,
         // Drafts saved before permit evidence existed have neither field.
-        flightPurpose: draft.form.flightPurpose ?? 'SURVEY_MONITORING',
+        flightPurpose:
+          draft.form.flightPurpose === 'AGRICULTURE'
+            ? 'SURVEY_MONITORING'
+            : (draft.form.flightPurpose ?? 'SURVEY_MONITORING'),
         permitExpiresOn: draft.form.permitExpiresOn ?? '',
         permitDocuments: draft.form.permitDocuments ?? [],
         monitoringRelationship: draft.form.monitoringRelationship ?? '',

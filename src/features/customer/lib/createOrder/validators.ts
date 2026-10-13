@@ -1,5 +1,6 @@
 import type { FormErrors, FormState, Step } from './types'
 import { isInsideHcmcServiceArea } from '../../../../shared/lib/serviceArea'
+import { todayPlus } from './format'
 
 export const ALTITUDE_MIN = 10
 export const ALTITUDE_MAX = 120
@@ -15,6 +16,7 @@ export type ValidationMessages = {
   serviceId: string
   title: string
   preferredDateFrom: string
+  preferredDateTooSoon: string
   preferredDateTo: string
   preferredDateOrder: string
   preferredTimeId: string
@@ -104,6 +106,9 @@ export function validateStep(
   }
   if (targetStep >= 4) {
     if (!form.preferredDateFrom) errors.preferredDateFrom = msg.preferredDateFrom
+    else if (form.preferredDateFrom < todayPlus(7)) {
+      errors.preferredDateFrom = msg.preferredDateTooSoon
+    }
     if (!form.preferredDateTo) errors.preferredDateTo = msg.preferredDateTo
     if (
       form.preferredDateFrom &&

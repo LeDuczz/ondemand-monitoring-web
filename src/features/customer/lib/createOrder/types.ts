@@ -51,6 +51,10 @@ export type UsagePurpose =
 export const FLIGHT_PURPOSES = [
   'SURVEY_MONITORING',
   'AGRICULTURE',
+  'CONSTRUCTION_MONITORING',
+  'INDUSTRIAL_INSPECTION',
+  'AREA_MONITORING',
+  'FOREST_MONITORING',
   'OTHER',
 ] as const
 export type FlightPurpose = (typeof FLIGHT_PURPOSES)[number]

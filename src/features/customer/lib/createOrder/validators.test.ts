@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createDefaultForm } from './draftStorage'
+import { todayPlus } from './format'
 import { validateStep, type ValidationMessages } from './validators'
 
 const msg: ValidationMessages = {
@@ -12,6 +13,7 @@ const msg: ValidationMessages = {
   serviceId: 'service',
   title: 'title',
   preferredDateFrom: 'from',
+  preferredDateTooSoon: 'tooSoon',
   preferredDateTo: 'to',
   preferredDateOrder: 'order',
   preferredTimeId: 'time',
@@ -101,13 +103,26 @@ describe('validateStep', () => {
     const form = {
       ...withService,
       address: 'A',
-      preferredDateFrom: '2026-10-05',
-      preferredDateTo: '2026-10-01',
+      preferredDateFrom: todayPlus(8),
+      preferredDateTo: todayPlus(7),
     }
     expect(validateStep(4, form, okLocation, msg)).toEqual({
       preferredDateTo: 'order',
       preferredTimeId: 'time',
     })
+  })
+
+  it('step 4 requires at least 7 days of advance notice', () => {
+    const form = {
+      ...withService,
+      address: 'A',
+      preferredDateFrom: todayPlus(6),
+      preferredDateTo: todayPlus(7),
+      preferredTimeId: 'pt',
+    }
+    expect(validateStep(4, form, okLocation, msg).preferredDateFrom).toBe(
+      'tooSoon',
+    )
   })
 
   it('step 5 also requires a deliverable and passes for a complete form', () => {
@@ -266,15 +281,15 @@ describe('validateStep', () => {
     const base = {
       ...withService,
       address: 'A',
-      preferredDateFrom: '2026-10-10',
-      preferredDateTo: '2026-10-12',
+      preferredDateFrom: todayPlus(7),
+      preferredDateTo: todayPlus(9),
       preferredTimeId: 't',
     }
     expect(validateStep(4, base, okLocation, msg)).toEqual({})
     expect(
       validateStep(
         4,
-        { ...base, resultDeadline: '2026-10-11' },
+        { ...base, resultDeadline: todayPlus(8) },
         okLocation,
         msg,
       ).resultDeadline,
@@ -282,7 +297,7 @@ describe('validateStep', () => {
     expect(
       validateStep(
         4,
-        { ...base, resultDeadline: '2026-10-12' },
+        { ...base, resultDeadline: todayPlus(9) },
         okLocation,
         msg,
       ).resultDeadline,

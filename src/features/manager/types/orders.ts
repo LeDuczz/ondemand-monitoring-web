@@ -120,6 +120,25 @@ export type OrderDetail = {
   termsAcceptedAt?: string | null
   termsVersion?: string | null
   deliverables?: OrderDeliverableResponse[] | null
+  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  flightAreaReviewReason?: string | null
+  flightAreaReviewNote?: string | null
+  flightAreaReviewedById?: string | null
+  flightAreaReviewedByName?: string | null
+  flightAreaReviewedAt?: string | null
+  requiresFlightPermissionReview?: boolean | null
+}
+
+export type FlightAreaReviewStatus =
+  | 'PRELIMINARY_PASS'
+  | 'RESTRICTED'
+  | 'UNDETERMINED'
+  | 'UNSUITABLE'
+
+export type FlightAreaReviewRequest = {
+  status: FlightAreaReviewStatus
+  reason?: string | null
+  note?: string | null
 }
 
 export type FindingCustomerAction = 'ACCEPTED' | 'IGNORED' | 'AUTO_FIXED' | null
@@ -273,6 +292,13 @@ export type OrderCreateResponse = {
   reviewById: string | null
   reviewByName: string | null
   reviewAt: string | null
+  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  flightAreaReviewReason?: string | null
+  flightAreaReviewNote?: string | null
+  flightAreaReviewedById?: string | null
+  flightAreaReviewedByName?: string | null
+  flightAreaReviewedAt?: string | null
+  requiresFlightPermissionReview?: boolean | null
   deliverables: OrderDeliverableResponse[]
   createdAt: string
   updatedAt: string

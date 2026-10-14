@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { OrderDetail } from '../../types/orders'
+import type { MissionStatus } from '../../../../shared/types/domain'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { ordersApi } from '../../api/ordersApi'
 import { planningApi } from '../../api/planningApi'
@@ -22,14 +23,23 @@ import { finalizeError } from '../../lib/planningErrors'
 import { ApiError } from '../../../../shared/api/httpClient'
 import { financeApi } from '../../../finance/api'
 
+/** What the page header needs to draw the Order/Mission workflow honestly. */
+export type PlanningWorkflowInfo = {
+  depositPaid: boolean
+  selectedMissionId: string | null
+  missions: Array<{ id: string; code: string; status: MissionStatus }>
+}
+
 export function OrderMissionPlanningSection({
   orderId,
   initialOrder,
   onAssignResources,
+  onWorkflowInfo,
 }: {
   orderId: string
   initialOrder?: OrderDetail
   onAssignResources?: (missionId: string) => void
+  onWorkflowInfo?: (info: PlanningWorkflowInfo) => void
 }) {
   return (
     <OrderPlanningWorkspace
@@ -37,6 +47,7 @@ export function OrderMissionPlanningSection({
       orderId={orderId}
       initialOrder={initialOrder}
       onAssignResources={onAssignResources}
+      onWorkflowInfo={onWorkflowInfo}
     />
   )
 }
@@ -45,10 +56,12 @@ function OrderPlanningWorkspace({
   orderId,
   initialOrder,
   onAssignResources,
+  onWorkflowInfo,
 }: {
   orderId: string
   initialOrder?: OrderDetail
   onAssignResources?: (missionId: string) => void
+  onWorkflowInfo?: (info: PlanningWorkflowInfo) => void
 }) {
   const { t } = useI18n(planningPresentationMessages)
   const confirmation = usePlanningConfirmation()
@@ -137,6 +150,19 @@ function OrderPlanningWorkspace({
   const depositPaid = Boolean(
     data?.invoice && data.invoice.paidAmount >= data.invoice.depositAmount,
   )
+  useEffect(() => {
+    if (!data || !onWorkflowInfo) return
+    onWorkflowInfo({
+      depositPaid,
+      selectedMissionId: selectedId,
+      missions: effective.map((mission) => ({
+        id: mission.id,
+        code: mission.missionCode || 'Mission',
+        status: mission.status,
+      })),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, depositPaid, selectedId])
   const allAssigned = writablePlanComplete()
   function writablePlanComplete() {
     return Boolean(

@@ -164,7 +164,7 @@ describe('Manager historical checklist review through Order API', () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
     await screen.findByText('Dịch vụ và yêu cầu media')
-    fireEvent.click(screen.getByText('Checklist & báo giá'))
+    fireEvent.click(screen.getByText('Quyết định'))
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
     expect(screen.getByText('Lý do là bắt buộc')).toBeInTheDocument()

@@ -115,6 +115,7 @@ export const liveDispatchPageMessages = defineMessages({
     confirmBody:
       'Kiểm tra lại đơn hàng, nhiệm vụ, các vai trò đã phân công và thiết bị trước khi gửi phân công.',
     tabsAria: 'Các mục phân công',
+    resourceTabsTitle: 'Phân bổ nguồn lực',
     assignedTitle: 'Đã phân công nguồn lực',
     assignedBody: (code: string, status: string) =>
       `Nhiệm vụ ${code} hiện ở trạng thái “${status}”.`,
@@ -256,6 +257,7 @@ export const liveDispatchPageMessages = defineMessages({
     confirmBody:
       'Review the order, mission role assignments, and device before submitting the assignment.',
     tabsAria: 'Assignment sections',
+    resourceTabsTitle: 'Resource allocation',
     assignedTitle: 'Resources assigned',
     assignedBody: (code: string, status: string) =>
       `Mission ${code} is now “${status}”.`,

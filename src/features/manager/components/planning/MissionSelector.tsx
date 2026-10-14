@@ -8,7 +8,12 @@ import type { ExecutionPlan } from '../../types/planning'
 import { STAFF_ROLE_LABELS } from '../missionDetail/missionDetailParts'
 import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { planningSchedule } from './planningSchedule'
-import { useLanguage } from '../../../../shared/i18n'
+import {
+  missionBucket,
+  missionProgress,
+} from '../workflow/workflowModel'
+import { workflowStepperMessages } from '../workflow/WorkflowStepper.messages'
+import { useI18n, useLanguage } from '../../../../shared/i18n'
 import { localizePlanningScopeLabel } from './planningScopeLabel'
 
 export function MissionSelector({
@@ -29,9 +34,12 @@ export function MissionSelector({
   onSelect: (id: string) => void
 }) {
   const { lang } = useLanguage()
+  const { t: wf } = useI18n(workflowStepperMessages)
   return (
     <nav className="odm-workspace-selector" aria-label="Mission trong Order">
-      {missions.map((mission) => {
+      {missions.map((mission, missionIndex) => {
+        const bucket = missionBucket(mission.status)
+        const stage = wf.missionStages[missionProgress(mission.status).current]
         const scope = plan.missions.find(
           (item) => item.missionId === mission.id,
         )
@@ -70,6 +78,11 @@ export function MissionSelector({
               >
                 {missionStatusLabel[mission.status] ?? 'Chưa xác định'}
               </StatusBadge>
+            </span>
+            <span className={`odm-workspace-rank is-${bucket}`}>
+              {bucket === 'finished' ? '✓' : bucket === 'active' ? '●' : bucket === 'blocked' ? '🔒' : '○'}{' '}
+              {wf.missionOf(missionIndex + 1, missions.length)}
+              {bucket === 'active' ? ` · ${stage.label}` : ''}
             </span>
             <span className="odm-workspace-scope">
               {scope?.scopeLabel

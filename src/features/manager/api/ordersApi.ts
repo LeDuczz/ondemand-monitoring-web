@@ -8,6 +8,7 @@ import type {
   OrderInternalNote,
   OrderMissionBrief,
   OrderResourcePreview,
+  FlightAreaReviewRequest,
 } from '../types/orders'
 
 function formatRequirementValue(value: unknown, suffix = '') {
@@ -106,6 +107,14 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     termsAcceptedAt: order.termsAcceptedAt ?? null,
     termsVersion: order.termsVersion ?? null,
     deliverables: order.deliverables ?? null,
+    flightAreaReviewStatus: order.flightAreaReviewStatus ?? null,
+    flightAreaReviewReason: order.flightAreaReviewReason ?? null,
+    flightAreaReviewNote: order.flightAreaReviewNote ?? null,
+    flightAreaReviewedById: order.flightAreaReviewedById ?? null,
+    flightAreaReviewedByName: order.flightAreaReviewedByName ?? null,
+    flightAreaReviewedAt: order.flightAreaReviewedAt ?? null,
+    requiresFlightPermissionReview:
+      order.requiresFlightPermissionReview ?? false,
   }
 }
 
@@ -181,6 +190,16 @@ export const ordersApi = {
       method: 'PUT',
       body: { note },
     })
+  },
+
+  saveFlightAreaReview(
+    id: string,
+    request: FlightAreaReviewRequest,
+  ): Promise<OrderCreateResponse> {
+    return apiRequest<OrderCreateResponse>(
+      `/api/orders/${encodeURIComponent(id)}/flight-area-review`,
+      { method: 'POST', body: request },
+    )
   },
 
   /** `POST /api/orders/{id}/approve` [BE] — approves only; staff schedules the mission later. */

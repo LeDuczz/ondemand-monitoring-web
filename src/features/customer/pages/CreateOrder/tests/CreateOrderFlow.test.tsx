@@ -8,6 +8,7 @@ import { setLanguage } from '../../../../../shared/i18n'
 import { CreateOrderPage } from '../CreateOrderPage'
 import { customerApi } from '../../../api/customerApi'
 import { CREATE_ORDER_DRAFT_STORAGE_KEY } from '../../../lib/createOrder/draftStorage'
+import { ApiError } from '../../../../../shared/api/httpClient'
 
 const originalScrollIntoView = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
@@ -259,6 +260,38 @@ describe('CreateOrderPage wizard', () => {
     expect(
       window.localStorage.getItem('odm.customer.createOrderDraft.v2'),
     ).toBeNull()
+  })
+
+  it('routes a backend preferredDateFrom error back to the schedule field', async () => {
+    vi.spyOn(customerApi, 'createOrder').mockRejectedValueOnce(
+      new ApiError(
+        'preferredDateFrom must be at least 7 days after the request date',
+        { status: 400, method: 'POST', path: '/api/orders' },
+      ),
+    )
+    await renderWizard()
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
+      ).toBe('dt-photo'),
+    )
+    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    await screen.findByRole('dialog')
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+
+    expect(
+      await screen.findByText(
+        'Ngày bay sớm nhất phải cách ngày tạo yêu cầu ít nhất 7 ngày để ODMS chuẩn bị thủ tục giấy phép bay.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Ngày sớm nhất/)).toHaveFocus(),
+    )
   })
 
   it('blocks submit until the terms and security commitment are accepted', async () => {

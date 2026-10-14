@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
@@ -42,11 +42,20 @@ function locationLabel(order: OrderDetail, t: OrderReviewMessages) {
 function InfoTileCard({
   tile,
   copyLabel,
+  copiedLabel,
 }: {
   tile: InfoTile
   copyLabel: string
+  copiedLabel: string
 }) {
   const { copyText } = tile
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    if (!copyText) return
+    void navigator.clipboard?.writeText(copyText)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1500)
+  }
   return (
     <div className="odm-or-svc-tile">
       <span className="odm-or-svc-ico" aria-hidden="true">
@@ -54,18 +63,26 @@ function InfoTileCard({
       </span>
       <div className="odm-or-svc-tile-text">
         <dt>{tile.label}</dt>
-        <dd>{tile.value}</dd>
+        <dd className={copyText ? 'odm-or-svc-coords' : undefined}>
+          {tile.value}
+          {copyText ? (
+            <button
+              type="button"
+              className="odm-or-svc-copy"
+              aria-label={`${copyLabel}: ${tile.label}`}
+              title={copied ? copiedLabel : copyLabel}
+              onClick={copy}
+            >
+              <OrderIcon name={copied ? 'check' : 'copy'} size={15} />
+            </button>
+          ) : null}
+        </dd>
+        {copied ? (
+          <span className="odm-or-svc-toast" role="status">
+            {copiedLabel}
+          </span>
+        ) : null}
       </div>
-      {copyText ? (
-        <button
-          type="button"
-          className="odm-or-svc-copy"
-          aria-label={`${copyLabel}: ${tile.label}`}
-          onClick={() => void navigator.clipboard?.writeText(copyText)}
-        >
-          <OrderIcon name="copy" size={15} />
-        </button>
-      ) : null}
     </div>
   )
 }
@@ -138,12 +155,32 @@ export function OrderServiceInfo({
             </span>
             <div className="odm-or-svc-tile-text">
               <dt>{t.preferredWindow}</dt>
-              <dd>{preferred ?? '—'}</dd>
+              <dd>
+                {preferred ? (
+                  <>
+                    <span className="odm-or-svc-date">
+                      {preferred.split(' · ')[0]}
+                    </span>
+                    {preferred.includes(' · ') ? (
+                      <span className="odm-or-svc-period">
+                        {preferred.split(' · ').slice(1).join(' · ')}
+                      </span>
+                    ) : null}
+                  </>
+                ) : (
+                  '—'
+                )}
+              </dd>
             </div>
           </div>
           <div className="odm-or-svc-tiles">
             {tiles.map((tile) => (
-              <InfoTileCard key={tile.label} tile={tile} copyLabel={t.copy} />
+              <InfoTileCard
+                key={tile.label}
+                tile={tile}
+                copyLabel={t.copy}
+                copiedLabel={t.copiedCoords}
+              />
             ))}
           </div>
         </dl>

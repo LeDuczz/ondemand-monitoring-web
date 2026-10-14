@@ -3430,9 +3430,30 @@ a.odm-or-btn {
 /* Dispatch tabs (sub-steps of the assignment step) */
 .odm-or-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
+  align-items: center;
   gap: 4px;
   padding: 6px;
+}
+
+.odm-or-tabs-title {
+  padding: 0 14px 0 10px;
+  color: var(--or-tx2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .odm-or-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .odm-or-tabs-title {
+    grid-column: 1 / -1;
+    padding: 4px 10px 0;
+  }
 }
 
 .odm-or-tab {
@@ -5108,6 +5129,127 @@ a.odm-or-btn.odm-or-view-btn {
   text-decoration: underline;
 }
 
+.odm-or-area-manager-review {
+  display: grid;
+  gap: 9px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bd);
+}
+
+.odm-or-area-manager-review > span,
+.odm-or-area-manager-review > small {
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.odm-or-area-manager-review > strong { color: #166534; }
+.odm-or-area-manager-review > strong.is-restricted,
+.odm-or-area-manager-review > strong.is-undetermined { color: #a16207; }
+.odm-or-area-manager-review > strong.is-unsuitable { color: #b91c1c; }
+.odm-or-area-manager-review p { margin: 0; line-height: 1.5; }
+
+.odm-or-area-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 55%);
+}
+
+.odm-or-area-modal {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 22px;
+  border-radius: 14px;
+  background: var(--bg, #fff);
+  box-shadow: 0 24px 70px rgb(15 23 42 / 30%);
+}
+
+.odm-or-area-modal header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.odm-or-area-modal h3 { margin: 0; font-size: 20px; }
+.odm-or-area-modal header p { margin: 6px 0 0; color: var(--tx3); }
+.odm-or-area-modal header > button {
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.odm-or-area-modal-context {
+  display: flex;
+  justify-content: space-between;
+  margin: 18px 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--or-tile, #f8fafc);
+}
+
+.odm-or-area-review-options { display: grid; gap: 8px; }
+.odm-or-area-review-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.odm-or-area-review-options label.is-selected {
+  border-color: var(--pr);
+  background: color-mix(in srgb, var(--pr) 7%, white);
+}
+.odm-or-area-review-options small { display: block; margin-top: 3px; color: var(--tx3); }
+
+.odm-or-area-field { display: grid; gap: 6px; margin-top: 14px; font-weight: 650; }
+.odm-or-area-field select,
+.odm-or-area-field textarea {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+}
+.odm-or-area-permission-note {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  line-height: 1.5;
+}
+.odm-or-area-secondary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.odm-or-area-secondary-actions a,
+.odm-or-area-secondary-actions button {
+  padding: 8px 11px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--pr);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+.odm-or-area-secondary-actions .is-danger { color: #b91c1c; border-color: #fecaca; }
+.odm-or-area-modal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bd);
+}
+
 @media (max-width: 900px) {
   .odm-or-area-check-grid {
     grid-template-columns: 1fr;
@@ -5764,4 +5906,439 @@ a.odm-or-btn.odm-or-view-btn {
   font-size: 14px;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+/* ===== Order review redesign: compact stepper, summary bar, tidy cards ===== */
+.odm-or {
+  --or-tx3: #6b7280;
+}
+.odm-or-review-page {
+  --odm-side-col: 360px;
+}
+.odm-or-review-top {
+  gap: 16px;
+}
+.odm-or-review-page .odm-or-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+.odm-or-review-page .odm-or-subtitle {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--or-tx2);
+}
+
+/* Stepper: one line per step; description only for the current step */
+.odm-or-review-stepper li {
+  position: relative;
+}
+.odm-or-review-step {
+  min-height: 52px;
+  padding: 8px 12px;
+}
+.odm-or-review-step-dot {
+  width: 28px;
+  height: 28px;
+  background: var(--or-card);
+  border: 2px solid #98a2b3;
+  color: var(--or-tx2);
+}
+.odm-or-review-step strong {
+  display: block;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--or-tx2);
+}
+.odm-or-review-step small {
+  color: var(--or-tx2);
+  font-size: 12px;
+}
+.odm-or-review-stepper li.is-current strong {
+  color: var(--or-tx);
+  font-weight: 700;
+}
+.odm-or-review-stepper li.is-current .odm-or-review-step-dot {
+  border-color: var(--or-primary);
+}
+.odm-or-review-stepper li.is-done strong {
+  color: var(--or-tx);
+}
+.odm-or-review-stepper li.is-done .odm-or-review-step-dot {
+  border-color: var(--or-green);
+}
+.odm-or-review-stepper li.is-done .odm-or-review-step {
+  box-shadow: inset 0 -3px 0 var(--or-green);
+}
+/* Locked: lighter than upcoming, with a lock icon */
+.odm-or-review-stepper li.is-locked .odm-or-review-step-dot,
+.odm-or-review-stepper li.is-locked .odm-or-review-step-text {
+  opacity: 1;
+}
+.odm-or-review-stepper li.is-locked .odm-or-review-step-dot {
+  border: 2px dashed #cbd2dc;
+  background: #f3f4f6;
+  color: #98a2b3;
+}
+.odm-or-review-stepper li.is-locked strong {
+  color: #98a2b3;
+  font-weight: 500;
+}
+:root[data-theme='dark'] .odm-or-review-stepper li.is-locked .odm-or-review-step-dot {
+  background: var(--sf3);
+  border-color: var(--bd);
+}
+@container (max-width: 1100px) {
+  .odm-or-review-stepper li:not(.is-current) {
+    flex: 0 0 auto;
+  }
+  .odm-or-review-stepper li:not(.is-current) .odm-or-review-step-text {
+    display: none;
+  }
+  .odm-or-review-stepper li.is-current {
+    flex: 1 1 auto;
+  }
+  .odm-or-review-stepper li.is-current small {
+    display: block;
+  }
+}
+
+/* Service banner -> compact summary bar */
+.odm-osb {
+  min-height: 0;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 16px;
+}
+.odm-osb-main {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  max-width: none;
+  gap: 8px 16px;
+}
+.odm-osb-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+.odm-osb-identity {
+  gap: 12px;
+}
+.odm-osb-eyebrow {
+  font-size: 11px;
+}
+.odm-osb-title {
+  font-size: 18px;
+  font-weight: 700;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.odm-osb-desc {
+  display: none;
+}
+.odm-osb-tag {
+  padding: 2px 10px;
+  font-size: 12.5px;
+  box-shadow: none;
+}
+.odm-osb-status {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.odm-osb-code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  color: #0a1f3d;
+}
+@media (max-width: 639px) {
+  .odm-osb {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Customer request tiles */
+.odm-or-svc-time {
+  padding: 14px 16px;
+  align-items: flex-start;
+}
+.odm-or-svc-time .odm-or-svc-ico {
+  width: 40px;
+  height: 40px;
+}
+.odm-or-svc-time dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 0;
+}
+.odm-or-svc-date {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.odm-or-svc-period {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--or-tx2);
+}
+.odm-or-svc-tile {
+  position: relative;
+}
+.odm-or-svc-coords {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.odm-or-svc-toast {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--or-tx);
+  color: var(--or-card);
+  font-size: 11.5px;
+}
+
+/* ---------- Two-level workflow: Order stages, then Mission stages ---------- */
+.odm-wf {
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  overflow: hidden;
+}
+.odm-wf-layer {
+  padding: 10px 6px 8px;
+}
+.odm-wf-layer + .odm-wf-layer {
+  border-top: 1px solid var(--or-border);
+  background: var(--or-tile);
+}
+.odm-wf-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 0 12px 6px;
+}
+.odm-wf-eyebrow {
+  color: var(--or-tx2);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.odm-wf-mission-of {
+  color: var(--or-tx);
+  font-size: 14px;
+}
+.odm-wf-code {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--or-card);
+  border: 1px solid var(--or-border);
+  color: var(--or-tx2);
+  font-size: 12px;
+}
+.odm-wf-pager {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.odm-wf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--or-primary-soft);
+  color: var(--or-primary-fg);
+}
+.odm-wf-chip.is-done {
+  background: var(--or-green-soft);
+  color: var(--or-green);
+}
+.odm-wf-chip.is-waiting {
+  background: var(--or-amber-soft);
+  color: var(--or-amber-fg);
+  border: 1px solid var(--or-amber-border);
+}
+.odm-wf-chip.is-danger {
+  background: color-mix(in srgb, var(--or-red) 12%, transparent);
+  color: var(--or-red);
+}
+.odm-wf-steps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.odm-wf-step {
+  display: flex;
+  min-width: 0;
+}
+.odm-wf-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--or-tx2);
+  font: inherit;
+  text-align: left;
+}
+button.odm-wf-btn {
+  cursor: pointer;
+}
+button.odm-wf-btn:hover {
+  background: var(--or-primary-soft);
+}
+button.odm-wf-btn:focus-visible {
+  outline: 2px solid var(--or-primary);
+  outline-offset: -2px;
+}
+.odm-wf-dot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eef2f7;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+:root[data-theme='dark'] .odm-wf-dot {
+  background: var(--sf3);
+}
+.odm-wf-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  overflow-wrap: normal;
+}
+.odm-wf-text strong {
+  color: var(--or-tx);
+  font-size: 13px;
+  line-height: 1.3;
+}
+.odm-wf-text small {
+  overflow: hidden;
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Completed: green check, clickable for read-only review. */
+.odm-wf-step.is-done .odm-wf-dot {
+  background: var(--or-green);
+  color: #fff;
+}
+.odm-wf-step.is-done .odm-wf-text small {
+  color: var(--or-green);
+}
+.odm-wf-step.is-viewing .odm-wf-btn {
+  background: var(--or-primary-soft);
+  box-shadow: inset 0 -3px 0 var(--or-primary);
+}
+/* Current: blue, can be acted on. */
+.odm-wf-step.is-current .odm-wf-btn {
+  background: var(--or-primary-soft);
+  box-shadow: inset 0 -3px 0 var(--or-primary);
+}
+.odm-wf-step.is-current .odm-wf-dot {
+  background: var(--or-primary);
+  color: #fff;
+}
+.odm-wf-step.is-current .odm-wf-text small {
+  color: var(--or-primary-fg);
+}
+/* Waiting on someone else: amber, never grey. */
+.odm-wf-step.is-waiting .odm-wf-btn {
+  background: var(--or-amber-soft);
+  box-shadow: inset 0 -3px 0 var(--or-amber-border);
+}
+.odm-wf-step.is-waiting .odm-wf-dot {
+  background: var(--or-amber-border);
+  color: var(--or-amber-fg);
+}
+.odm-wf-step.is-waiting .odm-wf-text small {
+  color: var(--or-amber-fg);
+  font-weight: 600;
+}
+/* Upcoming: plain. Blocked: lock icon, red tint, distinct from "done". */
+.odm-wf-step.is-upcoming .odm-wf-dot {
+  background: transparent;
+  border: 1.5px dashed var(--or-border);
+}
+.odm-wf-step.is-blocked .odm-wf-dot {
+  background: color-mix(in srgb, var(--or-red) 14%, transparent);
+  color: var(--or-red);
+}
+.odm-wf-step.is-blocked .odm-wf-text small {
+  color: var(--or-red);
+}
+.odm-wf-note {
+  margin: 6px 12px 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.odm-wf-note.is-waiting {
+  background: var(--or-amber-soft);
+  border: 1px solid var(--or-amber-border);
+  color: var(--or-amber-fg);
+}
+@container (max-width: 900px) {
+  .odm-wf-text small {
+    display: none;
+  }
+}
+@container (max-width: 620px) {
+  .odm-wf-steps {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+  }
+}
+
+/* Read-only review of a completed Order stage. */
+.odm-or-readonly-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--or-border);
+  border-left: 4px solid var(--or-primary);
+  border-radius: 10px;
+  background: var(--or-primary-soft);
+  color: var(--or-primary-fg);
+  font-size: 13px;
+}
+.odm-or-readonly-banner strong {
+  margin-right: auto;
+}
+fieldset.odm-or-readonly {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }

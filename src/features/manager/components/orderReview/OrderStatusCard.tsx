@@ -1,6 +1,6 @@
 import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
-import { formatOrderCode, formatVn } from './format'
+import { formatVn } from './format'
 import { OrderIcon } from './OrderIcon'
 import { StatusBadge, toUiTone } from '../../../../shared/components/ui'
 import {
@@ -17,20 +17,13 @@ export function OrderStatusCard({
   t: OrderReviewMessages
   locale: 'vi-VN' | 'en-US'
 }) {
-  // The detail payload has no "updated at" field — show a dash instead of
-  // inventing a value.
+  // The detail payload has no "updated at" field, so no such row is shown.
   const rows = [
-    {
-      icon: 'tag' as const,
-      label: t.orderCode,
-      value: formatOrderCode(order.code),
-    },
     {
       icon: 'calendar' as const,
       label: t.createdAt,
       value: order.submittedAt ? formatVn(order.submittedAt, locale) : '—',
     },
-    { icon: 'refresh' as const, label: t.updatedAt, value: '—' },
   ]
 
   return (
@@ -40,7 +33,11 @@ export function OrderStatusCard({
           <OrderIcon name="target" size={18} />
           {t.orderStatus}
         </span>
-        <StatusBadge tone={toUiTone(orderStatusTone[order.status])}>
+        <StatusBadge
+          tone={toUiTone(
+            order.status === 'PENDING' ? 'yellow' : orderStatusTone[order.status],
+          )}
+        >
           {getOrderStatusLabel(order.status, locale === 'en-US' ? 'en' : 'vi')}
         </StatusBadge>
       </header>

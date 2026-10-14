@@ -3,7 +3,10 @@ import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { planningApi } from '../../api/planningApi'
 import { ordersApi } from '../../api/ordersApi'
 import { planningError } from '../../lib/planningErrors'
-import { LiveDispatchPage } from '../../pages/LiveDispatchPage'
+import {
+  DispatchWizardTabs,
+  LiveDispatchPage,
+} from '../../pages/LiveDispatchPage'
 import { OrderWorkflowStepper } from '../OrderWorkflowStepper'
 import { OrderMissionsOverview } from './OrderMissionsOverview'
 import { planningSchedule } from './planningSchedule'
@@ -352,6 +355,7 @@ export function OrderResourceAssignmentWizard({
         </button>
       </div>
       <OrderWorkflowStepper currentStep={6} />
+      <DispatchWizardTabs activeStep="mission" selectionOnly onStep={() => undefined} />
       {selection}
       {allAssigned && (
         <div className="odm-planning-complete" role="status">

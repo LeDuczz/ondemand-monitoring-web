@@ -82,20 +82,24 @@ function firstInvalidStep(errors: FormErrors): Step {
 
 /** Step navigation: validate the current step before moving forward. */
 export function useWizard(o: Options) {
+  function showErrors(errors: FormErrors) {
+    o.setErrors(errors)
+    const invalidStep = firstInvalidStep(errors)
+    if (invalidStep !== o.step) o.setStep(invalidStep)
+    revealFirstError(errors)
+  }
+
   function validate(target: Step) {
     const errors = validateStep(target, o.form, o.location, o.messages)
     o.setErrors(errors)
     const valid = Object.keys(errors).length === 0
-    if (!valid) {
-      const invalidStep = firstInvalidStep(errors)
-      if (invalidStep !== o.step) o.setStep(invalidStep)
-      revealFirstError(errors)
-    }
+    if (!valid) showErrors(errors)
     return valid
   }
 
   return {
     validate,
+    showErrors,
     next: () => {
       if (validate(o.step) && (o.canAdvance?.(o.step) ?? true))
         o.setStep((c) => Math.min(5, c + 1) as Step)

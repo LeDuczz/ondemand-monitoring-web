@@ -309,11 +309,15 @@ it.each([
     )
     await screen.findByRole('heading', { name: 'Gán nguồn lực' })
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
-    expect(
-      document.querySelector('.odm-or-tab[aria-current="step"]'),
-    ).toHaveTextContent(
-      { staff: 'Nhân sự', device: 'Thiết bị', confirm: 'Xác nhận' }[step],
-    )
+    if (step === 'confirm')
+      await screen.findByRole('button', { name: 'Phân công' })
+    else
+      await screen.findByText(
+        {
+          staff: 'Chọn đủ 4 vai trò rồi sang bước Thiết bị.',
+          device: 'Chọn ít nhất một thiết bị khả dụng rồi sang bước Xác nhận.',
+        }[step],
+      )
     expect(missionApi.getMissionById).toHaveBeenCalledWith('m2')
     fireEvent.click(
       screen.getByRole('button', { name: 'Về danh sách nhiệm vụ' }),
@@ -334,6 +338,10 @@ it('scoped submit returns to its origin and never mutates Order/Mission completi
   await screen.findByLabelText('Chọn nhân sự cho Phi công')
   await fill('1')
   fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
+  // Step 8: overview of every Mission; leaving it returns to the origin.
+  await screen.findByRole('heading', { name: 'Tổng quan Mission' })
+  expect(close).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Về kế hoạch Order' }))
   await waitFor(() => expect(close).toHaveBeenCalledTimes(1))
   expect(missions[1].staffAssignments).toHaveLength(0)
   expect(missions[1].deviceId).toBeUndefined()

@@ -1088,6 +1088,7 @@ export function DispatchWizardTabs({
 }
 export type OrderDispatchContext = {
   orderId: string
+  embeddedInOrderReview?: boolean
   missionScoped: boolean
   returnLabel: string
   initialStep: 'staff' | 'device' | 'confirm'
@@ -1096,6 +1097,8 @@ export type OrderDispatchContext = {
   onMissionNext: () => boolean
   onReturn: (toOrigin?: boolean) => void
   onAssigned: () => void
+  /** Reports the 8-step order workflow step (6 = resources, 7 = confirm). */
+  onGlobalStep?: (step: 6 | 7) => void
   onChanged: () => void
   onDraftState: (dirty: boolean, busy: boolean) => void
   initialDevices: string[]
@@ -1243,6 +1246,10 @@ function LiveDispatchContent({
   useEffect(() => {
     draftCallback?.(dirty, busy)
   }, [dirty, busy, draftCallback])
+  const globalStepCallback = orderContext?.onGlobalStep
+  useEffect(() => {
+    globalStepCallback?.(activeStep === 'confirm' ? 7 : 6)
+  }, [activeStep, globalStepCallback])
 
   async function assign() {
     if (
@@ -1382,7 +1389,7 @@ function LiveDispatchContent({
     }
     setActiveStep(dispatchSteps[Math.max(activeStepIndex - 1, 0)])
   }
-  const globalStep = activeStep === 'confirm' ? 4 : 3
+  const globalStep = activeStep === 'confirm' ? 7 : 6
   const roleSummary = missionRoles.map((role) => ({
     role,
     names: (staffByRole[role] ?? [])
@@ -1407,7 +1414,7 @@ function LiveDispatchContent({
 
   return (
     <div className="odm-or">
-      <div className="odm-or-pagehead odm-or-pagehead-row">
+      {!orderContext?.embeddedInOrderReview && <div className="odm-or-pagehead odm-or-pagehead-row">
         <div>
           <h1 className="odm-or-title">{t.createMissionTitle}</h1>
           <p className="odm-or-subtitle">{t.createMissionSubtitle}</p>
@@ -1435,11 +1442,11 @@ function LiveDispatchContent({
             {t.backToOrders}
           </a>
         )}
-      </div>
+      </div>}
 
       {!assignable ? (
         <>
-          <OrderWorkflowStepper currentStep={5} />
+          <OrderWorkflowStepper currentStep={8} />
           <section className="odm-or-card">
             <div className="odm-or-card-body odm-or-result">
               <span className="odm-or-result-icon" aria-hidden="true">
@@ -1491,16 +1498,9 @@ function LiveDispatchContent({
         </>
       ) : (
         <>
-          <OrderWorkflowStepper currentStep={globalStep} />
-
-          <DispatchWizardTabs
-            activeStep={activeStep}
-            onStep={(step) => {
-              if (orderContext && (step === 'order' || step === 'mission'))
-                orderContext.onReturn(step === 'order')
-              else setActiveStep(step)
-            }}
-          />
+          {!orderContext?.embeddedInOrderReview && (
+            <OrderWorkflowStepper currentStep={globalStep} />
+          )}
 
           {activeStep === 'order' && (
             <section className="odm-or-card">

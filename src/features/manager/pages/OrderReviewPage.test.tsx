@@ -385,6 +385,36 @@ describe('OrderReviewPage', () => {
     expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
   })
 
+  it('does not repeat deliverable format in the order details', async () => {
+    mockPricing()
+    vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
+      ...order,
+      resultFormats: ['VIDEO'],
+      deliverables: [
+        {
+          id: 'deliverable-video',
+          deliverableTypeId: 'video',
+          deliverableTypeName: 'Video',
+          defaultFormat: 'MP4',
+          requirement: {
+            mediaType: 'VIDEO',
+            quantity: 10,
+            resolution: '4K',
+          },
+        },
+      ],
+    })
+    vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(feasibleAnalysis)
+    vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+
+    await screen.findByText('Lê Quốc Bảo')
+    expect(screen.queryByText('Định dạng kết quả')).not.toBeInTheDocument()
+    expect(screen.getByText('Video', { selector: 'strong' })).toBeInTheDocument()
+    expect(screen.getByText('10 mục · 4K')).toBeInTheDocument()
+    expect(screen.queryByText('Video · 10 mục · 4K')).not.toBeInTheDocument()
+  })
+
   it('shows a different order without obsolete analysis copy', async () => {
     mockHappyPath(riskyAnalysis)
     vi.mocked(ordersApi.getOrder).mockResolvedValue({

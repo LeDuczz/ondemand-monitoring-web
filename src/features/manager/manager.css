@@ -5567,3 +5567,115 @@ a.odm-or-btn.odm-or-view-btn {
   padding: 0;
   background: transparent;
 }
+.odm-paid-orders {
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1px solid #b7e4c7;
+}
+
+.odm-paid-orders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  background: #f0fdf4;
+  border-bottom: 1px solid #d1fae5;
+}
+
+.odm-paid-orders-head h2,
+.odm-paid-orders-head p { margin: 0; }
+.odm-paid-orders-head h2 { font-size: 18px; }
+.odm-paid-orders-head p { margin-top: 4px; color: #526273; font-size: 13px; }
+.odm-paid-orders-head > span,
+.odm-paid-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .odm-paid-orders-head { align-items: flex-start; flex-direction: column; }
+}
+
+/* Read-only variant of the review stepper (mission setup pages). */
+.odm-or-review-step.is-static {
+  cursor: default;
+}
+
+/* Step 8: Mission overview */
+.odm-or-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+}
+
+.odm-or-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--or-border);
+  border-radius: 14px;
+  background: var(--or-card);
+}
+
+.odm-or-overview-card.is-cancelled {
+  opacity: 0.6;
+}
+
+.odm-or-overview-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.odm-or-overview-card p {
+  margin: 0;
+}
+
+.odm-or-overview-card .odm-or-btn-outline {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.odm-or-overview-list {
+  display: grid;
+  margin: 0;
+}
+
+.odm-or-overview-list > div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--or-border);
+}
+
+.odm-or-overview-list > div:last-child {
+  border-bottom: 0;
+}
+
+.odm-or-overview-list dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--or-tx2);
+  font-size: 13px;
+}
+
+.odm-or-overview-list dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

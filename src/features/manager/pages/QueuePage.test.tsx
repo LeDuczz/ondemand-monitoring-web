@@ -1,12 +1,14 @@
 import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import type { OrderCreateResponse } from '../types/orders'
 import { QueuePage } from './QueuePage'
+import { financeApi } from '../../finance/api'
+import type { Invoice } from '../../finance/types'
 
 const rows: OrderCreateResponse[] = [
   {
@@ -67,7 +69,23 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+beforeEach(() => {
+  vi.spyOn(ordersApi, 'getApproved').mockResolvedValue([])
+  vi.spyOn(financeApi, 'getManagerInvoice').mockRejectedValue(new Error('No invoice'))
+})
+
 describe('QueuePage', () => {
+  it('shows a deposited approved order in the planning queue', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(ordersApi.getApproved).mockResolvedValue([{ ...rows[0], orderStatus: 'APPROVED' }])
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({ paidAmount: 1_000_000, depositAmount: 1_000_000 } as Invoice)
+    render(<QueuePage />)
+    expect(await screen.findByText('Đơn đã nhận cọc – chờ lập kế hoạch')).toBeInTheDocument()
+    expect(screen.getByText('Đã nhận cọc')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Lập kế hoạch' })).toHaveAttribute('href', '#portal/manager/orders/ord-2609-0157')
+    expect(screen.queryByText('Không còn đơn chờ duyệt')).not.toBeInTheDocument()
+  })
+
   it('shows loading, then the queue rows', async () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
     render(<QueuePage />)
@@ -75,7 +93,7 @@ describe('QueuePage', () => {
     await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
     expect(screen.getByText('ORD-2609-0157')).toBeInTheDocument()
     expect(screen.getByText('ORD-2609-0160')).toBeInTheDocument()
-    expect(screen.getByText('2 đơn đang chờ')).toBeInTheDocument()
+    expect(screen.getByText('2 đơn chờ duyệt · 0 đơn chờ lập kế hoạch')).toBeInTheDocument()
   })
 
   it('shows the error state and retries', async () => {
@@ -111,6 +129,6 @@ describe('QueuePage', () => {
 
     act(() => setLanguage('en'))
     expect(screen.getByText('Order review queue')).toBeInTheDocument()
-    expect(screen.getByText('2 orders pending')).toBeInTheDocument()
+    expect(screen.getByText('2 pending review · 0 ready for planning')).toBeInTheDocument()
   })
 })

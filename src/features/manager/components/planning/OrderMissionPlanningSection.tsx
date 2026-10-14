@@ -20,6 +20,7 @@ import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { usePlanningConfirmation } from './usePlanningConfirmation'
 import { finalizeError } from '../../lib/planningErrors'
 import { ApiError } from '../../../../shared/api/httpClient'
+import { financeApi } from '../../../finance/api'
 
 export function OrderMissionPlanningSection({
   orderId,
@@ -56,20 +57,24 @@ function OrderPlanningWorkspace({
   )
   const query = useApiQuery(
     async (signal) => {
-      const [plan, missions, order] = await Promise.all([
+      const [plan, missions, order, invoice] = await Promise.all([
         planningApi.getExecutionPlan(orderId, signal),
         planningApi.getOrderMissions(orderId, signal),
         initialOrderRef.current ?? ordersApi.getOrder(orderId, signal),
+        financeApi.getManagerInvoice(orderId, signal).catch((error) => {
+          if (error instanceof ApiError && error.status === 404) return null
+          throw error
+        }),
       ])
       // Reuse only the initial exact-Order read. Every later refresh remains authoritative.
       // An aborted StrictMode/dependency request must not consume the initial snapshot.
       if (!signal.aborted) initialOrderRef.current = undefined
-      return { plan, missions, order }
+      return { plan, missions, order, invoice }
     },
     [orderId],
   )
   const [assigningResources, setAssigningResources] = useState<{
-    missionId?: string
+    missionId: string
   } | null>(null)
   const [busy, setBusy] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -129,10 +134,14 @@ function OrderPlanningWorkspace({
   const selected = selectedId ?? undefined
   const effective =
     data?.missions.filter((mission) => mission.status !== 'CANCELLED') ?? []
+  const depositPaid = Boolean(
+    data?.invoice && data.invoice.paidAmount >= data.invoice.depositAmount,
+  )
   const allAssigned = writablePlanComplete()
   function writablePlanComplete() {
     return Boolean(
       data &&
+      depositPaid &&
       data.plan.planStatus === 'FINALIZED' &&
       effective.length &&
       effective.every(
@@ -144,7 +153,11 @@ function OrderPlanningWorkspace({
   const writable =
     !query.loading &&
     !query.error &&
-    Boolean(data && ['APPROVED', 'IN_PROGRESS'].includes(data.order.status))
+    Boolean(
+      data &&
+        depositPaid &&
+        ['APPROVED', 'IN_PROGRESS'].includes(data.order.status),
+    )
   async function mutate(
     action: 'finalize' | 'amend' | 'cancel',
     missionId?: string,
@@ -262,6 +275,26 @@ function OrderPlanningWorkspace({
             plan={data.plan}
             items={data.order.checklistItems ?? []}
           />
+          {!depositPaid && data.order.status === 'APPROVED' ? (
+            <div className="odm-planning-payment-gate" role="status">
+              <strong>Đang chờ khách hàng thanh toán đặt cọc</strong>
+              <p>
+                Báo giá đã được gửi. Tạo Mission và chốt kế hoạch sẽ được mở
+                sau khi hệ thống xác nhận khoản đặt cọc.
+              </p>
+              {data.invoice ? (
+                <span>
+                  Đã thanh toán {data.invoice.paidAmount.toLocaleString('vi-VN')} /{' '}
+                  {data.invoice.depositAmount.toLocaleString('vi-VN')} ₫ tiền đặt cọc
+                </span>
+              ) : (
+                <span>Khách hàng chưa chấp nhận báo giá hoặc chưa phát hành hóa đơn.</span>
+              )}
+              <button type="button" className="odm-btn" onClick={query.reload}>
+                Kiểm tra thanh toán
+              </button>
+            </div>
+          ) : null}
           {coverageWarning && (
             <p role="alert" className="odm-planning-notice">
               {coverageWarning}
@@ -282,16 +315,17 @@ function OrderPlanningWorkspace({
                   <button
                     type="button"
                     className="odm-btn"
-                    disabled={busy || saving}
+                    disabled={busy || saving || Boolean(creating)}
                     onClick={() => setCreating({})}
                   >
-                    Tạo thêm Mission
+                    {creating ? 'Đang tạo Mission' : 'Tạo thêm Mission'}
                   </button>
                   <button
                     className="odm-btn odm-btn-p"
                     disabled={
                       busy ||
                       saving ||
+                      Boolean(creating) ||
                       dirty ||
                       !data.plan.coverage.coverageReady ||
                       data.plan.blockers.length > 0
@@ -305,16 +339,33 @@ function OrderPlanningWorkspace({
               {writable &&
                 data.plan.planStatus === 'FINALIZED' &&
                 !amending && (
-                  <button
-                    className="odm-btn"
-                    disabled={busy}
-                    onClick={() => {
-                      setAmending(true)
-                      setReason('')
-                    }}
-                  >
-                    Điều chỉnh kế hoạch
-                  </button>
+                  <>
+                    <button
+                      className="odm-btn"
+                      disabled={busy}
+                      onClick={() => {
+                        setAmending(true)
+                        setReason('')
+                      }}
+                    >
+                      Điều chỉnh kế hoạch
+                    </button>
+                    {selected && (
+                      <button
+                        className="odm-btn odm-btn-p odm-planning-next-resource"
+                        disabled={busy || saving || dirty}
+                        onClick={() =>
+                          onAssignResources
+                            ? onAssignResources(selected)
+                            : setAssigningResources({ missionId: selected })
+                        }
+                      >
+                        Phân công nguồn lực cho{' '}
+                        {data.missions.find((mission) => mission.id === selected)
+                          ?.missionCode ?? 'Mission'}
+                      </button>
+                    )}
+                  </>
                 )}
             </div>
           )}
@@ -325,23 +376,32 @@ function OrderPlanningWorkspace({
             </p>
           )}
           {creating && (
-            <section aria-label="Tạo Mission trong Order">
-              <button
-                className="odm-btn"
-                type="button"
-                onClick={async () => {
-                  if (
-                    await confirmation.confirm({
-                      title: 'Đóng form tạo Mission?',
-                      body: 'Dữ liệu chưa gửi sẽ không được lưu.',
-                      action: 'Đóng form',
-                    })
-                  )
-                    setCreating(null)
-                }}
-              >
-                Đóng form tạo Mission
-              </button>
+            <section className="odm-planning-create-panel" aria-label="Tạo Mission trong Order">
+              <header className="odm-planning-create-head">
+                <span className="odm-planning-create-icon" aria-hidden="true">＋</span>
+                <div>
+                  <h3>Tạo Mission mới</h3>
+                  <p>Đặt tên dễ nhận biết, sau đó kiểm tra thời tiết và chọn lịch bay.</p>
+                </div>
+                <button
+                  className="odm-planning-create-close"
+                  type="button"
+                  aria-label="Đóng form tạo Mission"
+                  title="Đóng form"
+                  onClick={async () => {
+                    if (
+                      await confirmation.confirm({
+                        title: 'Đóng form tạo Mission?',
+                        body: 'Dữ liệu chưa gửi sẽ không được lưu.',
+                        action: 'Đóng form',
+                      })
+                    )
+                      setCreating(null)
+                  }}
+                >
+                  ×
+                </button>
+              </header>
               <CreateMissionPage
                 orderId={orderId}
                 replacesMissionId={creating.replacesMissionId}
@@ -435,32 +495,6 @@ function OrderPlanningWorkspace({
                         onChanged={query.reload}
                         onDraftState={updateDraft}
                       />
-                      {writable &&
-                        !busy &&
-                        runtimeBlocked[mission.id] === false &&
-                        data.plan.planStatus === 'FINALIZED' &&
-                        (scope?.finalizedPlanRevision ?? 0) > 0 &&
-                        [
-                          'RESOURCE_ASSIGNING',
-                          'WAITING_CREW_CONFIRMATION',
-                        ].includes(mission.status) && (
-                          <button
-                            className="odm-btn"
-                            disabled={busy || saving || dirty}
-                            onClick={() =>
-                              onAssignResources
-                                ? onAssignResources(mission.id)
-                                : setAssigningResources({
-                                    missionId: mission.id,
-                                  })
-                            }
-                          >
-                            {assignmentReadiness(mission).complete
-                              ? 'Chỉnh sửa phân công cho'
-                              : 'Phân công nguồn lực cho'}{' '}
-                            {mission.missionCode}
-                          </button>
-                        )}
                       {((writable &&
                         !['COMPLETED', 'CANCELLED'].includes(mission.status) &&
                         cancelCapabilities[mission.id] === true &&
@@ -478,7 +512,7 @@ function OrderPlanningWorkspace({
                             cancelCapabilities[mission.id] === true &&
                             runtimeBlocked[mission.id] === false && (
                               <button
-                                className="odm-btn"
+                                className="odm-btn odm-btn-danger-soft"
                                 disabled={busy || saving || dirty}
                                 onClick={() => {
                                   setCancelling(mission.id)

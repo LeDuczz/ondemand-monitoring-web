@@ -6,7 +6,19 @@ import { financeApi } from './api'
 import type { Invoice, Quote } from './types'
 import './finance.css'
 
-export function CustomerFinancePanel({ orderId }: { orderId: string }) {
+export type CustomerFinanceState = {
+  quote: Quote | null
+  invoice: Invoice | null
+  loading: boolean
+}
+
+export function CustomerFinancePanel({
+  orderId,
+  onStateChange,
+}: {
+  orderId: string
+  onStateChange?: (state: CustomerFinanceState) => void
+}) {
   const [quote, setQuote] = useState<Quote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
@@ -32,6 +44,10 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    onStateChange?.({ quote, invoice, loading })
+  }, [invoice, loading, onStateChange, quote])
 
   async function accept() {
     if (!quote) return
@@ -150,7 +166,14 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <span
               className={`finance-status is-${invoice.status.toLowerCase()}`}
             >
-              {invoice.status}
+              {{
+                ISSUED: 'Chờ thanh toán',
+                PARTIALLY_PAID: 'Đã thanh toán một phần',
+                PAID: 'Đã thanh toán',
+                OVERDUE: 'Quá hạn',
+                CANCELLED: 'Đã hủy',
+                REFUNDED: 'Đã hoàn tiền',
+              }[invoice.status]}
             </span>
           </div>
           <div className="customer-payment-stats">
@@ -166,8 +189,8 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <div className="customer-deposit-notice">
               <b>Đang chờ đặt cọc</b>
               <span>
-                Mission đã được tạo nhưng chỉ bắt đầu phân bổ nguồn lực sau khi
-                khoản đặt cọc được xác nhận.
+                Kế hoạch thực hiện và Mission sẽ được mở sau khi khoản đặt cọc
+                được xác nhận.
               </span>
             </div>
           ) : invoice.status !== 'PAID' ? (

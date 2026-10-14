@@ -1,15 +1,29 @@
 import type { OrderStatus } from '../../../../shared/types/domain'
 import type { OrderStep, OrderStepKey, OrderStepState, OrderTimelineEvent } from './types'
 
-const HAPPY_PATH: OrderStepKey[] = ['submitted', 'approved', 'inProgress', 'completed']
+const HAPPY_PATH: OrderStepKey[] = [
+  'submitted',
+  'approved',
+  'quote',
+  'deposit',
+  'planning',
+  'inProgress',
+  'completed',
+]
+
+export type OrderFinanceProgress = {
+  loading?: boolean
+  quote?: { status: string; approvedAt: string | null; acceptedAt: string | null } | null
+  invoice?: { depositAmount: number; paidAmount: number; issuedAt: string } | null
+}
 
 /** Index of the current happy-path step per status; `HAPPY_PATH.length` means all done. */
 const CURRENT_INDEX: Partial<Record<OrderStatus, number>> = {
   SUBMITTED: 1,
   PENDING: 1,
-  APPROVED: 2,
-  SCHEDULED: 2,
-  IN_PROGRESS: 2,
+  NEEDS_INFO: 1,
+  SCHEDULED: 4,
+  IN_PROGRESS: 5,
   COMPLETED: HAPPY_PATH.length,
 }
 
@@ -31,9 +45,20 @@ function eventFor(key: OrderStepKey, events: OrderTimelineEvent[]): OrderTimelin
   }
 }
 
-function step(key: OrderStepKey, state: OrderStepState, events: OrderTimelineEvent[]): OrderStep {
+function step(
+  key: OrderStepKey,
+  state: OrderStepState,
+  events: OrderTimelineEvent[],
+  finance?: OrderFinanceProgress,
+): OrderStep {
   const event = eventFor(key, events)
-  return { key, state, at: event?.at ?? null, actor: event?.actor ?? null, note: event?.note ?? null }
+  const financialDate =
+    key === 'quote'
+      ? finance?.quote?.acceptedAt ?? finance?.quote?.approvedAt
+      : key === 'deposit'
+        ? finance?.invoice?.issuedAt
+        : null
+  return { key, state, at: event?.at ?? financialDate ?? null, actor: event?.actor ?? null, note: event?.note ?? null }
 }
 
 /**
@@ -42,7 +67,11 @@ function step(key: OrderStepKey, state: OrderStepState, events: OrderTimelineEve
  * only the steps the events prove are listed. Draft-like statuses have no progress yet.
  * Dates, actors and notes are copied from the events and never invented.
  */
-export function buildOrderSteps(status: OrderStatus, events: OrderTimelineEvent[]): OrderStep[] {
+export function buildOrderSteps(
+  status: OrderStatus,
+  events: OrderTimelineEvent[],
+  finance?: OrderFinanceProgress,
+): OrderStep[] {
   if (status === 'REJECTED') {
     return [step('submitted', 'done', events), step('rejected', 'failed', events)]
   }
@@ -52,9 +81,14 @@ export function buildOrderSteps(status: OrderStatus, events: OrderTimelineEvent[
     if (eventFor('approved', events)) reached.push(step('approved', 'done', events))
     return [...reached, step('cancelled', 'cancelled', events)]
   }
-  const current = CURRENT_INDEX[status]
+  let current = CURRENT_INDEX[status]
+  if (status === 'APPROVED') {
+    if (!finance?.invoice) current = 2
+    else if (finance.invoice.paidAmount < finance.invoice.depositAmount) current = 3
+    else current = 4
+  }
   if (current === undefined) return []
   return HAPPY_PATH.map((key, index) =>
-    step(key, index < current ? 'done' : index === current ? 'current' : 'upcoming', events),
+    step(key, index < current ? 'done' : index === current ? 'current' : 'upcoming', events, finance),
   )
 }

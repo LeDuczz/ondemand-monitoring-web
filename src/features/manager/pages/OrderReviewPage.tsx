@@ -4,6 +4,7 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
+import { planningApi } from '../api/planningApi'
 import { InternalNoteCard } from '../components/orderReview/InternalNoteCard'
 import { OrderApprovalActions } from '../components/orderReview/OrderApprovalActions'
 import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachmentsCard'
@@ -44,27 +45,72 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   )
 
   const [navigateHome, setNavigateHome] = useState(false)
+  const [assignStep, setAssignStep] = useState<6 | 7 | 8>(6)
   const [reviewStep, setReviewStep] = useState<ReviewStep>(1)
   const pageRef = useRef<HTMLDivElement>(null)
   const [assigningMissionId, setAssigningMissionId] = useState<string | null>(
     null,
   )
+  const openResourceAssignment = async () => {
+    try {
+      const missions = await planningApi.getOrderMissions(orderId)
+      const candidate = missions.find((mission) =>
+        ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+          mission.status,
+        ),
+      )
+      setAssigningMissionId(candidate?.id ?? '__select_mission__')
+    } catch {
+      setAssigningMissionId('__select_mission__')
+    }
+  }
 
   if (navigateHome) {
     window.location.hash = managerHref({ screen: 'orderQueue' })
     return null
   }
 
-  if (assigningMissionId)
+  if (assigningMissionId && orderQuery.data)
     return (
-      <OrderResourceAssignmentWizard
-        orderId={orderId}
-        initialMissionId={assigningMissionId}
-        onClose={() => {
-          setAssigningMissionId(null)
-          orderQuery.reload()
-        }}
-      />
+      <div className="odm-or odm-or-review-page">
+        <div className="odm-or-review-top">
+          <div className="odm-or-pagehead">
+            <h1 className="odm-or-title">Đơn hàng</h1>
+            <p className="odm-or-subtitle">
+              Gán nhân sự và thiết bị cho Mission đã lên lịch
+            </p>
+          </div>
+          <ReviewStageStepper
+            currentStep={assignStep}
+            reviewLocked
+            onChange={() => undefined}
+            onResourceAssignment={() => undefined}
+          />
+          <OrderServiceBanner
+            serviceName={orderQuery.data.serviceName}
+            serviceDescription={orderQuery.data.serviceDescription}
+            currentStep={assignStep}
+            totalSteps={REVIEW_STEPS.length}
+            deliverables={orderDeliverableLabels(orderQuery.data, locale)}
+            eyebrow={t.serviceEyebrow}
+            stepLabel={(cur, total) => `${t.stepWord} ${cur}/${total}`}
+          />
+        </div>
+        <OrderResourceAssignmentWizard
+          orderId={orderId}
+          initialMissionId={
+            assigningMissionId === '__select_mission__'
+              ? undefined
+              : assigningMissionId
+          }
+          embedded
+          onStepChange={setAssignStep}
+          onClose={() => {
+            setAssigningMissionId(null)
+            orderQuery.reload()
+          }}
+        />
+      </div>
     )
   if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} t={t} />
 
@@ -103,6 +149,9 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     order.status,
   )
 
+  // Once approved, the order moves on to step 5 (scheduling / execution plan).
+  const displayStep = showExecutionPlan ? 5 : reviewStep
+
   const goToStep = (step: ReviewStep) => {
     setReviewStep(step)
     // Each step is a long page; start the next one from the top.
@@ -128,24 +177,29 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
   return (
     <div className="odm-or odm-or-review-page" ref={pageRef}>
-      {!showExecutionPlan && (
-        <div className="odm-or-review-top">
+      <div className="odm-or-review-top">
+        {!showExecutionPlan && (
           <div className="odm-or-pagehead">
             <h1 className="odm-or-title">{t.pageTitle}</h1>
             <p className="odm-or-subtitle">{t.pageSubtitle}</p>
           </div>
-          <ReviewStageStepper currentStep={reviewStep} onChange={goToStep} />
-          <OrderServiceBanner
-            serviceName={order.serviceName}
-            serviceDescription={order.serviceDescription}
-            currentStep={reviewStep}
-            totalSteps={REVIEW_STEPS.length}
-            deliverables={orderDeliverableLabels(order, locale)}
-            eyebrow={t.serviceEyebrow}
-            stepLabel={(cur, total) => `${t.stepWord} ${cur}/${total}`}
-          />
-        </div>
-      )}
+        )}
+        <ReviewStageStepper
+          currentStep={displayStep}
+          reviewLocked={showExecutionPlan}
+          onChange={goToStep}
+          onResourceAssignment={() => void openResourceAssignment()}
+        />
+        <OrderServiceBanner
+          serviceName={order.serviceName}
+          serviceDescription={order.serviceDescription}
+          currentStep={displayStep}
+          totalSteps={REVIEW_STEPS.length}
+          deliverables={orderDeliverableLabels(order, locale)}
+          eyebrow={t.serviceEyebrow}
+          stepLabel={(cur, total) => `${t.stepWord} ${cur}/${total}`}
+        />
+      </div>
       {showExecutionPlan && (
         <OrderMissionPlanningSection
           orderId={order.id}
@@ -194,6 +248,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               orderId={order.id}
               query={readinessQuery}
               editable={order.status === 'PENDING'}
+              onDecisionDone={() => setNavigateHome(true)}
             />
           </section>
           <ReviewStageActions
@@ -264,15 +319,20 @@ const REVIEW_STEPS: Array<{
   },
   { number: 5, label: 'Lên lịch', hint: 'Thời gian thực hiện' },
   { number: 6, label: 'Gán nguồn lực', hint: 'Thiết bị và nhân sự' },
-  { number: 7, label: 'Xác nhận', hint: 'Hoàn tất kế hoạch' },
+  { number: 7, label: 'Xác nhận', hint: 'Kiểm tra và gửi' },
+  { number: 8, label: 'Tổng quan', hint: 'Kiểm tra Mission' },
 ]
 
 function ReviewStageStepper({
   currentStep,
+  reviewLocked,
   onChange,
+  onResourceAssignment,
 }: {
-  currentStep: ReviewStep
+  currentStep: number
+  reviewLocked: boolean
   onChange: (step: ReviewStep) => void
+  onResourceAssignment: () => void
 }) {
   return (
     <nav
@@ -281,26 +341,37 @@ function ReviewStageStepper({
     >
       <ol>
         {REVIEW_STEPS.map((step) => {
-          const state = !step.reviewStep
-            ? 'locked'
-            : step.number < currentStep
+          const resourceStep = step.number === 6
+          const resourceStepAvailable = resourceStep && reviewLocked
+          const state =
+            step.number < currentStep
               ? 'done'
               : step.number === currentStep
                 ? 'current'
-                : 'todo'
+                : resourceStepAvailable
+                  ? 'todo'
+                : !step.reviewStep
+                  ? 'locked'
+                  : 'todo'
+          const disabled = resourceStepAvailable
+            ? false
+            : !step.reviewStep || reviewLocked
           return (
             <li key={step.number} className={`is-${state}`}>
               <button
                 type="button"
                 className="odm-or-review-step"
                 aria-current={state === 'current' ? 'step' : undefined}
-                disabled={!step.reviewStep}
+                disabled={disabled}
                 title={
-                  !step.reviewStep
+                  !step.reviewStep && state === 'locked' && !resourceStepAvailable
                     ? 'Hoàn tất duyệt đơn để mở bước này'
                     : undefined
                 }
-                onClick={() => step.reviewStep && onChange(step.reviewStep)}
+                onClick={() => {
+                  if (resourceStepAvailable) onResourceAssignment()
+                  else if (step.reviewStep) onChange(step.reviewStep)
+                }}
               >
                 <span className="odm-or-review-step-dot">
                   {state === 'done' ? (

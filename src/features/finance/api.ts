@@ -58,6 +58,11 @@ export const financeApi = {
     apiRequest<Invoice>(`/api/orders/${encodeURIComponent(orderId)}/invoice`, {
       signal,
     }),
+  getManagerInvoice: (orderId: string, signal?: AbortSignal) =>
+    apiRequest<Invoice>(
+      `/api/manager/orders/${encodeURIComponent(orderId)}/invoice`,
+      { signal },
+    ),
   createDeposit: (invoiceId: string) =>
     apiRequest<Payment>(
       `/api/invoices/${encodeURIComponent(invoiceId)}/payments/deposit`,

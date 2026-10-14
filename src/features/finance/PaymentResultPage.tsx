@@ -94,11 +94,11 @@ export function PaymentResultPage({
         <p>
           {success
             ? payment?.type === 'DEPOSIT'
-              ? 'Deposit đã được ghi nhận. Mission đang được chuẩn bị.'
-              : 'Thanh toán hoàn tất. Đang chờ Manager bàn giao dữ liệu gốc.'
+              ? 'Tiền đặt cọc đã được ghi nhận. Kế hoạch thực hiện đang được chuẩn bị.'
+              : 'Thanh toán đã hoàn tất. Đang chờ quản lý bàn giao dữ liệu.'
             : cancelled
               ? 'Chưa có khoản thu nào được xác nhận từ lần quay lại này.'
-              : 'Backend đang xác minh IPN hoặc đối soát trực tiếp trạng thái giao dịch với VNPAY.'}
+              : 'Hệ thống đang xác minh trạng thái giao dịch với VNPAY.'}
         </p>
         {payment ? (
           <dl className="payment-result-detail">
@@ -109,10 +109,6 @@ export function PaymentResultPage({
             <div>
               <dt>Số tiền</dt>
               <dd>{formatVnd(payment.amount)}</dd>
-            </div>
-            <div>
-              <dt>Trạng thái backend</dt>
-              <dd>{payment.status}</dd>
             </div>
           </dl>
         ) : null}

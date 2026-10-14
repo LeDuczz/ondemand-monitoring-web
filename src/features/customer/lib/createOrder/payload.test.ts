@@ -7,6 +7,7 @@ import {
   buildOrderPayload,
   calcArea,
   syncAiAddonDescription,
+  withAdditionalRequirementChecklist,
 } from './payload'
 import { truncateText } from './format'
 
@@ -33,6 +34,32 @@ describe('syncAiAddonDescription', () => {
     expect(added).toBe(`Mô tả\n${AI_IMAGE_ANALYSIS_DESCRIPTION}`)
     expect(syncAiAddonDescription(added, true)).toBe(added)
     expect(syncAiAddonDescription(added, false)).toBe('Mô tả')
+  })
+})
+
+describe('withAdditionalRequirementChecklist', () => {
+  it('adds the AI add-on as a customer requirement for manager pricing review', () => {
+    expect(
+      withAdditionalRequirementChecklist(
+        [{ sourceChecklistId: 'default', expectedChecklistVersion: 1 }],
+        true,
+      ),
+    ).toEqual([
+      { sourceChecklistId: 'default', expectedChecklistVersion: 1 },
+      {
+        contentOverride:
+          'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
+      },
+    ])
+  })
+
+  it('does not add the requirement when unselected or already present', () => {
+    const item = {
+      contentOverride:
+        'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
+    }
+    expect(withAdditionalRequirementChecklist([item], false)).toEqual([item])
+    expect(withAdditionalRequirementChecklist([item], true)).toEqual([item])
   })
 })
 

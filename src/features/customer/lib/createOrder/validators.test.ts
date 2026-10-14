@@ -141,7 +141,7 @@ describe('validateStep', () => {
     ).toEqual({})
   })
 
-  it('requires monitoring authorization only when submitting', () => {
+  it('requires monitoring authorization before leaving the location step', () => {
     const form = {
       ...withService,
       address: 'A',
@@ -150,8 +150,7 @@ describe('validateStep', () => {
       monitoringRelationship: '' as const,
       monitoringAuthorizationConfirmed: false,
     }
-    expect(validateStep(4, form, okLocation, msg)).toEqual({})
-    expect(validateStep(5, form, okLocation, msg)).toMatchObject({
+    expect(validateStep(3, form, okLocation, msg)).toMatchObject({
       monitoringRelationship: 'monitoringRelationship',
       monitoringAuthorizationConfirmed: 'monitoringAuthorizationConfirmed',
     })

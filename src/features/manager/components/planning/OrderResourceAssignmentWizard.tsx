@@ -1,13 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { planningApi } from '../../api/planningApi'
 import { ordersApi } from '../../api/ordersApi'
 import { planningError } from '../../lib/planningErrors'
-import {
-  DispatchWizardTabs,
-  LiveDispatchPage,
-} from '../../pages/LiveDispatchPage'
+import { LiveDispatchPage } from '../../pages/LiveDispatchPage'
 import { OrderWorkflowStepper } from '../OrderWorkflowStepper'
+import { OrderMissionsOverview } from './OrderMissionsOverview'
 import { planningSchedule } from './planningSchedule'
 import { STAFF_ROLE_LABELS } from '../missionDetail/missionDetailParts'
 import type { MissionStaffRole } from '../../../mission/types/mission'
@@ -27,11 +25,16 @@ export function OrderResourceAssignmentWizard({
   initialMissionId,
   onClose,
   returnLabel = 'Về kế hoạch Order',
+  embedded = false,
+  onStepChange,
 }: {
   orderId: string
   initialMissionId?: string
   onClose: () => void
   returnLabel?: string
+  embedded?: boolean
+  /** Current step of the 8-step order workflow (6, 7 or 8) for an outer stepper. */
+  onStepChange?: (step: 6 | 7 | 8) => void
 }) {
   const confirmation = usePlanningConfirmation()
   const query = useApiQuery(
@@ -61,6 +64,8 @@ export function OrderResourceAssignmentWizard({
     initialMissionId ?? null,
   )
   const [draft, setDraft] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
+  const [liveStep, setLiveStep] = useState<6 | 7>(6)
   const [busy, setBusy] = useState(false)
   const updateDraft = useCallback((dirty: boolean, saving: boolean) => {
     setDraft(dirty)
@@ -189,6 +194,37 @@ export function OrderResourceAssignmentWizard({
     </section>
   )
   const current = data?.missions.find((m) => m.id === activeId)
+  const outerStep: 6 | 7 | 8 =
+    reviewing && !current ? 8 : current ? liveStep : 6
+  useEffect(() => {
+    onStepChange?.(outerStep)
+  }, [outerStep, onStepChange])
+  if (reviewing && !current && data)
+    return (
+      <>
+        {confirmation.dialog}
+        <OrderMissionsOverview
+          missions={data.missions}
+          scopeLabels={Object.fromEntries(
+            data.plan.missions.map((m) => [m.missionId, m.scopeLabel]),
+          )}
+          loading={query.loading}
+          onReload={query.reload}
+          onAssignMore={(id) => {
+            setCandidateId(id)
+            setActiveId(id)
+            setDraft(false)
+            setReviewing(false)
+          }}
+          onDone={() => {
+            setReviewing(false)
+            onClose()
+          }}
+          doneLabel={returnLabel}
+          embedded={embedded}
+        />
+      </>
+    )
   if (current && !query.loading && !eligible(current.id))
     return (
       <section className="odm-or-card odm-or-card-body">
@@ -247,6 +283,7 @@ export function OrderResourceAssignmentWizard({
           missionId={current.id}
           orderContext={{
             orderId,
+            embeddedInOrderReview: embedded,
             missionScoped: Boolean(initialMissionId),
             returnLabel,
             initialStep: assignmentReadiness(current).step,
@@ -254,12 +291,14 @@ export function OrderResourceAssignmentWizard({
             missionSelection: selection,
             onMissionNext: next,
             onReturn: (toOrigin = false) => leave(toOrigin),
+            onGlobalStep: setLiveStep,
             onAssigned: () => {
               setActiveId(null)
               setDraft(false)
               setBusy(false)
               query.reload()
-              if (initialMissionId) onClose()
+              // Mission-scoped flow: step 8 shows every Mission for a final check.
+              if (initialMissionId) setReviewing(true)
             },
             onChanged: query.reload,
             onDraftState: updateDraft,
@@ -312,14 +351,7 @@ export function OrderResourceAssignmentWizard({
           {returnLabel}
         </button>
       </div>
-      <OrderWorkflowStepper currentStep={3} />
-      <DispatchWizardTabs
-        activeStep="mission"
-        selectionOnly
-        onStep={(step) => {
-          if (step === 'order') leave(true)
-        }}
-      />
+      <OrderWorkflowStepper currentStep={6} />
       {selection}
       {allAssigned && (
         <div className="odm-planning-complete" role="status">

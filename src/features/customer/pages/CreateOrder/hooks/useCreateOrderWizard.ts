@@ -6,7 +6,10 @@ import {
   isReusableConsultation,
 } from '../../../lib/createOrder/consultation'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
-import { buildOrderPayload } from '../../../lib/createOrder/payload'
+import {
+  buildOrderPayload,
+  withAdditionalRequirementChecklist,
+} from '../../../lib/createOrder/payload'
 import { scoreRequest } from '../../../lib/createOrder/scoring'
 import { createOrderPageMessages } from '../CreateOrderPage.messages'
 import { useConsultation } from './useConsultation'
@@ -89,7 +92,10 @@ export function useCreateOrderWizard() {
         aiAnalysisRequested: f.aiAnalysisRequested,
         pricingEstimate: meta.pricingEstimate,
       }),
-      checklistItems: checklist.serialize(),
+      checklistItems: withAdditionalRequirementChecklist(
+        checklist.serialize(),
+        f.aiAnalysisRequested,
+      ),
     }),
   })
 

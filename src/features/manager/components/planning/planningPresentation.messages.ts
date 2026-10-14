@@ -16,7 +16,7 @@ export const planningPresentationMessages = defineMessages({
       'Mỗi Mission đại diện cho một phần công việc của Order. Đặt tên rõ ràng để dễ phân biệt khi phân công checklist và nhân sự.',
     scopeLabel: 'Tên / phạm vi công việc của Mission',
     scopePlaceholder: 'Ví dụ: Khu A - ca sáng, Tuyến sông, Khu vực phía Bắc…',
-    scopeDefault: 'Toàn bộ phạm vi Order',
+    scopeDefault: 'Toàn bộ phạm vi đơn hàng',
     scopeHint:
       'Tên giúp phân biệt các Mission, không thay đổi phạm vi địa lý của Order.',
     scopeRequired: 'Nhập tên / phạm vi công việc của Mission.',

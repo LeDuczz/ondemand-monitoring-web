@@ -14,6 +14,7 @@ export type OrderStatus =
   | 'AI_ANALYZED'
   | 'SUBMITTED'
   | 'PENDING'
+  | 'NEEDS_INFO'
   | 'APPROVED'
   | 'SCHEDULED'
   | 'IN_PROGRESS'

@@ -3,6 +3,7 @@ import type {
   GeoJsonPolygon,
   ServicePricingEstimate,
 } from '../../api/customerApi'
+import type { ChecklistInput } from '../checklist/types'
 import { toNumber, truncateText } from './format'
 import type { AiScore, FormState } from './types'
 
@@ -19,6 +20,22 @@ export const AI_IMAGE_ANALYSIS_DESCRIPTION =
   'Yêu cầu bổ sung: sử dụng AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.'
 const AI_IMAGE_ANALYSIS_REQUIREMENT =
   'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.'
+
+export function withAdditionalRequirementChecklist(
+  checklistItems: ChecklistInput[],
+  aiAnalysisRequested: boolean,
+): ChecklistInput[] {
+  if (!aiAnalysisRequested) return checklistItems
+  const alreadyIncluded = checklistItems.some(
+    (item) => item.contentOverride?.trim() === AI_IMAGE_ANALYSIS_REQUIREMENT,
+  )
+  return alreadyIncluded
+    ? checklistItems
+    : [
+        ...checklistItems,
+        { contentOverride: AI_IMAGE_ANALYSIS_REQUIREMENT },
+      ]
+}
 
 /** Estimated monitored area in hectares (string, 1 decimal). */
 export function calcArea(radiusM: number) {

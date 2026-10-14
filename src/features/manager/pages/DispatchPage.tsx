@@ -447,7 +447,7 @@ function DispatchBody({
       </div>
 
       {setupMode ? (
-        <OrderWorkflowStepper currentStep={bothAssigned ? 4 : 3} />
+        <OrderWorkflowStepper currentStep={bothAssigned ? 7 : 6} />
       ) : null}
 
       <div className="odm-card" style={{ marginBottom: 14 }}>

@@ -139,8 +139,11 @@ function deliverableSummary(
   deliverableName?: string | null,
 ) {
   if (!requirement) return []
-  const type =
-    mediaTypeFromTitle(deliverableName) ?? text(requirement.mediaType)
+  // The deliverable heading already communicates its media type (for example,
+  // "Video"). Only fall back to the requirement media type for generic names.
+  const type = mediaTypeFromTitle(deliverableName)
+    ? null
+    : text(requirement.mediaType)
   return [
     type,
     numberText(requirement.quantity)
@@ -317,7 +320,9 @@ export function OrderCustomerRequestDetails({
       label: t.resultFormats,
       icon: 'doc',
       tone: 'orange',
-      value: resultFormats,
+      // A deliverable card below already shows the output format and its
+      // requirement details, so repeating the format here adds no information.
+      value: order.deliverables?.length ? null : resultFormats,
     },
     {
       label: t.deliveryMethods,

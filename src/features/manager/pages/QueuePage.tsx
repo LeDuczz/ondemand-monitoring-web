@@ -10,6 +10,7 @@ import { localizeTimeslot } from '../lib/viLabels'
 import { managerHref } from '../routes'
 import { queuePageMessages } from './QueuePage.messages'
 import { financeApi } from '../../finance/api'
+import { planningApi } from '../api/planningApi'
 import '../manager.css'
 
 export function QueuePage() {
@@ -21,8 +22,16 @@ export function QueuePage() {
     ])
     const paid = (await Promise.all(approved.map(async (order) => {
       try {
-        const invoice = await financeApi.getManagerInvoice(order.id, signal)
-        return invoice.paidAmount >= invoice.depositAmount ? order : null
+        const [invoice, missions] = await Promise.all([
+          financeApi.getManagerInvoice(order.id, signal),
+          planningApi.getOrderMissions(order.id, signal),
+        ])
+        const hasActiveMission = missions.some(
+          (mission) => mission.status !== 'CANCELLED',
+        )
+        return invoice.paidAmount >= invoice.depositAmount && !hasActiveMission
+          ? order
+          : null
       } catch {
         return null
       }

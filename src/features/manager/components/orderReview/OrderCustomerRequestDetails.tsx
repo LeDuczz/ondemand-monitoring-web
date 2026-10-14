@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import type { OrderDetail } from '../../types/orders'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
-import { humanizeMediaRequirement } from './format'
 
 type DetailItem = {
   label: string
@@ -134,6 +133,15 @@ function numberText(value: unknown): string | null {
   return valueText && valueText !== '0' ? valueText : null
 }
 
+function resolutionText(value: unknown): string | null {
+  const resolution = text(value)
+  if (!resolution) return null
+  if (resolution.toUpperCase() === '4K') {
+    return '4K UHD'
+  }
+  return resolution
+}
+
 function deliverableSummary(
   requirement: Record<string, unknown> | null,
   deliverableName?: string | null,
@@ -147,10 +155,10 @@ function deliverableSummary(
   return [
     type,
     numberText(requirement.quantity)
-      ? `${numberText(requirement.quantity)} mục`
+      ? `${numberText(requirement.quantity)} ảnh`
       : null,
-    text(requirement.resolution),
-    text(requirement.aiAnalysisRequested) === 'Có' ? 'Có phân tích AI' : null,
+    resolutionText(requirement.resolution),
+    text(requirement.aiAnalysisRequested) === 'Có' ? 'Có AI' : null,
   ].filter((item): item is string => Boolean(item))
 }
 
@@ -183,59 +191,6 @@ function addOnItems(requirement: Record<string, unknown> | null): string[] {
     .filter((item): item is string => Boolean(item))
 }
 
-function requirementItems(
-  requirement: Record<string, unknown> | null,
-): DetailItem[] {
-  if (!requirement) return []
-  const labels: Record<string, string> = {
-    mediaType: 'Loại media',
-    quantity: 'Số lượng',
-    resolution: 'Độ phân giải',
-    radiusM: 'Bán kính',
-    estimatedAreaHa: 'Diện tích',
-    aiAnalysisRequested: 'Phân tích AI',
-    additionalRequirements: 'Yêu cầu thêm',
-    type: 'Loại',
-    description: 'Mô tả',
-    additionalPrice: 'Phí bổ sung',
-    areaFiles: 'Tệp khu vực',
-    customerAttachments: 'Tệp khách gửi',
-  }
-  const hiddenTechnicalKeys = new Set([
-    'priority',
-    'readinessScore',
-    'usagePurpose',
-    'serviceCode',
-    'serviceId',
-    'deliverableTypeId',
-    'mediaType',
-    'quantity',
-    'resolution',
-    'radiusM',
-    'estimatedAreaHa',
-    'aiAnalysisRequested',
-    'additionalRequirements',
-  ])
-
-  return Object.entries(requirement)
-    .map<DetailItem | null>(([key, value]) => {
-      if (hiddenTechnicalKeys.has(key)) return null
-      const formatted = requirementValue(value)
-      if (!formatted) return null
-      const suffix =
-        key === 'radiusM' ? ' m' : key === 'estimatedAreaHa' ? ' ha' : ''
-      const finalValue =
-        key === 'additionalPrice'
-          ? (formatMoney(value) ?? formatted)
-          : formatted
-      return {
-        label: labels[key] ?? key,
-        value: `${finalValue}${suffix}`,
-      }
-    })
-    .filter((item): item is DetailItem => item != null)
-}
-
 function FactList({ items }: { items: DetailItem[] }) {
   const visible = visibleItems(items)
   if (visible.length === 0) return null
@@ -265,6 +220,33 @@ function FactList({ items }: { items: DetailItem[] }) {
   )
 }
 
+function FactSection({
+  title,
+  icon,
+  items,
+  children,
+}: {
+  title: string
+  icon: OrderIconName
+  items: DetailItem[]
+  children?: ReactNode
+}) {
+  const visible = visibleItems(items)
+  if (visible.length === 0 && !children) return null
+  return (
+    <section className="odm-or-req-section">
+      <h4>
+        <span aria-hidden="true">
+          <OrderIcon name={icon} size={18} />
+        </span>
+        {title}
+      </h4>
+      <FactList items={visible} />
+      {children}
+    </section>
+  )
+}
+
 export function OrderCustomerRequestDetails({
   order,
   t,
@@ -289,58 +271,66 @@ export function OrderCustomerRequestDetails({
     .join(' · ')
   const resultFormats =
     resultFormatsFromDeliverables(order) ?? list(order.resultFormats)
+  const deliverableFacts: DetailItem[] =
+    order.deliverables?.map((deliverable, index) => ({
+      label: deliverable.deliverableTypeName || t.mediaN(index + 1),
+      value:
+        deliverableSummary(
+          deliverable.requirement,
+          deliverable.deliverableTypeName,
+        ).join(' · ') || t.noData,
+    })) ??
+    order.mediaRequirements?.map((requirement, index) => ({
+      label: t.mediaN(index + 1),
+      value: requirement.label,
+    })) ??
+    []
+  const deliverableAddOns =
+    order.deliverables?.flatMap((deliverable) =>
+      addOnItems(deliverable.requirement),
+    ) ?? []
 
-  // What the manager needs first: how fast, how high, how long, what comes out.
-  const keyFacts: DetailItem[] = [
+  const scopeFacts: DetailItem[] = [
     {
       label: t.flightPurpose,
-      icon: 'target',
-      tone: 'green',
       value: text(order.flightPurpose),
     },
     {
       label: t.flightAltitude,
-      icon: 'altitude',
-      tone: 'blue',
       value: order.altitudeM != null ? `${order.altitudeM} m` : null,
     },
     {
       label: t.estimatedLength,
-      icon: 'radius',
       value:
         order.estimatedLengthM != null ? `${order.estimatedLengthM} m` : null,
     },
+    { label: t.recurrence, value: recurrence },
+  ]
+
+  const siteFacts: DetailItem[] = [
+    { label: t.siteContact, value: contact },
+    { label: t.accessNotes, value: order.accessNotes },
     {
-      label: t.resultDeadline,
-      icon: 'clock',
-      tone: 'blue',
-      value: dateOnly(order.resultDeadline),
-    },
-    {
-      label: t.resultFormats,
-      icon: 'doc',
-      tone: 'orange',
-      // A deliverable card below already shows the output format and its
-      // requirement details, so repeating the format here adds no information.
-      value: order.deliverables?.length ? null : resultFormats,
-    },
-    {
-      label: t.deliveryMethods,
-      icon: 'download',
-      tone: 'purple',
-      value: list(order.deliveryMethods),
+      label: t.weatherFallback,
+      value: text(order.weatherFallback),
     },
   ]
 
-  // Operational context, still visible but visually secondary.
-  const extraFacts: DetailItem[] = [
-    { label: t.siteContact, icon: 'user', value: contact },
-    { label: t.accessNotes, icon: 'info', value: order.accessNotes },
-    { label: t.permitInfo, icon: 'doc', tone: 'blue', value: permit || null },
+  const permitFacts: DetailItem[] = [
     {
-      label: 'Hiệu lực đến',
-      value: dateOnly(order.permitExpiresOn),
+      label: 'Yêu cầu giấy phép',
+      value:
+        order.permitRequired == null
+          ? null
+          : order.permitRequired
+            ? 'Có yêu cầu'
+            : 'Không yêu cầu',
     },
+    {
+      label: 'Trạng thái giấy phép',
+      value: permit || (order.permitRequired === false ? 'Không áp dụng' : null),
+    },
+    { label: 'Hiệu lực đến', value: dateOnly(order.permitExpiresOn) },
     {
       label: 'Tệp giấy phép',
       value:
@@ -357,20 +347,34 @@ export function OrderCustomerRequestDetails({
               </a>
             ))}
           </span>
-        ) : null,
+        ) : order.permitRequired
+          ? 'Chưa cung cấp'
+          : null,
+    },
+  ]
+
+  const resultFacts: DetailItem[] = [
+    ...deliverableFacts,
+    {
+      label: t.resultDeadline,
+      value: dateOnly(order.resultDeadline),
     },
     {
-      label: t.permitRequired,
-      icon: 'shield',
-      tone: 'green',
-      value: text(order.permitRequired),
+      label: t.resultFormats,
+      // A deliverable card below already shows the output format and its
+      // requirement details, so repeating the format here adds no information.
+      value: order.deliverables?.length ? null : resultFormats,
     },
-    { label: t.recurrence, icon: 'refresh', tone: 'orange', value: recurrence },
     {
-      label: t.weatherFallback,
-      icon: 'cloud',
-      tone: 'purple',
-      value: text(order.weatherFallback),
+      label: t.deliveryMethods,
+      value: list(order.deliveryMethods),
+    },
+    {
+      label: t.dataRetention,
+      value:
+        order.dataRetentionDays != null
+          ? `${order.dataRetentionDays} ngày`
+          : null,
     },
   ]
 
@@ -395,7 +399,13 @@ export function OrderCustomerRequestDetails({
   )
   const hasDetails =
     hasSummary ||
-    visibleItems([...keyFacts, ...extraFacts, ...legalFacts]).length > 0 ||
+    visibleItems([
+      ...scopeFacts,
+      ...siteFacts,
+      ...permitFacts,
+      ...resultFacts,
+      ...legalFacts,
+    ]).length > 0 ||
     (order.deliverables != null && order.deliverables.length > 0) ||
     (order.mediaRequirements != null && order.mediaRequirements.length > 0)
 
@@ -436,65 +446,21 @@ export function OrderCustomerRequestDetails({
           </div>
         ) : null}
 
-        <FactList items={keyFacts} />
-
-        {!order.deliverables?.length && order.mediaRequirements?.length ? (
-          <div className="odm-or-req-deliverables">
-            {order.mediaRequirements.map((requirement, index) => (
-              <p key={index}>
-                {humanizeMediaRequirement(requirement.label, t)}
-              </p>
-            ))}
-          </div>
-        ) : null}
-
-        {order.deliverables?.map((deliverable, index) => {
-          const items = requirementItems(deliverable.requirement)
-          const summary = deliverableSummary(
-            deliverable.requirement,
-            deliverable.deliverableTypeName,
-          )
-          const addOns = addOnItems(deliverable.requirement)
-          return (
-            <div
-              key={
-                deliverable.id || `${deliverable.deliverableTypeId}-${index}`
-              }
-              className="odm-or-req-deliverable"
-            >
-              <div className="odm-or-req-deliverable-head">
-                <strong>
-                  {deliverable.deliverableTypeName || `${t.mediaN(index + 1)}`}
-                </strong>
-                {summary.length > 0 ? (
-                  <span className="odm-or-req-summary">
-                    {summary.join(' · ')}
-                  </span>
-                ) : null}
+        <div className="odm-or-req-section-grid">
+          <FactSection title="Phạm vi giám sát" icon="target" items={scopeFacts} />
+          <FactSection title="Thông tin hiện trường" icon="pin" items={siteFacts} />
+          <FactSection title="Quyền & giấy phép" icon="shield" items={permitFacts} />
+          <FactSection title="Kết quả & dữ liệu" icon="database" items={resultFacts}>
+            {deliverableAddOns.length > 0 ? (
+              <div className="odm-or-addon-list">
+                <span>Yêu cầu bổ sung</span>
+                {deliverableAddOns.map((item) => (
+                  <p key={item}>{item}</p>
+                ))}
               </div>
-              {addOns.length > 0 ? (
-                <div className="odm-or-addon-list">
-                  <span>Yêu cầu bổ sung</span>
-                  {addOns.map((item) => (
-                    <p key={item}>{item}</p>
-                  ))}
-                </div>
-              ) : null}
-              {items.length > 0 ? <FactList items={items} /> : null}
-              {summary.length === 0 &&
-              addOns.length === 0 &&
-              items.length === 0 ? (
-                <p className="odm-or-detail-note">{t.noData}</p>
-              ) : null}
-            </div>
-          )
-        })}
-
-        {visibleItems(extraFacts).length > 0 ? (
-          <div className="odm-or-req-extra">
-            <FactList items={extraFacts} />
-          </div>
-        ) : null}
+            ) : null}
+          </FactSection>
+        </div>
 
         {visibleItems(legalFacts).length > 0 ? (
           <details className="odm-or-req-legal">

@@ -357,7 +357,7 @@ export function OrderResourceAssignmentWizard({
         <div className="odm-planning-complete" role="status">
           <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
           <button className="odm-or-btn odm-or-btn-blue" onClick={onClose}>
-            Hoàn tất phân công
+            Chốt kế hoạch
           </button>
         </div>
       )}

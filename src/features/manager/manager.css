@@ -5172,6 +5172,92 @@ a.odm-or-btn.odm-or-view-btn {
   padding: 0;
   background: transparent;
 }
+
+.odm-or-req-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.odm-or-req-section {
+  min-width: 0;
+  padding: 18px 22px;
+  border: 1px solid var(--or-border);
+  border-radius: 16px;
+  background: var(--or-card);
+}
+
+.odm-or-req-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  color: var(--or-tx);
+  font-size: 17px;
+}
+
+.odm-or-req-section h4 > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 11px;
+  color: var(--or-primary);
+  background: var(--or-primary-soft);
+}
+
+.odm-or-req-section .odm-or-req-facts {
+  display: block;
+}
+
+.odm-or-req-section .odm-or-req-facts > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 42%) minmax(0, 1fr);
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--or-border);
+}
+
+.odm-or-req-section .odm-or-req-facts > div:last-child {
+  border-bottom: 0;
+}
+
+.odm-or-req-section .odm-or-req-facts dt,
+.odm-or-req-section .odm-or-req-facts dd {
+  margin: 0;
+}
+
+.odm-or-req-section .odm-or-req-facts dt {
+  color: var(--or-tx2);
+  font-size: 13px;
+}
+
+.odm-or-req-section .odm-or-req-facts dd {
+  overflow-wrap: anywhere;
+  color: var(--or-tx);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .odm-or-req-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .odm-or-req-section {
+    padding: 16px;
+  }
+
+  .odm-or-req-section .odm-or-req-facts > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
 .odm-or-req-hero-text h3 {
   font-size: 18px;
   font-weight: 700;

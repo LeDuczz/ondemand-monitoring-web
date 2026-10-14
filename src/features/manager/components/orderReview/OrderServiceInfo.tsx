@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
-import { preferredLabel } from '../../lib/viLabels'
+import { preferredRangeLabel } from '../../lib/viLabels'
 import { estimatedAreaHa } from './format'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
 import { resolveOrderGpsCenter } from './orderGps'
@@ -82,8 +82,9 @@ export function OrderServiceInfo({
 }) {
   const areaHa = estimatedAreaHa(order.radiusM)
   const preferred =
-    preferredLabel(
-      order.preferredDate,
+    preferredRangeLabel(
+      order.preferredDateFrom ?? order.preferredDate,
+      order.preferredDateTo ?? order.preferredDateFrom ?? order.preferredDate,
       order.preferredTimeName,
       order.preferredWindow,
     ) || null

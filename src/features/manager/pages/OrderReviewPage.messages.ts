@@ -56,7 +56,7 @@ export const orderReviewPageMessages = defineMessages({
     aiCollapse: 'Thu gọn',
     copy: 'Sao chép',
     stepWord: 'Bước',
-    preferredWindow: 'Thời gian mong muốn',
+    preferredWindow: 'Khoảng thời gian khách mong muốn',
     mediaRequirements: 'Yêu cầu media',
     noData: 'Chưa có dữ liệu',
     mediaN: (n: number) => `Media ${n}`,

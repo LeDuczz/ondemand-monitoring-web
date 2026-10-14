@@ -229,6 +229,37 @@ function OrderPlanningWorkspace({
       query.reload()
     }
   }
+
+  async function continueToResourceAssignment() {
+    if (!data || !selected || !onAssignResources || !writable || busy || saving)
+      return
+    if (dirty) {
+      setCoverageWarning(
+        'Bạn vừa thay đổi checklist. Hãy bấm “Lưu phân công” trước khi tiếp tục.',
+      )
+      return
+    }
+    if (!data.plan.coverage.coverageReady || data.plan.blockers.length > 0) {
+      setCoverageWarning(
+        'Còn checklist chưa được gán cho Mission. Hãy chọn các mục còn thiếu và bấm “Lưu phân công”, sau đó tiếp tục gán nguồn lực.',
+      )
+      return
+    }
+    setBusy(true)
+    setMessage('')
+    setCoverageWarning('')
+    try {
+      // The backend locks the Mission/checklist structure before resources can
+      // be reserved. Keep that technical transition inside the Next action so
+      // the manager-facing flow remains: schedule -> resources -> confirmation.
+      await planningApi.finalizeExecutionPlan(orderId, data.plan.revision)
+      onAssignResources(selected)
+    } catch (error) {
+      setCoverageWarning(finalizeError(error))
+      setBusy(false)
+      query.reload()
+    }
+  }
   if (assigningResources)
     return (
       <OrderResourceAssignmentWizard
@@ -304,7 +335,7 @@ function OrderPlanningWorkspace({
             <div className="odm-planning-complete" role="status">
               <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
               <a className="odm-btn odm-btn-p" href="#portal/manager/orders">
-                Hoàn tất phân công
+                Chốt kế hoạch
               </a>
             </div>
           )}
@@ -321,18 +352,16 @@ function OrderPlanningWorkspace({
                     {creating ? 'Đang tạo Mission' : 'Tạo thêm Mission'}
                   </button>
                   <button
+                    type="button"
                     className="odm-btn odm-btn-p"
                     disabled={
                       busy ||
                       saving ||
-                      Boolean(creating) ||
-                      dirty ||
-                      !data.plan.coverage.coverageReady ||
-                      data.plan.blockers.length > 0
+                      Boolean(creating)
                     }
-                    onClick={() => void mutate('finalize')}
+                    onClick={() => void continueToResourceAssignment()}
                   >
-                    Chốt kế hoạch
+                    Tiếp: Gán nguồn lực
                   </button>
                 </>
               )}

@@ -104,6 +104,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               : assigningMissionId
           }
           embedded
+          returnLabel="Chốt kế hoạch"
           onStepChange={setAssignStep}
           onClose={() => {
             setAssigningMissionId(null)

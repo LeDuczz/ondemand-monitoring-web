@@ -9,6 +9,8 @@ import type { OrderCreateResponse } from '../types/orders'
 import { QueuePage } from './QueuePage'
 import { financeApi } from '../../finance/api'
 import type { Invoice } from '../../finance/types'
+import { planningApi } from '../api/planningApi'
+import type { MissionResponse } from '../types/missions'
 
 const rows: OrderCreateResponse[] = [
   {
@@ -72,6 +74,7 @@ afterEach(() => {
 beforeEach(() => {
   vi.spyOn(ordersApi, 'getApproved').mockResolvedValue([])
   vi.spyOn(financeApi, 'getManagerInvoice').mockRejectedValue(new Error('No invoice'))
+  vi.spyOn(planningApi, 'getOrderMissions').mockResolvedValue([])
 })
 
 describe('QueuePage', () => {
@@ -84,6 +87,34 @@ describe('QueuePage', () => {
     expect(screen.getByText('Đã nhận cọc')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Lập kế hoạch' })).toHaveAttribute('href', '#portal/manager/orders/ord-2609-0157')
     expect(screen.queryByText('Không còn đơn chờ duyệt')).not.toBeInTheDocument()
+  })
+
+  it('does not put an order back in the planning queue after a mission was created', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(ordersApi.getApproved).mockResolvedValue([{ ...rows[0], orderStatus: 'APPROVED' }])
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({ paidAmount: 1_000_000, depositAmount: 1_000_000 } as Invoice)
+    vi.mocked(planningApi.getOrderMissions).mockResolvedValue([
+      { id: 'mission-1', status: 'WAITING_CREW_CONFIRMATION' } as MissionResponse,
+    ])
+
+    render(<QueuePage />)
+
+    expect(await screen.findByText('Không còn đơn chờ duyệt')).toBeInTheDocument()
+    expect(screen.getByText('0 đơn chờ duyệt · 0 đơn chờ lập kế hoạch')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Lập kế hoạch' })).not.toBeInTheDocument()
+  })
+
+  it('allows planning again when every previous mission was cancelled', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(ordersApi.getApproved).mockResolvedValue([{ ...rows[0], orderStatus: 'APPROVED' }])
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({ paidAmount: 1_000_000, depositAmount: 1_000_000 } as Invoice)
+    vi.mocked(planningApi.getOrderMissions).mockResolvedValue([
+      { id: 'mission-cancelled', status: 'CANCELLED' } as MissionResponse,
+    ])
+
+    render(<QueuePage />)
+
+    expect(await screen.findByRole('link', { name: 'Lập kế hoạch' })).toBeInTheDocument()
   })
 
   it('shows loading, then the queue rows', async () => {

@@ -1,11 +1,18 @@
-import type { Dispatch } from 'react'
-import type { SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
+import {
+  getTicketSeverityLabel,
+  getTicketStatusLabel,
+} from '../../../../../shared/lib/statusTone'
+import { COLUMNS, SEVERITIES, type StatusFilter } from '../maintenanceHelpers'
 import { ticketFilterBarMessages } from './TicketFilterBar.messages'
 
+/** Toolbar: search + status segmented control + priority/assignment selects. */
 export function TicketFilterBar({
   searchQuery,
   setSearchQuery,
+  statusFilter,
+  setStatusFilter,
   priorityFilter,
   setPriorityFilter,
   assignedFilter,
@@ -13,72 +20,61 @@ export function TicketFilterBar({
 }: {
   searchQuery: string
   setSearchQuery: Dispatch<SetStateAction<string>>
+  statusFilter: StatusFilter
+  setStatusFilter: Dispatch<SetStateAction<StatusFilter>>
   priorityFilter: string
   setPriorityFilter: Dispatch<SetStateAction<string>>
   assignedFilter: string
   setAssignedFilter: Dispatch<SetStateAction<string>>
 }) {
-  const { t } = useI18n(ticketFilterBarMessages)
+  const { t, lang } = useI18n(ticketFilterBarMessages)
+  const options: StatusFilter[] = ['ALL', ...COLUMNS]
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 12,
-        alignItems: 'center',
-        marginBottom: 16,
-        background: '#ffffff',
-        padding: '10px 16px',
-        borderRadius: 12,
-        border: '1px solid #e2e8f0',
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <input
-          className="odm-input"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={t.page.searchPlaceholder}
-          style={{
-            width: '100%',
-            height: 38,
-            borderRadius: 8,
-            paddingLeft: 12,
-            fontSize: 13,
-          }}
-        />
+    <div className="mng-toolbar">
+      <input
+        className="odm-inp mng-search"
+        type="search"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder={t.searchPlaceholder}
+        aria-label={t.searchAria}
+      />
+      <div className="mng-seg" role="group" aria-label={t.statusGroup}>
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={`mng-seg-btn${statusFilter === option ? ' is-active' : ''}`}
+            aria-pressed={statusFilter === option}
+            onClick={() => setStatusFilter(option)}
+          >
+            {option === 'ALL' ? t.all : getTicketStatusLabel(option, lang)}
+          </button>
+        ))}
       </div>
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <span style={{ fontSize: 13, color: '#64748b' }}>
-          {t.page.priorityLabel}
-        </span>
-        <select
-          className="odm-input"
-          value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value)}
-          style={{ height: 38, borderRadius: 8, fontSize: 13 }}
-        >
-          <option value="ALL">{t.page.priorityAll}</option>
-          <option value="CRITICAL">{t.critical}</option>
-          <option value="HIGH">{t.high}</option>
-          <option value="MEDIUM">{t.medium}</option>
-          <option value="LOW">{t.low}</option>
-        </select>
-
-        <span style={{ fontSize: 13, color: '#64748b' }}>
-          {t.page.assignedLabel}
-        </span>
-        <select
-          className="odm-input"
-          value={assignedFilter}
-          onChange={(e) => setAssignedFilter(e.target.value)}
-          style={{ height: 38, borderRadius: 8, fontSize: 13 }}
-        >
-          <option value="ALL">{t.page.assignedAll}</option>
-          <option value="UNASSIGNED">{t.page.assignedUnassigned}</option>
-          <option value="ASSIGNED">{t.page.assignedAssigned}</option>
-        </select>
-      </div>
+      <select
+        className="odm-inp mng-select"
+        value={priorityFilter}
+        onChange={(e) => setPriorityFilter(e.target.value)}
+        aria-label={t.priorityAria}
+      >
+        <option value="ALL">{t.priorityAll}</option>
+        {[...SEVERITIES].reverse().map((s) => (
+          <option key={s} value={s}>
+            {getTicketSeverityLabel(s, lang)}
+          </option>
+        ))}
+      </select>
+      <select
+        className="odm-inp mng-select"
+        value={assignedFilter}
+        onChange={(e) => setAssignedFilter(e.target.value)}
+        aria-label={t.assignedAria}
+      >
+        <option value="ALL">{t.assignedAll}</option>
+        <option value="UNASSIGNED">{t.assignedUnassigned}</option>
+        <option value="ASSIGNED">{t.assignedAssigned}</option>
+      </select>
     </div>
   )
 }

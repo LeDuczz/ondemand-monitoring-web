@@ -1,21 +1,16 @@
-import {
-  toLocalHours,
-  HOUR_START,
-  PX_PER_HOUR,
-  toneBg,
-  toneFg,
-} from '../scheduleHelpers'
+import { toLocalHours, HOUR_START, PX_PER_HOUR } from '../scheduleHelpers'
+import { toUiTone } from '../../../../../shared/components/ui'
 import { missionStatusTone } from '../../../../../shared/lib/statusTone'
 import type { MissionCalendarItem } from '../../../types/missions'
 
 type MissionBlockProps = {
   mission: MissionCalendarItem
-  dayIndex: number
   selected: boolean
   onSelect: (m: MissionCalendarItem) => void
   missionStatusLabel: string
 }
 
+/** Rounded, status-coloured chip positioned on the time grid. */
 export function MissionBlock({
   mission,
   selected,
@@ -29,62 +24,28 @@ export function MissionBlock({
     ? toLocalHours(mission.scheduledEndAt)
     : startH
 
-  const top = Math.max(0, (startH - HOUR_START) * PX_PER_HOUR)
-  const height = Math.max(18, (endH - startH) * PX_PER_HOUR - 2)
-
-  const tone = missionStatusTone[mission.status] ?? 'gray'
-  const bg = toneBg[tone]
-  const fg = toneFg[tone]
+  const top = Math.max(0, (startH - HOUR_START) * PX_PER_HOUR) + 1
+  const height = Math.max(22, (endH - startH) * PX_PER_HOUR - 3)
+  const tone = toUiTone(missionStatusTone[mission.status] ?? 'gray')
 
   return (
     <button
       type="button"
-      style={{
-        position: 'absolute',
-        top,
-        left: 2,
-        right: 2,
-        height,
-        background: bg,
-        color: fg,
-        border: selected ? `2px solid ${fg}` : '1px solid transparent',
-        borderRadius: 5,
-        padding: '3px 5px',
-        textAlign: 'left',
-        fontSize: 11,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        lineHeight: 1.3,
-      }}
+      className={`mng-chip is-${tone}${selected ? ' is-selected' : ''}`}
+      style={{ top, height }}
       onClick={() => onSelect(mission)}
       aria-pressed={selected}
       aria-label={`${mission.missionCode} ${missionStatusLabel}`}
+      title={`${mission.missionCode} · ${missionStatusLabel}`}
     >
-      <div
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontWeight: 600,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {mission.missionCode.slice(-6)}
-      </div>
+      <span className="mng-chip-code">{mission.missionCode.slice(-6)}</span>
       {mission.droneCode && (
-        <div
-          style={{
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            opacity: 0.8,
-          }}
-        >
+        <span className="mng-chip-sub">
           {mission.droneCode}
           {mission.operatorName
             ? ` · ${mission.operatorName.split(' ').at(-1)}`
             : ''}
-        </div>
+        </span>
       )}
     </button>
   )

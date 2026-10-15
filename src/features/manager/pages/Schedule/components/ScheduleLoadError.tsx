@@ -1,4 +1,5 @@
 import { ApiError } from '../../../../../shared/api/httpClient'
+import { Card } from '../../../../../shared/components/ui'
 import type { MissionCalendarItem } from '../../../types/missions'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../../shared/i18n'
@@ -15,31 +16,14 @@ export function ScheduleLoadError({
   return (
     <>
       {!query.loading && !!query.error && (
-        <div style={{ padding: 24 }}>
-          <div
-            className="odm-card"
-            style={{
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-            }}
-            role="alert"
-          >
-            <div style={{ fontWeight: 600, color: 'var(--red-fg)' }}>
+        <Card>
+          <div role="alert" style={{ display: 'grid', gap: 10 }}>
+            <div style={{ fontWeight: 600, color: 'var(--ui-danger-text)' }}>
               {t.loadError}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-              {t.genericError}
-            </div>
+            <div className="mng-cell-sub">{t.genericError}</div>
             {query.error instanceof ApiError && (
-              <code
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--tx3)',
-                }}
-              >
+              <code className="odm-mono mng-cell-sub">
                 {query.error.method}
                 {t.missionsFrom}
                 {from} · {query.error.status ?? '—'}
@@ -48,13 +32,13 @@ export function ScheduleLoadError({
             <button
               type="button"
               className="odm-btn"
-              style={{ alignSelf: 'flex-start' }}
+              style={{ justifySelf: 'start' }}
               onClick={query.reload}
             >
               {t.retry}
             </button>
           </div>
-        </div>
+        </Card>
       )}
     </>
   )

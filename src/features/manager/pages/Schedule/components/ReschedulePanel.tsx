@@ -1,8 +1,17 @@
-import { missionStatusTone } from '../../../../../shared/lib/statusTone'
+import {
+  getMissionStatusLabel,
+  missionStatusTone,
+} from '../../../../../shared/lib/statusTone'
 import { useState } from 'react'
 import { missionsApi } from '../../../api/missionsApi'
 import { ApiError } from '../../../../../shared/api/httpClient'
-import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
+import {
+  Card,
+  FormField,
+  StatusBadge,
+  toUiTone,
+} from '../../../../../shared/components/ui'
+import { Icon } from '../../../../../shared/components/Icon'
 import { managerHref } from '../../../routes'
 import { env } from '../../../../../config/env'
 import type { MissionCalendarItem } from '../../../types/missions'
@@ -20,7 +29,7 @@ export function ReschedulePanel({
   onClose,
   onRescheduled,
 }: ReschedulePanelProps) {
-  const { t, locale } = useI18n(reschedulePanelMessages)
+  const { t, lang, locale } = useI18n(reschedulePanelMessages)
 
   const tone = missionStatusTone[mission.status] ?? 'gray'
 
@@ -62,182 +71,140 @@ export function ReschedulePanel({
     }
   }
 
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  const rows: Array<{ label: string; value: string }> = [
+    {
+      label: t.drone,
+      value: mission.droneCode
+        ? `${mission.droneCode}${mission.droneName ? ` · ${mission.droneName}` : ''}`
+        : t.notAssigned,
+    },
+    { label: t.pilot, value: mission.operatorName ?? t.notAssigned },
+    {
+      label: t.schedule,
+      value: mission.scheduledStartAt
+        ? `${time(mission.scheduledStartAt)}${mission.scheduledEndAt ? ` → ${time(mission.scheduledEndAt)}` : t.noEndTime}`
+        : '—',
+    },
+  ]
+  if (mission.addressText)
+    rows.push({ label: t.location, value: mission.addressText })
+
   return (
-    <div
-      className="odm-sched-panel"
-      role="complementary"
-      aria-label={t.missionDetail}
-    >
-      {/* Header */}
-      <div className="odm-sched-panel-head">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 12,
-              color: 'var(--tx3)',
-            }}
-          >
-            {mission.missionCode}
-          </div>
-          <div
-            style={{
-              fontWeight: 600,
-              fontSize: 14,
-              marginTop: 2,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {mission.serviceLabel ?? mission.addressText ?? '—'}
-          </div>
-        </div>
-        <button
-          type="button"
-          className="odm-btn"
-          style={{ flex: 'none' }}
-          onClick={onClose}
-          aria-label={t.closeDetail}
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Status badge + dispatch shortcut */}
-      <div
-        style={{
-          padding: '8px 16px 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flexWrap: 'wrap',
-        }}
-      >
-        <StatusBadge kind="mission" status={mission.status} tone={tone} />
-        {(mission.status === 'CREATED' ||
-          mission.status === 'RESOURCE_ASSIGNING') && (
-          <a
-            href={managerHref({
-              screen: 'missionDispatch',
-              missionId: mission.id,
-            })}
-            className="odm-btn odm-btn-p odm-btn-sm"
-          >
-            {t.assignResources}
-          </a>
-        )}
-      </div>
-
-      {/* Mission info */}
-      <dl className="odm-sched-panel-dl">
-        <dt>{t.drone}</dt>
-        <dd>
-          {mission.droneCode
-            ? `${mission.droneCode}${mission.droneName ? ` · ${mission.droneName}` : ''}`
-            : t.notAssigned}
-        </dd>
-        <dt>{t.pilot}</dt>
-        <dd>{mission.operatorName ?? t.notAssigned}</dd>
-        <dt>{t.schedule}</dt>
-        <dd>
-          {mission.scheduledStartAt
-            ? `${new Date(mission.scheduledStartAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}${mission.scheduledEndAt ? ` → ${new Date(mission.scheduledEndAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}` : t.noEndTime}`
-            : '—'}
-        </dd>
-        {mission.addressText && (
-          <>
-            <dt>{t.location}</dt>
-            <dd>{mission.addressText}</dd>
-          </>
-        )}
-      </dl>
-
-      {/* Reschedule section */}
-      {!reschedule ? (
-        <div style={{ padding: '0 16px 16px' }}>
+    <aside role="complementary" aria-label={t.missionDetail}>
+      <Card
+        className="odm-or-sidepanel"
+        title={<span className="odm-mono">{mission.missionCode}</span>}
+        actions={
           <button
             type="button"
-            className="odm-btn"
-            disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
-            title={
-              !env.useMockApi && import.meta.env.MODE !== 'test'
-                ? t.backendNotSupported
-                : undefined
-            }
-            onClick={() => setReschedule(true)}
+            className="odm-or-icon-btn"
+            onClick={onClose}
+            aria-label={t.closeDetail}
           >
-            {t.reschedule}
+            <Icon name="x" width={16} height={16} />
           </button>
-        </div>
-      ) : (
-        <div
-          style={{
-            padding: '0 16px 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600 }}>
-            {t.rescheduleTitle}
+        }
+      >
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div className="mng-panel-title">
+            {mission.serviceLabel ?? mission.addressText ?? '—'}
           </div>
-          <label style={{ fontSize: 12, color: 'var(--tx2)' }}>
-            {t.start}
-            <input
-              type="datetime-local"
-              className="odm-inp"
-              value={newStart}
-              onChange={(e) => setNewStart(e.target.value)}
-              style={{ display: 'block', marginTop: 4, width: '100%' }}
-            />
-          </label>
-          <label style={{ fontSize: 12, color: 'var(--tx2)' }}>
-            {t.end}
-            <input
-              type="datetime-local"
-              className="odm-inp"
-              value={newEnd}
-              onChange={(e) => setNewEnd(e.target.value)}
-              style={{ display: 'block', marginTop: 4, width: '100%' }}
-            />
-          </label>
-          {saveError && (
-            <div
-              style={{
-                fontSize: 12,
-                color: 'var(--red-fg)',
-                background: 'var(--red-bg)',
-                borderRadius: 6,
-                padding: '6px 10px',
-              }}
-              role="alert"
-            >
-              {saveError}
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              disabled={saving}
-              onClick={handleSave}
-            >
-              {saving ? t.saving : t.save}
-            </button>
+
+          <div className="odm-or-panel-status">
+            <StatusBadge tone={toUiTone(tone)}>
+              {getMissionStatusLabel(mission.status, lang)}
+            </StatusBadge>
+            {(mission.status === 'CREATED' ||
+              mission.status === 'RESOURCE_ASSIGNING') && (
+              <a
+                href={managerHref({
+                  screen: 'missionDispatch',
+                  missionId: mission.id,
+                })}
+                className="odm-btn odm-btn-p odm-btn-sm"
+              >
+                {t.assignResources}
+              </a>
+            )}
+          </div>
+
+          <dl className="odm-or-kv">
+            {rows.map((row) => (
+              <div key={row.label}>
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {!reschedule ? (
             <button
               type="button"
               className="odm-btn"
-              onClick={() => {
-                setReschedule(false)
-                setSaveError(null)
-              }}
+              disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
+              title={
+                !env.useMockApi && import.meta.env.MODE !== 'test'
+                  ? t.backendNotSupported
+                  : undefined
+              }
+              onClick={() => setReschedule(true)}
             >
-              {t.cancel}
+              {t.reschedule}
             </button>
-          </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 4 }}>
+              <div className="mng-panel-label">{t.rescheduleTitle}</div>
+              <FormField id="resched-start" label={t.start}>
+                <input
+                  id="resched-start"
+                  type="datetime-local"
+                  className="odm-inp"
+                  value={newStart}
+                  onChange={(e) => setNewStart(e.target.value)}
+                />
+              </FormField>
+              <FormField
+                id="resched-end"
+                label={t.end}
+                error={saveError ?? undefined}
+              >
+                <input
+                  id="resched-end"
+                  type="datetime-local"
+                  className="odm-inp"
+                  value={newEnd}
+                  onChange={(e) => setNewEnd(e.target.value)}
+                />
+              </FormField>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className="odm-btn odm-btn-p"
+                  disabled={saving}
+                  onClick={handleSave}
+                >
+                  {saving ? t.saving : t.save}
+                </button>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  onClick={() => {
+                    setReschedule(false)
+                    setSaveError(null)
+                  }}
+                >
+                  {t.cancel}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </Card>
+    </aside>
   )
 }

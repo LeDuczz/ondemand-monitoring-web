@@ -6,11 +6,13 @@ export const scheduleToolbarMessages = defineMessages({
     prevWeek: 'Tuần trước',
     nextWeek: 'Tuần sau',
     today: 'Hôm nay',
+    weekNav: 'Chuyển tuần',
   },
   en: {
     title: 'Mission schedule',
     prevWeek: 'Previous week',
     nextWeek: 'Next week',
     today: 'Today',
+    weekNav: 'Week navigation',
   },
 })

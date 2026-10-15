@@ -29,7 +29,9 @@ function scheduleText(
   const from = formatDate(order.preferredDateFrom, locale)
   const to = formatDate(order.preferredDateTo, locale)
   const range = from && to && from !== to ? `${from} – ${to}` : from || to
-  return [range, slotText(order.preferredTimeName, lang)].filter(Boolean).join(' · ')
+  return [range, slotText(order.preferredTimeName, lang)]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 export function ApprovedOrdersSection({
@@ -56,7 +58,9 @@ export function ApprovedOrdersSection({
               <div className="mng-order-text">
                 <div className="mng-cell-main odm-mono">{code}</div>
                 {meta && <div className="mng-cell-sub">{meta}</div>}
-                <div className="mng-cell-sub">{scheduleText(order, locale, lang)}</div>
+                <div className="mng-cell-sub">
+                  {scheduleText(order, locale, lang)}
+                </div>
               </div>
               <a
                 className="odm-btn odm-btn-sm odm-btn-p"

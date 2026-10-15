@@ -4,9 +4,9 @@ export const createModalMessages = defineMessages({
   vi: {
     createModal: {
       title: 'Tạo Ticket Bảo trì mới',
-      droneId: 'Mã/ID Drone *',
+      droneId: 'Mã/ID Drone',
       droneIdPlaceholder: 'VD: d0000000-0000-0000-0000-000000000001',
-      issueTitle: 'Tiêu đề sự cố *',
+      issueTitle: 'Tiêu đề sự cố',
       issueTitlePlaceholder: 'Mô tả ngắn gọn sự cố...',
       priority: 'Mức độ ưu tiên',
       issueType: 'Loại sự cố',
@@ -22,9 +22,9 @@ export const createModalMessages = defineMessages({
   en: {
     createModal: {
       title: 'Create a new maintenance ticket',
-      droneId: 'Drone ID *',
+      droneId: 'Drone ID',
       droneIdPlaceholder: 'e.g. d0000000-0000-0000-0000-000000000001',
-      issueTitle: 'Issue title *',
+      issueTitle: 'Issue title',
       issueTitlePlaceholder: 'Briefly describe the issue...',
       priority: 'Priority',
       issueType: 'Issue type',

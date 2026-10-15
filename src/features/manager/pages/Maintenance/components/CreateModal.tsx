@@ -1,5 +1,6 @@
 import { useI18n } from '../../../../../shared/i18n'
 import { useState } from 'react'
+import { FormField, Modal } from '../../../../../shared/components/ui'
 import type { TicketSeverity } from '../../../../../shared/types/domain'
 import { maintenanceApi } from '../../../api/maintenanceApi'
 import { SEVERITIES } from '../maintenanceHelpers'
@@ -42,185 +43,87 @@ export function CreateModal({ onClose, onCreate }: CreateModalProps) {
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.5)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="odm-card"
-        style={{
-          padding: 24,
-          width: 460,
-          borderRadius: 16,
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 700 }}>
-          {t.createModal.title}
-        </h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label
-              htmlFor="ct-drone"
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#334155',
-                display: 'block',
-                marginBottom: 4,
-              }}
-            >
-              {t.createModal.droneId}
-            </label>
-            <input
-              id="ct-drone"
-              className="odm-input"
-              value={droneId}
-              onChange={(e) => setDroneId(e.target.value)}
-              placeholder={t.createModal.droneIdPlaceholder}
-              style={{ width: '100%', borderRadius: 8 }}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="ct-title"
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#334155',
-                display: 'block',
-                marginBottom: 4,
-              }}
-            >
-              {t.createModal.issueTitle}
-            </label>
-            <input
-              id="ct-title"
-              className="odm-input"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t.createModal.issueTitlePlaceholder}
-              style={{ width: '100%', borderRadius: 8 }}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="ct-priority"
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#334155',
-                display: 'block',
-                marginBottom: 4,
-              }}
-            >
-              {t.createModal.priority}
-            </label>
-            <select
-              id="ct-priority"
-              className="odm-input"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as TicketSeverity)}
-              style={{ width: '100%', borderRadius: 8 }}
-            >
-              {SEVERITIES.map((s) => (
-                <option key={s} value={s}>
-                  {getTicketSeverityLabel(s, lang)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="ct-issue"
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#334155',
-                display: 'block',
-                marginBottom: 4,
-              }}
-            >
-              {t.createModal.issueType}
-            </label>
-            <input
-              id="ct-issue"
-              className="odm-input"
-              value={issueType}
-              onChange={(e) => setIssueType(e.target.value)}
-              placeholder={t.createModal.issueTypePlaceholder}
-              style={{ width: '100%', borderRadius: 8 }}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="ct-desc"
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#334155',
-                display: 'block',
-                marginBottom: 4,
-              }}
-            >
-              {t.createModal.description}
-            </label>
-            <textarea
-              id="ct-desc"
-              className="odm-input"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t.createModal.descriptionPlaceholder}
-              style={{ width: '100%', resize: 'vertical', borderRadius: 8 }}
-            />
-          </div>
-
-          {error && (
-            <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600 }}>
-              {error}
-            </div>
-          )}
-
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              marginTop: 8,
-            }}
+    <Modal
+      title={t.createModal.title}
+      icon="ticket"
+      width={480}
+      onClose={onClose}
+      footer={
+        <>
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh"
+            onClick={onClose}
+            disabled={saving}
           >
-            <button
-              type="button"
-              className="odm-btn"
-              onClick={onClose}
-              disabled={saving}
-            >
-              {t.createModal.cancel}
-            </button>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              onClick={handleCreate}
-              disabled={saving}
-              style={{ fontWeight: 600, borderRadius: 8 }}
-            >
-              {saving ? t.createModal.creating : t.createModal.create}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            {t.createModal.cancel}
+          </button>
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={handleCreate}
+            disabled={saving}
+          >
+            {saving ? t.createModal.creating : t.createModal.create}
+          </button>
+        </>
+      }
+    >
+      <FormField id="ct-drone" label={t.createModal.droneId} required>
+        <input
+          id="ct-drone"
+          className="odm-inp"
+          value={droneId}
+          onChange={(e) => setDroneId(e.target.value)}
+          placeholder={t.createModal.droneIdPlaceholder}
+        />
+      </FormField>
+      <FormField id="ct-title" label={t.createModal.issueTitle} required>
+        <input
+          id="ct-title"
+          className="odm-inp"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t.createModal.issueTitlePlaceholder}
+        />
+      </FormField>
+      <FormField id="ct-priority" label={t.createModal.priority}>
+        <select
+          id="ct-priority"
+          className="odm-inp"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as TicketSeverity)}
+        >
+          {SEVERITIES.map((s) => (
+            <option key={s} value={s}>
+              {getTicketSeverityLabel(s, lang)}
+            </option>
+          ))}
+        </select>
+      </FormField>
+      <FormField id="ct-issue" label={t.createModal.issueType}>
+        <input
+          id="ct-issue"
+          className="odm-inp"
+          value={issueType}
+          onChange={(e) => setIssueType(e.target.value)}
+          placeholder={t.createModal.issueTypePlaceholder}
+        />
+      </FormField>
+      <FormField
+        id="ct-desc"
+        label={t.createModal.description}
+        error={error ?? undefined}
+      >
+        <textarea
+          id="ct-desc"
+          className="odm-inp"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={t.createModal.descriptionPlaceholder}
+        />
+      </FormField>
+    </Modal>
   )
 }

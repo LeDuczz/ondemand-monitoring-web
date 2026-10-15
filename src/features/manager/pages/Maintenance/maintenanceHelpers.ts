@@ -46,3 +46,5 @@ export function systemOperatorList(lang: Language) {
     },
   ]
 }
+
+export type StatusFilter = 'ALL' | TicketStatus

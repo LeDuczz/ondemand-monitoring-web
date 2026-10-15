@@ -4,7 +4,5 @@ import { missionsEmptyStateMessages } from './MissionsEmptyState.messages'
 
 export function MissionsEmptyState() {
   const { t } = useI18n(missionsEmptyStateMessages)
-  return (
-    <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
-  )
+  return <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
 }

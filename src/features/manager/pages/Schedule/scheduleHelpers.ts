@@ -29,20 +29,13 @@ export function toLocalHours(iso: string): number {
   return d.getHours() + d.getMinutes() / 60
 }
 
-/** Tone → CSS variable suffix for mission block colours. */
-export const toneBg: Record<string, string> = {
-  gray: 'var(--gray-bg)',
-  yellow: 'var(--yellow-bg)',
-  blue: 'var(--blue-bg)',
-  green: 'var(--green-bg)',
-  orange: 'var(--orange-bg)',
-  red: 'var(--red-bg)',
-}
-export const toneFg: Record<string, string> = {
-  gray: 'var(--gray-fg)',
-  yellow: 'var(--yellow-fg)',
-  blue: 'var(--blue-fg)',
-  green: 'var(--green-fg)',
-  orange: 'var(--orange-fg)',
-  red: 'var(--red-fg)',
-}
+export type ChipTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info'
+
+/** Legend order, left to right. */
+export const LEGEND_TONES: ChipTone[] = [
+  'warning',
+  'info',
+  'success',
+  'danger',
+  'neutral',
+]

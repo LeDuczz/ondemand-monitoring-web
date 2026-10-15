@@ -3,12 +3,12 @@ import { defineMessages } from '../../../../shared/i18n'
 export const maintenancePageMessages = defineMessages({
   vi: {
     title: 'Quản lý Ticket & Phân công Bảo trì',
-    subtitle:
-      'Bảng điều phối ticket sự cố, tìm kiếm và phân công System Operator phụ trách.',
+    ticketCount: (n: number) => `${n} ticket`,
+    createButton: '+ Tạo ticket',
   },
   en: {
     title: 'Maintenance ticket & assignment management',
-    subtitle:
-      'Coordinate incident tickets, search, and assign the responsible operator.',
+    ticketCount: (n: number) => `${n} ticket${n === 1 ? '' : 's'}`,
+    createButton: '+ New ticket',
   },
 })

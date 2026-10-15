@@ -46,46 +46,44 @@ export function SchedulePage() {
     [query],
   )
 
+  const ready = !query.loading && !query.error && !!query.data
   return (
-    <div className="odm-sched" aria-label={t.pageAriaLabel}>
-      {/* Top bar */}
+    <div className="odm-or" aria-label={t.pageAriaLabel}>
       <ScheduleToolbar
         setAnchorDate={setAnchorDate}
         anchorDate={anchorDate}
         weekStart={weekStart}
         weekEnd={weekEnd}
+        count={
+          ready ? t.missionCount(query.data?.items.length ?? 0) : undefined
+        }
       />
 
-      {/* Main content + optional side panel */}
       <div
-        style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}
+        className={`odm-or-list-layout${selectedMission ? ' has-panel' : ''}`}
       >
-        {/* Calendar area */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '0 0 16px' }}>
+        <div className="odm-or-col">
           <ScheduleSkeleton query={query} />
 
           <ScheduleLoadError query={query} from={from} />
 
-          {!query.loading && !query.error && query.data && (
-            <>
-              {query.data.items.length === 0 ? (
-                <ScheduleEmptyState />
-              ) : (
-                <WeekGrid
-                  days={days}
-                  missions={query.data.items}
-                  selectedId={selectedMission?.id ?? null}
-                  onSelect={setSelectedMission}
-                  getMissionStatusLabel={(status) =>
-                    getMissionStatusLabel(status, lang)
-                  }
-                />
-              )}
-            </>
-          )}
+          {ready &&
+            query.data &&
+            (query.data.items.length === 0 ? (
+              <ScheduleEmptyState />
+            ) : (
+              <WeekGrid
+                days={days}
+                missions={query.data.items}
+                selectedId={selectedMission?.id ?? null}
+                onSelect={setSelectedMission}
+                getMissionStatusLabel={(status) =>
+                  getMissionStatusLabel(status, lang)
+                }
+              />
+            ))}
         </div>
 
-        {/* Side panel */}
         {selectedMission && (
           <ReschedulePanel
             key={selectedMission.id}

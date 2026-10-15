@@ -14,8 +14,9 @@ export function MissionsStats({
   const running = missions.filter(
     (m) => m.status === 'IN_FLIGHT' || m.status === 'IN_PROGRESS',
   ).length
-  const waiting = missions.filter((m) => assignmentReadiness(m).needsSetup)
-    .length
+  const waiting = missions.filter(
+    (m) => assignmentReadiness(m).needsSetup,
+  ).length
   const completed = missions.filter((m) => m.status === 'COMPLETED').length
   return (
     <div className="mng-stats">

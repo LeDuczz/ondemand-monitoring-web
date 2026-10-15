@@ -9,10 +9,7 @@ import {
   type DeliveryStatus,
 } from '../missionsHelpers'
 import { missionStopLabel } from '../../../../mission/lib/missionOperationalState'
-import {
-  StatusBadge,
-  toUiTone,
-} from '../../../../../shared/components/ui'
+import { StatusBadge, toUiTone } from '../../../../../shared/components/ui'
 import {
   getMissionStatusLabel,
   missionStatusTone,

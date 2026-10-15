@@ -1,20 +1,21 @@
-// MNG-10: Maintenance ticket kanban board with Manager Search, Filter & System Operator Assignment Workflow
+// MNG-10: Maintenance ticket list with Manager Search, Filter & System Operator Assignment Workflow
 import { useMemo, useState } from 'react'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
-import type { TicketStatus } from '../../../../shared/types/domain'
+import { PageHeader } from '../../../../shared/components/ui'
 import { maintenanceApi } from '../../api/maintenanceApi'
 import type { MaintenanceTicket } from '../../types/maintenance'
 import '../../manager.css'
 import { useI18n } from '../../../../shared/i18n'
 import { maintenancePageMessages } from './MaintenancePage.messages'
-import { COLUMNS } from './maintenanceHelpers'
+import type { StatusFilter } from './maintenanceHelpers'
 import { DetailPanel } from './components/DetailPanel'
 import { AssignModal } from './components/AssignModal'
 import { CreateModal } from './components/CreateModal'
-import { MaintenanceHeader } from './components/MaintenanceHeader'
+import { MaintenanceStats } from './components/MaintenanceStats'
+import { MaintenanceEmptyState } from './components/MaintenanceEmptyState'
+import { TicketsTable } from './components/TicketsTable'
 import { TicketFilterBar } from './components/TicketFilterBar'
 import { MaintenanceLoadError } from './components/MaintenanceLoadError'
-import { KanbanColumn } from './components/KanbanColumn'
 
 export function MaintenancePage() {
   const { t } = useI18n(maintenancePageMessages)
@@ -28,6 +29,7 @@ export function MaintenancePage() {
 
   // Manager Search & Filter controls state
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL')
   const [assignedFilter, setAssignedFilter] = useState<string>('ALL')
 
@@ -60,34 +62,11 @@ export function MaintenancePage() {
         (assignedFilter === 'UNASSIGNED' && !t.assignedTo) ||
         (assignedFilter === 'ASSIGNED' && !!t.assignedTo)
 
-      return matchQuery && matchPriority && matchAssigned
+      const matchStatus = statusFilter === 'ALL' || t.status === statusFilter
+
+      return matchQuery && matchPriority && matchAssigned && matchStatus
     })
-  }, [allTickets, searchQuery, priorityFilter, assignedFilter])
-
-  const byColumn = useMemo(() => {
-    const map: Record<TicketStatus, MaintenanceTicket[]> = {
-      OPEN: [],
-      IN_PROGRESS: [],
-      RESOLVED: [],
-      CLOSED: [],
-    }
-    for (const t of filteredTickets) {
-      map[t.status]?.push(t)
-    }
-    return map
-  }, [filteredTickets])
-
-  const unassignedCount = allTickets.filter(
-    (t) => (t.status === 'OPEN' || t.status === 'IN_PROGRESS') && !t.assignedTo,
-  ).length
-  const urgentCount = allTickets.filter(
-    (t) =>
-      (t.status === 'OPEN' || t.status === 'IN_PROGRESS') &&
-      (t.priority === 'CRITICAL' || t.priority === 'HIGH'),
-  ).length
-  const resolvedCount = allTickets.filter(
-    (t) => t.status === 'RESOLVED' || t.status === 'CLOSED',
-  ).length
+  }, [allTickets, searchQuery, statusFilter, priorityFilter, assignedFilter])
 
   function handleTicketUpdated(updated: MaintenanceTicket) {
     const base = tickets ?? query.data?.items ?? []
@@ -104,81 +83,72 @@ export function MaintenancePage() {
     setShowCreate(false)
   }
 
+  const ready = !query.loading && !query.error
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        padding: '0 4px',
-      }}
-    >
-      {/* Header Banner & Stats */}
-      <MaintenanceHeader
+    <div className="odm-or">
+      <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
-        unassignedCount={unassignedCount}
-        urgentCount={urgentCount}
-        resolvedCount={resolvedCount}
-        setShowCreate={setShowCreate}
+        subtitle={ready ? t.ticketCount(allTickets.length) : undefined}
+        actions={
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={() => setShowCreate(true)}
+          >
+            {t.createButton}
+          </button>
+        }
       />
 
-      {/* Search & Filter Toolbar */}
+      {ready && allTickets.length > 0 && (
+        <MaintenanceStats tickets={allTickets} />
+      )}
+
       <TicketFilterBar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
         priorityFilter={priorityFilter}
         setPriorityFilter={setPriorityFilter}
         assignedFilter={assignedFilter}
         setAssignedFilter={setAssignedFilter}
       />
 
-      {/* Content */}
-      {query.loading && (
-        <div style={{ padding: 40, textAlign: 'center' }} aria-busy="true">
-          <div className="odm-sk" style={{ height: 300, borderRadius: 12 }} />
-        </div>
-      )}
+      <div
+        className={`odm-or-list-layout${selectedTicket ? ' has-panel' : ''}`}
+      >
+        <div className="odm-or-col">
+          {query.loading && (
+            <div aria-busy="true">
+              <span className="odm-sk mng-dash-sk" />
+            </div>
+          )}
 
-      <MaintenanceLoadError query={query} />
+          <MaintenanceLoadError query={query} />
 
-      {!query.loading && !query.error && (
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          {/* Kanban board */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              gap: 14,
-              overflowX: 'auto',
-              padding: '4px 0',
-            }}
-          >
-            {COLUMNS.map((col) => (
-              <KanbanColumn
-                key={col}
-                col={col}
-                byColumn={byColumn}
-                selectedTicket={selectedTicket}
-                setSelectedTicket={setSelectedTicket}
-                setAssignTicket={setAssignTicket}
-              />
-            ))}
-          </div>
+          {ready && filteredTickets.length === 0 && <MaintenanceEmptyState />}
 
-          {/* Detail panel */}
-          {selectedTicket && (
-            <DetailPanel
-              key={selectedTicket.id}
-              ticket={selectedTicket}
-              onClose={() => setSelectedTicket(null)}
-              onAssignClick={(t) => setAssignTicket(t)}
+          {ready && filteredTickets.length > 0 && (
+            <TicketsTable
+              tickets={filteredTickets}
+              selectedId={selectedTicket?.id ?? null}
+              onSelect={setSelectedTicket}
+              onAssignClick={setAssignTicket}
             />
           )}
         </div>
-      )}
 
-      {/* Modals */}
+        {ready && selectedTicket && (
+          <DetailPanel
+            key={selectedTicket.id}
+            ticket={selectedTicket}
+            onClose={() => setSelectedTicket(null)}
+            onAssignClick={(ticket) => setAssignTicket(ticket)}
+          />
+        )}
+      </div>
+
       {showCreate && (
         <CreateModal
           onClose={() => setShowCreate(false)}

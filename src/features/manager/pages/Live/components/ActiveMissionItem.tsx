@@ -4,7 +4,7 @@ import {
   missionStatusTone,
   getMissionStatusLabel,
 } from '../../../../../shared/lib/statusTone'
-import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
+import { toUiTone } from '../../../../../shared/components/ui'
 
 export function ActiveMissionItem({
   mission,
@@ -16,7 +16,7 @@ export function ActiveMissionItem({
   onSelect: () => void
 }) {
   const { lang } = useLanguage()
-  const tone = missionStatusTone[mission.status] ?? 'gray'
+  const tone = toUiTone(missionStatusTone[mission.status] ?? 'gray')
   const label = getMissionStatusLabel(mission.status, lang) ?? mission.status
 
   return (
@@ -25,36 +25,22 @@ export function ActiveMissionItem({
       className={`odm-live-item${selected ? ' active' : ''}`}
       onClick={onSelect}
       aria-pressed={selected}
+      title={label}
     >
-      <div
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 12,
-          color: 'var(--tx3)',
-          marginBottom: 2,
-        }}
-      >
+      <span className={`odm-live-dot is-${tone}`} aria-hidden="true" />
+      <span className="odm-live-item-code">
         {mission.missionCode}
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          marginBottom: 4,
-        }}
-      >
+        <span className="mng-sr-only"> · {label}</span>
+      </span>
+      <span className="odm-live-item-title">
         {mission.serviceLabel ?? mission.addressText ?? '—'}
-      </div>
-      <StatusBadge tone={tone}>{label}</StatusBadge>
-      <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
+      </span>
+      <span className="odm-live-item-meta">
         {mission.droneCode ?? '—'}
         {mission.operatorName
           ? ` · ${mission.operatorName.split(' ').slice(-2).join(' ')}`
           : ''}
-      </div>
+      </span>
     </button>
   )
 }

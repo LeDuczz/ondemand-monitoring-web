@@ -263,112 +263,6 @@
   box-shadow: var(--shadow, 0 1px 2px rgba(0, 0, 0, 0.06));
 }
 
-/* ── MNG-07: Live (Giám sát realtime) ────────────────────────────────────  */
-
-.odm-live {
-  display: flex;
-  height: 100%;
-  background: var(--bg);
-  overflow: hidden;
-}
-
-.odm-live-sidebar {
-  width: 260px;
-  flex: none;
-  background: var(--sf);
-  border-right: 1px solid var(--bd);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.odm-live-sidebar-head {
-  padding: 12px 14px 8px;
-  border-bottom: 1px solid var(--bd);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--tx2);
-  flex: none;
-}
-
-.odm-live-item {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--bd);
-  cursor: pointer;
-  background: transparent;
-  border-left: 3px solid transparent;
-  text-align: left;
-  width: 100%;
-}
-
-.odm-live-item:hover {
-  background: var(--sf2);
-}
-
-.odm-live-item.active {
-  background: var(--sel);
-  border-left-color: var(--focus);
-}
-
-.odm-live-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.odm-live-topbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: var(--sf);
-  border-bottom: 1px solid var(--bd);
-  flex: none;
-}
-
-.odm-live-map {
-  background: var(--map-bg);
-  position: relative;
-  overflow: hidden;
-  flex: none;
-}
-
-.odm-live-telemetry {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 1px;
-  background: var(--bd);
-  border: 1px solid var(--bd);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.odm-live-tele-cell {
-  background: var(--sf);
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.odm-live-tele-label {
-  font-size: 11px;
-  color: var(--tx3);
-}
-
-.odm-live-tele-value {
-  font-family: var(--font-mono);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--tx);
-}
-
-.odm-live-tele-sub {
-  font-size: 11px;
-  color: var(--tx3);
-}
-
 /* ── Mission setup flow ───────────────────────────────────────────────── */
 
 .odm-mgr-setup-summary {
@@ -418,24 +312,6 @@
   flex-direction: column;
   gap: 16px;
   color: var(--or-tx);
-}
-
-.odm-or-pagehead {
-  min-width: 0;
-}
-
-.odm-or-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.25;
-}
-
-.odm-or-subtitle {
-  margin: 4px 0 0;
-  color: var(--or-tx2);
-  font-size: 13.5px;
 }
 
 /* Cards: same look as the shared ui Card. */
@@ -1030,11 +906,6 @@
   color: var(--or-primary-fg);
 }
 
-.odm-or-pill-amber {
-  background: var(--or-amber-soft);
-  color: var(--or-amber-fg);
-}
-
 /* Map */
 
 .odm-or-card-head + .odm-or-map {
@@ -1461,31 +1332,9 @@
   }
 }
 
-/* ---------- Order flow: shared bits for steps 2–4 (odm-or-*) ---------- */
-
-.odm-or-pagehead-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.odm-or-pill-green {
-  background: var(--or-green-soft);
-  color: var(--or-green);
-}
-
 .odm-or-pill-red {
   background: var(--ui-danger-soft);
   color: var(--ui-danger-text);
-}
-
-.odm-or-muted {
-  margin: 6px 0 0;
-  color: var(--or-tx2);
-  font-size: 13px;
-  line-height: 1.55;
 }
 
 .odm-or-error {
@@ -1536,13 +1385,6 @@
   overflow-wrap: anywhere;
 }
 
-.odm-or-btn-ghost {
-  background: var(--or-card);
-  border-color: var(--or-border);
-  color: var(--or-tx);
-  text-decoration: none;
-}
-
 .odm-or-btn-blue {
   min-width: 140px;
   background: var(--or-primary);
@@ -1551,105 +1393,6 @@
 
 a.odm-or-btn {
   text-decoration: none;
-}
-
-.odm-or-link-btn {
-  border: 0;
-  background: none;
-  padding: 0;
-  color: var(--or-primary);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* Dispatch tabs (sub-steps of the assignment step) */
-
-.odm-or-tabs {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px;
-  padding: 6px;
-}
-
-.odm-or-tab {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--or-tx);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.odm-or-tab:hover {
-  background: var(--or-tile);
-}
-
-.odm-or-tab.is-active {
-  background: var(--or-primary-soft);
-  color: var(--or-primary-fg);
-}
-
-.odm-or-tab-dot {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ui-surface-2);
-  color: var(--or-tx2);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.odm-or-tab.is-active .odm-or-tab-dot {
-  background: var(--or-primary);
-  color: var(--ui-on-primary);
-}
-
-.odm-or-tab.is-done .odm-or-tab-dot {
-  background: var(--or-green);
-  color: var(--ui-on-primary);
-}
-
-.odm-or-tab-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.odm-or-tab-label {
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.odm-or-tab-hint {
-  font-size: 11.5px;
-  color: var(--or-tx2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-@media (max-width: 1100px) {
-  .odm-or-tab-hint {
-    display: none;
-  }
-}
-
-@media (max-width: 767px) {
-  .odm-or-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* Dispatch: order tab, roles, devices, confirm */
@@ -1706,129 +1449,6 @@ a.odm-or-btn {
 .odm-or-role-card.is-filled {
   background: var(--or-tile);
   border-color: var(--or-primary-soft);
-}
-
-.odm-or-role-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-weight: 700;
-}
-
-.odm-or-role-check {
-  color: var(--or-green);
-  display: inline-flex;
-}
-
-.odm-or-device-box {
-  padding: 16px;
-  border: 1px solid var(--or-border);
-  border-radius: 10px;
-  background: var(--or-tile);
-}
-
-.odm-or-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  color: var(--or-tx2);
-  font-size: 13px;
-}
-
-.odm-or-chips > strong {
-  color: var(--or-tx);
-}
-
-.odm-or-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px 3px 10px;
-  border: 1px solid var(--or-border);
-  border-radius: 999px;
-  background: var(--or-card);
-  color: var(--or-tx);
-}
-
-.odm-or-chip-x {
-  border: 0;
-  background: transparent;
-  color: var(--or-tx2);
-  font-size: 15px;
-  line-height: 1;
-  padding: 0 4px;
-  cursor: pointer;
-}
-
-.odm-or-checklist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.odm-or-checklist li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.odm-or-checklist li.is-ok {
-  background: var(--or-green-soft);
-  color: var(--or-green);
-}
-
-.odm-or-checklist li.is-bad {
-  background: var(--or-amber-soft);
-  color: var(--or-amber-fg);
-}
-
-/* Result state after assigning */
-
-.odm-or-result {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 36px 24px;
-}
-
-.odm-or-result-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--or-green-soft);
-  color: var(--or-green);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.odm-or-result-title {
-  margin: 14px 0 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.odm-or-result-list {
-  width: min(520px, 100%);
-  margin-top: 18px;
-  text-align: left;
-}
-
-.odm-or-result-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 22px;
 }
 
 /* ---------- Mission list (mng-*, built on --ui tokens) ---------- */
@@ -2308,10 +1928,6 @@ a.odm-or-btn.odm-or-btn-red {
   color: var(--ui-on-primary);
 }
 
-a.odm-or-btn.odm-or-btn-ghost {
-  color: var(--or-tx);
-}
-
 a.odm-or-btn-outline {
   color: var(--or-tx);
   text-decoration: none;
@@ -2367,15 +1983,6 @@ a.odm-or-btn-outline {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.odm-or-result-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
 }
 
 .odm-or-crew {

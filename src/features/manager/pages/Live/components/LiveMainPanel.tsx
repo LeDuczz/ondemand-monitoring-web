@@ -11,6 +11,7 @@ import { MapPlaceholder } from './MapPlaceholder'
 import { IncidentModal } from './IncidentModal'
 import { CancelModal } from './CancelModal'
 import { LiveTopBar } from './LiveTopBar'
+import { LiveActions } from './LiveActions'
 import { TelemetryErrorBanner } from './TelemetryErrorBanner'
 import { TelemetryPanel } from './TelemetryPanel'
 import { LivestreamBlock } from './LivestreamBlock'
@@ -59,36 +60,31 @@ export function LiveMainPanel({
 
   return (
     <>
-      {/* Top bar */}
-      <LiveTopBar
-        mission={mission}
-        tone={tone}
-        setShowIncidentModal={setShowIncidentModal}
-        setShowCancelModal={setShowCancelModal}
-      />
+      <LiveTopBar mission={mission} tone={tone} />
 
-      {/* Telemetry error */}
       <TelemetryErrorBanner
         telemetryError={telemetryError}
         mission={mission}
         fetchLive={fetchLive}
       />
 
-      {/* Map */}
-      <MapPlaceholder
-        lat={telemetry?.latitude ?? mission.centerLat ?? null}
-        lon={telemetry?.longitude ?? mission.centerLon ?? null}
-        missionCode={mission.missionCode}
-      />
+      <div className="odm-live-media">
+        <MapPlaceholder
+          lat={telemetry?.latitude ?? mission.centerLat ?? null}
+          lon={telemetry?.longitude ?? mission.centerLon ?? null}
+          missionCode={mission.missionCode}
+        />
+        <LivestreamBlock telemetry={telemetry} />
+      </div>
 
-      {/* Telemetry cells */}
       <TelemetryPanel telemetry={telemetry} />
 
-      {/* Livestream block */}
-      <LivestreamBlock telemetry={telemetry} />
-
-      {/* Incident log */}
       <IncidentLog telemetry={telemetry} />
+
+      <LiveActions
+        setShowIncidentModal={setShowIncidentModal}
+        setShowCancelModal={setShowCancelModal}
+      />
 
       {/* Modals */}
       {showIncidentModal && (

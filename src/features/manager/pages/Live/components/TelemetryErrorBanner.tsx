@@ -16,33 +16,18 @@ export function TelemetryErrorBanner({
   return (
     <>
       {telemetryError && (
-        <div
-          role="alert"
-          style={{
-            padding: '8px 16px',
-            background: 'var(--red-bg)',
-            color: 'var(--red-fg)',
-            fontSize: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <span>
-            {t.telemetryLost} ·{' '}
-            <code style={{ fontFamily: 'var(--font-mono)' }}>
+        <div role="alert" className="odm-live-alert">
+          <div className="odm-live-alert-text">
+            <strong>{t.telemetryLost}</strong>
+            <span>{t.hint}</span>{' '}
+            <code>
               {t.getMissions}
               {mission.id}
               {t.live}
               {telemetryError.status ?? '—'}
             </code>
-          </span>
-          <button
-            type="button"
-            className="odm-btn"
-            style={{ marginLeft: 'auto' }}
-            onClick={fetchLive}
-          >
+          </div>
+          <button type="button" className="odm-btn" onClick={fetchLive}>
             {t.retry}
           </button>
         </div>

@@ -22,7 +22,7 @@ export function SelectedStaffChips({
   return (
     <>
       {selectedStaffIds.length > 0 && (
-        <div className="odm-or-chips">
+        <div className="odm-dp-chips">
           <strong>{t.selectedStaff}</strong>
           {missionRoles.flatMap((role) =>
             (staffByRole[role] ?? []).map((selectedId) => {
@@ -31,12 +31,11 @@ export function SelectedStaffChips({
               )
               if (!staff) return null
               return (
-                <span key={`${role}-${selectedId}`} className="odm-or-chip">
+                <span key={`${role}-${selectedId}`} className="odm-dp-chip">
                   <b>{t.roles[role]}</b>
                   {staff.fullName}
                   <button
                     type="button"
-                    className="odm-or-chip-x"
                     onClick={() =>
                       setStaffByRole((cur) => ({
                         ...cur,
@@ -55,7 +54,7 @@ export function SelectedStaffChips({
           )}
           <button
             type="button"
-            className="odm-or-link-btn"
+            className="odm-dp-link"
             onClick={() => setStaffByRole({})}
           >
             {t.clearAll}

@@ -3,6 +3,8 @@ import {
   fmtDateTime,
   missionRoles,
 } from '../liveDispatchHelpers'
+import '../missionDispatch.css'
+import { DispatchSidebar } from './DispatchSidebar'
 import { DispatchPageHead } from './DispatchPageHead'
 import { AssignedResult } from './AssignedResult'
 import { OrderWorkflowStepper } from '../../../components/common/OrderWorkflowStepper'
@@ -68,7 +70,7 @@ export function DispatchWizardView({
   hasAllRoles: boolean
   assign: () => Promise<void>
 }) {
-  const { t } = useI18n(dispatchWizardViewMessages)
+  const { t, locale } = useI18n(dispatchWizardViewMessages)
   const assignable = orderContext
     ? ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
         current.status,
@@ -121,15 +123,17 @@ export function DispatchWizardView({
     device: t.deviceFooterHint,
     confirm: t.footerHint,
   }
-  const scheduleText = `${fmtDateTime(current.scheduledStartAt)}${
-    current.scheduledEndAt ? ` → ${fmtDateTime(current.scheduledEndAt)}` : ''
+  const scheduleText = `${fmtDateTime(current.scheduledStartAt, locale)}${
+    current.scheduledEndAt
+      ? ` → ${fmtDateTime(current.scheduledEndAt, locale)}`
+      : ''
   }`
 
   const selectedStaffIds = missionRoles.flatMap(
     (role) => staffByRole[role] ?? [],
   )
   return (
-    <div className="odm-or">
+    <div className="odm-or odm-dp">
       <DispatchPageHead
         orderContext={orderContext}
         current={current}
@@ -146,81 +150,86 @@ export function DispatchWizardView({
         <>
           <OrderWorkflowStepper currentStep={globalStep} />
 
-          <DispatchWizardTabs
-            activeStep={activeStep}
-            onStep={(step) => {
-              if (orderContext && (step === 'order' || step === 'mission'))
-                orderContext.onReturn(step === 'order')
-              else setActiveStep(step)
-            }}
-          />
+          <div className="odm-or-layout">
+            <div className="odm-or-main">
+              <DispatchWizardTabs
+                activeStep={activeStep}
+                onStep={(step) => {
+                  if (orderContext && (step === 'order' || step === 'mission'))
+                    orderContext.onReturn(step === 'order')
+                  else setActiveStep(step)
+                }}
+              />
 
-          {activeStep === 'order' && <OrderInfoStep current={current} />}
+              {activeStep === 'order' && <OrderInfoStep current={current} />}
 
-          {activeStep === 'mission' &&
-            orderContext &&
-            orderContext.missionSelection}
-          {activeStep === 'mission' && !orderContext && (
-            <MissionImplementationStep
-              current={current}
-              scheduleText={scheduleText}
-            />
-          )}
+              {activeStep === 'mission' &&
+                orderContext &&
+                orderContext.missionSelection}
+              {activeStep === 'mission' && !orderContext && (
+                <MissionImplementationStep
+                  current={current}
+                  scheduleText={scheduleText}
+                />
+              )}
 
-          {activeStep === 'staff' && (
-            <StaffStep
-              missingRoles={missingRoles}
-              staffByRole={staffByRole}
-              operators={operators}
-              openStaffRole={openStaffRole}
-              setOpenStaffRole={setOpenStaffRole}
-              setStaffByRole={setStaffByRole}
-              setError={setError}
-              selectedStaffIds={selectedStaffIds}
-            />
-          )}
+              {activeStep === 'staff' && (
+                <StaffStep
+                  missingRoles={missingRoles}
+                  staffByRole={staffByRole}
+                  operators={operators}
+                  openStaffRole={openStaffRole}
+                  setOpenStaffRole={setOpenStaffRole}
+                  setStaffByRole={setStaffByRole}
+                  setError={setError}
+                  selectedStaffIds={selectedStaffIds}
+                />
+              )}
 
-          {activeStep === 'device' && (
-            <DeviceStep
-              selectedDrones={selectedDrones}
-              drones={drones}
-              droneIds={droneIds}
-              devicePickerOpen={devicePickerOpen}
-              setDevicePickerOpen={setDevicePickerOpen}
-              setOpenStaffRole={setOpenStaffRole}
-              setDroneIds={setDroneIds}
-              setError={setError}
-            />
-          )}
+              {activeStep === 'device' && (
+                <DeviceStep
+                  selectedDrones={selectedDrones}
+                  drones={drones}
+                  droneIds={droneIds}
+                  devicePickerOpen={devicePickerOpen}
+                  setDevicePickerOpen={setDevicePickerOpen}
+                  setOpenStaffRole={setOpenStaffRole}
+                  setDroneIds={setDroneIds}
+                  setError={setError}
+                />
+              )}
 
-          {activeStep === 'confirm' && (
-            <ConfirmStep
-              current={current}
-              scheduleText={scheduleText}
-              roleSummary={roleSummary}
-              selectedDrones={selectedDrones}
-              missingRoles={missingRoles}
-            />
-          )}
+              {activeStep === 'confirm' && <ConfirmStep />}
 
-          {error && (
-            <div role="alert" className="odm-or-error">
-              {error}
+              {error && (
+                <div role="alert" className="odm-dp-error">
+                  {error}
+                </div>
+              )}
             </div>
-          )}
 
-          <DispatchActionBar
-            stepHint={stepHint}
-            activeStep={activeStep}
-            activeStepIndex={activeStepIndex}
-            goPrevious={goPrevious}
-            goNext={goNext}
-            busy={busy}
-            droneIds={droneIds}
-            hasAllRoles={hasAllRoles}
-            orderContext={orderContext}
-            assign={assign}
-          />
+            <aside className="odm-or-side">
+              <DispatchSidebar
+                current={current}
+                scheduleText={scheduleText}
+                roleSummary={roleSummary}
+                selectedDrones={selectedDrones}
+                missingRoles={missingRoles}
+              />
+              <DispatchActionBar
+                stepHint={stepHint}
+                activeStep={activeStep}
+                activeStepIndex={activeStepIndex}
+                goPrevious={goPrevious}
+                goNext={goNext}
+                busy={busy}
+                droneIds={droneIds}
+                hasAllRoles={hasAllRoles}
+                orderContext={orderContext}
+                assign={assign}
+              />
+            </aside>
+          </div>
         </>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Card, StatusBadge } from '../../../../../shared/components/ui'
 import { missionRoles } from '../liveDispatchHelpers'
 import type { MissionStaffRole } from '../../../../mission/types/mission'
 import type { AvailableOperator } from '../../../../staff/api/operatorApi'
@@ -32,23 +32,19 @@ export function StaffStep({
 }) {
   const { t } = useI18n(staffStepMessages)
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="users" size={18} />
-          {t.step1}
-        </span>
-        <span
-          className={`odm-or-pill ${missingRoles === 0 ? 'odm-or-pill-green' : 'odm-or-pill-amber'}`}
-        >
+    <Card
+      title={t.step1}
+      actions={
+        <StatusBadge tone={missingRoles === 0 ? 'success' : 'warning'}>
           {missingRoles === 0 ? t.rolesComplete : t.rolesMissing(missingRoles)}
-        </span>
-      </header>
-      <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
-        <p className="odm-or-muted" style={{ margin: 0 }}>
+        </StatusBadge>
+      }
+    >
+      <div className="odm-dp-stack">
+        <p className="odm-dp-help">
           {t.roleHelp} {t.staffAvailabilityHint}
         </p>
-        <div className="odm-or-role-grid">
+        <div className="odm-dp-role-grid">
           {missionRoles.map((role) => {
             const selected = staffByRole[role] ?? []
             return (
@@ -67,7 +63,7 @@ export function StaffStep({
           })}
         </div>
         {!operators.data?.length && (
-          <p className="odm-or-empty">{t.noAvailableOperators}</p>
+          <p className="odm-dp-empty">{t.noAvailableOperators}</p>
         )}
         <SelectedStaffChips
           selectedStaffIds={selectedStaffIds}
@@ -76,6 +72,6 @@ export function StaffStep({
           setStaffByRole={setStaffByRole}
         />
       </div>
-    </section>
+    </Card>
   )
 }

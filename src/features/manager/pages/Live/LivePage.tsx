@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
+import { PageHeader } from '../../../../shared/components/ui'
 import { missionsApi } from '../../api/missionsApi'
 import { livePageMessages } from './LivePage.messages'
 import '../../manager.css'
+import './live.css'
 import { ACTIVE_STATUSES } from './liveHelpers'
 import { LiveMainPanel } from './components/LiveMainPanel'
 import { LiveSidebar } from './components/LiveSidebar'
@@ -46,27 +48,30 @@ export function LivePage({ missionId }: { missionId?: string }) {
   }, [listQuery])
 
   return (
-    <div className="odm-live" aria-label={t.sidebar.ariaLabel}>
-      {/* Left sidebar */}
-      <LiveSidebar
-        activeMissions={activeMissions}
-        listQuery={listQuery}
-        selected={selected}
-        setSelectedId={setSelectedId}
-      />
+    <>
+      <PageHeader title={t.sidebar.ariaLabel} subtitle={t.subtitle} />
+      <div className="odm-live" aria-label={t.sidebar.ariaLabel}>
+        {/* Left sidebar */}
+        <LiveSidebar
+          activeMissions={activeMissions}
+          listQuery={listQuery}
+          selected={selected}
+          setSelectedId={setSelectedId}
+        />
 
-      {/* Main panel */}
-      <div className="odm-live-main">
-        {selected ? (
-          <LiveMainPanel
-            key={selected.id}
-            mission={selected}
-            onCancelled={handleCancelled}
-          />
-        ) : (
-          !listQuery.loading && <LiveEmptyState />
-        )}
+        {/* Main panel */}
+        <div className="odm-live-main">
+          {selected ? (
+            <LiveMainPanel
+              key={selected.id}
+              mission={selected}
+              onCancelled={handleCancelled}
+            />
+          ) : (
+            !listQuery.loading && <LiveEmptyState />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

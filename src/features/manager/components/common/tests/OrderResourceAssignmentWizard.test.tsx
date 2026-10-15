@@ -106,7 +106,7 @@ async function enter(id: string) {
   )
   fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
   await waitFor(() =>
-    expect(document.querySelector('.odm-or-pagehead')).toHaveTextContent(
+    expect(document.querySelector('.ui-page-header')).toHaveTextContent(
       'Gán nguồn lực',
     ),
   )
@@ -114,7 +114,7 @@ async function enter(id: string) {
 function chooseStaff(name: string) {
   const picker = screen
     .getByPlaceholderText('Tìm theo tên hoặc email...')
-    .closest('div[style*="position: absolute"]')!
+    .closest('.odm-dp-panel')!
   fireEvent.click(
     within(picker as HTMLElement).getByRole('button', {
       name: new RegExp(name),
@@ -136,7 +136,7 @@ async function fill(id: string) {
 it('reuses the staff/device/confirmation screens for M1 then M2 and returns to the same Order selector', async () => {
   render(<OrderResourceAssignmentWizard orderId="o" onClose={vi.fn()} />)
   await enter('m1')
-  expect(document.querySelectorAll('.odm-or-role-card')).toHaveLength(4)
+  expect(document.querySelectorAll('.odm-dp-role')).toHaveLength(4)
   expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   await fill('1')
   fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
@@ -153,9 +153,7 @@ it('reuses the staff/device/confirmation screens for M1 then M2 and returns to t
     INSPECTOR: ['s1'],
   })
   await enter('m2')
-  expect(document.querySelectorAll('.odm-or-role-card.is-filled')).toHaveLength(
-    0,
-  )
+  expect(document.querySelectorAll('.odm-dp-role.is-filled')).toHaveLength(0)
   await fill('2')
   fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
   await screen.findByRole('region', { name: 'Chọn nhiệm vụ để phân công' })
@@ -198,9 +196,7 @@ it('warns before discarding a Mission draft and preloads a clean sibling', async
     name: 'Bỏ thay đổi chưa lưu?',
   })
   fireEvent.click(within(dialog).getByRole('button', { name: 'Hủy' }))
-  expect(document.querySelectorAll('.odm-or-role-card.is-filled')).toHaveLength(
-    1,
-  )
+  expect(document.querySelectorAll('.odm-dp-role.is-filled')).toHaveLength(1)
   fireEvent.click(screen.getByRole('button', { name: 'Chọn nhiệm vụ khác' }))
   fireEvent.click(
     within(await screen.findByRole('dialog')).getByRole('button', {
@@ -208,9 +204,7 @@ it('warns before discarding a Mission draft and preloads a clean sibling', async
     }),
   )
   await enter('m2')
-  expect(document.querySelectorAll('.odm-or-role-card.is-filled')).toHaveLength(
-    0,
-  )
+  expect(document.querySelectorAll('.odm-dp-role.is-filled')).toHaveLength(0)
 })
 it('localizes partial failure, reloads authoritative state and does not auto retry', async () => {
   vi.mocked(missionApi.assignResources).mockRejectedValue(
@@ -310,7 +304,7 @@ it.each([
     await screen.findByRole('heading', { name: 'Gán nguồn lực' })
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
     expect(
-      document.querySelector('.odm-or-tab[aria-current="step"]'),
+      document.querySelector('.odm-dp-tab[aria-current="step"]'),
     ).toHaveTextContent(
       { staff: 'Nhân sự', device: 'Thiết bị', confirm: 'Xác nhận' }[step],
     )
@@ -375,9 +369,7 @@ it('partial siblings resume independently and Back from generic Staff returns to
     />,
   )
   await enter('m2')
-  expect(document.querySelectorAll('.odm-or-role-card.is-filled')).toHaveLength(
-    1,
-  )
+  expect(document.querySelectorAll('.odm-dp-role.is-filled')).toHaveLength(1)
   expect(screen.queryByText('Staff 1')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
   await screen.findByRole('region', { name: 'Chọn nhiệm vụ để phân công' })

@@ -10,9 +10,12 @@ export const telemetryPanelMessages = defineMessages({
       speed: 'Tốc độ',
       satellites: 'Vệ tinh',
       gps: 'GPS',
+      signal: 'Tín hiệu',
     },
-    connectionStatus: 'connection_status',
-    telemetryActive: 'telemetry_active',
+    yes: 'Có',
+    no: 'Không',
+    connectionStatus: 'Kết nối:',
+    telemetryActive: 'Telemetry đang hoạt động:',
   },
   en: {
     telemetry: {
@@ -23,8 +26,11 @@ export const telemetryPanelMessages = defineMessages({
       speed: 'Speed',
       satellites: 'Satellites',
       gps: 'GPS',
+      signal: 'Signal',
     },
-    connectionStatus: 'connection_status',
-    telemetryActive: 'telemetry_active',
+    yes: 'Yes',
+    no: 'No',
+    connectionStatus: 'Connection:',
+    telemetryActive: 'Telemetry active:',
   },
 })

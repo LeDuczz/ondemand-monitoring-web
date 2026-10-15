@@ -30,21 +30,17 @@ export function StaffRoleCard({
   const { t } = useI18n(staffRoleCardMessages)
   return (
     <section
-      className={`odm-or-role-card${selected.length > 0 ? ' is-filled' : ''}`}
+      className={`odm-dp-role${selected.length > 0 ? ' is-filled' : ''}`}
     >
-      <span className="odm-or-role-head">
-        <span>
-          {t.roleIcons[role]} {t.roles[role]}
-        </span>
+      <span className="odm-dp-role-head">
+        <span>{t.roles[role]}</span>
         {selected.length > 0 && (
-          <span className="odm-or-role-check">
-            <OrderIcon name="check" size={16} />
+          <span className="odm-dp-check">
+            <OrderIcon name="check" size={14} />
           </span>
         )}
       </span>
-      <span className="odm-or-muted" style={{ fontSize: 12 }}>
-        {t.roleDescriptions[role]}
-      </span>
+      <span className="odm-dp-role-desc">{t.roleDescriptions[role]}</span>
       <StaffCombobox
         role={role}
         staff={operators.data ?? []}

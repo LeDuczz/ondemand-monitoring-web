@@ -29,84 +29,24 @@ export function StaffOptionRow({
       type="button"
       onMouseEnter={() => setActiveIndex(index)}
       onClick={() => choose(item)}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '36px minmax(0, 1fr) auto',
-        gap: 10,
-        alignItems: 'center',
-        width: '100%',
-        minHeight: 62,
-        padding: '8px 10px',
-        border: 0,
-        borderRadius: 10,
-        background: isSelected ? '#eff6ff' : isActive ? '#f8fafc' : '#fff',
-        textAlign: 'left',
-        cursor: 'pointer',
-      }}
+      className={`odm-dp-row${isSelected ? ' is-selected' : ''}${isActive ? ' is-active' : ''}`}
     >
       <StaffAvatar staff={item} />
-      <span style={{ minWidth: 0 }}>
-        <span
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            minWidth: 0,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: '#0f172a',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {item.fullName}
-          </span>
+      <span className="odm-dp-body">
+        <span className="odm-dp-name-line">
+          <span className="odm-dp-name">{item.fullName}</span>
           {usedRoles.map((usedRole) => (
-            <span
-              key={usedRole}
-              style={{
-                borderRadius: 999,
-                padding: '2px 7px',
-                background: '#e0f2fe',
-                color: '#0369a1',
-                fontSize: 11,
-                fontWeight: 700,
-                flex: '0 0 auto',
-              }}
-            >
+            <span key={usedRole} className="odm-dp-roletag">
               {t.roles[usedRole]}
             </span>
           ))}
         </span>
-        <span
-          style={{
-            display: 'block',
-            marginTop: 2,
-            fontSize: 12,
-            color: '#64748b',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {item.email}
-        </span>
-        <span style={{ display: 'block', marginTop: 5 }}>
+        <span className="odm-dp-sub">{item.email}</span>
+        <span>
           <StaffStatusBadge />
         </span>
       </span>
-      <span
-        style={{
-          color: isSelected ? '#2563eb' : 'transparent',
-          fontSize: 18,
-          fontWeight: 900,
-        }}
-      >
-        ✓
-      </span>
+      <span className="odm-dp-row-tick">✓</span>
     </button>
   )
 }

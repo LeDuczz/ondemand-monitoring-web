@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
+import { PageHeader } from '../../../../shared/components/ui'
 import { OrderWorkflowStepper } from './OrderWorkflowStepper'
 import { DispatchWizardTabs } from '../../pages/MissionDispatch/components/DispatchWizardTabs'
 import type { Confirmation } from './usePlanningConfirmation'
+import '../../pages/MissionDispatch/missionDispatch.css'
 import { useI18n } from '../../../../shared/i18n'
 import { wizardMissionStepMessages } from './WizardMissionStep.messages'
 
@@ -36,16 +38,19 @@ export function WizardMissionStep({
   return (
     <div className="odm-or">
       {confirmation.dialog}
-      <div className="odm-or-pagehead odm-or-pagehead-row">
-        <h1 className="odm-or-title">{t.assignResources}</h1>
-        <button
-          className="odm-or-btn-outline"
-          disabled={busy}
-          onClick={() => leave(true)}
-        >
-          {returnLabel}
-        </button>
-      </div>
+      <PageHeader
+        back={
+          <button
+            type="button"
+            className="odm-dp-back"
+            disabled={busy}
+            onClick={() => leave(true)}
+          >
+            {returnLabel}
+          </button>
+        }
+        title={t.assignResources}
+      />
       <OrderWorkflowStepper currentStep={3} />
       <DispatchWizardTabs
         activeStep="mission"
@@ -58,7 +63,7 @@ export function WizardMissionStep({
       {allAssigned && (
         <div className="odm-planning-complete" role="status">
           <span>{t.allMissionsAreFullyAssigned}</span>
-          <button className="odm-or-btn odm-or-btn-blue" onClick={onClose}>
+          <button className="odm-btn odm-btn-p" onClick={onClose}>
             {t.finishAssignment}
           </button>
         </div>
@@ -66,7 +71,7 @@ export function WizardMissionStep({
       <div className="odm-or-actionbar">
         <div className="odm-or-actionbar-hint">{t.chonDungNhiemVuTruoc}</div>
         <button
-          className="odm-or-btn odm-or-btn-blue"
+          className="odm-btn odm-btn-p"
           disabled={!candidateId || !eligible(candidateId)}
           onClick={next}
         >

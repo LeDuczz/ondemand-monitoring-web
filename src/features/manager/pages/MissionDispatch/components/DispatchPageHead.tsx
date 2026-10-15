@@ -1,9 +1,19 @@
+import {
+  PageHeader,
+  StatusBadge,
+  toUiTone,
+} from '../../../../../shared/components/ui'
+import {
+  getMissionStatusLabel,
+  missionStatusTone,
+} from '../../../../../shared/lib/statusTone'
 import { managerHref } from '../../../routes'
 import type { OrderDispatchContext } from '../orderDispatchContext'
 import type { Mission } from '../../../../mission/types/mission'
 import { useI18n } from '../../../../../shared/i18n'
 import { dispatchPageHeadMessages } from './DispatchPageHead.messages'
 
+/** Back link, mission code and status badge. */
 export function DispatchPageHead({
   orderContext,
   current,
@@ -13,36 +23,39 @@ export function DispatchPageHead({
   current: Mission
   busy: boolean
 }) {
-  const { t } = useI18n(dispatchPageHeadMessages)
+  const { t, lang } = useI18n(dispatchPageHeadMessages)
+  const back = orderContext ? (
+    <button
+      type="button"
+      className="odm-dp-back"
+      disabled={busy}
+      onClick={() => orderContext.onReturn()}
+    >
+      {orderContext.missionScoped
+        ? orderContext.returnLabel
+        : t.chooseAnotherMission}
+    </button>
+  ) : (
+    <a href={managerHref({ screen: 'orderQueue' })}>{t.backToOrders}</a>
+  )
   return (
-    <div className="odm-or-pagehead odm-or-pagehead-row">
-      <div>
-        <h1 className="odm-or-title">{t.createMissionTitle}</h1>
-        <p className="odm-or-subtitle">{t.createMissionSubtitle}</p>
-        {orderContext && (
-          <span className="odm-or-pill odm-or-pill-blue">
-            {current.missionCode}
-          </span>
-        )}
-      </div>
-      {orderContext ? (
-        <button
-          className="odm-or-btn-outline"
-          disabled={busy}
-          onClick={() => orderContext.onReturn()}
+    <PageHeader
+      back={back}
+      title={t.createMissionTitle}
+      subtitle={
+        <>
+          <span className="odm-mono">{current.missionCode}</span>
+          {' · '}
+          {t.createMissionSubtitle}
+        </>
+      }
+      actions={
+        <StatusBadge
+          tone={toUiTone(missionStatusTone[current.status] ?? 'gray')}
         >
-          {orderContext.missionScoped
-            ? orderContext.returnLabel
-            : t.chooseAnotherMission}
-        </button>
-      ) : (
-        <a
-          className="odm-or-btn-outline"
-          href={managerHref({ screen: 'orderQueue' })}
-        >
-          {t.backToOrders}
-        </a>
-      )}
-    </div>
+          {getMissionStatusLabel(current.status, lang) ?? current.status}
+        </StatusBadge>
+      }
+    />
   )
 }

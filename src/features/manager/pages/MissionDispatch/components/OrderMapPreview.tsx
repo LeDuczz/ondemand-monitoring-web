@@ -55,11 +55,11 @@ export function OrderMapPreview({
           <svg width="26" height="33" viewBox="0 0 30 38">
             <path
               d="M15 37C15 37 3 24.5 3 14.5a12 12 0 0 1 24 0C27 24.5 15 37 15 37z"
-              fill="#1677ff"
-              stroke="#fff"
+              fill="var(--ui-primary)"
+              stroke="var(--ui-surface)"
               strokeWidth="2"
             />
-            <circle cx="15" cy="14.5" r="4.5" fill="#fff" />
+            <circle cx="15" cy="14.5" r="4.5" fill="var(--ui-surface)" />
           </svg>
         </span>
         <span

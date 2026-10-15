@@ -33,73 +33,19 @@ export function DeviceOptionRow({
       aria-label={`${t.chooseDroneAria} ${item.label}`}
       onMouseEnter={() => setActiveIndex(index)}
       onClick={() => choose(item)}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '36px minmax(0, 1fr) auto',
-        gap: 10,
-        alignItems: 'center',
-        width: '100%',
-        minHeight: 62,
-        padding: '8px 10px',
-        border: 0,
-        borderRadius: 10,
-        background: isSelected ? '#eff6ff' : isActive ? '#f8fafc' : '#fff',
-        textAlign: 'left',
-        cursor: 'pointer',
-      }}
+      className={`odm-dp-row${isSelected ? ' is-selected' : ''}${isActive ? ' is-active' : ''}`}
     >
-      <span
-        aria-hidden="true"
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 12,
-          display: 'grid',
-          placeItems: 'center',
-          background: '#dbeafe',
-          color: '#2563eb',
-        }}
-      >
+      <span aria-hidden="true" className="odm-dp-icon">
         <ManagerIcon name="drones" size={18} />
       </span>
-      <span style={{ minWidth: 0 }}>
-        <span
-          style={{
-            display: 'block',
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#0f172a',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {serial || t.device}
-        </span>
-        <span
-          style={{
-            display: 'block',
-            marginTop: 2,
-            fontSize: 12,
-            color: '#64748b',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {model}
-        </span>
-        <span style={{ display: 'block', marginTop: 5 }}>
+      <span className="odm-dp-body">
+        <span className="odm-dp-name">{serial || t.device}</span>
+        <span className="odm-dp-sub">{model}</span>
+        <span>
           <StaffStatusBadge />
         </span>
       </span>
-      <span
-        style={{
-          color: isSelected ? '#2563eb' : 'transparent',
-          fontSize: 18,
-          fontWeight: 900,
-        }}
-      >
-        ✓
-      </span>
+      <span className="odm-dp-row-tick">✓</span>
     </button>
   )
 }

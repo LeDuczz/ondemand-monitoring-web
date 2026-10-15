@@ -98,7 +98,7 @@ it('refreshes staff conflict, removes only unavailable selections and returns to
     await screen.findByText(/Nhân sự không còn khả dụng/),
   ).toBeInTheDocument()
   expect(
-    document.querySelector('.odm-or-tabs [aria-current="step"]'),
+    document.querySelector('.odm-dp-tabs [aria-current="step"]'),
   ).toHaveTextContent('Nhân sự')
   expect(screen.getByLabelText('Chọn nhân sự cho Phi công')).toBeInTheDocument()
   expect(
@@ -130,7 +130,7 @@ it('refreshes device conflict, retains valid devices/crew and returns to device'
     await screen.findByText(/Thiết bị không còn khả dụng/),
   ).toBeInTheDocument()
   expect(
-    document.querySelector('.odm-or-tabs [aria-current="step"]'),
+    document.querySelector('.odm-dp-tabs [aria-current="step"]'),
   ).toHaveTextContent('Thiết bị')
   fireEvent.click(screen.getByRole('button', { name: /Thêm thiết bị/ }))
   expect(
@@ -163,7 +163,7 @@ it('keeps the exact failed device step even when another staff option also becam
   fireEvent.click(await screen.findByRole('button', { name: 'Phân công' }))
   await screen.findByText(/Thiết bị không còn khả dụng/)
   expect(
-    document.querySelector('.odm-or-tabs [aria-current="step"]'),
+    document.querySelector('.odm-dp-tabs [aria-current="step"]'),
   ).toHaveTextContent('Thiết bị')
 })
 
@@ -283,7 +283,7 @@ it('switching Mission clears local selection and cannot publish a late sibling r
   fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Phi công'))
   const picker = screen
     .getByPlaceholderText('Tìm theo tên hoặc email...')
-    .closest('div[style*="position: absolute"]')!
+    .closest('.odm-dp-panel')!
   expect(
     within(picker as HTMLElement).getByRole('button', {
       name: /Sibling staff/,

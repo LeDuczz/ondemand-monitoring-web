@@ -97,10 +97,7 @@ export function DeviceCombobox({
   }
 
   return (
-    <div
-      ref={rootRef}
-      style={{ position: 'relative', display: 'grid', gap: 10 }}
-    >
+    <div ref={rootRef} className="odm-dp-combo">
       {selectedDevices.length > 0 ? (
         <>
           <DeviceSelectedTrigger
@@ -109,13 +106,12 @@ export function DeviceCombobox({
             selectedDevices={selectedDevices}
             onRemove={onRemove}
           />
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="odm-dp-combo-actions">
             <button
               ref={triggerRef}
               type="button"
               className="odm-btn odm-btn-gh odm-btn-sm"
               onClick={openPicker}
-              style={{ minHeight: 30, borderRadius: 8 }}
             >
               {t.changeDevice}
             </button>
@@ -123,7 +119,6 @@ export function DeviceCombobox({
               type="button"
               className="odm-btn odm-btn-gh odm-btn-sm"
               onClick={onClear}
-              style={{ minHeight: 30, borderRadius: 8 }}
             >
               {t.clearDevice}
             </button>

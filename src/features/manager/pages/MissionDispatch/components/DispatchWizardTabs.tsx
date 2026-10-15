@@ -3,21 +3,6 @@ import { OrderIcon } from '../../../components/common/OrderIcon'
 import { dispatchSteps, type DispatchStep } from '../liveDispatchHelpers'
 import { dispatchWizardTabsMessages } from './DispatchWizardTabs.messages'
 
-const stepSubtitles: Record<
-  DispatchStep,
-  | 'orderStepHint'
-  | 'missionStepHint'
-  | 'staffStepHint'
-  | 'deviceStepHint'
-  | 'confirmStepHint'
-> = {
-  order: 'orderStepHint',
-  mission: 'missionStepHint',
-  staff: 'staffStepHint',
-  device: 'deviceStepHint',
-  confirm: 'confirmStepHint',
-}
-
 export function DispatchWizardTabs({
   activeStep,
   onStep,
@@ -37,12 +22,12 @@ export function DispatchWizardTabs({
     confirm: t.confirmTab,
   }
   return (
-    <nav className="odm-or-card odm-or-tabs" aria-label={t.tabsAria}>
+    <nav className="odm-dp-tabs" aria-label={t.tabsAria}>
       {dispatchSteps.map((step, index) => (
         <button
           key={step}
           type="button"
-          className={`odm-or-tab${activeStep === step ? ' is-active' : ''}${
+          className={`odm-dp-tab${activeStep === step ? ' is-active' : ''}${
             index < activeStepIndex ? ' is-done' : ''
           }`}
           aria-current={activeStep === step ? 'step' : undefined}
@@ -51,19 +36,14 @@ export function DispatchWizardTabs({
           }
           onClick={() => onStep(step)}
         >
-          <span className="odm-or-tab-dot">
+          <span className="odm-dp-tab-dot">
             {index < activeStepIndex ? (
-              <OrderIcon name="check" size={14} />
+              <OrderIcon name="check" size={12} />
             ) : (
               index + 1
             )}
           </span>
-          <span className="odm-or-tab-text">
-            <span className="odm-or-tab-label">{stepLabels[step]}</span>
-            <span className="odm-or-tab-hint">
-              {t[stepSubtitles[step]] as string}
-            </span>
-          </span>
+          {stepLabels[step]}
         </button>
       ))}
     </nav>

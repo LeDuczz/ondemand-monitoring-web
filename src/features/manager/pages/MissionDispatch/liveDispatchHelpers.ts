@@ -29,18 +29,18 @@ export const dispatchSteps: DispatchStep[] = [
   'confirm',
 ]
 
-export function fmtDate(value?: string | null) {
+export function fmtDate(value?: string | null, locale = 'vi-VN') {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('vi-VN')
+  return date.toLocaleDateString(locale)
 }
 
-export function fmtDateTime(value?: string | null) {
+export function fmtDateTime(value?: string | null, locale = 'vi-VN') {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('vi-VN', {
+  return date.toLocaleString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -49,15 +49,12 @@ export function fmtDateTime(value?: string | null) {
   })
 }
 
-export function preferredTimeLabel(value?: string | null) {
+export function preferredTimeLabel(
+  value: string | null | undefined,
+  labels: Record<string, string>,
+) {
   const key = value?.trim().toUpperCase()
   if (!key) return ''
-  const labels: Record<string, string> = {
-    MORNING: 'Buổi sáng',
-    AFTERNOON: 'Buổi chiều',
-    EVENING: 'Buổi tối',
-    NIGHT: 'Buổi đêm',
-  }
   return labels[key] ?? value?.trim() ?? ''
 }
 
@@ -68,15 +65,22 @@ export function missionStatusLabel(
   return labels[status] ?? status
 }
 
-export function requestedWindow(current: {
-  orderPreferredDateFrom?: string | null
-  orderPreferredDateTo?: string | null
-  orderPreferredTimeName?: string | null
-}) {
-  const from = fmtDate(current.orderPreferredDateFrom)
-  const to = fmtDate(current.orderPreferredDateTo)
+export function requestedWindow(
+  current: {
+    orderPreferredDateFrom?: string | null
+    orderPreferredDateTo?: string | null
+    orderPreferredTimeName?: string | null
+  },
+  preferredTimes: Record<string, string>,
+  locale = 'vi-VN',
+) {
+  const from = fmtDate(current.orderPreferredDateFrom, locale)
+  const to = fmtDate(current.orderPreferredDateTo, locale)
   const dateText = from === to ? from : `${from} → ${to}`
-  const timeLabel = preferredTimeLabel(current.orderPreferredTimeName)
+  const timeLabel = preferredTimeLabel(
+    current.orderPreferredTimeName,
+    preferredTimes,
+  )
   return timeLabel ? `${dateText} · ${timeLabel}` : dateText
 }
 

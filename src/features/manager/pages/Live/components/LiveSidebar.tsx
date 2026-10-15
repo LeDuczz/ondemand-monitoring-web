@@ -19,86 +19,51 @@ export function LiveSidebar({
 }) {
   const { t } = useI18n(liveSidebarMessages)
   return (
-    <div className="odm-live-sidebar">
+    <aside className="odm-live-sidebar">
       <div className="odm-live-sidebar-head">
         {t.sidebar.activeMissions}
         {activeMissions.length > 0 && (
-          <span
-            style={{
-              marginLeft: 6,
-              background: 'var(--blue-solid)',
-              color: 'var(--blue-on)',
-              borderRadius: 10,
-              fontSize: 11,
-              padding: '1px 6px',
-              fontWeight: 600,
-            }}
-          >
-            {activeMissions.length}
-          </span>
+          <span className="odm-live-count">{activeMissions.length}</span>
         )}
       </div>
 
-      {listQuery.loading && (
-        <div
-          style={{
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-          aria-busy="true"
-        >
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="odm-sk"
-              style={{ height: 68, borderRadius: 6 }}
-            />
-          ))}
-        </div>
-      )}
-
-      {!listQuery.loading && !!listQuery.error && (
-        <div
-          style={{ padding: 16, fontSize: 12, color: 'var(--red-fg)' }}
-          role="alert"
-        >
-          {t.sidebar.loadError}
-          <button
-            type="button"
-            className="odm-btn"
-            style={{ display: 'block', marginTop: 8 }}
-            onClick={listQuery.reload}
-          >
-            {t.sidebar.retry}
-          </button>
-        </div>
-      )}
-
-      {!listQuery.loading &&
-        !listQuery.error &&
-        activeMissions.length === 0 && (
-          <div
-            style={{
-              padding: 16,
-              fontSize: 12,
-              color: 'var(--tx3)',
-              textAlign: 'center',
-            }}
-          >
-            {t.sidebar.noActiveMissions}
+      <div className="odm-live-list">
+        {listQuery.loading && (
+          <div aria-busy="true">
+            {[1, 2, 3].map((i) => (
+              <span key={i} className="odm-sk odm-live-sk" />
+            ))}
           </div>
         )}
 
-      {activeMissions.map((m) => (
-        <ActiveMissionItem
-          key={m.id}
-          mission={m}
-          selected={selected?.id === m.id}
-          onSelect={() => setSelectedId(m.id)}
-        />
-      ))}
-    </div>
+        {!listQuery.loading && !!listQuery.error && (
+          <div className="odm-live-note is-error" role="alert">
+            {t.sidebar.loadError}
+            <button
+              type="button"
+              className="odm-btn"
+              onClick={listQuery.reload}
+            >
+              {t.sidebar.retry}
+            </button>
+          </div>
+        )}
+
+        {!listQuery.loading &&
+          !listQuery.error &&
+          activeMissions.length === 0 && (
+            <p className="odm-live-note">{t.sidebar.noActiveMissions}</p>
+          )}
+
+        {activeMissions.map((m) => (
+          <ActiveMissionItem
+            key={m.id}
+            mission={m}
+            selected={selected?.id === m.id}
+            onSelect={() => setSelectedId(m.id)}
+          />
+        ))}
+      </div>
+    </aside>
   )
 }

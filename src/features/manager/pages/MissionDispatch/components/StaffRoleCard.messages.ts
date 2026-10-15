@@ -2,12 +2,6 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const staffRoleCardMessages = defineMessages({
   vi: {
-    roleIcons: {
-      PILOT: '✈',
-      OPERATOR: '⌁',
-      MAINTAINER: '🔧',
-      INSPECTOR: '✓',
-    },
     roles: {
       PILOT: 'Phi công',
       OPERATOR: 'Vận hành',
@@ -22,12 +16,6 @@ export const staffRoleCardMessages = defineMessages({
     },
   },
   en: {
-    roleIcons: {
-      PILOT: '✈',
-      OPERATOR: '⌁',
-      MAINTAINER: '🔧',
-      INSPECTOR: '✓',
-    },
     roles: {
       PILOT: 'Pilot',
       OPERATOR: 'Operator',

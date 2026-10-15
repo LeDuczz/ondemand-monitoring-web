@@ -38,34 +38,9 @@ export function StaffPickerPanel({
   return (
     <>
       {open && (
-        <div
-          style={{
-            position: 'absolute',
-            zIndex: 80,
-            top: 'calc(100% + 8px)',
-            left: 0,
-            width: 'min(420px, calc(100vw - 48px))',
-            maxHeight: 280,
-            overflow: 'hidden',
-            border: '1px solid #e2e8f0',
-            borderRadius: 12,
-            background: '#fff',
-            boxShadow: '0 10px 30px rgba(15,23,42,0.12)',
-          }}
-        >
-          <div style={{ padding: 10, borderBottom: '1px solid #e2e8f0' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                minHeight: 38,
-                padding: '0 10px',
-                border: '1px solid #e2e8f0',
-                borderRadius: 9,
-                background: '#f8fafc',
-              }}
-            >
+        <div className="odm-dp-panel">
+          <div className="odm-dp-panel-head">
+            <div className="odm-dp-search">
               <ManagerIcon name="maintenance" size={15} />
               <input
                 ref={inputRef}
@@ -76,36 +51,13 @@ export function StaffPickerPanel({
                   setActiveIndex(0)
                 }}
                 onKeyDown={handleKeyDown}
-                style={{
-                  width: '100%',
-                  border: 0,
-                  outline: 0,
-                  background: 'transparent',
-                  fontSize: 14,
-                  color: '#0f172a',
-                }}
               />
             </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <span
-                style={{
-                  borderRadius: 999,
-                  padding: '4px 9px',
-                  background: '#eff6ff',
-                  color: '#2563eb',
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
-              >
-                {t.availableFilter}
-              </span>
-            </div>
+            <span className="odm-dp-filter">{t.availableFilter}</span>
           </div>
-          <div style={{ maxHeight: 200, overflowY: 'auto', padding: 6 }}>
+          <div className="odm-dp-list">
             {filtered.length === 0 ? (
-              <div style={{ padding: 16, color: '#64748b', fontSize: 14 }}>
-                {t.noStaffFound}
-              </div>
+              <div className="odm-dp-list-empty">{t.noStaffFound}</div>
             ) : (
               filtered.map((item, index) => {
                 const usedRoles = selectedRoleByStaff.get(item.id) ?? []

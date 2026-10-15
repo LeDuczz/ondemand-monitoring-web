@@ -113,10 +113,7 @@ export function StaffCombobox({
   }
 
   return (
-    <div
-      ref={rootRef}
-      style={{ position: 'relative', display: 'grid', gap: 8 }}
-    >
+    <div ref={rootRef} className="odm-dp-combo">
       {selectedStaff.length > 0 ? (
         <>
           <StaffSelectedTrigger
@@ -130,7 +127,6 @@ export function StaffCombobox({
             type="button"
             className="odm-btn odm-btn-gh odm-btn-sm"
             onClick={openPicker}
-            style={{ justifySelf: 'start', minHeight: 30, borderRadius: 8 }}
           >
             {t.changeStaff}
           </button>

@@ -22,92 +22,39 @@ export function StaffSelectedTrigger({
       ref={triggerRef}
       type="button"
       onClick={openPicker}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '36px minmax(0, 1fr) auto',
-        gap: 10,
-        alignItems: 'center',
-        width: '100%',
-        minHeight: 74,
-        padding: 10,
-        border: '1px solid #bfdbfe',
-        borderRadius: 12,
-        background: '#eff6ff',
-        textAlign: 'left',
-        cursor: 'pointer',
-      }}
+      className="odm-dp-selected"
     >
-      <span style={{ display: 'grid', gap: 8, gridColumn: '1 / -1' }}>
-        {selectedStaff.map((selected) => (
-          <span
-            key={selected.id}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '36px minmax(0, 1fr) auto',
-              gap: 10,
-              alignItems: 'center',
-            }}
-          >
-            <StaffAvatar staff={selected} />
-            <span style={{ minWidth: 0 }}>
-              <span
-                style={{
-                  display: 'block',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#0f172a',
-                }}
-              >
-                {selected.fullName}
-              </span>
-              <span
-                style={{
-                  display: 'block',
-                  marginTop: 2,
-                  fontSize: 12,
-                  color: '#64748b',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {selected.email}
-              </span>
-              <span style={{ display: 'block', marginTop: 5 }}>
-                <StaffStatusBadge />
-              </span>
-            </span>
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label={t.clearStaff}
-              onClick={(event) => {
-                event.stopPropagation()
-                onRemove(selected.id)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  onRemove(selected.id)
-                }
-              }}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 999,
-                display: 'inline-grid',
-                placeItems: 'center',
-                color: '#64748b',
-                background: '#fff',
-                border: '1px solid #dbeafe',
-                fontSize: 18,
-              }}
-            >
-              ×
+      {selectedStaff.map((selected) => (
+        <span key={selected.id} className="odm-dp-selected-item">
+          <StaffAvatar staff={selected} />
+          <span className="odm-dp-body">
+            <span className="odm-dp-name">{selected.fullName}</span>
+            <span className="odm-dp-sub">{selected.email}</span>
+            <span>
+              <StaffStatusBadge />
             </span>
           </span>
-        ))}
-      </span>
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={t.clearStaff}
+            className="odm-dp-x"
+            onClick={(event) => {
+              event.stopPropagation()
+              onRemove(selected.id)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                event.stopPropagation()
+                onRemove(selected.id)
+              }
+            }}
+          >
+            ×
+          </span>
+        </span>
+      ))}
     </button>
   )
 }

@@ -14,12 +14,15 @@ import {
   requestedWindow,
 } from '../liveDispatchHelpers'
 import type { Mission } from '../../../../mission/types/mission'
+import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
+import { liveDispatchHelpersMessages } from '../liveDispatchHelpers.messages'
 import { orderInfoStepMessages } from './OrderInfoStep.messages'
 import { OrderMapPreview } from './OrderMapPreview'
 
 export function OrderInfoStep({ current }: { current: Mission }) {
-  const { t } = useI18n(orderInfoStepMessages)
+  const { t, locale } = useI18n(orderInfoStepMessages)
+  const helpers = useI18n(liveDispatchHelpersMessages).t
   const currentOrderCode = displayOrderCode(current.orderCode, current.orderId)
   const hasTarget = current.latitude != null && current.longitude != null
   const target = hasTarget
@@ -32,16 +35,8 @@ export function OrderInfoStep({ current }: { current: Mission }) {
   const mapImageUrl = `${env.apiBaseUrl}${SIMULATION_MAP_TOP_IMAGE}?v=${SIMULATION_MAP_VERSION}`
   const imageStyle = simulationMapImageStyle(SIMULATION_MAP_IMAGE_CROP)
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="doc" size={18} />
-          {t.orderInfoTitle}
-        </span>
-      </header>
-      <div
-        className={`odm-or-card-body odm-or-order-body${target ? ' has-map' : ''}`}
-      >
+    <Card title={t.orderInfoTitle}>
+      <div className={`odm-or-order-body${target ? ' has-map' : ''}`}>
         <dl className="odm-or-summary-list">
           <div>
             <dt>
@@ -76,7 +71,7 @@ export function OrderInfoStep({ current }: { current: Mission }) {
               <OrderIcon name="calendar" size={16} />
               {t.customerDeadline}
             </dt>
-            <dd>{requestedWindow(current)}</dd>
+            <dd>{requestedWindow(current, helpers.preferredTimes, locale)}</dd>
           </div>
           <div>
             <dt>
@@ -95,6 +90,6 @@ export function OrderInfoStep({ current }: { current: Mission }) {
           />
         )}
       </div>
-    </section>
+    </Card>
   )
 }

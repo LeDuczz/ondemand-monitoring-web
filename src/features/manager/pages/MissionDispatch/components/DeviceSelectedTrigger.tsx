@@ -22,70 +22,20 @@ export function DeviceSelectedTrigger({
       ref={triggerRef}
       type="button"
       onClick={openPicker}
-      style={{
-        display: 'grid',
-        gap: 8,
-        width: '100%',
-        minHeight: 74,
-        padding: 10,
-        border: '1px solid #bfdbfe',
-        borderRadius: 12,
-        background: '#eff6ff',
-        textAlign: 'left',
-        cursor: 'pointer',
-      }}
+      className="odm-dp-selected"
     >
       {selectedDevices.map((device) => {
         const [serial, modelPart] = device.label.split(' (')
         const model = modelPart ? modelPart.replace(/\)$/, '') : t.unknownModel
         return (
-          <span
-            key={device.id}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '36px minmax(0, 1fr) auto',
-              gap: 10,
-              alignItems: 'center',
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                display: 'grid',
-                placeItems: 'center',
-                background: '#dbeafe',
-                color: '#2563eb',
-              }}
-            >
+          <span key={device.id} className="odm-dp-selected-item">
+            <span aria-hidden="true" className="odm-dp-icon">
               <ManagerIcon name="drones" size={18} />
             </span>
-            <span style={{ minWidth: 0 }}>
-              <span
-                style={{
-                  display: 'block',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#0f172a',
-                }}
-              >
-                {serial || t.device}
-              </span>
-              <span
-                style={{
-                  display: 'block',
-                  marginTop: 2,
-                  fontSize: 12,
-                  color: '#64748b',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {model}
-              </span>
-              <span style={{ display: 'block', marginTop: 5 }}>
+            <span className="odm-dp-body">
+              <span className="odm-dp-name">{serial || t.device}</span>
+              <span className="odm-dp-sub">{model}</span>
+              <span>
                 <StaffStatusBadge />
               </span>
             </span>
@@ -93,6 +43,7 @@ export function DeviceSelectedTrigger({
               role="button"
               tabIndex={0}
               aria-label={`${t.clearDevice} ${device.label}`}
+              className="odm-dp-x"
               onClick={(event) => {
                 event.stopPropagation()
                 onRemove(device.id)
@@ -103,17 +54,6 @@ export function DeviceSelectedTrigger({
                   event.stopPropagation()
                   onRemove(device.id)
                 }
-              }}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 999,
-                display: 'inline-grid',
-                placeItems: 'center',
-                color: '#64748b',
-                background: '#fff',
-                border: '1px solid #dbeafe',
-                fontSize: 18,
               }}
             >
               ×

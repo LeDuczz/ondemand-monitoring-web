@@ -1,4 +1,4 @@
-import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Card, StatusBadge } from '../../../../../shared/components/ui'
 import { DeviceCombobox } from './DeviceCombobox'
 import type { MissionStaffRole } from '../../../../mission/types/mission'
 import type { AvailableDrone } from '../../../../staff/api/droneApi'
@@ -28,44 +28,32 @@ export function DeviceStep({
 }) {
   const { t } = useI18n(deviceStepMessages)
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="drone" size={18} />
-          {t.step2}
-        </span>
-        {selectedDrones.length > 0 && (
-          <span className="odm-or-pill odm-or-pill-blue">
+    <Card
+      title={t.step2}
+      actions={
+        selectedDrones.length > 0 ? (
+          <StatusBadge tone="info">
             {t.deviceSelectedCount(selectedDrones.length)}
-          </span>
-        )}
-      </header>
-      <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
-        <p className="odm-or-muted" style={{ margin: 0 }}>
+          </StatusBadge>
+        ) : null
+      }
+    >
+      <div className="odm-dp-stack">
+        <p className="odm-dp-help">
           {t.deviceHelp} {t.deviceAvailabilityHint}
         </p>
         {!drones.data?.length ? (
-          <p className="odm-or-empty">{t.noAvailableDrones}</p>
+          <p className="odm-dp-empty">{t.noAvailableDrones}</p>
         ) : (
-          <section className="odm-or-device-box">
-            <div className="odm-or-role-head" style={{ marginBottom: 10 }}>
-              <span>
-                <b>{t.selectedDevice}</b>
-                <span
-                  className="odm-or-muted"
-                  style={{ display: 'block', fontSize: 13 }}
-                >
-                  {selectedDrones.length > 0
-                    ? t.deviceSelectedCount(selectedDrones.length)
-                    : t.chooseDroneOption}
-                </span>
-              </span>
-              {selectedDrones.length > 0 && (
-                <span className="odm-or-role-check">
-                  <OrderIcon name="check" size={16} />
-                </span>
-              )}
-            </div>
+          <section className="odm-dp-role">
+            <span className="odm-dp-role-head">
+              <span>{t.selectedDevice}</span>
+            </span>
+            <span className="odm-dp-role-desc">
+              {selectedDrones.length > 0
+                ? t.deviceSelectedCount(selectedDrones.length)
+                : t.chooseDroneOption}
+            </span>
             <DeviceCombobox
               devices={drones.data ?? []}
               selectedIds={droneIds}
@@ -97,6 +85,6 @@ export function DeviceStep({
           </section>
         )}
       </div>
-    </section>
+    </Card>
   )
 }

@@ -1,0 +1,343 @@
+/*
+ * Shared portal shell (sidebar + top bar + content area) used by the Admin and
+ * Manager layouts. Tokens are the shared --ui-* tokens from ui/ui.css.
+ */
+
+.odm-shell-root {
+  --shell-sidebar-w: 240px;
+
+  height: 100vh;
+  overflow: hidden;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+.odm-shell-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Sidebar ---------- */
+
+.odm-shell-side {
+  width: var(--shell-sidebar-w);
+  flex: none;
+  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--ui-space-4) var(--ui-space-3);
+}
+
+.odm-shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-5);
+  text-decoration: none;
+  color: var(--ui-text);
+}
+
+.odm-shell-brand-mark {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  object-position: left center;
+  flex: none;
+}
+
+.odm-shell-brand-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 0.95;
+}
+
+.odm-shell-brand-primary {
+  color: var(--brand-primary, var(--ui-text));
+}
+
+.odm-shell-brand-accent {
+  color: var(--brand-accent, var(--ui-primary));
+  -webkit-text-fill-color: var(--brand-accent, var(--ui-primary));
+  font-size: 1.22em;
+}
+
+.odm-shell-nav-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.odm-shell-navg {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ui-text-3);
+  padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-1);
+  letter-spacing: 0.06em;
+}
+
+.odm-shell-navi {
+  position: relative;
+  white-space: normal;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ui-text-2);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: background 0.1s;
+}
+
+.odm-shell-navi > span:not(.odm-shell-navc) {
+  min-width: 0;
+}
+
+.odm-shell-navi svg {
+  flex: none;
+}
+
+.odm-shell-navi:hover {
+  background: var(--ui-surface-2);
+}
+
+.odm-shell-navi.is-active {
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-weight: 600;
+}
+
+.odm-shell-navi.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ui-primary);
+}
+
+.odm-shell-navc {
+  margin-left: auto;
+  flex: none;
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.odm-shell-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--ui-space-3) var(--ui-space-2);
+  border-top: 1px solid var(--ui-border);
+  margin-top: var(--ui-space-2);
+}
+
+.odm-shell-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex: none;
+}
+
+.odm-shell-user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.odm-shell-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.odm-shell-user-email {
+  font-size: 11px;
+  color: var(--ui-text-3);
+  overflow-wrap: anywhere;
+}
+
+.odm-shell-logout {
+  width: 100%;
+  margin-top: var(--ui-space-1);
+}
+
+/* ---------- Main area ---------- */
+
+.odm-shell-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.odm-shell-topbar {
+  min-height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-8);
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+
+.odm-shell-breadcrumb {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ui-text-2);
+  overflow-wrap: anywhere;
+}
+
+.odm-shell-topbar-spacer {
+  flex: 1;
+}
+
+.odm-shell-search {
+  position: relative;
+  width: 280px;
+  flex: none;
+}
+
+.odm-shell-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ui-text-3);
+  pointer-events: none;
+}
+
+.odm-shell-search-input {
+  height: 34px;
+  padding-left: 32px;
+  width: 100%;
+}
+
+.odm-shell-bell {
+  position: relative;
+}
+
+.odm-shell-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ui-danger);
+  border: 2px solid var(--ui-surface);
+}
+
+.odm-shell-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--ui-space-8);
+}
+
+.odm-shell-content-inner {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.adm-card-hint {
+  margin: 0 0 var(--ui-space-3);
+  font-size: 13px;
+  color: var(--ui-text-3);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (min-width: 900px) {
+  .odm-shell-menu-toggle,
+  .odm-shell-scrim {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .odm-shell-side {
+    position: fixed;
+    top: 0;
+    left: calc(-1 * var(--shell-sidebar-w) - 24px);
+    bottom: 0;
+    z-index: 200;
+    transition: left 0.2s;
+  }
+
+  .odm-shell-side.is-open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .odm-shell-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 199;
+    border: 0;
+    cursor: default;
+  }
+
+  .odm-shell-menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--ui-space-1);
+    color: var(--ui-text-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .odm-shell-topbar {
+    padding: var(--ui-space-2) var(--ui-space-4);
+  }
+
+  .odm-shell-content {
+    padding: var(--ui-space-5) var(--ui-space-4);
+  }
+
+  .odm-shell-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 640px) {
+  .odm-shell-search {
+    display: none;
+  }
+}

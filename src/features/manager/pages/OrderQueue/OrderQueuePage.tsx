@@ -4,10 +4,14 @@ import { StateView } from '../../../../shared/components/odm/StateView'
 import { Card, PageHeader } from '../../../../shared/components/ui'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
+import { financeApi } from '../../../finance/api'
 import { ordersApi } from '../../api/ordersApi'
+import { planningApi } from '../../api/planningApi'
+import type { OrderCreateResponse } from '../../types/orders'
 import { managerHref } from '../../routes'
 import { orderQueuePageMessages } from './OrderQueuePage.messages'
 import '../../manager.css'
+import { PaidOrdersTable } from './components/PaidOrdersTable'
 import { QueueEmptyState } from './components/QueueEmptyState'
 import { QueueSkeleton } from './components/QueueSkeleton'
 import { QueueStats } from './components/QueueStats'
@@ -17,7 +21,35 @@ import { matchesQueueFilter, type QueueFilter } from './queueHelpers'
 
 export function OrderQueuePage() {
   const { t } = useI18n(orderQueuePageMessages)
-  const query = useApiQuery((signal) => ordersApi.getQueue(signal), [])
+  const query = useApiQuery(async (signal) => {
+    const [pending, approved] = await Promise.all([
+      ordersApi.getQueue(signal),
+      ordersApi.getApproved(signal),
+    ])
+    // Approved + deposit paid + no live Mission yet = ready for planning.
+    const paid = (
+      await Promise.all(
+        approved.map(async (order) => {
+          try {
+            const [invoice, missions] = await Promise.all([
+              financeApi.getManagerInvoice(order.id, signal),
+              planningApi.getOrderMissions(order.id, signal),
+            ])
+            const hasActiveMission = missions.some(
+              (mission) => mission.status !== 'CANCELLED',
+            )
+            return invoice.paidAmount >= invoice.depositAmount &&
+              !hasActiveMission
+              ? order
+              : null
+          } catch {
+            return null
+          }
+        }),
+      )
+    ).filter((order): order is OrderCreateResponse => order !== null)
+    return { pending, paid }
+  }, [])
   const [filter, setFilter] = useState<QueueFilter>('ALL')
   const [search, setSearch] = useState('')
 
@@ -31,7 +63,8 @@ export function OrderQueuePage() {
     }
   }, [query.reload])
 
-  const data = useMemo(() => query.data ?? [], [query.data])
+  const data = useMemo(() => query.data?.pending ?? [], [query.data])
+  const paidOrders = useMemo(() => query.data?.paid ?? [], [query.data])
   // Re-evaluated whenever the list reloads (every 15s / on focus).
   const now = useMemo(() => new Date(), [query.data])
   const visible = useMemo(() => {
@@ -82,13 +115,15 @@ export function OrderQueuePage() {
     <div className="odm-or">
       <PageHeader
         title={t.title}
-        subtitle={t.summary(data.length)}
+        subtitle={t.summary(data.length, paidOrders.length)}
         actions={actions}
       />
 
-      {data.length === 0 ? (
+      {paidOrders.length > 0 ? <PaidOrdersTable data={paidOrders} /> : null}
+
+      {data.length === 0 && paidOrders.length === 0 ? (
         <QueueEmptyState />
-      ) : (
+      ) : data.length > 0 ? (
         <>
           <QueueStats data={data} now={now} />
           <QueueToolbar
@@ -104,7 +139,7 @@ export function OrderQueuePage() {
             emptyDescription={t.noMatchDescription}
           />
         </>
-      )}
+      ) : null}
     </div>
   )
 }

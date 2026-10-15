@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import { env } from '../../../../../config/env'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { ApproveButton, type ApproveResult } from './ApproveButton'
 import { DecisionModal } from './DecisionModal'
@@ -30,7 +29,6 @@ export function OrderApprovalActions({
   const { t } = useI18n(orderApprovalActionsMessages)
 
   const [modal, setModal] = useState<ModalKind>(null)
-  const infoDisabled = !env.useMockApi && import.meta.env.MODE !== 'test'
 
   return (
     <>
@@ -45,8 +43,6 @@ export function OrderApprovalActions({
           <button
             type="button"
             className="odm-or-btn odm-or-btn-amber"
-            disabled={infoDisabled}
-            title={infoDisabled ? t.requestInfoDisabled : undefined}
             onClick={() => setModal('info')}
           >
             <OrderIcon name="alert" size={16} />

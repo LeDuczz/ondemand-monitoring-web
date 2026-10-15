@@ -187,7 +187,7 @@ export function DispatchBody({
       <DispatchHead setupMode={setupMode} mission={mission} />
 
       {setupMode ? (
-        <OrderWorkflowStepper currentStep={bothAssigned ? 4 : 3} />
+        <OrderWorkflowStepper currentStep={bothAssigned ? 7 : 6} />
       ) : null}
 
       <MissionBriefCard mission={mission} suggestions={suggestions} />

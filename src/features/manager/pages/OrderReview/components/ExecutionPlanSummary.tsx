@@ -1,12 +1,10 @@
 import type { ExecutionPlan } from '../../../types/planning'
 import type { OrderChecklistSnapshot } from '../../../types/orders'
-import { planningBlocker } from '../../../lib/planningErrors'
 import { useI18n } from '../../../../../shared/i18n'
 import { executionPlanSummaryMessages } from './ExecutionPlanSummary.messages'
 
 export function ExecutionPlanSummary({
   plan,
-  items,
 }: {
   plan: ExecutionPlan
   items: OrderChecklistSnapshot[]
@@ -34,22 +32,6 @@ export function ExecutionPlanSummary({
           <dd>{coverage.repeated}</dd>
         </div>
       </dl>
-      {coverage.uncoveredItemIds.length > 0 && (
-        <ul aria-label={t.checklistNotCovered}>
-          {coverage.uncoveredItemIds.map((id) => (
-            <li key={id}>
-              {items.find((item) => item.id === id)?.content ?? id}
-            </li>
-          ))}
-        </ul>
-      )}
-      {plan.planStatus === 'DRAFT' && plan.blockers.length > 0 && (
-        <ul aria-label={t.finalizeBlockers}>
-          {plan.blockers.map((blocker) => (
-            <li key={blocker}>{planningBlocker(blocker)}</li>
-          ))}
-        </ul>
-      )}
     </section>
   )
 }

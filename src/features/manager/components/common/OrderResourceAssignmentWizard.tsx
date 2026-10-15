@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { planningApi } from '../../api/planningApi'
 import { ordersApi } from '../../api/ordersApi'
 import { LiveDispatchPage } from '../../pages/MissionDispatch/components/LiveDispatchPage'
+import { OrderMissionsOverview } from './OrderMissionsOverview'
 import { staffRoleLabel } from './missionDetailHelpers'
 import type { MissionStaffRole } from '../../../mission/types/mission'
 import { assignmentReadiness } from '../../lib/assignmentReadiness'
@@ -27,11 +28,16 @@ export function OrderResourceAssignmentWizard({
   initialMissionId,
   onClose,
   returnLabel: returnLabelProp,
+  embedded = false,
+  onStepChange,
 }: {
   orderId: string
   initialMissionId?: string
   onClose: () => void
   returnLabel?: string
+  embedded?: boolean
+  /** Current step of the 8-step order workflow (6, 7 or 8) for an outer stepper. */
+  onStepChange?: (step: 6 | 7 | 8) => void
 }) {
   const { t, lang } = useI18n(orderResourceAssignmentWizardMessages)
   const returnLabel = returnLabelProp ?? t.backToOrderPlan
@@ -64,6 +70,8 @@ export function OrderResourceAssignmentWizard({
     initialMissionId ?? null,
   )
   const [draft, setDraft] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
+  const [liveStep, setLiveStep] = useState<6 | 7>(6)
   const [busy, setBusy] = useState(false)
   const updateDraft = useCallback((dirty: boolean, saving: boolean) => {
     setDraft(dirty)
@@ -134,6 +142,37 @@ export function OrderResourceAssignmentWizard({
     />
   )
   const current = data?.missions.find((m) => m.id === activeId)
+  const outerStep: 6 | 7 | 8 =
+    reviewing && !current ? 8 : current ? liveStep : 6
+  useEffect(() => {
+    onStepChange?.(outerStep)
+  }, [outerStep, onStepChange])
+  if (reviewing && !current && data)
+    return (
+      <>
+        {confirmation.dialog}
+        <OrderMissionsOverview
+          missions={data.missions}
+          scopeLabels={Object.fromEntries(
+            data.plan.missions.map((m) => [m.missionId, m.scopeLabel]),
+          )}
+          loading={query.loading}
+          onReload={query.reload}
+          onAssignMore={(id) => {
+            setCandidateId(id)
+            setActiveId(id)
+            setDraft(false)
+            setReviewing(false)
+          }}
+          onDone={() => {
+            setReviewing(false)
+            onClose()
+          }}
+          doneLabel={returnLabel}
+          embedded={embedded}
+        />
+      </>
+    )
   if (current && !query.loading && !eligible(current.id))
     return (
       <NotEligibleNotice
@@ -174,6 +213,7 @@ export function OrderResourceAssignmentWizard({
           missionId={current.id}
           orderContext={{
             orderId,
+            embeddedInOrderReview: embedded,
             missionScoped: Boolean(initialMissionId),
             returnLabel,
             initialStep: assignmentReadiness(current).step,
@@ -181,12 +221,14 @@ export function OrderResourceAssignmentWizard({
             missionSelection: selection,
             onMissionNext: next,
             onReturn: (toOrigin = false) => leave(toOrigin),
+            onGlobalStep: setLiveStep,
             onAssigned: () => {
               setActiveId(null)
               setDraft(false)
               setBusy(false)
               query.reload()
-              if (initialMissionId) onClose()
+              // Mission-scoped flow: step 8 shows every Mission for a final check.
+              if (initialMissionId) setReviewing(true)
             },
             onChanged: query.reload,
             onDraftState: updateDraft,
@@ -234,6 +276,7 @@ export function OrderResourceAssignmentWizard({
       returnLabel={returnLabel}
       selection={selection}
       allAssigned={allAssigned}
+      embedded={embedded}
       onClose={onClose}
       candidateId={candidateId}
       eligible={eligible}

@@ -59,7 +59,7 @@
   left: 16px;
   right: 16px;
   bottom: 8px;
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
   background: var(--sf3);
   overflow: hidden;
@@ -692,4 +692,46 @@
 }
 .mc-cancel:hover {
   color: #0f172a;
+}
+
+/* Read-only preview before the pilot accepts the mission */
+.mc-preview-notice {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--blue-dot);
+  border-radius: 8px;
+  background: var(--blue-bg);
+  color: var(--blue-fg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mc-preview-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.mc-preview-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: var(--sf2);
+}
+.mc-preview-mark {
+  color: var(--tx2);
+  line-height: 1.4;
+}
+.mc-preview-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.mc-preview-text small {
+  color: var(--tx2);
+  font-size: 12.5px;
 }

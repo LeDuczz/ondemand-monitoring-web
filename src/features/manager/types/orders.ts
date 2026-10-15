@@ -35,6 +35,9 @@ export type OrderQueueItem = {
 export type OrderCustomerContact = OrderCustomerSummary & {
   email: string | null
   phone: string | null
+  address?: string | null
+  citizenIdentificationNumber?: string | null
+  companyTaxCode?: string | null
 }
 
 /** `order.media_requirements[]` item [BRIEF] — brief-only field. */
@@ -120,6 +123,24 @@ export type OrderDetail = {
   termsAcceptedAt?: string | null
   termsVersion?: string | null
   deliverables?: OrderDeliverableResponse[] | null
+  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  flightAreaReviewReason?: string | null
+  flightAreaReviewNote?: string | null
+  requestedScopeFeasible?: boolean | null
+  flightAreaReviewedById?: string | null
+  flightAreaReviewedByName?: string | null
+  flightAreaReviewedAt?: string | null
+  requiresFlightPermissionReview?: boolean | null
+}
+
+export type FlightAreaReviewStatus =
+  'PRELIMINARY_PASS' | 'RESTRICTED' | 'UNDETERMINED' | 'UNSUITABLE'
+
+export type FlightAreaReviewRequest = {
+  status: FlightAreaReviewStatus
+  requestedScopeFeasible?: boolean | null
+  reason?: string | null
+  note?: string | null
 }
 
 export type FindingCustomerAction = 'ACCEPTED' | 'IGNORED' | 'AUTO_FIXED' | null
@@ -230,6 +251,11 @@ export type OrderCreateResponse = {
   customerId: string
   customerName: string
   customerEmail?: string | null
+  customerPhoneNumber?: string | null
+  customerAddress?: string | null
+  customerCompanyName?: string | null
+  customerCitizenIdentificationNumber?: string | null
+  customerCompanyTaxCode?: string | null
   title: string
   serviceId: string
   serviceName: string
@@ -273,6 +299,14 @@ export type OrderCreateResponse = {
   reviewById: string | null
   reviewByName: string | null
   reviewAt: string | null
+  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  flightAreaReviewReason?: string | null
+  flightAreaReviewNote?: string | null
+  requestedScopeFeasible?: boolean | null
+  flightAreaReviewedById?: string | null
+  flightAreaReviewedByName?: string | null
+  flightAreaReviewedAt?: string | null
+  requiresFlightPermissionReview?: boolean | null
   deliverables: OrderDeliverableResponse[]
   createdAt: string
   updatedAt: string

@@ -1,12 +1,16 @@
 import { act } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { setLanguage } from '../../../../../shared/i18n'
 import { ordersApi } from '../../../api/ordersApi'
 import type { OrderCreateResponse } from '../../../types/orders'
 import { OrderQueuePage } from '../OrderQueuePage'
+import { financeApi } from '../../../../finance/api'
+import type { Invoice } from '../../../../finance/types'
+import { planningApi } from '../../../api/planningApi'
+import type { MissionResponse } from '../../../types/missions'
 
 const rows: OrderCreateResponse[] = [
   {
@@ -67,7 +71,87 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+beforeEach(() => {
+  vi.spyOn(ordersApi, 'getApproved').mockResolvedValue([])
+  vi.spyOn(financeApi, 'getManagerInvoice').mockRejectedValue(
+    new Error('No invoice'),
+  )
+  vi.spyOn(planningApi, 'getOrderMissions').mockResolvedValue([])
+})
+
 describe('OrderQueuePage', () => {
+  it('shows a deposited approved order in the planning queue', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(ordersApi.getApproved).mockResolvedValue([
+      { ...rows[0], orderStatus: 'APPROVED' },
+    ])
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({
+      paidAmount: 1_000_000,
+      depositAmount: 1_000_000,
+    } as Invoice)
+    render(<OrderQueuePage />)
+    expect(
+      await screen.findByText('Đơn đã nhận cọc – chờ lập kế hoạch'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Đã nhận cọc')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Lập kế hoạch' })).toHaveAttribute(
+      'href',
+      '#portal/manager/orders/ord-2609-0157',
+    )
+    expect(
+      screen.queryByText('Không còn đơn chờ duyệt'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not put an order back in the planning queue after a mission was created', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(ordersApi.getApproved).mockResolvedValue([
+      { ...rows[0], orderStatus: 'APPROVED' },
+    ])
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({
+      paidAmount: 1_000_000,
+      depositAmount: 1_000_000,
+    } as Invoice)
+    vi.mocked(planningApi.getOrderMissions).mockResolvedValue([
+      {
+        id: 'mission-1',
+        status: 'WAITING_CREW_CONFIRMATION',
+      } as MissionResponse,
+    ])
+
+    render(<OrderQueuePage />)
+
+    expect(
+      await screen.findByText('Không còn đơn chờ duyệt'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('0 đơn chờ duyệt · 0 đơn chờ lập kế hoạch'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Lập kế hoạch' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('allows planning again when every previous mission was cancelled', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(ordersApi.getApproved).mockResolvedValue([
+      { ...rows[0], orderStatus: 'APPROVED' },
+    ])
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({
+      paidAmount: 1_000_000,
+      depositAmount: 1_000_000,
+    } as Invoice)
+    vi.mocked(planningApi.getOrderMissions).mockResolvedValue([
+      { id: 'mission-cancelled', status: 'CANCELLED' } as MissionResponse,
+    ])
+
+    render(<OrderQueuePage />)
+
+    expect(
+      await screen.findByRole('link', { name: 'Lập kế hoạch' }),
+    ).toBeInTheDocument()
+  })
+
   it('shows loading, then the queue rows', async () => {
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue(rows)
     render(<OrderQueuePage />)
@@ -75,7 +159,9 @@ describe('OrderQueuePage', () => {
     await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
     expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
     expect(screen.getByText('#ORD-2609-0160')).toBeInTheDocument()
-    expect(screen.getByText('2 đơn đang chờ')).toBeInTheDocument()
+    expect(
+      screen.getByText('2 đơn chờ duyệt · 0 đơn chờ lập kế hoạch'),
+    ).toBeInTheDocument()
   })
 
   it('shows the error state and retries', async () => {
@@ -111,6 +197,8 @@ describe('OrderQueuePage', () => {
 
     act(() => setLanguage('en'))
     expect(screen.getByText('Order review queue')).toBeInTheDocument()
-    expect(screen.getByText('2 orders pending')).toBeInTheDocument()
+    expect(
+      screen.getByText('2 pending review · 0 ready for planning'),
+    ).toBeInTheDocument()
   })
 })

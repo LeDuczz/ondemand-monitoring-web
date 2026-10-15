@@ -1,7 +1,9 @@
 import type { OrderDetail } from '../../types/orders'
 import { FactList } from './FactList'
 import {
+  addOnItems,
   dateOnly,
+  deliverableSummary,
   dateTime,
   list,
   resultFormatsFromDeliverables,
@@ -13,8 +15,8 @@ import {
 import { RequestChips } from './RequestDetailsHeader'
 import { requestDetailsHeaderMessages } from './RequestDetailsHeader.messages'
 import { Card } from '../../../../shared/components/ui'
-import { LegacyMediaRequirements } from './LegacyMediaRequirements'
-import { RequestDeliverables } from './RequestDeliverables'
+import { FactSection } from './FactSection'
+import { OrderIcon } from './OrderIcon'
 import { useI18n } from '../../../../shared/i18n'
 import { orderCustomerRequestDetailsMessages } from './OrderCustomerRequestDetails.messages'
 
@@ -41,12 +43,29 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
   const resultFormats =
     resultFormatsFromDeliverables(f, order) ?? list(f, order.resultFormats)
 
-  // What the manager needs first: how fast, how high, how long, what comes out.
-  const keyFacts: DetailItem[] = [
-    {
-      label: t.flightPurpose,
-      value: text(f, order.flightPurpose),
-    },
+  const deliverableFacts: DetailItem[] =
+    order.deliverables?.map((deliverable, index) => ({
+      label: deliverable.deliverableTypeName || t.mediaN(index + 1),
+      value:
+        deliverableSummary(
+          f,
+          deliverable.requirement,
+          deliverable.deliverableTypeName,
+        ).join(' · ') || t.noData,
+    })) ??
+    order.mediaRequirements?.map((requirement, index) => ({
+      label: t.mediaN(index + 1),
+      value: requirement.label,
+    })) ??
+    []
+  const deliverableAddOns =
+    order.deliverables?.flatMap((deliverable) =>
+      addOnItems(f, deliverable.requirement),
+    ) ?? []
+
+  const scopeFacts: DetailItem[] = [
+    { label: t.usagePurpose, value: text(f, order.usagePurpose) },
+    { label: t.flightPurpose, value: text(f, order.flightPurpose) },
     {
       label: t.flightAltitude,
       value: order.altitudeM != null ? `${order.altitudeM} m` : null,
@@ -56,29 +75,31 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
       value:
         order.estimatedLengthM != null ? `${order.estimatedLengthM} m` : null,
     },
-    {
-      label: t.resultDeadline,
-      value: dateOnly(f, order.resultDeadline),
-    },
-    {
-      label: t.resultFormats,
-      value: resultFormats,
-    },
-    {
-      label: t.deliveryMethods,
-      value: list(f, order.deliveryMethods),
-    },
+    { label: t.recurrence, value: recurrence },
   ]
 
-  // Operational context, still visible but visually secondary.
-  const extraFacts: DetailItem[] = [
+  const siteFacts: DetailItem[] = [
     { label: t.siteContact, value: contact },
     { label: t.accessNotes, value: order.accessNotes },
-    { label: t.permitInfo, value: permit || null },
+  ]
+  const weatherFallback = text(f, order.weatherFallback)
+
+  const permitFacts: DetailItem[] = [
     {
-      label: t.validUntil,
-      value: dateOnly(f, order.permitExpiresOn),
+      label: t.permitRequired,
+      value:
+        order.permitRequired == null
+          ? null
+          : order.permitRequired
+            ? t.permitRequiredYes
+            : t.permitRequiredNo,
     },
+    {
+      label: t.permitStatus,
+      value:
+        permit || (order.permitRequired === false ? t.notApplicable : null),
+    },
+    { label: t.validUntil, value: dateOnly(f, order.permitExpiresOn) },
     {
       label: t.permitFiles,
       value:
@@ -95,16 +116,28 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
               </a>
             ))}
           </span>
+        ) : order.permitRequired ? (
+          t.notProvided
         ) : null,
     },
+  ]
+
+  const resultFacts: DetailItem[] = [
+    ...deliverableFacts,
+    { label: t.resultDeadline, value: dateOnly(f, order.resultDeadline) },
     {
-      label: t.permitRequired,
-      value: text(f, order.permitRequired),
+      label: t.resultFormats,
+      // A deliverable row above already shows the output format and its
+      // requirement details, so repeating the format here adds no information.
+      value: order.deliverables?.length ? null : resultFormats,
     },
-    { label: t.recurrence, value: recurrence },
+    { label: t.deliveryMethods, value: list(f, order.deliveryMethods) },
     {
-      label: t.weatherFallback,
-      value: text(f, order.weatherFallback),
+      label: t.dataRetention,
+      value:
+        order.dataRetentionDays != null
+          ? t.ngay(order.dataRetentionDays)
+          : null,
     },
   ]
 
@@ -122,14 +155,17 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
   ]
 
   const priorityLabel = text(f, order.priority)
-  const purposeLabel = text(f, order.usagePurpose)
   const urgent = order.priority === 'URGENT' || order.priority === 'HIGH'
-  const hasSummary = Boolean(
-    order.title || order.description || priorityLabel || purposeLabel,
-  )
+  const hasSummary = Boolean(order.title || order.description || priorityLabel)
   const hasDetails =
     hasSummary ||
-    visibleItems([...keyFacts, ...extraFacts, ...legalFacts]).length > 0 ||
+    visibleItems([
+      ...scopeFacts,
+      ...siteFacts,
+      ...permitFacts,
+      ...resultFacts,
+      ...legalFacts,
+    ]).length > 0 ||
     (order.deliverables != null && order.deliverables.length > 0) ||
     (order.mediaRequirements != null && order.mediaRequirements.length > 0)
 
@@ -138,13 +174,7 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
   return (
     <Card
       title={header.customerRequestDetails}
-      actions={
-        <RequestChips
-          priorityLabel={priorityLabel}
-          purposeLabel={purposeLabel}
-          urgent={urgent}
-        />
-      }
+      actions={<RequestChips priorityLabel={priorityLabel} urgent={urgent} />}
     >
       <div className="odm-or-req-body">
         {hasSummary ? (
@@ -154,13 +184,45 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
           </div>
         ) : null}
 
-        <FactList items={keyFacts} />
+        <div className="odm-or-req-section-grid">
+          <FactSection
+            title={t.sectionScope}
+            icon="target"
+            items={scopeFacts}
+          />
+          <FactSection title={t.sectionSite} icon="pin" items={siteFacts} />
+          <FactSection
+            title={t.sectionPermit}
+            icon="shield"
+            items={permitFacts}
+          />
+          <FactSection
+            title={t.sectionResult}
+            icon="database"
+            items={resultFacts}
+          >
+            {deliverableAddOns.length > 0 ? (
+              <div className="odm-or-addon-list">
+                <span>{t.additionalRequirements}</span>
+                {deliverableAddOns.map((item) => (
+                  <p key={item}>{item}</p>
+                ))}
+              </div>
+            ) : null}
+          </FactSection>
+        </div>
 
-        <LegacyMediaRequirements order={order} />
-
-        <RequestDeliverables order={order} />
-
-        <FactList items={extraFacts} />
+        {weatherFallback ? (
+          <aside className="odm-or-req-fallback" aria-label={t.weatherFallback}>
+            <span className="odm-or-req-fallback-icon" aria-hidden="true">
+              <OrderIcon name="alert" size={22} />
+            </span>
+            <span className="odm-or-req-fallback-label">
+              {t.weatherFallback}
+            </span>
+            <strong>{weatherFallback}</strong>
+          </aside>
+        ) : null}
 
         {visibleItems(legalFacts).length > 0 ? (
           <details className="odm-or-req-legal">

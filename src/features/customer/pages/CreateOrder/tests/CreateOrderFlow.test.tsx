@@ -8,6 +8,7 @@ import { setLanguage } from '../../../../../shared/i18n'
 import { CreateOrderPage } from '../CreateOrderPage'
 import { customerApi } from '../../../api/customerApi'
 import { CREATE_ORDER_DRAFT_STORAGE_KEY } from '../../../lib/createOrder/draftStorage'
+import { ApiError } from '../../../../../shared/api/httpClient'
 
 const originalScrollIntoView = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
@@ -115,7 +116,7 @@ describe('CreateOrderPage wizard', () => {
           (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
         ).toBe('dt-photo'),
       )
-      fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+      fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
       fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
       await screen.findByRole('dialog')
       fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -245,7 +246,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-photo'),
     )
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
 
     expect(await screen.findByText('Tóm tắt yêu cầu')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -259,6 +260,38 @@ describe('CreateOrderPage wizard', () => {
     expect(
       window.localStorage.getItem('odm.customer.createOrderDraft.v2'),
     ).toBeNull()
+  })
+
+  it('routes a backend preferredDateFrom error back to the schedule field', async () => {
+    vi.spyOn(customerApi, 'createOrder').mockRejectedValueOnce(
+      new ApiError(
+        'preferredDateFrom must be at least 7 days after the request date',
+        { status: 400, method: 'POST', path: '/api/orders' },
+      ),
+    )
+    await renderWizard()
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect(
+        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
+      ).toBe('dt-photo'),
+    )
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    await screen.findByRole('dialog')
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+
+    expect(
+      await screen.findByText(
+        'Ngày bay sớm nhất phải cách ngày tạo yêu cầu ít nhất 7 ngày để ODMS chuẩn bị thủ tục giấy phép bay.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Ngày sớm nhất/)).toHaveFocus(),
+    )
   })
 
   it('blocks submit until the terms and security commitment are accepted', async () => {
@@ -276,7 +309,7 @@ describe('CreateOrderPage wizard', () => {
       await screen.findByText(/Bạn cần đồng ý điều khoản/),
     ).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })
@@ -297,7 +330,7 @@ describe('CreateOrderPage wizard', () => {
     fireEvent.change(screen.getByLabelText(/Thời hạn lưu trữ dữ liệu/), {
       target: { value: '180' },
     })
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -320,7 +353,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-photo'),
     )
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.keyDown(document, { key: 'Escape' })

@@ -22,7 +22,9 @@ export const deliveryOptionsCardMessages = defineMessages({
     termsHeading: 'Điều khoản và cam kết bảo mật',
     termsRequired: 'Bắt buộc',
     termsLabel:
-      'Tôi đã đọc và đồng ý với điều khoản sử dụng dịch vụ, chính sách bảo mật dữ liệu và xác nhận có quyền yêu cầu giám sát tại khu vực đã chọn.',
+      'Tôi xác nhận mục đích giám sát và đồng ý với chính sách xử lý dữ liệu.',
+    termsPrivacyNotice:
+      'Hình ảnh phát hiện có người sẽ tự động bị loại bỏ khỏi kết quả nhiệm vụ.',
     commitmentsToggle: 'Xem nội dung cam kết',
     commitmentUse:
       'Dữ liệu giám sát chỉ được sử dụng để thực hiện và bàn giao dịch vụ theo yêu cầu đã thống nhất.',
@@ -56,7 +58,9 @@ export const deliveryOptionsCardMessages = defineMessages({
     termsHeading: 'Terms and security commitment',
     termsRequired: 'Required',
     termsLabel:
-      'I have read and agree to the service terms and data privacy policy, and confirm that I have the right to request monitoring in the selected area.',
+      'I confirm the monitoring purpose and agree to the data processing policy.',
+    termsPrivacyNotice:
+      'Images containing people will be automatically excluded from the mission results.',
     commitmentsToggle: 'View the commitment',
     commitmentUse:
       'Monitoring data is used only to perform and deliver the service in accordance with the agreed request.',

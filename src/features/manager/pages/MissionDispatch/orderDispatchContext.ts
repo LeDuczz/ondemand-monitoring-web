@@ -6,6 +6,8 @@ import type { MissionStaffRole } from '../../../mission/types/mission'
 
 export type OrderDispatchContext = {
   orderId: string
+  /** Rendered inside the Order review page, which already owns the header and stepper. */
+  embeddedInOrderReview?: boolean
   missionScoped: boolean
   returnLabel: string
   initialStep: 'staff' | 'device' | 'confirm'
@@ -14,6 +16,8 @@ export type OrderDispatchContext = {
   onMissionNext: () => boolean
   onReturn: (toOrigin?: boolean) => void
   onAssigned: () => void
+  /** Reports the order workflow step (6 = resources, 7 = confirm). */
+  onGlobalStep?: (step: 6 | 7) => void
   onChanged: () => void
   onDraftState: (dirty: boolean, busy: boolean) => void
   initialDevices: string[]

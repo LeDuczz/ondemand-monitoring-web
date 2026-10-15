@@ -5,6 +5,7 @@ import { MissionUploadedMedia } from '../../../../media/components/MissionUpload
 import type { MissionResultApprovalStatus } from '../../../../mission/types/mission'
 import type { MissionPermissions } from '../../../../mission/types/permissions'
 import type { OperatorMission } from '../../../types/mission'
+import { useMissionDateFormatter } from '../missionDate'
 import {
   fetchLatestPostflightCheck,
   fetchLatestWeatherCheck,
@@ -17,11 +18,14 @@ import type {
   RuntimePreflightStatus,
   WeatherPreflightStatus,
 } from '../types'
+import { isAwaitingResponse } from '../missionResponse'
+import { DecisionSummary } from './DecisionSummary'
 import { DroneDeviceCard } from './DroneDeviceCard'
 import { ManagerNoteCard } from './ManagerNoteCard'
 import { MissionHeader } from './MissionHeader'
 import { missionDashboardMessages } from './MissionDashboard.messages'
-import { MissionInfoCard } from './MissionInfoCard'
+import { locationLabel, MissionInfoCard } from './MissionInfoCard'
+import { missionInfoCardMessages } from './MissionInfoCard.messages'
 import { MissionMapCard } from './MissionMapCard'
 import { PostcheckCard } from './PostcheckCard'
 import { PrecheckCard } from './PrecheckCard'
@@ -53,6 +57,8 @@ export function MissionDashboard({
   onOpenReject: () => void
 }) {
   const { t } = useI18n(missionDashboardMessages)
+  const { t: infoT } = useI18n(missionInfoCardMessages)
+  const formatDate = useMissionDateFormatter()
   const deviceId = mission.deviceId
   const [preflightStatus, setPreflightStatus] =
     useState<RuntimePreflightStatus | null>(() =>
@@ -103,18 +109,92 @@ export function MissionDashboard({
     return () => controller.abort()
   }, [deviceId, mission.id])
 
+  if (isAwaitingResponse(mission)) {
+    return (
+      <div className="mds-pending">
+        <MissionHeader mission={mission} access={access} />
+        <p className="mds-meta-line">
+          {[
+            mission.serviceLabel,
+            [formatDate(mission.date), mission.startTime]
+              .filter(Boolean)
+              .join(' · '),
+            locationLabel(mission.location, infoT),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+        <DecisionSummary mission={mission} />
+        {actionError ? (
+          <div
+            role="alert"
+            style={{
+              marginBottom: 12,
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'var(--red-bg)',
+              color: 'var(--red-fg)',
+              border: '1px solid var(--red-dot)',
+              fontSize: 13,
+            }}
+          >
+            {actionError}
+          </div>
+        ) : null}
+        <MissionMapCard mission={mission} />
+        <div className="mds-tab-grid" style={{ marginTop: 16 }}>
+          <div className="mds-col">
+            <MissionInfoCard mission={mission} />
+            {mission.managerNote ? <ManagerNoteCard mission={mission} /> : null}
+          </div>
+          <div className="mds-col">
+            <DroneDeviceCard mission={mission} />
+          </div>
+        </div>
+        <details className="odm-card mds-pending-checklist">
+          <summary>
+            {t.pendingChecklistTitle}
+            <small>{t.pendingChecklistHint}</small>
+          </summary>
+          <div className="mds-pending-checklist-body">{monitoringSection}</div>
+        </details>
+        <div
+          className="mds-action-bar"
+          role="region"
+          aria-label={t.actionBarLabel}
+        >
+          <div className="mds-action-bar-text">
+            {t.actionBarQuestion}
+            {!access?.canRespond && <small>{t.noRespondPermission}</small>}
+          </div>
+          <div className="mds-action-bar-buttons">
+            <button
+              type="button"
+              className="odm-btn odm-btn-rd"
+              onClick={onOpenReject}
+              disabled={submitting || !access?.canRespond}
+            >
+              {t.reject}
+            </button>
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={onAccept}
+              disabled={submitting || !access?.canRespond}
+            >
+              {submitting ? t.processing : t.acceptMission}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* ── Header ── */}
-      <MissionHeader
-        mission={mission}
-        submitting={submitting}
-        access={access}
-        onAccept={onAccept}
-        onOpenReject={onOpenReject}
-      />
+      <MissionHeader mission={mission} access={access} />
 
-      {monitoringSection}
       {resultActions}
 
       {actionError ? (
@@ -153,6 +233,7 @@ export function MissionDashboard({
         <div className="mds-tab-grid">
           <div className="mds-col">
             <MissionMapCard mission={mission} />
+            {monitoringSection}
           </div>
           <div className="mds-col mds-sticky-col">
             <MissionInfoCard mission={mission} />

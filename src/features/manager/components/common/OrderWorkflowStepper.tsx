@@ -1,54 +1,48 @@
-import { useI18n } from '../../../../shared/i18n'
-import { OrderIcon } from './OrderIcon'
-import { orderWorkflowStepperMessages } from './OrderWorkflowStepper.messages'
-import '../../manager.css'
-
-/** 1–4 = active step; 5 = every step completed. */
-export type OrderWorkflowStep = 1 | 2 | 3 | 4 | 5
+import {
+  MISSION_STAGES,
+  type MissionProgress,
+  type OrderProgress,
+} from './workflowModel'
+import { WorkflowStepper, type WorkflowMissionLayer } from './WorkflowStepper'
 
 /**
- * Reusable 4-step order workflow header: Review → Schedule → Assign
- * resources → Confirm. Steps before `currentStep` render as completed.
+ * Legacy page positions: 5 = planning, 6/7 = assigning resources to a Mission
+ * (staff, device, confirm), 8 = overview. 9 = everything done.
+ */
+export type OrderWorkflowStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+/**
+ * Mission-level screens sit under an Order whose own stages are finished (or,
+ * while planning, in progress). The Mission row has its own context and is
+ * never numbered as a continuation of the Order row.
  */
 export function OrderWorkflowStepper({
   currentStep,
+  mission,
 }: {
   currentStep: OrderWorkflowStep
+  mission?: Omit<WorkflowMissionLayer, 'progress'>
 }) {
-  const { t } = useI18n(orderWorkflowStepperMessages)
-
+  const orderProgress: OrderProgress =
+    currentStep <= 5
+      ? { current: 'planning', waiting: false, terminal: null }
+      : { current: 'complete', waiting: false, terminal: null }
+  const missionProgress: MissionProgress | null =
+    currentStep <= 5
+      ? null
+      : {
+          current: currentStep >= 8 ? MISSION_STAGES[1] : MISSION_STAGES[0],
+          finished: false,
+          terminal: null,
+        }
   return (
-    <nav className="odm-or-card odm-or-stepper" aria-label={t.ariaLabel}>
-      <ol className="odm-or-stepper-list">
-        {t.steps.map((step, index) => {
-          const number = index + 1
-          const state =
-            number < currentStep
-              ? 'done'
-              : number === currentStep
-                ? 'current'
-                : 'todo'
-          return (
-            <li
-              key={step.label}
-              className={`odm-or-step odm-or-step-${state}`}
-              title={step.hint}
-              aria-current={state === 'current' ? 'step' : undefined}
-            >
-              <span className="odm-or-step-dot">
-                {state === 'done' ? (
-                  <OrderIcon name="check" size={16} />
-                ) : (
-                  number
-                )}
-              </span>
-              <span className="odm-or-step-text">
-                <span className="odm-or-step-label">{step.label}</span>
-              </span>
-            </li>
-          )
-        })}
-      </ol>
-    </nav>
+    <WorkflowStepper
+      order={{ progress: orderProgress }}
+      mission={
+        currentStep <= 5 && !mission
+          ? undefined
+          : { ...mission, progress: missionProgress }
+      }
+    />
   )
 }

@@ -1,8 +1,6 @@
 import { MissionSelector } from './MissionSelector'
 import { MissionWorkspacePanel } from './MissionWorkspacePanel'
-import type { OrderDetail } from '../../../types/orders'
-import type { ExecutionPlan } from '../../../types/planning'
-import type { MissionResponse } from '../../../types/missions'
+import type { PlanningWorkspaceData } from '../planningWorkspaceData'
 import type { Dispatch } from 'react'
 import type { SetStateAction } from 'react'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
@@ -19,8 +17,6 @@ export function MissionWorkspaceGrid({
   updateDraft,
   runtimeBlocked,
   dirty,
-  onAssignResources,
-  setAssigningResources,
   cancelCapabilities,
   cancelling,
   setCancelling,
@@ -31,25 +27,17 @@ export function MissionWorkspaceGrid({
   updateCancelCapability,
   updateRuntimeBlocked,
 }: {
-  data: { plan: ExecutionPlan; missions: MissionResponse[]; order: OrderDetail }
+  data: PlanningWorkspaceData
   selected: string | undefined
   busy: boolean
   saving: boolean
   drafts: Record<string, { dirty: boolean; busy: boolean }>
   setSelectedId: Dispatch<SetStateAction<string | null>>
   writable: boolean
-  query: UseApiQueryState<{
-    plan: ExecutionPlan
-    missions: MissionResponse[]
-    order: OrderDetail
-  }>
+  query: UseApiQueryState<PlanningWorkspaceData>
   updateDraft: (id: string, dirty: boolean, saving: boolean) => void
   runtimeBlocked: Record<string, boolean>
   dirty: boolean
-  onAssignResources: ((missionId: string) => void) | undefined
-  setAssigningResources: Dispatch<
-    SetStateAction<{ missionId?: string | undefined } | null>
-  >
   cancelCapabilities: Record<string, boolean>
   cancelling: string | null
   setCancelling: Dispatch<SetStateAction<string | null>>
@@ -97,8 +85,6 @@ export function MissionWorkspaceGrid({
               runtimeBlocked={runtimeBlocked}
               saving={saving}
               dirty={dirty}
-              onAssignResources={onAssignResources}
-              setAssigningResources={setAssigningResources}
               cancelCapabilities={cancelCapabilities}
               cancelling={cancelling}
               setCancelling={setCancelling}

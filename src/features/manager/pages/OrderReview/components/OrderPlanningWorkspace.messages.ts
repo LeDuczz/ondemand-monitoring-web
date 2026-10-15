@@ -15,6 +15,10 @@ export const orderPlanningWorkspaceMessages = defineMessages({
     huyMission2: 'Hủy Mission',
     thePlanWasFinalizedSuccessfully: 'Kế hoạch đã được chốt thành công.',
     thePlanHasBeenUpdated: 'Đã cập nhật kế hoạch.',
+    saveChecklistFirst:
+      'Bạn vừa thay đổi checklist. Hãy bấm “Lưu phân công” trước khi tiếp tục.',
+    checklistNotCovered:
+      'Còn checklist chưa được gán cho Mission. Hãy chọn các mục còn thiếu và bấm “Lưu phân công”, sau đó tiếp tục gán nguồn lực.',
   },
   en: {
     finalizeThePlan: 'Finalize the plan?',
@@ -31,5 +35,9 @@ export const orderPlanningWorkspaceMessages = defineMessages({
     huyMission2: 'Cancel Mission',
     thePlanWasFinalizedSuccessfully: 'The plan was finalized successfully.',
     thePlanHasBeenUpdated: 'The plan has been updated.',
+    saveChecklistFirst:
+      'You just changed the checklist. Click “Save assignment” before continuing.',
+    checklistNotCovered:
+      'Some checklist items are not assigned to a Mission yet. Select the missing items and click “Save assignment”, then continue to assign resources.',
   },
 })

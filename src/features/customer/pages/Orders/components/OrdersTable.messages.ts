@@ -11,6 +11,7 @@ export const ordersTableMessages = defineMessages({
       actions: 'Thao tác',
     },
     view: 'Xem chi tiết',
+    addInformation: 'Bổ sung ngay',
   },
   en: {
     columns: {
@@ -22,5 +23,6 @@ export const ordersTableMessages = defineMessages({
       actions: 'Actions',
     },
     view: 'View details',
+    addInformation: 'Add information',
   },
 })

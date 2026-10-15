@@ -1,7 +1,10 @@
 import { useI18n } from '../../../../../shared/i18n'
 import { OrderIcon } from '../../../components/common/OrderIcon'
-import { dispatchSteps, type DispatchStep } from '../liveDispatchHelpers'
+import { type DispatchStep } from '../liveDispatchHelpers'
 import { dispatchWizardTabsMessages } from './DispatchWizardTabs.messages'
+
+/** Resource-assignment sub-steps only; Order and Mission context come from the parent workflow. */
+const resourceSteps: DispatchStep[] = ['staff', 'device', 'confirm']
 
 export function DispatchWizardTabs({
   activeStep,
@@ -13,7 +16,7 @@ export function DispatchWizardTabs({
   selectionOnly?: boolean
 }) {
   const { t } = useI18n(dispatchWizardTabsMessages)
-  const activeStepIndex = dispatchSteps.indexOf(activeStep)
+  const activeStepIndex = resourceSteps.indexOf(activeStep)
   const stepLabels: Record<DispatchStep, string> = {
     order: t.orderTab,
     mission: t.missionTab,
@@ -23,7 +26,8 @@ export function DispatchWizardTabs({
   }
   return (
     <nav className="odm-dp-tabs" aria-label={t.tabsAria}>
-      {dispatchSteps.map((step, index) => (
+      <span className="odm-dp-tabs-title">{t.resourceTabsTitle}</span>
+      {resourceSteps.map((step, index) => (
         <button
           key={step}
           type="button"
@@ -31,9 +35,7 @@ export function DispatchWizardTabs({
             index < activeStepIndex ? ' is-done' : ''
           }`}
           aria-current={activeStep === step ? 'step' : undefined}
-          disabled={
-            selectionOnly && ['staff', 'device', 'confirm'].includes(step)
-          }
+          disabled={selectionOnly}
           onClick={() => onStep(step)}
         >
           <span className="odm-dp-tab-dot">

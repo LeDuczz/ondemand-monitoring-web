@@ -46,6 +46,9 @@ export function RejectDialog({
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
             {t.title(missionId)}
           </h2>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--tx2)' }}>
+            {t.description}
+          </p>
           <div
             style={{
               marginTop: 14,

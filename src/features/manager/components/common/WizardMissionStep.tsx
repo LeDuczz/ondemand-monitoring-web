@@ -14,6 +14,7 @@ export function WizardMissionStep({
   returnLabel,
   selection,
   allAssigned,
+  embedded = false,
   onClose,
   candidateId,
   eligible,
@@ -28,6 +29,8 @@ export function WizardMissionStep({
   returnLabel: string
   selection: ReactNode
   allAssigned: boolean
+  /** Inside the Order review page, which already shows the header and stepper. */
+  embedded?: boolean
   onClose: () => void
   candidateId: string | null
   eligible: (id: string) => boolean
@@ -38,26 +41,28 @@ export function WizardMissionStep({
   return (
     <div className="odm-or">
       {confirmation.dialog}
-      <PageHeader
-        back={
-          <button
-            type="button"
-            className="odm-dp-back"
-            disabled={busy}
-            onClick={() => leave(true)}
-          >
-            {returnLabel}
-          </button>
-        }
-        title={t.assignResources}
-      />
-      <OrderWorkflowStepper currentStep={3} />
+      {!embedded && (
+        <>
+          <PageHeader
+            back={
+              <button
+                type="button"
+                className="odm-dp-back"
+                disabled={busy}
+                onClick={() => leave(true)}
+              >
+                {returnLabel}
+              </button>
+            }
+            title={t.assignResources}
+          />
+          <OrderWorkflowStepper currentStep={6} />
+        </>
+      )}
       <DispatchWizardTabs
         activeStep="mission"
         selectionOnly
-        onStep={(step) => {
-          if (step === 'order') leave(true)
-        }}
+        onStep={() => undefined}
       />
       {selection}
       {allAssigned && (

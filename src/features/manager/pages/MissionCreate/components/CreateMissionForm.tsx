@@ -51,6 +51,12 @@ export function CreateMissionForm({
 
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
+  const [weatherCheckDate, setWeatherCheckDate] = useState(
+    () => dateRangeFromBrief(brief)[0] ?? '',
+  )
+  const [weatherCheckTime, setWeatherCheckTime] = useState(() =>
+    forecastTimeFromBrief(brief),
+  )
   const [planRevision, setPlanRevision] = useState(
     brief.executionPlanRevision ?? 0,
   )
@@ -81,8 +87,20 @@ export function CreateMissionForm({
     setSubmit({ kind: 'idle' })
   }
 
-  const forecastDates = useMemo(() => dateRangeFromBrief(brief), [brief])
-  const forecastTime = useMemo(() => forecastTimeFromBrief(brief), [brief])
+  // Embedded in Order planning the manager checks one chosen day/time; the
+  // standalone page shows every day of the customer's window.
+  const forecastDates = useMemo(
+    () =>
+      onCreated
+        ? weatherCheckDate
+          ? [weatherCheckDate]
+          : []
+        : dateRangeFromBrief(brief),
+    [brief, onCreated, weatherCheckDate],
+  )
+  const forecastTime = onCreated
+    ? weatherCheckTime
+    : forecastTimeFromBrief(brief)
   const [forecastRows, setForecastRows] = useState<ForecastRow[]>(() =>
     loadingForecastRows(forecastDates),
   )
@@ -218,7 +236,7 @@ export function CreateMissionForm({
         />
       )}
 
-      {!onCreated && <OrderWorkflowStepper currentStep={2} />}
+      {!onCreated && <OrderWorkflowStepper currentStep={5} />}
 
       <div className="odm-or-layout">
         <div className="odm-or-main">
@@ -253,6 +271,16 @@ export function CreateMissionForm({
             forecastTime={forecastTime}
             brief={brief}
             forecastRows={forecastRows}
+            checkControls={
+              onCreated
+                ? {
+                    date: weatherCheckDate,
+                    time: weatherCheckTime,
+                    onDateChange: setWeatherCheckDate,
+                    onTimeChange: setWeatherCheckTime,
+                  }
+                : undefined
+            }
           />
         </aside>
       </div>

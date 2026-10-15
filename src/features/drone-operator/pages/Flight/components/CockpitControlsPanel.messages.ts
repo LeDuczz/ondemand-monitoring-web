@@ -3,6 +3,8 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const cockpitControlsPanelMessages = defineMessages({
   vi: {
     control: 'Điều khiển',
+    collapse: 'Thu gọn',
+    expandPanel: 'Mở rộng',
     takeoff: 'Cất cánh',
     takeoffSub: 'Lên độ cao bay',
     fly: 'Bay tới điểm',
@@ -24,6 +26,8 @@ export const cockpitControlsPanelMessages = defineMessages({
   },
   en: {
     control: 'Controls',
+    collapse: 'Collapse',
+    expandPanel: 'Expand',
     takeoff: 'Take off',
     takeoffSub: 'Climb to altitude',
     fly: 'Fly to point',

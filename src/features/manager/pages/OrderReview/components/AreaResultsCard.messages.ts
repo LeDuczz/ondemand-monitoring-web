@@ -2,7 +2,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const areaResultsCardMessages = defineMessages({
   vi: {
-    conclusionAboutTheFlightArea: 'Kết luận về khu vực bay',
+    conclusionAboutTheFlightArea: 'Kết quả kiểm tra khu vực',
     checking: 'Đang kiểm tra…',
     checkAgain: 'Kiểm tra lại',
     donChuaCoDuToa: 'Đơn chưa có đủ tọa độ hoặc bán kính để kiểm tra vùng.',
@@ -12,7 +12,7 @@ export const areaResultsCardMessages = defineMessages({
     openTheMinistryOfNational: 'Mở bản đồ cấm bay của Bộ Quốc phòng',
   },
   en: {
-    conclusionAboutTheFlightArea: 'Conclusion about the flight area',
+    conclusionAboutTheFlightArea: 'Area check result',
     checking: 'Checking…',
     checkAgain: 'Check again',
     donChuaCoDuToa:

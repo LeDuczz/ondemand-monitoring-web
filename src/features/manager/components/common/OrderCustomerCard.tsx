@@ -16,6 +16,21 @@ export function OrderCustomerCard({ order }: { order: OrderDetail }) {
       value: hasCompany ? customer.companyName : null,
       empty: t.noCompany,
     },
+    {
+      label: t.citizenIdentificationNumber,
+      value: customer.citizenIdentificationNumber ?? null,
+      empty: t.noCitizenIdentificationNumber,
+    },
+    {
+      label: t.companyTaxCode,
+      value: customer.companyTaxCode ?? null,
+      empty: t.noCompanyTaxCode,
+    },
+    {
+      label: t.customerAddress,
+      value: customer.address ?? null,
+      empty: t.noCustomerAddress,
+    },
   ]
 
   return (

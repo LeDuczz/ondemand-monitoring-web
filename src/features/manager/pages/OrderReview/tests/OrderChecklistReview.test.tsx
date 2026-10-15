@@ -83,7 +83,7 @@ describe('Manager historical checklist review through Order API', () => {
   it('does not duplicate the checklist in the order-information step', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
-    await screen.findByText('Dịch vụ và yêu cầu media')
+    await screen.findByText('Lịch thực hiện & khu vực giám sát')
     expect(
       screen.queryByRole('region', { name: 'Nội dung giám sát' }),
     ).not.toBeInTheDocument()
@@ -144,7 +144,7 @@ describe('Manager historical checklist review through Order API', () => {
   it('does not expose the legacy approve-and-schedule bypass', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
-    await screen.findByText('Dịch vụ và yêu cầu media')
+    await screen.findByText('Lịch thực hiện & khu vực giám sát')
     expect(
       screen.queryByRole('button', { name: 'Duyệt & lên lịch' }),
     ).not.toBeInTheDocument()
@@ -157,8 +157,8 @@ describe('Manager historical checklist review through Order API', () => {
   it('requires rejection reason and posts only the existing Order decision', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
-    await screen.findByText('Dịch vụ và yêu cầu media')
-    fireEvent.click(screen.getByText('Checklist & báo giá'))
+    await screen.findByText('Lịch thực hiện & khu vực giám sát')
+    fireEvent.click(screen.getByText('Quyết định'))
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
     expect(screen.getByText('Lý do là bắt buộc')).toBeInTheDocument()

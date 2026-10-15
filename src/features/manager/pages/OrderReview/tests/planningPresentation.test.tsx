@@ -25,11 +25,11 @@ describe('planning product presentation', () => {
     },
     blockers: ['ORDER_NOT_APPROVED', 'UNKNOWN_SERVER_CODE'],
   }
-  it('localizes draft blockers while preserving the original read model', () => {
+  it('keeps draft blockers in the read model without repeating them in the summary', () => {
     render(<ExecutionPlanSummary plan={summary} items={[]} />)
     expect(
-      screen.getByText('Order chưa ở trạng thái cho phép chốt kế hoạch.'),
-    ).toBeInTheDocument()
+      screen.queryByRole('list', { name: 'Finalize blockers' }),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText('ORDER_NOT_APPROVED')).not.toBeInTheDocument()
     expect(screen.queryByText('UNKNOWN_SERVER_CODE')).not.toBeInTheDocument()
     expect(summary.blockers).toEqual([

@@ -1,5 +1,7 @@
+import { useState } from 'react'
+
 import type { OrderDetail } from '../../types/orders'
-import { preferredLabel } from '../../lib/viLabels'
+import { preferredRangeLabel } from '../../lib/viLabels'
 import { estimatedAreaHa } from './format'
 import { OrderIcon } from './OrderIcon'
 import { Card } from '../../../../shared/components/ui'
@@ -41,11 +43,18 @@ export function OrderServiceInfo({
   hideService?: boolean
 }) {
   const { t } = useI18n(orderServiceInfoMessages)
+  const [copiedLabel, setCopiedLabel] = useState<string | null>(null)
+  const copy = (label: string, text: string) => {
+    void navigator.clipboard?.writeText(text)
+    setCopiedLabel(label)
+    window.setTimeout(() => setCopiedLabel(null), 1500)
+  }
 
   const areaHa = estimatedAreaHa(order.radiusM)
   const preferred =
-    preferredLabel(
-      order.preferredDate,
+    preferredRangeLabel(
+      order.preferredDateFrom ?? order.preferredDate,
+      order.preferredDateTo ?? order.preferredDateFrom ?? order.preferredDate,
       order.preferredTimeName,
       order.preferredWindow,
     ) || null
@@ -90,12 +99,19 @@ export function OrderServiceInfo({
                   type="button"
                   className="odm-or-copy"
                   aria-label={`${t.copy}: ${row.label}`}
-                  onClick={() =>
-                    void navigator.clipboard?.writeText(row.copyText ?? '')
-                  }
+                  title={copiedLabel === row.label ? t.copiedCoords : t.copy}
+                  onClick={() => copy(row.label, row.copyText ?? '')}
                 >
-                  <OrderIcon name="copy" size={14} />
+                  <OrderIcon
+                    name={copiedLabel === row.label ? 'check' : 'copy'}
+                    size={14}
+                  />
                 </button>
+              ) : null}
+              {copiedLabel === row.label ? (
+                <span className="odm-or-copy-toast" role="status">
+                  {t.copiedCoords}
+                </span>
               ) : null}
             </dd>
           </div>

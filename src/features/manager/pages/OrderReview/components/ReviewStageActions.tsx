@@ -1,4 +1,4 @@
-import { type ReviewStep, REVIEW_STEPS } from '../reviewSteps'
+import { type ReviewStep, REVIEW_PAGE_COUNT } from '../reviewSteps'
 import { useI18n } from '../../../../../shared/i18n'
 import { reviewStageActionsMessages } from './ReviewStageActions.messages'
 
@@ -8,12 +8,14 @@ export function ReviewStageActions({
   onNext,
   nextLabel,
   hint,
+  nextDisabled = false,
 }: {
   step: ReviewStep
   onBack?: () => void
   onNext?: () => void
   nextLabel?: string
   hint?: string | null
+  nextDisabled?: boolean
 }) {
   const { t } = useI18n(reviewStageActionsMessages)
 
@@ -26,7 +28,7 @@ export function ReviewStageActions({
       ) : null}
       <span className="odm-or-review-stage-progress">
         {t.step}
-        {step}/{REVIEW_STEPS.length}
+        {step}/{REVIEW_PAGE_COUNT}
       </span>
       {hint ? (
         <span className="odm-or-review-stage-hint" role="status">
@@ -34,7 +36,12 @@ export function ReviewStageActions({
         </span>
       ) : null}
       {onNext ? (
-        <button type="button" className="odm-btn odm-btn-p" onClick={onNext}>
+        <button
+          type="button"
+          className="odm-btn odm-btn-p"
+          onClick={onNext}
+          disabled={nextDisabled}
+        >
           {nextLabel ?? t.nextApprovalConditions}
         </button>
       ) : null}

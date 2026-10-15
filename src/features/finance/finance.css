@@ -798,6 +798,61 @@
 .customer-payment-actions {
   padding: 16px 0 0;
 }
+
+/* The customer finance card lives in the narrow order-detail sidebar. */
+.od-page .customer-invoice {
+  padding: 20px 24px 24px;
+}
+
+.od-page .customer-invoice-title {
+  align-items: center;
+}
+
+.od-page .customer-invoice-title > div {
+  min-width: 0;
+}
+
+.od-page .customer-invoice-title h3 {
+  overflow-wrap: anywhere;
+}
+
+.od-page .customer-payment-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.od-page .customer-payment-stats > div {
+  min-height: 76px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--ui-surface-2);
+}
+
+.od-page .customer-payment-stats strong {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.od-page .customer-deposit-notice {
+  padding: 14px 16px;
+  border-radius: 0 10px 10px 0;
+  line-height: 1.45;
+}
+
+.od-page .customer-payment-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.od-page .customer-payment-actions .odm-btn {
+  min-height: 42px;
+}
+
+@media (max-width: 420px) {
+  .od-page .customer-payment-stats { grid-template-columns: minmax(0, 1fr); }
+  .od-page .customer-payment-actions .odm-btn { width: 100%; justify-content: center; }
+}
 @media (max-width: 680px) {
   .customer-payment-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -186,7 +186,7 @@ function mockApprovedPlanning() {
 }
 
 async function openPricingStep() {
-  fireEvent.click(await screen.findByText('Checklist & báo giá'))
+  fireEvent.click(await screen.findByText('Quyết định'))
 }
 
 afterEach(() => {
@@ -273,9 +273,6 @@ describe('OrderReviewPage', () => {
         }),
       ).toBeInTheDocument()
       expect(
-        screen.queryByRole('navigation', { name: 'Các bước xử lý đơn hàng' }),
-      ).not.toBeInTheDocument()
-      expect(
         screen.queryByRole('button', { name: 'Duyệt & lên lịch' }),
       ).not.toBeInTheDocument()
       expect(
@@ -293,7 +290,7 @@ describe('OrderReviewPage', () => {
     expect(screen.getByText('Lê Quốc Bảo')).toBeInTheDocument()
     expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
     expect(screen.getByText('Khách hàng doanh nghiệp')).toBeInTheDocument()
-    expect(screen.getByText('Thông tin đơn')).toBeInTheDocument()
+    expect(screen.getByText('Tiếp nhận')).toBeInTheDocument()
     expect(screen.queryByText('Tình trạng nguồn lực')).not.toBeInTheDocument()
   })
 
@@ -302,7 +299,7 @@ describe('OrderReviewPage', () => {
     render(<OrderReviewPage orderId="ord-2609-0157" />)
 
     expect(screen.queryByText('Địa chỉ khu vực')).not.toBeInTheDocument()
-    fireEvent.click(await screen.findByText('Kiểm tra vùng'))
+    fireEvent.click(await screen.findByText('Kiểm tra điều kiện'))
 
     expect(screen.getByText('Địa chỉ khu vực')).toBeInTheDocument()
     expect(
@@ -349,10 +346,10 @@ describe('OrderReviewPage', () => {
       })
     render(<OrderReviewPage orderId="ord-2609-0157" />)
 
-    fireEvent.click(await screen.findByText('Kiểm tra vùng'))
+    fireEvent.click(await screen.findByText('Kiểm tra điều kiện'))
     await screen.findByText('Thuận lợi')
-    fireEvent.click(screen.getByText('Thông tin đơn'))
-    fireEvent.click(screen.getByText('Kiểm tra vùng'))
+    fireEvent.click(screen.getByText('Tiếp nhận'))
+    fireEvent.click(screen.getByText('Kiểm tra điều kiện'))
     await screen.findByText('Thuận lợi')
 
     expect(assessmentSpy).toHaveBeenCalledTimes(1)
@@ -380,6 +377,38 @@ describe('OrderReviewPage', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/\{"radiusM"/)).not.toBeInTheDocument()
+  })
+
+  it('does not repeat deliverable format in the order details', async () => {
+    mockPricing()
+    vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
+      ...order,
+      resultFormats: ['VIDEO'],
+      deliverables: [
+        {
+          id: 'deliverable-video',
+          deliverableTypeId: 'video',
+          deliverableTypeName: 'Video',
+          defaultFormat: 'MP4',
+          requirement: {
+            mediaType: 'VIDEO',
+            quantity: 10,
+            resolution: '4K',
+          },
+        },
+      ],
+    })
+    vi.spyOn(ordersApi, 'getLatestAnalysis').mockResolvedValue(feasibleAnalysis)
+    vi.spyOn(ordersApi, 'getResourcePreview').mockResolvedValue(preview)
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+
+    await screen.findByText('Lê Quốc Bảo')
+    expect(screen.queryByText('Định dạng kết quả')).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Video', { selector: 'strong' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('10 mục · 4K')).toBeInTheDocument()
+    expect(screen.queryByText('Video · 10 mục · 4K')).not.toBeInTheDocument()
   })
 
   it('shows a different order without obsolete analysis copy', async () => {

@@ -48,6 +48,21 @@ describe('OrdersPage', () => {
     expect(within(screen.getByRole('table')).getByText('Bị từ chối')).toBeInTheDocument()
   })
 
+  it('shows a direct action and filter for orders waiting for customer information', async () => {
+    vi.spyOn(customerApi, 'listMyOrders').mockResolvedValue([
+      { ...makeOrder(1), orderStatus: 'NEEDS_INFO' },
+    ])
+    render(<OrdersPage />)
+    expect(await screen.findByText('Cần bổ sung thông tin')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Bổ sung ngay' })).toHaveAttribute(
+      'href',
+      '#portal/customer/orders/ord-1',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Cần bổ sung thông tin' }),
+    ).toBeInTheDocument()
+  })
+
   it('sends the status filter to the BE', async () => {
     const spy = vi.spyOn(customerApi, 'listMyOrders')
     render(<OrdersPage />)

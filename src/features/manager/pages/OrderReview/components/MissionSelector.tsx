@@ -8,6 +8,12 @@ import type { ExecutionPlan } from '../../../types/planning'
 import { staffRoleLabel } from '../../../components/common/missionDetailHelpers'
 import { assignmentReadiness } from '../../../lib/assignmentReadiness'
 import { planningSchedule } from '../../../components/common/planningSchedule'
+import {
+  missionBucket,
+  missionProgress,
+} from '../../../components/common/workflowModel'
+import { workflowStepperMessages } from '../../../components/common/WorkflowStepper.messages'
+import { localizePlanningScopeLabel } from '../../../components/common/planningScopeLabel'
 import { useI18n } from '../../../../../shared/i18n'
 import { missionSelectorMessages } from './MissionSelector.messages'
 
@@ -29,10 +35,13 @@ export function MissionSelector({
   onSelect: (id: string) => void
 }) {
   const { t, locale, lang } = useI18n(missionSelectorMessages)
+  const { t: wf } = useI18n(workflowStepperMessages)
 
   return (
     <nav className="odm-workspace-selector" aria-label={t.missionsInTheOrder}>
-      {missions.map((mission) => {
+      {missions.map((mission, missionIndex) => {
+        const bucket = missionBucket(mission.status)
+        const stage = wf.missionStages[missionProgress(mission.status).current]
         const scope = plan.missions.find(
           (item) => item.missionId === mission.id,
         )
@@ -64,14 +73,29 @@ export function MissionSelector({
             disabled={disabled}
             onClick={() => onSelect(mission.id)}
           >
-            <strong>{mission.missionCode || 'Mission'}</strong>
-            <StatusBadge
-              tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}
-            >
-              {missionStatusLabel[mission.status] ?? t.unknown}
-            </StatusBadge>
+            <span className="odm-workspace-choice-head">
+              <strong>{mission.missionCode || 'Mission'}</strong>
+              <StatusBadge
+                tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}
+              >
+                {missionStatusLabel[mission.status] ?? t.unknown}
+              </StatusBadge>
+            </span>
+            <span className={`odm-workspace-rank is-${bucket}`}>
+              {bucket === 'finished'
+                ? '✓'
+                : bucket === 'active'
+                  ? '●'
+                  : bucket === 'blocked'
+                    ? '🔒'
+                    : '○'}{' '}
+              {wf.missionOf(missionIndex + 1, missions.length)}
+              {bucket === 'active' ? ` · ${stage.label}` : ''}
+            </span>
             <span className="odm-workspace-scope">
-              {scope?.scopeLabel || t.missionHistory}
+              {scope?.scopeLabel
+                ? localizePlanningScopeLabel(scope.scopeLabel, lang)
+                : t.missionHistory}
             </span>
             <small>
               {planningSchedule(
@@ -80,23 +104,27 @@ export function MissionSelector({
                 locale,
               )}
             </small>
-            <span>
+            <span className="odm-workspace-plan-state">
               {historical
                 ? t.historyViewOnly
                 : scope?.finalizedPlanRevision != null
                   ? t.finalized
                   : t.planning}
             </span>
-            <span>
-              {count > 0 || noChecklist ? '✓' : '⚠'}
-              {t.checklist} {noChecklist ? t.noRequirements : t.muc(count)}
-            </span>
-            <span>{device ? t.deviceAssigned : t.noDeviceYet}</span>
-            <span>
-              {missing.length ? '⚠' : '✓'}
-              {t.staff}
-              {4 - missing.length}
-              {t.n4Roles}
+            <span className="odm-workspace-readiness">
+              <span
+                className={count > 0 || noChecklist ? 'is-ready' : 'is-missing'}
+              >
+                {count > 0 || noChecklist ? '✓' : '!'} {t.chipChecklist}{' '}
+                {noChecklist ? '—' : count}
+              </span>
+              <span className={device ? 'is-ready' : 'is-missing'}>
+                {device ? '✓' : '!'} {t.chipDevice}
+              </span>
+              <span className={!missing.length ? 'is-ready' : 'is-missing'}>
+                {!missing.length ? '✓' : '!'} {t.chipStaff} {4 - missing.length}
+                /4
+              </span>
             </span>
             {!historical && (
               <small>

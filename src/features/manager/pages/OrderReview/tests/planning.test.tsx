@@ -17,6 +17,8 @@ import { SafeStopPanel } from '../../../components/common/SafeStopPanel'
 import { managerHref, parseManagerRoute } from '../../../routes'
 import { missionStatusLabel } from '../../../../../shared/lib/statusTone'
 import type { MissionStatus } from '../../../../../shared/types/domain'
+import { financeApi } from '../../../../finance/api'
+import type { Invoice } from '../../../../finance/types'
 
 const items = ['A', 'B', 'C', 'D', 'E'].map((id, displayOrder) => ({
   id,
@@ -59,6 +61,11 @@ const stop: SafeStop = {
   canCancelMission: true,
 }
 beforeEach(() => {
+  vi.spyOn(financeApi, 'getManagerInvoice').mockResolvedValue({
+    id: 'invoice-paid',
+    paidAmount: 500,
+    depositAmount: 500,
+  } as Invoice)
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.spyOn(ordersApi, 'getOrder').mockResolvedValue({
     id: 'o',
@@ -87,6 +94,27 @@ beforeEach(() => {
 })
 afterEach(() => vi.restoreAllMocks())
 describe('Manager multi-Mission planning', () => {
+  it('locks planning while the customer deposit is still unpaid', async () => {
+    vi.mocked(financeApi.getManagerInvoice).mockResolvedValue({
+      id: 'invoice-unpaid',
+      paidAmount: 0,
+      depositAmount: 500,
+    } as Invoice)
+
+    render(<OrderMissionPlanningSection orderId="o" />)
+
+    expect(
+      await screen.findByText('Đang chờ khách hàng thanh toán đặt cọc'),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Đã thanh toán\s+0\s*\/\s*500/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Tạo thêm Mission' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Chốt kế hoạch' }),
+    ).not.toBeInTheDocument()
+  })
+
   it.each(['RESOURCE_ASSIGNING', 'IN_FLIGHT', 'COMPLETED'])(
     'hides all safe-stop presentation for a %s Mission even with action capabilities',
     async (status) => {
@@ -336,7 +364,7 @@ describe('Manager multi-Mission planning', () => {
     )
     expect(screen.getByRole('button', { name: 'Chốt kế hoạch' })).toBeEnabled()
   })
-  it('shows uncovered backend items and disables finalize', async () => {
+  it('does not repeat uncovered items in the summary and disables finalize', async () => {
     vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({
       ...plan,
       coverage: {
@@ -349,9 +377,11 @@ describe('Manager multi-Mission planning', () => {
     })
     render(<OrderMissionPlanningSection orderId="o" />)
     expect(
-      await screen.findByRole('list', { name: 'Checklist chưa phủ' }),
-    ).toHaveTextContent('Requirement E')
-    expect(screen.getByRole('button', { name: 'Chốt kế hoạch' })).toBeDisabled()
+      await screen.findByRole('button', { name: 'Chốt kế hoạch' }),
+    ).toBeDisabled()
+    expect(
+      screen.queryByRole('list', { name: 'Checklist chưa phủ' }),
+    ).not.toBeInTheDocument()
   })
   it('submits split assignments with repeated E across sibling Missions', async () => {
     const update = vi

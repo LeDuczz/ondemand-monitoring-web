@@ -180,7 +180,8 @@ describe('Customer aggregate/report publication', () => {
     expect(
       await screen.findByText('Monitoring has not been scheduled yet.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Total sessions:')).toHaveTextContent('0')
+    expect(screen.queryByText('Total sessions')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
   })
   it('renders three exact Mission links and uses public availability', async () => {
     vi.mocked(customerMissionReportApi.list).mockResolvedValue([

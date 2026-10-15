@@ -87,6 +87,7 @@ export function MonitoringChecklistSection({
   attachEvidenceCandidate,
   compact = false,
   hideImplementationHints = false,
+  preview = false,
 }: {
   missionId: string
   hideImplementationHints?: boolean
@@ -107,6 +108,8 @@ export function MonitoringChecklistSection({
   ) => Promise<unknown>
   /** Dense acceptance panel: one line per item, only the active item expands. */
   compact?: boolean
+  /** Read-only preview shown before the pilot accepts the mission. */
+  preview?: boolean
 }) {
   const { t, lang } = useI18n(monitoringChecklistMessages)
   const evidenceT = checklistEvidenceMessages[lang]
@@ -295,6 +298,47 @@ export function MonitoringChecklistSection({
       </section>
     )
   }
+  if (preview) {
+    return (
+      <div
+        className="monitoring-checklist mc-preview"
+        aria-label={t.monitoringTitle}
+      >
+        <div className="mc-preview-notice" role="note">
+          <strong>{t.previewNoticeTitle}</strong>
+          <span>{t.previewNoticeBody}</span>
+        </div>
+        {loading && <p role="status">{t.loading}</p>}
+        {error ? (
+          <div role="alert">
+            <p>{monitoringErrorMessage(error)}</p>
+            <button type="button" className="odm-btn" onClick={refresh}>
+              {t.retry}
+            </button>
+          </div>
+        ) : null}
+        {data && !rows.length && !loading && <p>{t.noItems}</p>}
+        {data && (
+          <ol className="mc-preview-list">
+            {rows.map((item) => (
+              <li key={`preview:${missionId}:${item.id}`}>
+                <span className="mc-preview-mark" aria-hidden="true">
+                  ○
+                </span>
+                <span className="mc-preview-text">
+                  <strong>{item.content}</strong>
+                  <small>
+                    {t.statuses[item.executionStatus]} ·{' '}
+                    {t.previewMinEvidence(item.minimumEvidenceCount ?? 0)}
+                  </small>
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    )
+  }
   return (
     <section
       className="monitoring-checklist odm-card"
@@ -310,8 +354,9 @@ export function MonitoringChecklistSection({
           className="odm-btn"
           onClick={refresh}
           disabled={loading}
+          title={t.refreshTitle}
         >
-          {t.refresh}
+          <span aria-hidden="true">↻</span> {t.refresh}
         </button>
       </header>
       {loading && <p role="status">{t.loadingWithResult}</p>}
@@ -346,11 +391,12 @@ export function MonitoringChecklistSection({
             />
           </div>
           <div className="monitoring-notes">
-            {data.blockingReasons?.map((reason) => (
-              <p key={reason} role="status" className="is-warn">
-                {evidenceT.reasons[reason]}
-              </p>
-            ))}
+            {!rows.length &&
+              data.blockingReasons?.map((reason) => (
+                <p key={reason} role="status" className="is-warn">
+                  {evidenceT.reasons[reason]}
+                </p>
+              ))}
             {resultStatus && (
               <p>
                 {t.resultStatusLabel} {t.resultStatuses[resultStatus]}
@@ -633,14 +679,11 @@ function ChecklistExecutionItem({
               {t.statuses[item.executionStatus]}
             </span>
           )}
-          <span className={`is-assess-${item.assessmentStatus.toLowerCase()}`}>
-            {t.assessments[item.assessmentStatus]}
-          </span>
-          {!compact && (
+          {item.assessmentStatus !== 'NOT_ASSESSED' && (
             <span
-              className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}
+              className={`is-assess-${item.assessmentStatus.toLowerCase()}`}
             >
-              {terminal(item.executionStatus) ? t.finished : t.needAction}
+              {t.assessments[item.assessmentStatus]}
             </span>
           )}
         </div>

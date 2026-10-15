@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
+import { ordersApi } from '../../../api/ordersApi'
 import { readinessApi } from '../../../api/readinessApi'
 import type {
   OrderReadiness,
@@ -26,10 +27,13 @@ export function OrderReadinessCard({
   orderId,
   query,
   editable,
+  onDecisionDone,
 }: {
   orderId: string
   query: UseApiQueryState<OrderReadiness>
   editable: boolean
+  /** Called after a failed required criterion led to a reject / need-info decision. */
+  onDecisionDone?: () => void
 }) {
   const { t } = useI18n(orderReadinessCardMessages)
 
@@ -48,7 +52,10 @@ export function OrderReadinessCard({
   }
 
   const auto = readiness.criteria.filter(
-    (c) => c.type === 'AUTO' && c.code !== 'CHECKLIST_REVIEWED',
+    (c) =>
+      c.type === 'AUTO' &&
+      c.code !== 'CHECKLIST_REVIEWED' &&
+      c.code !== 'SCHEDULE_DATE',
   )
   const manual = readiness.criteria.filter(
     (c) =>
@@ -95,6 +102,51 @@ export function OrderReadinessCard({
     }
   }
 
+  const failedRequired = manual.filter((criterion) => {
+    const effectiveResult =
+      drafts[criterion.code]?.result ??
+      selectedResults[criterion.code] ??
+      criterion.result
+    return criterion.required && effectiveResult === 'FAIL'
+  })
+  const failedReasonsComplete = failedRequired.every((criterion) =>
+    Boolean(drafts[criterion.code]?.note.trim() || criterion.note?.trim()),
+  )
+
+  async function submitFailedDecision(decision: 'NEED_INFO' | 'REJECTED') {
+    if (!failedReasonsComplete) {
+      setError(t.failedReasonsRequired)
+      return
+    }
+    const reason = failedRequired
+      .map((criterion) => {
+        const note =
+          drafts[criterion.code]?.note.trim() || criterion.note?.trim()
+        return note ? `${criterion.title}: ${note}` : criterion.title
+      })
+      .join('; ')
+    if (!reason) return
+    setSavingCode('decision')
+    setError(null)
+    try {
+      await Promise.all(
+        failedRequired
+          .filter((criterion) => drafts[criterion.code]?.result === 'FAIL')
+          .map((criterion) =>
+            readinessApi.answer(orderId, criterion.code, {
+              result: 'FAIL',
+              note: drafts[criterion.code].note.trim(),
+            }),
+          ),
+      )
+      await ordersApi.submitApproval(orderId, { decision, reason })
+      onDecisionDone?.()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t.decisionFailed)
+      setSavingCode(null)
+    }
+  }
+
   function choose(criterion: ReadinessCriterion, result: Answer) {
     const note = drafts[criterion.code]?.note ?? criterion.note ?? ''
     if (result === 'FAIL') {
@@ -133,7 +185,12 @@ export function OrderReadinessCard({
           {error}
         </p>
       ) : null}
-      <ReadinessBlockingReasons readiness={readiness} />
+      <ReadinessBlockingReasons
+        readiness={readiness}
+        canDecide={failedRequired.length > 0 && editable}
+        busy={savingCode === 'decision'}
+        onDecision={(decision) => void submitFailedDecision(decision)}
+      />
     </section>
   )
 }

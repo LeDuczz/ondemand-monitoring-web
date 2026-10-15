@@ -47,16 +47,10 @@ function missionProgressBadge(
 
 export function MissionHeader({
   mission,
-  submitting,
   access,
-  onAccept,
-  onOpenReject,
 }: {
   mission: OperatorMission
-  submitting: boolean
   access?: MissionPermissions
-  onAccept: () => void
-  onOpenReject: () => void
 }) {
   const { t } = useI18n(missionHeaderMessages)
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
@@ -162,27 +156,8 @@ export function MissionHeader({
           ) : null
         ) : mission.status === 'PENDING' && hasAccepted ? (
           <StatusBadge tone="green">{t.youAccepted}</StatusBadge>
-        ) : mission.status === 'PENDING' ? (
-          <>
-            <button
-              type="button"
-              className="odm-btn odm-btn-rd"
-              onClick={onOpenReject}
-              disabled={submitting || !access?.canRespond}
-            >
-              {t.reject}
-            </button>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              onClick={onAccept}
-              disabled={submitting || !access?.canRespond}
-            >
-              {submitting ? t.processing : t.accept}
-            </button>
-          </>
-        ) : mission.backendStatus === 'READY_TO_FLY' &&
-          access?.canControlFlight ? (
+        ) : mission.status === 'PENDING' ? null : mission.backendStatus ===
+            'READY_TO_FLY' && access?.canControlFlight ? (
           <a
             className="odm-btn odm-btn-p"
             href={operatorHref({ screen: 'flight', missionId: mission.id })}

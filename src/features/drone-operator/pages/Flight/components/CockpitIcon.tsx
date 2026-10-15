@@ -37,6 +37,7 @@ const ICONS: Record<string, ReactNode> = {
     </>
   ),
   expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
+  chevron: <path d="M6 15l6-6 6 6" />,
   altitude: (
     <>
       <path d="M4 18l8-4 8 4" />

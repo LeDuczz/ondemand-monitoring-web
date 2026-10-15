@@ -328,6 +328,10 @@ it('scoped submit returns to its origin and never mutates Order/Mission completi
   await screen.findByLabelText('Chọn nhân sự cho Phi công')
   await fill('1')
   fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
+  // Step 8: overview of every Mission; leaving it returns to the origin.
+  await screen.findByRole('heading', { name: 'Tổng quan Mission' })
+  expect(close).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Về kế hoạch Order' }))
   await waitFor(() => expect(close).toHaveBeenCalledTimes(1))
   expect(missions[1].staffAssignments).toHaveLength(0)
   expect(missions[1].deviceId).toBeUndefined()

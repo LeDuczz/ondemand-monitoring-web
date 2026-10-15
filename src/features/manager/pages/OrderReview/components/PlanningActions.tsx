@@ -1,6 +1,4 @@
-import type { OrderDetail } from '../../../types/orders'
-import type { ExecutionPlan } from '../../../types/planning'
-import type { MissionResponse } from '../../../types/missions'
+import type { PlanningWorkspaceData } from '../planningWorkspaceData'
 import type { Dispatch } from 'react'
 import type { SetStateAction } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
@@ -13,26 +11,32 @@ export function PlanningActions({
   saving,
   setCreating,
   dirty,
-  mutate,
   amending,
   setAmending,
   setReason,
+  creating,
+  selected,
+  onContinue,
+  onAssignResources,
+  setAssigningResources,
 }: {
   writable: boolean
-  data: { plan: ExecutionPlan; missions: MissionResponse[]; order: OrderDetail }
+  data: PlanningWorkspaceData
   busy: boolean
   saving: boolean
   setCreating: Dispatch<
     SetStateAction<{ replacesMissionId?: string | undefined } | null>
   >
   dirty: boolean
-  mutate: (
-    action: 'finalize' | 'amend' | 'cancel',
-    missionId?: string | undefined,
-  ) => Promise<void>
   amending: boolean
   setAmending: Dispatch<SetStateAction<boolean>>
   setReason: Dispatch<SetStateAction<string>>
+  /** A Mission creation form is open. */
+  creating: boolean
+  selected: string | undefined
+  onContinue: () => Promise<void>
+  onAssignResources: ((missionId: string) => void) | undefined
+  setAssigningResources: Dispatch<SetStateAction<{ missionId: string } | null>>
 }) {
   const { t } = useI18n(planningActionsMessages)
 
@@ -45,37 +49,49 @@ export function PlanningActions({
               <button
                 type="button"
                 className="odm-btn"
-                disabled={busy || saving}
+                disabled={busy || saving || creating}
                 onClick={() => setCreating({})}
               >
-                {t.addMission}
+                {creating ? t.creatingMission : t.addMission}
               </button>
               <button
+                type="button"
                 className="odm-btn odm-btn-p"
-                disabled={
-                  busy ||
-                  saving ||
-                  dirty ||
-                  !data.plan.coverage.coverageReady ||
-                  data.plan.blockers.length > 0
-                }
-                onClick={() => void mutate('finalize')}
+                disabled={busy || saving || creating}
+                onClick={() => void onContinue()}
               >
-                {t.finalizePlan}
+                {t.continueToResources}
               </button>
             </>
           )}
           {writable && data.plan.planStatus === 'FINALIZED' && !amending && (
-            <button
-              className="odm-btn"
-              disabled={busy}
-              onClick={() => {
-                setAmending(true)
-                setReason('')
-              }}
-            >
-              {t.adjustPlan}
-            </button>
+            <>
+              <button
+                className="odm-btn"
+                disabled={busy}
+                onClick={() => {
+                  setAmending(true)
+                  setReason('')
+                }}
+              >
+                {t.adjustPlan}
+              </button>
+              {selected && (
+                <button
+                  className="odm-btn odm-btn-p odm-planning-next-resource"
+                  disabled={busy || saving || dirty}
+                  onClick={() =>
+                    onAssignResources
+                      ? onAssignResources(selected)
+                      : setAssigningResources({ missionId: selected })
+                  }
+                >
+                  {t.assignResourcesFor}{' '}
+                  {data.missions.find((mission) => mission.id === selected)
+                    ?.missionCode ?? 'Mission'}
+                </button>
+              )}
+            </>
           )}
         </div>
       )}

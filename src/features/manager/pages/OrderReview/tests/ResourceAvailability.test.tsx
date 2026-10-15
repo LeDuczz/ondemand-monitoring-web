@@ -72,7 +72,8 @@ it('uses exact Mission availability, keeps own assignments, and shows only retur
   expect(await screen.findByRole('button', { name: 'Phân công' })).toBeEnabled()
   expect(operatorApi.getAvailable).toHaveBeenCalledWith('m1')
   expect(droneApi.getAvailable).toHaveBeenCalledWith('m1')
-  fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
   fireEvent.click(screen.getByRole('button', { name: /Staff 0.*Sẵn sàng/ }))
   expect(
     screen.getByPlaceholderText('Tìm theo tên hoặc email...'),
@@ -137,7 +138,7 @@ it('refreshes device conflict, retains valid devices/crew and returns to device'
     screen.queryByRole('option', { name: /Drone 1/ }),
   ).not.toBeInTheDocument()
   expect(screen.getByRole('option', { name: /Drone 2/ })).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
   expect(
     screen.getByRole('button', { name: /Staff 0.*Sẵn sàng/ }),
   ).toHaveTextContent('Staff 0')
@@ -200,7 +201,7 @@ it('shows explanatory loading and empty states without stale options', async () 
       'Không có nhân sự phù hợp trong khung giờ Mission này.',
     ),
   ).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: /Thiết bị/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
   expect(
     screen.getByText('Không có thiết bị khả dụng trong khung giờ Mission này.'),
   ).toBeInTheDocument()

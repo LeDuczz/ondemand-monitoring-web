@@ -23,6 +23,7 @@ export function CockpitControlsPanel({
 }) {
   const { t } = useI18n(cockpitControlsPanelMessages)
   const [confirmStop, setConfirmStop] = useState(false)
+  const [open, setOpen] = useState(true)
   useEffect(() => {
     if (!confirmStop) return
     const timer = window.setTimeout(() => setConfirmStop(false), 3000)
@@ -87,53 +88,67 @@ export function CockpitControlsPanel({
     <section className="fc-panel">
       <header className="fc-panel__head">
         <span className="fc-panel__title is-bar">{t.control}</span>
+        <button
+          type="button"
+          className={`fc-collapse${open ? '' : ' is-closed'}`}
+          aria-expanded={open}
+          aria-label={open ? t.collapse : t.expandPanel}
+          title={open ? t.collapse : t.expandPanel}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Ico name="chevron" size={18} />
+        </button>
       </header>
-      <div className="fc-controls">
-        {controls.map((item) => (
+      {open ? (
+        <>
+          <div className="fc-controls">
+            {controls.map((item) => (
+              <button
+                key={item.cmd}
+                type="button"
+                className={`fc-ctl${item.tone ? ` is-${item.tone}` : ''}`}
+                disabled={busy || !item.enabled}
+                onClick={() => onCommand(item.cmd)}
+              >
+                <Ico name={item.icon} size={20} />
+                <strong>{item.label}</strong>
+                <small>{item.sub}</small>
+              </button>
+            ))}
+            {onFinishFlight ? (
+              <button
+                type="button"
+                className="fc-ctl fc-finish is-success"
+                disabled={busy || finishingFlight || (!canFly && !canTerminate)}
+                onClick={onFinishFlight}
+              >
+                <Ico name="land" size={20} />
+                <strong>{finishingFlight ? t.updating : t.finishFlight}</strong>
+                <small>{t.finishFlightSub}</small>
+              </button>
+            ) : null}
+          </div>
           <button
-            key={item.cmd}
             type="button"
-            className={`fc-ctl${item.tone ? ` is-${item.tone}` : ''}`}
-            disabled={busy || !item.enabled}
-            onClick={() => onCommand(item.cmd)}
+            className={`fc-emergency${confirmStop ? ' is-armed' : ''}`}
+            disabled={busy || (!canFly && !canTerminate)}
+            onClick={() => {
+              if (!confirmStop) {
+                setConfirmStop(true)
+                return
+              }
+              setConfirmStop(false)
+              onCommand('emergency_stop')
+            }}
           >
-            <Ico name={item.icon} size={20} />
-            <strong>{item.label}</strong>
-            <small>{item.sub}</small>
+            <Ico name="stop" size={30} />
+            <span>
+              <strong>{t.emergency}</strong>
+              <small>{confirmStop ? t.emergencyConfirm : t.emergencySub}</small>
+            </span>
           </button>
-        ))}
-        {onFinishFlight ? (
-          <button
-            type="button"
-            className="fc-ctl is-success"
-            disabled={busy || finishingFlight || (!canFly && !canTerminate)}
-            onClick={onFinishFlight}
-          >
-            <Ico name="land" size={20} />
-            <strong>{finishingFlight ? t.updating : t.finishFlight}</strong>
-            <small>{t.finishFlightSub}</small>
-          </button>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        className={`fc-emergency${confirmStop ? ' is-armed' : ''}`}
-        disabled={busy || (!canFly && !canTerminate)}
-        onClick={() => {
-          if (!confirmStop) {
-            setConfirmStop(true)
-            return
-          }
-          setConfirmStop(false)
-          onCommand('emergency_stop')
-        }}
-      >
-        <Ico name="stop" size={30} />
-        <span>
-          <strong>{t.emergency}</strong>
-          <small>{confirmStop ? t.emergencyConfirm : t.emergencySub}</small>
-        </span>
-      </button>
+        </>
+      ) : null}
     </section>
   )
 }

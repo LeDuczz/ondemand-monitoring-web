@@ -2546,6 +2546,21 @@ ul.co-help {
 .co-terms-check.has-error {
   border-color: var(--ui-danger, #d92d20);
 }
+.co-terms-check-copy {
+  display: grid;
+  gap: 5px;
+  line-height: 1.45;
+}
+.co-terms-check-copy strong {
+  color: var(--tx1);
+  font-size: 14px;
+  font-weight: 700;
+}
+.co-terms-check-copy small {
+  color: var(--tx2);
+  font-size: 13px;
+  line-height: 1.45;
+}
 .co-terms-check input {
   width: 18px;
   height: 18px;

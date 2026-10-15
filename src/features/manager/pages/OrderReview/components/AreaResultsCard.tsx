@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { AreaDecisionSummary } from './AreaDecisionSummary'
 import { AreaFacts } from './AreaFacts'
 import { AreaMinistryViolations } from './AreaMinistryViolations'
@@ -16,6 +18,7 @@ export function AreaResultsCard({
   hasMinistryViolations,
   ministryViolatedZones,
   findings,
+  managerReview,
 }: {
   assessment: {
     data: FlightAreaAssessment | null | undefined
@@ -31,6 +34,8 @@ export function AreaResultsCard({
   findings:
     | { code: string; severity: FlightAreaFindingSeverity; message: string }[]
     | undefined
+  /** Manager's own judgement of the area, rendered under the map result. */
+  managerReview?: ReactNode
 }) {
   const { t } = useI18n(areaResultsCardMessages)
 
@@ -84,6 +89,7 @@ export function AreaResultsCard({
             >
               {t.openTheMinistryOfNational}
             </a>
+            {managerReview}
           </>
         ) : null}
       </div>

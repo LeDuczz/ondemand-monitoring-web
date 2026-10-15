@@ -7,7 +7,7 @@ import { missionInfoCardMessages } from './MissionInfoCard.messages'
 import { MissionStatusBadge } from './MissionStatusBadge'
 import { missionStatusBadgeMessages } from './MissionStatusBadge.messages'
 
-type InfoCardLabels = typeof missionInfoCardMessages.vi
+export type InfoCardLabels = typeof missionInfoCardMessages.vi
 
 function missionDescriptionText(
   description: string | undefined,
@@ -27,7 +27,7 @@ function missionDescriptionText(
   return text
 }
 
-function locationLabel(value: string, t: InfoCardLabels): string {
+export function locationLabel(value: string, t: InfoCardLabels): string {
   if (value === 'Construction Site') return t.locationConstructionSite
   if (value === 'Dam') return t.locationDam
   if (value === 'Warehouse') return t.locationWarehouse

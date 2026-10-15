@@ -113,7 +113,7 @@ describe('MissionCreatePage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/),
-    ).toHaveValue('Toàn bộ phạm vi Order')
+    ).toHaveValue('Toàn bộ phạm vi đơn hàng')
     expect(
       screen.getByText('Mission sẽ sử dụng phạm vi địa lý hiện có của Order.'),
     ).toBeInTheDocument()

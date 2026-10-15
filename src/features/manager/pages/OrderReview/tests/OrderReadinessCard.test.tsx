@@ -2,11 +2,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { readinessApi } from '../../../api/readinessApi'
+import { ordersApi } from '../../../api/ordersApi'
 import type { OrderReadiness } from '../../../types/readiness'
 import { OrderReadinessCard } from '../components/OrderReadinessCard'
 
 vi.mock('../../../api/readinessApi', () => ({
   readinessApi: { get: vi.fn(), answer: vi.fn() },
+}))
+vi.mock('../../../api/ordersApi', () => ({
+  ordersApi: { submitApproval: vi.fn() },
 }))
 
 const readiness: OrderReadiness = {
@@ -23,6 +27,18 @@ const readiness: OrderReadiness = {
       required: true,
       result: 'PASS',
       reason: 'Vị trí nằm trong vùng phục vụ',
+      note: null,
+      decidedByName: null,
+      decidedAt: null,
+    },
+    {
+      code: 'SCHEDULE_DATE',
+      type: 'AUTO',
+      title: 'Thời gian thực hiện',
+      description: 'Ngày thực hiện và hạn nhận kết quả',
+      required: false,
+      result: 'WARN',
+      reason: 'Hạn nhận kết quả rất sát ngày thực hiện',
       note: null,
       decidedByName: null,
       decidedAt: null,
@@ -57,6 +73,8 @@ describe('OrderReadinessCard', () => {
   beforeEach(() => {
     vi.mocked(readinessApi.answer).mockReset()
     vi.mocked(readinessApi.answer).mockResolvedValue(readiness)
+    vi.mocked(ordersApi.submitApproval).mockReset()
+    vi.mocked(ordersApi.submitApproval).mockResolvedValue(undefined)
   })
 
   it('shows the system checks and the criteria the manager must answer', () => {
@@ -65,6 +83,10 @@ describe('OrderReadinessCard', () => {
       screen.getByText('Vị trí nằm trong vùng phục vụ'),
     ).toBeInTheDocument()
     expect(screen.getByText('Năng lực thực hiện')).toBeInTheDocument()
+    expect(screen.queryByText('Thời gian thực hiện')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Hạn nhận kết quả rất sát ngày thực hiện'),
+    ).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(
       'Còn 1 mục manager cần xác nhận',
     )
@@ -93,6 +115,20 @@ describe('OrderReadinessCard', () => {
     renderCard()
     fireEvent.click(screen.getByRole('button', { name: 'Không đạt' }))
     expect(readinessApi.answer).not.toHaveBeenCalled()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+    const requestMore = screen.getByRole('button', {
+      name: 'Yêu cầu bổ sung',
+    })
+    const reject = screen.getByRole('button', { name: 'Từ chối đơn' })
+    expect(requestMore).toBeEnabled()
+    expect(reject).toBeEnabled()
+    fireEvent.click(requestMore)
+    expect(
+      screen.getByText(
+        'Vui lòng nhập lý do cho tất cả tiêu chí không đạt trước khi tiếp tục.',
+      ),
+    ).toBeInTheDocument()
+    expect(ordersApi.submitApproval).not.toHaveBeenCalled()
     const save = screen.getByRole('button', { name: 'Lưu' })
     expect(save).toBeDisabled()
     fireEvent.change(screen.getByLabelText('Ghi chú: Năng lực thực hiện'), {
@@ -106,6 +142,7 @@ describe('OrderReadinessCard', () => {
         note: 'Không có drone ảnh nhiệt',
       }),
     )
+    expect(ordersApi.submitApproval).not.toHaveBeenCalled()
   })
 
   it('is read-only once the order is no longer pending', () => {

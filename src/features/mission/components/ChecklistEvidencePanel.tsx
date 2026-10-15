@@ -246,9 +246,10 @@ function MissionEvidencePanel({
               ? 0
               : (item.minimumEvidenceCount ?? 0)}
           </strong>
-          {item.blockingReasons?.map((reason) => (
-            <p key={reason}>{t.reasons[reason]}</p>
-          ))}
+          {terminalStatus(item.executionStatus) &&
+            item.blockingReasons?.map((reason) => (
+              <p key={reason}>{t.reasons[reason]}</p>
+            ))}
           <div className="checklist-evidence-grid">
             {item.evidence?.map((link) => (
               <article key={link.evidenceId}>
@@ -533,4 +534,9 @@ function MissionEvidencePanel({
       {error && <p role="alert">{error}</p>}
     </section>
   )
+}
+
+/** Reasons are only meaningful once the item is finished; before that the status already says it. */
+function terminalStatus(status: string) {
+  return status === 'COMPLETED' || status === 'UNABLE_TO_VERIFY'
 }

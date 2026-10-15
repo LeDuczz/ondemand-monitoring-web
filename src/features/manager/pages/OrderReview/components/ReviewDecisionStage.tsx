@@ -1,5 +1,6 @@
 import { ManagerPricingPanel } from '../../../../finance/ManagerPricingPanel'
 import { OrderApprovalActions } from './OrderApprovalActions'
+import { ReadOnlyScope } from './ReadOnlyScope'
 import { ReviewStageActions } from './ReviewStageActions'
 import type { ReviewStep } from '../reviewSteps'
 import type { Dispatch, SetStateAction } from 'react'
@@ -16,6 +17,7 @@ export function ReviewDecisionStage({
   approveBlockedReason,
   setNavigateHome,
   goToStep,
+  readOnly = false,
 }: {
   order: OrderDetail
   handleApproved: () => void
@@ -23,28 +25,32 @@ export function ReviewDecisionStage({
   approveBlockedReason: string | null
   setNavigateHome: Dispatch<SetStateAction<boolean>>
   goToStep: (step: ReviewStep) => void
+  /** A completed stage reopened for viewing: content is not editable. */
+  readOnly?: boolean
 }) {
   const { t } = useI18n(reviewDecisionStageMessages)
 
   return (
     <div className="odm-or-review-stage" aria-label={t.checklistAndQuote}>
-      <section className="odm-or-review-section">
-        <ManagerPricingPanel
-          orderId={order.id}
-          onApproved={handleApproved}
-          onChecklistReviewChanged={readinessQuery.reload}
-          approveBlockedReason={approveBlockedReason}
-          decisionActions={
-            <OrderApprovalActions
-              orderId={order.id}
-              orderCode={order.code}
-              onApproved={handleApproved}
-              onDecisionDone={() => setNavigateHome(true)}
-              showApprove={false}
-            />
-          }
-        />
-      </section>
+      <ReadOnlyScope on={readOnly}>
+        <section className="odm-or-review-section">
+          <ManagerPricingPanel
+            orderId={order.id}
+            onApproved={handleApproved}
+            onChecklistReviewChanged={readinessQuery.reload}
+            approveBlockedReason={approveBlockedReason}
+            decisionActions={
+              <OrderApprovalActions
+                orderId={order.id}
+                orderCode={order.code}
+                onApproved={handleApproved}
+                onDecisionDone={() => setNavigateHome(true)}
+                showApprove={false}
+              />
+            }
+          />
+        </section>
+      </ReadOnlyScope>
       <ReviewStageActions step={4} onBack={() => goToStep(3)} />
     </div>
   )

@@ -154,8 +154,8 @@ const ROUTES: Route[] = [
   {
     name: 'OrderDetail',
     hash: '#portal/customer/orders/cus-ord-003',
-    vi: 'Thông tin đơn hàng',
-    en: 'Order information',
+    vi: 'Chi tiết đơn hàng',
+    en: 'Order details',
   },
   {
     name: 'CreateOrder',
@@ -485,7 +485,7 @@ describe('Support pages i18n (vi -> en)', () => {
   it('context help widget on order and mission pages is English', async () => {
     window.location.hash = '#portal/customer/orders/cus-ord-003'
     render(<CustomerApp />)
-    await screen.findAllByText('Thông tin đơn hàng', { exact: false })
+    await screen.findAllByText('Chi tiết đơn hàng', { exact: false })
     act(() => setLanguage('en'))
     fireEvent.click(await screen.findByRole('button', { name: /Why is my order still pending approval\?/ }))
     fireEvent.click(screen.getByRole('button', { name: /^Create a ticket for/ }))

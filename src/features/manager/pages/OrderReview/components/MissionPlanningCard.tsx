@@ -11,6 +11,7 @@ import { staffRoleLabel } from '../../../components/common/missionDetailHelpers'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { planningSchedule } from '../../../components/common/planningSchedule'
 import { missionStopLabel } from '../../../../mission/lib/missionOperationalState'
+import { localizePlanningScopeLabel } from '../../../components/common/planningScopeLabel'
 import { useI18n } from '../../../../../shared/i18n'
 import { missionPlanningCardMessages } from './MissionPlanningCard.messages'
 
@@ -62,7 +63,11 @@ export function MissionPlanningCard({
         )}
       </header>
       <div className="odm-mission-scope">
-        <p>{scope?.scopeLabel || mission.orderTitle || t.scopeByOrder}</p>
+        <p>
+          {scope?.scopeLabel
+            ? localizePlanningScopeLabel(scope.scopeLabel, lang)
+            : mission.orderTitle || t.scopeByOrder}
+        </p>
         <span>
           <OrderIcon name="calendar" size={15} />
           {planningSchedule(

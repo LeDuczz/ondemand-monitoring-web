@@ -1,11 +1,9 @@
 import { MissionPlanningCard } from './MissionPlanningCard'
 import { MissionChecklistAssignmentEditor } from './MissionChecklistAssignmentEditor'
-import { assignmentReadiness } from '../../../lib/assignmentReadiness'
 import { ManagerMissionStopFlow } from './ManagerMissionStopFlow'
 import { MissionExecutionPanel } from './MissionExecutionPanel'
-import type { OrderDetail } from '../../../types/orders'
 import type { MissionResponse } from '../../../types/missions'
-import type { ExecutionPlan } from '../../../types/planning'
+import type { PlanningWorkspaceData } from '../planningWorkspaceData'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { Dispatch } from 'react'
 import type { SetStateAction } from 'react'
@@ -25,8 +23,6 @@ export function MissionWorkspacePanel({
   runtimeBlocked,
   saving,
   dirty,
-  onAssignResources,
-  setAssigningResources,
   cancelCapabilities,
   cancelling,
   setCancelling,
@@ -47,23 +43,15 @@ export function MissionWorkspacePanel({
         finalizedPlanRevision: number | null
       }
     | undefined
-  data: { plan: ExecutionPlan; missions: MissionResponse[]; order: OrderDetail }
+  data: PlanningWorkspaceData
   writable: boolean
   busy: boolean
   draft: boolean
-  query: UseApiQueryState<{
-    plan: ExecutionPlan
-    missions: MissionResponse[]
-    order: OrderDetail
-  }>
+  query: UseApiQueryState<PlanningWorkspaceData>
   updateDraft: (id: string, dirty: boolean, saving: boolean) => void
   runtimeBlocked: Record<string, boolean>
   saving: boolean
   dirty: boolean
-  onAssignResources: ((missionId: string) => void) | undefined
-  setAssigningResources: Dispatch<
-    SetStateAction<{ missionId?: string | undefined } | null>
-  >
   cancelCapabilities: Record<string, boolean>
   cancelling: string | null
   setCancelling: Dispatch<SetStateAction<string | null>>
@@ -103,31 +91,6 @@ export function MissionWorkspacePanel({
           onChanged={query.reload}
           onDraftState={updateDraft}
         />
-        {writable &&
-          !busy &&
-          runtimeBlocked[mission.id] === false &&
-          data.plan.planStatus === 'FINALIZED' &&
-          (scope?.finalizedPlanRevision ?? 0) > 0 &&
-          ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
-            mission.status,
-          ) && (
-            <button
-              className="odm-btn"
-              disabled={busy || saving || dirty}
-              onClick={() =>
-                onAssignResources
-                  ? onAssignResources(mission.id)
-                  : setAssigningResources({
-                      missionId: mission.id,
-                    })
-              }
-            >
-              {assignmentReadiness(mission).complete
-                ? t.editAssignmentFor
-                : t.assignResourcesFor}{' '}
-              {mission.missionCode}
-            </button>
-          )}
         {((writable &&
           !['COMPLETED', 'CANCELLED'].includes(mission.status) &&
           cancelCapabilities[mission.id] === true &&
@@ -140,7 +103,7 @@ export function MissionWorkspacePanel({
               cancelCapabilities[mission.id] === true &&
               runtimeBlocked[mission.id] === false && (
                 <button
-                  className="odm-btn"
+                  className="odm-btn odm-btn-danger-soft"
                   disabled={busy || saving || dirty}
                   onClick={() => {
                     setCancelling(mission.id)

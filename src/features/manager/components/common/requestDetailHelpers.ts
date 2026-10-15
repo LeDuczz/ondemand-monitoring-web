@@ -124,19 +124,28 @@ export function numberText(f: DetailFormat, value: unknown): string | null {
   return valueText && valueText !== '0' ? valueText : null
 }
 
+function resolutionText(f: DetailFormat, value: unknown): string | null {
+  const resolution = text(f, value)
+  if (!resolution) return null
+  return resolution.toUpperCase() === '4K' ? '4K UHD' : resolution
+}
+
 export function deliverableSummary(
   f: DetailFormat,
   requirement: Record<string, unknown> | null,
   deliverableName?: string | null,
 ) {
   if (!requirement) return []
-  const type =
-    mediaTypeFromTitle(f, deliverableName) ?? text(f, requirement.mediaType)
+  // The deliverable heading already communicates its media type (for example,
+  // "Video"). Only fall back to the requirement media type for generic names.
+  const type = mediaTypeFromTitle(f, deliverableName)
+    ? null
+    : text(f, requirement.mediaType)
   const quantity = numberText(f, requirement.quantity)
   return [
     type,
     quantity ? f.t.items(quantity) : null,
-    text(f, requirement.resolution),
+    resolutionText(f, requirement.resolution),
     text(f, requirement.aiAnalysisRequested) === f.t.yes ? f.t.withAi : null,
   ].filter((item): item is string => Boolean(item))
 }
@@ -174,44 +183,4 @@ export function addOnItems(
       return [title, description, price].filter(Boolean).join(' · ')
     })
     .filter((item): item is string => Boolean(item))
-}
-
-export function requirementItems(
-  f: DetailFormat,
-  requirement: Record<string, unknown> | null,
-): DetailItem[] {
-  if (!requirement) return []
-  const hiddenTechnicalKeys = new Set([
-    'priority',
-    'readinessScore',
-    'usagePurpose',
-    'serviceCode',
-    'serviceId',
-    'deliverableTypeId',
-    'mediaType',
-    'quantity',
-    'resolution',
-    'radiusM',
-    'estimatedAreaHa',
-    'aiAnalysisRequested',
-    'additionalRequirements',
-  ])
-
-  return Object.entries(requirement)
-    .map<DetailItem | null>(([key, value]) => {
-      if (hiddenTechnicalKeys.has(key)) return null
-      const formatted = requirementValue(f, value)
-      if (!formatted) return null
-      const suffix =
-        key === 'radiusM' ? ' m' : key === 'estimatedAreaHa' ? ' ha' : ''
-      const finalValue =
-        key === 'additionalPrice'
-          ? (formatMoney(f, value) ?? formatted)
-          : formatted
-      return {
-        label: f.t.labels[key] ?? key,
-        value: `${finalValue}${suffix}`,
-      }
-    })
-    .filter((item): item is DetailItem => item != null)
 }

@@ -143,6 +143,13 @@
   font: inherit;
   font-size: 12.5px;
 }
+
+.odm-or-readiness-blocking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
 .odm-or-readiness-list .odm-btn {
   margin-top: 6px;
 }
@@ -219,13 +226,17 @@
 }
 .odm-or-readiness-blocking {
   margin: 0;
-  padding: 10px 16px 12px 34px;
+  padding: 10px 16px 12px;
   border-top: 1px solid var(--or-amber-border);
   border-radius: 0 0 12px 12px;
   background: var(--or-amber-soft);
   color: var(--or-amber-fg);
   font-size: 12.5px;
   line-height: 1.5;
+}
+.odm-or-readiness-blocking ul {
+  margin: 0;
+  padding-left: 18px;
 }
 @container (max-width: 760px) {
   .odm-or-readiness-body {

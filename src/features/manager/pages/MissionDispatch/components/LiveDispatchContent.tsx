@@ -144,6 +144,10 @@ export function LiveDispatchContent({
   useEffect(() => {
     draftCallback?.(dirty, busy)
   }, [dirty, busy, draftCallback])
+  const globalStepCallback = orderContext?.onGlobalStep
+  useEffect(() => {
+    globalStepCallback?.(activeStep === 'confirm' ? 7 : 6)
+  }, [activeStep, globalStepCallback])
 
   async function assign() {
     if (

@@ -21,6 +21,7 @@ import { operatorHref } from '../../routes'
 import { MissionDashboard } from './components/MissionDashboard'
 import { RejectDialog } from './components/RejectDialog'
 import { SafeStopPostflightPrompt } from './components/SafeStopPostflightPrompt'
+import { isAwaitingResponse } from './missionResponse'
 import { missionDetailPageMessages } from './MissionDetailPage.messages'
 import { useMissionDetailActions } from './useMissionDetailActions'
 
@@ -127,6 +128,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             resultNote={monitoring.data?.result?.reviewNote}
             resultKnown={monitoringKnown}
             refresh={refreshWorkspace}
+            preview={isAwaitingResponse(mission)}
           />
         }
         resultApprovalStatus={resultApprovalStatus}
@@ -136,7 +138,8 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
         onOpenReject={() => setShowReject(true)}
       />
 
-      {actions.known &&
+      {!isAwaitingResponse(mission) &&
+        actions.known &&
         monitoring.data?.permissions.canPrepareSafeStopPostflight === true && (
           <SafeStopPostflightPrompt
             submitting={submitting}

@@ -7,12 +7,10 @@ import { CreateMissionSection } from './CreateMissionSection'
 import { AmendPlanForm } from './AmendPlanForm'
 import { planningPresentationMessages } from '../../../components/common/planningPresentation.messages'
 import { MissionWorkspaceGrid } from './MissionWorkspaceGrid'
-import type { OrderDetail } from '../../../types/orders'
 import { useI18n } from '../../../../../shared/i18n'
 import type { Confirmation } from '../../../components/common/usePlanningConfirmation'
 import type { ReactNode } from 'react'
-import type { ExecutionPlan } from '../../../types/planning'
-import type { MissionResponse } from '../../../types/missions'
+import type { PlanningWorkspaceData } from '../planningWorkspaceData'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { Dispatch } from 'react'
 import type { SetStateAction } from 'react'
@@ -27,6 +25,7 @@ export function PlanningWorkspaceView({
   message,
   coverageWarning,
   allAssigned,
+  depositPaid,
   writable,
   setCreating,
   dirty,
@@ -43,6 +42,7 @@ export function PlanningWorkspaceView({
   updateDraft,
   runtimeBlocked,
   onAssignResources,
+  continueToResourceAssignment,
   setAssigningResources,
   cancelCapabilities,
   cancelling,
@@ -54,19 +54,14 @@ export function PlanningWorkspaceView({
     confirm: (next: Confirmation) => Promise<boolean>
     dialog: ReactNode | null
   }
-  data:
-    | { plan: ExecutionPlan; missions: MissionResponse[]; order: OrderDetail }
-    | undefined
-  query: UseApiQueryState<{
-    plan: ExecutionPlan
-    missions: MissionResponse[]
-    order: OrderDetail
-  }>
+  data: PlanningWorkspaceData | undefined
+  query: UseApiQueryState<PlanningWorkspaceData>
   busy: boolean
   saving: boolean
   message: string
   coverageWarning: string
   allAssigned: boolean
+  depositPaid: boolean
   writable: boolean
   setCreating: Dispatch<
     SetStateAction<{ replacesMissionId?: string | undefined } | null>
@@ -88,16 +83,15 @@ export function PlanningWorkspaceView({
   updateDraft: (id: string, dirty: boolean, saving: boolean) => void
   runtimeBlocked: Record<string, boolean>
   onAssignResources: ((missionId: string) => void) | undefined
-  setAssigningResources: Dispatch<
-    SetStateAction<{ missionId?: string | undefined } | null>
-  >
+  continueToResourceAssignment: () => Promise<void>
+  setAssigningResources: Dispatch<SetStateAction<{ missionId: string } | null>>
   cancelCapabilities: Record<string, boolean>
   cancelling: string | null
   setCancelling: Dispatch<SetStateAction<string | null>>
   updateCancelCapability: (missionId: string, canCancel: boolean) => void
   updateRuntimeBlocked: (id: string, blocked: boolean) => void
 }) {
-  const { t } = useI18n(planningWorkspaceViewMessages)
+  const { t, locale } = useI18n(planningWorkspaceViewMessages)
 
   const { t: planningT } = useI18n(planningPresentationMessages)
   return (
@@ -134,6 +128,26 @@ export function PlanningWorkspaceView({
             plan={data.plan}
             items={data.order.checklistItems ?? []}
           />
+          {!depositPaid && data.order.status === 'APPROVED' ? (
+            <div className="odm-planning-payment-gate" role="status">
+              <strong>{t.depositWaitingTitle}</strong>
+              <p>{t.depositWaitingBody}</p>
+              {data.invoice ? (
+                <span>
+                  {t.depositProgress(
+                    data.invoice.paidAmount,
+                    data.invoice.depositAmount,
+                    locale,
+                  )}
+                </span>
+              ) : (
+                <span>{t.noInvoice}</span>
+              )}
+              <button type="button" className="odm-btn" onClick={query.reload}>
+                {t.checkPayment}
+              </button>
+            </div>
+          ) : null}
           {coverageWarning && (
             <p role="alert" className="odm-planning-notice">
               {coverageWarning}
@@ -147,10 +161,14 @@ export function PlanningWorkspaceView({
             saving={saving}
             setCreating={setCreating}
             dirty={dirty}
-            mutate={mutate}
             amending={amending}
             setAmending={setAmending}
             setReason={setReason}
+            creating={Boolean(creating)}
+            selected={selected}
+            onContinue={continueToResourceAssignment}
+            onAssignResources={onAssignResources}
+            setAssigningResources={setAssigningResources}
           />
           {dirty && (
             <p className="odm-mission-meta" role="status">
@@ -191,8 +209,6 @@ export function PlanningWorkspaceView({
             updateDraft={updateDraft}
             runtimeBlocked={runtimeBlocked}
             dirty={dirty}
-            onAssignResources={onAssignResources}
-            setAssigningResources={setAssigningResources}
             cancelCapabilities={cancelCapabilities}
             cancelling={cancelling}
             setCancelling={setCancelling}

@@ -40,7 +40,7 @@ export const monitoringChecklistMessages = defineMessages({
     noItems: 'Không có mục checklist giám sát.',
     readOnlyLocked: 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.',
     readOnlyNoPermission:
-      'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.',
+      '🔒 Checklist chưa thể cập nhật. Bạn có thể cập nhật tiến độ và bằng chứng khi nhiệm vụ bước vào giai đoạn thực hiện.',
     backendNotReady:
       'Dữ liệu checklist chưa đủ điều kiện theo backend. Hãy làm mới; nếu vẫn chưa sẵn sàng, liên hệ quản trị viên.',
     evidence: 'bằng chứng',
@@ -48,10 +48,14 @@ export const monitoringChecklistMessages = defineMessages({
     chipMissingEvidence: 'Thiếu bằng chứng',
     chipUnable: 'Không xác minh',
     updatedPrefix: 'Cập nhật',
-    monitoringTitle: 'Checklist giám sát',
-    monitoringSubtitle:
-      'Yêu cầu lịch sử của đơn hàng · tách biệt kiểm tra kỹ thuật thiết bị.',
-    refresh: 'Làm mới checklist',
+    monitoringTitle: 'Checklist thực hiện',
+    monitoringSubtitle: 'Các mục cần thực hiện và bằng chứng cho nhiệm vụ này.',
+    refresh: 'Tải lại',
+    refreshTitle: 'Lấy dữ liệu checklist mới nhất',
+    previewNoticeTitle: '🔒 Checklist chưa thể cập nhật',
+    previewNoticeBody:
+      'Bạn đang xem trước nội dung. Sau khi chấp nhận nhiệm vụ, bạn có thể cập nhật tiến độ và bằng chứng.',
+    previewMinEvidence: (n: number) => `Bằng chứng tối thiểu: ${n}`,
     loadingWithResult: 'Đang tải checklist và trạng thái kết quả…',
     readyToSubmit: 'Sẵn sàng gửi kết quả',
     notReadyToSubmit: 'Chưa sẵn sàng gửi kết quả',
@@ -81,8 +85,6 @@ export const monitoringChecklistMessages = defineMessages({
     useFresh: 'Dùng dữ liệu mới (bỏ chỉnh sửa chưa lưu)',
     cancel: 'Hủy',
     save: 'Lưu',
-    finished: 'Đã kết thúc',
-    needAction: 'Cần thực hiện',
     observation: 'Ghi nhận:',
     updatedColon: 'Cập nhật:',
     updateItem: 'Cập nhật mục',
@@ -131,7 +133,7 @@ export const monitoringChecklistMessages = defineMessages({
     noItems: 'No monitoring checklist items.',
     readOnlyLocked: 'Read-only — the result is pending approval or approved.',
     readOnlyNoPermission:
-      'Read-only — you cannot update, or your permissions are not verified.',
+      '🔒 The checklist cannot be updated yet. You can update progress and evidence once the mission enters the execution phase.',
     backendNotReady:
       'The checklist data does not meet backend requirements yet. Refresh; if it is still not ready, contact an administrator.',
     evidence: 'evidence',
@@ -139,10 +141,14 @@ export const monitoringChecklistMessages = defineMessages({
     chipMissingEvidence: 'Missing evidence',
     chipUnable: 'Not verifiable',
     updatedPrefix: 'Updated',
-    monitoringTitle: 'Monitoring checklist',
-    monitoringSubtitle:
-      'Historical order requirements · separate from the device technical check.',
-    refresh: 'Refresh checklist',
+    monitoringTitle: 'Execution checklist',
+    monitoringSubtitle: 'Items to carry out and the evidence for this mission.',
+    refresh: 'Reload',
+    refreshTitle: 'Fetch the latest checklist data',
+    previewNoticeTitle: '🔒 The checklist cannot be updated yet',
+    previewNoticeBody:
+      'You are previewing the content. After you accept the mission you can update progress and evidence.',
+    previewMinEvidence: (n: number) => `Minimum evidence: ${n}`,
     loadingWithResult: 'Loading checklist and result status…',
     readyToSubmit: 'Ready to submit result',
     notReadyToSubmit: 'Not ready to submit result',
@@ -173,8 +179,6 @@ export const monitoringChecklistMessages = defineMessages({
     useFresh: 'Use latest data (discard unsaved edits)',
     cancel: 'Cancel',
     save: 'Save',
-    finished: 'Finished',
-    needAction: 'Action needed',
     observation: 'Observation:',
     updatedColon: 'Updated:',
     updateItem: 'Update item',

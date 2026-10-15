@@ -14,6 +14,9 @@ export const cockpitTelemetryPanelMessages = defineMessages({
     toBase: 'Tới trạm (Home)',
     toTarget: 'Tới điểm (Target)',
     battery: 'Pin',
+    gps: 'Tọa độ GPS',
+    collapse: 'Thu gọn',
+    expandPanel: 'Mở rộng',
     mode: 'Chế độ',
   },
   en: {
@@ -29,6 +32,9 @@ export const cockpitTelemetryPanelMessages = defineMessages({
     toBase: 'To home',
     toTarget: 'To target',
     battery: 'Battery',
+    gps: 'GPS position',
+    collapse: 'Collapse',
+    expandPanel: 'Expand',
     mode: 'Mode',
   },
 })

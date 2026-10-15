@@ -8,6 +8,8 @@ import { assignmentReadiness } from '../../../lib/assignmentReadiness'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { finalizeError, planningError } from '../../../lib/planningErrors'
 import { OrderResourceAssignmentWizard } from '../../../components/common/OrderResourceAssignmentWizard'
+import { financeApi } from '../../../../finance/api'
+import type { PlanningWorkflowInfo } from '../planningWorkspaceData'
 import { PlanningWorkspaceView } from './PlanningWorkspaceView'
 import { useI18n } from '../../../../../shared/i18n'
 import { orderPlanningWorkspaceMessages } from './OrderPlanningWorkspace.messages'
@@ -16,10 +18,12 @@ export function OrderPlanningWorkspace({
   orderId,
   initialOrder,
   onAssignResources,
+  onWorkflowInfo,
 }: {
   orderId: string
   initialOrder?: OrderDetail
   onAssignResources?: (missionId: string) => void
+  onWorkflowInfo?: (info: PlanningWorkflowInfo) => void
 }) {
   const { t } = useI18n(orderPlanningWorkspaceMessages)
 
@@ -29,20 +33,24 @@ export function OrderPlanningWorkspace({
   )
   const query = useApiQuery(
     async (signal) => {
-      const [plan, missions, order] = await Promise.all([
+      const [plan, missions, order, invoice] = await Promise.all([
         planningApi.getExecutionPlan(orderId, signal),
         planningApi.getOrderMissions(orderId, signal),
         initialOrderRef.current ?? ordersApi.getOrder(orderId, signal),
+        financeApi.getManagerInvoice(orderId, signal).catch((error) => {
+          if (error instanceof ApiError && error.status === 404) return null
+          throw error
+        }),
       ])
       // Reuse only the initial exact-Order read. Every later refresh remains authoritative.
       // An aborted StrictMode/dependency request must not consume the initial snapshot.
       if (!signal.aborted) initialOrderRef.current = undefined
-      return { plan, missions, order }
+      return { plan, missions, order, invoice }
     },
     [orderId],
   )
   const [assigningResources, setAssigningResources] = useState<{
-    missionId?: string
+    missionId: string
   } | null>(null)
   const [busy, setBusy] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -102,10 +110,26 @@ export function OrderPlanningWorkspace({
   const selected = selectedId ?? undefined
   const effective =
     data?.missions.filter((mission) => mission.status !== 'CANCELLED') ?? []
+  const depositPaid = Boolean(
+    data?.invoice && data.invoice.paidAmount >= data.invoice.depositAmount,
+  )
+  useEffect(() => {
+    if (!data || !onWorkflowInfo) return
+    onWorkflowInfo({
+      depositPaid,
+      selectedMissionId: selectedId,
+      missions: effective.map((mission) => ({
+        id: mission.id,
+        code: mission.missionCode || 'Mission',
+        status: mission.status,
+      })),
+    })
+  }, [data, depositPaid, selectedId])
   const allAssigned = writablePlanComplete()
   function writablePlanComplete() {
     return Boolean(
       data &&
+      depositPaid &&
       data.plan.planStatus === 'FINALIZED' &&
       effective.length &&
       effective.every(
@@ -117,7 +141,11 @@ export function OrderPlanningWorkspace({
   const writable =
     !query.loading &&
     !query.error &&
-    Boolean(data && ['APPROVED', 'IN_PROGRESS'].includes(data.order.status))
+    Boolean(
+      data &&
+      depositPaid &&
+      ['APPROVED', 'IN_PROGRESS'].includes(data.order.status),
+    )
   async function mutate(
     action: 'finalize' | 'amend' | 'cancel',
     missionId?: string,
@@ -187,6 +215,33 @@ export function OrderPlanningWorkspace({
       query.reload()
     }
   }
+
+  async function continueToResourceAssignment() {
+    if (!data || !selected || !onAssignResources || !writable || busy || saving)
+      return
+    if (dirty) {
+      setCoverageWarning(t.saveChecklistFirst)
+      return
+    }
+    if (!data.plan.coverage.coverageReady || data.plan.blockers.length > 0) {
+      setCoverageWarning(t.checklistNotCovered)
+      return
+    }
+    setBusy(true)
+    setMessage('')
+    setCoverageWarning('')
+    try {
+      // The backend locks the Mission/checklist structure before resources can
+      // be reserved. Keep that technical transition inside the Next action so
+      // the manager-facing flow remains: schedule -> resources -> confirmation.
+      await planningApi.finalizeExecutionPlan(orderId, data.plan.revision)
+      onAssignResources(selected)
+    } catch (error) {
+      setCoverageWarning(finalizeError(error))
+      setBusy(false)
+      query.reload()
+    }
+  }
   if (assigningResources)
     return (
       <OrderResourceAssignmentWizard
@@ -208,6 +263,7 @@ export function OrderPlanningWorkspace({
       message={message}
       coverageWarning={coverageWarning}
       allAssigned={allAssigned}
+      depositPaid={depositPaid}
       writable={writable}
       setCreating={setCreating}
       dirty={dirty}
@@ -224,6 +280,7 @@ export function OrderPlanningWorkspace({
       updateDraft={updateDraft}
       runtimeBlocked={runtimeBlocked}
       onAssignResources={onAssignResources}
+      continueToResourceAssignment={continueToResourceAssignment}
       setAssigningResources={setAssigningResources}
       cancelCapabilities={cancelCapabilities}
       cancelling={cancelling}

@@ -29,6 +29,17 @@
   background: var(--ui-surface-2);
 }
 
+.odm-dp-tabs-title {
+  align-self: center;
+  padding: 0 var(--ui-space-3) 0 var(--ui-space-2);
+  color: var(--ui-text-3);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .odm-dp-tab {
   display: inline-flex;
   flex: 1;

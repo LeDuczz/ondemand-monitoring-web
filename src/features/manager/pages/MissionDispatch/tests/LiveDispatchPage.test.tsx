@@ -63,9 +63,8 @@ describe('LiveDispatchPage', () => {
       .mockResolvedValue({ ...mission, status: 'WAITING_CREW_CONFIRMATION' })
 
     render(<LiveDispatchPage missionId="mission-1" />)
-    await waitFor(() => screen.getByRole('button', { name: /Nhân sự/ }))
+    await waitFor(() => screen.getByRole('button', { name: 'Tiếp theo' }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
     fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Phi công'))
     fireEvent.click(screen.getByRole('button', { name: /Pilot A/ }))
     fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Vận hành'))
@@ -75,13 +74,13 @@ describe('LiveDispatchPage', () => {
     fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Nghiệm thu'))
     fireEvent.click(screen.getByRole('button', { name: /Inspector D/ }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Thiết bị/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
     fireEvent.click(screen.getByLabelText('Chọn thiết bị'))
     fireEvent.click(screen.getByRole('option', { name: /Drone 48/ }))
     fireEvent.click(screen.getByRole('button', { name: /Thêm thiết bị/ }))
     fireEvent.click(screen.getByRole('option', { name: /Drone 49/ }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Xác nhận/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
     await waitFor(() =>
       expect(assign).toHaveBeenCalledWith(
@@ -122,9 +121,8 @@ describe('LiveDispatchPage', () => {
       .mockResolvedValue({ ...mission, status: 'WAITING_CREW_CONFIRMATION' })
 
     render(<LiveDispatchPage missionId="mission-1" />)
-    await waitFor(() => screen.getByRole('button', { name: /Nhân sự/ }))
+    await waitFor(() => screen.getByRole('button', { name: 'Tiếp theo' }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
     fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Phi công'))
     clickLastStaffOption(/Seed Staff 1/)
     fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Vận hành'))
@@ -134,11 +132,11 @@ describe('LiveDispatchPage', () => {
     fireEvent.click(screen.getByLabelText('Chọn nhân sự cho Nghiệm thu'))
     clickLastStaffOption(/Seed Staff 1/)
 
-    fireEvent.click(screen.getByRole('button', { name: /Thiết bị/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
     fireEvent.click(screen.getByLabelText('Chọn thiết bị'))
     fireEvent.click(screen.getByRole('option', { name: /Drone 48/ }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Xác nhận/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Phân công' }))
     await waitFor(() =>
       expect(assign).toHaveBeenCalledWith('mission-1', ['drone-db-id'], {
@@ -173,7 +171,6 @@ describe('LiveDispatchPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Assign resources' }),
     ).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Order/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Confirm/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy()
   })
 })

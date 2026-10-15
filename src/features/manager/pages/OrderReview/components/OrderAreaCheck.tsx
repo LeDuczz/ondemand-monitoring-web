@@ -4,18 +4,29 @@ import {
   customerApi,
   type FlightAreaAssessment,
 } from '../../../../customer/api/customerApi'
-import type { OrderDetail } from '../../../types/orders'
+import type { FlightAreaReviewStatus, OrderDetail } from '../../../types/orders'
 import { OrderLocationCard } from './OrderLocationCard'
 import { resolveOrderGpsCenter } from '../../../components/common/orderGps'
 import { AreaCheckHead } from './AreaCheckHead'
 import { AreaResultsCard } from './AreaResultsCard'
+import { AreaManagerReview } from './AreaManagerReview'
+import { AreaReviewDialog } from './AreaReviewDialog'
+import { areaReviewFromOrder } from './areaReview'
 import { useI18n } from '../../../../../shared/i18n'
 import { orderAreaCheckMessages } from './OrderAreaCheck.messages'
 
 const assessmentCache = new Map<string, FlightAreaAssessment>()
 
-export function OrderAreaCheck({ order }: { order: OrderDetail }) {
+export function OrderAreaCheck({
+  order,
+  onReviewSaved,
+}: {
+  order: OrderDetail
+  onReviewSaved?: (status: FlightAreaReviewStatus) => void
+}) {
   const { t } = useI18n(orderAreaCheckMessages)
+  const [review, setReview] = useState(() => areaReviewFromOrder(order))
+  const [reviewOpen, setReviewOpen] = useState(false)
 
   const resolved = resolveOrderGpsCenter(order.center)
   const latitude = resolved?.center.lat
@@ -54,8 +65,28 @@ export function OrderAreaCheck({ order }: { order: OrderDetail }) {
           hasMinistryViolations={hasMinistryViolations}
           ministryViolatedZones={ministryViolatedZones}
           findings={findings}
+          managerReview={
+            <AreaManagerReview
+              order={order}
+              review={review}
+              onEdit={() => setReviewOpen(true)}
+            />
+          }
         />
       </div>
+      {reviewOpen ? (
+        <AreaReviewDialog
+          order={order}
+          initial={review}
+          zoneCount={ministryViolatedZones.length}
+          onClose={() => setReviewOpen(false)}
+          onSaved={(next) => {
+            setReview(next)
+            setReviewOpen(false)
+            onReviewSaved?.(next.status)
+          }}
+        />
+      ) : null}
     </section>
   )
 }

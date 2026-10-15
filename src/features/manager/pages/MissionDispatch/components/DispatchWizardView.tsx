@@ -104,7 +104,7 @@ export function DispatchWizardView({
     }
     setActiveStep(dispatchSteps[Math.max(activeStepIndex - 1, 0)])
   }
-  const globalStep = activeStep === 'confirm' ? 4 : 3
+  const globalStep = activeStep === 'confirm' ? 7 : 6
   const roleSummary = missionRoles.map((role) => ({
     role,
     names: (staffByRole[role] ?? [])
@@ -134,11 +134,13 @@ export function DispatchWizardView({
   )
   return (
     <div className="odm-or odm-dp">
-      <DispatchPageHead
-        orderContext={orderContext}
-        current={current}
-        busy={busy}
-      />
+      {!orderContext?.embeddedInOrderReview && (
+        <DispatchPageHead
+          orderContext={orderContext}
+          current={current}
+          busy={busy}
+        />
+      )}
 
       {!assignable ? (
         <AssignedResult
@@ -148,17 +150,15 @@ export function DispatchWizardView({
         />
       ) : (
         <>
-          <OrderWorkflowStepper currentStep={globalStep} />
+          {!orderContext?.embeddedInOrderReview && (
+            <OrderWorkflowStepper currentStep={globalStep} />
+          )}
 
           <div className="odm-or-layout">
             <div className="odm-or-main">
               <DispatchWizardTabs
                 activeStep={activeStep}
-                onStep={(step) => {
-                  if (orderContext && (step === 'order' || step === 'mission'))
-                    orderContext.onReturn(step === 'order')
-                  else setActiveStep(step)
-                }}
+                onStep={(step) => setActiveStep(step)}
               />
 
               {activeStep === 'order' && <OrderInfoStep current={current} />}

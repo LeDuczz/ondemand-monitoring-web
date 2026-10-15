@@ -43,7 +43,7 @@ export function StopRequestActions({
         <div className="odm-mission-actions">
           {(stop?.canCancelMission !== true || requested) && relevant && (
             <button
-              className="odm-btn"
+              className="odm-btn odm-btn-danger-soft"
               data-stop-trigger={`${missionId}:cancel`}
               disabled={!allowed}
               onClick={(event) => {
@@ -58,7 +58,7 @@ export function StopRequestActions({
           )}
           {draft && (stop?.canCancelMission === true || relevant) && (
             <button
-              className="odm-btn"
+              className="odm-btn odm-btn-secondary-soft"
               data-stop-trigger={`${missionId}:replace`}
               disabled={!allowed}
               onClick={(event) => {

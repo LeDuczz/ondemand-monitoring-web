@@ -19,7 +19,7 @@ export function AssignedResult({
   const { t } = useI18n(assignedResultMessages)
   return (
     <>
-      <OrderWorkflowStepper currentStep={5} />
+      <OrderWorkflowStepper currentStep={8} />
       <Card>
         <div className="odm-dp-result">
           <span className="odm-dp-result-icon" aria-hidden="true">

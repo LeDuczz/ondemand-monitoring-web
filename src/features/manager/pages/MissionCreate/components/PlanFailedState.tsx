@@ -18,7 +18,7 @@ export function PlanFailedState({
   const { t } = useI18n(planFailedStateMessages)
   return (
     <div className="odm-or">
-      {!onCreated && <OrderWorkflowStepper currentStep={2} />}
+      {!onCreated && <OrderWorkflowStepper currentStep={5} />}
       <Card>
         <div className="odm-or-load-error" role="alert">
           <strong>{t.planFailedTitle}</strong>

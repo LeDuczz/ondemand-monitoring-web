@@ -198,10 +198,12 @@ registerMockRoutes([
     method: 'GET',
     path: '/api/missions/pending-assignment',
     handler: () => {
-      const all: (StoredMission | CalendarMission)[] = [
-        ...missions,
-        ...calendarMissions,
-      ]
+      // `missions` already contains the calendar seeds, so de-duplicate by id
+      // (the richer calendar entry wins) to keep ids unique.
+      const byId = new Map<string, StoredMission | CalendarMission>()
+      for (const m of missions) byId.set(m.id, m)
+      for (const m of calendarMissions) byId.set(m.id, m)
+      const all = [...byId.values()]
       const items = all
         .filter(
           (m) => m.status === 'CREATED' || m.status === 'RESOURCE_ASSIGNING',
@@ -221,10 +223,12 @@ registerMockRoutes([
       const statusFilter = query.get('status')
 
       // Merge both stores; calendar missions include richer display fields.
-      const all: (StoredMission | CalendarMission)[] = [
-        ...missions,
-        ...calendarMissions,
-      ]
+      // `missions` already contains the calendar seeds, so de-duplicate by id
+      // (the richer calendar entry wins) to keep ids unique.
+      const byId = new Map<string, StoredMission | CalendarMission>()
+      for (const m of missions) byId.set(m.id, m)
+      for (const m of calendarMissions) byId.set(m.id, m)
+      const all = [...byId.values()]
 
       const items = all.filter((m) => {
         if (statusFilter && m.status !== statusFilter) return false

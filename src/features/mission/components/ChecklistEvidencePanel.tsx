@@ -2,39 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
 import type {
-  EvidenceBlockingReason,
   EvidenceCandidate,
   MissionChecklistExecution,
 } from '../types/checklistExecution'
 import './ChecklistEvidencePanel.css'
-
-export const evidenceReason: Record<EvidenceBlockingReason, string> = {
-  EVIDENCE_SOURCE_NOT_ELIGIBLE:
-    'Nguồn media không hợp lệ. Bằng chứng hỗ trợ camera drone và ảnh vệ tinh của hệ thống.',
-  EVIDENCE_TYPE_NOT_ELIGIBLE: 'Loại media không được hỗ trợ.',
-  MEDIA_REJECTED: 'Media đã bị từ chối.',
-  MEDIA_NOT_VALIDATED: 'Media chưa xác thực thành công.',
-  MEDIA_APPROVAL_REQUIRED: 'Cần duyệt media trước khi duyệt kết quả.',
-  INSUFFICIENT_EVIDENCE: 'Chưa đủ bằng chứng hợp lệ.',
-  EXECUTION_NOT_TERMINAL: 'Mục checklist chưa kết thúc.',
-  UNABLE_REASON_REQUIRED: 'Cần lý do không thể xác minh.',
-  CHECKLIST_INTEGRITY_INVALID: 'Checklist không khớp snapshot đơn hàng.',
-}
-const sourceLabel: Record<string, string> = {
-  DRONE_CAMERA: 'Camera drone',
-  SATELLITE_SNAPSHOT: 'Ảnh vệ tinh',
-  MANUAL_UPLOAD: 'Upload thủ công',
-}
-const mediaStatusLabel: Record<string, string> = {
-  PENDING_MANAGER_APPROVAL: 'Chờ manager duyệt',
-  AVAILABLE: 'Đã duyệt',
-  VALIDATING: 'Đang xác thực',
-  UPLOADING: 'Đang upload',
-  UPLOAD_PENDING: 'Chờ upload',
-  RETRY_REQUIRED: 'Cần upload lại',
-  MANUAL_UPLOAD_REQUIRED: 'Chờ upload thủ công',
-  REJECTED: 'Bị từ chối',
-}
+import { useI18n } from '../../../shared/i18n'
+import { checklistEvidenceMessages } from './ChecklistEvidencePanel.messages'
 
 export function ChecklistEvidencePanel(
   props: Parameters<typeof MissionEvidencePanel>[0],
@@ -70,6 +43,7 @@ function MissionEvidencePanel({
   /** Flat list layout for narrow side panels: no nested cards, one status per row. */
   compact?: boolean
 }) {
+  const { t, locale } = useI18n(checklistEvidenceMessages)
   const [candidates, setCandidates] = useState<EvidenceCandidate[] | null>(null)
   const [page, setPage] = useState(0)
   const [query, setQuery] = useState('')
@@ -103,9 +77,7 @@ function MissionEvidencePanel({
       await operation()
       refresh()
     } catch {
-      setError(
-        'Không thể cập nhật bằng chứng. Vui lòng làm mới checklist và thử lại.',
-      )
+      setError(t.updateFailed)
       refresh()
     } finally {
       setBusy(false)
@@ -158,7 +130,7 @@ function MissionEvidencePanel({
   const compactBody = (
     <>
       <div className="ce-head">
-        <span>Bằng chứng</span>
+        <span>{t.evidence}</span>
         <span className="ce-count">
           {have} / {required}
         </span>
@@ -168,8 +140,8 @@ function MissionEvidencePanel({
           {links.map((link) => {
             const status =
               !link.eligibleForOperationalReadiness && link.ineligibilityReason
-                ? evidenceReason[link.ineligibilityReason]
-                : (mediaStatusLabel[link.mediaStatus ?? ''] ??
+                ? t.reasons[link.ineligibilityReason]
+                : (t.mediaStatuses[link.mediaStatus ?? ''] ??
                   link.mediaStatus ??
                   'Legacy')
             const hasMenu = canDetach
@@ -192,8 +164,8 @@ function MissionEvidencePanel({
                     {link.fileName}
                   </span>
                   <span className="ce-meta">
-                    {link.mediaType === 'VIDEO' ? 'Video' : 'Ảnh'} •{' '}
-                    {sourceLabel[link.sourceType ?? ''] ??
+                    {link.mediaType === 'VIDEO' ? t.video : t.image} •{' '}
+                    {t.sources[link.sourceType ?? ''] ??
                       link.sourceType ??
                       'Unknown/Legacy'}
                   </span>
@@ -211,12 +183,12 @@ function MissionEvidencePanel({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Xem
+                      {t.view}
                     </a>
                   )}
                   {hasMenu && (
                     <details className="ce-more">
-                      <summary aria-label="Thêm thao tác">⋮</summary>
+                      <summary aria-label={t.moreActions}>⋮</summary>
                       <div className="ce-menu">
                         {canDetach && (
                           <button
@@ -233,7 +205,7 @@ function MissionEvidencePanel({
                               )
                             }
                           >
-                            Gỡ bằng chứng
+                            {t.detach}
                           </button>
                         )}
                       </div>
@@ -245,18 +217,16 @@ function MissionEvidencePanel({
           })}
         </ul>
       )}
-      {required > 0 && have >= required && (
-        <p className="ce-ok">✓ Đã đủ bằng chứng</p>
-      )}
+      {required > 0 && have >= required && <p className="ce-ok">{t.enough}</p>}
       {canAttach && (
         <button
           type="button"
           className="ce-add"
-          title="Chọn media của mission làm bằng chứng"
+          title={t.pickTitle}
           disabled={busy}
           onClick={() => void load(0)}
         >
-          + Thêm media
+          {t.addMedia}
         </button>
       )}
     </>
@@ -264,20 +234,20 @@ function MissionEvidencePanel({
   return (
     <section
       className={`checklist-evidence${compact ? ' is-compact' : ''}`}
-      aria-label={`Bằng chứng: ${item.content}`}
+      aria-label={t.evidenceFor(item.content)}
     >
       {compact ? (
         compactBody
       ) : (
         <>
           <strong>
-            Bằng chứng hợp lệ: {item.eligibleEvidenceCount ?? 0} /{' '}
+            {t.validEvidence} {item.eligibleEvidenceCount ?? 0} /{' '}
             {item.executionStatus === 'UNABLE_TO_VERIFY'
               ? 0
               : (item.minimumEvidenceCount ?? 0)}
           </strong>
           {item.blockingReasons?.map((reason) => (
-            <p key={reason}>{evidenceReason[reason]}</p>
+            <p key={reason}>{t.reasons[reason]}</p>
           ))}
           <div className="checklist-evidence-grid">
             {item.evidence?.map((link) => (
@@ -313,25 +283,24 @@ function MissionEvidencePanel({
                   </div>
                   <div className="checklist-candidate-meta">
                     <span>
-                      {sourceLabel[link.sourceType ?? ''] ??
-                        'Nguồn chưa xác định'}
+                      {t.sources[link.sourceType ?? ''] ?? t.unknownSource}
                     </span>
                     <span className="checklist-candidate-status">
-                      {mediaStatusLabel[link.mediaStatus ?? ''] ??
-                        'Chưa rõ trạng thái'}
+                      {t.mediaStatuses[link.mediaStatus ?? ''] ??
+                        t.unknownStatus}
                     </span>
                   </div>
                   <small>
-                    {new Date(link.capturedAt).toLocaleString('vi-VN')}
+                    {new Date(link.capturedAt).toLocaleString(locale)}
                   </small>
                   <p
                     className={`checklist-evidence-note${link.eligibleForOperationalReadiness ? ' is-ok' : ''}`}
                   >
                     {link.eligibleForOperationalReadiness
-                      ? 'Đủ điều kiện vận hành'
+                      ? t.operationalOk
                       : link.ineligibilityReason
-                        ? evidenceReason[link.ineligibilityReason]
-                        : 'Chưa hợp lệ'}
+                        ? t.reasons[link.ineligibilityReason]
+                        : t.notValid}
                   </p>
                   <div className="checklist-evidence-actions">
                     {canDetach && (
@@ -350,7 +319,7 @@ function MissionEvidencePanel({
                           )
                         }
                       >
-                        Gỡ bằng chứng
+                        {t.detach}
                       </button>
                     )}
                   </div>
@@ -368,7 +337,7 @@ function MissionEvidencePanel({
                 void load(0)
               }}
             >
-              Thêm bằng chứng từ media Mission
+              {t.addFromMissionMedia}
             </button>
           )}
         </>
@@ -380,7 +349,7 @@ function MissionEvidencePanel({
             className="checklist-picker"
             role="dialog"
             aria-modal="true"
-            aria-label="Chọn media làm bằng chứng"
+            aria-label={t.pickDialog}
             onKeyDown={(event) => {
               if (event.key === 'Escape' && !busy) closePicker()
             }}
@@ -394,15 +363,15 @@ function MissionEvidencePanel({
             <div className="checklist-picker-panel">
               <header className="checklist-picker-head">
                 <div>
-                  <strong>Chọn media làm bằng chứng</strong>
+                  <strong>{t.pickDialog}</strong>
                   <span>
-                    {item.content} · Trang {page + 1}
+                    {item.content} · {t.page} {page + 1}
                   </span>
                 </div>
                 <button
                   type="button"
                   className="checklist-picker-close"
-                  aria-label="Đóng"
+                  aria-label={t.close}
                   disabled={busy}
                   onClick={closePicker}
                 >
@@ -412,30 +381,28 @@ function MissionEvidencePanel({
               <input
                 type="search"
                 className="checklist-picker-search"
-                aria-label="Tìm media"
-                placeholder="Tìm theo tên file..."
+                aria-label={t.searchMedia}
+                placeholder={t.searchPlaceholder}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
               <div className="checklist-picker-body">
-                {mediaLoading && <p role="status">Đang tải media...</p>}
+                {mediaLoading && <p role="status">{t.loadingMedia}</p>}
                 {mediaError != null && (
                   <div role="alert">
-                    <p>Không thể tải media của Mission.</p>
+                    <p>{t.loadMediaFailed}</p>
                     <button
                       className="odm-btn"
                       type="button"
                       onClick={() => void load(page)}
                     >
-                      Thử lại
+                      {t.retry}
                     </button>
                   </div>
                 )}
                 {!mediaLoading && mediaError == null && shown.length === 0 && (
                   <p className="checklist-candidates-empty">
-                    {needle
-                      ? 'Không tìm thấy media phù hợp.'
-                      : 'Mission này chưa có media phù hợp để làm bằng chứng.'}
+                    {needle ? t.noMatch : t.noEligible}
                   </p>
                 )}
                 {!mediaLoading &&
@@ -443,9 +410,7 @@ function MissionEvidencePanel({
                   allAttached &&
                   shown.length > 0 && (
                     <p className="checklist-candidates-empty">
-                      {hasNext || page > 0
-                        ? 'Media phù hợp ở trang này đã được gắn vào checklist này.'
-                        : 'Tất cả media phù hợp đã được gắn vào checklist này.'}
+                      {hasNext || page > 0 ? t.attachedThisPage : t.attachedAll}
                     </p>
                   )}
                 <ul className="checklist-candidate-list">
@@ -458,12 +423,12 @@ function MissionEvidencePanel({
                               src={media.previewUrl}
                               controls
                               preload="metadata"
-                              aria-label={`Xem video ${media.fileName}`}
+                              aria-label={t.watchVideo(media.fileName)}
                             />
                           ) : (
                             <img
                               src={media.previewUrl}
-                              alt={`Xem trước ${media.fileName}`}
+                              alt={t.preview(media.fileName)}
                               loading="lazy"
                             />
                           )
@@ -482,25 +447,25 @@ function MissionEvidencePanel({
                         </span>
                         <span className="checklist-candidate-meta">
                           <span>
-                            {sourceLabel[media.sourceType ?? ''] ??
-                              'Nguồn chưa xác định'}
+                            {t.sources[media.sourceType ?? ''] ??
+                              t.unknownSource}
                           </span>
                           <span className="checklist-candidate-status">
-                            {mediaStatusLabel[media.status ?? ''] ??
-                              'Chưa rõ trạng thái'}
+                            {t.mediaStatuses[media.status ?? ''] ??
+                              t.unknownStatus}
                           </span>
                         </span>
                         <small>
-                          {media.mediaType === 'VIDEO' ? 'Video' : 'Ảnh'}
+                          {media.mediaType === 'VIDEO' ? t.video : t.image}
                         </small>
                         <small className="checklist-candidate-time">
-                          {new Date(media.capturedAt).toLocaleString('vi-VN')}
+                          {new Date(media.capturedAt).toLocaleString(locale)}
                         </small>
                         {!media.eligibleForOperationalReadiness && (
                           <small>
                             {media.ineligibilityReason
-                              ? evidenceReason[media.ineligibilityReason]
-                              : 'Không thể gắn'}
+                              ? t.reasons[media.ineligibilityReason]
+                              : t.cannotAttach}
                           </small>
                         )}
                       </div>
@@ -524,7 +489,7 @@ function MissionEvidencePanel({
                           })
                         }
                       >
-                        {attached(media) ? 'Đã gắn' : 'Gắn media'}
+                        {attached(media) ? t.attachedLabel : t.attachMedia}
                       </button>
                     </li>
                   ))}
@@ -539,7 +504,7 @@ function MissionEvidencePanel({
                       disabled={busy || mediaLoading || page === 0}
                       onClick={() => void load(page - 1)}
                     >
-                      Trang trước
+                      {t.prevPage}
                     </button>
                     <button
                       type="button"
@@ -547,7 +512,7 @@ function MissionEvidencePanel({
                       disabled={busy || mediaLoading || !hasNext}
                       onClick={() => void load(page + 1)}
                     >
-                      Trang sau
+                      {t.nextPage}
                     </button>
                   </>
                 )}
@@ -557,7 +522,7 @@ function MissionEvidencePanel({
                   disabled={busy}
                   onClick={closePicker}
                 >
-                  Đóng chọn media
+                  {t.closePicker}
                 </button>
               </footer>
               {error && <p role="alert">{error}</p>}

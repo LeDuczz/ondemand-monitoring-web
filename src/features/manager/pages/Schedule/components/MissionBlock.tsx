@@ -8,6 +8,9 @@ type MissionBlockProps = {
   selected: boolean
   onSelect: (m: MissionCalendarItem) => void
   missionStatusLabel: string
+  /** Overlap layout: lane index and lane count of this chip's cluster. */
+  lane?: number
+  lanes?: number
 }
 
 /** Rounded, status-coloured chip positioned on the time grid. */
@@ -16,6 +19,8 @@ export function MissionBlock({
   selected,
   onSelect,
   missionStatusLabel,
+  lane = 0,
+  lanes = 1,
 }: MissionBlockProps) {
   const startH = mission.scheduledStartAt
     ? toLocalHours(mission.scheduledStartAt)
@@ -32,7 +37,13 @@ export function MissionBlock({
     <button
       type="button"
       className={`mng-chip is-${tone}${selected ? ' is-selected' : ''}`}
-      style={{ top, height }}
+      style={{
+        top,
+        height,
+        left: `calc(${(lane / lanes) * 100}% + 3px)`,
+        width: `calc(${100 / lanes}% - 6px)`,
+        right: 'auto',
+      }}
       onClick={() => onSelect(mission)}
       aria-pressed={selected}
       aria-label={`${mission.missionCode} ${missionStatusLabel}`}

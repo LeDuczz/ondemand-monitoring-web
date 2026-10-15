@@ -215,7 +215,9 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--ui-text-2);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .odm-shell-topbar-spacer {
@@ -338,6 +340,14 @@
 
 @media (max-width: 640px) {
   .odm-shell-search {
+    display: none;
+  }
+}
+
+/* Very narrow screens: the support link collapses to its icon so the page
+   title keeps room (the link keeps its aria-label). */
+@media (max-width: 480px) {
+  .odm-shell-topbar-label {
     display: none;
   }
 }

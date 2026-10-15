@@ -208,9 +208,13 @@ export function ManagerLayout({
             </button>
             <div className="odm-shell-breadcrumb">{breadcrumb}</div>
             <div className="odm-shell-topbar-spacer" />
-            <a href={SUPPORT_HREF} className="odm-btn odm-btn-gh">
+            <a
+              href={SUPPORT_HREF}
+              className="odm-btn odm-btn-gh"
+              aria-label={t.supportCenter}
+            >
               <ManagerIcon name="reports" />
-              {t.supportCenter}
+              <span className="odm-shell-topbar-label">{t.supportCenter}</span>
             </a>
             <LanguageToggle />
             <button

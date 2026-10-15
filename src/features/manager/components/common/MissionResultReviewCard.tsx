@@ -21,7 +21,7 @@ export function MissionResultReviewCard({
   checklistFailed = false,
   refreshing = false,
   mediaCount: fallbackMediaCount = 0,
-  locale = 'vi-VN',
+  locale: localeProp,
   onReviewed,
   onViewMedia,
 }: {
@@ -36,7 +36,12 @@ export function MissionResultReviewCard({
   onReviewed: () => void
   onViewMedia?: () => void
 }) {
-  const { t, lang } = useI18n(missionResultReviewCardMessages)
+  const {
+    t,
+    lang,
+    locale: hookLocale,
+  } = useI18n(missionResultReviewCardMessages)
+  const locale = localeProp ?? hookLocale
   const { t: readinessT } = useI18n(missionResultReviewReadinessMessages)
 
   const headingId = useId()

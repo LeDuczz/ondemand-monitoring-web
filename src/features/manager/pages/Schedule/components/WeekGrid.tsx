@@ -7,6 +7,7 @@ import {
   formatDateShort,
   PX_PER_HOUR,
   isSameDay,
+  layoutOverlaps,
 } from '../scheduleHelpers'
 import { Card } from '../../../../../shared/components/ui'
 import type { MissionCalendarItem } from '../../../types/missions'
@@ -88,6 +89,7 @@ export function WeekGrid({
                   m.scheduledStartAt &&
                   isSameDay(new Date(m.scheduledStartAt), day),
               )
+              const layout = layoutOverlaps(dayMissions)
               return (
                 <div
                   key={di}
@@ -107,6 +109,8 @@ export function WeekGrid({
                       selected={selectedId === m.id}
                       onSelect={onSelect}
                       missionStatusLabel={getMissionStatusLabel(m.status)}
+                      lane={layout.get(m.id)?.lane}
+                      lanes={layout.get(m.id)?.lanes}
                     />
                   ))}
                 </div>

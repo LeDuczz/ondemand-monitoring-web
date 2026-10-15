@@ -42,6 +42,7 @@ export function ScoreRing({ score }: { score: number }) {
         textAnchor="middle"
         fontSize={13}
         fontWeight={700}
+        fill="var(--tx)"
       >
         {score}
       </text>

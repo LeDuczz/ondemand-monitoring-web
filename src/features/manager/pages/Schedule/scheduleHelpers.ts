@@ -39,3 +39,53 @@ export const LEGEND_TONES: ChipTone[] = [
   'danger',
   'neutral',
 ]
+
+/** Visual [start, end) of a chip in hours, matching MissionBlock's minimum height. */
+export function chipSpan(m: {
+  scheduledStartAt: string | null
+  scheduledEndAt: string | null
+}): { start: number; end: number } {
+  const start = m.scheduledStartAt
+    ? toLocalHours(m.scheduledStartAt)
+    : HOUR_START
+  const rawEnd = m.scheduledEndAt ? toLocalHours(m.scheduledEndAt) : start
+  return { start, end: Math.max(rawEnd, start + 22 / PX_PER_HOUR) }
+}
+
+/**
+ * Standard calendar overlap layout (display only): items that overlap in time
+ * (transitively) form a cluster; each gets a lane, and the cluster's column
+ * width is split evenly across its lane count.
+ */
+export function layoutOverlaps<
+  T extends {
+    id: string
+    scheduledStartAt: string | null
+    scheduledEndAt: string | null
+  },
+>(items: T[]): Map<string, { lane: number; lanes: number }> {
+  const spans = items
+    .map((item) => ({ id: item.id, ...chipSpan(item) }))
+    .sort((a, b) => a.start - b.start || a.end - b.end)
+  const result = new Map<string, { lane: number; lanes: number }>()
+  let cluster: { id: string; lane: number }[] = []
+  let laneEnds: number[] = []
+  let clusterEnd = -Infinity
+  const flush = () => {
+    for (const entry of cluster)
+      result.set(entry.id, { lane: entry.lane, lanes: laneEnds.length })
+    cluster = []
+    laneEnds = []
+    clusterEnd = -Infinity
+  }
+  for (const span of spans) {
+    if (span.start >= clusterEnd) flush()
+    let lane = laneEnds.findIndex((end) => end <= span.start)
+    if (lane === -1) lane = laneEnds.length
+    laneEnds[lane] = span.end
+    cluster.push({ id: span.id, lane })
+    clusterEnd = Math.max(clusterEnd, span.end)
+  }
+  flush()
+  return result
+}

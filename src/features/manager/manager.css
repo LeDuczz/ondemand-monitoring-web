@@ -4,6 +4,13 @@
  * Relies on the `.odm` tokens/primitives from src/styles/odm.css.
  */
 
+/* The global h1/h2 display style packs letters tightly (-0.045em), which
+   visually merges Vietnamese words; manager screens use normal tracking. */
+.odm-mgr h1,
+.odm-mgr h2 {
+  letter-spacing: -0.01em;
+}
+
 /* ---------- Dashboard (MNG-01) ---------- */
 
 .odm-mgr-dash {
@@ -254,6 +261,7 @@
   bottom: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px 16px;
   margin-top: 14px;
@@ -487,7 +495,7 @@
   display: flex;
   align-items: center;
   gap: var(--ui-space-2);
-  min-height: 44px;
+  min-height: 48px;
   padding: var(--ui-space-2) var(--ui-space-3);
   border: 0;
   background: transparent;
@@ -517,10 +525,15 @@
 
 .odm-or-review-step strong {
   display: block;
+  overflow: visible;
   color: var(--ui-text);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.25;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .odm-or-review-step:not(:disabled):hover {
@@ -556,8 +569,21 @@
   color: var(--ui-on-primary);
 }
 
+/* Mid widths: labels wrap to two lines at a slightly smaller size. */
+@container (max-width: 1100px) {
+  .odm-or-review-step {
+    gap: 6px;
+    padding-inline: var(--ui-space-2);
+  }
+
+  .odm-or-review-step strong {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+}
+
 /* Narrow: only the current step keeps its label; the rest collapse to dots. */
-@container (max-width: 720px) {
+@container (max-width: 860px) {
   .odm-or-review-stepper li {
     flex: 0 0 auto;
   }
@@ -1485,8 +1511,9 @@ a.odm-or-btn {
 
 .mng-seg {
   display: inline-flex;
+  flex-wrap: wrap;
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: visible;
   padding: 2px;
   gap: 2px;
   background: var(--ui-surface-2);
@@ -1604,6 +1631,14 @@ a.odm-or-btn {
   white-space: nowrap;
 }
 
+/* On phones the table scrolls inside its card, so keep cells on one line
+   instead of letting narrow columns break words apart. */
+@media (max-width: 640px) {
+  .mng-table td {
+    white-space: nowrap;
+  }
+}
+
 .mng-cell-main {
   white-space: nowrap;
   font-weight: 600;
@@ -1694,6 +1729,9 @@ a.odm-or-btn {
 
 .mng-dash-seg {
   margin-bottom: var(--ui-space-3);
+  /* Wrap instead of scrolling so the last chip is never clipped. */
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
 .mng-dash-sk {
@@ -2603,4 +2641,34 @@ a.odm-or-btn.odm-or-view-btn {
   background: var(--ui-surface-2);
   color: var(--ui-text-2);
   border-left-color: var(--ui-text-3);
+}
+
+/* ---------- Final polish: cross-screen consistency ---------- */
+
+/* Shared cards rendered from mission/, media/ and delivery/ use the same card
+   title scale as the manager cards (15px / 600). */
+.odm-mgr .odm-result-review-heading h2,
+.odm-mgr .monitoring-checklist h2,
+.odm-mgr .mission-media__title-row h3 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.odm-mgr .delivery-hero h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* `.odm-btn-p` pairs --ink with a white label; in dark mode --ink is a light
+   blue, so the label needs the dark on-primary colour to stay readable. */
+:root[data-theme='dark'] .odm.odm-mgr {
+  --inkfg: #06152b;
+}
+
+/* Transparent <button> card headers otherwise fall back to the UA ButtonText
+   colour (near-black) on dark surfaces. */
+.odm-mgr button.odm-card-header {
+  color: var(--tx);
+  font-family: inherit;
 }

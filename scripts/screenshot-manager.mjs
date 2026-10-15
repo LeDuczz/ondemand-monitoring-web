@@ -1,5 +1,9 @@
-// Usage: node scripts/screenshot-manager.mjs <route-hash> <name>
+// Usage: node scripts/screenshot-manager.mjs <route-hash> <name> [--viewport]
 //   e.g. node scripts/screenshot-manager.mjs "#portal/manager/missions" missions
+// By default the whole page is captured: the portal shell scrolls inside
+// .odm-shell-content, so Playwright's fullPage only sees the viewport. The
+// script grows the viewport to the inner scroll container's scrollHeight
+// before the shot. Pass --viewport (or FULL=0) to capture the viewport only.
 // Logs in as the demo MANAGER account from src/mocks/data/auth-users.json,
 // then screenshots the route in vi/en x light/dark x 1280/390 into
 // evd/manager-redesign/.
@@ -23,7 +27,9 @@ const MOCK_PORT = 5174
 const BASE = MOCK
   ? `http://localhost:${MOCK_PORT}`
   : (process.env.BASE_URL ?? 'http://localhost:5173')
-const [, , hashArg, name] = process.argv
+const args = process.argv.slice(2)
+const viewportOnly = args.includes('--viewport') || process.env.FULL === '0'
+const [hashArg, name] = args.filter((a) => !a.startsWith('--'))
 if (!hashArg || !name) {
   console.error('Usage: node scripts/screenshot-manager.mjs <route-hash> <name>')
   process.exit(1)
@@ -61,6 +67,24 @@ async function launch() {
       }
     }
     throw error
+  }
+}
+
+// Grows the viewport so the shell's inner scroll container (and the document)
+// show their full content. Two passes because layout can reflow after resize.
+async function expandToContent(page, width) {
+  for (let pass = 0; pass < 2; pass++) {
+    const needed = await page.evaluate(() => {
+      const el = document.querySelector('.odm-shell-content')
+      const innerExtra = el ? el.scrollHeight - el.clientHeight : 0
+      const docExtra =
+        document.documentElement.scrollHeight - window.innerHeight
+      return window.innerHeight + Math.max(innerExtra, docExtra, 0)
+    })
+    const current = page.viewportSize()?.height ?? 0
+    if (needed <= current) break
+    await page.setViewportSize({ width, height: Math.min(needed, 16000) })
+    await page.waitForTimeout(400)
   }
 }
 
@@ -152,6 +176,7 @@ for (const lang of ['vi', 'en']) {
         () => document.documentElement.scrollWidth > window.innerWidth + 1,
       )
       if (overflow) errors.push(`[${tag}] page has horizontal overflow`)
+      if (!viewportOnly) await expandToContent(page, width)
       const file = resolve(outDir, `${name}-${tag}.png`)
       await page.screenshot({ path: file, fullPage: true })
       saved.push(file)

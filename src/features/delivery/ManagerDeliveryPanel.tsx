@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../shared/api/httpClient'
 import { deliveryApi } from './api'
+import { useI18n } from '../../shared/i18n'
+import { managerDeliveryMessages } from './delivery.messages'
 import { DeliveryProgress, DeliveryStatusPill } from './DeliveryProgress'
 import type { Delivery } from './types'
 import './delivery.css'
@@ -12,6 +14,7 @@ export function ManagerDeliveryPanel({
   orderId: string
   refreshKey?: number
 }) {
+  const { t } = useI18n(managerDeliveryMessages)
   const [delivery, setDelivery] = useState<Delivery | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [notes, setNotes] = useState('')
@@ -28,11 +31,7 @@ export function ManagerDeliveryPanel({
       if (!(
         cause instanceof ApiError && [404, 409].includes(cause.status ?? 0)
       ))
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : 'Không tải được thông tin bàn giao.',
-        )
+        setError(cause instanceof Error ? cause.message : t.loadFailed)
     }
   }, [orderId, refreshKey])
 
@@ -51,7 +50,7 @@ export function ManagerDeliveryPanel({
       setDelivery(await action())
       await load()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Thao tác thất bại.')
+      setError(cause instanceof Error ? cause.message : t.actionFailed)
     } finally {
       setBusy(false)
     }
@@ -71,12 +70,9 @@ export function ManagerDeliveryPanel({
     >
       <header className="delivery-hero">
         <div className="delivery-hero__copy">
-          <span className="delivery-eyebrow">Quy trình bàn giao</span>
-          <h2 id="manager-delivery-title">Kiểm duyệt &amp; bàn giao kết quả</h2>
-          <p>
-            Chọn dữ liệu gửi xem trước, theo dõi thanh toán và phát hành bản gốc
-            cho khách hàng.
-          </p>
+          <span className="delivery-eyebrow">{t.eyebrow}</span>
+          <h2 id="manager-delivery-title">{t.title}</h2>
+          <p>{t.intro}</p>
         </div>
         <DeliveryStatusPill status={delivery.deliveryStatus} />
       </header>
@@ -85,21 +81,21 @@ export function ManagerDeliveryPanel({
         {delivery.revisionReason ? (
           <StatusBanner
             tone="warning"
-            title="Customer yêu cầu chỉnh sửa"
+            title={t.revisionTitle}
             text={delivery.revisionReason}
           />
         ) : null}
         {delivery.deliveryStatus === 'PROCESSING' ? (
           <StatusBanner
-            title="Chưa thể gửi bản xem trước"
-            text="Hãy duyệt kết quả nhiệm vụ và toàn bộ media bắt buộc trước."
+            title={t.cannotPreviewTitle}
+            text={t.cannotPreviewText}
           />
         ) : null}
         {canReleasePreview && delivery.assets.length === 0 ? (
           <StatusBanner
             tone="warning"
-            title="Chưa có media được duyệt"
-            text="Duyệt media cho khách hàng trong thư viện phía trên. Các tệp hợp lệ sẽ xuất hiện tại đây để lựa chọn."
+            title={t.noApprovedTitle}
+            text={t.noApprovedText}
           />
         ) : null}
 
@@ -110,9 +106,9 @@ export function ManagerDeliveryPanel({
           >
             <div className="delivery-section__head">
               <div>
-                <h3 id="manager-assets-title">Media gửi cho Customer</h3>
+                <h3 id="manager-assets-title">{t.mediaForCustomer}</h3>
                 <p>
-                  {selected.length}/{delivery.assets.length} tệp đang được chọn
+                  {t.selectedCount(selected.length, delivery.assets.length)}
                 </p>
               </div>
               {canReleasePreview ? (
@@ -127,7 +123,7 @@ export function ManagerDeliveryPanel({
                     )
                   }
                 >
-                  {allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                  {allSelected ? t.deselectAll : t.selectAll}
                 </button>
               ) : null}
             </div>
@@ -159,9 +155,9 @@ export function ManagerDeliveryPanel({
                       <strong title={asset.fileName}>{asset.fileName}</strong>
                       <small>
                         {asset.type.toUpperCase().includes('VIDEO')
-                          ? 'Video'
-                          : 'Hình ảnh'}{' '}
-                        · Tệp #{index + 1}
+                          ? t.video
+                          : t.image}{' '}
+                        · {t.fileNo(index + 1)}
                       </small>
                     </span>
                   </label>
@@ -178,54 +174,47 @@ export function ManagerDeliveryPanel({
           >
             <div className="delivery-field-head">
               <label id="delivery-note-title" htmlFor="delivery-notes">
-                Ghi chú bàn giao
+                {t.noteLabel}
               </label>
               <span>{notes.length}/1000</span>
             </div>
             <textarea
               id="delivery-notes"
-              placeholder="Ví dụ: Đã cân chỉnh màu và chọn các góc quay rõ nhất…"
+              placeholder={t.notePlaceholder}
               value={notes}
               maxLength={1000}
               onChange={(event) => setNotes(event.target.value)}
             />
             <div className="delivery-action-bar">
               <div>
-                <b>{selected.length} tệp</b>
-                <span>sẽ được gửi dưới dạng bản xem trước</span>
+                <b>{t.filesCount(selected.length)}</b>
+                <span>{t.willBeSent}</span>
               </div>
               <button
                 type="button"
                 className="odm-btn odm-btn-p delivery-primary-action"
                 disabled={busy || selected.length === 0}
-                title={
-                  selected.length === 0
-                    ? 'Hãy chọn ít nhất một media'
-                    : undefined
-                }
+                title={selected.length === 0 ? t.pickAtLeastOne : undefined}
                 onClick={() =>
                   void run(() =>
                     deliveryApi.releasePreview(orderId, selected, notes),
                   )
                 }
               >
-                {busy ? 'Đang gửi…' : `Gửi preview (${selected.length})`}
+                {busy ? t.sending : t.sendPreview(selected.length)}
               </button>
             </div>
           </section>
         ) : null}
 
         {delivery.deliveryStatus === 'CUSTOMER_REVIEW' ? (
-          <StatusBanner
-            title="Đã gửi bản xem trước"
-            text="Đang chờ Customer xem và phản hồi kết quả."
-          />
+          <StatusBanner title={t.sentTitle} text={t.sentText} />
         ) : null}
         {delivery.deliveryStatus === 'FINAL_PAYMENT_PENDING' ? (
           <StatusBanner
             tone="warning"
-            title="Customer đã chấp nhận kết quả"
-            text="Đang chờ khách hàng hoàn tất khoản thanh toán còn lại."
+            title={t.acceptedTitle}
+            text={t.acceptedText}
           />
         ) : null}
         {delivery.deliveryStatus === 'READY_FOR_DELIVERY' ||
@@ -236,8 +225,8 @@ export function ManagerDeliveryPanel({
                 ✓
               </span>
               <div>
-                <b>Thanh toán đã được xác nhận</b>
-                <span>Bản gốc đã sẵn sàng để phát hành cho Customer.</span>
+                <b>{t.paymentConfirmed}</b>
+                <span>{t.originalsReady}</span>
               </div>
             </div>
             <button
@@ -248,15 +237,15 @@ export function ManagerDeliveryPanel({
                 void run(() => deliveryApi.releaseOriginals(orderId))
               }
             >
-              {busy ? 'Đang bàn giao…' : 'Bàn giao bản gốc'}
+              {busy ? t.handingOver : t.handOver}
             </button>
           </div>
         ) : null}
         {delivery.deliveryStatus === 'DELIVERED' ? (
           <StatusBanner
             tone="success"
-            title="Bàn giao hoàn tất"
-            text={`${delivery.assets.length} tệp gốc đã sẵn sàng cho Customer tải xuống.`}
+            title={t.doneTitle}
+            text={t.doneText(delivery.assets.length)}
           />
         ) : null}
         {error ? (

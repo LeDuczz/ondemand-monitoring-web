@@ -8,7 +8,7 @@ export const statusChangeModalMessages = defineMessages({
       cannotChange: (status: string) =>
         `Không thể thay đổi trạng thái thủ công từ ${status}.`,
       newStatus: 'Trạng thái mới',
-      reason: 'Lý do *',
+      reason: 'Lý do',
       reasonPlaceholder: 'Nhập lý do thay đổi trạng thái...',
       reasonRequired: 'Vui lòng nhập lý do',
       cancel: 'Huỷ',
@@ -24,7 +24,7 @@ export const statusChangeModalMessages = defineMessages({
       cannotChange: (status: string) =>
         `Manual status change is not allowed from ${status}.`,
       newStatus: 'New status',
-      reason: 'Reason *',
+      reason: 'Reason',
       reasonPlaceholder: 'Enter the reason for the status change...',
       reasonRequired: 'Please enter a reason',
       cancel: 'Cancel',

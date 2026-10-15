@@ -1,4 +1,5 @@
 import { StateView } from '../../../../../shared/components/odm/StateView'
+import { Card } from '../../../../../shared/components/ui'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { PageResponseDroneResponse } from '../../../types/drones'
@@ -14,7 +15,7 @@ export function DronesLoadError({
   return (
     <>
       {!query.loading && !!query.error && (
-        <div style={{ padding: 24 }}>
+        <Card>
           <StateView
             state="error"
             title={t.loadError}
@@ -23,19 +24,14 @@ export function DronesLoadError({
           />
           {query.error instanceof ApiError && (
             <code
-              className="odm-mono"
-              style={{
-                display: 'block',
-                fontSize: 11,
-                color: 'var(--tx3)',
-                marginTop: 8,
-              }}
+              className="odm-mono mng-cell-sub"
+              style={{ display: 'block' }}
             >
               {t.getApiDrones}
               {query.error.status ?? '—'}
             </code>
           )}
-        </div>
+        </Card>
       )}
     </>
   )

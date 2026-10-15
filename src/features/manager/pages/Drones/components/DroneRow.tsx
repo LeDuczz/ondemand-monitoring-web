@@ -1,5 +1,5 @@
 import { MANUAL_TRANSITIONS } from '../droneHelpers'
-import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
+import { StatusBadge, toUiTone } from '../../../../../shared/components/ui'
 import {
   droneStatusTone,
   getDroneStatusLabel,
@@ -16,47 +16,37 @@ export function DroneRow({
   drone: DroneResponse
   setChangingDrone: Dispatch<SetStateAction<DroneResponse | null>>
 }) {
-  const { t, lang } = useI18n(droneRowMessages)
+  const { t, lang, locale } = useI18n(droneRowMessages)
   const canChange = (MANUAL_TRANSITIONS[drone.status]?.length ?? 0) > 0
+  const model = [drone.droneModel?.manufacturer, drone.droneModel?.modelCode]
+    .filter(Boolean)
+    .join(' ')
+  const updated = drone.updatedAt ? new Date(drone.updatedAt) : null
   return (
-    <tr style={{ borderBottom: '1px solid var(--border)' }}>
-      <td style={{ padding: '8px 12px', fontWeight: 500 }}>
-        {drone.serialNumber}
-        {drone.droneModel?.modelCode ? (
-          <span
-            style={{
-              fontWeight: 400,
-              color: 'var(--tx2)',
-              marginLeft: 4,
-            }}
-          >
-            {drone.droneModel.modelCode}
-          </span>
-        ) : null}
+    <tr>
+      <td>
+        <div className="mng-cell-main odm-mono">{drone.serialNumber}</div>
+        <div className="mng-cell-sub">{model || '—'}</div>
       </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.droneModel?.modelCode ?? '—'}
-      </td>
-      <td style={{ padding: '8px 12px' }}>
-        <StatusBadge tone={droneStatusTone[drone.status]}>
+      <td>{drone.dronePayload?.modelName ?? '—'}</td>
+      <td>
+        <StatusBadge tone={toUiTone(droneStatusTone[drone.status])}>
           {getDroneStatusLabel(drone.status, lang)}
         </StatusBadge>
       </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>—</td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>—</td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.dronePayload?.modelName ?? '—'}
+      <td className="mng-nowrap">
+        {updated && !Number.isNaN(updated.getTime())
+          ? updated.toLocaleString(locale, {
+              dateStyle: 'short',
+              timeStyle: 'short',
+            })
+          : '—'}
       </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>—</td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.updatedAt ?? '—'}
-      </td>
-      <td style={{ padding: '8px 12px' }}>
+      <td className="mng-actions">
         {canChange && (
           <button
             type="button"
-            className="odm-btn"
-            style={{ fontSize: 12 }}
+            className="odm-btn odm-btn-sm"
             onClick={() => setChangingDrone(drone)}
           >
             {t.changeStatus}

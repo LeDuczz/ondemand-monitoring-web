@@ -1,4 +1,4 @@
-import { StateView } from '../../../../../shared/components/odm/StateView'
+import { EmptyState } from '../../../../../shared/components/ui'
 import type { DroneResponse } from '../../../types/drones'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { PageResponseDroneResponse } from '../../../types/drones'
@@ -16,11 +16,7 @@ export function DronesEmptyState({
   return (
     <>
       {!query.loading && !query.error && visible.length === 0 && (
-        <StateView
-          state="empty"
-          title={t.emptyTitle}
-          description={t.emptyDescription}
-        />
+        <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
       )}
     </>
   )

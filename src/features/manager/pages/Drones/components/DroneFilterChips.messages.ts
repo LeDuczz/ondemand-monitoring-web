@@ -2,6 +2,9 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const droneFilterChipsMessages = defineMessages({
   vi: {
+    title: 'Trạng thái drone',
+    searchPlaceholder: 'Tìm số serial, model hoặc payload',
+    searchAria: 'Tìm drone',
     filters: {
       ALL: 'Tất cả',
       AVAILABLE: 'Sẵn sàng',
@@ -11,6 +14,9 @@ export const droneFilterChipsMessages = defineMessages({
     },
   },
   en: {
+    title: 'Drone status',
+    searchPlaceholder: 'Search serial, model or payload',
+    searchAria: 'Search drones',
     filters: {
       ALL: 'All',
       AVAILABLE: 'Available',

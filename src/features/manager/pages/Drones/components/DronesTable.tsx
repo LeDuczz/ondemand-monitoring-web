@@ -1,8 +1,8 @@
 import type { DroneResponse } from '../../../types/drones'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { PageResponseDroneResponse } from '../../../types/drones'
-import type { Dispatch } from 'react'
-import type { SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
+import { TableCard } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { dronesTableMessages } from './DronesTable.messages'
 import { DroneRow } from './DroneRow'
@@ -20,43 +20,17 @@ export function DronesTable({
   return (
     <>
       {!query.loading && !query.error && visible.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table
-            style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}
-          >
+        <TableCard>
+          <table className="mng-table">
             <thead>
-              <tr
-                style={{
-                  borderBottom: '1px solid var(--border)',
-                  color: 'var(--tx3)',
-                  textAlign: 'left',
-                }}
-              >
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.drone}
+              <tr>
+                <th>{t.columns.drone}</th>
+                <th>{t.columns.payload}</th>
+                <th>{t.columns.status}</th>
+                <th>{t.columns.lastActivity}</th>
+                <th>
+                  <span className="mng-sr-only">{t.columns.actions}</span>
                 </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.model}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.status}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.battery}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.station}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.payload}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.flightHours}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-                  {t.columns.lastActivity}
-                </th>
-                <th style={{ padding: '8px 12px', fontWeight: 500 }} />
               </tr>
             </thead>
             <tbody>
@@ -69,7 +43,7 @@ export function DronesTable({
               ))}
             </tbody>
           </table>
-        </div>
+        </TableCard>
       )}
     </>
   )

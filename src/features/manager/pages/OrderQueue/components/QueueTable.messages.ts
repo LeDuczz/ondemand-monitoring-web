@@ -3,19 +3,23 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const queueTableMessages = defineMessages({
   vi: {
     columns: {
-      orderCode: 'Mã đơn',
-      customer: 'Khách hàng',
+      order: 'Đơn hàng',
       service: 'Dịch vụ',
-      preferredDate: 'Ngày mong muốn',
+      schedule: 'Lịch mong muốn',
+      age: 'Chờ',
+      status: 'Trạng thái',
+      actions: 'Thao tác',
     },
     review: 'Duyệt',
   },
   en: {
     columns: {
-      orderCode: 'Order ID',
-      customer: 'Customer',
+      order: 'Order',
       service: 'Service',
-      preferredDate: 'Preferred date',
+      schedule: 'Preferred schedule',
+      age: 'Waiting',
+      status: 'Status',
+      actions: 'Actions',
     },
     review: 'Review',
   },

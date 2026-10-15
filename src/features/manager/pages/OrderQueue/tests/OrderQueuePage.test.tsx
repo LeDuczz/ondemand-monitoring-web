@@ -73,8 +73,8 @@ describe('OrderQueuePage', () => {
     render(<OrderQueuePage />)
 
     await waitFor(() => screen.getByText('Hàng đợi duyệt đơn'))
-    expect(screen.getByText('ORD-2609-0157')).toBeInTheDocument()
-    expect(screen.getByText('ORD-2609-0160')).toBeInTheDocument()
+    expect(screen.getByText('#ORD-2609-0157')).toBeInTheDocument()
+    expect(screen.getByText('#ORD-2609-0160')).toBeInTheDocument()
     expect(screen.getByText('2 đơn đang chờ')).toBeInTheDocument()
   })
 
@@ -91,7 +91,7 @@ describe('OrderQueuePage', () => {
     expect(getQueue).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
-    await waitFor(() => screen.getByText('ORD-2609-0157'))
+    await waitFor(() => screen.getByText('#ORD-2609-0157'))
     expect(getQueue).toHaveBeenCalledTimes(2)
   })
 

@@ -1,4 +1,4 @@
-import { StateView } from '../../../../../shared/components/odm/StateView'
+import { EmptyState } from '../../../../../shared/components/ui'
 import { managerHref } from '../../../routes'
 import { useI18n } from '../../../../../shared/i18n'
 import { queueEmptyStateMessages } from './QueueEmptyState.messages'
@@ -6,8 +6,7 @@ import { queueEmptyStateMessages } from './QueueEmptyState.messages'
 export function QueueEmptyState() {
   const { t } = useI18n(queueEmptyStateMessages)
   return (
-    <StateView
-      state="empty"
+    <EmptyState
       title={t.emptyTitle}
       description={t.emptyDescription}
       action={

@@ -1,14 +1,15 @@
 import { useI18n } from '../../../../shared/i18n'
 import { dronesPageMessages } from './DronesPage.messages'
 // MNG-09: Drone fleet management page
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { PageHeader } from '../../../../shared/components/ui'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { dronesApi } from '../../api/dronesApi'
 import type { DroneResponse } from '../../types/drones'
 import '../../manager.css'
 import { matchesFilter, type FilterChip } from './droneHelpers'
 import { StatusChangeModal } from './components/StatusChangeModal'
-import { DronesHeader } from './components/DronesHeader'
+import { DronesStats } from './components/DronesStats'
 import { DroneFilterChips } from './components/DroneFilterChips'
 import { DronesLoadError } from './components/DronesLoadError'
 import { DronesEmptyState } from './components/DronesEmptyState'
@@ -22,25 +23,31 @@ type DronesPageProps = {
 export function DronesPage({ droneId: _droneId }: DronesPageProps) {
   const { t } = useI18n(dronesPageMessages)
   const [filter, setFilter] = useState<FilterChip>('ALL')
+  const [search, setSearch] = useState('')
   const [changingDrone, setChangingDrone] = useState<DroneResponse | null>(null)
   const [drones, setDrones] = useState<DroneResponse[] | null>(null)
 
   const query = useApiQuery((signal) => dronesApi.listDrones({ signal }), [])
 
-  const allDrones = drones ?? query.data?.items ?? []
-  const visible = allDrones.filter((d) => matchesFilter(d, filter))
-
-  const counts = {
-    available: allDrones.filter((d) => d.status === 'AVAILABLE').length,
-    flying: allDrones.filter(
-      (d) =>
-        d.status === 'IN_MISSION' ||
-        d.status === 'RESERVED' ||
-        d.status === 'RETURNING',
-    ).length,
-    maintenance: allDrones.filter((d) => d.status === 'MAINTENANCE').length,
-    outOfService: allDrones.filter((d) => d.status === 'OUT_OF_SERVICE').length,
-  }
+  const allDrones = useMemo(
+    () => drones ?? query.data?.items ?? [],
+    [drones, query.data?.items],
+  )
+  const visible = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    return allDrones.filter((d) => {
+      if (!matchesFilter(d, filter)) return false
+      if (!needle) return true
+      return [
+        d.serialNumber,
+        d.droneModel?.modelCode,
+        d.droneModel?.manufacturer,
+        d.dronePayload?.modelName,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle))
+    })
+  }, [allDrones, filter, search])
 
   function handleChanged(updated: DroneResponse) {
     const base = drones ?? query.data?.items ?? []
@@ -48,18 +55,27 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
     setChangingDrone(null)
   }
 
+  const ready = !query.loading && !query.error
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <DronesHeader title={t.title} query={query} counts={counts} />
+    <div className="odm-or">
+      <PageHeader
+        title={t.title}
+        subtitle={ready ? t.droneCount(allDrones.length) : undefined}
+      />
 
-      {/* Filter chips */}
-      <DroneFilterChips filter={filter} setFilter={setFilter} />
+      {ready && allDrones.length > 0 && <DronesStats drones={allDrones} />}
 
-      {/* Content */}
+      <DroneFilterChips
+        filter={filter}
+        setFilter={setFilter}
+        search={search}
+        setSearch={setSearch}
+      />
+
       {query.loading && (
-        <div style={{ padding: 40, textAlign: 'center' }} aria-busy="true">
-          <div className="odm-sk" style={{ height: 300, borderRadius: 8 }} />
+        <div aria-busy="true">
+          <span className="odm-sk mng-dash-sk" />
         </div>
       )}
 
@@ -73,7 +89,6 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
         setChangingDrone={setChangingDrone}
       />
 
-      {/* Status change modal */}
       {changingDrone && (
         <StatusChangeModal
           drone={changingDrone}

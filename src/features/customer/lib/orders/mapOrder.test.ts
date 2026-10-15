@@ -61,7 +61,7 @@ describe('toOrderRow', () => {
   it('flattens the BE order and nulls missing values', () => {
     expect(toOrderRow(be)).toMatchObject({
       id: be.id,
-      code: '3F2B9C1E',
+      code: 'ORD-3F2B9C1E',
       title: 'Kiểm tra mái',
       address: 'KCN Long Hậu',
       dateFrom: '2026-10-01',
@@ -72,7 +72,7 @@ describe('toOrderRow', () => {
       radiusM: 300,
     })
     const bare = toOrderRow({ id: 'x', customerId: 'c' })
-    expect(bare).toMatchObject({ title: 'x', address: null, dateFrom: null, serviceName: null })
+    expect(bare).toMatchObject({ title: 'ORD-X', address: null, dateFrom: null, serviceName: null })
   })
 })
 

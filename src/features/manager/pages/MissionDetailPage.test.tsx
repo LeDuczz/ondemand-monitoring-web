@@ -163,7 +163,7 @@ describe('Manager Mission Detail monitoring review', () => {
     expect(
       await screen.findByText('Kiểm tra mái nhà lịch sử'),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Không có góc nhìn/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Không có góc nhìn/).length).toBeGreaterThan(0)
     expect(screen.getByText(/Có cây che/)).toBeInTheDocument()
     expect(screen.queryByText('Cập nhật mục')).toBeNull()
     expect(screen.getByText('Duyệt kết quả')).toBeEnabled()

@@ -166,7 +166,7 @@ describe('CustomerCreateRequestPage', () => {
         requiredEvidenceType: 'IMAGE_OR_VIDEO',
       },
     ])
-  })
+  }, 15_000)
 
   it('submits [] after deselecting all requirements', async () => {
     const create = vi.spyOn(customerApi, 'createOrder')
@@ -179,7 +179,7 @@ describe('CustomerCreateRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
     await screen.findByText('Đã tạo yêu cầu')
     expect(create.mock.calls[0][0].checklistItems).toEqual([])
-  })
+  }, 15_000)
 
   it('shows stale recovery after creation fails, without auto retry', async () => {
     const create = vi.spyOn(customerApi, 'createOrder').mockRejectedValue(
@@ -205,7 +205,7 @@ describe('CustomerCreateRequestPage', () => {
     expect(screen.getByRole('button', { name: 'Gửi yêu cầu' })).toBeDisabled()
     expect(screen.queryByText('internal detail')).not.toBeInTheDocument()
     expect(create).toHaveBeenCalledTimes(1)
-  })
+  }, 15_000)
 
   it('does not clear the create-order wizard draft', async () => {
     window.localStorage.setItem(

@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
+import { useI18n } from '../../shared/i18n'
 import { formatVnd } from '../../shared/lib/formatVnd'
 import { financeApi } from './api'
 import type { Invoice, Quote } from './types'
+import { customerFinancePanelMessages } from './CustomerFinancePanel.messages'
 import './finance.css'
 
 export function CustomerFinancePanel({ orderId }: { orderId: string }) {
+  const { t } = useI18n(customerFinancePanelMessages)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -22,10 +25,10 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
     ])
     if (quoteResult.status === 'fulfilled') setQuote(quoteResult.value)
     else if (!isNotFound(quoteResult.reason))
-      setError(messageOf(quoteResult.reason))
+      setError(quoteResult.reason)
     if (invoiceResult.status === 'fulfilled') setInvoice(invoiceResult.value)
     else if (!isNotFound(invoiceResult.reason))
-      setError(messageOf(invoiceResult.reason))
+      setError(invoiceResult.reason)
     setLoading(false)
   }, [orderId])
 
@@ -41,7 +44,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
       setInvoice(await financeApi.acceptQuote(orderId, quote.id))
       await load()
     } catch (cause) {
-      setError(messageOf(cause))
+      setError(cause)
     } finally {
       setBusy(false)
     }
@@ -57,10 +60,10 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
           ? await financeApi.createDeposit(invoice.id)
           : await financeApi.createFinalPayment(invoice.id)
       if (!payment.paymentUrl)
-        throw new Error('Cổng thanh toán chưa trả về checkout URL.')
+        throw new Error(t.missingPaymentUrl)
       window.location.assign(payment.paymentUrl)
     } catch (cause) {
-      setError(messageOf(cause))
+      setError(cause)
       setBusy(false)
     }
   }
@@ -68,7 +71,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
   if (loading && !quote && !invoice)
     return (
       <section className="ui-card customer-finance-card">
-        Đang tải báo giá...
+        {t.loading}
       </section>
     )
   if (!quote && !invoice && !error) return null
@@ -80,8 +83,8 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
     >
       <header className="customer-finance-head">
         <div>
-          <h2 id="customer-quote-title">Báo giá và thanh toán</h2>
-          <p>Giá được manager xác nhận theo phạm vi yêu cầu của đơn.</p>
+          <h2 id="customer-quote-title">{t.title}</h2>
+          <p>{t.description}</p>
         </div>
         {quote ? (
           <span className="finance-status">Báo giá v{quote.version}</span>
@@ -204,7 +207,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
       ) : null}
       {error ? (
         <p className="finance-alert is-error" role="alert">
-          {error}
+          {messageOf(error, t)}
         </p>
       ) : null}
     </section>
@@ -238,11 +241,14 @@ function PaymentStat({ label, value }: { label: string; value: number }) {
 function isNotFound(error: unknown) {
   return error instanceof ApiError && error.status === 404
 }
-function messageOf(error: unknown) {
+function messageOf(error: unknown, t: (typeof customerFinancePanelMessages)['vi']) {
+  if (error instanceof ApiError && error.code === 'NETWORK_ERROR') {
+    return t.networkError
+  }
   if (error instanceof ApiError && error.code === 'PAYMENT_PROVIDER_ERROR') {
-    return 'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.'
+    return t.paymentProviderError
   }
   return error instanceof Error
     ? error.message
-    : 'Không thể tải dữ liệu tài chính.'
+    : t.loadError
 }

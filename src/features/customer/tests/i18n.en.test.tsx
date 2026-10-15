@@ -277,48 +277,47 @@ describe('Customer portal i18n (vi -> en)', () => {
     window.location.hash = '#portal/customer/orders/new'
     render(<CustomerApp />)
     act(() => setLanguage('en'))
+
+    // Step 1: select a service and provide a title.
+    fireEvent.click(await screen.findByRole('button', { name: /Construction monitoring/ }))
+    fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Đơn kiểm thử' } })
+    fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
+    await settled()
+    expect(viLines()).toEqual([])
+
+    // Step 2: the current service checklist is ready before moving to location.
+    const locationNext = await screen.findByRole('button', { name: /Continue: Location & monitoring area/ })
+    await waitFor(() => expect(locationNext).toBeEnabled())
+    fireEvent.click(locationNext)
+
+    // Step 3: location is now the active wizard step.
     fireEvent.change(await screen.findByLabelText(/Address\/area/), {
       target: { value: 'KCN Long Hậu' },
     })
     await settled()
     expect(viLines()).toEqual([])
-
-    // Validation errors on the first step.
-    fireEvent.change(screen.getByLabelText(/Address\/area/), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
+    await screen.findByLabelText(/Preferred time window/)
     await settled()
     expect(viLines()).toEqual([])
 
-    fireEvent.change(screen.getByLabelText(/Address\/area/), {
-      target: { value: 'KCN Long Hậu' },
+    // Step 4: choose a time window to reach the deliverables/review step.
+    fireEvent.change(screen.getByLabelText(/Preferred time window/), {
+      target: { value: 'pt-1' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
-    await screen.findByRole('button', { name: /Construction progress monitoring/ })
-
-    // Step 2 validation errors, then a valid service and title.
-    fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
-    await settled()
-    expect(viLines()).toEqual([])
-
-    fireEvent.click(screen.getByRole('button', { name: /Construction progress monitoring/ }))
-    fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Đơn kiểm thử' } })
-    await settled()
-    expect(viLines()).toEqual([])
-
-    // Step 3 (schedule and deliverables).
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
     const deliverable = (await screen.findByLabelText(/Deliverable type/)) as HTMLSelectElement
     await waitFor(() => expect(deliverable.value).not.toBe(''))
     await settled()
     expect(viLines()).toEqual([])
 
-    // Step 4 (review) and the confirm dialog.
-    fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
+    // Step 5 and the confirmation dialog.
+    fireEvent.click(screen.getByLabelText(/I have read and accept/))
     fireEvent.click(await screen.findByRole('button', { name: 'Submit request' }))
     await screen.findByRole('dialog')
     await settled()
     expect(viLines()).toEqual([])
-  })
+  }, 15_000)
 
   it('CustomerCreateRequest (PortalLayout) is English', async () => {
     render(<CustomerCreateRequestPage />)

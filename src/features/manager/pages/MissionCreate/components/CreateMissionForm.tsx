@@ -208,36 +208,34 @@ export function CreateMissionForm({
   const submitting = submit.kind === 'submitting'
 
   return (
-    <div className="odm-or odm-plan-page">
-      <MissionCreateHeader onCreated={onCreated} brief={brief} />
+    <div className="odm-or odm-or-review-page odm-plan-page">
+      {!onCreated && (
+        <MissionCreateHeader
+          orderId={orderId}
+          brief={brief}
+          planQuery={planQuery}
+          planRevision={planRevision}
+        />
+      )}
 
       {!onCreated && <OrderWorkflowStepper currentStep={2} />}
 
-      <PlanningContextCard
-        onCreated={onCreated}
-        planQuery={planQuery}
-        planRevision={planRevision}
-        orderId={orderId}
-        scopeLabel={scopeLabel}
-        setScopeLabel={setScopeLabel}
-        submit={submit}
-        replacesMissionId={replacesMissionId}
-        replacementQuery={replacementQuery}
-      />
-
-      <div className="odm-or-grid">
-        <div className="odm-or-col">
-          <CustomerTimeWindowCard brief={brief} />
-
-          <WeatherForecastCard
-            forecastTime={forecastTime}
-            brief={brief}
-            forecastRows={forecastRows}
+      <div className="odm-or-layout">
+        <div className="odm-or-main">
+          <PlanningContextCard
+            onCreated={onCreated}
+            planQuery={planQuery}
+            planRevision={planRevision}
+            scopeLabel={scopeLabel}
+            setScopeLabel={setScopeLabel}
+            submit={submit}
+            replacesMissionId={replacesMissionId}
+            replacementQuery={replacementQuery}
           />
 
           <FlightScheduleCard
             durationText={durationText}
-            forecastRows={forecastRows}
+            canFillFromCustomer={forecastRows.length > 0}
             fillFromCustomer={fillFromCustomer}
             scheduledStart={scheduledStart}
             setScheduledStart={setScheduledStart}
@@ -248,9 +246,15 @@ export function CreateMissionForm({
           />
         </div>
 
-        <div className="odm-or-col">
+        <aside className="odm-or-side">
           <OrderSummaryCard brief={brief} />
-        </div>
+          <CustomerTimeWindowCard brief={brief} />
+          <WeatherForecastCard
+            forecastTime={forecastTime}
+            brief={brief}
+            forecastRows={forecastRows}
+          />
+        </aside>
       </div>
 
       <MissionCreateActionBar

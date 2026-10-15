@@ -1,6 +1,6 @@
 import { defineMessages } from '../../../../../shared/i18n'
 
-export const missionRouteMapMessages = defineMessages({
+export const waypointReasonMessages = defineMessages({
   vi: {
     flightPoint: 'Điểm bay',
     startingPoint: 'Điểm xuất phát',

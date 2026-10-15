@@ -2,7 +2,6 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const checksTabMessages = defineMessages({
   vi: {
-    weatherResultCard: 'Kết quả thời tiết',
     precheckCard: 'Kiểm tra thiết bị trước bay',
     totalChecks: 'Tổng check',
     passed: 'Đạt',
@@ -17,7 +16,6 @@ export const checksTabMessages = defineMessages({
     noPostcheck: 'Chưa có kết quả postcheck.',
   },
   en: {
-    weatherResultCard: 'Weather result',
     precheckCard: 'Pre-flight device check',
     totalChecks: 'Total checks',
     passed: 'Passed',

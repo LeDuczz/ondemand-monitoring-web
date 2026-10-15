@@ -3,28 +3,22 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const missionKpisMessages = defineMessages({
   vi: {
     kpi: {
-      customer: 'Khách hàng',
-      schedule: 'Lịch bay',
-      drone: 'Thiết bị',
       crew: 'Đội bay',
       media: 'Media',
+      checklist: 'Checklist hoàn tất',
       actualDuration: 'Thời lượng thực tế',
       plannedDuration: 'Thời lượng dự kiến',
     },
-    crewAccepted: (accepted: number, total: number) =>
-      `${accepted}/${total} đã nhận`,
+    crewAccepted: 'đã nhận nhiệm vụ',
   },
   en: {
     kpi: {
-      customer: 'Customer',
-      schedule: 'Schedule',
-      drone: 'Device',
       crew: 'Crew',
       media: 'Media',
+      checklist: 'Checklist done',
       actualDuration: 'Actual duration',
       plannedDuration: 'Planned duration',
     },
-    crewAccepted: (accepted: number, total: number) =>
-      `${accepted}/${total} accepted`,
+    crewAccepted: 'accepted',
   },
 })

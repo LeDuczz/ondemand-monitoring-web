@@ -1,0 +1,455 @@
+/* Mission detail screen: layout comes from the shared `odm-or-*` classes. */
+
+.odm-md-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
+}
+
+.odm-md-actions .odm-btn {
+  text-decoration: none;
+}
+
+.odm-md-sk-title {
+  display: block;
+  width: 180px;
+  height: 28px;
+}
+
+.odm-md-sk-stat {
+  display: block;
+  height: 72px;
+}
+
+.odm-md-tabs {
+  align-self: flex-start;
+}
+
+/* Map card */
+
+.odm-md-map {
+  overflow: hidden;
+  border-radius: var(--ui-radius-sm);
+}
+
+.odm-md-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ui-space-2);
+  margin: var(--ui-space-3) 0 0;
+}
+
+.odm-md-facts > div,
+.odm-md-metric {
+  min-width: 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+}
+
+.odm-md-facts dt,
+.odm-md-metric span {
+  display: block;
+  color: var(--ui-text-3);
+  font-size: 12px;
+}
+
+.odm-md-facts dd,
+.odm-md-metric strong {
+  display: block;
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.odm-md-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-1) var(--ui-space-4);
+  margin: var(--ui-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+}
+
+.odm-md-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.odm-md-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.odm-md-legend i.is-home {
+  background: var(--ui-success);
+}
+
+.odm-md-legend i.is-line {
+  width: 16px;
+  height: 0;
+  border-radius: 0;
+  border-top: 2px dashed var(--ui-primary);
+}
+
+.odm-md-legend i.is-wp {
+  background: var(--ui-primary);
+}
+
+.odm-md-legend i.is-target {
+  background: var(--ui-danger);
+}
+
+.odm-md-wps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--ui-space-2);
+  margin: var(--ui-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.odm-md-wps li {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-width: 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+}
+
+.odm-md-wps b {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ui-primary);
+  color: var(--ui-on-primary);
+  font-size: 11px;
+}
+
+.odm-md-wps li:first-child b {
+  background: var(--ui-success);
+}
+
+.odm-md-wps li:last-child b {
+  background: var(--ui-danger);
+}
+
+.odm-md-wps strong {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odm-md-wps span {
+  flex: none;
+  color: var(--ui-text-3);
+}
+
+/* Satellite map (Leaflet) */
+
+.odm-rm-satellite {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 340px;
+  overflow: hidden;
+  background: var(--ui-surface-2);
+}
+
+.odm-rm-leaflet {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.odm-rm-satellite .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+.odm-rm-chip {
+  position: absolute;
+  z-index: 500;
+  max-width: calc(100% - 20px);
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  box-shadow: var(--ui-shadow);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.odm-rm-chip-target {
+  bottom: 10px;
+  left: 10px;
+  border-color: var(--ui-danger);
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-text);
+}
+
+.odm-rm-chip-route {
+  top: 10px;
+  left: 56px;
+}
+
+.odm-rm-chip-radius {
+  right: 10px;
+  bottom: 28px;
+}
+
+.odm-rm-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: var(--ui-text-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.odm-rm-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 42px;
+  height: 24px;
+  padding: 0 var(--ui-space-2);
+  border: 2px solid var(--ui-surface);
+  border-radius: 999px;
+  color: var(--ui-on-primary);
+  box-shadow: var(--ui-shadow);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.odm-rm-marker.is-home {
+  background: var(--ui-success);
+}
+
+.odm-rm-marker.is-target {
+  background: var(--ui-danger);
+}
+
+path.odm-rm-route {
+  stroke: var(--ui-primary);
+}
+
+path.odm-rm-radius {
+  stroke: var(--ui-success);
+  fill: var(--ui-success);
+}
+
+/* Detail blocks inside cards */
+
+.odm-md-stack {
+  display: grid;
+  gap: var(--ui-space-3);
+}
+
+.odm-md-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--ui-space-2);
+}
+
+.odm-md-note {
+  margin: var(--ui-space-3) 0 0;
+  color: var(--ui-text-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.odm-md-stack > .odm-md-note {
+  margin: 0;
+}
+
+.odm-md-advisories {
+  display: grid;
+  gap: var(--ui-space-1);
+  margin: 0;
+  padding: 0 0 0 var(--ui-space-5);
+  color: var(--ui-text-3);
+  font-size: 13px;
+}
+
+.odm-md-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.odm-md-checks li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.odm-md-checks li:last-child {
+  border-bottom: 0;
+}
+
+.odm-md-check-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.odm-md-check-text strong {
+  font-size: 13px;
+}
+
+.odm-md-check-text small {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.odm-md-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.odm-md-table th,
+.odm-md-table td {
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.odm-md-table th {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.odm-md-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Crew */
+
+.odm-md-count {
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.odm-md-progress {
+  height: 6px;
+  margin-bottom: var(--ui-space-3);
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ui-surface-2);
+}
+
+.odm-md-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--ui-success);
+}
+
+.odm-md-crew {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.odm-md-crew li {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.odm-md-crew li:first-child {
+  padding-top: 0;
+}
+
+.odm-md-crew li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.odm-md-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.odm-md-avatar.is-device {
+  background: var(--ui-surface-2);
+  color: var(--ui-text-2);
+}
+
+.odm-md-crew-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.odm-md-crew-role {
+  color: var(--ui-text-3);
+  font-size: 12px;
+}
+
+.odm-md-crew-main strong {
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.odm-md-crew-main small {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .odm-md-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .odm-rm-satellite {
+    height: 260px;
+  }
+
+  .odm-md-actions {
+    justify-content: flex-start;
+  }
+}

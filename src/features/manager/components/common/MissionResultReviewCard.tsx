@@ -36,7 +36,7 @@ export function MissionResultReviewCard({
   onReviewed: () => void
   onViewMedia?: () => void
 }) {
-  const { t } = useI18n(missionResultReviewCardMessages)
+  const { t, lang } = useI18n(missionResultReviewCardMessages)
   const { t: readinessT } = useI18n(missionResultReviewReadinessMessages)
 
   const headingId = useId()
@@ -118,7 +118,7 @@ export function MissionResultReviewCard({
               </div>
               <div>
                 <dt>{t.duration}</dt>
-                <dd>{formatDuration(matchingResult.durationSeconds)}</dd>
+                <dd>{formatDuration(matchingResult.durationSeconds, lang)}</dd>
               </div>
               <div>
                 <dt>{t.media}</dt>

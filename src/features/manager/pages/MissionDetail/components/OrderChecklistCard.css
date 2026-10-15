@@ -1,6 +1,3 @@
-.odm-or-checklist-title {
-  margin: 0;
-}
 .odm-or-checklist-hint {
   margin: 0 0 14px;
   line-height: 1.6;
@@ -13,10 +10,10 @@
   padding: 10px 0 10px 4px;
 }
 .odm-or-checklist-list li + li {
-  border-top: 1px solid var(--or-border);
+  border-top: 1px solid var(--ui-border);
 }
 .odm-or-checklist-list li::marker {
-  color: var(--or-tx2);
+  color: var(--ui-text-3);
   font-weight: 600;
 }
 .odm-or-checklist-content {
@@ -26,6 +23,6 @@
   white-space: pre-wrap;
 }
 .odm-or-checklist-source {
-  color: var(--or-tx2);
+  color: var(--ui-text-3);
   font-size: 12px;
 }

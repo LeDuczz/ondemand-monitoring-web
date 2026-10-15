@@ -1,5 +1,5 @@
-import { OrderIcon } from '../../../components/common/OrderIcon'
-import { formatLocalInput, type ForecastRow } from '../createMissionHelpers'
+import { Card, FormField } from '../../../../../shared/components/ui'
+import { formatLocalInput } from '../createMissionHelpers'
 import type { Dispatch } from 'react'
 import type { SetStateAction } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
@@ -7,7 +7,7 @@ import { flightScheduleCardMessages } from './FlightScheduleCard.messages'
 
 export function FlightScheduleCard({
   durationText,
-  forecastRows,
+  canFillFromCustomer,
   fillFromCustomer,
   scheduledStart,
   setScheduledStart,
@@ -17,7 +17,7 @@ export function FlightScheduleCard({
   scopeLabel,
 }: {
   durationText: string | null
-  forecastRows: ForecastRow[]
+  canFillFromCustomer: boolean
   fillFromCustomer: () => void
   scheduledStart: string
   setScheduledStart: Dispatch<SetStateAction<string>>
@@ -31,64 +31,62 @@ export function FlightScheduleCard({
 }) {
   const { t } = useI18n(flightScheduleCardMessages)
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="clock" size={18} />
-          {t.flightSchedule}
-        </span>
-        {durationText ? (
-          <span className="odm-or-pill odm-or-pill-blue">
+    <Card
+      title={t.flightSchedule}
+      actions={
+        durationText ? (
+          <span className="odm-plan-version">
             {t.durationLabel(durationText)}
           </span>
-        ) : null}
-      </header>
-      <div className="odm-or-card-body">
-        <p className="odm-or-muted odm-or-hint">{t.flightScheduleHint}</p>
-        {forecastRows.length > 0 ? (
-          <button
-            type="button"
-            className="odm-or-quickfill"
-            onClick={fillFromCustomer}
-          >
-            {t.fillFromCustomer}
-          </button>
-        ) : null}
-        <div className="odm-or-form-row">
-          <label className="odm-or-field">
-            <span className="odm-or-field-label">{t.start}</span>
-            <input
-              className="odm-or-input"
-              type="datetime-local"
-              value={scheduledStart}
-              onChange={(e) => setScheduledStart(e.target.value)}
-            />
-          </label>
-          <label className="odm-or-field">
-            <span className="odm-or-field-label">{t.end}</span>
-            <input
-              className="odm-or-input"
-              type="datetime-local"
-              min={scheduledStart || undefined}
-              value={scheduledEnd}
-              onChange={(e) => setScheduledEnd(e.target.value)}
-            />
-          </label>
-        </div>
-        {scheduledStart && scheduledEnd ? (
-          <p className="odm-or-schedule-summary">
-            {t.scheduleSummary(
-              formatLocalInput(scheduledStart),
-              formatLocalInput(scheduledEnd),
-            )}
-          </p>
-        ) : null}
-        {submit.kind === 'validationFailed' && scopeLabel.trim() ? (
-          <div role="alert" className="odm-or-error">
-            {submit.message}
-          </div>
-        ) : null}
+        ) : undefined
+      }
+    >
+      <p className="odm-plan-field-help odm-plan-lead">
+        {t.flightScheduleHint}
+      </p>
+      {canFillFromCustomer ? (
+        <button
+          type="button"
+          className="odm-btn odm-plan-quickfill"
+          onClick={fillFromCustomer}
+        >
+          {t.fillFromCustomer}
+        </button>
+      ) : null}
+      <div className="odm-plan-form-row">
+        <FormField id="mission-start" label={t.start}>
+          <input
+            id="mission-start"
+            className="odm-inp"
+            type="datetime-local"
+            value={scheduledStart}
+            onChange={(e) => setScheduledStart(e.target.value)}
+          />
+        </FormField>
+        <FormField id="mission-end" label={t.end}>
+          <input
+            id="mission-end"
+            className="odm-inp"
+            type="datetime-local"
+            min={scheduledStart || undefined}
+            value={scheduledEnd}
+            onChange={(e) => setScheduledEnd(e.target.value)}
+          />
+        </FormField>
       </div>
-    </section>
+      {scheduledStart && scheduledEnd ? (
+        <p className="odm-plan-summary">
+          {t.scheduleSummary(
+            formatLocalInput(scheduledStart),
+            formatLocalInput(scheduledEnd),
+          )}
+        </p>
+      ) : null}
+      {submit.kind === 'validationFailed' && scopeLabel.trim() ? (
+        <div role="alert" className="odm-or-error">
+          {submit.message}
+        </div>
+      ) : null}
+    </Card>
   )
 }

@@ -1,6 +1,5 @@
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { managerHref } from '../../../routes'
-import { Button } from '../../../../../shared/components/Button'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { ExecutionPlan } from '../../../types/planning'
 import type { MissionResponse } from '../../../types/missions'
@@ -25,22 +24,17 @@ export function MissionCreateActionBar({
   const { t } = useI18n(missionCreateActionBarMessages)
   return (
     <div className="odm-or-actionbar">
-      <div className="odm-or-actionbar-hint">
-        <span className="odm-or-actionbar-hint-icon">
-          <OrderIcon name="info" size={18} />
-        </span>
+      <p className="odm-or-actionbar-hint">
+        <OrderIcon name="info" size={16} />
         <span>{t.actionHint}</span>
-      </div>
+      </p>
       <div className="odm-or-actionbar-actions">
-        <a
-          className="odm-or-btn odm-or-btn-ghost"
-          href={managerHref({ screen: 'orderQueue' })}
-        >
+        <a className="odm-btn" href={managerHref({ screen: 'orderQueue' })}>
           {t.backToOrders}
         </a>
-        <Button
+        <button
           type="button"
-          className="odm-or-btn odm-or-btn-primary"
+          className="odm-btn odm-btn-p"
           onClick={handleSubmit}
           disabled={
             submitting ||
@@ -58,7 +52,7 @@ export function MissionCreateActionBar({
         >
           {submitting ? t.creating : t.createMission}
           <OrderIcon name="chevron-right" size={16} />
-        </Button>
+        </button>
       </div>
     </div>
   )

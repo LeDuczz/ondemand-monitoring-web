@@ -1,4 +1,4 @@
-import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Card } from '../../../../../shared/components/ui'
 import { preferredLabel } from '../../../lib/viLabels'
 import type { OrderMissionBrief } from '../../../types/orders'
 import { useI18n } from '../../../../../shared/i18n'
@@ -11,19 +11,11 @@ export function CustomerTimeWindowCard({
 }) {
   const { t } = useI18n(customerTimeWindowCardMessages)
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="calendar" size={18} />
-          {t.customerTimeWindow}
-        </span>
-      </header>
-      <div className="odm-or-card-body">
-        <div className="odm-or-bigvalue">
-          {preferredLabel(brief.preferredDate, brief.preferredTimeName)}
-        </div>
-        <p className="odm-or-muted">{t.customerTimeWindowHint}</p>
+    <Card title={t.customerTimeWindow}>
+      <div className="odm-plan-bigvalue">
+        {preferredLabel(brief.preferredDate, brief.preferredTimeName)}
       </div>
-    </section>
+      <p className="odm-plan-field-help">{t.customerTimeWindowHint}</p>
+    </Card>
   )
 }

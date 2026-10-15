@@ -1,3 +1,4 @@
+import { Card } from '../../../../../shared/components/ui'
 import { OrderWorkflowStepper } from '../../../components/common/OrderWorkflowStepper'
 import type { SubmitState } from '../createMissionHelpers'
 import type { Dispatch } from 'react'
@@ -18,39 +19,20 @@ export function PlanFailedState({
   return (
     <div className="odm-or">
       {!onCreated && <OrderWorkflowStepper currentStep={2} />}
-      <div className="odm-or-card">
-        <div className="odm-mgr-review-error">
-          <div className="odm-mgr-review-error-icon" aria-hidden="true">
-            !
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>
-            {t.planFailedTitle}
-          </div>
-          <div style={{ color: 'var(--tx3)', maxWidth: 420, lineHeight: 1.5 }}>
-            {t.planFailedBody}
-          </div>
-          <div
-            style={{
-              fontSize: 11.5,
-              color: 'var(--tx3)',
-              background: 'var(--sf3)',
-              padding: '3px 8px',
-              borderRadius: 5,
-            }}
+      <Card>
+        <div className="odm-or-load-error" role="alert">
+          <strong>{t.planFailedTitle}</strong>
+          <p>{t.planFailedBody}</p>
+          <code className="odm-plan-code">{submit.message}</code>
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={() => setSubmit({ kind: 'idle' })}
           >
-            {submit.message}
-          </div>
-          <div style={{ marginTop: 6, display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              onClick={() => setSubmit({ kind: 'idle' })}
-            >
-              {t.retry}
-            </button>
-          </div>
+            {t.retry}
+          </button>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

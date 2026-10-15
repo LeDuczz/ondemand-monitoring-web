@@ -30,10 +30,10 @@ export function PlanDetail({
   postcheck?: PersistedPostDeviceCheckResponse | null
   precheckItems?: PreflightCheckItem[] | null
 }) {
-  const { t } = useI18n(planDetailMessages)
+  const { t, lang } = useI18n(planDetailMessages)
 
   if (!plan) {
-    return <div className="odm-or-empty">{t.noFlightPlanYet}</div>
+    return <p className="odm-or-empty">{t.noFlightPlanYet}</p>
   }
   const estimatedUsedPercent =
     plan.estimatedBatteryUsedPercent ??
@@ -45,19 +45,19 @@ export function PlanDetail({
     postcheck?.landingBatteryPercent ??
     null
   return (
-    <div className="odm-or-detail-grid">
+    <div className="odm-md-metrics">
       <MetricTile label={t.algorithm} value={plan.planningAlgorithm} />
       <MetricTile
         label={t.distance}
-        value={formatNumber(plan.plannedDistanceM, ' m')}
+        value={formatNumber(plan.plannedDistanceM, ' m', lang)}
       />
       <MetricTile
         label={t.duration}
-        value={formatDuration(plan.plannedDurationSec)}
+        value={formatDuration(plan.plannedDurationSec, lang)}
       />
       <MetricTile
         label={t.energy}
-        value={formatNumber(plan.estimatedEnergyMah, ' mAh')}
+        value={formatNumber(plan.estimatedEnergyMah, ' mAh', lang)}
       />
       <MetricTile
         label={t.batteryBeforeFlight}
@@ -65,19 +65,20 @@ export function PlanDetail({
           plan.availableBatteryPercentAtPlanning ??
             batteryFromPrecheck(precheckItems),
           '%',
+          lang,
         )}
       />
       <MetricTile
         label={t.estimatedBatteryUse}
-        value={formatNumber(estimatedUsedPercent, '%')}
+        value={formatNumber(estimatedUsedPercent, '%', lang)}
       />
       <MetricTile
         label={t.batteryRemaining}
-        value={formatNumber(remainingBattery, '%')}
+        value={formatNumber(remainingBattery, '%', lang)}
       />
       <MetricTile
         label={t.maxAltitude}
-        value={formatNumber(plan.maxPlannedAltitudeM, ' m')}
+        value={formatNumber(plan.maxPlannedAltitudeM, ' m', lang)}
       />
       <MetricTile label={t.waypoint} value={plan.waypoints?.length ?? 0} />
     </div>

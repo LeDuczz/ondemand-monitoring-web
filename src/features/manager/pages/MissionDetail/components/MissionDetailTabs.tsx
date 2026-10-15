@@ -22,14 +22,14 @@ export function MissionDetailTabs({
     { id: 'checks', label: t.tabs.checks },
   ]
   return (
-    <div className="odm-or-seg" role="tablist" aria-label={t.tabsAria}>
+    <div className="mng-seg odm-md-tabs" role="tablist" aria-label={t.tabsAria}>
       {tabs.map((item) => (
         <button
           key={item.id}
           type="button"
           role="tab"
           aria-selected={activeTab === item.id}
-          className={`odm-or-seg-btn${activeTab === item.id ? ' is-active' : ''}`}
+          className={`mng-seg-btn${activeTab === item.id ? ' is-active' : ''}`}
           onClick={() => setTab(item.id)}
         >
           {item.label}

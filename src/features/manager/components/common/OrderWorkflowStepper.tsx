@@ -32,6 +32,7 @@ export function OrderWorkflowStepper({
             <li
               key={step.label}
               className={`odm-or-step odm-or-step-${state}`}
+              title={step.hint}
               aria-current={state === 'current' ? 'step' : undefined}
             >
               <span className="odm-or-step-dot">
@@ -43,13 +44,7 @@ export function OrderWorkflowStepper({
               </span>
               <span className="odm-or-step-text">
                 <span className="odm-or-step-label">{step.label}</span>
-                <span className="odm-or-step-hint">{step.hint}</span>
               </span>
-              {number < 4 ? (
-                <span className="odm-or-step-chevron">
-                  <OrderIcon name="chevron-right" size={16} />
-                </span>
-              ) : null}
             </li>
           )
         })}

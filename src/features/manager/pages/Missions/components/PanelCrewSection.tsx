@@ -2,9 +2,9 @@ import { formatStaffSummary } from '../missionsHelpers'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import {
   initialsOf,
-  STAFF_ROLE_LABELS,
+  staffRoleLabel,
   assignmentTone,
-  STAFF_RESPONSE_LABELS,
+  staffResponseLabel,
 } from '../../../components/common/missionDetailHelpers'
 import type { MissionCalendarItem } from '../../../types/missions'
 import type { MissionStaffAssignmentResponse } from '../../../types/missions'
@@ -20,7 +20,7 @@ export function PanelCrewSection({
   hasAssignedResources: boolean
   mission: MissionCalendarItem
 }) {
-  const { t } = useI18n(panelCrewSectionMessages)
+  const { t, lang } = useI18n(panelCrewSectionMessages)
   return (
     <section className="odm-or-crew">
       <div className="odm-or-crew-head">
@@ -77,7 +77,7 @@ export function PanelCrewSection({
                 </span>
                 <span className="odm-or-crew-main">
                   <span className="odm-or-crew-role">
-                    {STAFF_ROLE_LABELS[assignment.assignedRole]}
+                    {staffRoleLabel(assignment.assignedRole, lang)}
                   </span>
                   <strong>{name}</strong>
                   {assignment.staffEmail && assignment.staffName ? (
@@ -89,7 +89,7 @@ export function PanelCrewSection({
                     assignment.responseStatus,
                   )}`}
                 >
-                  {STAFF_RESPONSE_LABELS[assignment.responseStatus]}
+                  {staffResponseLabel(assignment.responseStatus, lang)}
                 </span>
               </li>
             )

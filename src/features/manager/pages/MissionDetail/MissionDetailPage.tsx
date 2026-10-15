@@ -8,10 +8,8 @@ import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { ordersApi } from '../../api/ordersApi'
 import { type DetailData } from '../../components/common/missionDetailHelpers'
 import { fetchMissionDetail } from './fetchMissionDetail'
-import { managerHref } from '../../routes'
 import { missionDetailPageMessages } from './MissionDetailPage.messages'
 import '../../manager.css'
-import { MissionBackLink } from './components/MissionBackLink'
 import { MissionDetailSkeleton } from './components/MissionDetailSkeleton'
 import { MissionDetailError } from './components/MissionDetailError'
 import { MissionDetailHeader } from './components/MissionDetailHeader'
@@ -26,6 +24,9 @@ import { OrderTab } from './components/OrderTab'
 import { ChecksTab } from './components/ChecksTab'
 import { MissionInfoCard } from './components/MissionInfoCard'
 import { MissionCrewCard } from './components/MissionCrewCard'
+import { MissionWeatherCard } from './components/MissionWeatherCard'
+import { ManagerDeliveryPanel } from '../../../delivery/ManagerDeliveryPanel'
+import './missionDetail.css'
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
   return <MissionDetail key={missionId} missionId={missionId} />
@@ -151,28 +152,21 @@ function MissionDetail({ missionId }: { missionId: string }) {
   )
 
   return (
-    <div className="odm-or">
-      <MissionBackLink />
+    <div className="odm-or odm-or-review-page">
       <MissionDetailHeader mission={mission} canSetup={canSetup} />
 
       <MissionKpis
-        mission={mission}
-        deviceLabel={deviceLabel}
         staff={staff}
         accepted={accepted}
         detail={detail}
         plan={plan}
+        checklist={
+          checklist.data?.missionId === missionId ? checklist.data : undefined
+        }
       />
 
-      <a
-        className="odm-or-btn-outline"
-        href={managerHref({ screen: 'orderReview', orderId: mission.orderId })}
-      >
-        {t.openOrderPlan}
-      </a>
-
-      <div className="odm-or-md-grid">
-        <div className="odm-or-col">
+      <div className="odm-or-layout">
+        <div className="odm-or-main">
           <MissionDetailTabs
             showPlanTab={showPlanTab}
             activeTab={activeTab}
@@ -191,7 +185,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
               refreshDetail={refreshDetail}
               mediaLibrary={mediaLibrary}
               missionId={missionId}
-              revision={revision}
             />
           ) : null}
 
@@ -207,15 +200,11 @@ function MissionDetail({ missionId }: { missionId: string }) {
           {activeTab === 'order' ? <OrderTab detail={detail} /> : null}
 
           {activeTab === 'checks' ? (
-            <ChecksTab
-              detail={detail}
-              preflight={preflight}
-              postcheck={postcheck}
-            />
+            <ChecksTab preflight={preflight} postcheck={postcheck} />
           ) : null}
         </div>
 
-        <aside className="odm-or-col">
+        <aside className="odm-or-side">
           <MissionInfoCard
             mission={mission}
             deviceLabel={deviceLabel}
@@ -229,6 +218,15 @@ function MissionDetail({ missionId }: { missionId: string }) {
             deviceCode={deviceCode}
             deviceLabel={deviceLabel}
           />
+
+          <MissionWeatherCard weather={detail.weather} />
+
+          {mission.status === 'COMPLETED' ? (
+            <ManagerDeliveryPanel
+              orderId={mission.orderId}
+              refreshKey={revision}
+            />
+          ) : null}
         </aside>
       </div>
     </div>

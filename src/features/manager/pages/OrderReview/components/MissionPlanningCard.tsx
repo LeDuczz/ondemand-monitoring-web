@@ -7,7 +7,7 @@ import {
 import { managerHref } from '../../../routes'
 import type { MissionResponse } from '../../../types/missions'
 import type { ExecutionPlan } from '../../../types/planning'
-import { STAFF_ROLE_LABELS } from '../../../components/common/missionDetailHelpers'
+import { staffRoleLabel } from '../../../components/common/missionDetailHelpers'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { planningSchedule } from '../../../components/common/planningSchedule'
 import { missionStopLabel } from '../../../../mission/lib/missionOperationalState'
@@ -25,7 +25,7 @@ export function MissionPlanningCard({
   missions: MissionResponse[]
   children: ReactNode
 }) {
-  const { t, locale } = useI18n(missionPlanningCardMessages)
+  const { t, locale, lang } = useI18n(missionPlanningCardMessages)
 
   const original = missions.find((m) => m.id === mission.replacesMissionId)
   const replacements = missions.filter(
@@ -100,7 +100,7 @@ export function MissionPlanningCard({
                   }
                 >
                   <span>
-                    {STAFF_ROLE_LABELS[person.assignedRole] ?? t.staff}
+                    {staffRoleLabel(person.assignedRole, lang) ?? t.staff}
                   </span>
                   <strong>{person.staffName || t.noName}</strong>
                 </li>

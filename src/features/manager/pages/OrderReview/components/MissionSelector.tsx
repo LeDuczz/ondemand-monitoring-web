@@ -5,7 +5,7 @@ import {
 } from '../../../../../shared/lib/statusTone'
 import type { MissionResponse } from '../../../types/missions'
 import type { ExecutionPlan } from '../../../types/planning'
-import { STAFF_ROLE_LABELS } from '../../../components/common/missionDetailHelpers'
+import { staffRoleLabel } from '../../../components/common/missionDetailHelpers'
 import { assignmentReadiness } from '../../../lib/assignmentReadiness'
 import { planningSchedule } from '../../../components/common/planningSchedule'
 import { useI18n } from '../../../../../shared/i18n'
@@ -28,7 +28,7 @@ export function MissionSelector({
   drafts: Record<string, { dirty: boolean; busy: boolean }>
   onSelect: (id: string) => void
 }) {
-  const { t, locale } = useI18n(missionSelectorMessages)
+  const { t, locale, lang } = useI18n(missionSelectorMessages)
 
   return (
     <nav className="odm-workspace-selector" aria-label={t.missionsInTheOrder}>
@@ -112,7 +112,7 @@ export function MissionSelector({
             {missing.length > 0 && !historical && (
               <small>
                 {t.missing}{' '}
-                {missing.map((role) => STAFF_ROLE_LABELS[role]).join(', ')}
+                {missing.map((role) => staffRoleLabel(role, lang)).join(', ')}
               </small>
             )}
             {mission.replacesMissionId && (

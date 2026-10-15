@@ -6,7 +6,7 @@ export function MetricTile({
   value: string | number | null | undefined
 }) {
   return (
-    <div className="odm-or-detail-metric">
+    <div className="odm-md-metric">
       <span>{label}</span>
       <strong>{value ?? '—'}</strong>
     </div>

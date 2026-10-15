@@ -1,4 +1,4 @@
-import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Card } from '../../../../../shared/components/ui'
 import { type ForecastRow } from '../createMissionHelpers'
 import type { OrderMissionBrief } from '../../../types/orders'
 import { useI18n } from '../../../../../shared/i18n'
@@ -16,30 +16,28 @@ export function WeatherForecastCard({
 }) {
   const { t } = useI18n(weatherForecastCardMessages)
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="info" size={18} />
-          {t.weatherForecastTitle}
-        </span>
-        <span className="odm-or-pill odm-or-pill-blue">
+    <Card
+      title={t.weatherForecastTitle}
+      actions={
+        <span className="odm-plan-version">
           {t.weatherForecastTime(forecastTime)}
         </span>
-      </header>
-      <div className="odm-or-card-body">
-        <p className="odm-or-muted odm-or-hint">{t.weatherForecastHint}</p>
-        {!brief.center ? (
-          <div className="odm-or-weather-empty">{t.weatherNoLocation}</div>
-        ) : forecastRows.length === 0 ? (
-          <div className="odm-or-weather-empty">{t.weatherNoDates}</div>
-        ) : (
-          <div className="odm-or-weather-list">
-            {forecastRows.map((row) => (
-              <WeatherRow key={row.date} row={row} />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+      }
+    >
+      <p className="odm-plan-field-help odm-plan-lead">
+        {t.weatherForecastHint}
+      </p>
+      {!brief.center ? (
+        <div className="odm-plan-weather-empty">{t.weatherNoLocation}</div>
+      ) : forecastRows.length === 0 ? (
+        <div className="odm-plan-weather-empty">{t.weatherNoDates}</div>
+      ) : (
+        <div className="odm-plan-weather-list">
+          {forecastRows.map((row) => (
+            <WeatherRow key={row.date} row={row} />
+          ))}
+        </div>
+      )}
+    </Card>
   )
 }

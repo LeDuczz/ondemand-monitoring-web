@@ -3,7 +3,7 @@ import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { planningApi } from '../../api/planningApi'
 import { ordersApi } from '../../api/ordersApi'
 import { LiveDispatchPage } from '../../pages/MissionDispatch/components/LiveDispatchPage'
-import { STAFF_ROLE_LABELS } from './missionDetailHelpers'
+import { staffRoleLabel } from './missionDetailHelpers'
 import type { MissionStaffRole } from '../../../mission/types/mission'
 import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { usePlanningConfirmation } from './usePlanningConfirmation'
@@ -33,7 +33,7 @@ export function OrderResourceAssignmentWizard({
   onClose: () => void
   returnLabel?: string
 }) {
-  const { t } = useI18n(orderResourceAssignmentWizardMessages)
+  const { t, lang } = useI18n(orderResourceAssignmentWizardMessages)
   const returnLabel = returnLabelProp ?? t.backToOrderPlan
 
   const confirmation = usePlanningConfirmation()
@@ -203,7 +203,7 @@ export function OrderResourceAssignmentWizard({
                     fullName:
                       person.staffName ||
                       person.staffEmail ||
-                      STAFF_ROLE_LABELS[person.assignedRole],
+                      staffRoleLabel(person.assignedRole, lang),
                     email: person.staffEmail || '',
                   },
                 ]),

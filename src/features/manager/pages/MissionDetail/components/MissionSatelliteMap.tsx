@@ -19,25 +19,10 @@ function validGps(point: GpsPoint | null) {
   )
 }
 
-function routeMarkerIcon(label: string, color: string) {
+/** Marker styling lives in missionDetail.css (`.odm-rm-marker.is-*`). */
+function routeMarkerIcon(label: string, tone: 'home' | 'target') {
   return L.divIcon({
-    html: `<div style="
-      min-width:42px;
-      height:24px;
-      padding:0 8px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-sizing:border-box;
-      background:${color};
-      color:#fff;
-      border:2px solid #fff;
-      box-shadow:0 3px 10px rgba(15,23,42,.28);
-      font-size:10px;
-      font-weight:800;
-      line-height:1;
-    ">${label}</div>`,
+    html: `<div class="odm-rm-marker is-${tone}">${label}</div>`,
     className: 'odm-rm-route-marker',
     iconSize: [42, 24],
     iconAnchor: [21, 12],
@@ -122,13 +107,12 @@ export function MissionSatelliteMap({
       (routePoint) =>
         [routePoint.latitude, routePoint.longitude] as L.LatLngExpression,
     )
-    const routeColor = '#2563eb'
 
     if (homeMarker.current) {
       homeMarker.current.setLatLng(home)
     } else {
       homeMarker.current = L.marker(home, {
-        icon: routeMarkerIcon('HOME', '#16a34a'),
+        icon: routeMarkerIcon('HOME', 'home'),
         keyboard: false,
       })
         .addTo(map.current)
@@ -139,7 +123,7 @@ export function MissionSatelliteMap({
       targetMarker.current.setLatLng(targetLatLng)
     } else {
       targetMarker.current = L.marker(targetLatLng, {
-        icon: routeMarkerIcon('TARGET', '#dc2626'),
+        icon: routeMarkerIcon('TARGET', 'target'),
         keyboard: false,
       })
         .addTo(map.current)
@@ -147,10 +131,10 @@ export function MissionSatelliteMap({
     }
 
     if (routeLine.current) {
-      routeLine.current.setLatLngs(routeLatLngs).setStyle({ color: routeColor })
+      routeLine.current.setLatLngs(routeLatLngs)
     } else {
       routeLine.current = L.polyline(routeLatLngs, {
-        color: routeColor,
+        className: 'odm-rm-route',
         weight: 4,
         opacity: 0.95,
         dashArray: '8 8',
@@ -173,8 +157,7 @@ export function MissionSatelliteMap({
       } else {
         circle.current = L.circle(targetLatLng, {
           radius: radiusMeters,
-          color: '#16a34a',
-          fillColor: '#22c55e',
+          className: 'odm-rm-radius',
           fillOpacity: 0.16,
           weight: 2,
         }).addTo(map.current)

@@ -8,12 +8,12 @@ export function WeatherRow({ row }: { row: ForecastRow }) {
   const { t } = useI18n(weatherRowMessages)
   return (
     <div
-      className={`odm-or-weather-row ${row.status === 'ready' ? suitabilityTone(row.forecast) : ''}`}
+      className={`odm-plan-weather-row ${row.status === 'ready' ? suitabilityTone(row.forecast) : ''}`}
     >
-      <div className="odm-or-weather-main">
-        <div className="odm-or-weather-top">
-          <div className="odm-or-weather-date">{row.label}</div>
-          <span className="odm-or-weather-badge">
+      <div className="odm-plan-weather-main">
+        <div className="odm-plan-weather-top">
+          <div className="odm-plan-weather-date">{row.label}</div>
+          <span className="odm-plan-weather-badge">
             {row.status === 'ready'
               ? t.weatherSuitability[row.forecast.suitability ?? 'GOOD']
               : row.status === 'loading'
@@ -23,16 +23,16 @@ export function WeatherRow({ row }: { row: ForecastRow }) {
         </div>
         {row.status === 'ready' ? (
           <>
-            <div className="odm-or-weather-hero">
+            <div className="odm-plan-weather-hero">
               <WeatherGlyph code={row.forecast.weatherCode} />
-              <span className="odm-or-weather-label">
+              <span className="odm-plan-weather-label">
                 {row.forecast.weatherLabel || t.weatherUnknown}
               </span>
             </div>
             <WeatherMetrics row={row} />
           </>
         ) : (
-          <div className="odm-or-weather-desc">
+          <div className="odm-plan-weather-desc">
             {row.status === 'loading'
               ? t.weatherLoading
               : row.status === 'unavailable'

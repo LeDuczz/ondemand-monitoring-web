@@ -8,6 +8,7 @@ import type {
   WeatherPreflightCheckResponse,
 } from '../../types/missions'
 import type { OrderDetail } from '../../types/orders'
+import { missionDetailHelpersMessages } from './missionDetailHelpers.messages'
 
 export function formatDateTime(
   value: string | null | undefined,
@@ -25,61 +26,63 @@ export function formatDateTime(
   })
 }
 
-export function formatNumber(value: number | null | undefined, suffix = '') {
+export type HelperLang = 'vi' | 'en'
+
+const localeOf = (lang: HelperLang) => (lang === 'en' ? 'en-US' : 'vi-VN')
+
+export function formatNumber(
+  value: number | null | undefined,
+  suffix = '',
+  lang: HelperLang = 'vi',
+) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—'
-  return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value)}${suffix}`
+  return `${new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: 1 }).format(value)}${suffix}`
 }
 
-export function formatDuration(seconds: number | null | undefined) {
+export function formatDuration(
+  seconds: number | null | undefined,
+  lang: HelperLang = 'vi',
+) {
   if (seconds === null || seconds === undefined) return '—'
-  if (seconds < 60) return `${Math.round(seconds)} giây`
+  const t = missionDetailHelpersMessages[lang]
+  if (seconds < 60) return t.durationSeconds(Math.round(seconds))
   const minutes = Math.floor(seconds / 60)
   const rest = Math.round(seconds % 60)
-  return rest > 0 ? `${minutes} phút ${rest} giây` : `${minutes} phút`
+  return rest > 0 ? t.durationMinSec(minutes, rest) : t.durationMinutes(minutes)
 }
 
-export function checkTone(status: string | null | undefined) {
+/** Badge tone for a check/result status (matches the shared `UiTone`). */
+export function checkTone(
+  status: string | null | undefined,
+): 'success' | 'danger' | 'info' | 'warning' {
   if (status === 'PASSED' || status === 'APPROVED' || status === 'COMPLETED')
-    return 'green'
-  if (status === 'FAILED' || status === 'REJECTED') return 'red'
-  if (status === 'CHECKING' || status === 'IN_PROGRESS') return 'blue'
-  return 'amber'
+    return 'success'
+  if (status === 'FAILED' || status === 'REJECTED') return 'danger'
+  if (status === 'CHECKING' || status === 'IN_PROGRESS') return 'info'
+  return 'warning'
 }
 
-export function checkLabel(status: string | null | undefined) {
-  const labels: Record<string, string> = {
-    PASSED: 'Đạt',
-    FAILED: 'Không đạt',
-    PENDING: 'Chờ kiểm tra',
-    CHECKING: 'Đang kiểm tra',
-    CANCELLED: 'Đã hủy',
-    COMPLETED: 'Hoàn thành',
-    IN_PROGRESS: 'Đang xử lý',
-    DRAFT: 'Nháp',
-    PENDING_MANAGER_APPROVAL: 'Chờ duyệt',
-    APPROVED: 'Đã duyệt',
-    REJECTED: 'Từ chối',
-  }
+export function checkLabel(
+  status: string | null | undefined,
+  lang: HelperLang = 'vi',
+) {
+  const labels: Record<string, string> =
+    missionDetailHelpersMessages[lang].checkLabels
   return status ? (labels[status] ?? status) : '—'
 }
 
-export const STAFF_ROLE_LABELS: Record<
-  MissionStaffAssignmentResponse['assignedRole'],
-  string
-> = {
-  PILOT: 'Phi công',
-  OPERATOR: 'Vận hành',
-  MAINTAINER: 'Bảo trì',
-  INSPECTOR: 'Nghiệm thu',
+export function staffRoleLabel(
+  role: MissionStaffAssignmentResponse['assignedRole'],
+  lang: HelperLang = 'vi',
+) {
+  return missionDetailHelpersMessages[lang].staffRoles[role]
 }
 
-export const STAFF_RESPONSE_LABELS: Record<
-  MissionStaffAssignmentResponse['responseStatus'],
-  string
-> = {
-  PENDING: 'Chờ phản hồi',
-  ACCEPTED: 'Đã chấp nhận',
-  REJECTED: 'Đã từ chối',
+export function staffResponseLabel(
+  status: MissionStaffAssignmentResponse['responseStatus'],
+  lang: HelperLang = 'vi',
+) {
+  return missionDetailHelpersMessages[lang].staffResponses[status]
 }
 
 export function assignmentTone(
@@ -88,6 +91,14 @@ export function assignmentTone(
   if (status === 'ACCEPTED') return 'green'
   if (status === 'REJECTED') return 'red'
   return 'amber'
+}
+
+export function assignmentUiTone(
+  status: MissionStaffAssignmentResponse['responseStatus'],
+): 'success' | 'danger' | 'warning' {
+  if (status === 'ACCEPTED') return 'success'
+  if (status === 'REJECTED') return 'danger'
+  return 'warning'
 }
 
 export function initialsOf(name: string): string {

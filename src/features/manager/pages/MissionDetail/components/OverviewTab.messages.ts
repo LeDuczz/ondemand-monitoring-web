@@ -14,7 +14,6 @@ export const overviewTabMessages = defineMessages({
     kpi: {
       drone: 'Thiết bị',
     },
-    weatherResultCard: 'Kết quả thời tiết',
     khongTheTaiChecklistCua:
       'Không thể tải checklist của Mission này. Vui lòng thử lại.',
     mediaLibrary: 'Thư viện media',
@@ -32,7 +31,6 @@ export const overviewTabMessages = defineMessages({
     kpi: {
       drone: 'Device',
     },
-    weatherResultCard: 'Weather result',
     khongTheTaiChecklistCua:
       "Could not load this Mission's checklist. Please try again.",
     mediaLibrary: 'Media library',

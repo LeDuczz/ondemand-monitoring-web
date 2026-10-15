@@ -1,11 +1,6 @@
-import type { ReactNode } from 'react'
-
+import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { humanizeMediaRequirement } from '../../../components/common/format'
-import {
-  OrderIcon,
-  type OrderIconName,
-} from '../../../components/common/OrderIcon'
 import type { OrderMissionBrief } from '../../../types/orders'
 import { orderSummaryCardMessages } from './OrderSummaryCard.messages'
 
@@ -14,53 +9,32 @@ export function OrderSummaryCard({ brief }: { brief: OrderMissionBrief }) {
   const localizeMediaLabel = (label: string) =>
     humanizeMediaRequirement(label, t)
 
-  const summaryRows: Array<{
-    icon: OrderIconName
-    label: string
-    value: ReactNode
-  }> = [
-    { icon: 'service', label: t.serviceLabel, value: brief.serviceName },
-    { icon: 'user', label: t.customerLabel, value: brief.customerFullName },
-    { icon: 'pin', label: t.locationLabel, value: brief.addressText ?? '—' },
+  const rows: Array<{ label: string; value: string }> = [
+    { label: t.serviceLabel, value: brief.serviceName },
+    { label: t.customerLabel, value: brief.customerFullName },
+    { label: t.locationLabel, value: brief.addressText ?? '—' },
     {
-      icon: 'radius',
       label: t.radiusLabel,
       value: brief.radiusM != null ? `${brief.radiusM} m` : '—',
     },
   ]
   if (brief.nearestBase) {
-    summaryRows.push({
-      icon: 'drone',
-      label: t.nearestBaseLabel,
-      value: brief.nearestBase,
-    })
+    rows.push({ label: t.nearestBaseLabel, value: brief.nearestBase })
   }
 
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="doc" size={18} />
-          {t.orderSummary}
-        </span>
-      </header>
-      <dl className="odm-or-card-body odm-or-summary-list">
-        {summaryRows.map((row) => (
+    <Card title={t.orderSummary}>
+      <dl className="odm-or-kv">
+        {rows.map((row) => (
           <div key={row.label}>
-            <dt>
-              <OrderIcon name={row.icon} size={16} />
-              {row.label}
-            </dt>
+            <dt>{row.label}</dt>
             <dd>{row.value}</dd>
           </div>
         ))}
         {brief.mediaRequirements && brief.mediaRequirements.length > 0 ? (
           <div>
-            <dt>
-              <OrderIcon name="media" size={16} />
-              {t.mediaLabel}
-            </dt>
-            <dd className="odm-or-info-lines">
+            <dt>{t.mediaLabel}</dt>
+            <dd className="odm-plan-lines">
               {brief.mediaRequirements.map((req, i) => (
                 <span key={i}>{localizeMediaLabel(req.label)}</span>
               ))}
@@ -68,6 +42,6 @@ export function OrderSummaryCard({ brief }: { brief: OrderMissionBrief }) {
           </div>
         ) : null}
       </dl>
-    </section>
+    </Card>
   )
 }

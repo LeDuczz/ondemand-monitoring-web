@@ -1,15 +1,16 @@
 export function CreateMissionSkeleton({ label }: { label: string }) {
   return (
     <div className="odm-or" aria-busy="true" aria-live="polite">
-      <span className="odm-sk" style={{ width: '100%', height: 100 }} />
-      <span
-        className="odm-sk"
-        style={{ width: '100%', height: 240, marginTop: 14 }}
-      />
-      <span
-        className="odm-sk"
-        style={{ width: '100%', height: 300, marginTop: 14 }}
-      />
+      <div className="odm-or-layout">
+        <div className="odm-or-main">
+          <span className="odm-sk odm-or-sk-main" />
+          <span className="odm-sk odm-or-sk-sub" />
+        </div>
+        <div className="odm-or-side">
+          <span className="odm-sk odm-or-sk-side" />
+          <span className="odm-sk odm-or-sk-side" />
+        </div>
+      </div>
       <span className="odm-visually-hidden">{label}</span>
     </div>
   )

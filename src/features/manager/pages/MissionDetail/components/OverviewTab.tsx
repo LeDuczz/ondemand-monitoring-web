@@ -1,17 +1,15 @@
 import { MissionSatelliteMap } from './MissionSatelliteMap'
-import { DetailSection } from './DetailSection'
-import { WeatherResultDetail } from './WeatherResultDetail'
 import {
   formatNumber,
   type DetailData,
 } from '../../../components/common/missionDetailHelpers'
-import { waypointReasonLabel } from './MissionRouteMap'
+import { waypointReasonLabel } from './waypointReason'
 import { MissionResultReviewCard } from '../../../components/common/MissionResultReviewCard'
 import { MonitoringChecklistSection } from '../../../../mission/components/MonitoringChecklistSection'
 import { MissionUploadedMedia } from '../../../../media/components/MissionUploadedMedia'
 import { staffMissionMediaReader } from '../../../api/missionMediaReader'
 import { missionsApi } from '../../../api/missionsApi'
-import { ManagerDeliveryPanel } from '../../../../delivery/ManagerDeliveryPanel'
+import { Card } from '../../../../../shared/components/ui'
 import type { MissionResponse } from '../../../types/missions'
 import type { MissionPlanResponse } from '../../../types/missions'
 import type { PlanWaypointResponse } from '../../../types/missions'
@@ -32,7 +30,6 @@ export function OverviewTab({
   refreshDetail,
   mediaLibrary,
   missionId,
-  revision,
 }: {
   mission: MissionResponse
   deviceLabel: string
@@ -44,76 +41,74 @@ export function OverviewTab({
   refreshDetail: () => void
   mediaLibrary: RefObject<HTMLElement | null>
   missionId: string
-  revision: number
 }) {
-  const { t, locale } = useI18n(overviewTabMessages)
+  const { t, locale, lang } = useI18n(overviewTabMessages)
+  const facts: Array<{ label: string; value: string | number }> = [
+    { label: t.kpi.drone, value: deviceLabel },
+    { label: t.map.waypoint, value: waypoints.length },
+    {
+      label: t.map.distance,
+      value: formatNumber(plan?.plannedDistanceM, ' m', lang),
+    },
+    {
+      label: t.map.altitude,
+      value: formatNumber(plan?.maxPlannedAltitudeM, ' m', lang),
+    },
+  ]
   return (
     <>
-      <section className="odm-or-card odm-rm-card">
-        <div className="odm-rm-stage">
+      <Card title={t.map.title}>
+        <div className="odm-md-map">
           <MissionSatelliteMap
             missionId={mission.id}
             latitude={mission.latitude}
             longitude={mission.longitude}
           />
         </div>
-        <div className="odm-rm-side">
-          <h3>{t.map.title}</h3>
-          <dl className="odm-or-kv">
-            <div>
-              <dt>{t.kpi.drone}</dt>
-              <dd>{deviceLabel}</dd>
+        <dl className="odm-md-facts">
+          {facts.map((fact) => (
+            <div key={fact.label}>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
             </div>
-            <div>
-              <dt>{t.map.waypoint}</dt>
-              <dd>{waypoints.length}</dd>
-            </div>
-            <div>
-              <dt>{t.map.distance}</dt>
-              <dd>{formatNumber(plan?.plannedDistanceM, ' m')}</dd>
-            </div>
-            <div>
-              <dt>{t.map.altitude}</dt>
-              <dd>{formatNumber(plan?.maxPlannedAltitudeM, ' m')}</dd>
-            </div>
-          </dl>
-          <ul className="odm-rm-key">
-            <li>
-              <i className="is-home" />
-              {t.map.home}
-            </li>
-            <li>
-              <i className="is-line" />
-              {t.map.route}
-            </li>
-            <li>
-              <i className="is-wp" />
-              {t.map.waypoint}
-            </li>
-            <li>
-              <i className="is-target" />
-              {t.map.target}
-            </li>
+          ))}
+        </dl>
+        <ul className="odm-md-legend">
+          <li>
+            <i className="is-home" />
+            {t.map.home}
+          </li>
+          <li>
+            <i className="is-line" />
+            {t.map.route}
+          </li>
+          <li>
+            <i className="is-wp" />
+            {t.map.waypoint}
+          </li>
+          <li>
+            <i className="is-target" />
+            {t.map.target}
+          </li>
+        </ul>
+        {waypoints.length > 0 ? (
+          <ul className="odm-md-wps">
+            {waypoints.map((point, index) => (
+              <li key={point.id}>
+                <b>
+                  {index === 0
+                    ? 'H'
+                    : index === waypoints.length - 1
+                      ? 'T'
+                      : point.sequence}
+                </b>
+                <strong>{waypointReasonLabel(point.reason)}</strong>
+                <span>{formatNumber(point.altitudeM, ' m', lang)}</span>
+              </li>
+            ))}
           </ul>
-          {waypoints.length > 0 ? (
-            <ul className="odm-rm-wps">
-              {waypoints.map((point, index) => (
-                <li key={point.id}>
-                  <b>
-                    {index === 0
-                      ? 'H'
-                      : index === waypoints.length - 1
-                        ? 'T'
-                        : point.sequence}
-                  </b>
-                  <strong>{waypointReasonLabel(point.reason)}</strong>
-                  <span>{formatNumber(point.altitudeM, ' m')}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      </section>
+        ) : null}
+      </Card>
 
       <MissionResultReviewCard
         mission={mission}
@@ -133,14 +128,6 @@ export function OverviewTab({
           mediaLibrary.current?.focus({ preventScroll: true })
         }}
       />
-
-      <section className="odm-or-card">
-        <div className="odm-or-card-body">
-          <DetailSection title={t.weatherResultCard}>
-            <WeatherResultDetail weather={detail.weather} locale={locale} />
-          </DetailSection>
-        </div>
-      </section>
 
       <MonitoringChecklistSection
         hideImplementationHints
@@ -171,9 +158,6 @@ export function OverviewTab({
           }}
         />
       </section>
-      {mission.status === 'COMPLETED' ? (
-        <ManagerDeliveryPanel orderId={mission.orderId} refreshKey={revision} />
-      ) : null}
     </>
   )
 }

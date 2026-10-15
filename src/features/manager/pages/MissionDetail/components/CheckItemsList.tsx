@@ -1,3 +1,4 @@
+import { StatusBadge } from '../../../../../shared/components/ui'
 import {
   checkLabel,
   checkTone,
@@ -18,28 +19,26 @@ export function CheckItemsList({
 }: {
   items: Array<PreflightCheckItem | PostDeviceCheckItem>
 }) {
-  const { t } = useI18n(checkItemsListMessages)
+  const { t, lang } = useI18n(checkItemsListMessages)
 
   if (items.length === 0) {
-    return <div className="odm-or-empty">{t.noCheckItemsYet}</div>
+    return <p className="odm-or-empty">{t.noCheckItemsYet}</p>
   }
+  // Backend check text is English; the Vietnamese table only applies to vi.
+  const name = (value: string) => (lang === 'vi' ? viCheckName(value) : value)
+  const message = (value: string) =>
+    lang === 'vi' ? viCheckMessage(value) : value
   return (
-    <ul className="odm-or-check-list">
+    <ul className="odm-md-checks">
       {items.map((item) => (
-        <li
-          key={`${item.checkType}-${item.checkName}`}
-          className="odm-or-check-item"
-        >
-          <span className={`odm-or-dot is-${checkTone(item.status)}`} />
-          <span>
-            <strong>{viCheckName(item.checkName)}</strong>
-            {item.message ? (
-              <small>{viCheckMessage(item.message)}</small>
-            ) : null}
+        <li key={`${item.checkType}-${item.checkName}`}>
+          <span className="odm-md-check-text">
+            <strong>{name(item.checkName)}</strong>
+            {item.message ? <small>{message(item.message)}</small> : null}
           </span>
-          <span className={`odm-or-pill odm-or-pill-${checkTone(item.status)}`}>
-            {checkLabel(item.status)}
-          </span>
+          <StatusBadge tone={checkTone(item.status)}>
+            {checkLabel(item.status, lang)}
+          </StatusBadge>
         </li>
       ))}
     </ul>

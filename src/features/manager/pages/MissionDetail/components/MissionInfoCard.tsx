@@ -1,6 +1,6 @@
 import { formatOrderCode } from '../../../components/common/format'
 import { formatDateTime } from '../../../components/common/missionDetailHelpers'
-import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Card } from '../../../../../shared/components/ui'
 import type { MissionResponse } from '../../../types/missions'
 import { useI18n } from '../../../../../shared/i18n'
 import { missionInfoCardMessages } from './MissionInfoCard.messages'
@@ -55,26 +55,18 @@ export function MissionInfoCard({
   if (failure) rows.push({ label: t.fields.failure, value: failure })
 
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="doc" size={18} />
-          {t.infoCard}
-        </span>
-      </header>
-      <div className="odm-or-card-body">
-        <dl className="odm-or-kv">
-          {rows.map((row) => (
-            <div key={row.label}>
-              <dt>{row.label}</dt>
-              <dd>{row.value}</dd>
-            </div>
-          ))}
-        </dl>
-        {mission.description ? (
-          <p className="odm-or-detail-note">{mission.description}</p>
-        ) : null}
-      </div>
-    </section>
+    <Card title={t.infoCard}>
+      <dl className="odm-or-kv">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {mission.description ? (
+        <p className="odm-md-note">{mission.description}</p>
+      ) : null}
+    </Card>
   )
 }

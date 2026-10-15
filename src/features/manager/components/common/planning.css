@@ -2,18 +2,6 @@
   margin: 16px 0;
   padding: 20px;
 }
-.odm-plan-create {
-  margin-bottom: 20px;
-  overflow: hidden;
-}
-.odm-plan-page .button.odm-or-btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--inkfg);
-}
-.odm-plan-page .button.odm-or-btn-primary:hover:not(:disabled) {
-  background: var(--blue-fg);
-}
 .odm-plan-header {
   display: flex;
   align-items: flex-start;
@@ -21,10 +9,6 @@
   gap: 20px;
   flex-wrap: wrap;
   padding: 20px 0;
-}
-.odm-plan-create > .odm-plan-header {
-  padding: 24px;
-  border-bottom: 1px solid var(--bd);
 }
 .odm-plan-heading {
   display: flex;
@@ -48,8 +32,7 @@
   font-size: 20px;
   line-height: 1.35;
 }
-.odm-plan-heading p,
-.odm-plan-description {
+.odm-plan-heading p {
   margin: 0;
   color: var(--tx2);
   line-height: 1.6;
@@ -69,75 +52,11 @@
   font-size: 13px;
   white-space: nowrap;
 }
-.odm-plan-create-body {
-  padding: 24px;
-}
-.odm-plan-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 20px;
-  color: var(--blue-fg);
-  font-weight: 600;
-  font-size: 14px;
-}
-.odm-plan-create-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 24px;
-  padding: 20px;
-  border: 1px solid var(--bd);
-  border-radius: 12px;
-}
-.odm-plan-form {
-  min-width: 0;
-}
-.odm-plan-form h3,
-.odm-plan-geography h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  line-height: 1.4;
-}
-.odm-plan-description {
-  margin-bottom: 20px;
-}
-.odm-plan-form .odm-or-field {
-  margin-bottom: 8px;
-}
-.odm-plan-form input {
-  width: 100%;
-  box-sizing: border-box;
-}
 .odm-plan-field-help {
   color: var(--tx2);
   font-size: 13px;
   line-height: 1.5;
   margin: 8px 0 0;
-}
-.odm-plan-field-error {
-  color: var(--red-fg);
-  margin: 8px 0 0;
-}
-.odm-plan-geography {
-  padding: 16px;
-  border-radius: 10px;
-  background: var(--sf3);
-  min-width: 0;
-}
-.odm-plan-geography h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.odm-plan-geography ul {
-  margin: 12px 0 0;
-  padding-left: 20px;
-  color: var(--tx2);
-  font-size: 14px;
-  line-height: 1.6;
-}
-.odm-plan-geography li + li {
-  margin-top: 10px;
 }
 .odm-plan-error {
   display: flex;
@@ -162,24 +81,7 @@
   color: var(--tx2);
   line-height: 1.6;
 }
-.odm-plan-create :is(a, button, input):focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
-}
-@media (max-width: 900px) {
-  .odm-plan-create-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 @media (max-width: 640px) {
-  .odm-plan-create > .odm-plan-header,
-  .odm-plan-create-body {
-    padding: 16px;
-  }
-  .odm-plan-create-grid {
-    padding: 16px;
-    gap: 20px;
-  }
   .odm-plan-heading {
     flex-basis: 100%;
   }
@@ -574,10 +476,6 @@
 .odm-mission-execution > .mission-media {
   margin-top: 0;
 }
-.odm-or-table td > .odm-mission-meta {
-  display: block;
-  margin-top: 4px;
-}
 @media (max-width: 600px) {
   .odm-planning-complete > :last-child {
     width: 100%;
@@ -602,5 +500,257 @@
     top: 12px;
     max-height: calc(100vh - 104px);
     overflow-y: auto;
+  }
+}
+
+/* ---------- Mission create (MissionCreate page) ---------- */
+.odm-plan-version {
+  padding: 2px var(--ui-space-2);
+  border-radius: 999px;
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.odm-plan-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+}
+.odm-plan-section > .odm-or-error,
+.odm-plan-section > .ui-form-field {
+  margin: 0;
+}
+.odm-plan-section .odm-inp,
+.odm-plan-page .odm-inp {
+  height: 38px;
+  font-size: 14px;
+}
+.odm-plan-lead {
+  margin: 0 0 var(--ui-space-3);
+}
+.odm-plan-field-help {
+  margin: var(--ui-space-1) 0 0;
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.odm-plan-notice {
+  margin: 0;
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
+  font-size: 13px;
+}
+.odm-plan-scopenote {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+}
+.odm-plan-scopenote-title {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.odm-plan-scopenote ul {
+  margin: var(--ui-space-2) 0 0;
+  padding-left: var(--ui-space-5);
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.odm-plan-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-4);
+}
+.odm-plan-form-row > .ui-form-field {
+  margin-bottom: 0;
+}
+.odm-plan-quickfill {
+  margin-bottom: var(--ui-space-3);
+}
+.odm-plan-summary {
+  margin: var(--ui-space-3) 0 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+.odm-plan-bigvalue {
+  font-size: 18px;
+  font-weight: 700;
+}
+.odm-plan-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+}
+.odm-plan-code {
+  padding: 2px var(--ui-space-2);
+  border-radius: 6px;
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+  font-size: 12px;
+}
+
+/* Weather forecast rows in the sidebar */
+.odm-plan-weather-list {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+.odm-plan-weather-empty {
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+  font-size: 13px;
+}
+.odm-plan-weather-row {
+  --wx-tone: var(--ui-text-3);
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-left: 3px solid var(--wx-tone);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+}
+.odm-plan-weather-row.is-good {
+  --wx-tone: var(--ui-success);
+}
+.odm-plan-weather-row.is-caution {
+  --wx-tone: var(--ui-warning);
+}
+.odm-plan-weather-row.is-poor {
+  --wx-tone: var(--ui-danger);
+}
+.odm-plan-weather-main {
+  min-width: 0;
+}
+.odm-plan-weather-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+.odm-plan-weather-date {
+  font-size: 13px;
+  font-weight: 700;
+}
+.odm-plan-weather-badge {
+  flex: none;
+  padding: 2px var(--ui-space-2);
+  border-radius: 999px;
+  background: var(--ui-surface-2);
+  color: var(--ui-text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.odm-plan-weather-row.is-good .odm-plan-weather-badge {
+  background: var(--ui-success-soft);
+  color: var(--ui-success-text);
+}
+.odm-plan-weather-row.is-caution .odm-plan-weather-badge {
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
+}
+.odm-plan-weather-row.is-poor .odm-plan-weather-badge {
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-text);
+}
+.odm-plan-weather-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-2);
+}
+.odm-plan-weather-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.odm-plan-weather-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-2);
+}
+.odm-plan-weather-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ui-space-2);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2);
+}
+.odm-plan-weather-metric-label {
+  color: var(--ui-text-3);
+  font-size: 11.5px;
+}
+.odm-plan-weather-metric-value {
+  font-size: 14px;
+  font-weight: 700;
+}
+.odm-plan-weather-desc {
+  margin-top: var(--ui-space-1);
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+}
+
+/* Footer bar with the submit and cancel buttons */
+.odm-or-actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow);
+}
+.odm-or-actionbar-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--ui-text-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.odm-or-actionbar-hint svg {
+  flex: none;
+  color: var(--ui-primary);
+}
+.odm-or-actionbar-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+.odm-or-actionbar-actions .odm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  text-decoration: none;
+}
+@media (max-width: 640px) {
+  .odm-plan-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .odm-or-actionbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .odm-or-actionbar-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
 }

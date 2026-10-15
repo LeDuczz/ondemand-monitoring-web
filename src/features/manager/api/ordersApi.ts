@@ -56,9 +56,13 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     status: order.orderStatus,
     customer: {
       fullName: order.customerName || order.customerId,
-      companyName: '',
+      companyName: order.customerCompanyName ?? '',
       email: order.customerEmail ?? null,
-      phone: null,
+      phone: order.customerPhoneNumber ?? null,
+      address: order.customerAddress ?? null,
+      citizenIdentificationNumber:
+        order.customerCitizenIdentificationNumber ?? null,
+      companyTaxCode: order.customerCompanyTaxCode ?? null,
     },
     serviceName: order.serviceName,
     serviceDescription: order.serviceDescription ?? null,
@@ -110,6 +114,7 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     flightAreaReviewStatus: order.flightAreaReviewStatus ?? null,
     flightAreaReviewReason: order.flightAreaReviewReason ?? null,
     flightAreaReviewNote: order.flightAreaReviewNote ?? null,
+    requestedScopeFeasible: order.requestedScopeFeasible ?? null,
     flightAreaReviewedById: order.flightAreaReviewedById ?? null,
     flightAreaReviewedByName: order.flightAreaReviewedByName ?? null,
     flightAreaReviewedAt: order.flightAreaReviewedAt ?? null,

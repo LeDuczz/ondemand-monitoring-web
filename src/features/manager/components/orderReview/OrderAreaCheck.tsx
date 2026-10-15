@@ -215,6 +215,7 @@ export function OrderAreaCheck({
 
 type SavedAreaReview = {
   status: FlightAreaReviewStatus
+  requestedScopeFeasible: boolean | null
   reason: string | null
   note: string | null
   reviewer: string | null
@@ -225,6 +226,7 @@ function areaReviewFromOrder(order: OrderDetail): SavedAreaReview | null {
   if (!order.flightAreaReviewStatus) return null
   return {
     status: order.flightAreaReviewStatus,
+    requestedScopeFeasible: order.requestedScopeFeasible ?? null,
     reason: order.flightAreaReviewReason ?? null,
     note: order.flightAreaReviewNote ?? null,
     reviewer: order.flightAreaReviewedByName ?? null,
@@ -294,7 +296,6 @@ const REVIEW_OPTIONS: Array<{
 }> = [
   { status: 'PRELIMINARY_PASS', label: 'Đạt sơ bộ', hint: 'Không phát hiện vấn đề cần chặn.' },
   { status: 'RESTRICTED', label: 'Cần xử lý/giấy phép', hint: 'Có điều kiện nhưng có thể tiếp tục chuẩn bị Mission.' },
-  { status: 'UNDETERMINED', label: 'Chưa xác định', hint: 'Cần thêm thông tin hoặc hỗ trợ xác minh.' },
   { status: 'UNSUITABLE', label: 'Không phù hợp', hint: 'Khu vực hiện tại không thể thực hiện theo yêu cầu.' },
 ]
 
@@ -312,7 +313,9 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
   onClose: () => void
   onSaved: (review: SavedAreaReview) => void
 }) {
-  const [status, setStatus] = useState<FlightAreaReviewStatus | null>(initial?.status ?? null)
+  const [status, setStatus] = useState<FlightAreaReviewStatus | null>(
+    initial?.status === 'UNDETERMINED' ? null : (initial?.status ?? null),
+  )
   const [reason, setReason] = useState(initial?.reason ?? '')
   const [note, setNote] = useState(initial?.note ?? '')
   const [saving, setSaving] = useState(false)
@@ -332,6 +335,7 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
       })
       onSaved({
         status: result.flightAreaReviewStatus ?? status,
+        requestedScopeFeasible: result.requestedScopeFeasible ?? null,
         reason: result.flightAreaReviewReason ?? (reason.trim() || null),
         note: result.flightAreaReviewNote ?? (note.trim() || null),
         reviewer: result.flightAreaReviewedByName ?? 'Manager',
@@ -373,12 +377,6 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
             Đơn có thể tiếp tục. Điều kiện giấy phép sẽ được xử lý sau khi Mission và kế hoạch bay được xác định.
           </p>
         ) : null}
-        {status === 'UNDETERMINED' ? (
-          <div className="odm-or-area-secondary-actions">
-            <a href="https://cambay.mod.gov.vn/" target="_blank" rel="noreferrer">Mở bản đồ Bộ Quốc phòng</a>
-            <a href="#portal/manager/support">Yêu cầu hỗ trợ</a>
-          </div>
-        ) : null}
         {reasonRequired ? (
           <label className="odm-or-area-field">Lý do
             <select value={reason} onChange={(event) => setReason(event.target.value)}>
@@ -395,7 +393,7 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
         <footer>
           <button type="button" className="odm-btn" onClick={onClose}>Hủy</button>
           <button type="button" className="odm-btn odm-btn-p" disabled={saving} onClick={save}>
-            {saving ? 'Đang lưu…' : status === 'UNDETERMINED' ? 'Lưu để kiểm tra sau' : 'Xác nhận đánh giá'}
+            {saving ? 'Đang lưu…' : 'Xác nhận đánh giá'}
           </button>
         </footer>
       </section>

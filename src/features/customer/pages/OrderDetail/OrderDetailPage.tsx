@@ -25,6 +25,7 @@ import {
   type CustomerFinanceState,
 } from '../../../finance/CustomerFinancePanel'
 import { CustomerDeliveryPanel } from '../../../delivery/CustomerDeliveryPanel'
+import type { CustomerMissionSummary } from '../../api/customerMissionReportApi'
 
 /** Customer order detail backed by `GET /api/orders/{id}`. */
 export function OrderDetailPage({ orderId }: { orderId: string }) {
@@ -37,6 +38,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     invoice: null,
     loading: true,
   })
+  const [missions, setMissions] = useState<CustomerMissionSummary[]>([])
   const updateFinance = useCallback((state: CustomerFinanceState) => {
     setFinance(state)
   }, [])
@@ -58,7 +60,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
       <ReviewNotice order={order} onInformationSubmitted={detail.reload} />
       <OrderActions order={order} />
       <OrderOverviewVisualCard order={order} />
-      <CustomerOrderMissionsSection key={order.id} orderId={order.id} />
+      <CustomerOrderMissionsSection key={order.id} orderId={order.id} onMissionsChange={setMissions} />
       <div className="od-grid">
         <div className="od-stack">
           <OrderInfoCard
@@ -80,7 +82,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           {['IN_PROGRESS', 'COMPLETED'].includes(order.status) ? (
             <CustomerDeliveryPanel orderId={order.id} />
           ) : null}
-          <OrderTimeline status={order.status} events={order.timeline} finance={finance} />
+          <OrderTimeline status={order.status} events={order.timeline} finance={finance} missions={missions} />
           <ContextAwareHelpWidget
             type="ORDER"
             id={order.code}

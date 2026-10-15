@@ -67,7 +67,7 @@ const copy = {
     layout: 'Bố cục',
     layoutSplit: 'Chia đôi',
     layoutCamera: 'Camera lớn',
-    layoutMap: 'Bản đồ lớn',
+    layoutMap: 'Bản đồ',
     enlarge: 'Phóng to',
     shrink: 'Thu nhỏ về chia đôi',
     camera: 'Camera trực tiếp',
@@ -80,6 +80,9 @@ const copy = {
     altitude: 'Độ cao',
     speed: 'Tốc độ ngang',
     vertical: 'Lên / xuống',
+    gps: 'Tọa độ GPS',
+    collapse: 'Thu gọn',
+    expandPanel: 'Mở rộng',
     toBase: 'Tới trạm (Home)',
     toTarget: 'Tới điểm (Target)',
     mode: 'Chế độ',
@@ -122,7 +125,7 @@ const copy = {
     layout: 'Layout',
     layoutSplit: 'Split',
     layoutCamera: 'Large camera',
-    layoutMap: 'Large map',
+    layoutMap: 'Map',
     enlarge: 'Enlarge',
     shrink: 'Back to split',
     camera: 'Live camera',
@@ -135,6 +138,9 @@ const copy = {
     altitude: 'Altitude',
     speed: 'Ground speed',
     vertical: 'Up / down',
+    gps: 'GPS position',
+    collapse: 'Collapse',
+    expandPanel: 'Expand',
     toBase: 'To home',
     toTarget: 'To target',
     mode: 'Mode',
@@ -201,6 +207,7 @@ const ICONS: Record<string, ReactNode> = {
     </>
   ),
   expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
+  chevron: <path d="M6 15l6-6 6 6" />,
   altitude: (
     <>
       <path d="M4 18l8-4 8 4" />
@@ -524,6 +531,8 @@ export function FlightCockpit(props: Props) {
   const clock = useFlightClock(tm.inAir)
   const [confirmStop, setConfirmStop] = useState(false)
   const [layout, setLayout] = useCockpitLayout()
+  const [paramsOpen, setParamsOpen] = useState(true)
+  const [controlOpen, setControlOpen] = useState(true)
   useEffect(() => {
     if (!confirmStop) return
     const timer = window.setTimeout(() => setConfirmStop(false), 3000)
@@ -777,139 +786,185 @@ export function FlightCockpit(props: Props) {
           <section className="fc-panel">
             <header className="fc-panel__head">
               <span className="fc-panel__title is-bar">{c.params}</span>
-              <span className={`fc-badge ${tm.inAir ? 'is-ok' : 'is-mid'}`}>
-                <i className="fc-dot" />
-                {tm.inAir ? c.flying : c.ground}
+              <span className="fc-panel__tools">
+                <span className={`fc-badge ${tm.inAir ? 'is-ok' : 'is-mid'}`}>
+                  <i className="fc-dot" />
+                  {tm.inAir ? c.flying : c.ground}
+                </span>
+                <button
+                  type="button"
+                  className={`fc-collapse${paramsOpen ? '' : ' is-closed'}`}
+                  aria-expanded={paramsOpen}
+                  aria-label={paramsOpen ? c.collapse : c.expandPanel}
+                  title={paramsOpen ? c.collapse : c.expandPanel}
+                  onClick={() => setParamsOpen((open) => !open)}
+                >
+                  <Ico name="chevron" size={18} />
+                </button>
               </span>
             </header>
-            <div className="fc-instruments">
-              <AttitudeIndicator
-                roll={tm.rollDeg ?? null}
-                pitch={tm.pitchDeg ?? null}
-                label={`${c.roll} ${fmt(tm.rollDeg, 0)}° · ${c.pitch} ${fmt(tm.pitchDeg, 0)}°`}
-              />
-              <CompassRose heading={tm.headingDeg} label={c.heading} />
-            </div>
-            <div className="fc-stats">
-              <Stat
-                icon="altitude"
-                label={c.altitude}
-                value={fmt(tm.altitudeM)}
-                unit="m"
-                tone="accent"
-              />
-              <Stat
-                icon="speed"
-                label={c.speed}
-                value={fmt(tm.speedMps)}
-                unit="m/s"
-                tone="accent"
-              />
-              <Stat
-                icon="vertical"
-                label={c.vertical}
-                value={fmt(tm.verticalMps)}
-                unit="m/s"
-              />
-              <Stat
-                icon="compass"
-                label={c.heading}
-                value={
-                  tm.headingDeg === null
-                    ? '--'
-                    : `${Math.round(tm.headingDeg)}°`
-                }
-              />
-              <Stat
-                icon="home"
-                label={c.toBase}
-                value={fmt(tm.baseDistanceKm, 2)}
-                unit="km"
-              />
-              <Stat
-                icon="pin"
-                label={c.toTarget}
-                value={fmt(tm.targetDistanceKm, 2)}
-                unit="km"
-              />
-              <div className={`fc-stat fc-stat--battery is-${batteryTone}`}>
-                <span className="fc-stat__icon">
-                  <Ico name="battery" size={22} />
-                </span>
-                <div>
-                  <span className="fc-stat__label">{c.battery}</span>
-                  <strong>
-                    {battery === null ? '--' : `${battery.toFixed(1)}%`}
-                  </strong>
-                  <span className="fc-battery">
-                    <i style={{ width: `${battery ?? 0}%` }} />
-                  </span>
+            {paramsOpen ? (
+              <>
+                <div className="fc-instruments">
+                  <AttitudeIndicator
+                    roll={tm.rollDeg ?? null}
+                    pitch={tm.pitchDeg ?? null}
+                    label={`${c.roll} ${fmt(tm.rollDeg, 0)}° · ${c.pitch} ${fmt(tm.pitchDeg, 0)}°`}
+                  />
+                  <CompassRose heading={tm.headingDeg} label={c.heading} />
                 </div>
-              </div>
-              <Stat icon="mode" label={c.mode} value={tm.flightMode ?? '--'} />
-            </div>
+                <div className="fc-stats">
+                  <Stat
+                    icon="altitude"
+                    label={c.altitude}
+                    value={fmt(tm.altitudeM)}
+                    unit="m"
+                    tone="accent"
+                  />
+                  <Stat
+                    icon="speed"
+                    label={c.speed}
+                    value={fmt(tm.speedMps)}
+                    unit="m/s"
+                    tone="accent"
+                  />
+                  <Stat
+                    icon="vertical"
+                    label={c.vertical}
+                    value={fmt(tm.verticalMps)}
+                    unit="m/s"
+                  />
+                  <Stat
+                    icon="compass"
+                    label={c.heading}
+                    value={
+                      tm.headingDeg === null
+                        ? '--'
+                        : `${Math.round(tm.headingDeg)}°`
+                    }
+                  />
+                  <div className={`fc-stat fc-stat--battery is-${batteryTone}`}>
+                    <span className="fc-stat__icon">
+                      <Ico name="battery" size={22} />
+                    </span>
+                    <div>
+                      <span className="fc-stat__label">{c.battery}</span>
+                      <strong>
+                        {battery === null ? '--' : `${battery.toFixed(0)}%`}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="fc-stat fc-stat--gps">
+                    <span className="fc-stat__icon">
+                      <Ico name="pin" size={22} />
+                    </span>
+                    <div>
+                      <span className="fc-stat__label">{c.gps}</span>
+                      <strong className="fc-mono">
+                        {hasGps ? (
+                          <>
+                            <span>{tm.latitude!.toFixed(6)} N</span>
+                            <span>{tm.longitude!.toFixed(6)} E</span>
+                          </>
+                        ) : (
+                          '--'
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+                <dl className="fc-secondary">
+                  <div>
+                    <dt>{c.toBase}</dt>
+                    <dd>{fmt(tm.baseDistanceKm, 2)} km</dd>
+                  </div>
+                  <div>
+                    <dt>{c.toTarget}</dt>
+                    <dd>{fmt(tm.targetDistanceKm, 2)} km</dd>
+                  </div>
+                  <div>
+                    <dt>{c.mode}</dt>
+                    <dd>{tm.flightMode ?? '--'}</dd>
+                  </div>
+                </dl>
+              </>
+            ) : null}
           </section>
 
           <section className="fc-panel">
             <header className="fc-panel__head">
               <span className="fc-panel__title is-bar">{c.control}</span>
+              <button
+                type="button"
+                className={`fc-collapse${controlOpen ? '' : ' is-closed'}`}
+                aria-expanded={controlOpen}
+                aria-label={controlOpen ? c.collapse : c.expandPanel}
+                title={controlOpen ? c.collapse : c.expandPanel}
+                onClick={() => setControlOpen((open) => !open)}
+              >
+                <Ico name="chevron" size={18} />
+              </button>
             </header>
-            <div className="fc-controls">
-              {controls.map((item) => (
+            {controlOpen ? (
+              <>
+                <div className="fc-controls">
+                  {controls.map((item) => (
+                    <button
+                      key={item.cmd}
+                      type="button"
+                      className={`fc-ctl${item.tone ? ` is-${item.tone}` : ''}`}
+                      disabled={busy || !item.enabled}
+                      onClick={() => onCommand(item.cmd)}
+                    >
+                      <Ico name={item.icon} size={20} />
+                      <strong>{item.label}</strong>
+                      <small>{item.sub}</small>
+                    </button>
+                  ))}
+                  {onFinishFlight ? (
+                    <button
+                      type="button"
+                      className="fc-ctl fc-finish is-success"
+                      disabled={
+                        busy || finishingFlight || (!canFly && !canTerminate)
+                      }
+                      onClick={onFinishFlight}
+                    >
+                      <Ico name="land" size={20} />
+                      <strong>
+                        {finishingFlight
+                          ? language === 'en'
+                            ? 'Updating...'
+                            : 'Đang cập nhật...'
+                          : c.finishFlight}
+                      </strong>
+                      <small>{c.finishFlightSub}</small>
+                    </button>
+                  ) : null}
+                </div>
                 <button
-                  key={item.cmd}
                   type="button"
-                  className={`fc-ctl${item.tone ? ` is-${item.tone}` : ''}`}
-                  disabled={busy || !item.enabled}
-                  onClick={() => onCommand(item.cmd)}
+                  className={`fc-emergency${confirmStop ? ' is-armed' : ''}`}
+                  disabled={busy || (!canFly && !canTerminate)}
+                  onClick={() => {
+                    if (!confirmStop) {
+                      setConfirmStop(true)
+                      return
+                    }
+                    setConfirmStop(false)
+                    onCommand('emergency_stop')
+                  }}
                 >
-                  <Ico name={item.icon} size={20} />
-                  <strong>{item.label}</strong>
-                  <small>{item.sub}</small>
+                  <Ico name="stop" size={30} />
+                  <span>
+                    <strong>{c.emergency}</strong>
+                    <small>
+                      {confirmStop ? c.emergencyConfirm : c.emergencySub}
+                    </small>
+                  </span>
                 </button>
-              ))}
-              {onFinishFlight ? (
-                <button
-                  type="button"
-                  className="fc-ctl is-success"
-                  disabled={
-                    busy || finishingFlight || (!canFly && !canTerminate)
-                  }
-                  onClick={onFinishFlight}
-                >
-                  <Ico name="land" size={20} />
-                  <strong>
-                    {finishingFlight
-                      ? language === 'en'
-                        ? 'Updating...'
-                        : 'Đang cập nhật...'
-                      : c.finishFlight}
-                  </strong>
-                  <small>{c.finishFlightSub}</small>
-                </button>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              className={`fc-emergency${confirmStop ? ' is-armed' : ''}`}
-              disabled={busy || (!canFly && !canTerminate)}
-              onClick={() => {
-                if (!confirmStop) {
-                  setConfirmStop(true)
-                  return
-                }
-                setConfirmStop(false)
-                onCommand('emergency_stop')
-              }}
-            >
-              <Ico name="stop" size={30} />
-              <span>
-                <strong>{c.emergency}</strong>
-                <small>
-                  {confirmStop ? c.emergencyConfirm : c.emergencySub}
-                </small>
-              </span>
-            </button>
+              </>
+            ) : null}
           </section>
         </aside>
       </main>

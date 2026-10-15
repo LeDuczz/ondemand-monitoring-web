@@ -1,4 +1,4 @@
-import type { OrderStatus } from '../../../../shared/types/domain'
+import type { MissionStatus, OrderStatus } from '../../../../shared/types/domain'
 import type { OrderStep, OrderStepKey, OrderStepState, OrderTimelineEvent } from './types'
 
 const HAPPY_PATH: OrderStepKey[] = [
@@ -16,6 +16,28 @@ export type OrderFinanceProgress = {
   quote?: { status: string; approvedAt: string | null; acceptedAt: string | null } | null
   invoice?: { depositAmount: number; paidAmount: number; issuedAt: string } | null
 }
+
+export type OrderMissionProgress = {
+  status: MissionStatus
+  scheduledStartAt: string | null
+}
+
+const PLANNING_COMPLETED_STATUSES = new Set<MissionStatus>([
+  'WAITING_CREW_CONFIRMATION',
+  'WAITING_OPERATOR_ACCEPTANCE',
+  'SCHEDULED',
+  'CONNECTED',
+  'PREFLIGHT_CHECKING',
+  'READY_TO_FLY',
+  'FAILED_PREFLIGHT',
+  'PENDING_APPROVAL',
+  'IN_FLIGHT',
+  'IN_PROGRESS',
+  'RETURNING',
+  'POSTFLIGHT_CHECKING',
+  'PENDING_REVIEW',
+  'COMPLETED',
+])
 
 /** Index of the current happy-path step per status; `HAPPY_PATH.length` means all done. */
 const CURRENT_INDEX: Partial<Record<OrderStatus, number>> = {
@@ -50,6 +72,7 @@ function step(
   state: OrderStepState,
   events: OrderTimelineEvent[],
   finance?: OrderFinanceProgress,
+  missions: OrderMissionProgress[] = [],
 ): OrderStep {
   const event = eventFor(key, events)
   const financialDate =
@@ -58,7 +81,13 @@ function step(
       : key === 'deposit'
         ? finance?.invoice?.issuedAt
         : null
-  return { key, state, at: event?.at ?? financialDate ?? null, actor: event?.actor ?? null, note: event?.note ?? null }
+  const planningDate = key === 'planning'
+    ? missions
+        .filter((mission) => mission.scheduledStartAt && PLANNING_COMPLETED_STATUSES.has(mission.status))
+        .map((mission) => mission.scheduledStartAt!)
+        .sort()[0] ?? null
+    : null
+  return { key, state, at: event?.at ?? financialDate ?? planningDate, actor: event?.actor ?? null, note: event?.note ?? null }
 }
 
 /**
@@ -71,6 +100,7 @@ export function buildOrderSteps(
   status: OrderStatus,
   events: OrderTimelineEvent[],
   finance?: OrderFinanceProgress,
+  missions: OrderMissionProgress[] = [],
 ): OrderStep[] {
   if (status === 'REJECTED') {
     return [step('submitted', 'done', events), step('rejected', 'failed', events)]
@@ -87,8 +117,12 @@ export function buildOrderSteps(
     else if (finance.invoice.paidAmount < finance.invoice.depositAmount) current = 3
     else current = 4
   }
+  const planningCompleted = missions.some(
+    (mission) => Boolean(mission.scheduledStartAt) && PLANNING_COMPLETED_STATUSES.has(mission.status),
+  )
+  if (planningCompleted && current === 4) current = 5
   if (current === undefined) return []
   return HAPPY_PATH.map((key, index) =>
-    step(key, index < current ? 'done' : index === current ? 'current' : 'upcoming', events, finance),
+    step(key, index < current ? 'done' : index === current ? 'current' : 'upcoming', events, finance, missions),
   )
 }

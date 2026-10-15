@@ -104,6 +104,7 @@ export function MonitoringChecklistSection({
   attachEvidenceCandidate,
   compact = false,
   hideImplementationHints = false,
+  preview = false,
 }: {
   missionId: string
   hideImplementationHints?: boolean
@@ -124,6 +125,8 @@ export function MonitoringChecklistSection({
   ) => Promise<unknown>
   /** Dense acceptance panel: one line per item, only the active item expands. */
   compact?: boolean
+  /** Read-only preview shown before the pilot accepts the mission. */
+  preview?: boolean
 }) {
   const [openId, setOpenId] = useState<string | null>(null)
   const locked =
@@ -317,6 +320,52 @@ export function MonitoringChecklistSection({
       </section>
     )
   }
+  if (preview) {
+    return (
+      <div
+        className="monitoring-checklist mc-preview"
+        aria-label="Checklist thực hiện"
+      >
+        <div className="mc-preview-notice" role="note">
+          <strong>🔒 Checklist chưa thể cập nhật</strong>
+          <span>
+            Bạn đang xem trước nội dung. Sau khi chấp nhận nhiệm vụ, bạn có thể
+            cập nhật tiến độ và bằng chứng.
+          </span>
+        </div>
+        {loading && <p role="status">Đang tải checklist…</p>}
+        {error ? (
+          <div role="alert">
+            <p>{monitoringErrorMessage(error)}</p>
+            <button type="button" className="odm-btn" onClick={refresh}>
+              Thử lại checklist
+            </button>
+          </div>
+        ) : null}
+        {data && !rows.length && !loading && (
+          <p>Không có mục checklist giám sát.</p>
+        )}
+        {data && (
+          <ol className="mc-preview-list">
+            {rows.map((item) => (
+              <li key={`preview:${missionId}:${item.id}`}>
+                <span className="mc-preview-mark" aria-hidden="true">
+                  ○
+                </span>
+                <span className="mc-preview-text">
+                  <strong>{item.content}</strong>
+                  <small>
+                    {statuses[item.executionStatus]} · Bằng chứng tối thiểu:{' '}
+                    {item.minimumEvidenceCount ?? 0}
+                  </small>
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    )
+  }
   return (
     <section
       className="monitoring-checklist odm-card"
@@ -324,12 +373,9 @@ export function MonitoringChecklistSection({
     >
       <header>
         <div>
-          <h2>Checklist giám sát</h2>
+          <h2>Checklist thực hiện</h2>
           {!hideImplementationHints && (
-            <p>
-              Yêu cầu lịch sử của đơn hàng · tách biệt kiểm tra kỹ thuật thiết
-              bị.
-            </p>
+            <p>Các mục cần thực hiện và bằng chứng cho nhiệm vụ này.</p>
           )}
         </div>
         <button
@@ -337,8 +383,9 @@ export function MonitoringChecklistSection({
           className="odm-btn"
           onClick={refresh}
           disabled={loading}
+          title="Lấy dữ liệu checklist mới nhất"
         >
-          Làm mới checklist
+          <span aria-hidden="true">↻</span> Tải lại
         </button>
       </header>
       {loading && (
@@ -378,11 +425,12 @@ export function MonitoringChecklistSection({
             />
           </div>
           <div className="monitoring-notes">
-            {data.blockingReasons?.map((reason) => (
-              <p key={reason} role="status" className="is-warn">
-                {evidenceReason[reason]}
-              </p>
-            ))}
+            {!rows.length &&
+              data.blockingReasons?.map((reason) => (
+                <p key={reason} role="status" className="is-warn">
+                  {evidenceReason[reason]}
+                </p>
+              ))}
             {resultStatus && (
               <p>
                 Trạng thái kết quả:{' '}
@@ -419,7 +467,7 @@ export function MonitoringChecklistSection({
                   ? 'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.'
                   : editable
                     ? 'Bạn có thể cập nhật checklist.'
-                    : 'Chỉ đọc — bạn không có quyền cập nhật hoặc trạng thái chưa được xác minh.'}
+                    : '🔒 Checklist chưa thể cập nhật. Bạn có thể cập nhật tiến độ và bằng chứng khi nhiệm vụ bước vào giai đoạn thực hiện.'}
               </p>
             )}
           </div>
@@ -679,14 +727,11 @@ function ChecklistExecutionItem({
               {statuses[item.executionStatus]}
             </span>
           )}
-          <span className={`is-assess-${item.assessmentStatus.toLowerCase()}`}>
-            {assessments[item.assessmentStatus]}
-          </span>
-          {!compact && (
+          {item.assessmentStatus !== 'NOT_ASSESSED' && (
             <span
-              className={terminal(item.executionStatus) ? 'is-done' : 'is-todo'}
+              className={`is-assess-${item.assessmentStatus.toLowerCase()}`}
             >
-              {terminal(item.executionStatus) ? 'Đã kết thúc' : 'Cần thực hiện'}
+              {assessments[item.assessmentStatus]}
             </span>
           )}
         </div>

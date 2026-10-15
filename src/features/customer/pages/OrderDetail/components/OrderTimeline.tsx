@@ -3,7 +3,7 @@ import { useI18n, useLanguage } from '../../../../../shared/i18n'
 import type { OrderStatus } from '../../../../../shared/types/domain'
 import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
 import { fmtDateTime, getOrderStatusMeta } from '../../../lib/orderStatus'
-import { buildOrderSteps } from '../../../lib/orders/orderSteps'
+import { buildOrderSteps, type OrderMissionProgress } from '../../../lib/orders/orderSteps'
 import type { CustomerFinanceState } from '../../../../finance/CustomerFinancePanel'
 import type { OrderStep, OrderStepKey, OrderTimelineEvent } from '../../../lib/orders/types'
 import { CardTitle } from './CardTitle'
@@ -22,10 +22,10 @@ const MARKER_ICON: Partial<Record<OrderStep['state'], OrderIconName>> = {
 }
 
 /** Vertical progress stepper derived from the status and the few dates the BE returns. */
-export function OrderTimeline({ status, events, finance }: { status: OrderStatus; events: OrderTimelineEvent[]; finance?: CustomerFinanceState }) {
+export function OrderTimeline({ status, events, finance, missions = [] }: { status: OrderStatus; events: OrderTimelineEvent[]; finance?: CustomerFinanceState; missions?: OrderMissionProgress[] }) {
   const { t, locale } = useI18n(orderTimelineMessages)
   const { lang } = useLanguage()
-  const steps = buildOrderSteps(status, events, finance)
+  const steps = buildOrderSteps(status, events, finance, missions)
   if (steps.length === 0) return null
 
   const stageLabel: Record<OrderStepKey, string> = {

@@ -65,6 +65,28 @@ describe('buildOrderSteps', () => {
     expect(steps[5].at).toBe('2026-09-30T01:00:00Z')
   })
 
+  it('marks planning done when the manager scheduled and assigned the mission', () => {
+    const steps = buildOrderSteps('APPROVED', [created, approved], {
+      quote: { status: 'ACCEPTED_BY_CUSTOMER', approvedAt: null, acceptedAt: '2026-09-29T02:00:00Z' },
+      invoice: { depositAmount: 1_000_000, paidAmount: 1_000_000, issuedAt: '2026-09-29T03:00:00Z' },
+    }, [{ status: 'WAITING_CREW_CONFIRMATION', scheduledStartAt: '2026-10-21T01:00:00Z' }])
+
+    expect(states(steps)).toEqual([
+      'submitted:done', 'approved:done', 'quote:done', 'deposit:done',
+      'planning:done', 'inProgress:current', 'completed:upcoming',
+    ])
+    expect(steps[4].at).toBe('2026-10-21T01:00:00Z')
+  })
+
+  it('keeps planning current while the mission is still assigning resources', () => {
+    const steps = buildOrderSteps('APPROVED', [created, approved], {
+      quote: { status: 'ACCEPTED_BY_CUSTOMER', approvedAt: null, acceptedAt: '2026-09-29T02:00:00Z' },
+      invoice: { depositAmount: 1_000_000, paidAmount: 1_000_000, issuedAt: '2026-09-29T03:00:00Z' },
+    }, [{ status: 'RESOURCE_ASSIGNING', scheduledStartAt: '2026-10-21T01:00:00Z' }])
+
+    expect(states(steps)[4]).toBe('planning:current')
+  })
+
   it('COMPLETED: all done, and a step without an event gets no date', () => {
     const steps = buildOrderSteps('COMPLETED', [created, approved, status('COMPLETED', '2026-10-01T01:00:00Z')])
     expect(states(steps)).toEqual(['submitted:done', 'approved:done', 'quote:done', 'deposit:done', 'planning:done', 'inProgress:done', 'completed:done'])

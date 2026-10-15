@@ -1,17 +1,22 @@
+import { useEffect } from 'react'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { customerMissionReportApi } from '../../api/customerMissionReportApi'
+import type { CustomerMissionSummary } from '../../api/customerMissionReportApi'
 import { CardTitle } from '../../pages/OrderDetail/components/CardTitle'
 import { CustomerMissionCard } from './CustomerMissionCard'
 import { customerReportMessages } from './messages'
 import './reports.css'
 
-export function CustomerOrderMissionsSection({ orderId }: { orderId: string }) {
+export function CustomerOrderMissionsSection({ orderId, onMissionsChange }: { orderId: string; onMissionsChange?: (missions: CustomerMissionSummary[]) => void }) {
   const { t } = useI18n(customerReportMessages)
   const query = useApiQuery(
     (signal) => customerMissionReportApi.list(orderId, signal),
     [orderId],
   )
+  useEffect(() => {
+    if (query.data) onMissionsChange?.(query.data)
+  }, [onMissionsChange, query.data])
   return (
     <section className="cr-section" aria-label={t.title}>
       <div className="cr-heading">

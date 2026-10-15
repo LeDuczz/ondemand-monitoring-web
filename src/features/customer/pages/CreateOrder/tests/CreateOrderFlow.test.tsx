@@ -116,7 +116,7 @@ describe('CreateOrderPage wizard', () => {
           (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
         ).toBe('dt-photo'),
       )
-      fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+      fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
       fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
       await screen.findByRole('dialog')
       fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -246,7 +246,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-photo'),
     )
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
 
     expect(await screen.findByText('Tóm tắt yêu cầu')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -278,7 +278,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-photo'),
     )
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -309,7 +309,7 @@ describe('CreateOrderPage wizard', () => {
       await screen.findByText(/Bạn cần đồng ý điều khoản/),
     ).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })
@@ -330,7 +330,7 @@ describe('CreateOrderPage wizard', () => {
     fireEvent.change(screen.getByLabelText(/Thời hạn lưu trữ dữ liệu/), {
       target: { value: '180' },
     })
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
@@ -353,7 +353,7 @@ describe('CreateOrderPage wizard', () => {
         (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
       ).toBe('dt-photo'),
     )
-    fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))
     await screen.findByRole('dialog')
     fireEvent.keyDown(document, { key: 'Escape' })

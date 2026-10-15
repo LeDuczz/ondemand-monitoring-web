@@ -2099,6 +2099,7 @@
 .odm-or-req-chip {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
   background: var(--or-primary-soft);
@@ -2106,6 +2107,20 @@
   font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
+}
+.odm-or-req-chip-label {
+  color: var(--or-tx2);
+  font-weight: 500;
+}
+.odm-or-req-chip strong {
+  color: inherit;
+  font-size: inherit;
+  font-weight: 750;
+}
+.odm-or-req-chip.is-purpose {
+  border: 1px solid var(--or-border);
+  background: var(--or-card);
+  color: var(--or-tx);
 }
 .odm-or-req-chip.is-urgent {
   background: #fde8e6;
@@ -2752,6 +2767,17 @@
 
 .odm-or-contact li svg {
   flex: none;
+}
+
+.odm-or-contact li > span {
+  display: grid;
+  gap: 2px;
+}
+
+.odm-or-contact li small {
+  color: var(--or-tx3);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .odm-or-contact li.is-empty {
@@ -5322,6 +5348,42 @@ a.odm-or-btn.odm-or-view-btn {
   margin-top: 18px;
 }
 
+.odm-or-req-fallback {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 0.7fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: 1px solid #f5c36b;
+  border-left: 4px solid #e79016;
+  border-radius: 14px;
+  color: var(--or-tx);
+  background: color-mix(in srgb, #fff2cf 78%, var(--or-card));
+}
+
+.odm-or-req-fallback-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: #b96600;
+  background: color-mix(in srgb, #ffd782 72%, var(--or-card));
+}
+
+.odm-or-req-fallback-label {
+  color: var(--or-tx2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.odm-or-req-fallback strong {
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
 .odm-or-req-section {
   min-width: 0;
   padding: 18px 22px;
@@ -5391,6 +5453,20 @@ a.odm-or-btn.odm-or-view-btn {
 }
 
 @media (max-width: 520px) {
+  .odm-or-req-fallback {
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    padding: 14px;
+  }
+
+  .odm-or-req-fallback-icon {
+    grid-row: 1 / span 2;
+  }
+
+  .odm-or-req-fallback strong {
+    grid-column: 2;
+  }
+
   .odm-or-req-section {
     padding: 16px;
   }

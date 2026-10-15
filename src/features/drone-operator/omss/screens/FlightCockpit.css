@@ -277,3 +277,103 @@
 @media (prefers-reduced-motion: reduce) {
   .fc-body { transition: none; }
 }
+
+
+/* ===== Reference layout: big stage + picture-in-picture, collapsible side ===== */
+.fc-body {
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 24vw, 400px);
+  grid-template-rows: minmax(0, 1fr);
+}
+.fc-camera, .fc-map { grid-column: 1; grid-row: 1; }
+.fc-side { grid-row: 1; }
+
+/* the stage (large) */
+.fc-body.is-layout-split .fc-camera,
+.fc-body.is-layout-camera .fc-camera,
+.fc-body.is-layout-map .fc-map {
+  z-index: 1;
+  border-color: rgba(56, 189, 248, .45);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, .12), 0 14px 34px rgba(0, 0, 0, .35);
+}
+/* the inset */
+.fc-body.is-layout-split .fc-map,
+.fc-body.is-layout-camera .fc-map,
+.fc-body.is-layout-map .fc-camera {
+  z-index: 3;
+  align-self: end;
+  justify-self: end;
+  width: min(440px, 42%);
+  height: min(320px, 46%);
+  margin: 0 14px 14px 0;
+  border-color: rgba(56, 189, 248, .55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+}
+.fc-body.is-layout-camera .fc-map {
+  width: min(280px, 28%);
+  height: min(200px, 30%);
+}
+/* stage panels drop their header; the layout switcher in the top bar replaces it */
+.fc-body.is-layout-split .fc-camera > .fc-panel__head,
+.fc-body.is-layout-camera .fc-camera > .fc-panel__head,
+.fc-body.is-layout-map .fc-map > .fc-panel__head {
+  display: none;
+}
+.fc-body.is-layout-map .fc-map .fc-legend,
+.fc-body.is-layout-camera .fc-map .fc-legend {
+  transform-origin: left bottom;
+}
+.fc-body.is-layout-camera .fc-map .fc-legend { display: none; }
+
+/* header: separate layout buttons */
+.fc-seg { padding: 0; gap: 6px; border: 0; background: transparent; }
+.fc-seg button {
+  height: 38px; padding: 0 14px; border: 1px solid var(--fc-line-2); border-radius: 10px;
+  background: rgba(15, 23, 42, .7); color: var(--fc-tx); font-size: 13px;
+}
+.fc-seg button.is-active {
+  background: #1d4ed8; border-color: rgba(96, 165, 250, .8); box-shadow: none;
+}
+
+/* collapsible side panels */
+.fc-collapse {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0;
+  border: 0; border-radius: 8px; background: transparent; color: #7dd3fc; cursor: pointer;
+  transition: transform .2s;
+}
+.fc-collapse.is-closed { transform: rotate(180deg); }
+.fc-collapse:hover { background: rgba(56, 189, 248, .12); }
+.fc-collapse:focus-visible { outline: 2px solid var(--fc-blue); outline-offset: 2px; }
+
+.fc-stat--gps strong { display: grid; font-size: 12.5px; line-height: 1.25; color: #e2e8f0; white-space: normal; }
+.fc-secondary {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0 10px 10px;
+}
+.fc-secondary div { padding: 6px 8px; border-radius: 9px; background: rgba(2, 6, 23, .35); }
+.fc-secondary dt { color: var(--fc-tx2); font-size: 10.5px; font-weight: 700; }
+.fc-secondary dd { margin: 1px 0 0; font-size: 13px; font-weight: 800; }
+
+/* finish flight: full-width bar, like the reference */
+.fc-controls .fc-finish {
+  grid-column: 1 / -1; grid-template-columns: auto auto; justify-content: center;
+  column-gap: 12px; align-items: center; padding: 12px;
+  border-color: rgba(34, 197, 94, .8); background: linear-gradient(180deg, #15803d, #166534);
+}
+.fc-controls .fc-finish svg { grid-row: 1 / 3; color: #fff; }
+.fc-controls .fc-finish strong { text-align: left; font-size: 15px; }
+.fc-controls .fc-finish small { text-align: left; color: #bbf7d0; }
+
+@media (max-width: 1060px) {
+  .fc-body { grid-template-columns: minmax(0, 1fr); }
+  .fc-camera, .fc-map { grid-row: auto; }
+  .fc-body.is-layout-split .fc-map,
+  .fc-body.is-layout-camera .fc-map,
+  .fc-body.is-layout-map .fc-camera {
+    width: auto; height: 60vw; min-height: 300px; margin: 0; align-self: stretch; justify-self: stretch;
+  }
+  .fc-body .fc-panel__head { display: flex !important; }
+  .fc-seg { display: none; }
+}
+.fc-body.is-layout-camera, .fc-body.is-layout-map { grid-template-rows: minmax(0, 1fr); }
+@media (max-width: 1060px) {
+  .fc-body.is-layout-camera, .fc-body.is-layout-map { grid-template-rows: none; }
+}

@@ -43,6 +43,7 @@ const contextualAnswerLabels: Record<string, Record<Answer, string>> = {
 }
 
 const criterionDescriptionOverrides: Record<string, string> = {}
+const criterionTitleOverrides: Record<string, string> = {}
 
 /**
  * Approval criteria for an order. Left: what the system checked on its own.
@@ -276,7 +277,7 @@ export function OrderReadinessCard({
                   <span className="odm-or-readiness-dot" aria-hidden="true" />
                   <div>
                     <strong>
-                      {c.title}
+                      {criterionTitleOverrides[c.code] ?? c.title}
                       {c.required ? (
                         <span className="odm-or-readiness-tag">Bắt buộc</span>
                       ) : null}
@@ -297,7 +298,7 @@ export function OrderReadinessCard({
                         placeholder={
                           needsNote ? 'Lý do không đạt (bắt buộc)' : 'Ghi chú'
                         }
-                        aria-label={`Ghi chú: ${c.title}`}
+                        aria-label={`Ghi chú: ${criterionTitleOverrides[c.code] ?? c.title}`}
                         onChange={(event) =>
                           setDrafts((state) => ({
                             ...state,
@@ -331,7 +332,7 @@ export function OrderReadinessCard({
                   <div
                     className="odm-or-readiness-choices"
                     role="group"
-                    aria-label={c.title}
+                    aria-label={criterionTitleOverrides[c.code] ?? c.title}
                   >
                     {options.map((option) => (
                       <button

@@ -25,15 +25,35 @@ export function OrderCustomerCard({
   const hasCompany = Boolean(customer.companyName?.trim())
   const rows: Array<{
     icon: OrderIconName
+    label: string
     value: string | null
     empty: string
   }> = [
-    { icon: 'mail', value: customer.email, empty: t.noEmail },
-    { icon: 'phone', value: customer.phone, empty: t.noPhone },
+    { icon: 'mail', label: t.email, value: customer.email, empty: t.noEmail },
+    { icon: 'phone', label: t.phone, value: customer.phone, empty: t.noPhone },
     {
       icon: 'building',
+      label: t.company,
       value: hasCompany ? customer.companyName : null,
       empty: t.noCompany,
+    },
+    {
+      icon: 'file',
+      label: t.citizenIdentificationNumber,
+      value: customer.citizenIdentificationNumber ?? null,
+      empty: t.noCitizenIdentificationNumber,
+    },
+    {
+      icon: 'file',
+      label: t.companyTaxCode,
+      value: customer.companyTaxCode ?? null,
+      empty: t.noCompanyTaxCode,
+    },
+    {
+      icon: 'pin',
+      label: t.customerAddress,
+      value: customer.address ?? null,
+      empty: t.noCustomerAddress,
     },
   ]
 
@@ -61,9 +81,9 @@ export function OrderCustomerCard({
         </div>
         <ul className="odm-or-contact">
           {rows.map((row) => (
-            <li key={row.icon} className={row.value ? undefined : 'is-empty'}>
+            <li key={row.label} className={row.value ? undefined : 'is-empty'}>
               <OrderIcon name={row.icon} size={16} />
-              <span>{row.value || row.empty}</span>
+              <span><small>{row.label}</small>{row.value || row.empty}</span>
             </li>
           ))}
         </ul>

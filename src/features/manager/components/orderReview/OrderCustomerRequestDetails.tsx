@@ -30,9 +30,10 @@ const enumLabels: Record<string, string> = {
   NEED_SUPPORT: 'Cần hỗ trợ xin phép',
   WEEKLY: 'Hằng tuần',
   MONTHLY: 'Hằng tháng',
-  AUTO_RESCHEDULE: 'Tự dời lịch',
-  CONTACT_CUSTOMER: 'Liên hệ khách trước',
-  CANCEL_ORDER: 'Huỷ yêu cầu',
+  AUTO_RESCHEDULE:
+    'Tự động dời sang ngày phù hợp gần nhất trong khoảng thời gian khách đã chọn',
+  CONTACT_CUSTOMER: 'Liên hệ khách hàng trước khi thay đổi lịch bay',
+  CANCEL_ORDER: 'Không sắp xếp bay lại và hủy yêu cầu',
   PHOTO: 'Ảnh',
   IMAGE: 'Ảnh',
   VIDEO: 'Video',
@@ -292,6 +293,10 @@ export function OrderCustomerRequestDetails({
 
   const scopeFacts: DetailItem[] = [
     {
+      label: t.usagePurpose,
+      value: text(order.usagePurpose),
+    },
+    {
       label: t.flightPurpose,
       value: text(order.flightPurpose),
     },
@@ -310,11 +315,8 @@ export function OrderCustomerRequestDetails({
   const siteFacts: DetailItem[] = [
     { label: t.siteContact, value: contact },
     { label: t.accessNotes, value: order.accessNotes },
-    {
-      label: t.weatherFallback,
-      value: text(order.weatherFallback),
-    },
   ]
+  const weatherFallback = text(order.weatherFallback)
 
   const permitFacts: DetailItem[] = [
     {
@@ -392,10 +394,9 @@ export function OrderCustomerRequestDetails({
   ]
 
   const priorityLabel = text(order.priority)
-  const purposeLabel = text(order.usagePurpose)
   const urgent = order.priority === 'URGENT' || order.priority === 'HIGH'
   const hasSummary = Boolean(
-    order.title || order.description || priorityLabel || purposeLabel,
+    order.title || order.description || priorityLabel,
   )
   const hasDetails =
     hasSummary ||
@@ -418,19 +419,14 @@ export function OrderCustomerRequestDetails({
           <OrderIcon name="file" size={18} />
           {t.customerRequestDetails}
         </span>
-        {priorityLabel || purposeLabel ? (
+        {priorityLabel ? (
           <div className="odm-or-req-chips">
             {priorityLabel ? (
               <span
                 className={`odm-or-req-chip${urgent ? ' is-urgent' : ''}`}
-                title={t.priority}
               >
-                {priorityLabel}
-              </span>
-            ) : null}
-            {purposeLabel ? (
-              <span className="odm-or-req-chip" title={t.usagePurpose}>
-                {purposeLabel}
+                <span className="odm-or-req-chip-label">{t.priority}:</span>
+                <strong>{priorityLabel}</strong>
               </span>
             ) : null}
           </div>
@@ -447,7 +443,7 @@ export function OrderCustomerRequestDetails({
         ) : null}
 
         <div className="odm-or-req-section-grid">
-          <FactSection title="Phạm vi giám sát" icon="target" items={scopeFacts} />
+          <FactSection title="Mục đích & thông số bay" icon="target" items={scopeFacts} />
           <FactSection title="Thông tin hiện trường" icon="pin" items={siteFacts} />
           <FactSection title="Quyền & giấy phép" icon="shield" items={permitFacts} />
           <FactSection title="Kết quả & dữ liệu" icon="database" items={resultFacts}>
@@ -461,6 +457,16 @@ export function OrderCustomerRequestDetails({
             ) : null}
           </FactSection>
         </div>
+
+        {weatherFallback ? (
+          <aside className="odm-or-req-fallback" aria-label={t.weatherFallback}>
+            <span className="odm-or-req-fallback-icon" aria-hidden="true">
+              <OrderIcon name="alert" size={22} />
+            </span>
+            <span className="odm-or-req-fallback-label">{t.weatherFallback}</span>
+            <strong>{weatherFallback}</strong>
+          </aside>
+        ) : null}
 
         {visibleItems(legalFacts).length > 0 ? (
           <details className="odm-or-req-legal">

@@ -1,4 +1,4 @@
-import { ReviewBreadcrumbHeader } from './ReviewBreadcrumbHeader'
+import { ReviewHeader } from './ReviewHeader'
 import { useI18n } from '../../../../../shared/i18n'
 import { reviewSkeletonMessages } from './ReviewSkeleton.messages'
 
@@ -7,17 +7,15 @@ export function ReviewSkeleton({ orderId }: { orderId: string }) {
 
   return (
     <div className="odm-or" aria-busy="true" aria-live="polite">
-      <ReviewBreadcrumbHeader orderId={orderId} />
-      <span className="odm-sk" style={{ width: '100%', height: 68 }} />
-      <div className="odm-or-grid">
-        <div className="odm-or-col">
-          <span className="odm-sk" style={{ width: '100%', height: 400 }} />
-          <span className="odm-sk" style={{ width: '100%', height: 220 }} />
+      <ReviewHeader orderId={orderId} />
+      <div className="odm-or-layout">
+        <div className="odm-or-main">
+          <span className="odm-sk odm-or-sk-main" />
+          <span className="odm-sk odm-or-sk-sub" />
         </div>
-        <div className="odm-or-col">
-          <span className="odm-sk" style={{ width: '100%', height: 170 }} />
-          <span className="odm-sk" style={{ width: '100%', height: 150 }} />
-          <span className="odm-sk" style={{ width: '100%', height: 150 }} />
+        <div className="odm-or-side">
+          <span className="odm-sk odm-or-sk-side" />
+          <span className="odm-sk odm-or-sk-side" />
         </div>
       </div>
       <span className="odm-visually-hidden">{t.loading}</span>

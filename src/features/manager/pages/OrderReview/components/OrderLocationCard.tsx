@@ -110,10 +110,7 @@ export function OrderLocationCard({
 
   const header = (action?: ReactNode) => (
     <header className="odm-or-card-head">
-      <span className="odm-or-card-title">
-        <OrderIcon name="pin" size={18} />
-        {t.location}
-      </span>
+      <span className="odm-or-card-title">{t.location}</span>
       {action}
     </header>
   )

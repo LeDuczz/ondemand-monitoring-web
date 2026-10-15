@@ -8,6 +8,7 @@ import { OrderIcon } from './OrderIcon'
 import { formatDateTime, formatDuration } from './missionDetailHelpers'
 import { MissionResultReviewActions } from './MissionResultReviewActions'
 import { missionResultReviewReadiness } from './missionResultReviewReadiness'
+import { missionResultReviewReadinessMessages } from './missionResultReviewReadiness.messages'
 import './MissionResultReviewCard.css'
 import { useI18n } from '../../../../shared/i18n'
 import { missionResultReviewCardMessages } from './MissionResultReviewCard.messages'
@@ -36,6 +37,7 @@ export function MissionResultReviewCard({
   onViewMedia?: () => void
 }) {
   const { t } = useI18n(missionResultReviewCardMessages)
+  const { t: readinessT } = useI18n(missionResultReviewReadinessMessages)
 
   const headingId = useId()
   const reasonId = useId()
@@ -46,6 +48,7 @@ export function MissionResultReviewCard({
     checklist,
     loading: refreshing || checklistLoading,
     failed: checklistFailed,
+    t: readinessT,
   })
   const mediaCount =
     matchingResult?.mediaCount ??

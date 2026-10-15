@@ -13,10 +13,7 @@ export function ResourceAvailabilityCard({ query }: { query: Query }) {
     return (
       <section className="odm-or-card" aria-busy="true">
         <header className="odm-or-card-head">
-          <span className="odm-or-card-title">
-            <OrderIcon name="users" size={18} />
-            {t.resourceStatus}
-          </span>
+          <span className="odm-or-card-title">{t.resourceStatus}</span>
         </header>
         <div className="odm-or-card-body">
           <span className="odm-sk" style={{ width: '100%', height: 72 }} />
@@ -35,10 +32,7 @@ export function ResourceAvailabilityCard({ query }: { query: Query }) {
   return (
     <section className="odm-or-card">
       <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="users" size={18} />
-          {t.resourceStatus}
-        </span>
+        <span className="odm-or-card-title">{t.resourceStatus}</span>
         {preview ? (
           <span
             className={`odm-or-status-dot ${ready ? 'is-ready' : 'is-short'}`}

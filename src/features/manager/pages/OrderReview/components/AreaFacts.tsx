@@ -20,7 +20,9 @@ function restrictedLabel(value: {
 function distanceLabel(value: number | null | undefined) {
   return value == null
     ? areaFactsMessages[getLanguage()].notDetermined
-    : `${Math.round(value).toLocaleString('vi-VN')} m`
+    : `${Math.round(value).toLocaleString(
+        getLanguage() === 'en' ? 'en-US' : 'vi-VN',
+      )} m`
 }
 
 function metersLabel(value: number | null | undefined) {

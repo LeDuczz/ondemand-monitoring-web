@@ -1,4 +1,3 @@
-import { OrderIcon } from '../../../components/common/OrderIcon'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { OrderReadiness } from '../../../types/readiness'
 import { useI18n } from '../../../../../shared/i18n'
@@ -17,10 +16,7 @@ export function ReadinessUnavailable({
       aria-label={t.approvalConditions}
     >
       <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="check" size={18} />
-          {t.approvalConditions}
-        </span>
+        <span className="odm-or-card-title">{t.approvalConditions}</span>
       </header>
       <div className="odm-or-card-body odm-or-empty">
         {query.loading

@@ -107,7 +107,6 @@ export function PlanningWorkspaceView({
     >
       {confirmation.dialog}
       <PlanningHeader
-        primary
         status={data?.plan.planStatus}
         revision={data?.plan.revision ?? 0}
         loading={query.loading}

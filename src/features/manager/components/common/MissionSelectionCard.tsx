@@ -40,7 +40,7 @@ export function MissionSelectionCard({
   candidateId: string | null
   setCandidateId: Dispatch<SetStateAction<string | null>>
 }) {
-  const { t } = useI18n(missionSelectionCardMessages)
+  const { t, locale } = useI18n(missionSelectionCardMessages)
 
   return (
     <section className="odm-or-card" aria-label={t.selectAMissionToAssign}>
@@ -101,6 +101,7 @@ export function MissionSelectionCard({
                   {planningSchedule(
                     mission.scheduledStartAt,
                     mission.scheduledEndAt,
+                    locale,
                   )}
                 </small>
                 <small>{label}</small>

@@ -1,4 +1,4 @@
-import { resultLabel } from '../readinessLabels'
+import { readinessLabelsMessages } from '../readinessLabels.messages'
 import type { ReadinessCriterion } from '../../../types/readiness'
 import { useI18n } from '../../../../../shared/i18n'
 import { readinessAutoColumnMessages } from './ReadinessAutoColumn.messages'
@@ -11,6 +11,7 @@ export function ReadinessAutoColumn({
   auto: ReadinessCriterion[]
 }) {
   const { t } = useI18n(readinessAutoColumnMessages)
+  const { t: labels } = useI18n(readinessLabelsMessages)
 
   return (
     <div className="odm-or-readiness-col">
@@ -36,7 +37,7 @@ export function ReadinessAutoColumn({
               </strong>
               <span>{c.reason ?? c.description}</span>
             </div>
-            <em>{resultLabel[c.result]}</em>
+            <em>{labels.resultLabel[c.result]}</em>
           </li>
         ))}
       </ul>

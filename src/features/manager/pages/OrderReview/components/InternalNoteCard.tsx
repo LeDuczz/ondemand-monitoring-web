@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { env } from '../../../../../config/env'
 import { ordersApi } from '../../../api/ordersApi'
 import { formatVn } from '../../../components/common/format'
-import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { internalNoteCardMessages } from './InternalNoteCard.messages'
 
@@ -43,14 +43,8 @@ export function InternalNoteCard({
     !env.useMockApi && import.meta.env.MODE !== 'test'
 
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="doc" size={18} />
-          {t.internalNote}
-        </span>
-      </header>
-      <div className="odm-or-card-body odm-or-note">
+    <Card title={t.internalNote}>
+      <div className="odm-or-note">
         {saved ? (
           <div className="odm-or-note-existing">
             <div className="odm-or-note-meta">
@@ -97,6 +91,6 @@ export function InternalNoteCard({
           </span>
         </div>
       </div>
-    </section>
+    </Card>
   )
 }

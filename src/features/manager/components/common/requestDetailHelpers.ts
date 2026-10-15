@@ -1,121 +1,113 @@
 import type { ReactNode } from 'react'
 
+import { useLanguage } from '../../../../shared/i18n'
 import type { OrderDetail } from '../../types/orders'
-import type { OrderIconName } from './OrderIcon'
+import { requestDetailHelpersMessages } from './requestDetailHelpers.messages'
 
 export type DetailItem = {
   label: string
   value: ReactNode
-  icon?: OrderIconName
-  tone?: 'green' | 'blue' | 'orange' | 'purple'
 }
 
-export const enumLabels: Record<string, string> = {
-  INTERNAL: 'Nội bộ',
-  LEGAL: 'Pháp lý',
-  PARTNER_REPORT: 'Báo cáo cho đối tác',
-  OTHER: 'Khác',
-  AGRICULTURE: 'Phục vụ nông nghiệp',
-  SURVEY_MONITORING: 'Đo đạc, khảo sát, giám sát từ trên cao',
-  CONSTRUCTION_MONITORING: 'Giám sát tiến độ công trình',
-  INDUSTRIAL_INSPECTION: 'Kiểm tra nhà xưởng và cơ sở sản xuất',
-  AREA_MONITORING: 'Giám sát khu vực',
-  FOREST_MONITORING: 'Giám sát tài nguyên rừng',
-  NORMAL: 'Bình thường',
-  HIGH: 'Cao',
-  URGENT: 'Khẩn cấp',
-  NONE: 'Không có',
-  HAVE_PERMIT: 'Đã có giấy phép',
-  NEED_SUPPORT: 'Cần hỗ trợ xin phép',
-  WEEKLY: 'Hằng tuần',
-  MONTHLY: 'Hằng tháng',
-  AUTO_RESCHEDULE: 'Tự dời lịch',
-  CONTACT_CUSTOMER: 'Liên hệ khách trước',
-  CANCEL_ORDER: 'Huỷ yêu cầu',
-  PHOTO: 'Ảnh',
-  IMAGE: 'Ảnh',
-  VIDEO: 'Video',
-  PDF_REPORT: 'Báo cáo PDF',
-  ORTHOMOSAIC: 'Bản đồ ghép ảnh',
-  MODEL_3D: 'Mô hình 3D',
-  PDF: 'PDF',
-  DOWNLOAD: 'Tải về',
-  EMAIL: 'Email',
-  API: 'API',
-  AI_IMAGE_ANALYSIS: 'AI phân tích hình ảnh',
+type Locale = 'vi-VN' | 'en-US'
+type HelperMessages = (typeof requestDetailHelpersMessages)['vi']
+
+/** Language-bound formatters; every helper below takes this as its first arg. */
+export type DetailFormat = { t: HelperMessages; locale: Locale }
+
+export function useDetailFormat(): DetailFormat {
+  const { lang, locale } = useLanguage()
+  return { t: requestDetailHelpersMessages[lang], locale }
 }
 
-export function text(value: unknown): string | null {
+export function text(f: DetailFormat, value: unknown): string | null {
   if (typeof value === 'string') {
     const trimmed = value.trim()
-    return trimmed ? (enumLabels[trimmed] ?? trimmed) : null
+    return trimmed ? (f.t.enumLabels[trimmed] ?? trimmed) : null
   }
   if (typeof value === 'number' && Number.isFinite(value)) return String(value)
-  if (typeof value === 'boolean') return value ? 'Có' : 'Không'
+  if (typeof value === 'boolean') return value ? f.t.yes : f.t.no
   return null
 }
 
-export function list(values: string[] | null | undefined): string | null {
+export function list(
+  f: DetailFormat,
+  values: string[] | null | undefined,
+): string | null {
   if (!values || values.length === 0) return null
-  return values.map((value) => text(value) ?? value).join(', ')
+  return values.map((value) => text(f, value) ?? value).join(', ')
 }
 
-export function dateOnly(value: string | null | undefined): string | null {
+export function dateOnly(
+  f: DetailFormat,
+  value: string | null | undefined,
+): string | null {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('vi-VN')
+  return date.toLocaleDateString(f.locale)
 }
 
-export function dateTime(value: string | null | undefined): string | null {
+export function dateTime(
+  f: DetailFormat,
+  value: string | null | undefined,
+): string | null {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('vi-VN')
+  return date.toLocaleString(f.locale)
 }
 
 export function visibleItems(items: DetailItem[]) {
   return items.filter((item) => item.value != null && item.value !== '')
 }
 
-export function requirementValue(value: unknown): string | null {
+export function requirementValue(
+  f: DetailFormat,
+  value: unknown,
+): string | null {
   if (Array.isArray(value)) {
-    const values = value.map(requirementValue).filter(Boolean)
+    const values = value
+      .map((item) => requirementValue(f, item))
+      .filter(Boolean)
     return values.length ? values.join(', ') : null
   }
   if (value && typeof value === 'object') {
     const record = value as Record<string, unknown>
     const parts = [
-      text(record.type),
-      text(record.description),
+      text(f, record.type),
+      text(f, record.description),
       record.additionalPrice != null
-        ? `${text(record.additionalPrice)} đ`
+        ? `${text(f, record.additionalPrice)}${f.t.currencySuffix}`
         : null,
-      text(record.fileName ?? record.name),
+      text(f, record.fileName ?? record.name),
     ].filter(Boolean)
     return parts.length ? parts.join(' · ') : null
   }
-  return text(value)
+  return text(f, value)
 }
 
-export function mediaTypeFromTitle(title: string | null | undefined) {
+export function mediaTypeFromTitle(
+  f: DetailFormat,
+  title: string | null | undefined,
+) {
   const normalized = title?.trim().toLowerCase() ?? ''
-  if (normalized.includes('video')) return 'Video'
+  if (normalized.includes('video')) return f.t.mediaVideo
   if (
     normalized.includes('ảnh') ||
     normalized.includes('hình') ||
     normalized.includes('photo') ||
     normalized.includes('image')
   ) {
-    return 'Ảnh'
+    return f.t.mediaImage
   }
   if (normalized.includes('báo cáo') || normalized.includes('report')) {
-    return 'Báo cáo'
+    return f.t.mediaReport
   }
   return null
 }
 
-export function formatMoney(value: unknown) {
+export function formatMoney(f: DetailFormat, value: unknown) {
   const amount =
     typeof value === 'number'
       ? value
@@ -123,41 +115,42 @@ export function formatMoney(value: unknown) {
         ? Number(value)
         : null
   return amount != null && Number.isFinite(amount)
-    ? amount.toLocaleString('vi-VN') + ' đ'
-    : text(value)
+    ? amount.toLocaleString(f.locale) + f.t.currencySuffix
+    : text(f, value)
 }
 
-export function numberText(value: unknown): string | null {
-  const valueText = text(value)
+export function numberText(f: DetailFormat, value: unknown): string | null {
+  const valueText = text(f, value)
   return valueText && valueText !== '0' ? valueText : null
 }
 
 export function deliverableSummary(
+  f: DetailFormat,
   requirement: Record<string, unknown> | null,
   deliverableName?: string | null,
 ) {
   if (!requirement) return []
   const type =
-    mediaTypeFromTitle(deliverableName) ?? text(requirement.mediaType)
+    mediaTypeFromTitle(f, deliverableName) ?? text(f, requirement.mediaType)
+  const quantity = numberText(f, requirement.quantity)
   return [
     type,
-    numberText(requirement.quantity)
-      ? `${numberText(requirement.quantity)} mục`
-      : null,
-    text(requirement.resolution),
-    text(requirement.aiAnalysisRequested) === 'Có' ? 'Có phân tích AI' : null,
+    quantity ? f.t.items(quantity) : null,
+    text(f, requirement.resolution),
+    text(f, requirement.aiAnalysisRequested) === f.t.yes ? f.t.withAi : null,
   ].filter((item): item is string => Boolean(item))
 }
 
 export function resultFormatsFromDeliverables(
+  f: DetailFormat,
   order: OrderDetail,
 ): string | null {
   const formats =
     order.deliverables
       ?.map((deliverable) => {
-        const fromName = mediaTypeFromTitle(deliverable.deliverableTypeName)
+        const fromName = mediaTypeFromTitle(f, deliverable.deliverableTypeName)
         if (fromName) return fromName
-        return text(deliverable.requirement?.mediaType)
+        return text(f, deliverable.requirement?.mediaType)
       })
       .filter((item): item is string => Boolean(item)) ?? []
 
@@ -166,40 +159,28 @@ export function resultFormatsFromDeliverables(
 }
 
 export function addOnItems(
+  f: DetailFormat,
   requirement: Record<string, unknown> | null,
 ): string[] {
   const value = requirement?.additionalRequirements
   if (!Array.isArray(value)) return []
   return value
     .map((item) => {
-      if (!item || typeof item !== 'object') return requirementValue(item)
+      if (!item || typeof item !== 'object') return requirementValue(f, item)
       const record = item as Record<string, unknown>
-      const title = text(record.type) ?? 'Yêu cầu bổ sung'
-      const description = text(record.description)
-      const price = formatMoney(record.additionalPrice)
+      const title = text(f, record.type) ?? f.t.additionalRequirement
+      const description = text(f, record.description)
+      const price = formatMoney(f, record.additionalPrice)
       return [title, description, price].filter(Boolean).join(' · ')
     })
     .filter((item): item is string => Boolean(item))
 }
 
 export function requirementItems(
+  f: DetailFormat,
   requirement: Record<string, unknown> | null,
 ): DetailItem[] {
   if (!requirement) return []
-  const labels: Record<string, string> = {
-    mediaType: 'Loại media',
-    quantity: 'Số lượng',
-    resolution: 'Độ phân giải',
-    radiusM: 'Bán kính',
-    estimatedAreaHa: 'Diện tích',
-    aiAnalysisRequested: 'Phân tích AI',
-    additionalRequirements: 'Yêu cầu thêm',
-    type: 'Loại',
-    description: 'Mô tả',
-    additionalPrice: 'Phí bổ sung',
-    areaFiles: 'Tệp khu vực',
-    customerAttachments: 'Tệp khách gửi',
-  }
   const hiddenTechnicalKeys = new Set([
     'priority',
     'readinessScore',
@@ -219,16 +200,16 @@ export function requirementItems(
   return Object.entries(requirement)
     .map<DetailItem | null>(([key, value]) => {
       if (hiddenTechnicalKeys.has(key)) return null
-      const formatted = requirementValue(value)
+      const formatted = requirementValue(f, value)
       if (!formatted) return null
       const suffix =
         key === 'radiusM' ? ' m' : key === 'estimatedAreaHa' ? ' ha' : ''
       const finalValue =
         key === 'additionalPrice'
-          ? (formatMoney(value) ?? formatted)
+          ? (formatMoney(f, value) ?? formatted)
           : formatted
       return {
-        label: labels[key] ?? key,
+        label: f.t.labels[key] ?? key,
         value: `${finalValue}${suffix}`,
       }
     })

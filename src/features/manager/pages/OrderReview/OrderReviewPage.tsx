@@ -9,19 +9,24 @@ import { OrderMissionPlanningSection } from './components/OrderMissionPlanningSe
 import { OrderResourceAssignmentWizard } from '../../components/common/OrderResourceAssignmentWizard'
 import '../../manager.css'
 import { type ReviewStep } from './reviewSteps'
-import { ReviewBreadcrumbHeader } from './components/ReviewBreadcrumbHeader'
+import { ReviewHeader } from './components/ReviewHeader'
+import { ReviewStageStepper } from './components/ReviewStageStepper'
+import { OrderStatusCard } from './components/OrderStatusCard'
+import { InternalNoteCard } from './components/InternalNoteCard'
+import { OrderCustomerCard } from '../../components/common/OrderCustomerCard'
+import { OrderAttachmentsCard } from '../../components/common/OrderAttachmentsCard'
 import { ReviewSkeleton } from './components/ReviewSkeleton'
 import { ReviewLoadError } from './components/ReviewLoadError'
-import { ReviewTop } from './components/ReviewTop'
 import { ReviewInfoStage } from './components/ReviewInfoStage'
 import { ReviewAreaStage } from './components/ReviewAreaStage'
 import { ReviewReadinessStage } from './components/ReviewReadinessStage'
 import { ReviewDecisionStage } from './components/ReviewDecisionStage'
-import { useI18n } from '../../../../shared/i18n'
+import { useI18n, useLanguage } from '../../../../shared/i18n'
 import { orderReviewPageMessages } from './OrderReviewPage.messages'
 
 export function OrderReviewPage({ orderId }: { orderId: string }) {
   const { t } = useI18n(orderReviewPageMessages)
+  const { locale } = useLanguage()
 
   const orderQuery = useApiQuery(
     (signal) => ordersApi.getOrder(orderId, signal),
@@ -61,8 +66,8 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     const is409 =
       orderQuery.error instanceof ApiError && orderQuery.error.status === 409
     return (
-      <div className="odm-mgr-dash">
-        <ReviewBreadcrumbHeader orderId={orderId} />
+      <div className="odm-or">
+        <ReviewHeader orderId={orderId} />
         <ReviewLoadError is409={is409} />
       </div>
     )
@@ -99,49 +104,56 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
   return (
     <div className="odm-or odm-or-review-page" ref={pageRef}>
+      <ReviewHeader orderId={orderId} order={order} />
       {!showExecutionPlan && (
-        <ReviewTop
-          title={t.pageTitle}
-          subtitle={t.pageSubtitle}
-          reviewStep={reviewStep}
-          goToStep={goToStep}
-          order={order}
-        />
+        <ReviewStageStepper currentStep={reviewStep} onChange={goToStep} />
       )}
-      {showExecutionPlan && (
-        <OrderMissionPlanningSection
-          orderId={order.id}
-          initialOrder={order}
-          onAssignResources={setAssigningMissionId}
-        />
-      )}
-      {!showExecutionPlan && reviewStep === 1 ? (
-        <ReviewInfoStage order={order} goToStep={goToStep} />
-      ) : null}
+      <div
+        className={`odm-or-layout${!showExecutionPlan && reviewStep === 4 ? ' is-wide' : ''}`}
+      >
+        <div className="odm-or-main">
+          {showExecutionPlan && (
+            <OrderMissionPlanningSection
+              orderId={order.id}
+              initialOrder={order}
+              onAssignResources={setAssigningMissionId}
+            />
+          )}
+          {!showExecutionPlan && reviewStep === 1 ? (
+            <ReviewInfoStage order={order} goToStep={goToStep} />
+          ) : null}
 
-      {!showExecutionPlan && reviewStep === 2 ? (
-        <ReviewAreaStage order={order} goToStep={goToStep} />
-      ) : null}
+          {!showExecutionPlan && reviewStep === 2 ? (
+            <ReviewAreaStage order={order} goToStep={goToStep} />
+          ) : null}
 
-      {!showExecutionPlan && reviewStep === 3 ? (
-        <ReviewReadinessStage
-          order={order}
-          readinessQuery={readinessQuery}
-          goToStep={goToStep}
-          pendingRequired={pendingRequired}
-        />
-      ) : null}
+          {!showExecutionPlan && reviewStep === 3 ? (
+            <ReviewReadinessStage
+              order={order}
+              readinessQuery={readinessQuery}
+              goToStep={goToStep}
+              pendingRequired={pendingRequired}
+            />
+          ) : null}
 
-      {!showExecutionPlan && reviewStep === 4 ? (
-        <ReviewDecisionStage
-          order={order}
-          handleApproved={handleApproved}
-          readinessQuery={readinessQuery}
-          approveBlockedReason={approveBlockedReason}
-          setNavigateHome={setNavigateHome}
-          goToStep={goToStep}
-        />
-      ) : null}
+          {!showExecutionPlan && reviewStep === 4 ? (
+            <ReviewDecisionStage
+              order={order}
+              handleApproved={handleApproved}
+              readinessQuery={readinessQuery}
+              approveBlockedReason={approveBlockedReason}
+              setNavigateHome={setNavigateHome}
+              goToStep={goToStep}
+            />
+          ) : null}
+        </div>
+        <aside className="odm-or-side">
+          <OrderStatusCard order={order} locale={locale} />
+          <OrderCustomerCard order={order} />
+          <OrderAttachmentsCard order={order} />
+          <InternalNoteCard orderId={order.id} locale={locale} />
+        </aside>
+      </div>
     </div>
   )
 }

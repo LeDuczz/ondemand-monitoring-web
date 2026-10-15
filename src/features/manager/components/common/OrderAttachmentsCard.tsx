@@ -1,5 +1,5 @@
 import type { OrderDetail } from '../../types/orders'
-import { OrderIcon } from './OrderIcon'
+import { Card } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
 import { orderAttachmentsCardMessages } from './OrderAttachmentsCard.messages'
 
@@ -8,24 +8,15 @@ export function OrderAttachmentsCard({ order }: { order: OrderDetail }) {
 
   const attachments = order.attachments
   return (
-    <section className="odm-or-card">
-      <header className="odm-or-card-head">
-        <span className="odm-or-card-title">
-          <OrderIcon name="file" size={18} />
-          {t.attachments}
-        </span>
-      </header>
+    <Card title={t.attachments}>
       {attachments == null ? (
-        <div className="odm-or-card-body odm-or-empty">
-          {t.noAttachmentsData}
-        </div>
+        <p className="odm-or-empty">{t.noAttachmentsData}</p>
       ) : attachments.length === 0 ? (
-        <div className="odm-or-card-body odm-or-empty">{t.noAttachments}</div>
+        <p className="odm-or-empty">{t.noAttachments}</p>
       ) : (
-        <div className="odm-or-card-body odm-or-attachments">
+        <ul className="odm-or-attachments">
           {attachments.map((att) => (
-            <div key={att.url} className="odm-or-attachment">
-              <OrderIcon name="file" size={18} />
+            <li key={att.url} className="odm-or-attachment">
               <div className="odm-or-attachment-main">
                 <div className="odm-or-attachment-name">{att.name}</div>
                 <div className="odm-or-attachment-meta">
@@ -35,10 +26,10 @@ export function OrderAttachmentsCard({ order }: { order: OrderDetail }) {
               <a className="odm-btn odm-btn-sm" href={att.url}>
                 {t.download}
               </a>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </section>
+    </Card>
   )
 }

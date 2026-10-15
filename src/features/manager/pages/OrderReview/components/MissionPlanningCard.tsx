@@ -25,7 +25,7 @@ export function MissionPlanningCard({
   missions: MissionResponse[]
   children: ReactNode
 }) {
-  const { t } = useI18n(missionPlanningCardMessages)
+  const { t, locale } = useI18n(missionPlanningCardMessages)
 
   const original = missions.find((m) => m.id === mission.replacesMissionId)
   const replacements = missions.filter(
@@ -65,7 +65,11 @@ export function MissionPlanningCard({
         <p>{scope?.scopeLabel || mission.orderTitle || t.scopeByOrder}</p>
         <span>
           <OrderIcon name="calendar" size={15} />
-          {planningSchedule(mission.scheduledStartAt, mission.scheduledEndAt)}
+          {planningSchedule(
+            mission.scheduledStartAt,
+            mission.scheduledEndAt,
+            locale,
+          )}
         </span>
       </div>
       <div className="odm-mission-resources">

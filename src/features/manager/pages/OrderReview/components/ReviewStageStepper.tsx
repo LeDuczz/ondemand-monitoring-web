@@ -33,7 +33,11 @@ export function ReviewStageStepper({
                 className="odm-or-review-step"
                 aria-current={state === 'current' ? 'step' : undefined}
                 disabled={!step.reviewStep}
-                title={!step.reviewStep ? t.finishTheOrderReviewTo : undefined}
+                title={
+                  step.reviewStep
+                    ? t.steps[step.number - 1].hint
+                    : t.finishTheOrderReviewTo
+                }
                 onClick={() => step.reviewStep && onChange(step.reviewStep)}
               >
                 <span className="odm-or-review-step-dot">
@@ -44,8 +48,7 @@ export function ReviewStageStepper({
                   )}
                 </span>
                 <span className="odm-or-review-step-text">
-                  <strong>{step.label}</strong>
-                  <small>{step.hint}</small>
+                  <strong>{t.steps[step.number - 1].label}</strong>
                 </span>
               </button>
             </li>

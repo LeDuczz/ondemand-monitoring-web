@@ -1,8 +1,9 @@
-import { OrderIcon } from './OrderIcon'
+import { StatusBadge } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
 import { requestDetailsHeaderMessages } from './RequestDetailsHeader.messages'
 
-export function RequestDetailsHeader({
+/** Priority and purpose chips shown in the request card header. */
+export function RequestChips({
   priorityLabel,
   purposeLabel,
   urgent,
@@ -12,30 +13,21 @@ export function RequestDetailsHeader({
   urgent: boolean
 }) {
   const { t } = useI18n(requestDetailsHeaderMessages)
-
+  if (!priorityLabel && !purposeLabel) return null
   return (
-    <header className="odm-or-card-head">
-      <span className="odm-or-card-title">
-        <OrderIcon name="file" size={18} />
-        {t.customerRequestDetails}
-      </span>
-      {priorityLabel || purposeLabel ? (
-        <div className="odm-or-req-chips">
-          {priorityLabel ? (
-            <span
-              className={`odm-or-req-chip${urgent ? ' is-urgent' : ''}`}
-              title={t.priority}
-            >
-              {priorityLabel}
-            </span>
-          ) : null}
-          {purposeLabel ? (
-            <span className="odm-or-req-chip" title={t.usagePurpose}>
-              {purposeLabel}
-            </span>
-          ) : null}
-        </div>
+    <div className="odm-or-req-chips">
+      {priorityLabel ? (
+        <span title={t.priority}>
+          <StatusBadge tone={urgent ? 'danger' : 'neutral'}>
+            {priorityLabel}
+          </StatusBadge>
+        </span>
       ) : null}
-    </header>
+      {purposeLabel ? (
+        <span title={t.usagePurpose}>
+          <StatusBadge tone="info">{purposeLabel}</StatusBadge>
+        </span>
+      ) : null}
+    </div>
   )
 }

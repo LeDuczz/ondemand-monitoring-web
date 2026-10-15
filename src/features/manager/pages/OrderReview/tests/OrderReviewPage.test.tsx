@@ -238,7 +238,7 @@ describe('OrderReviewPage', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
     )
-    await screen.findByRole('heading', { name: 'Kế hoạch thực thi', level: 1 })
+    await screen.findByRole('heading', { name: 'Kế hoạch thực thi', level: 2 })
     expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
     expect(
       screen.queryByRole('heading', { name: 'Gán nguồn lực' }),
@@ -269,7 +269,7 @@ describe('OrderReviewPage', () => {
       expect(
         await screen.findByRole('heading', {
           name: 'Kế hoạch thực thi',
-          level: 1,
+          level: 2,
         }),
       ).toBeInTheDocument()
       expect(
@@ -282,9 +282,6 @@ describe('OrderReviewPage', () => {
         screen.queryByRole('button', { name: 'Từ chối' }),
       ).not.toBeInTheDocument()
       expect(screen.queryByText('Chờ duyệt')).not.toBeInTheDocument()
-      expect(
-        screen.queryByRole('heading', { name: 'Đơn hàng' }),
-      ).not.toBeInTheDocument()
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     },
   )
@@ -463,7 +460,7 @@ describe('OrderReviewPage', () => {
     expect(
       await screen.findByRole('heading', {
         name: 'Kế hoạch thực thi',
-        level: 1,
+        level: 2,
       }),
     ).toBeInTheDocument()
     expect(approveSpy).toHaveBeenCalledExactlyOnceWith(order.id, quote.id)
@@ -480,7 +477,7 @@ describe('OrderReviewPage', () => {
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByRole('heading', { name: '#ORD-2609-0157' }))
     await openPricingStep()
     fireEvent.click(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
@@ -488,7 +485,7 @@ describe('OrderReviewPage', () => {
     expect(
       await screen.findByRole('heading', {
         name: 'Kế hoạch thực thi',
-        level: 1,
+        level: 2,
       }),
     ).toBeInTheDocument()
     expect(window.location.hash).toBe('#portal/manager/orders/' + order.id)
@@ -532,7 +529,7 @@ describe('OrderReviewPage', () => {
 
     render(<OrderReviewPage orderId="ord-2609-0149" />)
 
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByRole('heading', { name: '#ORD-2609-0149' }))
     expect(screen.getByText('Nguyễn Minh Khoa')).toBeInTheDocument()
     expect(
       screen.getByText('Chưa có dữ liệu tệp đính kèm cho đơn này.'),
@@ -554,7 +551,7 @@ describe('OrderReviewPage', () => {
       updatedAt: '2026-09-19T13:50:00+07:00',
     })
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByRole('heading', { name: '#ORD-2609-0157' }))
 
     fireEvent.change(
       screen.getByPlaceholderText(
@@ -570,12 +567,12 @@ describe('OrderReviewPage', () => {
   it('renders English labels and the uppercase English verdict after switching language', async () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Đơn hàng' }))
+    await waitFor(() => screen.getByRole('heading', { name: '#ORD-2609-0157' }))
     await openPricingStep()
 
     act(() => setLanguage('en'))
 
-    expect(screen.getByRole('heading', { name: 'Orders' })).toBeInTheDocument()
+    expect(screen.getByText('← Order queue')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
   })
 })

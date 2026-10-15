@@ -1,11 +1,9 @@
 import {
   riskLevelOptions,
   answerOptions,
-  criterionDescriptionOverrides,
   type Answer,
-  contextualAnswerLabels,
-  resultLabel,
 } from '../readinessLabels'
+import { readinessLabelsMessages } from '../readinessLabels.messages'
 import type { ReadinessCriterion } from '../../../types/readiness'
 import type { Dispatch } from 'react'
 import type { SetStateAction } from 'react'
@@ -36,6 +34,7 @@ export function ReadinessManualColumn({
   choose: (criterion: ReadinessCriterion, result: Answer) => void
 }) {
   const { t } = useI18n(readinessManualColumnMessages)
+  const { t: labels } = useI18n(readinessLabelsMessages)
 
   return (
     <div className="odm-or-readiness-col">
@@ -70,9 +69,7 @@ export function ReadinessManualColumn({
                     <span className="odm-or-readiness-tag">{t.required}</span>
                   ) : null}
                 </strong>
-                <span>
-                  {criterionDescriptionOverrides[c.code] ?? c.description}
-                </span>
+                <span>{c.description}</span>
                 {c.decidedByName && !draft ? (
                   <span className="odm-or-readiness-meta">
                     {t.confirmedBy}
@@ -131,8 +128,8 @@ export function ReadinessManualColumn({
                   >
                     {savingCode === c.code && current === option
                       ? t.saving
-                      : (contextualAnswerLabels[c.code]?.[option] ??
-                        resultLabel[option])}
+                      : (labels.contextualAnswerLabels[c.code]?.[option] ??
+                        labels.resultLabel[option])}
                   </button>
                 ))}
               </div>

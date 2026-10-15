@@ -6,10 +6,13 @@ import {
   list,
   resultFormatsFromDeliverables,
   text,
+  useDetailFormat,
   visibleItems,
   type DetailItem,
 } from './requestDetailHelpers'
-import { RequestDetailsHeader } from './RequestDetailsHeader'
+import { RequestChips } from './RequestDetailsHeader'
+import { requestDetailsHeaderMessages } from './RequestDetailsHeader.messages'
+import { Card } from '../../../../shared/components/ui'
 import { LegacyMediaRequirements } from './LegacyMediaRequirements'
 import { RequestDeliverables } from './RequestDeliverables'
 import { useI18n } from '../../../../shared/i18n'
@@ -17,6 +20,8 @@ import { orderCustomerRequestDetailsMessages } from './OrderCustomerRequestDetai
 
 export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
   const { t } = useI18n(orderCustomerRequestDetailsMessages)
+  const { t: header } = useI18n(requestDetailsHeaderMessages)
+  const f = useDetailFormat()
 
   const contact =
     [order.siteContactName, order.siteContactPhone]
@@ -24,66 +29,55 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
       .join(' · ') || null
   const recurrence =
     order.recurrenceType && order.recurrenceOccurrences
-      ? t.lan(text(order.recurrenceType), order.recurrenceOccurrences)
-      : text(order.recurrenceType)
+      ? t.lan(text(f, order.recurrenceType), order.recurrenceOccurrences)
+      : text(f, order.recurrenceType)
   const permit = [
-    text(order.permitStatus),
+    text(f, order.permitStatus),
     order.permitNumber,
     order.permitZoneName,
   ]
     .filter(Boolean)
     .join(' · ')
   const resultFormats =
-    resultFormatsFromDeliverables(order) ?? list(order.resultFormats)
+    resultFormatsFromDeliverables(f, order) ?? list(f, order.resultFormats)
 
   // What the manager needs first: how fast, how high, how long, what comes out.
   const keyFacts: DetailItem[] = [
     {
       label: t.flightPurpose,
-      icon: 'target',
-      tone: 'green',
-      value: text(order.flightPurpose),
+      value: text(f, order.flightPurpose),
     },
     {
       label: t.flightAltitude,
-      icon: 'altitude',
-      tone: 'blue',
       value: order.altitudeM != null ? `${order.altitudeM} m` : null,
     },
     {
       label: t.estimatedLength,
-      icon: 'radius',
       value:
         order.estimatedLengthM != null ? `${order.estimatedLengthM} m` : null,
     },
     {
       label: t.resultDeadline,
-      icon: 'clock',
-      tone: 'blue',
-      value: dateOnly(order.resultDeadline),
+      value: dateOnly(f, order.resultDeadline),
     },
     {
       label: t.resultFormats,
-      icon: 'doc',
-      tone: 'orange',
       value: resultFormats,
     },
     {
       label: t.deliveryMethods,
-      icon: 'download',
-      tone: 'purple',
-      value: list(order.deliveryMethods),
+      value: list(f, order.deliveryMethods),
     },
   ]
 
   // Operational context, still visible but visually secondary.
   const extraFacts: DetailItem[] = [
-    { label: t.siteContact, icon: 'user', value: contact },
-    { label: t.accessNotes, icon: 'info', value: order.accessNotes },
-    { label: t.permitInfo, icon: 'doc', tone: 'blue', value: permit || null },
+    { label: t.siteContact, value: contact },
+    { label: t.accessNotes, value: order.accessNotes },
+    { label: t.permitInfo, value: permit || null },
     {
       label: t.validUntil,
-      value: dateOnly(order.permitExpiresOn),
+      value: dateOnly(f, order.permitExpiresOn),
     },
     {
       label: t.permitFiles,
@@ -105,16 +99,12 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
     },
     {
       label: t.permitRequired,
-      icon: 'shield',
-      tone: 'green',
-      value: text(order.permitRequired),
+      value: text(f, order.permitRequired),
     },
-    { label: t.recurrence, icon: 'refresh', tone: 'orange', value: recurrence },
+    { label: t.recurrence, value: recurrence },
     {
       label: t.weatherFallback,
-      icon: 'cloud',
-      tone: 'purple',
-      value: text(order.weatherFallback),
+      value: text(f, order.weatherFallback),
     },
   ]
 
@@ -127,12 +117,12 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
           ? t.ngay(order.dataRetentionDays)
           : null,
     },
-    { label: t.termsAcceptedAt, value: dateTime(order.termsAcceptedAt) },
+    { label: t.termsAcceptedAt, value: dateTime(f, order.termsAcceptedAt) },
     { label: t.termsVersion, value: order.termsVersion },
   ]
 
-  const priorityLabel = text(order.priority)
-  const purposeLabel = text(order.usagePurpose)
+  const priorityLabel = text(f, order.priority)
+  const purposeLabel = text(f, order.usagePurpose)
   const urgent = order.priority === 'URGENT' || order.priority === 'HIGH'
   const hasSummary = Boolean(
     order.title || order.description || priorityLabel || purposeLabel,
@@ -146,19 +136,21 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
   if (!hasDetails) return null
 
   return (
-    <section className="odm-or-card odm-or-req">
-      <RequestDetailsHeader
-        priorityLabel={priorityLabel}
-        purposeLabel={purposeLabel}
-        urgent={urgent}
-      />
-      <div className="odm-or-card-body odm-or-req-body">
+    <Card
+      title={header.customerRequestDetails}
+      actions={
+        <RequestChips
+          priorityLabel={priorityLabel}
+          purposeLabel={purposeLabel}
+          urgent={urgent}
+        />
+      }
+    >
+      <div className="odm-or-req-body">
         {hasSummary ? (
           <div className="odm-or-req-hero">
-            <div className="odm-or-req-hero-text">
-              {order.title ? <h3>{order.title}</h3> : null}
-              {order.description ? <p>{order.description}</p> : null}
-            </div>
+            {order.title ? <h3>{order.title}</h3> : null}
+            {order.description ? <p>{order.description}</p> : null}
           </div>
         ) : null}
 
@@ -168,11 +160,7 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
 
         <RequestDeliverables order={order} />
 
-        {visibleItems(extraFacts).length > 0 ? (
-          <div className="odm-or-req-extra">
-            <FactList items={extraFacts} />
-          </div>
-        ) : null}
+        <FactList items={extraFacts} />
 
         {visibleItems(legalFacts).length > 0 ? (
           <details className="odm-or-req-legal">
@@ -181,6 +169,6 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
           </details>
         ) : null}
       </div>
-    </section>
+    </Card>
   )
 }

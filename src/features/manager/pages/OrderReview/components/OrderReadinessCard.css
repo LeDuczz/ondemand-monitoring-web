@@ -1,3 +1,6 @@
+.odm-or-readiness {
+  container-type: inline-size;
+}
 .odm-or-readiness-verdict {
   padding: 4px 10px;
   border-radius: 999px;
@@ -12,12 +15,12 @@
   gap: 8px;
 }
 .odm-or-readiness-verdict.is-ok {
-  background: var(--or-green-soft, #e3f5ea);
-  color: var(--or-green, #178a4c);
+  background: var(--or-green-soft);
+  color: var(--or-green);
 }
 .odm-or-readiness-verdict.is-blocked {
-  background: var(--or-amber-soft, #fff4d6);
-  color: var(--or-amber-fg, #8a5a00);
+  background: var(--or-amber-soft);
+  color: var(--or-amber-fg);
 }
 .odm-or-readiness-body {
   display: grid;
@@ -25,7 +28,7 @@
 }
 .odm-or-readiness-col {
   min-width: 0;
-  padding: 12px 16px;
+  padding: var(--ui-space-4) var(--ui-space-6);
 }
 .odm-or-readiness-col + .odm-or-readiness-col {
   border-left: 1px solid var(--or-border);
@@ -94,24 +97,24 @@
   background: var(--or-tx3);
 }
 .odm-or-readiness-list > li.is-pass .odm-or-readiness-dot {
-  background: var(--or-green, #178a4c);
+  background: var(--or-green);
 }
 .odm-or-readiness-list > li.is-warn .odm-or-readiness-dot {
-  background: #e09b12;
+  background: var(--ui-warning);
 }
 .odm-or-readiness-list > li.is-fail .odm-or-readiness-dot {
-  background: var(--or-red, #d92d20);
+  background: var(--or-red);
 }
 .odm-or-readiness-list > li.is-pass em {
-  background: var(--or-green-soft, #e3f5ea);
-  color: var(--or-green, #178a4c);
+  background: var(--or-green-soft);
+  color: var(--or-green);
 }
 .odm-or-readiness-list > li.is-warn em {
-  background: var(--or-amber-soft, #fff4d6);
-  color: var(--or-amber-fg, #8a5a00);
+  background: var(--or-amber-soft);
+  color: var(--or-amber-fg);
 }
 .odm-or-readiness-list > li.is-fail em {
-  color: var(--or-red, #d92d20);
+  color: var(--or-red);
 }
 .odm-or-readiness-tag {
   display: inline-block !important;
@@ -125,11 +128,6 @@
   vertical-align: 1px;
 }
 .odm-or-readiness-meta {
-  font-size: 11.5px !important;
-}
-.odm-or-readiness-guidance {
-  margin-top: 5px !important;
-  color: #9a6700 !important;
   font-size: 11.5px !important;
 }
 .odm-or-readiness-note {
@@ -150,10 +148,10 @@
 }
 .odm-or-readiness-choices {
   display: inline-flex;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ui-border-strong);
   border-radius: 8px;
   overflow: hidden;
-  background: #f8fafc;
+  background: var(--ui-surface-2);
   box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
 }
 .odm-or-readiness-choices button {
@@ -181,8 +179,8 @@
   opacity: 0.6;
 }
 .odm-or-readiness-choices button:not(:disabled):hover {
-  background: #eef4ff;
-  color: var(--or-primary-fg, #1d4ed8);
+  background: var(--ui-primary-soft);
+  color: var(--or-primary-fg);
 }
 .odm-or-readiness-choices button:not(:disabled):active {
   transform: translateY(1px);
@@ -190,24 +188,24 @@
 .odm-or-readiness-choices button:focus-visible {
   position: relative;
   z-index: 1;
-  outline: 2px solid var(--or-primary, #2563eb);
+  outline: 2px solid var(--or-primary);
   outline-offset: -2px;
 }
 .odm-or-readiness-choices button.is-pass.is-on {
-  background: var(--or-green, #178a4c);
-  color: #fff;
+  background: var(--or-green);
+  color: var(--ui-on-primary);
   font-weight: 700;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
 }
 .odm-or-readiness-choices button.is-warn.is-on {
-  background: #d88908;
-  color: #fff;
+  background: var(--ui-warning);
+  color: var(--ui-on-primary);
   font-weight: 700;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
 }
 .odm-or-readiness-choices button.is-fail.is-on {
-  background: var(--or-red, #d92d20);
-  color: #fff;
+  background: var(--or-red);
+  color: var(--ui-on-primary);
   font-weight: 700;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
 }
@@ -215,21 +213,21 @@
   margin: 0 16px 12px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: #fef2f2;
-  color: #991b1b;
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-text);
   font-size: 13px;
 }
 .odm-or-readiness-blocking {
   margin: 0;
   padding: 10px 16px 12px 34px;
-  border-top: 1px solid var(--or-amber-border, #f0cf6a);
+  border-top: 1px solid var(--or-amber-border);
   border-radius: 0 0 12px 12px;
-  background: var(--or-amber-soft, #fff4d6);
-  color: var(--or-amber-fg, #8a5a00);
+  background: var(--or-amber-soft);
+  color: var(--or-amber-fg);
   font-size: 12.5px;
   line-height: 1.5;
 }
-@media (max-width: 1100px) {
+@container (max-width: 760px) {
   .odm-or-readiness-body {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -249,5 +247,6 @@
   .odm-or-readiness-list > li > em,
   .odm-or-readiness-choices {
     grid-column: 2;
+    justify-self: start;
   }
 }

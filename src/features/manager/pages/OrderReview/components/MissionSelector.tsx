@@ -28,7 +28,7 @@ export function MissionSelector({
   drafts: Record<string, { dirty: boolean; busy: boolean }>
   onSelect: (id: string) => void
 }) {
-  const { t } = useI18n(missionSelectorMessages)
+  const { t, locale } = useI18n(missionSelectorMessages)
 
   return (
     <nav className="odm-workspace-selector" aria-label={t.missionsInTheOrder}>
@@ -77,6 +77,7 @@ export function MissionSelector({
               {planningSchedule(
                 mission.scheduledStartAt,
                 mission.scheduledEndAt,
+                locale,
               )}
             </small>
             <span>

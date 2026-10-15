@@ -9,6 +9,8 @@ export const readinessHeaderMessages = defineMessages({
   en: {
     approvalConditions: 'Approval conditions',
     conMucManagerCanXac: (a0: string | number | null | undefined) =>
-      `${a0} items the manager must confirm remain`,
+      Number(a0) === 1
+        ? '1 item the manager must confirm remains'
+        : `${a0} items the manager must confirm remain`,
   },
 })

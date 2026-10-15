@@ -190,7 +190,6 @@
     padding-left: 56px;
   }
 }
-.odm-planning-heading,
 .odm-planning-actions {
   display: flex;
   align-items: center;
@@ -253,48 +252,6 @@
 .odm-workspace-panels .odm-planning-mission {
   margin-top: 0;
 }
-.odm-resource-assignment {
-  margin-top: 16px;
-}
-.odm-resource-assignment h4 {
-  margin: 0 0 12px;
-}
-.odm-resource-assignment fieldset {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.odm-resource-assignment label {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  font-size: 13px;
-}
-.odm-resource-assignment label small {
-  color: var(--tx3);
-}
-.odm-resource-assignment select {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 40px;
-  border: 1px solid var(--bd);
-  border-radius: 6px;
-  background: var(--sf);
-  color: var(--tx);
-  padding: 10px 12px;
-  font: inherit;
-}
-.odm-resource-assignment legend {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-.odm-resource-assignment fieldset {
-  margin: 0 0 20px;
-}
-.odm-resource-assignment .odm-resource-device {
-  grid-template-columns: minmax(0, 1fr);
-}
 @media (max-width: 900px) {
   .odm-planning-workspace {
     grid-template-columns: minmax(0, 1fr);
@@ -304,8 +261,7 @@
   }
 }
 @media (max-width: 540px) {
-  .odm-workspace-selector,
-  .odm-resource-assignment fieldset {
+  .odm-workspace-selector {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -483,7 +439,7 @@
   gap: 8px;
 }
 .odm-planning-stop {
-  border-top: 1px solid var(--border, #dbe2ea);
+  border-top: 1px solid var(--border);
   margin-top: 16px;
   padding-top: 12px;
 }
@@ -495,7 +451,7 @@
 }
 .odm-planning-item small {
   display: block;
-  color: var(--tx3, #64748b);
+  color: var(--tx3);
 }
 .odm-planning textarea,
 .odm-planning-stop textarea {
@@ -514,7 +470,7 @@
   padding: 0;
 }
 .odm-planning-notice {
-  background: var(--sf3, #f1f5f9);
+  background: var(--sf3);
   padding: 12px;
   border-radius: 8px;
 }
@@ -588,21 +544,6 @@
 }
 .odm-planning-adjustment > button {
   margin: 4px 8px 0 0;
-}
-.odm-stop-progress {
-  display: grid;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin: 16px 0;
-}
-.odm-stop-progress li {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-}
-.odm-stop-progress li > span:first-child {
-  color: var(--tx2);
 }
 .odm-manager-stop-flow > .odm-btn {
   margin-top: 12px;

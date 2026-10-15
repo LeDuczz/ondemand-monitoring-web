@@ -11,6 +11,8 @@ export const reviewReadinessStageMessages = defineMessages({
     approvalConditions: 'Approval conditions',
     nextChecklistQuote: 'Next: Checklist & quote',
     conMucBatBuocChua: (a0: string | number | null | undefined) =>
-      `${a0} required items are not confirmed yet — the quote cannot be approved`,
+      Number(a0) === 1
+        ? '1 required item is not confirmed yet — the quote cannot be approved'
+        : `${a0} required items are not confirmed yet — the quote cannot be approved`,
   },
 })

@@ -3,6 +3,7 @@ import {
   addOnItems,
   deliverableSummary,
   requirementItems,
+  useDetailFormat,
 } from './requestDetailHelpers'
 import type { OrderDetail } from '../../types/orders'
 import { useI18n } from '../../../../shared/i18n'
@@ -10,16 +11,18 @@ import { requestDeliverablesMessages } from './RequestDeliverables.messages'
 
 export function RequestDeliverables({ order }: { order: OrderDetail }) {
   const { t } = useI18n(requestDeliverablesMessages)
+  const f = useDetailFormat()
 
   return (
     <>
       {order.deliverables?.map((deliverable, index) => {
-        const items = requirementItems(deliverable.requirement)
+        const items = requirementItems(f, deliverable.requirement)
         const summary = deliverableSummary(
+          f,
           deliverable.requirement,
           deliverable.deliverableTypeName,
         )
-        const addOns = addOnItems(deliverable.requirement)
+        const addOns = addOnItems(f, deliverable.requirement)
         return (
           <div
             key={deliverable.id || `${deliverable.deliverableTypeId}-${index}`}

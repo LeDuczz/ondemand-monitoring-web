@@ -3,6 +3,7 @@ import { missionsApi } from '../../api/missionsApi'
 import type { MissionResultApprovalStatus } from '../../../mission/types/mission'
 import { OrderIcon } from './OrderIcon'
 import { missionResultReviewErrorMessage } from './missionResultReviewReadiness'
+import { missionResultReviewReadinessMessages } from './missionResultReviewReadiness.messages'
 import './MissionResultReviewCard.css'
 import { useI18n } from '../../../../shared/i18n'
 import { missionResultReviewActionsMessages } from './MissionResultReviewActions.messages'
@@ -23,6 +24,7 @@ export function MissionResultReviewActions({
   onReviewed: () => void
 }) {
   const { t } = useI18n(missionResultReviewActionsMessages)
+  const { t: readinessT } = useI18n(missionResultReviewReadinessMessages)
 
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -57,7 +59,7 @@ export function MissionResultReviewActions({
       {status === 'APPROVED' && <p>{t.theResultHasBeenApproved}</p>}
       {error != null && (
         <p className="odm-result-review-error" role="alert">
-          {missionResultReviewErrorMessage(error)}
+          {missionResultReviewErrorMessage(error, readinessT)}
         </p>
       )}
       {status === 'PENDING_MANAGER_APPROVAL' && (

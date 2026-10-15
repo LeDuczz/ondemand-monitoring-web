@@ -1,7 +1,14 @@
 import type { FlightAreaAssessment } from '../../../../customer/api/customerApi'
 import { useI18n } from '../../../../../shared/i18n'
 import { areaCheckHeadMessages } from './AreaCheckHead.messages'
+import { StatusBadge, type UiTone } from '../../../../../shared/components/ui'
 import { getLanguage } from '../../../../../shared/i18n'
+
+function riskTone(level: string): UiTone {
+  if (level === 'HIGH_RISK') return 'danger'
+  if (level === 'NEEDS_REVIEW') return 'warning'
+  return 'success'
+}
 
 function riskLabel(level: string) {
   if (level === 'HIGH_RISK')
@@ -20,16 +27,11 @@ export function AreaCheckHead({
 
   return (
     <div className="odm-or-area-check-head">
-      <div>
-        <h2>{t.monitoringAreaCheck}</h2>
-        <p>{t.giupXacDinhKhuVuc}</p>
-      </div>
+      <h2>{t.monitoringAreaCheck}</h2>
       {data ? (
-        <span
-          className={`odm-or-area-risk is-${data.assessment.level.toLowerCase()}`}
-        >
+        <StatusBadge tone={riskTone(data.assessment.level)}>
           {riskLabel(data.assessment.level)}
-        </span>
+        </StatusBadge>
       ) : null}
     </div>
   )

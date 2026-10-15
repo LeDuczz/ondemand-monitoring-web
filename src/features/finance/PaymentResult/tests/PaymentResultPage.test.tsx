@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { financeApi } from './api'
-import { PaymentResultPage } from './PaymentResultPage'
-import type { Payment } from './types'
+import { financeApi } from '../../api'
+import { PaymentResultPage } from '../PaymentResultPage'
+import type { Payment } from '../../types'
 
 const pending: Payment = {
   id: 'payment-1',
@@ -44,7 +44,11 @@ describe('PaymentResultPage VNPAY return', () => {
       expect(refreshPayment).toHaveBeenCalledWith('1760000000000123456'),
     )
     expect(await screen.findByText('Thanh toán thành công')).toBeInTheDocument()
-    expect(screen.getByText('Tiền đặt cọc đã được ghi nhận. Kế hoạch thực hiện đang được chuẩn bị.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Tiền đặt cọc đã được ghi nhận. Kế hoạch thực hiện đang được chuẩn bị.',
+      ),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/backend/i)).not.toBeInTheDocument()
     expect(screen.queryByText('SUCCESS')).not.toBeInTheDocument()
   })

@@ -77,10 +77,7 @@ export const financeApi = {
         method: 'POST',
       },
     ),
-  getPaymentByReference: (
-    transactionReference: string,
-    signal?: AbortSignal,
-  ) =>
+  getPaymentByReference: (transactionReference: string, signal?: AbortSignal) =>
     apiRequest<Payment>(
       `/api/payments/by-reference/${encodeURIComponent(transactionReference)}`,
       { signal },

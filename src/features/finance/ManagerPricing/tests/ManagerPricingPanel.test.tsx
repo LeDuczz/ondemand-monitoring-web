@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { financeApi } from './api'
-import { ManagerPricingPanel } from './ManagerPricingPanel'
+import { financeApi } from '../../api'
+import { ManagerPricingPanel } from '../ManagerPricingPanel'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -199,20 +199,32 @@ describe('ManagerPricingPanel', () => {
       currentQuote: null,
       quoteHistory: [],
     })
-    const reviewItem = vi.spyOn(financeApi, 'reviewChecklist').mockResolvedValue({
-      id: 'package-1',
-      sourceChecklistId: 'template-1',
-      content: 'Package requirement',
-      displayOrder: 1,
-      sourceType: 'SERVICE_TEMPLATE',
-      reviewStatus: 'INCLUDED',
-      managerNote: null,
-    })
+    const reviewItem = vi
+      .spyOn(financeApi, 'reviewChecklist')
+      .mockResolvedValue({
+        id: 'package-1',
+        sourceChecklistId: 'template-1',
+        content: 'Package requirement',
+        displayOrder: 1,
+        sourceType: 'SERVICE_TEMPLATE',
+        reviewStatus: 'INCLUDED',
+        managerNote: null,
+      })
     const draft = {
-      id: 'quote-1', orderId: 'order-1', version: 1, status: 'DRAFT' as const,
-      packagePrice: 5_000_000, additionalAmount: 0, discountAmount: 0,
-      adjustmentAmount: 0, totalAmount: 5_000_000, managerNote: null,
-      approvedByName: null, approvedAt: null, acceptedAt: null, items: [],
+      id: 'quote-1',
+      orderId: 'order-1',
+      version: 1,
+      status: 'DRAFT' as const,
+      packagePrice: 5_000_000,
+      additionalAmount: 0,
+      discountAmount: 0,
+      adjustmentAmount: 0,
+      totalAmount: 5_000_000,
+      managerNote: null,
+      approvedByName: null,
+      approvedAt: null,
+      acceptedAt: null,
+      items: [],
     }
     vi.spyOn(financeApi, 'saveDraft').mockResolvedValue(draft)
     const approve = vi.spyOn(financeApi, 'approveQuote').mockResolvedValue({

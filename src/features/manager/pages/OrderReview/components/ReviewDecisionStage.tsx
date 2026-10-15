@@ -1,4 +1,4 @@
-import { ManagerPricingPanel } from '../../../../finance/ManagerPricingPanel'
+import { ManagerPricingPanel } from '../../../../finance/ManagerPricing'
 import { OrderApprovalActions } from './OrderApprovalActions'
 import { ReadOnlyScope } from './ReadOnlyScope'
 import { ReviewStageActions } from './ReviewStageActions'

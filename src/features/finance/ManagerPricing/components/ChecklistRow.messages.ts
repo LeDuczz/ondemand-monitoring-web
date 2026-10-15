@@ -1,0 +1,38 @@
+import { defineMessages } from '../../../../shared/i18n'
+
+export const checklistRowMessages = defineMessages({
+  vi: {
+    classify: 'Phân loại',
+    notReviewed: 'Chưa review',
+    reviewed: 'Đã review',
+    included: 'Đã gồm trong gói',
+    additional: 'Tính phí bổ sung',
+    duplicate: 'Trùng lặp',
+    rejected: 'Từ chối',
+    extraPrice: 'Đơn giá thêm (VND)',
+    surcharge: 'Phụ phí',
+    templateSource: 'Yêu cầu mặc định của gói',
+    customSource: 'Yêu cầu thêm của khách hàng',
+    noteAria: (content: string) => `Ghi chú: ${content}`,
+    managerNote: 'Ghi chú manager',
+    classifyFirst: 'Phân loại nội dung trước',
+    notePlaceholder: 'Lý do hoặc phạm vi xử lý',
+  },
+  en: {
+    classify: 'Classification',
+    notReviewed: 'Not reviewed',
+    reviewed: 'Reviewed',
+    included: 'Included in package',
+    additional: 'Additional charge',
+    duplicate: 'Duplicate',
+    rejected: 'Rejected',
+    extraPrice: 'Extra unit price (VND)',
+    surcharge: 'Surcharge',
+    templateSource: 'Default package requirement',
+    customSource: 'Customer-added requirement',
+    noteAria: (content: string) => `Note: ${content}`,
+    managerNote: 'Manager note',
+    classifyFirst: 'Classify the item first',
+    notePlaceholder: 'Reason or handling scope',
+  },
+})

@@ -1,0 +1,152 @@
+import { StatusBadge, toUiTone } from '../../../../../shared/components/ui'
+import {
+  missionStatusLabel,
+  missionStatusTone,
+} from '../../../../../shared/lib/statusTone'
+import type { MissionResponse } from '../../../types/missions'
+import type { ExecutionPlan } from '../../../types/planning'
+import { STAFF_ROLE_LABELS } from '../../../components/common/missionDetailHelpers'
+import { assignmentReadiness } from '../../../lib/assignmentReadiness'
+import { planningSchedule } from '../../../components/common/planningSchedule'
+import { useI18n } from '../../../../../shared/i18n'
+import { missionSelectorMessages } from './MissionSelector.messages'
+
+export function MissionSelector({
+  missions,
+  plan,
+  selectedId,
+  noChecklist,
+  disabled,
+  drafts,
+  onSelect,
+}: {
+  missions: MissionResponse[]
+  plan: ExecutionPlan
+  selectedId?: string
+  noChecklist: boolean
+  disabled: boolean
+  drafts: Record<string, { dirty: boolean; busy: boolean }>
+  onSelect: (id: string) => void
+}) {
+  const { t } = useI18n(missionSelectorMessages)
+
+  return (
+    <nav className="odm-workspace-selector" aria-label={t.missionsInTheOrder}>
+      {missions.map((mission) => {
+        const scope = plan.missions.find(
+          (item) => item.missionId === mission.id,
+        )
+        const {
+          missingRoles: missing,
+          device,
+          complete,
+        } = assignmentReadiness(mission)
+        const historical =
+          !scope ||
+          ['COMPLETED', 'CANCELLED', 'FAILED'].includes(mission.status)
+        const count = scope?.assignmentCount ?? 0
+        const checklistEditable =
+          plan.planStatus === 'DRAFT' &&
+          scope?.finalizedPlanRevision == null &&
+          mission.status === 'RESOURCE_ASSIGNING'
+        const resourcesEditable =
+          plan.planStatus === 'FINALIZED' &&
+          (scope?.finalizedPlanRevision ?? 0) > 0 &&
+          ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+            mission.status,
+          )
+        return (
+          <button
+            type="button"
+            key={mission.id}
+            className={`odm-workspace-choice ${selectedId === mission.id ? 'is-selected' : ''}`}
+            aria-pressed={selectedId === mission.id}
+            disabled={disabled}
+            onClick={() => onSelect(mission.id)}
+          >
+            <strong>{mission.missionCode || 'Mission'}</strong>
+            <StatusBadge
+              tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}
+            >
+              {missionStatusLabel[mission.status] ?? t.unknown}
+            </StatusBadge>
+            <span className="odm-workspace-scope">
+              {scope?.scopeLabel || t.missionHistory}
+            </span>
+            <small>
+              {planningSchedule(
+                mission.scheduledStartAt,
+                mission.scheduledEndAt,
+              )}
+            </small>
+            <span>
+              {historical
+                ? t.historyViewOnly
+                : scope?.finalizedPlanRevision != null
+                  ? t.finalized
+                  : t.planning}
+            </span>
+            <span>
+              {count > 0 || noChecklist ? '✓' : '⚠'}
+              {t.checklist} {noChecklist ? t.noRequirements : t.muc(count)}
+            </span>
+            <span>{device ? t.deviceAssigned : t.noDeviceYet}</span>
+            <span>
+              {missing.length ? '⚠' : '✓'}
+              {t.staff}
+              {4 - missing.length}
+              {t.n4Roles}
+            </span>
+            {!historical && (
+              <small>
+                {plan.planStatus === 'DRAFT'
+                  ? count > 0 || noChecklist
+                    ? t.checklistAssigned
+                    : t.checklistAssignmentNeeded
+                  : device && !missing.length
+                    ? t.resourcesFullyAssigned
+                    : t.moreResourcesNeeded}
+              </small>
+            )}
+            {missing.length > 0 && !historical && (
+              <small>
+                {t.missing}{' '}
+                {missing.map((role) => STAFF_ROLE_LABELS[role]).join(', ')}
+              </small>
+            )}
+            {mission.replacesMissionId && (
+              <small>
+                {t.replacement}{' '}
+                {missions.find((m) => m.id === mission.replacesMissionId)
+                  ?.missionCode || t.previousMission}
+              </small>
+            )}
+            {missions
+              .filter((m) => m.replacesMissionId === mission.id)
+              .map((m) => (
+                <small key={m.id}>
+                  {t.replacedBy}
+                  {m.missionCode}
+                </small>
+              ))}
+            {(drafts[mission.id]?.dirty ||
+              drafts[`resources:${mission.id}`]?.dirty) && (
+              <small>{t.unsavedChangesAreKeptIn}</small>
+            )}
+            <span className="odm-workspace-choice-action">
+              {historical
+                ? t.viewHistory
+                : checklistEditable
+                  ? t.checklistAssignment
+                  : !resourcesEditable
+                    ? t.viewAssignment
+                    : complete
+                      ? t.editAssignment
+                      : t.continueAssigning}
+            </span>
+          </button>
+        )
+      })}
+    </nav>
+  )
+}

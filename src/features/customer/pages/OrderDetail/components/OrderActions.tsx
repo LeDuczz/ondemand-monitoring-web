@@ -1,5 +1,5 @@
 import { MockDataBadge } from '../../../../../shared/components/ui'
-import { OrderIcon } from '../../../../manager/components/orderReview/OrderIcon'
+import { OrderIcon } from '../../../../manager/components/common/OrderIcon'
 import { useI18n } from '../../../../../shared/i18n'
 import type { OrderDetailView } from '../../../lib/orders/types'
 import { customerHref } from '../../../routes'

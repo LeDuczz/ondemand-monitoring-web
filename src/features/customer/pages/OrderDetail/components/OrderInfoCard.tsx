@@ -1,6 +1,6 @@
 import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
-import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
+import { OrderIcon, type OrderIconName } from '../../../../manager/components/common/OrderIcon'
 import { useTimeslotLabel } from '../../../hooks/usePreferredTimes'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { fmtDateTime } from '../../../lib/orderStatus'

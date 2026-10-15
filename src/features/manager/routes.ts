@@ -8,7 +8,7 @@
 //  dashboard        MNG-01   orderQueue      MNG-02   orderReview   MNG-03
 //  missionCreate    MNG-04   missionDispatch MNG-05   schedule      MNG-06
 //  live             MNG-07   missions        MNG-08   drones        MNG-09
-//  maintenance      MNG-10   media           MNG-11   reports       MNG-12
+//  maintenance      MNG-10
 
 export const MANAGER_ROOT = '#portal/manager'
 
@@ -25,8 +25,6 @@ export type ManagerRoute =
   | { screen: 'missions'; missionId?: string }
   | { screen: 'drones'; droneId?: string }
   | { screen: 'maintenance' }
-  | { screen: 'media' }
-  | { screen: 'reports' }
   | { screen: 'support' }
   | { screen: 'notFound' }
 
@@ -46,8 +44,6 @@ export const managerScreenCode: Record<ManagerScreen, string> = {
   missions: 'MNG-08',
   drones: 'MNG-09',
   maintenance: 'MNG-10',
-  media: 'MNG-11',
-  reports: 'MNG-12',
   support: 'MNG-SUP',
   notFound: '',
 }
@@ -75,7 +71,11 @@ export function parseManagerRoute(hash: string): ManagerRoute {
       if (tail.length === 2 && tail[1] === 'mission')
         return { screen: 'missionCreate', orderId: tail[0] }
       if (tail.length === 3 && tail[1] === 'replacement')
-        return { screen: 'missionCreate', orderId: tail[0], replacesMissionId: tail[2] }
+        return {
+          screen: 'missionCreate',
+          orderId: tail[0],
+          replacesMissionId: tail[2],
+        }
       if (tail.length === 0) return { screen: 'orderQueue' }
       return { screen: 'notFound' }
     }
@@ -106,10 +106,6 @@ export function parseManagerRoute(hash: string): ManagerRoute {
       return tail.length === 0
         ? { screen: 'maintenance' }
         : { screen: 'notFound' }
-    case 'media':
-      return tail.length === 0 ? { screen: 'media' } : { screen: 'notFound' }
-    case 'reports':
-      return tail.length === 0 ? { screen: 'reports' } : { screen: 'notFound' }
     case 'support':
       return tail.length === 0 ? { screen: 'support' } : { screen: 'notFound' }
     default:
@@ -152,10 +148,6 @@ export function managerHref(route: ManagerRoute): string {
         : `${MANAGER_ROOT}/drones`
     case 'maintenance':
       return `${MANAGER_ROOT}/maintenance`
-    case 'media':
-      return `${MANAGER_ROOT}/media`
-    case 'reports':
-      return `${MANAGER_ROOT}/reports`
     case 'support':
       return `${MANAGER_ROOT}/support`
     case 'notFound':

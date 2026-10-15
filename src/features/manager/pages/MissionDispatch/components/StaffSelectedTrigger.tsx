@@ -1,0 +1,113 @@
+import { StaffAvatar } from './StaffAvatar'
+import { StaffStatusBadge } from './StaffStatusBadge'
+import type { AvailableOperator } from '../../../../staff/api/operatorApi'
+import type { RefObject } from 'react'
+import { useI18n } from '../../../../../shared/i18n'
+import { staffSelectedTriggerMessages } from './StaffSelectedTrigger.messages'
+
+export function StaffSelectedTrigger({
+  triggerRef,
+  openPicker,
+  selectedStaff,
+  onRemove,
+}: {
+  triggerRef: RefObject<HTMLButtonElement | null>
+  openPicker: () => void
+  selectedStaff: AvailableOperator[]
+  onRemove: (staffId: string) => void
+}) {
+  const { t } = useI18n(staffSelectedTriggerMessages)
+  return (
+    <button
+      ref={triggerRef}
+      type="button"
+      onClick={openPicker}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '36px minmax(0, 1fr) auto',
+        gap: 10,
+        alignItems: 'center',
+        width: '100%',
+        minHeight: 74,
+        padding: 10,
+        border: '1px solid #bfdbfe',
+        borderRadius: 12,
+        background: '#eff6ff',
+        textAlign: 'left',
+        cursor: 'pointer',
+      }}
+    >
+      <span style={{ display: 'grid', gap: 8, gridColumn: '1 / -1' }}>
+        {selectedStaff.map((selected) => (
+          <span
+            key={selected.id}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '36px minmax(0, 1fr) auto',
+              gap: 10,
+              alignItems: 'center',
+            }}
+          >
+            <StaffAvatar staff={selected} />
+            <span style={{ minWidth: 0 }}>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#0f172a',
+                }}
+              >
+                {selected.fullName}
+              </span>
+              <span
+                style={{
+                  display: 'block',
+                  marginTop: 2,
+                  fontSize: 12,
+                  color: '#64748b',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {selected.email}
+              </span>
+              <span style={{ display: 'block', marginTop: 5 }}>
+                <StaffStatusBadge />
+              </span>
+            </span>
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={t.clearStaff}
+              onClick={(event) => {
+                event.stopPropagation()
+                onRemove(selected.id)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onRemove(selected.id)
+                }
+              }}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+                display: 'inline-grid',
+                placeItems: 'center',
+                color: '#64748b',
+                background: '#fff',
+                border: '1px solid #dbeafe',
+                fontSize: 18,
+              }}
+            >
+              ×
+            </span>
+          </span>
+        ))}
+      </span>
+    </button>
+  )
+}

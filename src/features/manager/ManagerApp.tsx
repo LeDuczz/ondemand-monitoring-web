@@ -3,20 +3,18 @@ import { useEffect, useState } from 'react'
 import { StateView } from '../../shared/components/odm/StateView'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
 import { managerApi } from './api/dashboardApi'
-import { ManagerLayout } from './components/ManagerLayout'
-import { CreateMissionPage } from './pages/CreateMissionPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { DispatchPage } from './pages/DispatchPage'
-import { DronesPage } from './pages/DronesPage'
-import { LivePage } from './pages/LivePage'
-import { MaintenancePage } from './pages/MaintenancePage'
-import { MediaPage } from './pages/MediaPage'
-import { MissionDetailPage } from './pages/MissionDetailPage'
-import { MissionsListPage } from './pages/MissionsListPage'
-import { ReportsPage } from './pages/ReportsPage'
-import { OrderReviewPage } from './pages/OrderReviewPage'
-import { QueuePage } from './pages/QueuePage'
-import { SchedulePage } from './pages/SchedulePage'
+import { ManagerLayout } from './ManagerLayout'
+import { MissionCreatePage } from './pages/MissionCreate'
+import { DashboardPage } from './pages/Dashboard'
+import { MissionDispatchPage } from './pages/MissionDispatch'
+import { DronesPage } from './pages/Drones'
+import { LivePage } from './pages/Live'
+import { MaintenancePage } from './pages/Maintenance'
+import { MissionDetailPage } from './pages/MissionDetail'
+import { MissionsPage } from './pages/Missions'
+import { OrderReviewPage } from './pages/OrderReview'
+import { OrderQueuePage } from './pages/OrderQueue'
+import { SchedulePage } from './pages/Schedule'
 import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
 import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 
@@ -43,8 +41,6 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
   missions: 'Nhiệm vụ',
   drones: 'Đội drone',
   maintenance: 'Bảo trì',
-  media: 'Media và giao kết quả',
-  reports: 'Báo cáo',
   support: 'Trung tâm Hỗ trợ',
   notFound: 'Không tìm thấy',
 }
@@ -76,7 +72,6 @@ export function ManagerApp() {
     ? {
         pendingOrders: data.navCounts?.pendingOrders ?? 0,
         openMaintenance: data.navCounts?.openMaintenanceTickets ?? 0,
-        mediaNeedsAction: data.navCounts?.mediaNeedsAction ?? 0,
       }
     : undefined
 
@@ -93,21 +88,23 @@ export function ManagerApp() {
 
 function renderScreen(route: ManagerRoute) {
   if (route.screen === 'dashboard') return <DashboardPage />
-  if (route.screen === 'orderQueue') return <QueuePage />
+  if (route.screen === 'orderQueue') return <OrderQueuePage />
   if (route.screen === 'orderReview')
     return <OrderReviewPage key={route.orderId} orderId={route.orderId} />
   if (route.screen === 'missionCreate')
     return (
-      <CreateMissionPage
+      <MissionCreatePage
         orderId={route.orderId}
         replacesMissionId={route.replacesMissionId}
       />
     )
   if (route.screen === 'missionDispatch')
-    return <DispatchPage key={route.missionId} missionId={route.missionId} />
+    return (
+      <MissionDispatchPage key={route.missionId} missionId={route.missionId} />
+    )
   if (route.screen === 'missionSetup')
     return (
-      <DispatchPage
+      <MissionDispatchPage
         key={route.missionId}
         missionId={route.missionId}
         setupMode
@@ -124,11 +121,9 @@ function renderScreen(route: ManagerRoute) {
       />
     )
   if (route.screen === 'missions')
-    return <MissionsListPage missionId={route.missionId} />
+    return <MissionsPage missionId={route.missionId} />
   if (route.screen === 'drones') return <DronesPage droneId={route.droneId} />
   if (route.screen === 'maintenance') return <MaintenancePage />
-  if (route.screen === 'media') return <MediaPage />
-  if (route.screen === 'reports') return <ReportsPage />
   if (route.screen === 'support') return <StaffSupportDashboardPage />
 
   // route.screen === 'notFound'

@@ -1,0 +1,114 @@
+import { planningError } from '../../lib/planningErrors'
+import { assignmentReadiness } from '../../lib/assignmentReadiness'
+import { planningSchedule } from './planningSchedule'
+import type { UseApiQueryState } from '../../../../shared/hooks/useApiQuery'
+import type { ExecutionPlan } from '../../types/planning'
+import type { MissionResponse } from '../../types/missions'
+import type { OrderDetail } from '../../types/orders'
+import type { SafeStop } from '../../types/planning'
+import type { Dispatch } from 'react'
+import type { SetStateAction } from 'react'
+import { useI18n } from '../../../../shared/i18n'
+import { missionSelectionCardMessages } from './MissionSelectionCard.messages'
+
+export function MissionSelectionCard({
+  busy,
+  query,
+  data,
+  eligible,
+  orderId,
+  candidateId,
+  setCandidateId,
+}: {
+  busy: boolean
+  query: UseApiQueryState<{
+    plan: ExecutionPlan
+    missions: MissionResponse[]
+    order: OrderDetail
+    stops: (SafeStop | null)[]
+  }>
+  data:
+    | {
+        plan: ExecutionPlan
+        missions: MissionResponse[]
+        order: OrderDetail
+        stops: (SafeStop | null)[]
+      }
+    | undefined
+  eligible: (id: string) => boolean
+  orderId: string
+  candidateId: string | null
+  setCandidateId: Dispatch<SetStateAction<string | null>>
+}) {
+  const { t } = useI18n(missionSelectionCardMessages)
+
+  return (
+    <section className="odm-or-card" aria-label={t.selectAMissionToAssign}>
+      <header className="odm-or-card-head">
+        <span className="odm-or-card-title">{t.selectAMissionToAssign}</span>
+        <button
+          className="odm-or-btn-outline"
+          disabled={busy || query.loading}
+          onClick={query.reload}
+        >
+          {t.refreshMissions}
+        </button>
+      </header>
+      <div className="odm-or-card-body">
+        {query.loading && <p role="status">{t.loadingMissions}</p>}
+        {query.error ? <p role="alert">{planningError(query.error)}</p> : null}
+        <div className="odm-or-role-grid">
+          {data?.missions.map((mission) => {
+            const readiness = assignmentReadiness(mission)
+            const count = 4 - readiness.missingRoles.length
+            const device = readiness.device
+            const historical = ['COMPLETED', 'CANCELLED'].includes(
+              mission.status,
+            )
+            const label = historical
+              ? t.historyViewOnly
+              : readiness.complete
+                ? t.resourcesAssigned
+                : data.plan.planStatus !== 'FINALIZED' ||
+                    !data.plan.missions.find((m) => m.missionId === mission.id)
+                      ?.finalizedPlanRevision
+                  ? t.planNotFinalized
+                  : !eligible(mission.id)
+                    ? t.notEligibleForAssignment
+                    : device && count === 4
+                      ? t.awaitingAssignmentConfirmation
+                      : t.daPhanCong4Vai(count)
+            return (
+              <label className="odm-or-role-card" key={mission.id}>
+                <span>
+                  <input
+                    type="radio"
+                    name={`mission-for-${orderId}`}
+                    value={mission.id}
+                    checked={candidateId === mission.id}
+                    disabled={busy || !eligible(mission.id)}
+                    onChange={() => setCandidateId(mission.id)}
+                  />{' '}
+                  {mission.missionCode}
+                </span>
+                <span>
+                  {
+                    data.plan.missions.find((m) => m.missionId === mission.id)
+                      ?.scopeLabel
+                  }
+                </span>
+                <small>
+                  {planningSchedule(
+                    mission.scheduledStartAt,
+                    mission.scheduledEndAt,
+                  )}
+                </small>
+                <small>{label}</small>
+              </label>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}

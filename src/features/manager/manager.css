@@ -3429,37 +3429,196 @@ a.odm-or-btn {
   margin-top: 22px;
 }
 
-/* ---------- Mission list (odm-or-*) ---------- */
+/* ---------- Mission list (mng-*, built on --ui tokens) ---------- */
 
-.odm-or-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.mng-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-4);
 }
 
-.odm-or-filter {
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--or-border);
-  border-radius: 999px;
-  background: var(--or-card);
-  color: var(--or-tx2);
+.mng-stats .ui-stat {
+  padding: var(--ui-space-3) var(--ui-space-4);
+}
+
+.mng-stats .ui-stat-value {
+  font-size: 26px;
+  margin-top: var(--ui-space-1);
+}
+
+.mng-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-4);
+}
+
+.mng-search {
+  flex: 1 1 220px;
+  max-width: 340px;
+  min-width: 0;
+}
+
+.mng-seg {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+  gap: 2px;
+  background: var(--ui-surface-2);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+}
+
+.mng-seg-btn {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-2);
   font: inherit;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.odm-or-filter:hover {
-  border-color: var(--or-primary);
-  color: var(--or-primary);
+.mng-seg-btn:hover {
+  color: var(--ui-text);
 }
 
-.odm-or-filter.is-active {
-  background: var(--or-primary);
-  border-color: var(--or-primary);
-  color: #fff;
+.mng-seg-btn.is-active {
+  background: var(--ui-surface);
+  color: var(--ui-primary-text);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--ui-border);
 }
+
+.mng-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mng-order-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.mng-order-item:last-child {
+  border-bottom: 0;
+}
+
+.mng-order-text {
+  min-width: 0;
+}
+
+.mng-order-item .odm-btn {
+  flex: none;
+}
+
+.mng-link-btn {
+  margin-top: var(--ui-space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mng-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  color: var(--ui-text);
+}
+
+.mng-table th {
+  position: relative;
+  padding: var(--ui-space-3) var(--ui-space-4);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-text-3);
+  background: var(--ui-surface-2);
+  border-bottom: 1px solid var(--ui-border);
+  white-space: nowrap;
+}
+
+.mng-table td {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+  vertical-align: middle;
+}
+
+.mng-table tbody tr {
+  cursor: pointer;
+}
+
+.mng-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.mng-table tbody tr:hover td {
+  background: var(--ui-surface-2);
+}
+
+.mng-table tbody tr.is-selected td {
+  background: var(--ui-primary-soft);
+}
+
+.mng-cell-main {
+  font-weight: 600;
+  color: var(--ui-text);
+}
+
+.mng-cell-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ui-text-3);
+}
+
+.mng-cell-sub a {
+  color: inherit;
+}
+
+.mng-nowrap {
+  white-space: nowrap;
+}
+
+.mng-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.mng-actions .odm-btn + .odm-btn {
+  margin-left: var(--ui-space-2);
+}
+
+.mng-actions a.odm-btn {
+  text-decoration: none;
+}
+
+.mng-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Mission list (odm-or-*) ---------- */
 
 .odm-or-notice {
   display: flex;
@@ -3630,10 +3789,6 @@ a.odm-or-btn {
   font-size: 12px;
 }
 
-.odm-or-table-card {
-  overflow: hidden;
-}
-
 .odm-or-table-scroll {
   overflow-x: auto;
 }
@@ -3676,11 +3831,6 @@ a.odm-or-btn {
 
 .odm-or-table tbody tr.is-selected {
   background: var(--or-primary-soft);
-}
-
-.odm-or-table td.odm-or-table-strong {
-  color: var(--or-tx);
-  font-weight: 600;
 }
 
 /* Anchors styled as buttons must keep their own text colour */
@@ -4060,11 +4210,6 @@ a.odm-or-btn-outline {
   font-size: 11px;
 }
 
-.odm-or-table-action {
-  text-align: right;
-  white-space: nowrap;
-}
-
 .odm-or-table td {
   white-space: nowrap;
 }
@@ -4095,26 +4240,7 @@ a.odm-or-btn-outline {
   min-width: 0;
 }
 
-.odm-or-list-layout.has-panel .odm-or-table th,
-.odm-or-list-layout.has-panel .odm-or-table td {
-  padding: 11px 10px;
-  font-size: 13px;
-}
-
-.odm-or-table td.odm-or-table-action {
-  padding-right: 14px;
-}
-
-@media (max-width: 1500px) {
-  .odm-or-list-layout.has-panel .odm-or-table th:nth-child(3),
-  .odm-or-list-layout.has-panel .odm-or-table td:nth-child(3),
-  .odm-or-list-layout.has-panel .odm-or-table th:nth-child(5),
-  .odm-or-list-layout.has-panel .odm-or-table td:nth-child(5) {
-    display: none;
-  }
-}
-
-/* Mission detail page + list "view" actions */
+/* Mission detail page */
 .odm-or-back {
   display: inline-flex;
   align-items: center;
@@ -4184,10 +4310,6 @@ a.odm-or-btn-outline {
 a.odm-or-btn.odm-or-view-btn {
   color: #fff;
   text-decoration: none;
-}
-
-.odm-or-table-action .odm-or-btn + .odm-or-btn {
-  margin-left: 8px;
 }
 
 .odm-or-media-list li {

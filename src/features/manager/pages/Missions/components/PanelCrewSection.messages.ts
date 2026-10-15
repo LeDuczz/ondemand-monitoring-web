@@ -9,6 +9,8 @@ export const panelCrewSectionMessages = defineMessages({
       empty: 'Mission này chưa có thiết bị hoặc nhân sự được gán.',
     },
     assignedStaff: 'Nhân sự đã phân công',
+    staffAccepted: (accepted: number, total: number) =>
+      `${accepted}/${total} đã nhận`,
   },
   en: {
     assignments: {
@@ -18,5 +20,7 @@ export const panelCrewSectionMessages = defineMessages({
       empty: 'No device or staff has been assigned to this mission yet.',
     },
     assignedStaff: 'Assigned staff',
+    staffAccepted: (accepted: number, total: number) =>
+      `${accepted}/${total} accepted`,
   },
 })

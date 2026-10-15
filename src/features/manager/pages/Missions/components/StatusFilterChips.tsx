@@ -1,37 +1,52 @@
 import type { StatusChip } from '../missionsHelpers'
-import type { Dispatch } from 'react'
-import type { SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
 import { statusFilterChipsMessages } from './StatusFilterChips.messages'
 
+const STATUS_CHIPS: StatusChip[] = [
+  'ALL',
+  'IN_FLIGHT',
+  'COMPLETED',
+  'FAILED',
+  'CREATED',
+]
+
+/** Toolbar: code search + segmented status filter (same options as before). */
 export function StatusFilterChips({
   statusFilter,
   setStatusFilter,
+  search,
+  setSearch,
 }: {
   statusFilter: StatusChip
   setStatusFilter: Dispatch<SetStateAction<StatusChip>>
+  search: string
+  setSearch: (value: string) => void
 }) {
   const { t } = useI18n(statusFilterChipsMessages)
-  const statusChips: Array<{ value: StatusChip; label: string }> = [
-    { value: 'ALL', label: t.statusChips.ALL },
-    { value: 'IN_FLIGHT', label: t.statusChips.IN_FLIGHT },
-    { value: 'COMPLETED', label: t.statusChips.COMPLETED },
-    { value: 'FAILED', label: t.statusChips.FAILED },
-    { value: 'CREATED', label: t.statusChips.CREATED },
-  ]
   return (
-    <div className="odm-or-filters" role="group" aria-label={t.title}>
-      {statusChips.map((chip) => (
-        <button
-          key={chip.value}
-          type="button"
-          className={`odm-or-filter${statusFilter === chip.value ? ' is-active' : ''}`}
-          aria-pressed={statusFilter === chip.value}
-          onClick={() => setStatusFilter(chip.value)}
-        >
-          {chip.label}
-        </button>
-      ))}
+    <div className="mng-toolbar">
+      <input
+        className="odm-inp mng-search"
+        type="search"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t.searchPlaceholder}
+        aria-label={t.searchAria}
+      />
+      <div className="mng-seg" role="group" aria-label={t.title}>
+        {STATUS_CHIPS.map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={`mng-seg-btn${statusFilter === value ? ' is-active' : ''}`}
+            aria-pressed={statusFilter === value}
+            onClick={() => setStatusFilter(value)}
+          >
+            {t.statusChips[value as keyof typeof t.statusChips]}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

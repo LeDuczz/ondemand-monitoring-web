@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react'
 import { managerHref } from '../../../routes'
 import { formatOrderCode } from '../../../components/common/format'
 import {
@@ -8,11 +9,16 @@ import {
   type DeliveryStatus,
 } from '../missionsHelpers'
 import { missionStopLabel } from '../../../../mission/lib/missionOperationalState'
-import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
-import { missionStatusTone } from '../../../../../shared/lib/statusTone'
+import {
+  StatusBadge,
+  toUiTone,
+} from '../../../../../shared/components/ui'
+import {
+  getMissionStatusLabel,
+  missionStatusTone,
+} from '../../../../../shared/lib/statusTone'
 import { assignmentReadiness } from '../../../lib/assignmentReadiness'
 import type { MissionCalendarItem } from '../../../types/missions'
-import type { Dispatch, SetStateAction } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
 import { missionRowMessages } from './MissionRow.messages'
 
@@ -29,77 +35,72 @@ export function MissionRow({
   deliveryStatuses: Record<string, DeliveryStatus>
   orderDeliveryStatuses: Record<string, DeliveryStatus>
 }) {
-  const { t, locale } = useI18n(missionRowMessages)
+  const { t, lang, locale } = useI18n(missionRowMessages)
+  const stopLabel = missionStopLabel(m)
+  const readiness = assignmentReadiness(m)
+  const delivery = deliveryStatuses[m.id] ?? 'NOT_READY'
+  const orderDelivery = orderDeliveryStatuses[m.orderId]
   return (
     <tr
       className={selectedMission === m.id ? 'is-selected' : undefined}
       onClick={() => setSelectedMission(selectedMission === m.id ? null : m.id)}
     >
-      <td className="odm-or-table-strong odm-mono">{m.missionCode}</td>
       <td>
-        <a
-          href={managerHref({
-            screen: 'orderReview',
-            orderId: m.orderId,
-          })}
-          onClick={(event) => event.stopPropagation()}
-          aria-label={t.openTheOrderPlanOf(m.missionCode)}
-        >
-          {m.orderCode ? formatOrderCode(m.orderCode) : t.openOrderPlan}
-        </a>
+        <div className="mng-cell-main odm-mono">{m.missionCode}</div>
+        <div className="mng-cell-sub">
+          <a
+            href={managerHref({ screen: 'orderReview', orderId: m.orderId })}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={t.openTheOrderPlanOf(m.missionCode)}
+          >
+            {m.orderCode ? formatOrderCode(m.orderCode) : t.openOrderPlan}
+          </a>
+          {m.attemptNumber != null && ` · ${t.attempt(m.attemptNumber)}`}
+        </div>
       </td>
-      <td>{m.attemptNumber == null ? '—' : `#${m.attemptNumber}`}</td>
-      <td>{formatScheduled(m.scheduledStartAt, m.scheduledEndAt, locale)}</td>
+      <td className="mng-nowrap">
+        {formatScheduled(m.scheduledStartAt, m.scheduledEndAt, locale)}
+      </td>
       <td>
         {m.droneCode
           ? `${m.droneCode}${m.droneName ? ` ${m.droneName}` : ''}`
           : '—'}
       </td>
-      <td>{formatStaffSummary(m.staffAssignments)}</td>
+      <td className="mng-nowrap">
+        {formatStaffSummary(m.staffAssignments, t.staffAccepted)}
+      </td>
       <td>
-        {missionStopLabel(m) ? (
-          <StatusBadge tone="yellow">{missionStopLabel(m)}</StatusBadge>
+        {stopLabel ? (
+          <StatusBadge tone="warning">{stopLabel}</StatusBadge>
         ) : (
-          <StatusBadge
-            kind="mission"
-            status={m.status}
-            tone={missionStatusTone[m.status]}
-          />
+          <StatusBadge tone={toUiTone(missionStatusTone[m.status])}>
+            {getMissionStatusLabel(m.status, lang)}
+          </StatusBadge>
         )}
-        {assignmentReadiness(m).label && (
-          <small className="odm-mission-meta">
-            {assignmentReadiness(m).label}
-          </small>
+        {readiness.label && (
+          <div className="mng-cell-sub">{readiness.label}</div>
         )}
       </td>
       <td>
-        <StatusBadge tone={deliveryTone(deliveryStatuses[m.id] ?? 'NOT_READY')}>
-          {deliveryLabel(deliveryStatuses[m.id] ?? 'NOT_READY', t)}
+        <StatusBadge tone={deliveryTone(delivery)}>
+          {deliveryLabel(delivery, t)}
         </StatusBadge>
-        {orderDeliveryStatuses[m.orderId] && (
-          <small className="odm-mission-meta">
-            {deliveryLabel(orderDeliveryStatuses[m.orderId], t)}
-          </small>
+        {orderDelivery && (
+          <div className="mng-cell-sub">{deliveryLabel(orderDelivery, t)}</div>
         )}
       </td>
-      <td className="odm-or-table-action">
+      <td className="mng-actions">
         <a
-          className="odm-or-btn odm-or-btn-sm odm-or-btn-outline"
-          href={managerHref({
-            screen: 'missionDetail',
-            missionId: m.id,
-          })}
+          className="odm-btn odm-btn-sm"
+          href={managerHref({ screen: 'missionDetail', missionId: m.id })}
           onClick={(event) => event.stopPropagation()}
         >
           {t.view}
         </a>
-        {assignmentReadiness(m).needsSetup && (
+        {readiness.needsSetup && (
           <a
-            className="odm-or-btn odm-or-btn-sm odm-or-btn-blue"
-            href={managerHref({
-              screen: 'missionSetup',
-              missionId: m.id,
-            })}
+            className="odm-btn odm-btn-sm odm-btn-p"
+            href={managerHref({ screen: 'missionSetup', missionId: m.id })}
             onClick={(event) => event.stopPropagation()}
           >
             {t.continueSetup}

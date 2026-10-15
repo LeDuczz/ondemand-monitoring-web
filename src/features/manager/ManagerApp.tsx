@@ -16,6 +16,8 @@ import { OrderReviewPage } from './pages/OrderReview'
 import { OrderQueuePage } from './pages/OrderQueue'
 import { SchedulePage } from './pages/Schedule'
 import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
+import { useI18n } from '../../shared/i18n'
+import { managerAppMessages } from './ManagerApp.messages'
 import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 
 function useHash(): string {
@@ -26,23 +28,6 @@ function useHash(): string {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
   return hash
-}
-
-const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
-  dashboard: 'Dashboard',
-  orderQueue: 'Đơn hàng',
-  orderReview: 'Đơn hàng',
-  missionCreate: 'Đơn hàng',
-  missionDispatch: 'Nhiệm vụ',
-  missionSetup: 'Thiết lập nhiệm vụ',
-  missionDetail: 'Chi tiết nhiệm vụ',
-  schedule: 'Lịch nhiệm vụ',
-  live: 'Giám sát realtime',
-  missions: 'Nhiệm vụ',
-  drones: 'Đội drone',
-  maintenance: 'Bảo trì',
-  support: 'Trung tâm Hỗ trợ',
-  notFound: 'Không tìm thấy',
 }
 
 /**
@@ -58,6 +43,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
  */
 export function ManagerApp() {
   const hash = useHash()
+  const { t } = useI18n(managerAppMessages)
   const route = parseManagerRoute(hash)
   const navCounts = useApiQuery((signal) => managerApi.getDashboard(signal), [])
 
@@ -78,15 +64,18 @@ export function ManagerApp() {
   return (
     <ManagerLayout
       route={route}
-      breadcrumb={breadcrumbLabel[route.screen]}
+      breadcrumb={t.breadcrumb[route.screen]}
       counts={counts}
     >
-      {renderScreen(route)}
+      {renderScreen(route, t)}
     </ManagerLayout>
   )
 }
 
-function renderScreen(route: ManagerRoute) {
+function renderScreen(
+  route: ManagerRoute,
+  t: ReturnType<typeof useI18n<typeof managerAppMessages.vi>>['t'],
+) {
   if (route.screen === 'dashboard') return <DashboardPage />
   if (route.screen === 'orderQueue') return <OrderQueuePage />
   if (route.screen === 'orderReview')
@@ -130,14 +119,14 @@ function renderScreen(route: ManagerRoute) {
   return (
     <StateView
       state="empty"
-      title="Không tìm thấy màn hình"
-      description="Đường dẫn này không tồn tại trong khu vực Staff."
+      title={t.notFoundTitle}
+      description={t.notFoundDescription}
       action={
         <a
           className="odm-btn odm-btn-p"
           href={managerHref({ screen: 'dashboard' })}
         >
-          Về Dashboard
+          {t.backToDashboard}
         </a>
       }
     />

@@ -27,7 +27,7 @@ export function PanelCrewSection({
         <span className="odm-or-crew-title">{t.assignments.title}</span>
         {staffAssignments.length > 0 ? (
           <span className="odm-or-crew-count">
-            {formatStaffSummary(staffAssignments)}
+            {formatStaffSummary(staffAssignments, t.staffAccepted)}
           </span>
         ) : null}
       </div>

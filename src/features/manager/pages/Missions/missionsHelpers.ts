@@ -1,5 +1,6 @@
 import type { DeliveryStatus as WorkflowDeliveryStatus } from '../../../delivery/types'
 import type { MissionStatus } from '../../../../shared/types/domain'
+import type { UiTone } from '../../../../shared/components/ui'
 import type {
   MissionResultApprovalStatus,
   MissionStaffAssignmentResponse,
@@ -13,9 +14,13 @@ export type DeliveryStatus =
   | 'NOT_READY'
   | 'LOADING'
 
-type DeliveryLabelMessages = {
+export type DeliveryLabelMessages = {
   deliveryStatus: {
     none: string
+    approved: string
+    pendingApproval: string
+    rejected: string
+    noResult: string
     processing: string
     readyForPreview: string
     customerReview: string
@@ -48,52 +53,51 @@ export function formatScheduled(
   return `${dateStr} ${startTime}–${endTime}`
 }
 
+/** `acceptedLabel` comes from the caller's messages (e.g. "2/4 accepted"). */
 export function formatStaffSummary(
-  assignments?: MissionStaffAssignmentResponse[],
+  assignments: MissionStaffAssignmentResponse[] | undefined,
+  acceptedLabel: (accepted: number, total: number) => string,
 ) {
   const active = assignments ?? []
   if (active.length === 0) return '—'
   const accepted = active.filter(
     (item) => item.responseStatus === 'ACCEPTED',
   ).length
-  return `${accepted}/${active.length} đã nhận`
+  return acceptedLabel(accepted, active.length)
 }
 
-export function deliveryTone(
-  status: DeliveryStatus,
-): 'gray' | 'blue' | 'green' | 'red' {
-  if (status === 'APPROVED') return 'green'
-  if (status === 'PENDING_MANAGER_APPROVAL') return 'blue'
-  if (status === 'REJECTED') return 'red'
-  if (status === 'DELIVERED') return 'green'
-  if (status === 'REVISION_REQUESTED') return 'red'
+export function deliveryTone(status: DeliveryStatus): UiTone {
+  if (status === 'APPROVED') return 'success'
+  if (status === 'PENDING_MANAGER_APPROVAL') return 'info'
+  if (status === 'REJECTED') return 'danger'
+  if (status === 'DELIVERED') return 'success'
+  if (status === 'REVISION_REQUESTED') return 'danger'
   if (
     ['CUSTOMER_REVIEW', 'FINAL_PAYMENT_PENDING', 'READY_FOR_DELIVERY'].includes(
       status,
     )
   )
-    return 'blue'
-  return 'gray'
+    return 'info'
+  return 'neutral'
 }
 
 export function deliveryLabel(
   status: DeliveryStatus,
   t: DeliveryLabelMessages,
 ) {
-  if (status === 'APPROVED') return 'Kết quả đã duyệt'
-  if (status === 'PENDING_MANAGER_APPROVAL') return 'Kết quả chờ duyệt'
-  if (status === 'REJECTED') return 'Kết quả bị từ chối'
-  if (status === 'NO_RESULT') return 'Chưa có kết quả'
-  if (status === 'PROCESSING') return t.deliveryStatus.processing
-  if (status === 'READY_FOR_MANAGER_REVIEW')
-    return t.deliveryStatus.readyForPreview
-  if (status === 'CUSTOMER_REVIEW') return t.deliveryStatus.customerReview
-  if (status === 'REVISION_REQUESTED') return t.deliveryStatus.revisionRequested
-  if (status === 'FINAL_PAYMENT_PENDING')
-    return t.deliveryStatus.finalPaymentPending
+  const d = t.deliveryStatus
+  if (status === 'APPROVED') return d.approved
+  if (status === 'PENDING_MANAGER_APPROVAL') return d.pendingApproval
+  if (status === 'REJECTED') return d.rejected
+  if (status === 'NO_RESULT') return d.noResult
+  if (status === 'PROCESSING') return d.processing
+  if (status === 'READY_FOR_MANAGER_REVIEW') return d.readyForPreview
+  if (status === 'CUSTOMER_REVIEW') return d.customerReview
+  if (status === 'REVISION_REQUESTED') return d.revisionRequested
+  if (status === 'FINAL_PAYMENT_PENDING') return d.finalPaymentPending
   if (status === 'PAYMENT_CONFIRMED' || status === 'READY_FOR_DELIVERY')
-    return t.deliveryStatus.readyForDelivery
-  if (status === 'DELIVERED') return t.deliveryStatus.delivered
-  if (status === 'LOADING') return t.deliveryStatus.loading
-  return t.deliveryStatus.none
+    return d.readyForDelivery
+  if (status === 'DELIVERED') return d.delivered
+  if (status === 'LOADING') return d.loading
+  return d.none
 }

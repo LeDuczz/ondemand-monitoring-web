@@ -10,7 +10,8 @@ import { useI18n } from '../../../../shared/i18n'
 import { missionsPageMessages } from './MissionsPage.messages'
 import { type DeliveryStatus, type StatusChip } from './missionsHelpers'
 import { DetailPanel } from './components/DetailPanel'
-import { MissionsHeader } from './components/MissionsHeader'
+import { MissionsStats } from './components/MissionsStats'
+import { PageHeader } from '../../../../shared/components/ui'
 import { StatusFilterChips } from './components/StatusFilterChips'
 import { ApprovedOrdersSection } from './components/ApprovedOrdersSection'
 import { MissionsLoadError } from './components/MissionsLoadError'
@@ -24,6 +25,7 @@ type MissionsListPageProps = {
 export function MissionsPage({ missionId }: MissionsListPageProps) {
   const { t } = useI18n(missionsPageMessages)
   const [statusFilter, setStatusFilter] = useState<StatusChip>('ALL')
+  const [search, setSearch] = useState('')
   const [selectedMission, setSelectedMission] = useState<string | null>(
     missionId ?? null,
   )
@@ -50,6 +52,15 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
     [approvedOrdersQuery.data],
   )
   const setupOrders = approvedOrders
+  const visibleMissions = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    if (!needle) return missions
+    return missions.filter((m) =>
+      [m.missionCode, m.orderCode]
+        .filter(Boolean)
+        .some((code) => String(code).toLowerCase().includes(needle)),
+    )
+  }, [missions, search])
   const showApprovedOrders =
     statusFilter === 'ALL' || statusFilter === 'CREATED'
   const selected =
@@ -138,18 +149,26 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
     }
   }, [missionId, missions])
 
+  const ready = !query.loading && !query.error
   return (
     <div className="odm-or">
-      <MissionsHeader title={t.title} query={query} missions={missions} />
-
-      <StatusFilterChips
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
+      <PageHeader
+        title={t.title}
+        subtitle={ready ? t.missionCount(missions.length) : undefined}
       />
+
+      {ready && missions.length > 0 && <MissionsStats missions={missions} />}
 
       <ApprovedOrdersSection
         showApprovedOrders={showApprovedOrders}
         setupOrders={setupOrders}
+      />
+
+      <StatusFilterChips
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        search={search}
+        setSearch={setSearch}
       />
 
       <div
@@ -162,19 +181,21 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
             </div>
           )}
 
-          <MissionsLoadError query={query} />
+          {!query.loading && !!query.error && (
+            <MissionsLoadError onRetry={query.reload} />
+          )}
 
-          <MissionsEmptyState query={query} missions={missions} />
+          {ready && visibleMissions.length === 0 && <MissionsEmptyState />}
 
-          <MissionsTable
-            query={query}
-            missions={missions}
-
-            selectedMission={selectedMission}
-            setSelectedMission={setSelectedMission}
-            deliveryStatuses={deliveryStatuses}
-            orderDeliveryStatuses={orderDeliveryStatuses}
-          />
+          {ready && visibleMissions.length > 0 && (
+            <MissionsTable
+              missions={visibleMissions}
+              selectedMission={selectedMission}
+              setSelectedMission={setSelectedMission}
+              deliveryStatuses={deliveryStatuses}
+              orderDeliveryStatuses={orderDeliveryStatuses}
+            />
+          )}
         </div>
 
         {selected && (

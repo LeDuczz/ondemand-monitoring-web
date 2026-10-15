@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { ApiError } from '../../../shared/api/httpClient'
 import { checklistExecutionApi } from '../api/checklistExecutionApi'
 import {
@@ -144,6 +150,35 @@ describe('MonitoringChecklistSection', () => {
       ),
     )
   })
+  it('shows per-item evidence type, eligible count, remaining count, and wrong-type blockers', async () => {
+    render(
+      <MonitoringChecklistSection
+        {...props}
+        compact
+        data={{
+          ...data,
+          executions: [
+            {
+              ...item,
+              executionStatus: 'COMPLETED',
+              eligibleEvidenceCount: 1,
+              minimumEvidenceCount: 3,
+              requiredEvidenceType: 'VIDEO',
+              blockingReasons: ['EVIDENCE_TYPE_NOT_ELIGIBLE'],
+            },
+          ],
+        }}
+      />,
+    )
+    expect(
+      screen.getByText(/1\/3.*Chỉ video.*còn thiếu 2.*cần đúng loại media/),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByLabelText('Bằng chứng: Yêu cầu lịch sử')).getByText(
+        /Chỉ video/,
+      ),
+    ).toBeInTheDocument()
+  })
   it('renders historical content in displayOrder including assessment, notes and reason', () => {
     render(
       <MonitoringChecklistSection
@@ -179,7 +214,7 @@ describe('MonitoringChecklistSection', () => {
     ).toEqual(['Yêu cầu lịch sử', 'Thứ hai', 'Thứ ba'])
     expect(screen.getByText('Không đạt yêu cầu')).toBeInTheDocument()
     expect(screen.getByText(/Vết nứt/)).toBeInTheDocument()
-    expect(screen.getByText(/Bị che khuất/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Bị che khuất/).length).toBeGreaterThan(0)
     expect(screen.getByText('Chưa sẵn sàng gửi kết quả')).toBeInTheDocument()
   })
   it.each(['IN_PROGRESS', 'COMPLETED'] as const)(

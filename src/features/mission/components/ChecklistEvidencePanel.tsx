@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ApiError } from '../../../shared/api/httpClient'
 import { createPortal } from 'react-dom'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
 import type {
@@ -11,14 +12,43 @@ import './ChecklistEvidencePanel.css'
 export const evidenceReason: Record<EvidenceBlockingReason, string> = {
   EVIDENCE_SOURCE_NOT_ELIGIBLE:
     'Nguồn media không hợp lệ. Bằng chứng hỗ trợ camera drone và ảnh vệ tinh của hệ thống.',
-  EVIDENCE_TYPE_NOT_ELIGIBLE: 'Loại media không được hỗ trợ.',
+  EVIDENCE_TYPE_NOT_ELIGIBLE:
+    'Loại media không phù hợp yêu cầu. Hãy chọn ảnh/video đúng loại.',
   MEDIA_REJECTED: 'Media đã bị từ chối.',
   MEDIA_NOT_VALIDATED: 'Media chưa xác thực thành công.',
   MEDIA_APPROVAL_REQUIRED: 'Cần duyệt media trước khi duyệt kết quả.',
   INSUFFICIENT_EVIDENCE: 'Chưa đủ bằng chứng hợp lệ.',
+  EXECUTION_NOT_COMPLETED:
+    'Checklist item must be marked completed before mission acceptance.',
   EXECUTION_NOT_TERMINAL: 'Mục checklist chưa kết thúc.',
   UNABLE_REASON_REQUIRED: 'Cần lý do không thể xác minh.',
   CHECKLIST_INTEGRITY_INVALID: 'Checklist không khớp snapshot đơn hàng.',
+}
+function matchesEvidenceType(
+  required: MissionChecklistExecution['requiredEvidenceType'],
+  mediaType: string,
+) {
+  switch (required ?? 'IMAGE_OR_VIDEO') {
+    case 'IMAGE':
+      return mediaType === 'IMAGE'
+    case 'VIDEO':
+      return mediaType === 'VIDEO'
+    default:
+      return mediaType === 'IMAGE' || mediaType === 'VIDEO'
+  }
+}
+
+const evidenceTypeLabel = (
+  type?: MissionChecklistExecution['requiredEvidenceType'],
+) => {
+  switch (type ?? 'IMAGE_OR_VIDEO') {
+    case 'IMAGE':
+      return 'Chỉ ảnh'
+    case 'VIDEO':
+      return 'Chỉ video'
+    default:
+      return 'Ảnh hoặc video'
+  }
 }
 const sourceLabel: Record<string, string> = {
   DRONE_CAMERA: 'Camera drone',
@@ -102,9 +132,11 @@ function MissionEvidencePanel({
     try {
       await operation()
       refresh()
-    } catch {
+    } catch (cause) {
       setError(
-        'Không thể cập nhật bằng chứng. Vui lòng làm mới checklist và thử lại.',
+        cause instanceof ApiError && cause.code === 'EVIDENCE_NOT_ELIGIBLE'
+          ? 'Media không phù hợp. Chọn đúng loại ảnh/video và nguồn bằng chứng được hỗ trợ.'
+          : 'Không thể cập nhật bằng chứng. Vui lòng làm mới checklist và thử lại.',
       )
       refresh()
     } finally {
@@ -149,20 +181,32 @@ function MissionEvidencePanel({
     Boolean(item.evidence?.some((link) => link.mediaId === media.mediaId))
   const allAttached = eligible.length > 0 && eligible.every(attached)
   const hasNext = (candidates?.length ?? 0) >= 50
-  const required =
-    item.executionStatus === 'UNABLE_TO_VERIFY'
-      ? 0
-      : (item.minimumEvidenceCount ?? 0)
+  const unableToVerify = item.executionStatus === 'UNABLE_TO_VERIFY'
+  const configuredRequired = item.minimumEvidenceCount ?? 0
   const have = item.eligibleEvidenceCount ?? 0
+  const remaining = Math.max(0, configuredRequired - have)
   const links = item.evidence ?? []
+  const unableExplanation = item.unableToVerifyReason
+    ? `Quy trình ngoại lệ: Miễn nộp bằng chứng do không thể xác minh (Lý do: "${item.unableToVerifyReason}").`
+    : 'Quy trình ngoại lệ: Không thể xác minh được miễn đính kèm bằng chứng (bắt buộc phải có lý do giải trình).'
   const compactBody = (
     <>
       <div className="ce-head">
-        <span>Bằng chứng</span>
+        <span>Bằng chứng · {evidenceTypeLabel(item.requiredEvidenceType)}</span>
         <span className="ce-count">
-          {have} / {required}
+          {have} / {configuredRequired}
         </span>
       </div>
+      {unableToVerify ? (
+        <p className="ce-unable-note">{unableExplanation}</p>
+      ) : remaining > 0 ? (
+        <p className="ce-remaining">Còn thiếu {remaining} bằng chứng hợp lệ</p>
+      ) : null}
+      {item.blockingReasons?.map((reason) => (
+        <p key={reason} className="ce-blocker">
+          {evidenceReason[reason]}
+        </p>
+      ))}
       {links.length > 0 && (
         <ul className="ce-list">
           {links.map((link) => {
@@ -245,9 +289,11 @@ function MissionEvidencePanel({
           })}
         </ul>
       )}
-      {required > 0 && have >= required && (
-        <p className="ce-ok">✓ Đã đủ bằng chứng</p>
-      )}
+      {!unableToVerify &&
+        configuredRequired > 0 &&
+        have >= configuredRequired && (
+          <p className="ce-ok">✓ Đã đủ bằng chứng</p>
+        )}
       {canAttach && (
         <button
           type="button"
@@ -271,13 +317,26 @@ function MissionEvidencePanel({
       ) : (
         <>
           <strong>
-            Bằng chứng hợp lệ: {item.eligibleEvidenceCount ?? 0} /{' '}
-            {item.executionStatus === 'UNABLE_TO_VERIFY'
-              ? 0
-              : (item.minimumEvidenceCount ?? 0)}
+            Bằng chứng hợp lệ: {have} / {configuredRequired} ·{' '}
+            {evidenceTypeLabel(item.requiredEvidenceType)}
           </strong>
+          {unableToVerify && (
+            <p className="ce-unable-note">{unableExplanation}</p>
+          )}
+          {!unableToVerify && remaining > 0 && (
+            <p className="ce-remaining">
+              Còn thiếu {remaining} bằng chứng hợp lệ
+            </p>
+          )}
+          {!unableToVerify &&
+            configuredRequired > 0 &&
+            have >= configuredRequired && (
+              <p className="ce-ok">✓ Đã đủ bằng chứng hợp lệ</p>
+            )}
           {item.blockingReasons?.map((reason) => (
-            <p key={reason}>{evidenceReason[reason]}</p>
+            <p key={reason} className="ce-blocker">
+              {evidenceReason[reason]}
+            </p>
           ))}
           <div className="checklist-evidence-grid">
             {item.evidence?.map((link) => (
@@ -496,6 +555,15 @@ function MissionEvidencePanel({
                         <small className="checklist-candidate-time">
                           {new Date(media.capturedAt).toLocaleString('vi-VN')}
                         </small>
+                        {!matchesEvidenceType(
+                          item.requiredEvidenceType,
+                          media.mediaType,
+                        ) && (
+                          <small>
+                            Loại media không phù hợp yêu cầu (
+                            {evidenceTypeLabel(item.requiredEvidenceType)}).
+                          </small>
+                        )}
                         {!media.eligibleForOperationalReadiness && (
                           <small>
                             {media.ineligibilityReason
@@ -507,7 +575,15 @@ function MissionEvidencePanel({
                       <button
                         type="button"
                         className="odm-btn odm-btn-p"
-                        disabled={busy || !media.attachable || attached(media)}
+                        disabled={
+                          busy ||
+                          !media.attachable ||
+                          attached(media) ||
+                          !matchesEvidenceType(
+                            item.requiredEvidenceType,
+                            media.mediaType,
+                          )
+                        }
                         onClick={() =>
                           void act(async () => {
                             if (attachCandidate) {

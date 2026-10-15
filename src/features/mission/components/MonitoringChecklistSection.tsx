@@ -21,6 +21,18 @@ const statuses: Record<ChecklistExecutionStatus, string> = {
   COMPLETED: 'Đã thực hiện',
   UNABLE_TO_VERIFY: 'Không thể xác minh',
 }
+const evidenceTypeLabel = (
+  type?: MissionChecklistExecution['requiredEvidenceType'],
+) => {
+  switch (type ?? 'IMAGE_OR_VIDEO') {
+    case 'IMAGE':
+      return 'Chỉ ảnh'
+    case 'VIDEO':
+      return 'Chỉ video'
+    default:
+      return 'Ảnh hoặc video'
+  }
+}
 const assessments: Record<ChecklistAssessmentStatus, string> = {
   NOT_ASSESSED: 'Chưa đánh giá',
   COMPLIANT: 'Đạt yêu cầu',
@@ -81,7 +93,11 @@ export function monitoringErrorMessage(error: unknown) {
     if (error.code === 'MISSION_STATUS_INVALID')
       return 'Trạng thái mission đã thay đổi. Vui lòng tải lại.'
     if (error.code === 'CHECKLIST_NOT_READY')
-      return 'Checklist chưa sẵn sàng gửi kết quả. Vui lòng kiểm tra các mục còn lại.'
+      return error.message.includes('EVIDENCE_TYPE_NOT_ELIGIBLE')
+        ? 'Một hoặc nhiều mục cần loại media khác. Chọn và gắn đúng loại ảnh/video theo yêu cầu từng mục, sau đó thử lại.'
+        : error.message.includes('INSUFFICIENT_EVIDENCE')
+          ? 'Chưa đủ bằng chứng hợp lệ. Kiểm tra số lượng hiện tại và yêu cầu từng mục, sau đó bổ sung phần còn thiếu.'
+          : 'Checklist chưa sẵn sàng gửi kết quả. Vui lòng kiểm tra các mục còn lại.'
     if (error.status === 409)
       return 'Dữ liệu đã thay đổi hoặc thao tác chưa đủ điều kiện. Vui lòng tải lại.'
   }
@@ -216,8 +232,18 @@ export function MonitoringChecklistSection({
               const missing =
                 finished &&
                 item.executionStatus === 'COMPLETED' &&
-                (item.eligibleEvidenceCount ?? 0) <
-                  (item.minimumEvidenceCount ?? 0)
+                ((item.eligibleEvidenceCount ?? 0) <
+                  (item.minimumEvidenceCount ?? 0) ||
+                  Boolean(
+                    item.blockingReasons?.some((reason) =>
+                      [
+                        'EVIDENCE_TYPE_NOT_ELIGIBLE',
+                        'MEDIA_REJECTED',
+                        'MEDIA_NOT_VALIDATED',
+                        'EVIDENCE_SOURCE_NOT_ELIGIBLE',
+                      ].includes(reason),
+                    ),
+                  ))
               const tone =
                 item.executionStatus === 'UNABLE_TO_VERIFY'
                   ? 'is-unable'
@@ -253,7 +279,24 @@ export function MonitoringChecklistSection({
                         {item.executionStatus === 'UNABLE_TO_VERIFY'
                           ? 0
                           : (item.minimumEvidenceCount ?? 0)}{' '}
-                        bằng chứng
+                        bằng chứng ·{' '}
+                        {evidenceTypeLabel(item.requiredEvidenceType)}
+                        {item.executionStatus !== 'UNABLE_TO_VERIFY' &&
+                          (item.minimumEvidenceCount ?? 0) >
+                            (item.eligibleEvidenceCount ?? 0) && (
+                            <>
+                              {' '}
+                              · còn thiếu{' '}
+                              {Math.max(
+                                0,
+                                (item.minimumEvidenceCount ?? 0) -
+                                  (item.eligibleEvidenceCount ?? 0),
+                              )}
+                            </>
+                          )}
+                        {item.blockingReasons?.includes(
+                          'EVIDENCE_TYPE_NOT_ELIGIBLE',
+                        ) && ' · cần đúng loại media'}
                       </span>
                     </span>
                     {tone === 'is-current' && (

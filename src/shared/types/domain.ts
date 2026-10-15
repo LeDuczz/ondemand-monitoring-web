@@ -9,6 +9,9 @@
 /** One of the 6 status-colour tones from [BRIEF Phần B]. */
 export type StatusTone = 'gray' | 'yellow' | 'blue' | 'green' | 'orange' | 'red'
 
+/** `order.enums.RequiredEvidenceType` — evidence media type saved per requirement. */
+export type RequiredEvidenceType = 'IMAGE' | 'VIDEO' | 'IMAGE_OR_VIDEO'
+
 export type OrderStatus =
   | 'DRAFT'
   | 'AI_ANALYZED'

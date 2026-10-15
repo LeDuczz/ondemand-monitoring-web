@@ -7,6 +7,7 @@ import type {
   AiVerdict,
   FindingSeverity,
   OrderStatus,
+  RequiredEvidenceType,
 } from '../../../shared/types/domain'
 
 export type OrderCustomerSummary = {
@@ -267,4 +268,7 @@ export type OrderChecklistSnapshot = {
   sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
   content: string
   displayOrder: number
+  /** Optional for historical pre-policy snapshots. */
+  minimumEvidenceCount?: number
+  requiredEvidenceType?: RequiredEvidenceType
 }

@@ -79,7 +79,11 @@ export function staffResultError(error: unknown) {
     if (error.code === 'CHECKLIST_EXECUTION_LOCKED')
       return 'Kết quả đã được gửi hoặc duyệt. Dữ liệu mới đang được cập nhật.'
     if (error.code === 'CHECKLIST_NOT_READY')
-      return 'Checklist chưa hoàn tất hoặc chưa đủ bằng chứng hợp lệ.'
+      return error.message.includes('EVIDENCE_TYPE_NOT_ELIGIBLE')
+        ? 'Một hoặc nhiều mục có media sai loại. Thay bằng đúng loại ảnh/video theo yêu cầu của từng mục.'
+        : error.message.includes('INSUFFICIENT_EVIDENCE')
+          ? 'Chưa đủ bằng chứng hợp lệ theo số lượng yêu cầu. Kiểm tra tiến độ từng mục và bổ sung phần còn thiếu.'
+          : 'Checklist chưa hoàn tất hoặc chưa đủ bằng chứng hợp lệ.'
   }
   return 'Không thể thực hiện thao tác. Dữ liệu mới đang được cập nhật; vui lòng kiểm tra và thử lại.'
 }

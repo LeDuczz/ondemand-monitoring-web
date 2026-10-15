@@ -121,13 +121,24 @@ describe('CreateOrderPage wizard', () => {
         selection === 'empty'
           ? []
           : [
-              { sourceChecklistId: 'catalog-0', expectedChecklistVersion: 10 },
+              {
+                sourceChecklistId: 'catalog-0',
+                expectedChecklistVersion: 10,
+                minimumEvidenceCount: 1,
+                requiredEvidenceType: 'IMAGE_OR_VIDEO',
+              },
               {
                 sourceChecklistId: 'catalog-1',
                 expectedChecklistVersion: 11,
+                minimumEvidenceCount: 1,
+                requiredEvidenceType: 'IMAGE_OR_VIDEO',
                 contentOverride: 'Edited requirement',
               },
-              { contentOverride: 'Custom requirement' },
+              {
+                contentOverride: 'Custom requirement',
+                minimumEvidenceCount: 1,
+                requiredEvidenceType: 'IMAGE_OR_VIDEO',
+              },
             ],
       )
     },

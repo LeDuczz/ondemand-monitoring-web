@@ -5,6 +5,7 @@ import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
 import { normalizeContent, type ChecklistRow } from '../../lib/checklist/types'
 import type { OrderChecklistEditorState } from '../../lib/checklist/useOrderChecklist'
+import type { RequiredEvidenceType } from '../../../../shared/types/domain'
 import './Checklist.css'
 
 /** Rows shown before "show more" in the compact variant. */
@@ -70,160 +71,213 @@ export function ChecklistEditor({
     .map((entry, pos, all) => ({
       ...entry,
       heading:
-        grouped && (pos === 0 || all[pos - 1].row.selected !== entry.row.selected)
+        grouped &&
+        (pos === 0 || all[pos - 1].row.selected !== entry.row.selected)
           ? entry.row.selected
             ? t.groupSelected(selectedTotal)
             : t.groupUnselected(rows.length - selectedTotal)
           : null,
     }))
   const renderRow = (row: ChecklistRow, index: number) => {
-            const normalizedLength = normalizeContent(row.content).length
-            const invalid =
-              row.selected && (normalizedLength < 1 || normalizedLength > 500)
-            const expanded = !compact || editingKey === row.key || invalid
-            if (hiddenCount && index >= COMPACT_VISIBLE && !expanded)
-              return null
-            if (
-              searching &&
-              !expanded &&
-              !row.content.toLowerCase().includes(needle)
-            )
-              return null
-            const checkbox = (
-              <input
-                type="checkbox"
-                className="checklist-check"
-                checked={row.selected}
-                aria-label={t.select(index + 1)}
-                onChange={(event) =>
-                  checklist.change(row.key, {
-                    selected: event.target.checked,
-                  })
-                }
-              />
-            )
-            if (!expanded) {
-              return (
-                <div
-                  className={`checklist-row is-compact${row.selected ? '' : ' is-removed'}`}
-                  key={row.key}
-                >
-                  {checkbox}
-                  <span className="checklist-index">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span
-                    className="checklist-summary"
-                    title={row.content}
-                    onClick={() => {
-                      // Click-to-edit, but never while the user is selecting text.
-                      if (row.selected && !window.getSelection()?.toString())
-                        setEditingKey(row.key)
-                    }}
-                  >
-                    {row.content || t.emptyContent}
-                    {!row.sourceChecklistId && (
-                      <span className="checklist-custom-tag">{t.custom}</span>
-                    )}
-                  </span>
-                  <span className="checklist-length">
-                    {row.content.length} / 500
-                  </span>
-                  <button
-                    type="button"
-                    className="checklist-icon-btn"
-                    aria-label={t.editRow(index + 1)}
-                    title={t.edit}
-                    disabled={!row.selected}
-                    onClick={() => setEditingKey(row.key)}
-                  >
-                    <Icon name="edit" width={16} height={16} aria-hidden="true" />
-                  </button>
-                  {!row.sourceChecklistId && (
-                    <button
-                      type="button"
-                      className="checklist-icon-btn is-danger"
-                      aria-label={`${t.remove} ${index + 1}`}
-                      title={t.remove}
-                      onClick={() => checklist.remove(row.key)}
-                    >
-                      <Icon name="trash" width={16} height={16} aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              )
+    const normalizedLength = normalizeContent(row.content).length
+    const invalid =
+      row.selected && (normalizedLength < 1 || normalizedLength > 500)
+    const expanded = !compact || editingKey === row.key || invalid
+    if (hiddenCount && index >= COMPACT_VISIBLE && !expanded) return null
+    if (searching && !expanded && !row.content.toLowerCase().includes(needle))
+      return null
+    const checkbox = (
+      <input
+        type="checkbox"
+        className="checklist-check"
+        checked={row.selected}
+        aria-label={t.select(index + 1)}
+        onChange={(event) =>
+          checklist.change(row.key, {
+            selected: event.target.checked,
+          })
+        }
+      />
+    )
+    const evidenceRequirements = (
+      <div className="checklist-evidence-requirements">
+        <label>
+          <span className="checklist-evidence-field-label">
+            {t.evidenceCountLabel}
+          </span>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            step={1}
+            value={row.minimumEvidenceCount}
+            disabled={!row.selected}
+            aria-label={t.evidenceCount(index + 1)}
+            onChange={(event) =>
+              checklist.change(row.key, {
+                minimumEvidenceCount:
+                  event.target.value === '' ? 0 : Number(event.target.value),
+              })
             }
-            const length = row.content.length
-            const lengthState =
-              length > 500 ? ' is-over' : length >= 450 ? ' is-near' : ''
-            return (
-              <div
-                className={`checklist-row${row.selected ? '' : ' is-removed'}`}
-                key={row.key}
+          />
+        </label>
+        <label>
+          <span className="checklist-evidence-field-label">
+            {t.evidenceTypeLabel}
+          </span>
+          <select
+            value={row.requiredEvidenceType}
+            disabled={!row.selected}
+            aria-label={t.evidenceType(index + 1)}
+            onChange={(event) =>
+              checklist.change(row.key, {
+                requiredEvidenceType: event.target
+                  .value as RequiredEvidenceType,
+              })
+            }
+          >
+            <option value="IMAGE">{t.image}</option>
+            <option value="VIDEO">{t.video}</option>
+            <option value="IMAGE_OR_VIDEO">{t.imageOrVideo}</option>
+          </select>
+        </label>
+      </div>
+    )
+    if (!expanded) {
+      return (
+        <div
+          className={`checklist-row is-compact${row.selected ? '' : ' is-removed'}`}
+          key={row.key}
+        >
+          {checkbox}
+          <span className="checklist-index">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          <span
+            className="checklist-summary"
+            title={row.content}
+            onClick={() => {
+              // Click-to-edit, but never while the user is selecting text.
+              if (row.selected && !window.getSelection()?.toString())
+                setEditingKey(row.key)
+            }}
+          >
+            {row.content || t.emptyContent}
+            {!row.sourceChecklistId && (
+              <span className="checklist-custom-tag">{t.custom}</span>
+            )}
+          </span>
+          <span className="checklist-evidence-summary">
+            {row.minimumEvidenceCount} ·{' '}
+            {row.requiredEvidenceType === 'IMAGE'
+              ? t.image
+              : row.requiredEvidenceType === 'VIDEO'
+                ? t.video
+                : t.imageOrVideo}
+          </span>
+          <span className="checklist-length checklist-length-with-evidence">
+            {row.content.length} / 500
+          </span>
+          <button
+            type="button"
+            className="checklist-icon-btn"
+            aria-label={t.editRow(index + 1)}
+            title={t.edit}
+            disabled={!row.selected}
+            onClick={() => setEditingKey(row.key)}
+          >
+            <Icon name="edit" width={16} height={16} aria-hidden="true" />
+          </button>
+          {!row.sourceChecklistId && (
+            <button
+              type="button"
+              className="checklist-icon-btn is-danger"
+              aria-label={`${t.remove} ${index + 1}`}
+              title={t.remove}
+              onClick={() => checklist.remove(row.key)}
+            >
+              <Icon name="trash" width={16} height={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      )
+    }
+    const length = row.content.length
+    const lengthState =
+      length > 500 ? ' is-over' : length >= 450 ? ' is-near' : ''
+    return (
+      <div
+        className={`checklist-row${row.selected ? '' : ' is-removed'}`}
+        key={row.key}
+      >
+        {checkbox}
+        <div className="checklist-row-main">
+          <div className="checklist-row-heading">
+            <span className="checklist-index">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            {!row.sourceChecklistId && (
+              <span className="checklist-custom-tag">{t.custom}</span>
+            )}
+            {row.sourceChecklistId && (
+              <span className="checklist-custom-tag is-default">
+                {t.defaultItem}
+              </span>
+            )}
+            {!row.sourceChecklistId && (
+              <button
+                type="button"
+                className="checklist-remove"
+                onClick={() => checklist.remove(row.key)}
               >
-                {checkbox}
-                <div className="checklist-row-main">
-                  <div className="checklist-row-heading">
-                    <span className="checklist-index">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    {!row.sourceChecklistId && (
-                      <span className="checklist-custom-tag">{t.custom}</span>
-                    )}
-                    {row.sourceChecklistId && (
-                      <span className="checklist-custom-tag is-default">{t.defaultItem}</span>
-                    )}
-                    {!row.sourceChecklistId && (
-                      <button
-                        type="button"
-                        className="checklist-remove"
-                        onClick={() => checklist.remove(row.key)}
-                      >
-                        {t.remove}
-                      </button>
-                    )}
-                    {row.sourceChecklistId && (
-                      <button
-                        type="button"
-                        className="checklist-remove"
-                        onClick={() => checklist.change(row.key, { selected: !row.selected })}
-                      >
-                        {row.selected ? t.removeDefault : t.restoreDefault}
-                      </button>
-                    )}
-                    {compact && (
-                      <button
-                        type="button"
-                        className="checklist-done"
-                        disabled={invalid}
-                        onClick={() => setEditingKey(null)}
-                      >
-                        {t.done}
-                      </button>
-                    )}
-                  </div>
-                  <label
-                    className="checklist-content-label"
-                    htmlFor={`requirement-${row.key}`}
-                  >
-                    {t.content(index + 1)}
-                  </label>
-                  <textarea
-                    id={`requirement-${row.key}`}
-                    rows={2}
-                    value={row.content}
-                    disabled={!row.selected}
-                    aria-invalid={row.selected && Boolean(checklist.validation)}
-                    onChange={(event) =>
-                      checklist.change(row.key, { content: event.target.value })
-                    }
-                  />
-                  <span className={`checklist-length${lengthState}`}>
-                    {length} / 500
-                  </span>
-                </div>
-              </div>
-            )
+                {t.remove}
+              </button>
+            )}
+            {row.sourceChecklistId && (
+              <button
+                type="button"
+                className="checklist-remove"
+                onClick={() =>
+                  checklist.change(row.key, { selected: !row.selected })
+                }
+              >
+                {row.selected ? t.removeDefault : t.restoreDefault}
+              </button>
+            )}
+            {compact && (
+              <button
+                type="button"
+                className="checklist-done"
+                disabled={invalid}
+                onClick={() => setEditingKey(null)}
+              >
+                {t.done}
+              </button>
+            )}
+          </div>
+          <label
+            className="checklist-content-label"
+            htmlFor={`requirement-${row.key}`}
+          >
+            {t.content(index + 1)}
+          </label>
+          <textarea
+            id={`requirement-${row.key}`}
+            rows={2}
+            value={row.content}
+            disabled={!row.selected}
+            aria-invalid={row.selected && Boolean(checklist.validation)}
+            onChange={(event) =>
+              checklist.change(row.key, { content: event.target.value })
+            }
+          />
+          {evidenceRequirements}
+          <span className={`checklist-length${lengthState}`}>
+            {length} / 500
+          </span>
+        </div>
+      </div>
+    )
   }
   return (
     <div role="region" aria-label={t.title}>
@@ -273,7 +327,8 @@ export function ChecklistEditor({
               disabled={disabled || checklist.selectedCount === 0}
               onClick={() => {
                 for (const row of rows)
-                  if (row.selected) checklist.change(row.key, { selected: false })
+                  if (row.selected)
+                    checklist.change(row.key, { selected: false })
               }}
             >
               {t.deselectAll}
@@ -286,7 +341,11 @@ export function ChecklistEditor({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
-            <div className="checklist-view" role="group" aria-label={t.viewLabel}>
+            <div
+              className="checklist-view"
+              role="group"
+              aria-label={t.viewLabel}
+            >
               <button
                 type="button"
                 aria-pressed={view === 'list'}
@@ -300,7 +359,12 @@ export function ChecklistEditor({
                 aria-pressed={view === 'group'}
                 onClick={() => setView('group')}
               >
-                <Icon name="clipboard" width={14} height={14} aria-hidden="true" />
+                <Icon
+                  name="clipboard"
+                  width={14}
+                  height={14}
+                  aria-hidden="true"
+                />
                 {t.viewGroup}
               </button>
             </div>
@@ -351,7 +415,9 @@ export function ChecklistEditor({
               {t.showLess}
             </button>
           )}
-          {searching && ready && rows.length > 0 &&
+          {searching &&
+            ready &&
+            rows.length > 0 &&
             !rows.some((row) => row.content.toLowerCase().includes(needle)) && (
               <p className="checklist-hint">{t.noMatch}</p>
             )}

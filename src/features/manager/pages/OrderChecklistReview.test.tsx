@@ -24,6 +24,8 @@ const snapshot: OrderChecklistSnapshot[] = [
     sourceType: 'SERVICE_TEMPLATE',
     content: 'Check emergency exits on floors 1-3',
     displayOrder: 2,
+    minimumEvidenceCount: 3,
+    requiredEvidenceType: 'VIDEO',
   },
   {
     id: 'kept',
@@ -118,6 +120,13 @@ describe('Manager historical checklist review through Order API', () => {
             : 'Customer-added requirement',
         ),
       ).toBeInTheDocument()
+      expect(
+        within(region).getByText(
+          language === 'vi'
+            ? 'Bằng chứng: tối thiểu 3 · Video'
+            : 'Evidence: at least 3 · Video',
+        ),
+      ).toBeInTheDocument()
       for (const role of ['button', 'checkbox', 'textbox'])
         expect(within(region).queryByRole(role)).not.toBeInTheDocument()
       expect(within(region).queryByText('C1')).not.toBeInTheDocument()
@@ -131,6 +140,70 @@ describe('Manager historical checklist review through Order API', () => {
       ])
     },
   )
+
+  it('keeps requirement metadata optional for legacy snapshots', async () => {
+    const { readOrderChecklistSnapshot } =
+      await import('../lib/orderChecklistSnapshot')
+    const legacy = readOrderChecklistSnapshot(
+      {
+        checklistItems: [
+          {
+            id: 'legacy',
+            sourceChecklistId: 'C-LEGACY',
+            sourceType: 'SERVICE_TEMPLATE',
+            content: 'Legacy item',
+            displayOrder: 0,
+          },
+        ],
+        checklistSnapshotAt: '2025-01-01T00:00:00Z',
+      },
+      'order-history',
+    )
+    expect(legacy.checklistItems[0]).not.toHaveProperty('minimumEvidenceCount')
+    expect(legacy.checklistItems[0]).not.toHaveProperty('requiredEvidenceType')
+    const partial = readOrderChecklistSnapshot(
+      {
+        checklistItems: [
+          {
+            id: 'partial',
+            sourceChecklistId: null,
+            sourceType: 'CUSTOMER_CUSTOM',
+            content: 'Partial metadata',
+            displayOrder: 0,
+            requiredEvidenceType: 'VIDEO',
+          },
+        ],
+        checklistSnapshotAt: '2025-01-01T00:00:00Z',
+      },
+      'order-history',
+    )
+    expect(partial.checklistItems[0]).toMatchObject({
+      requiredEvidenceType: 'VIDEO',
+    })
+    expect(partial.checklistItems[0]).not.toHaveProperty('minimumEvidenceCount')
+  })
+
+  it('renders the evidence requirement as plain read-only snapshot metadata', async () => {
+    serveOrder({
+      ...backendOrder,
+      checklistItems: [
+        {
+          ...snapshot[2],
+          minimumEvidenceCount: 2,
+          requiredEvidenceType: 'IMAGE',
+        },
+      ],
+    })
+    render(<OrderReviewPage orderId="order-history" />)
+    const region = await screen.findByRole('region', {
+      name: 'Nội dung giám sát',
+    })
+    expect(
+      within(region).getByText('Bằng chứng: tối thiểu 2 · Ảnh'),
+    ).toBeInTheDocument()
+    expect(within(region).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(region).queryByRole('textbox')).not.toBeInTheDocument()
+  })
 
   it('renders a service-only snapshot', async () => {
     serveOrder({
@@ -286,6 +359,8 @@ describe('Manager historical checklist review through Order API', () => {
     { checklistSnapshotAt: 'invalid-date' },
     { checklistItems: [{ ...snapshot[0], displayOrder: -1 }] },
     { checklistItems: [{ ...snapshot[0], content: '' }] },
+    { checklistItems: [{ ...snapshot[0], minimumEvidenceCount: 51 }] },
+    { checklistItems: [{ ...snapshot[0], requiredEvidenceType: 'AUDIO' }] },
     { checklistItems: [{ ...snapshot[0], sourceChecklistId: null }] },
     { checklistItems: [{ ...snapshot[2], sourceChecklistId: 'fake-source' }] },
     { checklistItems: [snapshot[0], snapshot[0]] },

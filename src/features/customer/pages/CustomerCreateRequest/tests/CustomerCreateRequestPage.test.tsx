@@ -88,12 +88,12 @@ describe('CustomerCreateRequestPage', () => {
     expect(createOrder).toHaveBeenCalledTimes(1)
     const payload = createOrder.mock.calls[0][0]
     expect(payload.checklistItems).toEqual([
-      { sourceChecklistId: 'check-svc-construction-1', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-2', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-3', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-4', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-5', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-6', expectedChecklistVersion: 1 },
+      ...Array.from({ length: 6 }, (_, index) => ({
+        sourceChecklistId: `check-svc-construction-${index + 1}`,
+        expectedChecklistVersion: 1,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+      })),
     ])
     expect(payload).toMatchObject({
       title: 'Đơn nhanh',
@@ -150,14 +150,21 @@ describe('CustomerCreateRequestPage', () => {
       {
         sourceChecklistId: 'check-svc-construction-1',
         expectedChecklistVersion: 1,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE_OR_VIDEO',
         contentOverride: 'Kiểm tra tầng 1–3',
       },
-      { sourceChecklistId: 'check-svc-construction-2', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-3', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-4', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-5', expectedChecklistVersion: 1 },
-      { sourceChecklistId: 'check-svc-construction-6', expectedChecklistVersion: 1 },
-      { contentOverride: 'Kiểm tra mũ bảo hộ' },
+      ...Array.from({ length: 5 }, (_, index) => ({
+        sourceChecklistId: `check-svc-construction-${index + 2}`,
+        expectedChecklistVersion: 1,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+      })),
+      {
+        contentOverride: 'Kiểm tra mũ bảo hộ',
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+      },
     ])
   })
 

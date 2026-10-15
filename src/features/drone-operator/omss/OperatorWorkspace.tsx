@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { authSession } from '../../auth/api/authApi'
 import { useI18n } from '../../../shared/i18n'
-import type { Screen, Mission, Drone, FlightToken, NavId } from './types'
+import type { Screen, Mission, Drone, FlightToken, NavId } from '../types/omss'
 import { missionApi } from '../../mission/api/missionApi'
-import { flightControlApi } from './api/flightControlApi'
-import type { FlightControlStatus } from './api/flightControlApi'
+import { flightControlApi } from '../api/flightControlApi'
+import type { FlightControlStatus } from '../api/flightControlApi'
 import { operatorWorkspaceMessages } from './i18n/operatorWorkspace'
 
 import Sidebar from './components/Sidebar'
@@ -15,7 +15,7 @@ import MissionDetail from './screens/MissionDetail'
 import AcceptReject from './screens/AcceptReject'
 import GCSConnection from './screens/GCSConnection'
 import ReadyToFly from './screens/ReadyToFly'
-import InFlightControl from './screens/InFlightControl'
+import InFlightControl from '../pages/Flight/components/InFlightControl'
 import ReturnToBase from './screens/ReturnToBase'
 import PostflightCheck from './screens/PostflightCheck'
 import type { InspectionResult } from './screens/PostflightCheck'
@@ -23,7 +23,6 @@ import MissionCompleted from './screens/MissionCompleted'
 import MissionFailed from './screens/MissionFailed'
 import MediaUpload from './screens/MediaUpload'
 import ManualUpload from './screens/ManualUpload'
-import SimulationZones from './screens/SimulationZones'
 
 type BackendMission = {
   id: string
@@ -838,7 +837,6 @@ export default function OperatorWorkspace() {
               onBack={() => setScreen('media-upload')}
             />
           )}
-          {screen === 'simulation-zones' && <SimulationZones />}
         </div>
       </main>
     </div>

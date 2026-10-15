@@ -69,17 +69,6 @@ function buildGroups(
       ],
     },
     {
-      labelKey: 'flight',
-      items: [
-        {
-          screen: 'zoneMap',
-          labelKey: 'zoneMap',
-          icon: '⛶',
-          route: { screen: 'zoneMap' },
-        },
-      ],
-    },
-    {
       labelKey: 'account',
       items: [
         {
@@ -116,7 +105,6 @@ const activeNavScreen: Record<OperatorScreen, OperatorScreen | null> = {
   devices: 'devices',
   support: 'support',
   maintenance: 'maintenance',
-  zoneMap: 'zoneMap',
   notifications: 'notifications',
   profile: 'profile',
   notFound: null,

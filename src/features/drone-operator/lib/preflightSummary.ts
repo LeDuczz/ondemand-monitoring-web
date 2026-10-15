@@ -11,7 +11,7 @@ export type PreflightSummary = {
 }
 
 /** Aggregates a preflight checklist into pass/fail/in-progress counts. Used by both
- * the PreflightScreen UI and the mock `/preflight` handler so the feasibility rule
+ * the PreflightPage UI and the mock `/preflight` handler so the feasibility rule
  * (all 9 items OK => PASS, any FAIL => blocked) lives in one place. */
 export function preflightSummary(
   items: PreflightItem[],

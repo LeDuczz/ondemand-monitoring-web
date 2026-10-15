@@ -8,7 +8,7 @@ export type PostflightSummary = {
 }
 
 /** Aggregates a postflight checklist into pass/fail counts. `overall_ok` is true
- * only when every seeded item is answered "ok" — used by both PostflightScreen
+ * only when every seeded item is answered "ok" — used by both PostflightPage
  * and the mock `/postflight` handler. */
 export function postflightSummary(
   items: PostflightItem[],

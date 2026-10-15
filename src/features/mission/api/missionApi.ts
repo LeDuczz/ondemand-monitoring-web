@@ -8,7 +8,7 @@ import type {
   DeviceImage,
   DeviceStatus,
 } from '../types/mission'
-import type { FlightControlStatus } from '../../drone-operator/omss/api/flightControlApi'
+import type { FlightControlStatus } from '../../drone-operator/api/flightControlApi'
 
 import { env } from '../../../config/env'
 import { ApiError } from '../../../shared/api/httpClient'

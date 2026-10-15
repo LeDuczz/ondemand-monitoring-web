@@ -14,7 +14,6 @@ export type OperatorRoute =
   | { screen: 'devices' }
   | { screen: 'support' }
   | { screen: 'maintenance' }
-  | { screen: 'zoneMap' }
   | { screen: 'notifications' }
   | { screen: 'profile' }
   | { screen: 'notFound' }
@@ -112,8 +111,6 @@ export function parseOperatorRoute(hash: string): OperatorRoute {
         : { screen: 'notFound' }
     case 'maintenance':
       return { screen: 'maintenance' }
-    case 'zone-map':
-      return { screen: 'zoneMap' }
     case 'notifications':
       return { screen: 'notifications' }
     case 'profile':
@@ -163,8 +160,6 @@ export function operatorHref(route: OperatorRoute): string {
       return `${OPERATOR_ROOT}/technical/devices`
     case 'maintenance':
       return `${OPERATOR_ROOT}/maintenance`
-    case 'zoneMap':
-      return `${OPERATOR_ROOT}/zone-map`
     case 'notifications':
       return `${OPERATOR_ROOT}/notifications`
     case 'profile':

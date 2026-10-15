@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { Mission, Drone } from '../types'
-import { flightControlApi } from '../api/flightControlApi'
+import type { Mission, Drone } from '../../types/omss'
+import { flightControlApi } from '../../api/flightControlApi'
 import { useI18n } from '../../../../shared/i18n'
 import { gcsConnectionMessages } from '../i18n/gcsConnection'
 

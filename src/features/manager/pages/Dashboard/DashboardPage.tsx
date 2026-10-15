@@ -58,14 +58,14 @@ export function DashboardPage() {
   )
 
   return (
-    <div className="odm-mgr-dash">
+    <div>
       <DashboardHeader now={now} />
 
       <KpiRow data={data} />
 
       <DashboardCharts data={data} />
 
-      <div className="odm-mgr-lower">
+      <div className="mng-dash-grid">
         <ActionListCard
           filter={filter}
           setFilter={setFilter}

@@ -95,7 +95,9 @@ describe('DashboardPage', () => {
     expect(
       screen.getByText('Tuần tra an ninh bãi container Cát Lái'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Đang bay')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Đang bay' }),
+    ).toBeInTheDocument()
   })
 
   it('links each KPI card to its related screen', async () => {
@@ -168,6 +170,8 @@ describe('DashboardPage', () => {
 
     expect(screen.getByText('Operations dashboard')).toBeInTheDocument()
     expect(screen.getByText('Needs attention now')).toBeInTheDocument()
-    expect(screen.getByText('In flight')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'In flight' }),
+    ).toBeInTheDocument()
   })
 })

@@ -1,3 +1,4 @@
+import { Card } from '../../../../../shared/components/ui'
 import type { ManagerDashboardResponse } from '../../../types/dashboard'
 import { MissionStatusChart } from './MissionStatusChart'
 import { DroneStatusDonut } from './DroneStatusDonut'
@@ -7,19 +8,13 @@ import { dashboardChartsMessages } from './DashboardCharts.messages'
 export function DashboardCharts({ data }: { data: ManagerDashboardResponse }) {
   const { t } = useI18n(dashboardChartsMessages)
   return (
-    <div className="odm-mgr-charts-row">
-      <div className="odm-card">
-        <div className="odm-card-header">{t.missionsByStatus}</div>
-        <div className="odm-card-body">
-          <MissionStatusChart days={data.missionStatusByDay} />
-        </div>
-      </div>
-      <div className="odm-card">
-        <div className="odm-card-header">{t.droneFleetStatus}</div>
-        <div className="odm-card-body">
-          <DroneStatusDonut data={data.droneStatusBreakdown} />
-        </div>
-      </div>
+    <div className="mng-dash-grid">
+      <Card title={t.missionsByStatus}>
+        <MissionStatusChart days={data.missionStatusByDay} />
+      </Card>
+      <Card title={t.droneFleetStatus}>
+        <DroneStatusDonut data={data.droneStatusBreakdown} />
+      </Card>
     </div>
   )
 }

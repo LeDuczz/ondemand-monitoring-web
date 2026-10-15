@@ -1,41 +1,76 @@
+import { StatCard } from '../../../../../shared/components/ui'
+import type { StatTone } from '../../../../../shared/components/ui'
 import type { ManagerDashboardResponse } from '../../../types/dashboard'
-import { KpiCard } from './KpiCard'
 import { managerHref } from '../../../routes'
 import { useI18n } from '../../../../../shared/i18n'
 import { kpiRowMessages } from './KpiRow.messages'
 
+function Kpi({
+  label,
+  value,
+  hint,
+  tone,
+  href,
+}: {
+  label: string
+  value: string
+  hint: string
+  tone?: StatTone
+  href?: string
+}) {
+  const card = (
+    <StatCard
+      label={label}
+      value={value}
+      hint={hint || undefined}
+      tone={tone}
+    />
+  )
+  return href ? (
+    <a className="mng-stat-link" href={href}>
+      {card}
+    </a>
+  ) : (
+    card
+  )
+}
+
 export function KpiRow({ data }: { data: ManagerDashboardResponse }) {
   const { t } = useI18n(kpiRowMessages)
+  const { kpis } = data
   return (
-    <div className="odm-mgr-kpi-row">
-      <KpiCard
+    <div className="mng-stats">
+      <Kpi
         label={t.kpis.pendingOrders}
-        value={String(data.kpis.pendingOrders.count)}
-        detail={data.kpis.pendingOrders.detail}
+        value={String(kpis.pendingOrders.count)}
+        hint={kpis.pendingOrders.detail}
+        tone={kpis.pendingOrders.count > 0 ? 'warning' : 'default'}
         href={managerHref({ screen: 'orderQueue' })}
       />
-      <KpiCard
+      <Kpi
         label={t.kpis.missionsToday}
-        value={String(data.kpis.missionsToday.count)}
-        detail={data.kpis.missionsToday.detail}
+        value={String(kpis.missionsToday.count)}
+        hint={kpis.missionsToday.detail}
         href={managerHref({ screen: 'missions' })}
       />
-      <KpiCard
+      <Kpi
         label={t.kpis.missionsInFlight}
-        value={String(data.kpis.missionsInFlight.count)}
-        detail={data.kpis.missionsInFlight.detail}
+        value={String(kpis.missionsInFlight.count)}
+        hint={kpis.missionsInFlight.detail}
         href={managerHref({ screen: 'live' })}
       />
-      <KpiCard
+      <Kpi
         label={t.kpis.dronesReady}
-        value={`${data.kpis.dronesReady.ready}/${data.kpis.dronesReady.total}`}
-        detail={data.kpis.dronesReady.detail}
+        value={`${kpis.dronesReady.ready}/${kpis.dronesReady.total}`}
+        hint={kpis.dronesReady.detail}
+        tone="success"
         href={managerHref({ screen: 'drones' })}
       />
-      <KpiCard
+      <Kpi
         label={t.kpis.actionItems}
-        value={String(data.kpis.actionItems.count)}
-        detail={data.kpis.actionItems.detail}
+        value={String(kpis.actionItems.count)}
+        hint={kpis.actionItems.detail}
+        tone={kpis.actionItems.count > 0 ? 'warning' : 'default'}
       />
     </div>
   )

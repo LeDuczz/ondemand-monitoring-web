@@ -1,3 +1,4 @@
+import { Card } from '../../../../../shared/components/ui'
 import type { ManagerDashboardResponse } from '../../../types/dashboard'
 import { formatFlightProgress } from '../../../lib/actionItemAge'
 import { managerHref } from '../../../routes'
@@ -12,54 +13,50 @@ export function FlyingMissionCard({
   now: Date
 }) {
   const { t } = useI18n(flyingMissionCardMessages)
-  return data.flyingMission ? (
-    <div className="odm-card odm-mgr-flying-card">
-      <div className="odm-card-header">{t.flying.title}</div>
-      <div className="odm-card-body odm-mgr-flying-body">
-        <div>
-          <div className="odm-mgr-flying-code odm-mono">
-            {data.flyingMission.code}
-          </div>
-          <div className="odm-mgr-flying-title">{data.flyingMission.title}</div>
-        </div>
-        <div className="odm-mgr-flying-field">
-          <div className="odm-mgr-flying-label">{t.flying.droneOperator}</div>
-          <div>
-            {data.flyingMission.droneCode} · {data.flyingMission.operatorName}
-          </div>
-        </div>
-        <div className="odm-mgr-flying-field">
-          <div className="odm-mgr-flying-label">{t.flying.battery}</div>
-          <div className="odm-mgr-battery">
-            <span className="odm-mgr-battery-track">
-              <span
-                className="odm-mgr-battery-fill"
-                style={{ width: `${data.flyingMission.batteryPercent}%` }}
-              />
-            </span>
-            <span className="odm-tn">{data.flyingMission.batteryPercent}%</span>
-          </div>
-        </div>
-        <div className="odm-mgr-flying-field">
-          <div className="odm-mgr-flying-label">{t.flying.flightTime}</div>
-          <div className="odm-tn">
-            {formatFlightProgress(
-              now,
-              data.flyingMission.startedAtIso,
-              data.flyingMission.plannedDurationMin,
-            )}
-          </div>
-        </div>
+  const mission = data.flyingMission
+  if (!mission) return null
+  return (
+    <Card title={t.flying.title}>
+      <div className="mng-cell-main odm-mono">{mission.code}</div>
+      <div className="mng-cell-sub" style={{ marginBottom: 12 }}>
+        {mission.title}
+      </div>
+      <div className="mng-kv">
+        <span className="mng-kv-label">{t.flying.droneOperator}</span>
+        <span className="mng-kv-value">
+          {mission.droneCode} · {mission.operatorName}
+        </span>
+      </div>
+      <div className="mng-kv">
+        <span className="mng-kv-label">{t.flying.battery}</span>
+        <span className="mng-battery">
+          <span className="mng-battery-track">
+            <span
+              className="mng-battery-fill"
+              style={{ width: `${mission.batteryPercent}%` }}
+            />
+          </span>
+          <span className="odm-tn">{mission.batteryPercent}%</span>
+        </span>
+      </div>
+      <div className="mng-kv">
+        <span className="mng-kv-label">{t.flying.flightTime}</span>
+        <span className="mng-kv-value odm-tn">
+          {formatFlightProgress(
+            now,
+            mission.startedAtIso,
+            mission.plannedDurationMin,
+          )}
+        </span>
+      </div>
+      <div className="mng-flying-cta">
         <a
           className="odm-btn odm-btn-p"
-          href={managerHref({
-            screen: 'live',
-            missionId: data.flyingMission.missionId,
-          })}
+          href={managerHref({ screen: 'live', missionId: mission.missionId })}
         >
           {t.flying.monitor}
         </a>
       </div>
-    </div>
-  ) : null
+    </Card>
+  )
 }

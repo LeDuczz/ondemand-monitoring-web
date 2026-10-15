@@ -7,6 +7,12 @@ export const missionStatusChartMessages = defineMessages({
       `Mission theo trạng thái 7 ngày gần nhất. ${summary}.`,
     caption: 'Mission theo trạng thái, 7 ngày gần nhất',
     day: 'Ngày',
+    series: {
+      completed: 'Hoàn thành',
+      inFlight: 'Đang bay',
+      failed: 'Thất bại',
+      cancelled: 'Đã huỷ',
+    },
   },
   en: {
     empty: 'No missions in the last 7 days',
@@ -14,5 +20,11 @@ export const missionStatusChartMessages = defineMessages({
       `Missions by status, last 7 days. ${summary}.`,
     caption: 'Missions by status, last 7 days',
     day: 'Date',
+    series: {
+      completed: 'Completed',
+      inFlight: 'In flight',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+    },
   },
 })

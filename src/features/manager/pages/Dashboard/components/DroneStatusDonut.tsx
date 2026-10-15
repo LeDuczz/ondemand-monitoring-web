@@ -5,23 +5,15 @@ import { droneStatusDonutMessages } from './DroneStatusDonut.messages'
 import type { DroneStatusBreakdown } from '../../../types/dashboard'
 
 const TONE_COLOR: Record<StatusTone, string> = {
-  gray: 'var(--gray-dot)',
-  yellow: 'var(--yellow-dot)',
-  blue: 'var(--blue-dot)',
-  green: 'var(--green-dot)',
-  orange: 'var(--orange-dot)',
-  red: 'var(--red-dot)',
+  gray: 'var(--ui-text-3)',
+  yellow: 'var(--ui-warning)',
+  blue: 'var(--ui-primary)',
+  green: 'var(--ui-success)',
+  orange: 'var(--ui-warning-text)',
+  red: 'var(--ui-danger)',
 }
 
-/**
- * "Trạng thái đội drone" donut [TK MNG-01]. Legend shows the raw backend
- * `DroneStatus` code (matching how the design itself prints AVAILABLE /
- * ASSIGNED / IN_FLIGHT / MAINTENANCE / RETIRED as literal enum text) —
- * colours come from the app-wide `droneStatusTone` map (src/shared/lib/statusTone.ts)
- * rather than the design's one-off palette, so OUT_OF_SERVICE renders red
- * (not the design's gray for its now-removed "RETIRED" value) — see the
- * mapping table in evd/P3-manager-dashboard.md.
- */
+/** Drone fleet status donut; colours come from `droneStatusTone`. */
 export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
   const { t } = useI18n(droneStatusDonutMessages)
   const total = data.reduce((sum, entry) => sum + entry.count, 0)
@@ -42,11 +34,11 @@ export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
     })
 
   const summary = data
-    .map((entry) => `${entry.status} ${entry.count}`)
+    .map((entry) => `${t.status[entry.status]} ${entry.count}`)
     .join(', ')
 
   return (
-    <div className="odm-mgr-donut">
+    <div className="mng-donut">
       <svg
         width={size}
         height={size}
@@ -59,7 +51,7 @@ export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--sf3)"
+          className="mng-donut-track"
           strokeWidth={stroke}
         />
         {arcs.map((arc) => (
@@ -80,9 +72,7 @@ export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
           x={size / 2}
           y={size / 2 - 3}
           textAnchor="middle"
-          fontSize={20}
-          fontWeight={600}
-          fill="var(--tx)"
+          className="mng-donut-total"
         >
           {total}
         </text>
@@ -90,24 +80,25 @@ export function DroneStatusDonut({ data }: { data: DroneStatusBreakdown[] }) {
           x={size / 2}
           y={size / 2 + 13}
           textAnchor="middle"
-          fontSize={10}
-          fill="var(--tx3)"
+          className="mng-donut-unit"
         >
           {t.unit}
         </text>
       </svg>
-      <div className="odm-mgr-donut-legend">
+      <ul className="mng-donut-legend">
         {data.map((entry) => (
-          <span key={entry.status} className="odm-mgr-donut-legend-item">
+          <li key={entry.status}>
             <span
-              className="odm-mgr-legend-dot"
+              className="mng-legend-dot"
               style={{ background: TONE_COLOR[droneStatusTone[entry.status]] }}
             />
-            <span className="odm-mgr-donut-legend-label">{entry.status}</span>
-            <b className="odm-tn">{entry.count}</b>
-          </span>
+            <span className="mng-donut-legend-label">
+              {t.status[entry.status]}
+            </span>
+            <b>{entry.count}</b>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   )
 }

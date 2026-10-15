@@ -6,11 +6,11 @@ type SeriesKey = 'completed' | 'inFlight' | 'failed' | 'cancelled'
 
 // Bottom-to-top stack order + legend order, matching [TK MNG-01]
 // ("COMPLETED, IN_FLIGHT, FAILED, CANCELLED").
-const SERIES: Array<{ key: SeriesKey; label: string; color: string }> = [
-  { key: 'completed', label: 'COMPLETED', color: 'var(--green-dot)' },
-  { key: 'inFlight', label: 'IN_FLIGHT', color: 'var(--blue-dot)' },
-  { key: 'failed', label: 'FAILED', color: 'var(--red-dot)' },
-  { key: 'cancelled', label: 'CANCELLED', color: 'var(--gray-dot)' },
+const SERIES: Array<{ key: SeriesKey; color: string }> = [
+  { key: 'completed', color: 'var(--ui-success)' },
+  { key: 'inFlight', color: 'var(--ui-primary)' },
+  { key: 'failed', color: 'var(--ui-danger)' },
+  { key: 'cancelled', color: 'var(--ui-text-3)' },
 ]
 
 function dayTotal(day: MissionStatusDayPoint): number {
@@ -37,19 +37,19 @@ export function MissionStatusChart({
   const hasData = days.length > 0 && days.some((day) => dayTotal(day) > 0)
 
   if (!hasData) {
-    return <div className="odm-mgr-chart-empty">{t.empty}</div>
+    return <div className="mng-chart-empty">{t.empty}</div>
   }
 
   const width = 700
   const height = 220
-  const marginLeft = 28
+  const marginLeft = 30
   const marginRight = 10
   const marginTop = 10
   const marginBottom = 24
   const plotWidth = width - marginLeft - marginRight
   const plotHeight = height - marginTop - marginBottom
   const maxTotal = Math.max(1, ...days.map(dayTotal))
-  const barGap = 16
+  const barGap = 20
   const barWidth = (plotWidth - barGap * (days.length - 1)) / days.length
 
   const bars = days.map((day, index) => {
@@ -75,8 +75,30 @@ export function MissionStatusChart({
         viewBox={`0 0 ${width} ${height}`}
         role="img"
         aria-label={t.ariaLabel(summary)}
-        style={{ width: '100%', height: 'auto', display: 'block' }}
+        className="mng-chart-svg"
       >
+        {[0, 1].map((fraction) => {
+          const y = marginTop + plotHeight * (1 - fraction)
+          return (
+            <g key={fraction}>
+              <line
+                className="mng-chart-grid"
+                x1={marginLeft}
+                x2={width - marginRight}
+                y1={y}
+                y2={y}
+              />
+              <text
+                className="mng-chart-axis"
+                x={marginLeft - 6}
+                y={y + 4}
+                textAnchor="end"
+              >
+                {Math.round(maxTotal * fraction)}
+              </text>
+            </g>
+          )
+        })}
         {bars.map(({ day, x, segments }) => (
           <g key={day.date}>
             {segments.map((segment) => (
@@ -94,33 +116,32 @@ export function MissionStatusChart({
               x={x + barWidth / 2}
               y={height - 6}
               textAnchor="middle"
-              fontSize={10.5}
-              fill="var(--tx3)"
+              className="mng-chart-axis"
             >
               {formatDayLabel(day.date)}
             </text>
           </g>
         ))}
       </svg>
-      <div className="odm-mgr-chart-legend">
+      <div className="mng-legend">
         {SERIES.map((series) => (
-          <span key={series.key} className="odm-mgr-chip-legend">
+          <span key={series.key} className="mng-legend-item">
             <span
-              className="odm-mgr-legend-dot"
+              className="mng-legend-dot"
               style={{ background: series.color }}
             />
-            {series.label}
+            {t.series[series.key]}
           </span>
         ))}
       </div>
-      <table className="odm-visually-hidden">
+      <table className="mng-sr-only">
         <caption>{t.caption}</caption>
         <thead>
           <tr>
             <th scope="col">{t.day}</th>
             {SERIES.map((series) => (
               <th scope="col" key={series.key}>
-                {series.label}
+                {t.series[series.key]}
               </th>
             ))}
           </tr>

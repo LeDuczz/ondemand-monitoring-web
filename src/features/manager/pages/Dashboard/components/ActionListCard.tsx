@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 
+import { Card, EmptyState } from '../../../../../shared/components/ui'
 import type { Language } from '../../../../../shared/i18n'
 import { useI18n } from '../../../../../shared/i18n'
 import {
@@ -65,10 +66,10 @@ export function ActionListCard({
 }) {
   const { t, lang } = useI18n(actionListCardMessages)
   return (
-    <div className="odm-card">
-      <div className="odm-card-header">
-        <span>{t.actionListTitle}</span>
-        {filter !== 'all' ? (
+    <Card
+      title={t.actionListTitle}
+      actions={
+        filter !== 'all' ? (
           <button
             type="button"
             className="odm-btn odm-btn-gh odm-btn-sm"
@@ -76,15 +77,16 @@ export function ActionListCard({
           >
             {t.clearFilter}
           </button>
-        ) : null}
-      </div>
+        ) : null
+      }
+    >
       {presentTypes.length > 1 ? (
-        <div className="odm-mgr-filter-chips">
+        <div className="mng-seg mng-dash-seg">
           {presentTypes.map((type) => (
             <button
               key={type}
               type="button"
-              className={`odm-mgr-chip ${filter === type ? 'is-active' : ''}`}
+              className={`mng-seg-btn${filter === type ? ' is-active' : ''}`}
               aria-pressed={filter === type}
               onClick={() =>
                 setFilter((current) => (current === type ? 'all' : type))
@@ -97,22 +99,20 @@ export function ActionListCard({
         </div>
       ) : null}
       {visibleItems.length === 0 ? (
-        <div className="odm-mgr-empty-list">
-          <div className="odm-mgr-empty-list-title">{t.emptyListTitle}</div>
-          <div className="odm-mgr-empty-list-desc">
-            {t.emptyListDescription}
-          </div>
-        </div>
+        <EmptyState
+          title={t.emptyListTitle}
+          description={t.emptyListDescription}
+        />
       ) : (
-        <ul className="odm-mgr-action-list">
+        <ul className="mng-order-list">
           {visibleItems.map((item) => (
-            <li key={item.id} className="odm-mgr-action-row">
-              <div className="odm-mgr-action-text">
-                <div className="odm-mgr-action-title">{item.title}</div>
-                <div className="odm-mgr-action-subtitle">{item.subtitle}</div>
-              </div>
-              <div className="odm-mgr-action-age odm-tn">
-                {actionItemAge(now, item, lang)}
+            <li key={item.id} className="mng-action-item">
+              <div className="mng-order-text">
+                <div className="mng-cell-main">{item.title}</div>
+                <div className="mng-cell-sub">{item.subtitle}</div>
+                <div className="mng-cell-sub odm-tn">
+                  {actionItemAge(now, item, lang)}
+                </div>
               </div>
               <a
                 className="odm-btn odm-btn-sm"
@@ -124,6 +124,6 @@ export function ActionListCard({
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   )
 }

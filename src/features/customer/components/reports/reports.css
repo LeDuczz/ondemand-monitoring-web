@@ -311,3 +311,85 @@
     font-size: 24px;
   }
 }
+
+/* Order detail: missions summary card */
+.od-page .cr-section {
+  margin: 0;
+  padding: 20px 24px 24px;
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  background: var(--ui-surface);
+  box-shadow: 0 1px 2px rgba(15, 40, 90, 0.04);
+}
+.od-page .cr-section .cr-heading h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.od-page .cr-refresh {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ui-text-2);
+}
+.od-page .cr-refresh:hover:not(:disabled) {
+  background: var(--ui-surface-2);
+  color: var(--ui-primary);
+}
+.cr-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 12px;
+  padding: 0;
+}
+.cr-metric {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ui-surface-2);
+}
+.cr-metric dt {
+  font-size: 13px;
+  color: var(--ui-text-3);
+}
+.cr-metric dd {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text);
+}
+.od-page .cr-note {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.cr-empty,
+.cr-error {
+  margin: 0;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+.cr-empty {
+  border: 1px dashed var(--ui-border-strong);
+  color: var(--ui-text-3);
+}
+.cr-error {
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger-text);
+}
+@media (max-width: 640px) {
+  .od-page .cr-section {
+    padding: 16px;
+  }
+  .cr-metrics {
+    gap: 8px;
+  }
+  .cr-metric {
+    padding: 12px;
+  }
+}

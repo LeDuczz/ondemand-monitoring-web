@@ -8,6 +8,13 @@ import type { ExecutionPlan } from '../../types/planning'
 import { STAFF_ROLE_LABELS } from '../missionDetail/missionDetailParts'
 import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { planningSchedule } from './planningSchedule'
+import {
+  missionBucket,
+  missionProgress,
+} from '../workflow/workflowModel'
+import { workflowStepperMessages } from '../workflow/WorkflowStepper.messages'
+import { useI18n, useLanguage } from '../../../../shared/i18n'
+import { localizePlanningScopeLabel } from './planningScopeLabel'
 
 export function MissionSelector({
   missions,
@@ -26,9 +33,13 @@ export function MissionSelector({
   drafts: Record<string, { dirty: boolean; busy: boolean }>
   onSelect: (id: string) => void
 }) {
+  const { lang } = useLanguage()
+  const { t: wf } = useI18n(workflowStepperMessages)
   return (
     <nav className="odm-workspace-selector" aria-label="Mission trong Order">
-      {missions.map((mission) => {
+      {missions.map((mission, missionIndex) => {
+        const bucket = missionBucket(mission.status)
+        const stage = wf.missionStages[missionProgress(mission.status).current]
         const scope = plan.missions.find(
           (item) => item.missionId === mission.id,
         )
@@ -60,14 +71,23 @@ export function MissionSelector({
             disabled={disabled}
             onClick={() => onSelect(mission.id)}
           >
-            <strong>{mission.missionCode || 'Mission'}</strong>
-            <StatusBadge
-              tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}
-            >
-              {missionStatusLabel[mission.status] ?? 'Chưa xác định'}
-            </StatusBadge>
+            <span className="odm-workspace-choice-head">
+              <strong>{mission.missionCode || 'Mission'}</strong>
+              <StatusBadge
+                tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}
+              >
+                {missionStatusLabel[mission.status] ?? 'Chưa xác định'}
+              </StatusBadge>
+            </span>
+            <span className={`odm-workspace-rank is-${bucket}`}>
+              {bucket === 'finished' ? '✓' : bucket === 'active' ? '●' : bucket === 'blocked' ? '🔒' : '○'}{' '}
+              {wf.missionOf(missionIndex + 1, missions.length)}
+              {bucket === 'active' ? ` · ${stage.label}` : ''}
+            </span>
             <span className="odm-workspace-scope">
-              {scope?.scopeLabel || 'Lịch sử Mission'}
+              {scope?.scopeLabel
+                ? localizePlanningScopeLabel(scope.scopeLabel, lang)
+                : 'Lịch sử nhiệm vụ'}
             </span>
             <small>
               {planningSchedule(
@@ -75,23 +95,19 @@ export function MissionSelector({
                 mission.scheduledEndAt,
               )}
             </small>
-            <span>
-              {historical
-                ? 'Lịch sử · chỉ xem'
-                : scope?.finalizedPlanRevision != null
-                  ? 'Đã chốt'
-                  : 'Đang lập kế hoạch'}
+            <span className="odm-workspace-plan-state">
+              {historical ? 'Lịch sử · chỉ xem' : scope?.finalizedPlanRevision != null ? 'Đã chốt' : 'Đang lập kế hoạch'}
             </span>
-            <span>
-              {count > 0 || noChecklist ? '✓' : '⚠'} Checklist:{' '}
-              {noChecklist ? 'Không có yêu cầu' : `${count} mục`}
-            </span>
-            <span>
-              {device ? '✓ Thiết bị đã phân công' : '⚠ Chưa có thiết bị'}
-            </span>
-            <span>
-              {missing.length ? '⚠' : '✓'} Nhân sự: {4 - missing.length}/4 vai
-              trò
+            <span className="odm-workspace-readiness">
+              <span className={count > 0 || noChecklist ? 'is-ready' : 'is-missing'}>
+                {count > 0 || noChecklist ? '✓' : '!'} Checklist {noChecklist ? '—' : count}
+              </span>
+              <span className={device ? 'is-ready' : 'is-missing'}>
+                {device ? '✓' : '!'} Thiết bị
+              </span>
+              <span className={!missing.length ? 'is-ready' : 'is-missing'}>
+                {!missing.length ? '✓' : '!'} Nhân sự {4 - missing.length}/4
+              </span>
             </span>
             {!historical && (
               <small>

@@ -236,6 +236,12 @@ function CreateMissionForm({
 
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
+  const [weatherCheckDate, setWeatherCheckDate] = useState(
+    () => dateRangeFromBrief(brief)[0] ?? '',
+  )
+  const [weatherCheckTime, setWeatherCheckTime] = useState(
+    () => forecastTimeFromBrief(brief),
+  )
   const [planRevision, setPlanRevision] = useState(brief.executionPlanRevision ?? 0)
   const [scopeLabel, setScopeLabel] = useState('Whole Order scope')
   const planQuery = useApiQuery(signal => planningApi.getExecutionPlan(orderId, signal), [orderId])
@@ -253,8 +259,16 @@ function CreateMissionForm({
     setSubmit({ kind: 'idle' })
   }
 
-  const forecastDates = useMemo(() => dateRangeFromBrief(brief), [brief])
-  const forecastTime = useMemo(() => forecastTimeFromBrief(brief), [brief])
+  const forecastDates = useMemo(
+    () =>
+      onCreated
+        ? weatherCheckDate
+          ? [weatherCheckDate]
+          : []
+        : dateRangeFromBrief(brief),
+    [brief, onCreated, weatherCheckDate],
+  )
+  const forecastTime = onCreated ? weatherCheckTime : forecastTimeFromBrief(brief)
   const [forecastRows, setForecastRows] = useState<ForecastRow[]>(() =>
     forecastDates.map((date) => ({ date, label: formatDateLabel(date), status: 'loading' })),
   )
@@ -358,7 +372,7 @@ function CreateMissionForm({
   if (submit.kind === 'planFailed') {
     return (
       <div className="odm-or">
-        {!onCreated && <OrderWorkflowStepper currentStep={2} />}
+        {!onCreated && <OrderWorkflowStepper currentStep={5} />}
         <div className="odm-or-card">
           <div className="odm-mgr-review-error">
             <div className="odm-mgr-review-error-icon" aria-hidden="true">
@@ -435,7 +449,7 @@ function CreateMissionForm({
   }
 
   return (
-    <div className="odm-or odm-plan-page">
+    <div className={`odm-or odm-plan-page${onCreated ? ' is-embedded' : ''}`}>
       {!onCreated && <div className="odm-or-pagehead">
         <h1 className="odm-or-title">{t.title}</h1>
         <p className="odm-or-subtitle">
@@ -447,7 +461,7 @@ function CreateMissionForm({
         </p>
       </div>}
 
-      {!onCreated && <OrderWorkflowStepper currentStep={2} />}
+      {!onCreated && <OrderWorkflowStepper currentStep={5} />}
 
       <section className="odm-or-card odm-plan-create" aria-label="Mission planning context">
         {!onCreated && <PlanningHeader status={planQuery.data?.planStatus} revision={planRevision} loading={planQuery.loading} />}
@@ -504,7 +518,7 @@ function CreateMissionForm({
             <header className="odm-or-card-head">
               <span className="odm-or-card-title">
                 <OrderIcon name="info" size={18} />
-                {t.weatherForecastTitle}
+                {onCreated ? 'Kiểm tra thời tiết theo lịch bay' : t.weatherForecastTitle}
               </span>
               <span className="odm-or-pill odm-or-pill-blue">
                 {t.weatherForecastTime(forecastTime)}
@@ -512,8 +526,32 @@ function CreateMissionForm({
             </header>
             <div className="odm-or-card-body">
               <p className="odm-or-muted odm-or-hint">
-                {t.weatherForecastHint}
+                {onCreated
+                  ? 'Chọn một ngày và giờ bất kỳ để kiểm tra trước khi quyết định lịch bay.'
+                  : t.weatherForecastHint}
               </p>
+              {onCreated ? (
+                <div className="odm-weather-check-controls">
+                  <label className="odm-or-field">
+                    <span className="odm-or-field-label">Ngày muốn kiểm tra</span>
+                    <input
+                      className="odm-or-input"
+                      type="date"
+                      value={weatherCheckDate}
+                      onChange={(event) => setWeatherCheckDate(event.target.value)}
+                    />
+                  </label>
+                  <label className="odm-or-field">
+                    <span className="odm-or-field-label">Giờ muốn kiểm tra</span>
+                    <input
+                      className="odm-or-input"
+                      type="time"
+                      value={weatherCheckTime}
+                      onChange={(event) => setWeatherCheckTime(event.target.value)}
+                    />
+                  </label>
+                </div>
+              ) : null}
               {!brief.center ? (
                 <div className="odm-or-weather-empty">{t.weatherNoLocation}</div>
               ) : forecastRows.length === 0 ? (

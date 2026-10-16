@@ -200,7 +200,7 @@
 }
 .odm-planning-workspace {
   display: grid;
-  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 2fr);
+  grid-template-columns: minmax(270px, 0.72fr) minmax(0, 2fr);
   gap: 20px;
   margin-top: 16px;
   align-items: start;
@@ -215,10 +215,10 @@
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  gap: 6px;
-  padding: 14px;
+  gap: 8px;
+  padding: 16px;
   border: 1px solid var(--bd);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--sf);
   color: var(--tx);
   font: inherit;
@@ -228,15 +228,47 @@
   min-width: 0;
 }
 .odm-workspace-choice.is-selected {
-  border-color: var(--ink);
+  border-color: var(--blue-fg);
   background: var(--blue-bg);
+  box-shadow: inset 3px 0 0 var(--blue-fg), 0 6px 18px rgba(37, 99, 235, 0.08);
 }
 .odm-workspace-choice:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 .odm-workspace-choice strong {
-  font-size: 15px;
+  font-size: 16px;
+}
+.odm-workspace-choice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+.odm-workspace-plan-state {
+  color: var(--tx2);
+  font-size: 12px;
+}
+.odm-workspace-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.odm-workspace-readiness > span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.odm-workspace-readiness .is-ready {
+  color: #087443;
+  background: #dcfce7;
+}
+.odm-workspace-readiness .is-missing {
+  color: #9a5b00;
+  background: #fff1c2;
 }
 .odm-workspace-choice small,
 .odm-workspace-scope {
@@ -246,6 +278,9 @@
   color: var(--blue-fg);
   font-weight: 600;
   margin-top: 4px;
+  padding-top: 9px;
+  width: 100%;
+  border-top: 1px solid rgba(37, 99, 235, 0.18);
 }
 .odm-workspace-panels {
   min-width: 0;
@@ -334,10 +369,11 @@
 }
 .odm-planning-mission {
   border: 1px solid var(--bd);
-  border-radius: 10px;
+  border-radius: 12px;
   margin-top: 16px;
-  padding: 16px;
+  padding: 20px;
   overflow-wrap: anywhere;
+  background: var(--sf);
 }
 .odm-planning > .odm-plan-header {
   padding: 0 0 16px;
@@ -395,8 +431,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   gap: 20px;
-  padding: 14px;
-  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
   background: var(--sf3);
 }
 .odm-mission-resource {
@@ -459,11 +496,36 @@
   margin-top: 2px;
 }
 .odm-mission-actions {
-  margin-top: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bd);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+.odm-btn-danger-soft {
+  border-color: #fecaca !important;
+  background: #fff7f7 !important;
+  color: #b42318 !important;
+}
+.odm-btn-danger-soft:hover:not(:disabled) {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+.odm-btn-secondary-soft {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+.odm-planning-editor {
+  margin-top: 16px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--bd);
+}
+.odm-planning-editor summary {
+  font-weight: 700;
+  color: var(--tx);
 }
 .odm-mission-actions form {
   flex-basis: 100%;
@@ -481,6 +543,217 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.odm-planning-next-resource {
+  margin-left: auto;
+  min-width: 220px;
+  justify-content: center;
+}
+@media (max-width: 640px) {
+  .odm-planning-next-resource {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+.odm-planning-create-panel {
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  background: var(--sf);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+.odm-planning-create-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(135deg, var(--blue-bg), var(--sf) 58%);
+}
+.odm-planning-create-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--blue-fg);
+  color: #fff;
+  font-size: 23px;
+  font-weight: 500;
+}
+.odm-planning-create-head h3 {
+  margin: 0 0 4px;
+  font-size: 19px;
+}
+.odm-planning-create-head p {
+  margin: 0;
+  color: var(--tx2);
+  font-size: 13px;
+}
+.odm-planning-create-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--bd);
+  border-radius: 9px;
+  background: var(--sf);
+  color: var(--tx2);
+  font: 24px/1 inherit;
+  cursor: pointer;
+  margin-left: auto;
+  transition: 160ms ease;
+}
+.odm-planning-create-close:hover {
+  border-color: var(--blue-fg);
+  color: var(--blue-fg);
+  background: var(--blue-bg);
+}
+
+/* Chế độ nhúng trong kế hoạch: chỉ giữ các trường cần để tạo Mission. */
+.odm-plan-page.is-embedded {
+  padding: 0;
+}
+.odm-plan-page.is-embedded > .odm-plan-create {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.odm-plan-page.is-embedded .odm-plan-create-body {
+  padding: 22px;
+}
+.odm-plan-page.is-embedded .odm-plan-create-grid {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  border: 0;
+}
+.odm-plan-page.is-embedded .odm-plan-form > h3,
+.odm-plan-page.is-embedded .odm-plan-description {
+  display: none;
+}
+.odm-plan-page.is-embedded .odm-plan-form .odm-or-field-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.odm-plan-page.is-embedded .odm-plan-form .odm-or-input {
+  height: 50px;
+  border-radius: 11px;
+  background: var(--sf);
+  font-size: 15px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.odm-plan-page.is-embedded .odm-plan-form .odm-or-input:focus {
+  border-color: var(--blue-fg);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.odm-plan-page.is-embedded .odm-plan-geography {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+}
+.odm-plan-page.is-embedded .odm-plan-geography h3 {
+  margin: 0;
+  font-size: 13px;
+  color: #1d4ed8;
+  white-space: nowrap;
+}
+.odm-plan-page.is-embedded .odm-plan-geography ul {
+  display: block;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tx2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.odm-plan-page.is-embedded .odm-plan-geography li:not(:first-child) {
+  display: none;
+}
+.odm-plan-page.is-embedded > .odm-or-grid {
+  display: block;
+  margin: 0;
+  padding: 0 20px;
+}
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(420px, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:first-child,
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:last-child {
+  display: none;
+}
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:nth-child(2) {
+  order: 2;
+}
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:nth-child(3) {
+  order: 1;
+}
+.odm-plan-page.is-embedded > .odm-or-grid .odm-or-card {
+  margin: 0;
+  box-shadow: none;
+}
+.odm-weather-check-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.55fr);
+  gap: 12px;
+  margin: 14px 0;
+}
+.odm-weather-check-controls .odm-or-field {
+  margin: 0;
+}
+.odm-plan-page.is-embedded .odm-or-actionbar {
+  position: static;
+  margin: 20px 0 0;
+  padding: 16px 20px;
+  border: 0;
+  border-top: 1px solid var(--bd);
+  border-radius: 0;
+  box-shadow: none;
+}
+.odm-plan-page.is-embedded .odm-or-actionbar-hint,
+.odm-plan-page.is-embedded .odm-or-actionbar-actions > a {
+  display: none;
+}
+.odm-plan-page.is-embedded .odm-or-actionbar-actions {
+  width: 100%;
+  justify-content: flex-end;
+}
+@media (max-width: 640px) {
+  .odm-planning-create-head,
+  .odm-plan-page.is-embedded .odm-plan-create-body,
+  .odm-plan-page.is-embedded .odm-or-actionbar {
+    padding: 16px;
+  }
+  .odm-plan-page.is-embedded > .odm-or-grid {
+    padding: 0 16px;
+  }
+  .odm-plan-page.is-embedded .odm-or-actionbar-actions .odm-or-btn {
+    width: 100%;
+  }
+  .odm-weather-check-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .odm-planning-create-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .odm-plan-page.is-embedded .odm-plan-geography {
+    display: grid;
+  }
+}
+@media (max-width: 1000px) {
+  .odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .odm-planning-stop {
   border-top: 1px solid var(--border, #dbe2ea);
@@ -663,3 +936,33 @@
     overflow-y: auto;
   }
 }
+.odm-planning-payment-gate {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #f0c36a;
+  border-radius: 12px;
+  background: #fff7df;
+  color: #805100;
+}
+
+.odm-planning-payment-gate p {
+  margin: 0;
+}
+
+.odm-planning-payment-gate .odm-btn {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* Mission rail: position in the Order ("Mission 2 / 3") and a clear bucket. */
+.odm-workspace-rank {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--or-tx2, #5b6472);
+}
+.odm-workspace-rank.is-finished { color: var(--or-green, #178a4c); }
+.odm-workspace-rank.is-active { color: var(--or-primary-fg, #0b3fa8); }
+.odm-workspace-rank.is-blocked { color: var(--or-red, #d92d20); }

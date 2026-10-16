@@ -117,7 +117,10 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
             aria-invalid={Boolean(errors.termsAccepted)}
             onChange={(event) => update('termsAccepted', event.target.checked)}
           />
-          <span>{t.termsLabel}</span>
+          <span className="co-terms-check-copy">
+            <strong>{t.termsLabel}</strong>
+            <small>{t.termsPrivacyNotice}</small>
+          </span>
         </label>
         {errors.termsAccepted && <div className="ui-field-error">{errors.termsAccepted}</div>}
       </div>

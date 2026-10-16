@@ -438,13 +438,6 @@ export const customerApi = {
       body: payload,
     }),
 
-  /** Mock only: the BE has no cancel endpoint. Returns the order in BE shape. */
-  cancelOrder: (orderId: string) =>
-    apiRequest<OrderCreateResponse>(
-      `/api/customer/orders/${encodeURIComponent(orderId)}/cancel`,
-      { method: 'POST' },
-    ),
-
   /** `GET /api/orders/{orderId}/analysis/latest` [BE]: `null` until analysed. */
   getLatestAnalysis: (orderId: string, signal?: AbortSignal) =>
     apiRequest<RawAnalysis | null>(

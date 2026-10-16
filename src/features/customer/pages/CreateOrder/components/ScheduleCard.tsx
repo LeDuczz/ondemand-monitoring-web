@@ -51,7 +51,8 @@ export function ScheduleCard({ form, errors, update, preferredTimes }: Props) {
       <FormField id="co-time" label={t.timeWindow} required error={errors.preferredTimeId}>
         <select
           id="co-time"
-          className="co-input"
+          className={`co-input${errors.preferredTimeId ? ' is-error' : ''}`}
+          aria-invalid={Boolean(errors.preferredTimeId)}
           value={form.preferredTimeId}
           onChange={(e) => update('preferredTimeId', e.target.value)}
         >

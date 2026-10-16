@@ -11,6 +11,8 @@ import { STAFF_ROLE_LABELS } from '../missionDetail/missionDetailParts'
 import { OrderIcon } from '../orderReview/OrderIcon'
 import { planningSchedule } from './planningSchedule'
 import { missionStopLabel } from '../../../mission/lib/missionOperationalState'
+import { useLanguage } from '../../../../shared/i18n'
+import { localizePlanningScopeLabel } from './planningScopeLabel'
 
 export function MissionPlanningCard({
   mission,
@@ -23,6 +25,7 @@ export function MissionPlanningCard({
   missions: MissionResponse[]
   children: ReactNode
 }) {
+  const { lang } = useLanguage()
   const original = missions.find((m) => m.id === mission.replacesMissionId)
   const replacements = missions.filter(
     (m) => m.replacesMissionId === mission.id,
@@ -58,7 +61,9 @@ export function MissionPlanningCard({
       </header>
       <div className="odm-mission-scope">
         <p>
-          {scope?.scopeLabel || mission.orderTitle || 'Phạm vi theo đơn hàng'}
+          {scope?.scopeLabel
+            ? localizePlanningScopeLabel(scope.scopeLabel, lang)
+            : mission.orderTitle || 'Phạm vi theo đơn hàng'}
         </p>
         <span>
           <OrderIcon name="calendar" size={15} />

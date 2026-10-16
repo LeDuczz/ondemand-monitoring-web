@@ -28,6 +28,8 @@ export const customerReportMessages = defineMessages({
     retry: 'Thử lại',
     refresh: 'Làm mới báo cáo',
     empty: 'Chưa lên lịch giám sát.',
+    emptyHint:
+      'Đơn đang chờ xếp lịch bay. Bạn sẽ nhận được thông báo khi có lịch giám sát đầu tiên.',
     unavailable: 'Báo cáo chưa được công bố.',
     view: 'Xem báo cáo',
     details: 'Xem phiên giám sát',
@@ -97,6 +99,8 @@ export const customerReportMessages = defineMessages({
     retry: 'Retry',
     refresh: 'Refresh report',
     empty: 'Monitoring has not been scheduled yet.',
+    emptyHint:
+      'Your order is waiting for a flight slot. You will be notified when the first session is scheduled.',
     unavailable: 'Report is not available yet.',
     view: 'View report',
     details: 'View monitoring session',

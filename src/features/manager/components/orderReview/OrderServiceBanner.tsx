@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { OrderDetail } from '../../types/orders'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
 import './OrderServiceBanner.css'
@@ -6,14 +7,19 @@ export type OrderServiceBannerProps = {
   serviceName: string
   serviceDescription?: string | null
   serviceIcon?: OrderIconName | null
-  currentStep: number
-  totalSteps: number
+  /** Step info lives in the stepper; kept optional for callers. */
+  currentStep?: number
+  totalSteps?: number
   /** Real deliverable / result-format labels of the order. */
   deliverables?: string[] | null
   /** Label for the small "SERVICE" eyebrow, e.g. "DỊCH VỤ". */
   eyebrow: string
   /** Formats the step indicator, e.g. (1, 7) => "Bước 1/7". */
-  stepLabel: (current: number, total: number) => string
+  stepLabel?: (current: number, total: number) => string
+  /** Prefix for the deliverables chip, e.g. "Định dạng". */
+  deliverablesLabel?: string
+  /** Right-hand summary, e.g. order code and status. */
+  meta?: ReactNode
 }
 
 function clean(value: string | null | undefined) {
@@ -96,24 +102,20 @@ function ServiceIdentity({
   )
 }
 
-function ServiceDeliverableTags({ labels }: { labels: string[] }) {
-  if (labels.length === 0) return null
+function ServiceDeliverableTags({
+  labels,
+  prefix,
+}: {
+  labels: string[]
+  prefix?: string
+}) {
+  const unique = [...new Set(labels.map((l) => l.trim()).filter(Boolean))]
+  if (unique.length === 0) return null
+  const text = unique.join(', ')
   return (
     <ul className="odm-osb-tags">
-      {labels.map((label) => (
-        <li key={label} className="odm-osb-tag">
-          {label}
-        </li>
-      ))}
+      <li className="odm-osb-tag">{prefix ? `${prefix}: ${text}` : text}</li>
     </ul>
-  )
-}
-
-function StepIndicator({ stepText }: { stepText: string }) {
-  return (
-    <div className="odm-osb-status">
-      <span className="odm-osb-step">{stepText}</span>
-    </div>
   )
 }
 
@@ -121,11 +123,10 @@ export function OrderServiceBanner({
   serviceName,
   serviceDescription,
   serviceIcon,
-  currentStep,
-  totalSteps,
   deliverables,
   eyebrow,
-  stepLabel,
+  deliverablesLabel,
+  meta,
 }: OrderServiceBannerProps) {
   const name = clean(serviceName)
   const labels = deliverables ?? []
@@ -141,9 +142,9 @@ export function OrderServiceBanner({
             eyebrow={eyebrow}
           />
         ) : null}
-        <ServiceDeliverableTags labels={labels} />
+        <ServiceDeliverableTags labels={labels} prefix={deliverablesLabel} />
       </div>
-      <StepIndicator stepText={stepLabel(currentStep, totalSteps)} />
+      {meta ? <div className="odm-osb-status">{meta}</div> : null}
     </section>
   )
 }

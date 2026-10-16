@@ -6,7 +6,10 @@ import {
   isReusableConsultation,
 } from '../../../lib/createOrder/consultation'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
-import { buildOrderPayload } from '../../../lib/createOrder/payload'
+import {
+  buildOrderPayload,
+  withAdditionalRequirementChecklist,
+} from '../../../lib/createOrder/payload'
 import { scoreRequest } from '../../../lib/createOrder/scoring'
 import { createOrderPageMessages } from '../CreateOrderPage.messages'
 import { useConsultation } from './useConsultation'
@@ -17,6 +20,18 @@ import { useRecommendedService } from './useRecommendedService'
 import { useSubmitOrder } from './useSubmitOrder'
 import { useWizard } from './useWizard'
 import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
+import { ApiError } from '../../../../../shared/api/httpClient'
+import type { FormErrors, FormState } from '../../../lib/createOrder/types'
+
+const formFields = new Set<keyof FormState>([
+  'serviceId', 'title', 'address', 'latitude', 'longitude', 'altitudeM',
+  'estimatedLengthM', 'siteContactPhone', 'permitStatus', 'permitNumber',
+  'permitDocuments', 'permitExpiresOn', 'monitoringRelationship',
+  'monitoringAuthorizationConfirmed', 'monitoringAuthorizationDocuments',
+  'preferredDateFrom', 'preferredDateTo', 'preferredTimeId', 'resultDeadline',
+  'recurrenceOccurrences', 'deliverableTypeId', 'resultFormats',
+  'deliveryMethods', 'termsAccepted',
+])
 
 /** Wires every wizard hook together; the page only renders the result. */
 export function useCreateOrderWizard() {
@@ -81,6 +96,29 @@ export function useCreateOrderWizard() {
     validate: () => wizard.validate(5) && checklist.valid,
     onTemplateChanged: checklist.markStale,
     onError: f.setSubmitError,
+    onValidationError: (error) => {
+      if (!(error instanceof ApiError) || error.status !== 400) return false
+
+      const fieldErrors: FormErrors = {}
+      for (const [field, message] of Object.entries(error.errors ?? {})) {
+        if (formFields.has(field as keyof FormState) && message) {
+          fieldErrors[field as keyof FormState] = String(message)
+        }
+      }
+
+      // Service validation currently returns this rule as a plain ApiException
+      // message rather than in the `errors` map.
+      if (/preferredDateFrom must be at least 7 days/i.test(error.message)) {
+        fieldErrors.preferredDateFrom = t.validation.preferredDateTooSoon
+      } else if (/preferredDateFrom must be before or equal to preferredDateTo/i.test(error.message)) {
+        fieldErrors.preferredDateTo = t.validation.preferredDateOrder
+      }
+
+      if (Object.keys(fieldErrors).length === 0) return false
+      f.setSubmitError(null)
+      wizard.showErrors(fieldErrors)
+      return true
+    },
     buildPayload: () => ({
       ...buildOrderPayload({
         form,
@@ -89,7 +127,10 @@ export function useCreateOrderWizard() {
         aiAnalysisRequested: f.aiAnalysisRequested,
         pricingEstimate: meta.pricingEstimate,
       }),
-      checklistItems: checklist.serialize(),
+      checklistItems: withAdditionalRequirementChecklist(
+        checklist.serialize(),
+        f.aiAnalysisRequested,
+      ),
     }),
   })
 

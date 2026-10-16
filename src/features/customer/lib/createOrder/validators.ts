@@ -95,6 +95,24 @@ export function validateStep(
     }
     const phone = form.siteContactPhone.trim()
     if (phone && !PHONE_PATTERN.test(phone)) errors.siteContactPhone = msg.siteContactPhone
+    if (!form.monitoringRelationship) {
+      errors.monitoringRelationship = msg.monitoringRelationship
+    }
+    if (!form.monitoringAuthorizationConfirmed) {
+      errors.monitoringAuthorizationConfirmed =
+        msg.monitoringAuthorizationConfirmed
+    }
+    if (
+      form.monitoringAuthorizationDocuments.some(
+        (document) =>
+          !document.documentName.trim() ||
+          !document.fileName ||
+          !document.dataUrl,
+      )
+    ) {
+      errors.monitoringAuthorizationDocuments =
+        msg.monitoringAuthorizationDocuments
+    }
     if (validLatitude && validLongitude && form.permitStatus === 'HAVE_PERMIT') {
       if (!form.permitNumber.trim()) errors.permitNumber = msg.permitNumber
       if (form.permitDocuments.length === 0) errors.permitDocuments = msg.permitDocuments
@@ -137,24 +155,6 @@ export function validateStep(
     }
   }
   if (targetStep >= 5) {
-    if (!form.monitoringRelationship) {
-      errors.monitoringRelationship = msg.monitoringRelationship
-    }
-    if (!form.monitoringAuthorizationConfirmed) {
-      errors.monitoringAuthorizationConfirmed =
-        msg.monitoringAuthorizationConfirmed
-    }
-    if (
-      form.monitoringAuthorizationDocuments.some(
-        (document) =>
-          !document.documentName.trim() ||
-          !document.fileName ||
-          !document.dataUrl,
-      )
-    ) {
-      errors.monitoringAuthorizationDocuments =
-        msg.monitoringAuthorizationDocuments
-    }
     if (!form.deliverableTypeId) {
       errors.deliverableTypeId = msg.deliverableTypeId
     }

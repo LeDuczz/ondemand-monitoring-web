@@ -585,3 +585,99 @@
 .odm-opr-mission-manager{width:170px}
 .odm-opr-mission-table td,.odm-opr-mission-table th{overflow:hidden;text-overflow:ellipsis}
 .odm-opr-mission-table .odm-opr-mission-job,.odm-opr-mission-table td.odm-opr-mission-job{overflow:visible}
+
+/* ── Mission detail: waiting for pilot response ── */
+.mds-pending {
+  padding-bottom: 88px; /* room for the sticky action bar */
+}
+.mds-meta-line {
+  margin: 0 0 12px 2px;
+  color: var(--tx2, #334155);
+  font-size: 13.5px;
+}
+.mds-decision {
+  margin-bottom: 16px;
+}
+.mds-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px 20px;
+  padding: 14px 16px;
+}
+.mds-decision-item dt {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tx2, #475569);
+}
+.mds-decision-item dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx, #0f172a);
+  overflow-wrap: anywhere;
+}
+.mds-pending-checklist {
+  margin-top: 16px;
+}
+.mds-pending-checklist summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-weight: 600;
+  list-style: none;
+}
+.mds-pending-checklist summary:focus-visible {
+  outline: 2px solid #1767ff;
+  outline-offset: -2px;
+}
+.mds-pending-checklist summary small {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  color: var(--tx2, #475569);
+}
+.mds-pending-checklist-body {
+  padding: 0 16px 16px;
+}
+.mds-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--bd, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
+}
+.mds-action-bar-text {
+  font-weight: 600;
+  color: var(--tx, #0f172a);
+}
+.mds-action-bar-text small {
+  display: block;
+  font-weight: 400;
+  color: var(--tx2, #475569);
+}
+.mds-action-bar-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.mds-action-bar .odm-btn-p {
+  min-height: 42px;
+  padding: 0 24px;
+  font-weight: 700;
+}
+.mds-action-bar .odm-btn:focus-visible {
+  outline: 2px solid #1767ff;
+  outline-offset: 2px;
+}
+.mds-action-bar .odm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

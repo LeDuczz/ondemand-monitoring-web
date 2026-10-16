@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { env } from '../../../../config/env'
 import { ordersApi } from '../../api/ordersApi'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import type { ApprovalDecision } from '../../types/orders'
@@ -30,8 +29,6 @@ export function OrderApprovalActions({
   showApprove?: boolean
 }) {
   const [modal, setModal] = useState<ModalKind>(null)
-  const infoDisabled = !env.useMockApi && import.meta.env.MODE !== 'test'
-
   return (
     <>
       <div className="odm-or-actionbar">
@@ -45,8 +42,6 @@ export function OrderApprovalActions({
           <button
             type="button"
             className="odm-or-btn odm-or-btn-amber"
-            disabled={infoDisabled}
-            title={infoDisabled ? t.requestInfoDisabled : undefined}
             onClick={() => setModal('info')}
           >
             <OrderIcon name="alert" size={16} />

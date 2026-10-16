@@ -17,6 +17,8 @@ import { operatorApi } from '../../../staff/api/operatorApi'
 import type { MissionResponse } from '../../types/missions'
 import type { OrderDetail, OrderMissionBrief } from '../../types/orders'
 import type { ExecutionPlan } from '../../types/planning'
+import { financeApi } from '../../../finance/api'
+import type { Invoice } from '../../../finance/types'
 
 const items = ['A', 'B', 'C', 'D', 'E'].map((id, displayOrder) => ({
   id,
@@ -108,6 +110,11 @@ it('does not consume the initial snapshot in an aborted StrictMode request', asy
   expect(ordersApi.getOrder).not.toHaveBeenCalled()
 })
 beforeEach(() => {
+  vi.spyOn(financeApi, 'getManagerInvoice').mockResolvedValue({
+    id: 'invoice-paid',
+    paidAmount: 500,
+    depositAmount: 500,
+  } as Invoice)
   missions = ['m1', 'm2'].map(
     (id) =>
       ({

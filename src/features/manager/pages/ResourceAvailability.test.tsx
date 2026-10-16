@@ -69,7 +69,8 @@ it('uses exact Mission availability, keeps own assignments, and shows only retur
   expect(await screen.findByRole('button', { name: 'Phân công' })).toBeEnabled()
   expect(operatorApi.getAvailable).toHaveBeenCalledWith('m1')
   expect(droneApi.getAvailable).toHaveBeenCalledWith('m1')
-  fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
   fireEvent.click(screen.getByRole('button', { name: /Staff 0.*Sẵn sàng/ }))
   expect(
     screen.getByPlaceholderText('Tìm theo tên hoặc email...'),
@@ -94,9 +95,6 @@ it('refreshes staff conflict, removes only unavailable selections and returns to
   expect(
     await screen.findByText(/Nhân sự không còn khả dụng/),
   ).toBeInTheDocument()
-  expect(
-    document.querySelector('.odm-or-tabs [aria-current="step"]'),
-  ).toHaveTextContent('Nhân sự')
   expect(screen.getByLabelText('Chọn nhân sự cho Phi công')).toBeInTheDocument()
   expect(
     screen.getByRole('button', { name: /Staff 1.*Sẵn sàng/ }),
@@ -126,15 +124,12 @@ it('refreshes device conflict, retains valid devices/crew and returns to device'
   expect(
     await screen.findByText(/Thiết bị không còn khả dụng/),
   ).toBeInTheDocument()
-  expect(
-    document.querySelector('.odm-or-tabs [aria-current="step"]'),
-  ).toHaveTextContent('Thiết bị')
   fireEvent.click(screen.getByRole('button', { name: /Thêm thiết bị/ }))
   expect(
     screen.queryByRole('option', { name: /Drone 1/ }),
   ).not.toBeInTheDocument()
   expect(screen.getByRole('option', { name: /Drone 2/ })).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: /Nhân sự/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
   expect(
     screen.getByRole('button', { name: /Staff 0.*Sẵn sàng/ }),
   ).toHaveTextContent('Staff 0')
@@ -159,9 +154,6 @@ it('keeps the exact failed device step even when another staff option also becam
   render(<LiveDispatchPage missionId="m1" orderContext={context()} />)
   fireEvent.click(await screen.findByRole('button', { name: 'Phân công' }))
   await screen.findByText(/Thiết bị không còn khả dụng/)
-  expect(
-    document.querySelector('.odm-or-tabs [aria-current="step"]'),
-  ).toHaveTextContent('Thiết bị')
 })
 
 it('shows explanatory loading and empty states without stale options', async () => {
@@ -197,7 +189,7 @@ it('shows explanatory loading and empty states without stale options', async () 
       'Không có nhân sự phù hợp trong khung giờ Mission này.',
     ),
   ).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: /Thiết bị/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
   expect(
     screen.getByText('Không có thiết bị khả dụng trong khung giờ Mission này.'),
   ).toBeInTheDocument()

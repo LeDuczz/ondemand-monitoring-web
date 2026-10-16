@@ -259,7 +259,7 @@ describe('MissionDetailScreen', () => {
       screen.queryByRole('button', { name: 'Gửi kết quả cho Manager' }),
     ).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Làm mới checklist' }))
+    fireEvent.click(screen.getByRole('button', { name: /Tải lại/ }))
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Gửi kết quả cho Manager' }),

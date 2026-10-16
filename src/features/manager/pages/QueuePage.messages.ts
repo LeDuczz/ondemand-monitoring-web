@@ -3,7 +3,15 @@ import { defineMessages } from '../../../shared/i18n'
 export const queuePageMessages = defineMessages({
   vi: {
     title: 'Hàng đợi duyệt đơn',
-    summary: (count: number) => `${count} đơn đang chờ`,
+    summary: (count: number, paid: number) => `${count} đơn chờ duyệt · ${paid} đơn chờ lập kế hoạch`,
+    paid: {
+      title: 'Đơn đã nhận cọc – chờ lập kế hoạch',
+      description: 'Khách hàng đã thanh toán tiền đặt cọc. Manager có thể tạo Mission và phân công nguồn lực.',
+      count: (count: number) => `${count} đơn sẵn sàng`,
+      status: 'Trạng thái',
+      depositReceived: 'Đã nhận cọc',
+      action: 'Lập kế hoạch',
+    },
     missionsToAssign: 'Mission chờ phân công',
     viewMissions: 'Xem nhiệm vụ đã tạo',
     refresh: 'Làm mới',
@@ -22,7 +30,15 @@ export const queuePageMessages = defineMessages({
   },
   en: {
     title: 'Order review queue',
-    summary: (count: number) => `${count} orders pending`,
+    summary: (count: number, paid: number) => `${count} pending review · ${paid} ready for planning`,
+    paid: {
+      title: 'Deposit received – planning queue',
+      description: 'The customer has paid the deposit. A manager can now create Missions and assign resources.',
+      count: (count: number) => `${count} ready`,
+      status: 'Status',
+      depositReceived: 'Deposit received',
+      action: 'Plan execution',
+    },
     missionsToAssign: 'Missions to assign',
     viewMissions: 'View created missions',
     refresh: 'Refresh',

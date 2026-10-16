@@ -43,8 +43,10 @@ const be: OrderCreateResponse = {
 }
 
 describe('normalizeStatus', () => {
-  it('keeps BE statuses and falls back to PENDING', () => {
-    expect(normalizeStatus('COMPLETED')).toBe('COMPLETED')
+  it('keeps every supported status and falls back to PENDING', () => {
+    for (const status of ['PENDING', 'NEEDS_INFO', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']) {
+      expect(normalizeStatus(status)).toBe(status)
+    }
     expect(normalizeStatus(undefined)).toBe('PENDING')
     expect(normalizeStatus('WHATEVER')).toBe('PENDING')
   })
@@ -84,6 +86,7 @@ describe('toDeliverableView', () => {
     expect(view.requirements).toEqual([
       { key: 'mediaType', value: 'IMAGE' },
       { key: 'quantity', value: '10' },
+      { key: 'additionalRequirements', value: 'AI_IMAGE_ANALYSIS' },
     ])
     expect(view.aiAnalysisRequested).toBe(true)
   })
@@ -112,8 +115,12 @@ describe('buildTimeline', () => {
 })
 
 describe('toOrderDetail', () => {
-  it('allows cancel only while PENDING', () => {
-    expect(toOrderDetail(be).canCancel).toBe(true)
-    expect(toOrderDetail({ ...be, orderStatus: 'APPROVED' }).canCancel).toBe(false)
+  it('maps fields from the backend without inventing action flags', () => {
+    expect(toOrderDetail(be)).toMatchObject({
+      status: 'PENDING',
+      altitudeM: null,
+      resultFormats: [],
+      deliveryMethods: [],
+    })
   })
 })

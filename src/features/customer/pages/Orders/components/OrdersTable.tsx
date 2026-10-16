@@ -57,7 +57,7 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
               </td>
               <td className="ord-col-actions">
                 <a className="ord-view" href={href}>
-                  {t.view}
+                  {row.status === 'NEEDS_INFO' ? t.addInformation : t.view}
                   <Icon name="arrow-right" width={16} height={16} aria-hidden="true" />
                 </a>
               </td>

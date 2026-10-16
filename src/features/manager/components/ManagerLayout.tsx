@@ -46,7 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Hỗ trợ khách hàng',
     items: [
       {
-        label: 'Support Center',
+        label: 'Trung tâm hỗ trợ',
         icon: 'reports',
         href: '#portal/manager/support',
       },
@@ -96,7 +96,7 @@ const activeNavLabel: Record<ManagerScreen, string> = {
   maintenance: 'Bảo trì',
   media: 'Media và giao kết quả',
   reports: 'Báo cáo',
-  support: 'Support Center',
+  support: 'Trung tâm hỗ trợ',
   notFound: '',
 }
 
@@ -243,7 +243,7 @@ export function ManagerLayout({
                 marginRight: 8,
               }}
             >
-              🎧 Support Center
+              🎧 Trung tâm hỗ trợ
             </a>
             <button
               type="button"

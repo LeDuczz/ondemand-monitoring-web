@@ -90,7 +90,7 @@ describe('CreateMissionPage', () => {
     render(<CreateMissionPage orderId={brief.id} initialBrief={brief} />)
     expect(await screen.findByText('Phiên bản 0')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Kế hoạch thực thi' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/)).toHaveValue('Toàn bộ phạm vi Order')
+    expect(screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/)).toHaveValue('Toàn bộ phạm vi đơn hàng')
     expect(screen.getByText('Mission sẽ sử dụng phạm vi địa lý hiện có của Order.')).toBeInTheDocument()
     expect(screen.queryByDisplayValue('Whole Order scope')).not.toBeInTheDocument()
     expect(screen.getByLabelText(/Tên \/ phạm vi công việc của Mission/)).toHaveAttribute('aria-describedby', 'mission-scope-help')

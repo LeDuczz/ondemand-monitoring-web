@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ApiError } from '../../../../shared/api/httpClient'
 import type { UseApiQueryState } from '../../../../shared/hooks/useApiQuery'
 import { readinessApi } from '../../api/readinessApi'
+import { ordersApi } from '../../api/ordersApi'
 import type {
   CriterionResult,
   OrderReadiness,
@@ -13,6 +14,7 @@ import { OrderIcon } from './OrderIcon'
 import './OrderReadinessCard.css'
 
 type Answer = Exclude<CriterionResult, 'PENDING'>
+type FailureAction = 'NEED_INFO' | 'REJECTED'
 
 const resultLabel: Record<CriterionResult, string> = {
   PASS: 'Đạt',
@@ -41,6 +43,7 @@ const contextualAnswerLabels: Record<string, Record<Answer, string>> = {
 }
 
 const criterionDescriptionOverrides: Record<string, string> = {}
+const criterionTitleOverrides: Record<string, string> = {}
 
 /**
  * Approval criteria for an order. Left: what the system checked on its own.
@@ -51,10 +54,12 @@ export function OrderReadinessCard({
   orderId,
   query,
   editable,
+  onDecisionDone,
 }: {
   orderId: string
   query: UseApiQueryState<OrderReadiness>
   editable: boolean
+  onDecisionDone?: () => void
 }) {
   const [drafts, setDrafts] = useState<
     Record<string, { result: Answer; note: string }>
@@ -88,7 +93,10 @@ export function OrderReadinessCard({
   }
 
   const auto = readiness.criteria.filter(
-    (c) => c.type === 'AUTO' && c.code !== 'CHECKLIST_REVIEWED',
+    (c) =>
+      c.type === 'AUTO' &&
+      c.code !== 'CHECKLIST_REVIEWED' &&
+      c.code !== 'SCHEDULE_DATE',
   )
   const manual = readiness.criteria.filter(
     (c) =>
@@ -131,6 +139,53 @@ export function OrderReadinessCard({
           : 'Không lưu được. Vui lòng thử lại.',
       )
     } finally {
+      setSavingCode(null)
+    }
+  }
+
+  const failedRequired = manual.filter((criterion) => {
+    const effectiveResult =
+      drafts[criterion.code]?.result ??
+      selectedResults[criterion.code] ??
+      criterion.result
+    return criterion.required && effectiveResult === 'FAIL'
+  })
+  const failedReasonsComplete = failedRequired.every((criterion) =>
+    Boolean(
+      drafts[criterion.code]?.note.trim() || criterion.note?.trim(),
+    ),
+  )
+
+  async function submitFailedDecision(decision: FailureAction) {
+    if (!failedReasonsComplete) {
+      setError('Vui lòng nhập lý do cho tất cả tiêu chí không đạt trước khi tiếp tục.')
+      return
+    }
+    const reason = failedRequired
+      .map((criterion) => {
+        const note =
+          drafts[criterion.code]?.note.trim() || criterion.note?.trim()
+        return note ? `${criterion.title}: ${note}` : criterion.title
+      })
+      .join('; ')
+    if (!reason) return
+    setSavingCode('decision')
+    setError(null)
+    try {
+      await Promise.all(
+        failedRequired
+          .filter((criterion) => drafts[criterion.code]?.result === 'FAIL')
+          .map((criterion) =>
+            readinessApi.answer(orderId, criterion.code, {
+              result: 'FAIL',
+              note: drafts[criterion.code].note.trim(),
+            }),
+          ),
+      )
+      await ordersApi.submitApproval(orderId, { decision, reason })
+      onDecisionDone?.()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không gửi được quyết định.')
       setSavingCode(null)
     }
   }
@@ -222,7 +277,7 @@ export function OrderReadinessCard({
                   <span className="odm-or-readiness-dot" aria-hidden="true" />
                   <div>
                     <strong>
-                      {c.title}
+                      {criterionTitleOverrides[c.code] ?? c.title}
                       {c.required ? (
                         <span className="odm-or-readiness-tag">Bắt buộc</span>
                       ) : null}
@@ -243,7 +298,7 @@ export function OrderReadinessCard({
                         placeholder={
                           needsNote ? 'Lý do không đạt (bắt buộc)' : 'Ghi chú'
                         }
-                        aria-label={`Ghi chú: ${c.title}`}
+                        aria-label={`Ghi chú: ${criterionTitleOverrides[c.code] ?? c.title}`}
                         onChange={(event) =>
                           setDrafts((state) => ({
                             ...state,
@@ -277,7 +332,7 @@ export function OrderReadinessCard({
                   <div
                     className="odm-or-readiness-choices"
                     role="group"
-                    aria-label={c.title}
+                    aria-label={criterionTitleOverrides[c.code] ?? c.title}
                   >
                     {options.map((option) => (
                       <button
@@ -308,14 +363,33 @@ export function OrderReadinessCard({
         </p>
       ) : null}
       {!readiness.canApprove && readiness.blockingReasons.length > 0 ? (
-        <ul
-          className="odm-or-readiness-blocking"
-          aria-label="Lý do chưa thể duyệt"
-        >
-          {readiness.blockingReasons.map((reason) => (
-            <li key={reason}>{reason}</li>
-          ))}
-        </ul>
+        <div className="odm-or-readiness-blocking" aria-label="Lý do chưa thể duyệt">
+          <ul>
+            {readiness.blockingReasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+          {failedRequired.length > 0 && editable ? (
+            <div className="odm-or-readiness-blocking-actions">
+              <button
+                type="button"
+                className="odm-btn odm-btn-ok"
+                disabled={savingCode === 'decision'}
+                onClick={() => void submitFailedDecision('NEED_INFO')}
+              >
+                Yêu cầu bổ sung
+              </button>
+              <button
+                type="button"
+                className="odm-btn odm-btn-rd"
+                disabled={savingCode === 'decision'}
+                onClick={() => void submitFailedDecision('REJECTED')}
+              >
+                Từ chối đơn
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </section>
   )

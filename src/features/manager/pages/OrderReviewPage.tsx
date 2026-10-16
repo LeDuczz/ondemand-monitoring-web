@@ -1,8 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../shared/i18n'
+import {
+  getMissionStatusLabel,
+  getOrderStatusLabel,
+} from '../../../shared/lib/statusTone'
 import { ordersApi } from '../api/ordersApi'
 import { InternalNoteCard } from '../components/orderReview/InternalNoteCard'
 import { OrderApprovalActions } from '../components/orderReview/OrderApprovalActions'
@@ -10,7 +14,6 @@ import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachments
 import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
 import { OrderReadinessCard } from '../components/orderReview/OrderReadinessCard'
 import { readinessApi } from '../api/readinessApi'
-import { OrderIcon } from '../components/orderReview/OrderIcon'
 import { OrderCustomerRequestDetails } from '../components/orderReview/OrderCustomerRequestDetails'
 import { OrderAreaCheck } from '../components/orderReview/OrderAreaCheck'
 import { OrderServiceInfo } from '../components/orderReview/OrderServiceInfo'
@@ -19,8 +22,19 @@ import {
   orderDeliverableLabels,
 } from '../components/orderReview/OrderServiceBanner'
 import { OrderStatusCard } from '../components/orderReview/OrderStatusCard'
+import { OrderBannerMeta } from '../components/orderReview/OrderBannerMeta'
 import { managerHref } from '../routes'
-import { OrderMissionPlanningSection } from '../components/planning/OrderMissionPlanningSection'
+import {
+  OrderMissionPlanningSection,
+  type PlanningWorkflowInfo,
+} from '../components/planning/OrderMissionPlanningSection'
+import { WorkflowStepper } from '../components/workflow/WorkflowStepper'
+import {
+  missionProgress,
+  orderProgress,
+  orderStageToReviewStep,
+  type OrderStage,
+} from '../components/workflow/workflowModel'
 import { OrderResourceAssignmentWizard } from '../components/planning/OrderResourceAssignmentWizard'
 import {
   orderReviewPageMessages,
@@ -28,12 +42,13 @@ import {
 } from './OrderReviewPage.messages'
 import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
 import '../manager.css'
+import type { FlightAreaReviewStatus } from '../types/orders'
 
 type PageMessages = OrderReviewMessages
 type ReviewStep = 1 | 2 | 3 | 4
 
 export function OrderReviewPage({ orderId }: { orderId: string }) {
-  const { t, locale } = useI18n(orderReviewPageMessages)
+  const { t, locale, lang } = useI18n(orderReviewPageMessages)
   const orderQuery = useApiQuery(
     (signal) => ordersApi.getOrder(orderId, signal),
     [orderId],
@@ -44,27 +59,73 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   )
 
   const [navigateHome, setNavigateHome] = useState(false)
+  const [assignStep, setAssignStep] = useState<6 | 7 | 8>(6)
   const [reviewStep, setReviewStep] = useState<ReviewStep>(1)
+  const [areaReviewStatus, setAreaReviewStatus] =
+    useState<FlightAreaReviewStatus | null>(null)
+  // A completed Order stage reopened read-only; null = the live (current) screen.
+  const [viewStage, setViewStage] = useState<OrderStage | null>(null)
+  const [planning, setPlanning] = useState<PlanningWorkflowInfo | null>(null)
   const pageRef = useRef<HTMLDivElement>(null)
   const [assigningMissionId, setAssigningMissionId] = useState<string | null>(
     null,
   )
-
+  useEffect(() => {
+    setAreaReviewStatus(orderQuery.data?.flightAreaReviewStatus ?? null)
+  }, [orderQuery.data])
   if (navigateHome) {
     window.location.hash = managerHref({ screen: 'orderQueue' })
     return null
   }
 
-  if (assigningMissionId)
+  if (assigningMissionId && orderQuery.data)
     return (
-      <OrderResourceAssignmentWizard
-        orderId={orderId}
-        initialMissionId={assigningMissionId}
-        onClose={() => {
-          setAssigningMissionId(null)
-          orderQuery.reload()
-        }}
-      />
+      <div className="odm-or odm-or-review-page">
+        <div className="odm-or-review-top">
+          <div className="odm-or-pagehead">
+            <h1 className="odm-or-title">Chi tiết đơn hàng</h1>
+            <p className="odm-or-subtitle">
+              Gán nhân sự và thiết bị cho Mission đã lên lịch
+            </p>
+          </div>
+          <WorkflowStepper
+            order={{
+              progress: { current: 'complete', waiting: false, terminal: null },
+            }}
+            mission={missionLayer(
+              planning,
+              assigningMissionId === '__select_mission__'
+                ? null
+                : assigningMissionId,
+              lang,
+              assignStep >= 8 ? 'review' : 'resources',
+            )}
+          />
+          <OrderServiceBanner
+            serviceName={orderQuery.data.serviceName}
+            serviceDescription={orderQuery.data.serviceDescription}
+            deliverables={orderDeliverableLabels(orderQuery.data, locale)}
+            deliverablesLabel={t.deliverableFormat}
+            eyebrow={t.serviceEyebrow}
+            meta={<OrderBannerMeta order={orderQuery.data} locale={locale} />}
+          />
+        </div>
+        <OrderResourceAssignmentWizard
+          orderId={orderId}
+          initialMissionId={
+            assigningMissionId === '__select_mission__'
+              ? undefined
+              : assigningMissionId
+          }
+          embedded
+          returnLabel="Chốt kế hoạch"
+          onStepChange={setAssignStep}
+          onClose={() => {
+            setAssigningMissionId(null)
+            orderQuery.reload()
+          }}
+        />
+      </div>
     )
   if (orderQuery.loading) return <ReviewSkeleton orderId={orderId} t={t} />
 
@@ -103,6 +164,23 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     order.status,
   )
 
+  // Until the planning data arrives assume the deposit is paid, so the header
+  // never flashes "waiting for deposit" for an order that is already funded.
+  const stepperProgress = orderProgress({
+    status: order.status,
+    depositPaid: planning ? planning.depositPaid : true,
+    reviewStep,
+  })
+  const readOnly = showExecutionPlan
+  const reviewing = !showExecutionPlan || viewStage !== null
+  const openStage = (stage: OrderStage) => {
+    const step = orderStageToReviewStep(stage)
+    if (!step) return
+    setReviewStep(step)
+    setViewStage(stage)
+    pageRef.current?.scrollIntoView?.({ block: 'start' })
+  }
+
   const goToStep = (step: ReviewStep) => {
     setReviewStep(step)
     // Each step is a long page; start the next one from the top.
@@ -128,33 +206,72 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
 
   return (
     <div className="odm-or odm-or-review-page" ref={pageRef}>
-      {!showExecutionPlan && (
-        <div className="odm-or-review-top">
+      <div className="odm-or-review-top">
+        {!showExecutionPlan && (
           <div className="odm-or-pagehead">
             <h1 className="odm-or-title">{t.pageTitle}</h1>
             <p className="odm-or-subtitle">{t.pageSubtitle}</p>
           </div>
-          <ReviewStageStepper currentStep={reviewStep} onChange={goToStep} />
-          <OrderServiceBanner
-            serviceName={order.serviceName}
-            serviceDescription={order.serviceDescription}
-            currentStep={reviewStep}
-            totalSteps={REVIEW_STEPS.length}
-            deliverables={orderDeliverableLabels(order, locale)}
-            eyebrow={t.serviceEyebrow}
-            stepLabel={(cur, total) => `${t.stepWord} ${cur}/${total}`}
+        )}
+        <WorkflowStepper
+          order={{
+            progress: stepperProgress,
+            statusLabel: getOrderStatusLabel(order.status, lang),
+            viewing: viewStage,
+            onSelect: (stage) =>
+              showExecutionPlan
+                ? openStage(stage)
+                : goToStep(orderStageToReviewStep(stage) ?? 1),
+            // Before approval the three review stages stay freely navigable;
+            // afterwards only completed stages reopen (read-only).
+            selectable: (stage, state) =>
+              orderStageToReviewStep(stage) !== null &&
+              (showExecutionPlan ? state === 'done' : true),
+          }}
+          mission={
+            showExecutionPlan && planning?.depositPaid && planning.missions.length
+              ? missionLayer(planning, planning.selectedMissionId, lang)
+              : undefined
+          }
+        />
+        <OrderServiceBanner
+          serviceName={order.serviceName}
+          serviceDescription={order.serviceDescription}
+          deliverables={orderDeliverableLabels(order, locale)}
+          deliverablesLabel={t.deliverableFormat}
+          eyebrow={t.serviceEyebrow}
+          meta={<OrderBannerMeta order={order} locale={locale} />}
+        />
+      </div>
+      {showExecutionPlan && (
+        // Stays mounted while history is open so unsaved planning drafts survive.
+        <div hidden={viewStage !== null}>
+          <OrderMissionPlanningSection
+            orderId={order.id}
+            initialOrder={order}
+            onAssignResources={setAssigningMissionId}
+            onWorkflowInfo={setPlanning}
           />
         </div>
       )}
-      {showExecutionPlan && (
-        <OrderMissionPlanningSection
-          orderId={order.id}
-          initialOrder={order}
-          onAssignResources={setAssigningMissionId}
-        />
+      {readOnly && viewStage !== null && (
+        <div className="odm-or-readonly-banner" role="status">
+          <strong>Bạn đang xem lại bước đã hoàn thành</strong>
+          <span>
+            Thông tin này đã được xác nhận và hiện chỉ có thể xem.
+          </span>
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            onClick={() => setViewStage(null)}
+          >
+            Quay lại bước hiện tại
+          </button>
+        </div>
       )}
-      {!showExecutionPlan && reviewStep === 1 ? (
+      {reviewing && reviewStep === 1 ? (
         <div className="odm-or-review-stage" aria-label="Thông tin đơn">
+          <ReadOnlyScope on={readOnly}>
           <section className="odm-or-grid odm-or-review-summary">
             <div className="odm-or-col">
               <OrderServiceInfo order={order} t={t} hideService />
@@ -171,31 +288,54 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               <InternalNoteCard orderId={order.id} t={t} locale={locale} />
             </div>
           </section>
+          </ReadOnlyScope>
           <ReviewStageActions step={1} onNext={() => goToStep(2)} />
         </div>
       ) : null}
 
-      {!showExecutionPlan && reviewStep === 2 ? (
+      {reviewing && reviewStep === 2 ? (
         <div className="odm-or-review-stage" aria-label="Kiểm tra vùng giám sát">
-          <OrderAreaCheck order={order} t={t} />
+          <ReadOnlyScope on={readOnly}>
+            <OrderAreaCheck
+              order={order}
+              t={t}
+              onReviewSaved={setAreaReviewStatus}
+            />
+          </ReadOnlyScope>
           <ReviewStageActions
             step={2}
             onBack={() => goToStep(1)}
             onNext={() => goToStep(3)}
             nextLabel="Tiếp: Điều kiện duyệt"
+            nextDisabled={
+              areaReviewStatus !== 'PRELIMINARY_PASS' &&
+              areaReviewStatus !== 'RESTRICTED'
+            }
+            hint={
+              areaReviewStatus == null
+                ? 'Manager cần đánh giá khu vực trước khi tiếp tục'
+                : areaReviewStatus === 'UNDETERMINED'
+                  ? 'Đang chờ xác minh thêm về khu vực'
+                  : areaReviewStatus === 'UNSUITABLE'
+                    ? 'Hãy yêu cầu khách đổi khu vực hoặc từ chối đơn'
+                    : null
+            }
           />
         </div>
       ) : null}
 
-      {!showExecutionPlan && reviewStep === 3 ? (
+      {reviewing && reviewStep === 3 ? (
         <div className="odm-or-review-stage" aria-label="Điều kiện duyệt">
-          <section className="odm-or-review-section">
-            <OrderReadinessCard
-              orderId={order.id}
-              query={readinessQuery}
-              editable={order.status === 'PENDING'}
-            />
-          </section>
+          <ReadOnlyScope on={readOnly}>
+            <section className="odm-or-review-section">
+              <OrderReadinessCard
+                orderId={order.id}
+                query={readinessQuery}
+                editable={order.status === 'PENDING'}
+                onDecisionDone={() => setNavigateHome(true)}
+              />
+            </section>
+          </ReadOnlyScope>
           <ReviewStageActions
             step={3}
             onBack={() => goToStep(2)}
@@ -210,8 +350,9 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
         </div>
       ) : null}
 
-      {!showExecutionPlan && reviewStep === 4 ? (
+      {reviewing && reviewStep === 4 ? (
         <div className="odm-or-review-stage" aria-label="Checklist và báo giá">
+          <ReadOnlyScope on={readOnly}>
           <section className="odm-or-review-section">
             <ManagerPricingPanel
               orderId={order.id}
@@ -230,6 +371,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               }
             />
           </section>
+          </ReadOnlyScope>
           <ReviewStageActions step={4} onBack={() => goToStep(3)} />
         </div>
       ) : null}
@@ -237,89 +379,42 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   )
 }
 
-const REVIEW_STEPS: Array<{
-  number: number
-  label: string
-  hint: string
-  reviewStep?: ReviewStep
-}> = [
-  { number: 1, label: 'Thông tin đơn', hint: 'Hồ sơ và vị trí', reviewStep: 1 },
-  {
-    number: 2,
-    label: 'Kiểm tra vùng',
-    hint: 'Bản đồ và cảnh báo',
-    reviewStep: 2,
-  },
-  {
-    number: 3,
-    label: 'Điều kiện duyệt',
-    hint: 'Kiểm tra và xác nhận',
-    reviewStep: 3,
-  },
-  {
-    number: 4,
-    label: 'Checklist & báo giá',
-    hint: 'Phân loại và quyết định',
-    reviewStep: 4,
-  },
-  { number: 5, label: 'Lên lịch', hint: 'Thời gian thực hiện' },
-  { number: 6, label: 'Gán nguồn lực', hint: 'Thiết bị và nhân sự' },
-  { number: 7, label: 'Xác nhận', hint: 'Hoàn tất kế hoạch' },
-]
+const REVIEW_PAGE_COUNT = 4
 
-function ReviewStageStepper({
-  currentStep,
-  onChange,
-}: {
-  currentStep: ReviewStep
-  onChange: (step: ReviewStep) => void
-}) {
-  return (
-    <nav
-      className="odm-or-card odm-or-review-stepper"
-      aria-label="Các bước review đơn"
-    >
-      <ol>
-        {REVIEW_STEPS.map((step) => {
-          const state = !step.reviewStep
-            ? 'locked'
-            : step.number < currentStep
-              ? 'done'
-              : step.number === currentStep
-                ? 'current'
-                : 'todo'
-          return (
-            <li key={step.number} className={`is-${state}`}>
-              <button
-                type="button"
-                className="odm-or-review-step"
-                aria-current={state === 'current' ? 'step' : undefined}
-                disabled={!step.reviewStep}
-                title={
-                  !step.reviewStep
-                    ? 'Hoàn tất duyệt đơn để mở bước này'
-                    : undefined
-                }
-                onClick={() => step.reviewStep && onChange(step.reviewStep)}
-              >
-                <span className="odm-or-review-step-dot">
-                  {state === 'done' ? (
-                    <OrderIcon name="check" size={16} />
-                  ) : (
-                    step.number
-                  )}
-                </span>
-                <span className="odm-or-review-step-text">
-                  <strong>{step.label}</strong>
-                  <small>{step.hint}</small>
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ol>
-    </nav>
+/** Completed stages stay readable but cannot be edited: a disabled fieldset covers every control inside. */
+function ReadOnlyScope({ on, children }: { on: boolean; children: ReactNode }) {
+  return on ? (
+    <fieldset className="odm-or-readonly" disabled>
+      {children}
+    </fieldset>
+  ) : (
+    <>{children}</>
   )
+}
+
+/** Mission row of the workflow header: which Mission, its business status, and where it is. */
+function missionLayer(
+  planning: PlanningWorkflowInfo | null,
+  missionId: string | null,
+  lang: 'vi' | 'en',
+  stage?: 'resources' | 'review',
+) {
+  const total = planning?.missions.length
+  const index = planning?.missions.findIndex((m) => m.id === missionId) ?? -1
+  const mission = index >= 0 ? planning?.missions[index] : undefined
+  const progress = mission ? missionProgress(mission.status) : null
+  return {
+    progress:
+      stage === 'resources'
+        ? { current: 'resources' as const, finished: false, terminal: null }
+        : stage === 'review'
+          ? { current: 'prepare' as const, finished: false, terminal: null }
+          : progress,
+    index: mission ? index + 1 : undefined,
+    total: mission ? total : undefined,
+    code: mission?.code,
+    statusLabel: mission ? getMissionStatusLabel(mission.status, lang) : undefined,
+  }
 }
 
 function ReviewStageActions({
@@ -328,12 +423,14 @@ function ReviewStageActions({
   onNext,
   nextLabel = 'Tiếp: Điều kiện duyệt',
   hint,
+  nextDisabled = false,
 }: {
   step: ReviewStep
   onBack?: () => void
   onNext?: () => void
   nextLabel?: string
   hint?: string | null
+  nextDisabled?: boolean
 }) {
   return (
     <div className="odm-or-review-stage-actions">
@@ -343,7 +440,7 @@ function ReviewStageActions({
         </button>
       ) : null}
       <span className="odm-or-review-stage-progress">
-        Bước {step}/{REVIEW_STEPS.length}
+        Bước {step}/{REVIEW_PAGE_COUNT}
       </span>
       {hint ? (
         <span className="odm-or-review-stage-hint" role="status">
@@ -351,7 +448,7 @@ function ReviewStageActions({
         </span>
       ) : null}
       {onNext ? (
-        <button type="button" className="odm-btn odm-btn-p" onClick={onNext}>
+        <button type="button" className="odm-btn odm-btn-p" onClick={onNext} disabled={nextDisabled}>
           {nextLabel}
         </button>
       ) : null}

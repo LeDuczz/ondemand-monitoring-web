@@ -8,17 +8,38 @@ import {
   pricingLabel,
 } from '../../shared/lib/pricingPresentation'
 import { financeApi } from './api'
-import type { Invoice, Quote } from './types'
 import { customerFinancePanelMessages } from './CustomerFinancePanel.messages'
+import type { Invoice, Quote } from './types'
 import './finance.css'
 
-export function CustomerFinancePanel({ orderId }: { orderId: string }) {
+export type CustomerFinanceState = {
+  quote: Quote | null
+  invoice: Invoice | null
+  loading: boolean
+}
+
+const invoiceStatusLabels: Record<string, string> = {
+  ISSUED: 'Chờ thanh toán',
+  PARTIALLY_PAID: 'Đã thanh toán một phần',
+  PAID: 'Đã thanh toán',
+  OVERDUE: 'Quá hạn',
+  CANCELLED: 'Đã hủy',
+  REFUNDED: 'Đã hoàn tiền',
+}
+
+export function CustomerFinancePanel({
+  orderId,
+  onStateChange,
+}: {
+  orderId: string
+  onStateChange?: (state: CustomerFinanceState) => void
+}) {
   const { t } = useI18n(customerFinancePanelMessages)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<unknown>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -29,16 +50,20 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
     ])
     if (quoteResult.status === 'fulfilled') setQuote(quoteResult.value)
     else if (!isNotFound(quoteResult.reason))
-      setError(quoteResult.reason)
+      setError(messageOf(quoteResult.reason, t))
     if (invoiceResult.status === 'fulfilled') setInvoice(invoiceResult.value)
     else if (!isNotFound(invoiceResult.reason))
-      setError(invoiceResult.reason)
+      setError(messageOf(invoiceResult.reason, t))
     setLoading(false)
-  }, [orderId])
+  }, [orderId, t])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    onStateChange?.({ quote, invoice, loading })
+  }, [invoice, loading, onStateChange, quote])
 
   async function accept() {
     if (!quote) return
@@ -48,26 +73,26 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
       setInvoice(await financeApi.acceptQuote(orderId, quote.id))
       await load()
     } catch (cause) {
-      setError(cause)
+      setError(messageOf(cause, t))
     } finally {
       setBusy(false)
     }
   }
 
-  async function pay(kind: 'deposit' | 'final') {
+  async function pay(type: 'deposit' | 'final') {
     if (!invoice) return
     setBusy(true)
     setError(null)
     try {
       const payment =
-        kind === 'deposit'
+        type === 'deposit'
           ? await financeApi.createDeposit(invoice.id)
           : await financeApi.createFinalPayment(invoice.id)
       if (!payment.paymentUrl)
         throw new Error(t.missingPaymentUrl)
       window.location.assign(payment.paymentUrl)
     } catch (cause) {
-      setError(cause)
+      setError(messageOf(cause, t))
       setBusy(false)
     }
   }
@@ -161,7 +186,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <span
               className={`finance-status is-${invoice.status.toLowerCase()}`}
             >
-              {pricingLabel(invoice.status)}
+              {invoiceStatusLabels[invoice.status] ?? pricingLabel(invoice.status)}
             </span>
           </div>
           <div className="customer-payment-stats">
@@ -177,8 +202,8 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <div className="customer-deposit-notice">
               <b>Đang chờ đặt cọc</b>
               <span>
-                Nhiệm vụ đã được tạo nhưng chỉ bắt đầu phân bổ nguồn lực sau khi
-                khoản đặt cọc được xác nhận.
+                Kế hoạch thực hiện và Mission sẽ được mở sau khi khoản đặt cọc
+                được xác nhận.
               </span>
             </div>
           ) : invoice.status !== 'PAID' ? (
@@ -215,7 +240,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
       ) : null}
       {error ? (
         <p className="finance-alert is-error" role="alert">
-          {messageOf(error, t)}
+          {error}
         </p>
       ) : null}
     </section>
@@ -255,7 +280,7 @@ function messageOf(error: unknown, t: (typeof customerFinancePanelMessages)['vi'
       return t.networkError
     }
     if (error.code === 'PAYMENT_PROVIDER_ERROR') {
-      return t.paymentProviderError
+      return 'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.'
     }
     const messages: Record<string, string> = {
       INVOICE_ALREADY_PAID: 'Hóa đơn này đã được thanh toán đầy đủ.',

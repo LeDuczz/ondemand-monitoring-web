@@ -613,6 +613,15 @@ function formatCheckedAt(value?: string) {
   })
 }
 
+/** Pilot has not answered yet: the screen's job is to support Accept/Reject. */
+function isAwaitingResponse(mission: OperatorMission) {
+  return (
+    mission.status === 'PENDING' &&
+    mission.myResponseStatus !== 'ACCEPTED' &&
+    !missionHasSafeStop(mission)
+  )
+}
+
 function actionErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message
     ? monitoringErrorMessage(error)
@@ -805,6 +814,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             resultNote={monitoring.data?.result?.reviewNote}
             resultKnown={monitoringKnown}
             refresh={refreshWorkspace}
+            preview={isAwaitingResponse(mission)}
           />
         }
         resultApprovalStatus={resultApprovalStatus}
@@ -814,7 +824,8 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
         onOpenReject={() => setShowReject(true)}
       />
 
-      {actions.known &&
+      {!isAwaitingResponse(mission) &&
+        actions.known &&
         monitoring.data?.permissions.canPrepareSafeStopPostflight === true && (
           <div className="odm-card">
             <p>
@@ -904,7 +915,7 @@ function MissionDashboard({
   const [tab, setTab] = useState<'overview' | 'checks' | 'media'>('overview')
   const tabs: Array<{ id: 'overview' | 'checks' | 'media'; label: string }> = [
     { id: 'overview', label: 'Tổng quan' },
-    { id: 'checks', label: 'Kết quả check' },
+    { id: 'checks', label: 'Kết quả kiểm tra thiết bị' },
     ...(mission.status === 'COMPLETED' ||
     mission.backendStatus === 'PENDING_REVIEW'
       ? [{ id: 'media' as const, label: 'Ảnh & video' }]
@@ -940,18 +951,97 @@ function MissionDashboard({
     return () => controller.abort()
   }, [deviceId, mission.id])
 
+  if (isAwaitingResponse(mission)) {
+    return (
+      <div className="mds-pending">
+        <MissionHeader mission={mission} access={access} />
+        <p className="mds-meta-line">
+          {[
+            mission.serviceLabel,
+            [formatVnDate(mission.date), mission.startTime]
+              .filter(Boolean)
+              .join(' · '),
+            locationLabel(mission.location),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+        <DecisionSummary mission={mission} />
+        {actionError ? (
+          <div
+            role="alert"
+            style={{
+              marginBottom: 12,
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'var(--red-bg)',
+              color: 'var(--red-fg)',
+              border: '1px solid var(--red-dot)',
+              fontSize: 13,
+            }}
+          >
+            {actionError}
+          </div>
+        ) : null}
+        <MissionMapCard mission={mission} />
+        <div className="mds-tab-grid" style={{ marginTop: 16 }}>
+          <div className="mds-col">
+            <MissionInfoCard mission={mission} />
+            {mission.managerNote ? <ManagerNoteCard mission={mission} /> : null}
+          </div>
+          <div className="mds-col">
+            <DroneDeviceCard mission={mission} />
+          </div>
+        </div>
+        <details className="odm-card mds-pending-checklist">
+          <summary>
+            Checklist thực hiện
+            <small>
+              🔒 Checklist sẽ được mở sau khi bạn chấp nhận nhiệm vụ. Bấm để xem
+              trước.
+            </small>
+          </summary>
+          <div className="mds-pending-checklist-body">{monitoringSection}</div>
+        </details>
+        <div
+          className="mds-action-bar"
+          role="region"
+          aria-label="Phản hồi nhiệm vụ"
+        >
+          <div className="mds-action-bar-text">
+            Bạn có muốn nhận nhiệm vụ này?
+            {!access?.canRespond && (
+              <small>Bạn chưa có quyền phản hồi nhiệm vụ này.</small>
+            )}
+          </div>
+          <div className="mds-action-bar-buttons">
+            <button
+              type="button"
+              className="odm-btn odm-btn-rd"
+              onClick={onOpenReject}
+              disabled={submitting || !access?.canRespond}
+            >
+              Từ chối
+            </button>
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={onAccept}
+              disabled={submitting || !access?.canRespond}
+            >
+              {submitting ? 'Đang xử lý...' : '✓ Chấp nhận nhiệm vụ'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* ── Header ── */}
-      <MissionHeader
-        mission={mission}
-        submitting={submitting}
-        access={access}
-        onAccept={onAccept}
-        onOpenReject={onOpenReject}
-      />
+      <MissionHeader mission={mission} access={access} />
 
-      {monitoringSection}
       {resultActions}
 
       {actionError ? (
@@ -990,6 +1080,7 @@ function MissionDashboard({
         <div className="mds-tab-grid">
           <div className="mds-col">
             <MissionMapCard mission={mission} />
+            {monitoringSection}
           </div>
           <div className="mds-col mds-sticky-col">
             <MissionInfoCard mission={mission} />
@@ -1029,16 +1120,10 @@ function MissionDashboard({
 
 function MissionHeader({
   mission,
-  submitting,
   access,
-  onAccept,
-  onOpenReject,
 }: {
   mission: OperatorMission
-  submitting: boolean
   access?: MissionPermissions
-  onAccept: () => void
-  onOpenReject: () => void
 }) {
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
   const stopping = missionHasSafeStop(mission)
@@ -1148,27 +1233,8 @@ function MissionHeader({
           ) : null
         ) : mission.status === 'PENDING' && hasAccepted ? (
           <StatusBadge tone="green">Bạn đã chấp nhận</StatusBadge>
-        ) : mission.status === 'PENDING' ? (
-          <>
-            <button
-              type="button"
-              className="odm-btn odm-btn-rd"
-              onClick={onOpenReject}
-              disabled={submitting || !access?.canRespond}
-            >
-              Từ chối
-            </button>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              onClick={onAccept}
-              disabled={submitting || !access?.canRespond}
-            >
-              {submitting ? 'Đang xử lý...' : 'Chấp nhận'}
-            </button>
-          </>
-        ) : mission.backendStatus === 'READY_TO_FLY' &&
-          access?.canControlFlight ? (
+        ) : mission.status === 'PENDING' ? null : mission.backendStatus ===
+            'READY_TO_FLY' && access?.canControlFlight ? (
           <a
             className="odm-btn odm-btn-p"
             href={operatorHref({ screen: 'flight', missionId: mission.id })}
@@ -1204,6 +1270,54 @@ function MissionHeader({
         ) : null}
       </div>
     </div>
+  )
+}
+
+// ─── Decision summary ─────────────────────────────────────────────────────────
+
+function DecisionSummary({ mission }: { mission: OperatorMission }) {
+  const time = [mission.startTime, mission.endTime].filter(Boolean).join('–')
+  const items: Array<{ label: string; value: string }> = [
+    { label: '📍 Khu vực', value: locationLabel(mission.location) },
+    {
+      label: '🕐 Thời gian',
+      value: [formatVnDate(mission.date), time].filter(Boolean).join(' · '),
+    },
+    {
+      label: '🛩 Phạm vi',
+      value:
+        mission.radiusMeters == null
+          ? '—'
+          : `Bán kính ${Math.round(mission.radiusMeters)} m`,
+    },
+    { label: '📋 Loại nhiệm vụ', value: mission.serviceLabel || '—' },
+  ]
+  if (mission.respondBy) {
+    items.push({
+      label: '⏳ Hạn phản hồi',
+      value: formatCheckedAt(mission.respondBy),
+    })
+  }
+  if (mission.managerNote) {
+    items.push({ label: '⚠ Lưu ý từ manager', value: mission.managerNote })
+  }
+  return (
+    <section
+      className="odm-card mds-decision"
+      aria-label="Thông tin để quyết định"
+    >
+      <div className="odm-card-header">
+        <span style={{ fontWeight: 700 }}>Thông tin để quyết định</span>
+      </div>
+      <dl className="mds-decision-grid" style={{ margin: 0 }}>
+        {items.map((item) => (
+          <div key={item.label} className="mds-decision-item">
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   )
 }
 

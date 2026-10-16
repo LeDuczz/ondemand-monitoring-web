@@ -5,7 +5,12 @@ import {
   type FlightAreaAssessment,
 } from '../../../customer/api/customerApi'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
-import type { OrderDetail } from '../../types/orders'
+import { ordersApi } from '../../api/ordersApi'
+import { managerHref } from '../../routes'
+import type {
+  FlightAreaReviewStatus,
+  OrderDetail,
+} from '../../types/orders'
 import { OrderLocationCard } from './OrderLocationCard'
 import { resolveOrderGpsCenter } from './orderGps'
 
@@ -14,10 +19,14 @@ const assessmentCache = new Map<string, FlightAreaAssessment>()
 export function OrderAreaCheck({
   order,
   t,
+  onReviewSaved,
 }: {
   order: OrderDetail
   t: OrderReviewMessages
+  onReviewSaved?: (status: FlightAreaReviewStatus) => void
 }) {
+  const [review, setReview] = useState(() => areaReviewFromOrder(order))
+  const [reviewOpen, setReviewOpen] = useState(false)
   const resolved = resolveOrderGpsCenter(order.center)
   const latitude = resolved?.center.lat
   const longitude = resolved?.center.lon
@@ -64,7 +73,7 @@ export function OrderAreaCheck({
         <OrderLocationCard order={order} t={t} showAreaAddress />
         <section className="odm-or-card">
           <header className="odm-or-card-head">
-            <span className="odm-or-card-title">Kết luận về khu vực bay</span>
+            <span className="odm-or-card-title">Kết quả kiểm tra khu vực</span>
             <button
               type="button"
               className="odm-or-btn-outline"
@@ -126,7 +135,7 @@ export function OrderAreaCheck({
                 </details>
                 {hasMinistryViolations ? (
                   <div className="odm-or-area-findings">
-                    <strong>Mã vùng vi phạm theo cambay.mod.gov.vn</strong>
+                    <strong>Vùng cần đối chiếu</strong>
                     <ul>
                       {ministryViolatedZones.map((zone) => (
                         <li key={zone} className="is-high odm-or-area-zone-row">
@@ -177,13 +186,235 @@ export function OrderAreaCheck({
                 >
                   Mở bản đồ cấm bay của Bộ Quốc phòng
                 </a>
+                <ManagerAreaReview
+                  order={order}
+                  review={review}
+                  onEdit={() => setReviewOpen(true)}
+                />
               </>
             ) : null}
           </div>
         </section>
       </div>
+      {reviewOpen ? (
+        <AreaReviewDialog
+          order={order}
+          initial={review}
+          zoneCount={ministryViolatedZones.length}
+          onClose={() => setReviewOpen(false)}
+          onSaved={(next) => {
+            setReview(next)
+            setReviewOpen(false)
+            onReviewSaved?.(next.status)
+          }}
+        />
+      ) : null}
     </section>
   )
+}
+
+type SavedAreaReview = {
+  status: FlightAreaReviewStatus
+  requestedScopeFeasible: boolean | null
+  reason: string | null
+  note: string | null
+  reviewer: string | null
+  reviewedAt: string | null
+}
+
+function areaReviewFromOrder(order: OrderDetail): SavedAreaReview | null {
+  if (!order.flightAreaReviewStatus) return null
+  return {
+    status: order.flightAreaReviewStatus,
+    requestedScopeFeasible: order.requestedScopeFeasible ?? null,
+    reason: order.flightAreaReviewReason ?? null,
+    note: order.flightAreaReviewNote ?? null,
+    reviewer: order.flightAreaReviewedByName ?? null,
+    reviewedAt: order.flightAreaReviewedAt ?? null,
+  }
+}
+
+function ManagerAreaReview({
+  order,
+  review,
+  onEdit,
+}: {
+  order: OrderDetail
+  review: SavedAreaReview | null
+  onEdit: () => void
+}) {
+  return (
+    <div className="odm-or-area-manager-review">
+      {review ? (
+        <>
+          <span>Đánh giá của Manager</span>
+          <strong className={`is-${review.status.toLowerCase()}`}>
+            {areaReviewLabel(review.status)}
+          </strong>
+          {review.reason ? <p><b>Lý do:</b> {review.reason}</p> : null}
+          {review.note ? <p><b>Ghi chú:</b> {review.note}</p> : null}
+          <small>
+            {review.reviewer ?? 'Manager'}
+            {review.reviewedAt
+              ? ` · ${new Intl.DateTimeFormat('vi-VN', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                }).format(new Date(review.reviewedAt))}`
+              : ''}
+          </small>
+          <button type="button" className="odm-or-btn-outline" onClick={onEdit}>
+            Chỉnh sửa đánh giá
+          </button>
+          {review.status === 'UNSUITABLE' ? (
+            <div className="odm-or-area-secondary-actions">
+              <button type="button" onClick={() => void resolveUnsuitable(order, review, 'NEED_INFO')}>
+                Yêu cầu khách đổi khu vực
+              </button>
+              <button type="button" className="is-danger" onClick={() => void resolveUnsuitable(order, review, 'REJECTED')}>
+                Từ chối đơn hàng
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <p>Chưa có đánh giá của Manager.</p>
+          <button type="button" className="odm-btn odm-btn-p" onClick={onEdit}>
+            Đánh giá khu vực
+          </button>
+          <a href="#portal/manager/support">Cần trợ giúp? Liên hệ hỗ trợ</a>
+        </>
+      )}
+    </div>
+  )
+}
+
+const REVIEW_OPTIONS: Array<{
+  status: FlightAreaReviewStatus
+  label: string
+  hint: string
+}> = [
+  { status: 'PRELIMINARY_PASS', label: 'Đạt sơ bộ', hint: 'Không phát hiện vấn đề cần chặn.' },
+  { status: 'RESTRICTED', label: 'Cần xử lý/giấy phép', hint: 'Có điều kiện nhưng có thể tiếp tục chuẩn bị Mission.' },
+  { status: 'UNSUITABLE', label: 'Không phù hợp', hint: 'Khu vực hiện tại không thể thực hiện theo yêu cầu.' },
+]
+
+const UNSUITABLE_REASONS = [
+  'Khu vực cấm/hạn chế không đáp ứng điều kiện',
+  'Không thể bảo đảm phạm vi hoạt động',
+  'Không thể xác minh điều kiện khu vực',
+  'Lý do khác',
+]
+
+function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
+  order: OrderDetail
+  initial: SavedAreaReview | null
+  zoneCount: number
+  onClose: () => void
+  onSaved: (review: SavedAreaReview) => void
+}) {
+  const [status, setStatus] = useState<FlightAreaReviewStatus | null>(
+    initial?.status === 'UNDETERMINED' ? null : (initial?.status ?? null),
+  )
+  const [reason, setReason] = useState(initial?.reason ?? '')
+  const [note, setNote] = useState(initial?.note ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const reasonRequired = status === 'UNSUITABLE'
+
+  async function save() {
+    if (!status) return setError('Chọn một kết quả đánh giá.')
+    if (reasonRequired && !reason.trim()) return setError('Chọn lý do khu vực không phù hợp.')
+    setSaving(true)
+    setError('')
+    try {
+      const result = await ordersApi.saveFlightAreaReview(order.id, {
+        status,
+        reason: reason.trim() || null,
+        note: note.trim() || null,
+      })
+      onSaved({
+        status: result.flightAreaReviewStatus ?? status,
+        requestedScopeFeasible: result.requestedScopeFeasible ?? null,
+        reason: result.flightAreaReviewReason ?? (reason.trim() || null),
+        note: result.flightAreaReviewNote ?? (note.trim() || null),
+        reviewer: result.flightAreaReviewedByName ?? 'Manager',
+        reviewedAt: result.flightAreaReviewedAt ?? new Date().toISOString(),
+      })
+    } catch {
+      setError('Không thể lưu đánh giá. Vui lòng thử lại.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="odm-or-area-modal-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose()
+    }}>
+      <section className="odm-or-area-modal" role="dialog" aria-modal="true" aria-labelledby="area-review-title">
+        <header>
+          <div>
+            <h3 id="area-review-title">Đánh giá điều kiện khu vực bay</h3>
+            <p>Kết quả bản đồ cần được Manager xác nhận trước khi tiếp tục.</p>
+          </div>
+          <button type="button" aria-label="Đóng" onClick={onClose}>×</button>
+        </header>
+        <div className="odm-or-area-modal-context">
+          <b>{order.title || 'Yêu cầu giám sát'}</b><span>{zoneCount} vùng cần đối chiếu</span>
+        </div>
+        <div className="odm-or-area-review-options">
+          {REVIEW_OPTIONS.map((option) => (
+            <label key={option.status} className={status === option.status ? 'is-selected' : ''}>
+              <input type="radio" name="area-review" checked={status === option.status}
+                onChange={() => { setStatus(option.status); setError('') }} />
+              <span><b>{option.label}</b><small>{option.hint}</small></span>
+            </label>
+          ))}
+        </div>
+        {status === 'RESTRICTED' ? (
+          <p className="odm-or-area-permission-note">
+            Đơn có thể tiếp tục. Điều kiện giấy phép sẽ được xử lý sau khi Mission và kế hoạch bay được xác định.
+          </p>
+        ) : null}
+        {reasonRequired ? (
+          <label className="odm-or-area-field">Lý do
+            <select value={reason} onChange={(event) => setReason(event.target.value)}>
+              <option value="">Chọn lý do</option>
+              {UNSUITABLE_REASONS.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+        ) : null}
+        <label className="odm-or-area-field">Ghi chú của Manager
+          <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)}
+            placeholder="Ghi lại nội dung đã đối chiếu hoặc thông tin cần xác minh…" />
+        </label>
+        {error ? <p className="odm-or-area-error" role="alert">{error}</p> : null}
+        <footer>
+          <button type="button" className="odm-btn" onClick={onClose}>Hủy</button>
+          <button type="button" className="odm-btn odm-btn-p" disabled={saving} onClick={save}>
+            {saving ? 'Đang lưu…' : 'Xác nhận đánh giá'}
+          </button>
+        </footer>
+      </section>
+    </div>
+  )
+}
+
+function areaReviewLabel(status: FlightAreaReviewStatus) {
+  return REVIEW_OPTIONS.find((option) => option.status === status)?.label ?? status
+}
+
+async function resolveUnsuitable(
+  order: OrderDetail,
+  review: SavedAreaReview,
+  decision: 'NEED_INFO' | 'REJECTED',
+) {
+  const action = decision === 'NEED_INFO' ? 'yêu cầu khách đổi khu vực' : 'từ chối đơn hàng'
+  if (!window.confirm(`Xác nhận ${action}?`)) return
+  const reason = [review.reason, review.note].filter(Boolean).join(' — ')
+  await ordersApi.submitApproval(order.id, { decision, reason })
+  window.location.hash = managerHref({ screen: 'orderQueue' })
 }
 
 function useCachedAreaAssessment({

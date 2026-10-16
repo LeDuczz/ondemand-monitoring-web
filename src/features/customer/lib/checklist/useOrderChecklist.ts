@@ -6,6 +6,9 @@ import { checklistMessages } from './messages'
 import { useChecklistQuote } from './useChecklistQuote'
 import type { ChecklistQuoteContext } from '../../../../shared/api/checklistPricingApi'
 import {
+  EVIDENCE_TYPES,
+  evidenceTypeFor,
+  mediaTotals,
   normalizeContent,
   serializeChecklist,
   usesMedia,
@@ -72,8 +75,10 @@ export function useOrderChecklist(
               content: item.content,
               selected: true,
               minimumEvidenceCount: item.minimumEvidenceCount ?? 1,
-              requiredEvidenceType:
-                item.requiredEvidenceType ?? 'IMAGE_OR_VIDEO',
+              requiredEvidenceType: evidenceTypeFor(
+                item.includedImageCount ?? 0,
+                item.includedVideoCount ?? 0,
+              ),
               includedImageCount: item.includedImageCount ?? 0,
               includedVideoCount: item.includedVideoCount ?? 0,
               requestedImageCount: item.includedImageCount ?? 0,
@@ -102,7 +107,10 @@ export function useOrderChecklist(
                   content: item.content,
                   selected: false,
                   minimumEvidenceCount: 1,
-                  requiredEvidenceType: 'IMAGE_OR_VIDEO' as const,
+                  requiredEvidenceType: evidenceTypeFor(
+                    item.includedImageCount ?? 0,
+                    item.includedVideoCount ?? 0,
+                  ),
                   includedImageCount: item.includedImageCount ?? 0,
                   includedVideoCount: item.includedVideoCount ?? 0,
                   requestedImageCount: item.includedImageCount ?? 0,
@@ -157,8 +165,8 @@ export function useOrderChecklist(
   else if (
     selected.some(
       (row) =>
-        !(['IMAGE', 'VIDEO', 'IMAGE_OR_VIDEO'] as const).includes(
-          row.requiredEvidenceType,
+        !EVIDENCE_TYPES.includes(
+          row.requiredEvidenceType as (typeof EVIDENCE_TYPES)[number],
         ),
     )
   )
@@ -178,6 +186,14 @@ export function useOrderChecklist(
     )
   )
     validation = t.mediaRequired
+  else if (
+    selected.some(
+      (row) =>
+        row.requiredEvidenceType === 'IMAGE_AND_VIDEO' &&
+        (row.requestedImageCount < 1 || row.requestedVideoCount < 1),
+    )
+  )
+    validation = t.bothMediaRequired
   else if (
     new Set(selected.map((row) => normalizeContent(row.content).toLowerCase()))
       .size !== selected.length
@@ -233,6 +249,11 @@ export function useOrderChecklist(
     error: status === 'error' ? checklistError(current?.error, true) : null,
     serviceId,
     selectedCount: selected.length,
+    /** Images and videos requested across the selected checklists. */
+    mediaTotals: mediaTotals(rows),
+    /** Rows the customer can actually see and pick from (package rows plus anything selected or added). */
+    totalCount: rows.filter((row) => row.packageItem !== false || row.selected)
+      .length,
     quote,
     /** Choices and quantities for the backend price quote; null while the form is incomplete. */
     quoteItems: () => quoteItems,
@@ -255,7 +276,7 @@ export function useOrderChecklist(
                   content: '',
                   selected: true,
                   minimumEvidenceCount: 1,
-                  requiredEvidenceType: 'IMAGE_OR_VIDEO',
+                  requiredEvidenceType: 'IMAGE',
                   includedImageCount: 0,
                   includedVideoCount: 0,
                   requestedImageCount: 0,

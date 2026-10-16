@@ -78,15 +78,14 @@ export function CustomerCreateRequestPage() {
                 preferredTimes={meta.preferredTimes}
               />
               <DeliverablesCard
-                form={form}
-                errors={errors}
-                update={update}
                 deliverables={meta.deliverables}
                 loading={meta.deliverablesLoading}
                 error={meta.deliverablesError}
                 onRetry={meta.reloadDeliverables}
+                mediaTotals={r.checklist.mediaTotals}
               />
               <DeliveryOptionsCard
+                mediaTotals={r.checklist.mediaTotals}
                 form={form}
                 errors={errors}
                 update={update}
@@ -95,6 +94,7 @@ export function CustomerCreateRequestPage() {
           </div>
           <div className="co-grid">
             <RequestSummaryCard
+              mediaTotals={r.checklist.mediaTotals}
               form={form}
               service={r.service}
               time={r.time}
@@ -124,6 +124,9 @@ export function CustomerCreateRequestPage() {
               form={form}
               service={r.service}
               pricingEstimate={estimate}
+              checklistCount={r.checklist.selectedCount}
+              mediaTotals={r.checklist.mediaTotals}
+              time={r.time}
               submitting={submit.submitting}
               error={r.submitError}
               onConfirm={() => void submit.submit()}

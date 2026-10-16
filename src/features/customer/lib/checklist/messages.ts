@@ -39,12 +39,19 @@ export const checklistMessages = defineMessages({
     evidenceType: (n: number) => `Loại bằng chứng cho mục ${n}`,
     image: 'Ảnh',
     video: 'Video',
-    imageOrVideo: 'Ảnh hoặc video',
+    imageAndVideo: 'Ảnh và video',
+    imageOrVideo: 'Ảnh hoặc video (cũ)',
+    minimumImagesLabel: 'Số ảnh tối thiểu',
+    minimumVideosLabel: 'Số video tối thiểu',
+    imageAndVideoSummary: (images: number, videos: number) =>
+      `${images} ảnh + ${videos} video`,
+    bothMediaRequired:
+      'Loại "Ảnh và video" cần ít nhất một ảnh và một video.',
     custom: 'Bổ sung của bạn',
     awaitingManagerQuote: 'Chờ Manager đánh giá',
     defaultItem: 'Mặc định của dịch vụ',
     catalogItem: 'Danh mục bổ sung',
-    count: (n: number) => `${n}/100 nội dung được chọn`,
+    count: (n: number, total: number) => `${n}/${total} nội dung được chọn`,
     length: 'Mỗi nội dung cần từ 1 đến 500 ký tự sau khi bỏ khoảng trắng thừa.',
     duplicate: 'Các nội dung được chọn không được trùng nhau.',
     invalidEvidenceCount:
@@ -124,12 +131,19 @@ export const checklistMessages = defineMessages({
     evidenceType: (n: number) => `Evidence type for requirement ${n}`,
     image: 'Image',
     video: 'Video',
-    imageOrVideo: 'Image or video',
+    imageAndVideo: 'Image and video',
+    imageOrVideo: 'Image or video (legacy)',
+    minimumImagesLabel: 'Minimum images',
+    minimumVideosLabel: 'Minimum videos',
+    imageAndVideoSummary: (images: number, videos: number) =>
+      `${images} images + ${videos} videos`,
+    bothMediaRequired:
+      '"Image and video" needs at least one image and one video.',
     custom: 'Your addition',
     awaitingManagerQuote: 'Awaiting manager assessment',
     defaultItem: 'Service default',
     catalogItem: 'Additional catalog item',
-    count: (n: number) => `${n}/100 requirements selected`,
+    count: (n: number, total: number) => `${n}/${total} requirements selected`,
     length:
       'Each requirement must contain 1–500 characters after whitespace normalization.',
     duplicate: 'Selected requirements must not have duplicate content.',

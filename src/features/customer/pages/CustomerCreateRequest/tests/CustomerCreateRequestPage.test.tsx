@@ -30,10 +30,9 @@ async function fillForm() {
   fireEvent.click(
     await screen.findByRole('button', { name: /Giám sát công trình/ }),
   )
-  const deliverable = (await screen.findByLabelText(
-    /Loại kết quả/,
-  )) as HTMLSelectElement
-  await waitFor(() => expect(deliverable.value).toBe('dt-photo'))
+  await waitFor(() =>
+    expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
+  )
   fireEvent.click(screen.getByLabelText(/Tôi đã đọc và đồng ý/))
 }
 
@@ -92,7 +91,7 @@ describe('CustomerCreateRequestPage', () => {
         sourceChecklistId: `check-svc-construction-${index + 1}`,
         expectedChecklistVersion: 1,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       })),
     ])
     expect(payload).toMatchObject({
@@ -116,21 +115,6 @@ describe('CustomerCreateRequestPage', () => {
     }
   })
 
-  it('validates deliverable selection before opening confirmation', async () => {
-    render(<CustomerCreateRequestPage />)
-    await fillForm()
-    await screen.findByLabelText('Nội dung giám sát 1')
-    fireEvent.change(screen.getByLabelText(/Loại kết quả/), {
-      target: { value: '' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByLabelText(/Loại kết quả/)).toHaveValue('')
-    expect(
-      screen.getByLabelText(/Loại kết quả/).closest('section'),
-    ).toHaveTextContent('Chọn kết quả bàn giao.')
-  })
-
   it('submits edited template and custom requirements', async () => {
     const create = vi.spyOn(customerApi, 'createOrder')
     render(<CustomerCreateRequestPage />)
@@ -151,19 +135,19 @@ describe('CustomerCreateRequestPage', () => {
         sourceChecklistId: 'check-svc-construction-1',
         expectedChecklistVersion: 1,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
         contentOverride: 'Kiểm tra tầng 1–3',
       },
       ...Array.from({ length: 5 }, (_, index) => ({
         sourceChecklistId: `check-svc-construction-${index + 2}`,
         expectedChecklistVersion: 1,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       })),
       {
         contentOverride: 'Kiểm tra mũ bảo hộ',
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       },
     ])
   }, 15_000)

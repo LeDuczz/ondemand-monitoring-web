@@ -53,7 +53,9 @@ export function ChecklistSnapshotCard({
                           ? t.image
                           : item.requiredEvidenceType === 'VIDEO'
                             ? t.video
-                            : t.imageOrVideo}
+                            : item.requiredEvidenceType === 'IMAGE_AND_VIDEO'
+                              ? t.imageAndVideo
+                              : t.imageOrVideo}
                       </span>
                     )}
                 </li>

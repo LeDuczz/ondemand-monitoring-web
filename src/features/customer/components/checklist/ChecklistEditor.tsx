@@ -6,7 +6,10 @@ import { checklistMessages } from '../../lib/checklist/messages'
 import {
   extraMedia,
   normalizeContent,
+  singleEvidenceCount,
   usesMedia,
+  withEvidenceType,
+  withSingleEvidenceCount,
   type ChecklistRow,
 } from '../../lib/checklist/types'
 import type { OrderChecklistEditorState } from '../../lib/checklist/useOrderChecklist'
@@ -124,91 +127,98 @@ export function ChecklistEditor({
         }
       />
     )
-    const mediaInput = (
-      field: 'requestedImageCount' | 'requestedVideoCount',
+    const numberInput = (
       label: string,
+      value: number,
+      min: number,
+      max: number,
+      onChange: (value: number) => void,
     ) => (
       <label>
         <span className="checklist-evidence-field-label">{label}</span>
         <input
           type="number"
-          min={0}
-          max={500}
+          min={min}
+          max={max}
           step={1}
-          value={row[field]}
+          value={value}
           disabled={!row.selected}
           aria-label={`${label} ${index + 1}`}
           onChange={(event) =>
-            checklist.change(row.key, {
-              [field]:
-                event.target.value === '' ? 0 : Number(event.target.value),
-            })
+            onChange(event.target.value === '' ? 0 : Number(event.target.value))
           }
         />
       </label>
     )
-    const mediaRequirements = (
+    const bothTypes = row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
+    const evidenceRequirements = (
       <div className="checklist-evidence-requirements">
-        {mediaInput('requestedImageCount', t.requestedImages)}
-        {mediaInput('requestedVideoCount', t.requestedVideos)}
-        <small className="checklist-hint">
-          {t.includedMedia(row.includedImageCount, row.includedVideoCount)}
-          {' · '}
-          {t.extraMedia(
-            extraMedia(row.requestedImageCount, row.includedImageCount),
-            extraMedia(row.requestedVideoCount, row.includedVideoCount),
-          )}
-          {' · '}
-          {t.mediaAcceptanceNote}
-        </small>
-      </div>
-    )
-    const evidenceRequirements = usesMedia(row) ? (
-      mediaRequirements
-    ) : (
-      <div className="checklist-evidence-requirements">
-        <label>
-          <span className="checklist-evidence-field-label">
-            {t.evidenceCountLabel}
-          </span>
-          <input
-            type="number"
-            min={1}
-            max={50}
-            step={1}
-            value={row.minimumEvidenceCount}
-            disabled={!row.selected}
-            aria-label={t.evidenceCount(index + 1)}
-            onChange={(event) =>
-              checklist.change(row.key, {
-                minimumEvidenceCount:
-                  event.target.value === '' ? 0 : Number(event.target.value),
-              })
-            }
-          />
-        </label>
         <label>
           <span className="checklist-evidence-field-label">
             {t.evidenceTypeLabel}
           </span>
           <select
-            value={row.requiredEvidenceType}
+            value={
+              row.requiredEvidenceType === 'IMAGE_OR_VIDEO'
+                ? 'IMAGE_AND_VIDEO'
+                : row.requiredEvidenceType
+            }
             disabled={!row.selected}
             aria-label={t.evidenceType(index + 1)}
             onChange={(event) =>
-              checklist.change(row.key, {
-                requiredEvidenceType: event.target
-                  .value as RequiredEvidenceType,
-              })
+              checklist.change(
+                row.key,
+                withEvidenceType(
+                  row,
+                  event.target.value as RequiredEvidenceType,
+                ),
+              )
             }
           >
             <option value="IMAGE">{t.image}</option>
             <option value="VIDEO">{t.video}</option>
-            <option value="IMAGE_OR_VIDEO">{t.imageOrVideo}</option>
+            <option value="IMAGE_AND_VIDEO">{t.imageAndVideo}</option>
           </select>
         </label>
-        {mediaInput('requestedImageCount', t.requestedImages)}
-        {mediaInput('requestedVideoCount', t.requestedVideos)}
+        {bothTypes ? (
+          <>
+            {numberInput(
+              t.minimumImagesLabel,
+              row.requestedImageCount,
+              1,
+              500,
+              (value) => checklist.change(row.key, { requestedImageCount: value }),
+            )}
+            {numberInput(
+              t.minimumVideosLabel,
+              row.requestedVideoCount,
+              1,
+              500,
+              (value) => checklist.change(row.key, { requestedVideoCount: value }),
+            )}
+          </>
+        ) : (
+          numberInput(
+            t.evidenceCountLabel,
+            singleEvidenceCount(row),
+            1,
+            usesMedia(row) ? 500 : 50,
+            (value) =>
+              checklist.change(row.key, withSingleEvidenceCount(row, value)),
+          )
+        )}
+        {usesMedia(row) && (
+          <small className="checklist-hint">
+            {t.includedMedia(row.includedImageCount, row.includedVideoCount)}
+            {' · '}
+            {t.extraMedia(
+              extraMedia(row.requestedImageCount, row.includedImageCount),
+              extraMedia(row.requestedVideoCount, row.includedVideoCount),
+            )}
+            {' · '}
+            {t.mediaAcceptanceNote}
+          </small>
+        )}
       </div>
     )
     if (!expanded) {
@@ -241,12 +251,14 @@ export function ChecklistEditor({
             )}
           </span>
           <span className="checklist-evidence-summary">
-            {row.minimumEvidenceCount} ·{' '}
-            {row.requiredEvidenceType === 'IMAGE'
-              ? t.image
-              : row.requiredEvidenceType === 'VIDEO'
-                ? t.video
-                : t.imageOrVideo}
+            {row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
+              ? t.imageAndVideoSummary(
+                  row.requestedImageCount,
+                  row.requestedVideoCount,
+                )
+              : `${singleEvidenceCount(row)} · ${
+                  row.requiredEvidenceType === 'VIDEO' ? t.video : t.image
+                }`}
           </span>
           <span className="checklist-length checklist-length-with-evidence">
             {row.content.length} / 500
@@ -373,7 +385,7 @@ export function ChecklistEditor({
         actions={
           <>
             <span className="checklist-hint">
-              {t.count(checklist.selectedCount)}
+              {t.count(checklist.selectedCount, checklist.totalCount)}
             </span>
             {compact && ready && (
               <button

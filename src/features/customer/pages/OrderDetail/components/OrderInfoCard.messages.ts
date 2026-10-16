@@ -21,6 +21,9 @@ export const orderInfoCardMessages = defineMessages({
     permit: 'Giấy phép bay', permitRequired: 'Yêu cầu giấy phép', permitExpiry: 'Hiệu lực giấy phép',
     permitFiles: 'Tệp giấy phép', authorizationFiles: 'Tệp xác nhận quyền',
     resultFormats: 'Định dạng kết quả', deliveryMethods: 'Cách bàn giao', retention: 'Thời gian lưu dữ liệu',
+    termsVersion: (version: string) => `phiên bản ${version}`,
+    days: (n: number) => `${n} ngày`,
+    times: (n: number) => `${n} lần`,
     terms: 'Điều khoản đã chấp nhận', executionPlan: 'Kế hoạch thực hiện', yes: 'Có', no: 'Không',
   },
   en: {
@@ -43,6 +46,9 @@ export const orderInfoCardMessages = defineMessages({
     permit: 'Flight permit', permitRequired: 'Permit required', permitExpiry: 'Permit expiry',
     permitFiles: 'Permit files', authorizationFiles: 'Authorization files',
     resultFormats: 'Result formats', deliveryMethods: 'Delivery methods', retention: 'Data retention',
+    termsVersion: (version: string) => `version ${version}`,
+    days: (n: number) => `${n} days`,
+    times: (n: number) => `${n} times`,
     terms: 'Accepted terms', executionPlan: 'Execution plan', yes: 'Yes', no: 'No',
   },
 })

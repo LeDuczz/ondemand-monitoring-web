@@ -85,7 +85,7 @@ export function CreateOrderPage() {
           </a>
         }
       />
-      <StepTabs step={step} labels={t.stepLabels} onSelect={wizard.goTo} />
+      <StepTabs step={step} reached={wizard.reached} labels={t.stepLabels} onSelect={wizard.goTo} />
 
       {meta.loading && !meta.services.length && <LoadingState />}
       {Boolean(meta.error) && (
@@ -116,6 +116,7 @@ export function CreateOrderPage() {
         <ContentStep
           selected={meta.services.find((s) => s.id === form.serviceId)}
           selectedCount={checklist.selectedCount}
+          totalCount={checklist.totalCount}
           valid={checklist.valid}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
@@ -161,6 +162,7 @@ export function CreateOrderPage() {
           deliverablesLoading={meta.deliverablesLoading}
           deliverablesError={meta.deliverablesError}
           reloadDeliverables={meta.reloadDeliverables}
+          mediaTotals={checklist.mediaTotals}
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={estimate}
@@ -183,6 +185,10 @@ export function CreateOrderPage() {
           form={form}
           service={service}
           pricingEstimate={estimate}
+          checklistCount={checklist.selectedCount}
+          mediaTotals={checklist.mediaTotals}
+          time={time}
+          aiAnalysisRequested={f.aiAnalysisRequested}
           submitting={submit.submitting}
           error={f.submitError}
           onConfirm={() => void submit.submit()}

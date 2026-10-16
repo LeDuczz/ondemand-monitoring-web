@@ -24,6 +24,7 @@ type Props = {
   deliverablesLoading: boolean
   deliverablesError?: unknown
   reloadDeliverables: () => void
+  mediaTotals: { images: number; videos: number }
   consultation: CustomerConsultation | null
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
@@ -40,18 +41,22 @@ export function ReviewStep(p: Props) {
     <div className="co-grid is-review">
       <div className="co-stack">
         <DeliverablesCard
-          form={p.form}
-          errors={p.errors}
-          update={p.update}
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
           error={p.deliverablesError}
           onRetry={p.reloadDeliverables}
+          mediaTotals={p.mediaTotals}
         />
-        <DeliveryOptionsCard form={p.form} errors={p.errors} update={p.update} />
+        <DeliveryOptionsCard
+          form={p.form}
+          errors={p.errors}
+          update={p.update}
+          mediaTotals={p.mediaTotals}
+        />
       </div>
       <aside className="co-stack co-summary is-tall">
         <RequestSummaryCard
+          mediaTotals={p.mediaTotals}
           form={p.form}
           service={p.service}
           time={p.time}

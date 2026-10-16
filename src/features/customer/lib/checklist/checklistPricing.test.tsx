@@ -89,7 +89,7 @@ const preview: ServicePricePreview = {
         {
           component: 'EXTRA_IMAGE',
           category: 'MEDIA',
-          description: 'Phần ảnh bổ sung: 10 (khoảng 0–10, khối 10)',
+          description: 'Phần ảnh bổ sung: 10 (từ 0 đến 10, mỗi khối 10)',
           quantity: 1,
           unitPrice: 50_000,
           amount: 50_000,
@@ -148,7 +148,7 @@ describe('Customer checklist media quantities', () => {
       sourceChecklistId: 'c-wall',
       expectedChecklistVersion: 2,
       minimumEvidenceCount: 1,
-      requiredEvidenceType: 'IMAGE_OR_VIDEO',
+      requiredEvidenceType: 'IMAGE',
     })
     expect(exit).toMatchObject({
       requestedImageCount: 2,
@@ -242,7 +242,7 @@ describe('ChecklistEditor media inputs', () => {
         /Đã bao gồm: 10 ảnh · 1 video · Bổ sung: 0 ảnh · 0 video/,
       ).length,
     ).toBeGreaterThan(0)
-    fireEvent.change(screen.getByLabelText('Số ảnh yêu cầu 1'), {
+    fireEvent.change(screen.getByLabelText('Số ảnh tối thiểu 1'), {
       target: { value: '30' },
     })
     expect(

@@ -116,21 +116,21 @@ describe('Order checklist state and editor', () => {
         row.requiredEvidenceType,
       ]),
     ).toEqual([
-      [1, 'IMAGE_OR_VIDEO'],
-      [1, 'IMAGE_OR_VIDEO'],
+      [1, 'IMAGE'],
+      [1, 'IMAGE'],
     ])
     expect(result.current.serialize()).toEqual([
       {
         sourceChecklistId: 'catalog-1',
         expectedChecklistVersion: 3,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       },
       {
         sourceChecklistId: 'catalog-2',
         expectedChecklistVersion: 7,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       },
     ])
   })
@@ -182,13 +182,13 @@ describe('Order checklist state and editor', () => {
         sourceChecklistId: 'catalog-1',
         expectedChecklistVersion: 3,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
         contentOverride: 'Edited first',
       },
       {
         contentOverride: 'My requirement',
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       },
     ])
     act(() => {

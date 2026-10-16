@@ -148,6 +148,8 @@ export function useCreateOrderWizard() {
     },
     buildPayload: () => ({
       ...buildOrderPayload({
+        mediaTotals: checklist.mediaTotals,
+        deliverableOptions: meta.deliverables,
         form,
         score,
         consultationId,

@@ -63,6 +63,8 @@ export function useCreateRequest() {
     onError: setSubmitError,
     buildPayload: () => ({
       ...buildOrderPayload({
+        mediaTotals: checklist.mediaTotals,
+        deliverableOptions: meta.deliverables,
         form,
         score,
         aiAnalysisRequested: false,

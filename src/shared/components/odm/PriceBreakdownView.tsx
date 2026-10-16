@@ -8,6 +8,13 @@ import './priceBreakdown.css'
 
 const messages = defineMessages({
   vi: {
+    profileNames: {
+      DEFAULT: 'Mặc định',
+      GENERIC_CUSTOMER_ADDED: 'Checklist khách tự thêm',
+      CUSTOM: 'Checklist khách tự thêm',
+    } as Record<string, string>,
+    withinAllowance: (kinds: string) =>
+      `${kinds} nằm trong định mức đã bao gồm nên không tính thêm.`,
     unpriced:
       'Dịch vụ này chưa có checklist mặc định nào có giá. Hãy cấu hình giá checklist để dịch vụ có giá.',
     addOns: 'Dịch vụ bổ sung',
@@ -37,6 +44,13 @@ const messages = defineMessages({
       'Các yêu cầu đang chờ Manager báo giá chưa được tính vào tổng này.',
   },
   en: {
+    profileNames: {
+      DEFAULT: 'Default',
+      GENERIC_CUSTOMER_ADDED: 'Customer-added checklist',
+      CUSTOM: 'Customer-added checklist',
+    } as Record<string, string>,
+    withinAllowance: (kinds: string) =>
+      `${kinds} fall within the included allowance, so nothing extra is charged.`,
     unpriced:
       'This service has no priced default checklist yet. Price its checklists to give the service a price.',
     addOns: 'Add-ons',
@@ -75,7 +89,7 @@ export function ChecklistBreakdown({ row }: { row: ChecklistPriceBreakdown }) {
         <strong>{row.content}</strong>
         {row.custom && <span className="price-bd-tag">{t.custom}</span>}
         <span className="price-bd-profile">
-          {t.profile}: {row.pricingProfile}
+          {t.profile}: {t.profileNames[row.pricingProfile] ?? row.pricingProfile}
         </span>
       </header>
       <p className="price-bd-media">
@@ -85,6 +99,23 @@ export function ChecklistBreakdown({ row }: { row: ChecklistPriceBreakdown }) {
         {t.videos} — {t.extra}: {row.extraImageCount} {t.images} ·{' '}
         {row.extraVideoCount} {t.videos}
       </p>
+      {(row.requestedImageCount > 0 && row.extraImageCount === 0) ||
+      (row.requestedVideoCount > 0 && row.extraVideoCount === 0) ? (
+        <p className="price-bd-hint">
+          {t.withinAllowance(
+            [
+              row.requestedImageCount > 0 && row.extraImageCount === 0
+                ? t.images
+                : null,
+              row.requestedVideoCount > 0 && row.extraVideoCount === 0
+                ? t.videos
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' & '),
+          )}
+        </p>
+      ) : null}
       {row.quotePending ? (
         <p className="price-bd-warning">{t.awaitingManagerQuote}</p>
       ) : (

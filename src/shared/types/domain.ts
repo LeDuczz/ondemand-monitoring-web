@@ -10,7 +10,15 @@
 export type StatusTone = 'gray' | 'yellow' | 'blue' | 'green' | 'orange' | 'red'
 
 /** `order.enums.RequiredEvidenceType` — evidence media type saved per requirement. */
-export type RequiredEvidenceType = 'IMAGE' | 'VIDEO' | 'IMAGE_OR_VIDEO'
+/**
+ * IMAGE / VIDEO: a single minimum of that media type. IMAGE_AND_VIDEO: its own minimum images AND its own minimum videos.
+ * IMAGE_OR_VIDEO is legacy (older orders only); the UI no longer offers it.
+ */
+export type RequiredEvidenceType =
+  | 'IMAGE'
+  | 'VIDEO'
+  | 'IMAGE_AND_VIDEO'
+  | 'IMAGE_OR_VIDEO'
 
 export type OrderStatus =
   | 'DRAFT'

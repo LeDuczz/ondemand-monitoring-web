@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Card, FormField } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import {
@@ -14,21 +15,61 @@ type Props = {
   form: FormState
   errors: FormErrors
   update: UpdateField
+  /** Images and videos requested in the checklists; they decide the PHOTO and VIDEO result formats. */
+  mediaTotals: { images: number; videos: number }
 }
 
 /** Step 5: result formats, delivery method, retention period, terms acceptance. */
-export function DeliveryOptionsCard({ form, errors, update }: Props) {
+export function DeliveryOptionsCard({
+  form,
+  errors,
+  update,
+  mediaTotals,
+}: Props) {
   const { t } = useI18n(deliveryOptionsCardMessages)
+  // With no media in the checklists there is nothing to derive from, so every format stays a free choice.
+  const hasMedia = mediaTotals.images + mediaTotals.videos > 0
+  const derived = (format: (typeof RESULT_FORMATS)[number]) =>
+    !hasMedia
+      ? undefined
+      : format === 'PHOTO'
+        ? mediaTotals.images > 0
+        : format === 'VIDEO'
+          ? mediaTotals.videos > 0
+          : undefined
+
+  // Photo and video are not chosen here: they follow what the checklists ask for. Only the PDF report is optional.
+  useEffect(() => {
+    const wanted = RESULT_FORMATS.filter((format) => {
+      const fromMedia = derived(format)
+      return fromMedia === undefined
+        ? form.resultFormats.includes(format)
+        : fromMedia
+    })
+    if (
+      wanted.length !== form.resultFormats.length ||
+      wanted.some((format, index) => format !== form.resultFormats[index])
+    )
+      update('resultFormats', wanted)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaTotals.images, mediaTotals.videos, form.resultFormats])
 
   function toggle<T extends string>(list: readonly T[], value: T): T[] {
-    return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
+    return list.includes(value)
+      ? list.filter((item) => item !== value)
+      : [...list, value]
   }
 
   return (
     <Card title={t.cardTitle}>
       <p className="co-hint co-card-sub">{t.cardSubtitle}</p>
 
-      <FormField id="co-result-formats" label={t.formatsLabel} required error={errors.resultFormats}>
+      <FormField
+        id="co-result-formats"
+        label={t.formatsLabel}
+        required
+        error={errors.resultFormats}
+      >
         <div className="co-chip-group" role="group" aria-label={t.formatsLabel}>
           {RESULT_FORMATS.map((format) => (
             <label
@@ -38,7 +79,10 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
               <input
                 type="checkbox"
                 checked={form.resultFormats.includes(format)}
-                onChange={() => update('resultFormats', toggle(form.resultFormats, format))}
+                disabled={derived(format) !== undefined}
+                onChange={() =>
+                  update('resultFormats', toggle(form.resultFormats, format))
+                }
               />
               <span>{t.formats[format]}</span>
             </label>
@@ -47,7 +91,12 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
         <p className="co-hint">{t.formatsHint}</p>
       </FormField>
 
-      <FormField id="co-delivery-methods" label={t.methodsLabel} required error={errors.deliveryMethods}>
+      <FormField
+        id="co-delivery-methods"
+        label={t.methodsLabel}
+        required
+        error={errors.deliveryMethods}
+      >
         <div className="co-chip-group" role="group" aria-label={t.methodsLabel}>
           {DELIVERY_METHODS.map((method) => (
             <label
@@ -57,7 +106,12 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
               <input
                 type="checkbox"
                 checked={form.deliveryMethods.includes(method)}
-                onChange={() => update('deliveryMethods', toggle(form.deliveryMethods, method))}
+                onChange={() =>
+                  update(
+                    'deliveryMethods',
+                    toggle(form.deliveryMethods, method),
+                  )
+                }
               />
               <span>{t.methods[method]}</span>
             </label>
@@ -71,7 +125,10 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
           className="co-input"
           value={form.dataRetentionDays}
           onChange={(event) =>
-            update('dataRetentionDays', Number(event.target.value) as FormState['dataRetentionDays'])
+            update(
+              'dataRetentionDays',
+              Number(event.target.value) as FormState['dataRetentionDays'],
+            )
           }
         >
           {RETENTION_DAYS.map((days) => (
@@ -110,7 +167,9 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
           <li>{t.commitmentPermit}</li>
           <li className="is-key">{t.commitmentPrivacy}</li>
         </ul>
-        <label className={`co-check co-terms-check${errors.termsAccepted ? ' has-error' : ''}`}>
+        <label
+          className={`co-check co-terms-check${errors.termsAccepted ? ' has-error' : ''}`}
+        >
           <input
             type="checkbox"
             checked={form.termsAccepted}
@@ -122,7 +181,9 @@ export function DeliveryOptionsCard({ form, errors, update }: Props) {
             <small>{t.termsPrivacyNotice}</small>
           </span>
         </label>
-        {errors.termsAccepted && <div className="ui-field-error">{errors.termsAccepted}</div>}
+        {errors.termsAccepted && (
+          <div className="ui-field-error">{errors.termsAccepted}</div>
+        )}
       </div>
     </Card>
   )

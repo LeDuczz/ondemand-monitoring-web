@@ -5,7 +5,8 @@ export const deliveryOptionsCardMessages = defineMessages({
     cardTitle: 'Nhận kết quả & cam kết',
     cardSubtitle: 'Chọn định dạng, cách nhận kết quả và xác nhận điều khoản trước khi gửi.',
     formatsLabel: 'Định dạng kết quả',
-    formatsHint: 'Chọn một hoặc nhiều định dạng.',
+    formatsHint:
+      'Ảnh và Video được chọn tự động theo số ảnh/video trong checklist. Bạn chỉ cần chọn thêm Báo cáo PDF nếu muốn.',
     formats: {
       PHOTO: 'Ảnh',
       VIDEO: 'Video',
@@ -41,7 +42,8 @@ export const deliveryOptionsCardMessages = defineMessages({
     cardTitle: 'Result delivery & commitments',
     cardSubtitle: 'Choose the formats, how you receive the result, and accept the terms before submitting.',
     formatsLabel: 'Result formats',
-    formatsHint: 'Select one or more formats.',
+    formatsHint:
+      'Photo and Video follow the photo/video counts in your checklists. You only choose whether to add a PDF report.',
     formats: {
       PHOTO: 'Photos',
       VIDEO: 'Video',

@@ -109,6 +109,9 @@ describe('CreateMissionPage', () => {
     vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({ orderId: brief.id, planStatus: 'DRAFT', revision: 4, missions: [{ missionId: 'existing', scopeLabel: 'First', assignmentCount: 0, finalizedPlanRevision: null }], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
     const create = vi.spyOn(missionsApi, 'createMission').mockResolvedValue(createdMission)
     render(<CreateMissionPage orderId={brief.id} />)
+    // Wait for the authoritative plan revision before asserting the outgoing
+    // optimistic-lock token; the order form may be ready while this loads.
+    await screen.findByText('Phiên bản 4')
     const start = await screen.findByLabelText('Giờ cất cánh')
     fireEvent.change(start, { target: { value: '2026-09-24T09:00' } })
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), { target: { value: '2026-09-24T10:00' } })
@@ -181,6 +184,9 @@ describe('CreateMissionPage', () => {
       expect(
         screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
       target: { value: '2026-09-24T08:00' },
@@ -270,6 +276,9 @@ describe('CreateMissionPage', () => {
       expect(
         screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
       target: { value: '2026-09-24T08:00' },

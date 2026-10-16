@@ -13,6 +13,8 @@ const reasons: Record<EvidenceBlockingReason, string> = {
     'Checklist chưa đủ bằng chứng. Cần bổ sung trước khi duyệt kết quả.',
   EXECUTION_NOT_TERMINAL:
     'Checklist chưa hoàn tất. Cần hoàn tất các mục trước khi duyệt kết quả.',
+  EXECUTION_NOT_COMPLETED:
+    'Checklist chưa hoàn tất. Cần hoàn tất các mục trước khi duyệt kết quả.',
   UNABLE_REASON_REQUIRED:
     'Cần bổ sung lý do cho mục checklist chưa thể xác minh.',
   CHECKLIST_INTEGRITY_INVALID:
@@ -20,7 +22,7 @@ const reasons: Record<EvidenceBlockingReason, string> = {
   EVIDENCE_SOURCE_NOT_ELIGIBLE:
     'Bằng chứng chưa phù hợp. Cần bổ sung ảnh/video phù hợp.',
   EVIDENCE_TYPE_NOT_ELIGIBLE:
-    'Loại media chưa phù hợp. Cần bổ sung ảnh/video phù hợp.',
+    'Loại media chưa phù hợp. Cần bổ sung ảnh/video đúng loại yêu cầu.',
 }
 
 /** Present the canonical backend verdict; never reconstruct evidence eligibility or counts. */

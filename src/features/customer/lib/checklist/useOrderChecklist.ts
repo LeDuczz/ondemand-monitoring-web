@@ -61,6 +61,9 @@ export function useOrderChecklist(serviceId: string) {
               originalContent: item.content,
               content: item.content,
               selected: true,
+              minimumEvidenceCount: item.minimumEvidenceCount ?? 1,
+              requiredEvidenceType:
+                item.requiredEvidenceType ?? 'IMAGE_OR_VIDEO',
             }))
           setState({ serviceId, status: 'ready', rows, error: null })
         })
@@ -92,6 +95,24 @@ export function useOrderChecklist(serviceId: string) {
   )
     validation = t.length
   else if (
+    selected.some(
+      (row) =>
+        !Number.isInteger(row.minimumEvidenceCount) ||
+        row.minimumEvidenceCount < 1 ||
+        row.minimumEvidenceCount > 50,
+    )
+  )
+    validation = t.invalidEvidenceCount
+  else if (
+    selected.some(
+      (row) =>
+        !(['IMAGE', 'VIDEO', 'IMAGE_OR_VIDEO'] as const).includes(
+          row.requiredEvidenceType,
+        ),
+    )
+  )
+    validation = t.invalidEvidenceType
+  else if (
     new Set(selected.map((row) => normalizeContent(row.content).toLowerCase()))
       .size !== selected.length
   )
@@ -99,7 +120,12 @@ export function useOrderChecklist(serviceId: string) {
 
   function change(
     key: string,
-    patch: Partial<Pick<ChecklistRow, 'content' | 'selected'>>,
+    patch: Partial<
+      Pick<
+        ChecklistRow,
+        'content' | 'selected' | 'minimumEvidenceCount' | 'requiredEvidenceType'
+      >
+    >,
   ) {
     setState((previous) =>
       previous?.serviceId === serviceId && previous.status === 'ready'
@@ -137,6 +163,8 @@ export function useOrderChecklist(serviceId: string) {
                   originalContent: '',
                   content: '',
                   selected: true,
+                  minimumEvidenceCount: 1,
+                  requiredEvidenceType: 'IMAGE_OR_VIDEO',
                 },
               ],
             }

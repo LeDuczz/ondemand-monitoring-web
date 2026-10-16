@@ -3,9 +3,10 @@ import type { ReactNode } from 'react'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import type { OrderDetail } from '../../types/orders'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
+import { humanizeMediaRequirement } from './format'
 
 type DetailItem = {
-  label: string
+  label: ReactNode
   value: ReactNode
   icon?: OrderIconName
   tone?: 'green' | 'blue' | 'orange' | 'purple'
@@ -134,15 +135,6 @@ function numberText(value: unknown): string | null {
   return valueText && valueText !== '0' ? valueText : null
 }
 
-function resolutionText(value: unknown): string | null {
-  const resolution = text(value)
-  if (!resolution) return null
-  if (resolution.toUpperCase() === '4K') {
-    return '4K UHD'
-  }
-  return resolution
-}
-
 function deliverableSummary(
   requirement: Record<string, unknown> | null,
   deliverableName?: string | null,
@@ -156,9 +148,9 @@ function deliverableSummary(
   return [
     type,
     numberText(requirement.quantity)
-      ? `${numberText(requirement.quantity)} ảnh`
+      ? `${numberText(requirement.quantity)} mục`
       : null,
-    resolutionText(requirement.resolution),
+    text(requirement.resolution),
     text(requirement.aiAnalysisRequested) === 'Có' ? 'Có AI' : null,
   ].filter((item): item is string => Boolean(item))
 }
@@ -197,9 +189,9 @@ function FactList({ items }: { items: DetailItem[] }) {
   if (visible.length === 0) return null
   return (
     <dl className="odm-or-req-facts">
-      {visible.map((item) => (
+      {visible.map((item, idx) => (
         <div
-          key={item.label}
+          key={typeof item.label === 'string' ? item.label : `detail-${idx}`}
           className={
             item.icon
               ? `has-icon${item.tone ? ` tone-${item.tone}` : ''}`
@@ -274,7 +266,7 @@ export function OrderCustomerRequestDetails({
     resultFormatsFromDeliverables(order) ?? list(order.resultFormats)
   const deliverableFacts: DetailItem[] =
     order.deliverables?.map((deliverable, index) => ({
-      label: deliverable.deliverableTypeName || t.mediaN(index + 1),
+      label: <strong>{deliverable.deliverableTypeName || t.mediaN(index + 1)}</strong>,
       value:
         deliverableSummary(
           deliverable.requirement,
@@ -283,7 +275,7 @@ export function OrderCustomerRequestDetails({
     })) ??
     order.mediaRequirements?.map((requirement, index) => ({
       label: t.mediaN(index + 1),
-      value: requirement.label,
+      value: humanizeMediaRequirement(requirement.label, t),
     })) ??
     []
   const deliverableAddOns =

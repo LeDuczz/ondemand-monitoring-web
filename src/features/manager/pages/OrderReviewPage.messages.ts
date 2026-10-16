@@ -5,6 +5,11 @@ export const orderReviewPageMessages = defineMessages({
     monitoringRequirements: 'Nội dung giám sát',
     serviceRequirement: 'Nội dung từ dịch vụ',
     customerRequirement: 'Nội dung khách hàng bổ sung',
+    evidenceRequirement: (count: number, type: string) =>
+      `Bằng chứng: tối thiểu ${count} · ${type}`,
+    image: 'Ảnh',
+    video: 'Video',
+    imageOrVideo: 'Ảnh hoặc video',
     requirementsHistory:
       'Nội dung đã chốt khi khách hàng gửi yêu cầu · Chỉ xem, không thay đổi theo danh mục dịch vụ hiện tại.',
     requirementsEmpty: 'Khách hàng đã gửi yêu cầu không kèm nội dung giám sát.',
@@ -187,6 +192,11 @@ export const orderReviewPageMessages = defineMessages({
     monitoringRequirements: 'Monitoring requirements',
     serviceRequirement: 'Service requirement',
     customerRequirement: 'Customer-added requirement',
+    evidenceRequirement: (count: number, type: string) =>
+      `Evidence: at least ${count} · ${type}`,
+    image: 'Image',
+    video: 'Video',
+    imageOrVideo: 'Image or video',
     requirementsHistory:
       'Requirements saved on customer submission · Read only, independent of the current service catalog.',
     requirementsEmpty:

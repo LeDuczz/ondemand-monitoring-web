@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../shared/api/httpClient'
+import { useLanguage } from '../../shared/i18n'
 import { formatVnd } from '../../shared/lib/formatVnd'
 import { financeApi } from '../finance/api'
 import { deliveryApi } from './api'
@@ -8,9 +9,10 @@ import type { Delivery } from './types'
 import './delivery.css'
 
 export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
+  const { lang } = useLanguage()
   const [delivery, setDelivery] = useState<Delivery | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown>(null)
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [reason, setReason] = useState('')
 
@@ -29,7 +31,7 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
       if (!(
         cause instanceof ApiError && [404, 409].includes(cause.status ?? 0)
       ))
-        setError(message(cause))
+        setError(cause)
     }
   }, [orderId])
 
@@ -47,7 +49,7 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
   if (!delivery)
     return error ? (
       <p className="delivery-error" role="alert">
-        {error}
+        {message(error, lang)}
       </p>
     ) : null
 
@@ -79,7 +81,7 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
         throw new Error('VNPAY chưa trả về đường dẫn thanh toán.')
       window.location.assign(payment.paymentUrl)
     } catch (cause) {
-      setError(message(cause))
+      setError(cause)
       setBusy(false)
     }
   }
@@ -90,7 +92,7 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
       setDelivery(await action())
       await load()
     } catch (cause) {
-      setError(message(cause))
+      setError(cause)
     } finally {
       setBusy(false)
     }
@@ -360,7 +362,7 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
         ) : null}
         {error ? (
           <p className="delivery-error" role="alert">
-            {error}
+            {message(error, lang)}
           </p>
         ) : null}
       </div>
@@ -396,6 +398,15 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function message(cause: unknown) {
-  return cause instanceof Error ? cause.message : 'Không thể xử lý yêu cầu.'
+function message(cause: unknown, lang: 'vi' | 'en') {
+  if (cause instanceof ApiError && cause.code === 'NETWORK_ERROR') {
+    return lang === 'en'
+      ? 'Unable to reach the server. Please try again.'
+      : 'Không thể kết nối tới máy chủ. Vui lòng thử lại.'
+  }
+  return cause instanceof Error
+    ? cause.message
+    : lang === 'en'
+      ? 'Unable to process the request.'
+      : 'Không thể xử lý yêu cầu.'
 }

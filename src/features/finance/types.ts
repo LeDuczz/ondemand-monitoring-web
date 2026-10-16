@@ -9,12 +9,17 @@ export type PricingChecklistItem = {
   sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
   reviewStatus: ChecklistReviewStatus
   managerNote: string | null
+  difficultySnapshot?: 'BASIC' | 'MEDIUM' | 'HARD' | 'VERY_HARD'
 }
+
+export type PricingCategory =
+  | 'PACKAGE' | 'DISTANCE' | 'AREA' | 'CHECKLIST' | 'OUTPUT' | 'RESOURCE'
+  | 'TERRAIN' | 'CONDITION' | 'PERMIT' | 'DISCOUNT' | 'MANAGER_ADJUSTMENT'
 
 export type QuoteItem = {
   id: string
   orderChecklistItemId: string | null
-  type: 'PACKAGE' | 'INCLUDED' | 'ADDITIONAL' | 'ADJUSTMENT'
+  type: PricingCategory | 'INCLUDED' | 'ADDITIONAL' | 'ADJUSTMENT'
   description: string
   quantity: number
   unitPrice: number
@@ -44,6 +49,59 @@ export type Quote = {
   approvedAt: string | null
   acceptedAt: string | null
   items: QuoteItem[]
+  pricingPolicyId?: string
+  pricingPolicyVersion?: number
+  systemCalculatedAmount?: number
+  managerAdjustmentAmount?: number
+  adjustmentType?: 'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION' | null
+  adjustmentReason?: string | null
+  adjustmentRequestedById?: string | null
+  adjustmentRequestedByName?: string | null
+  adjustmentRequestedAt?: string | null
+  pricingApprovalStatus?: 'NOT_REQUIRED' | 'PENDING_SECOND_MANAGER' | 'APPROVED' | 'REJECTED' | 'BLOCKED_BY_POLICY'
+  pricingApprovedByName?: string | null
+  pricingApprovedAt?: string | null
+  pricingApprovalNote?: string | null
+  pricingRevision?: number
+  riskFlags?: Array<'ZERO_PRICE' | 'HIGH_DISCOUNT' | 'BELOW_MINIMUM_PRICE' | 'CUSTOM_WORK_OVERRIDE' | 'LARGE_MARKUP' | 'REPEATED_OVERRIDE'>
+}
+
+export type PricingBreakdownItem = {
+  category: PricingCategory
+  description: string
+  quantity: number
+  unitPrice: number
+  amount: number
+}
+
+export type PricingBreakdown = {
+  policyId: string
+  policyVersion: number
+  currency: string
+  systemCalculatedAmount: number
+  customWork: boolean
+  assessmentComplete: boolean
+  items: PricingBreakdownItem[]
+}
+
+export type CustomWorkAssessment = {
+  id?: string
+  orderId?: string
+  estimatedFlightHours: number | null
+  estimatedDistanceKm: number | null
+  estimatedAreaHa: number | null
+  pilotCount: number | null
+  droneCount: number | null
+  batteryUnits: number | null
+  terrain: 'FLAT' | 'MOUNTAIN' | 'HIGH_RISE' | 'DAM_RESERVOIR' | 'HARD_TO_ACCESS'
+  thermalRequired: boolean
+  multispectralRequired: boolean
+  aiReportRequired: boolean
+  nightOperation: boolean
+  specialEquipment: string | null
+  otherCostDrivers: string | null
+  assessmentComplete: boolean
+  version?: number
 }
 
 export type Invoice = {
@@ -86,4 +144,6 @@ export type PricingReview = {
   checklistItems: PricingChecklistItem[]
   currentQuote: Quote | null
   quoteHistory: Quote[]
+  systemCalculation?: PricingBreakdown
+  currentManagerId?: string
 }

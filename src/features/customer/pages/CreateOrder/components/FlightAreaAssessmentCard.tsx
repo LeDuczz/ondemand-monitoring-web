@@ -22,7 +22,7 @@ type Props = {
 
 /** Advisory preview of the picked area. Never says "safe" and never blocks creating an order. */
 export function FlightAreaAssessmentCard({ state, requestedAltitudeAglM }: Props) {
-  const { t, locale } = useI18n(flightAreaAssessmentCardMessages)
+  const { t, lang, locale } = useI18n(flightAreaAssessmentCardMessages)
   const number = (value: number, digits = 0) =>
     new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)
   const data = state.data
@@ -116,7 +116,7 @@ export function FlightAreaAssessmentCard({ state, requestedAltitudeAglM }: Props
                       <span aria-hidden="true" className="co-fa-mark">
                         {finding.severity === 'INFO' ? 'ⓘ' : '⚠'}
                       </span>
-                      <span>{finding.message}</span>
+                      <span>{finding.code === 'MOCK_MODE' ? t.mockModeNote : finding.message}</span>
                     </li>
                   ))}
               </ul>
@@ -130,7 +130,11 @@ export function FlightAreaAssessmentCard({ state, requestedAltitudeAglM }: Props
                 ` ${t.osmRadius(number(data.osmContext.queryRadiusMeters))}`}
             </p>
           )}
-          <p className="co-fa-disclaimer">{data.assessment.disclaimer}</p>
+          <p className="co-fa-disclaimer">
+            {lang === 'en' && data.assessment.disclaimer.startsWith('Đánh giá sơ bộ.')
+              ? t.disclaimer
+              : data.assessment.disclaimer}
+          </p>
         </div>
       )}
     </Card>

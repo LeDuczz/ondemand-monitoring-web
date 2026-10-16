@@ -39,39 +39,41 @@ import type {
 export const mockServiceChecklist = (
   serviceId: string,
 ): ServiceChecklistItem[] =>
-  ({
-    'svc-construction': [
-      'Kiểm tra tình trạng tổng thể công trình',
-      'Ghi nhận tiến độ các khu vực đang thi công',
-      'Kiểm tra mặt ngoài công trình',
-      'Quan sát khu vực khó tiếp cận',
-      'Chụp ảnh tổng quan công trình',
-      'Ghi nhận hiện trạng sau khi hoàn tất kiểm tra',
-    ],
-    'svc-factory': [
-      'Kiểm tra tình trạng tổng thể nhà xưởng',
-      'Kiểm tra mái nhà xưởng',
-      'Kiểm tra bề mặt và kết cấu phía trên',
-      'Quan sát khu vực khó tiếp cận',
-      'Chụp ảnh các vị trí bất thường',
-      'Ghi nhận hiện trạng sau khi hoàn tất kiểm tra',
-    ],
-    'svc-area': [
-      'Ghi nhận toàn cảnh khu vực',
-      'Ghi nhận các khu vực chính',
-      'Quan sát khu vực khó tiếp cận',
-      'Chụp ảnh các vị trí khách hàng yêu cầu',
-      'Ghi nhận hiện trạng khu vực',
-    ],
-    'svc-forest': [
-      'Ghi nhận toàn cảnh khu vực rừng',
-      'Quan sát tình trạng khu vực cây xanh',
-      'Quan sát khu vực có dấu hiệu bất thường',
-      'Quan sát khu vực khó tiếp cận',
-      'Chụp ảnh các vị trí được chỉ định',
-      'Ghi nhận hiện trạng sau khi hoàn tất giám sát',
-    ],
-  }[serviceId] ?? []).map((content, index) => ({
+  (
+    ({
+      'svc-construction': [
+        'Kiểm tra tình trạng tổng thể công trình',
+        'Ghi nhận tiến độ các khu vực đang thi công',
+        'Kiểm tra mặt ngoài công trình',
+        'Quan sát khu vực khó tiếp cận',
+        'Chụp ảnh tổng quan công trình',
+        'Ghi nhận hiện trạng sau khi hoàn tất kiểm tra',
+      ],
+      'svc-factory': [
+        'Kiểm tra tình trạng tổng thể nhà xưởng',
+        'Kiểm tra mái nhà xưởng',
+        'Kiểm tra bề mặt và kết cấu phía trên',
+        'Quan sát khu vực khó tiếp cận',
+        'Chụp ảnh các vị trí bất thường',
+        'Ghi nhận hiện trạng sau khi hoàn tất kiểm tra',
+      ],
+      'svc-area': [
+        'Ghi nhận toàn cảnh khu vực',
+        'Ghi nhận các khu vực chính',
+        'Quan sát khu vực khó tiếp cận',
+        'Chụp ảnh các vị trí khách hàng yêu cầu',
+        'Ghi nhận hiện trạng khu vực',
+      ],
+      'svc-forest': [
+        'Ghi nhận toàn cảnh khu vực rừng',
+        'Quan sát tình trạng khu vực cây xanh',
+        'Quan sát khu vực có dấu hiệu bất thường',
+        'Quan sát khu vực khó tiếp cận',
+        'Chụp ảnh các vị trí được chỉ định',
+        'Ghi nhận hiện trạng sau khi hoàn tất giám sát',
+      ],
+    })[serviceId] ?? []
+  ).map((content, index) => ({
     id: `assignment-${serviceId}-${index + 1}`,
     serviceId,
     checklistId: `check-${serviceId}-${index + 1}`,
@@ -428,6 +430,8 @@ registerMockRoutes([
           sourceType: item.sourceChecklistId
             ? 'SERVICE_TEMPLATE'
             : 'CUSTOMER_CUSTOM',
+          minimumEvidenceCount: item.minimumEvidenceCount ?? 1,
+          requiredEvidenceType: item.requiredEvidenceType ?? 'IMAGE_OR_VIDEO',
         })),
         deliverables: (b.deliverables as Array<Record<string, unknown>>).map(
           (d, i) => ({

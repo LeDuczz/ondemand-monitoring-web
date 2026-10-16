@@ -1274,6 +1274,33 @@
 }
 
 /* ---------- Catalog page helpers ---------- */
+.pricing-policy-form,
+.pricing-rules {
+  display: grid;
+  gap: 1rem;
+}
+
+.pricing-policy-guardrails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.pricing-policy-form label,
+.pricing-rule-row label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.pricing-rule-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 0.65rem;
+  align-items: end;
+  padding: 0.75rem;
+  border: 1px solid #dfe6ee;
+  border-radius: 0.65rem;
+}
 
 .adm-toolbar {
   display: flex;

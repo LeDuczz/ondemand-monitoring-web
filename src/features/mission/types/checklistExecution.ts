@@ -1,3 +1,5 @@
+import type { RequiredEvidenceType } from '../../../shared/types/domain'
+
 export type ChecklistExecutionStatus =
   'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNABLE_TO_VERIFY'
 export type ChecklistAssessmentStatus =
@@ -21,6 +23,7 @@ export type MissionChecklistExecution = {
   version: number
   evidencePolicyVersion?: number
   minimumEvidenceCount?: number
+  requiredEvidenceType?: RequiredEvidenceType
   eligibleEvidenceCount?: number
   evidenceRequirementSatisfied?: boolean
   evidenceReady?: boolean
@@ -47,6 +50,7 @@ export type EvidenceBlockingReason =
   | 'MEDIA_APPROVAL_REQUIRED'
   | 'INSUFFICIENT_EVIDENCE'
   | 'EXECUTION_NOT_TERMINAL'
+  | 'EXECUTION_NOT_COMPLETED'
   | 'UNABLE_REASON_REQUIRED'
   | 'CHECKLIST_INTEGRITY_INVALID'
 export type EvidenceMediaStatus =

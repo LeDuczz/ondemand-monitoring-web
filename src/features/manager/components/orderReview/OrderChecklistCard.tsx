@@ -35,6 +35,19 @@ export function OrderChecklistCard({
                     ? t.customerRequirement
                     : t.serviceRequirement}
                 </span>
+                {(item.minimumEvidenceCount !== undefined ||
+                  item.requiredEvidenceType !== undefined) && (
+                  <span className="odm-or-checklist-evidence">
+                    {t.evidenceRequirement(
+                      item.minimumEvidenceCount ?? 1,
+                      item.requiredEvidenceType === 'IMAGE'
+                        ? t.image
+                        : item.requiredEvidenceType === 'VIDEO'
+                          ? t.video
+                          : t.imageOrVideo,
+                    )}
+                  </span>
+                )}
               </li>
             ))}
           </ol>

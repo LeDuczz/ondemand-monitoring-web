@@ -39,6 +39,8 @@ export const flightAreaAssessmentCardMessages = defineMessages({
     legendArea: 'Vùng giám sát',
     legendRestricted: 'Vùng hạn chế',
     legendPoint: 'Điểm giám sát',
+    mockModeNote: 'Chế độ mô phỏng: chưa có dữ liệu thực về địa hình, vùng hạn chế hoặc khu vực xung quanh.',
+    disclaimer: 'Đây là đánh giá sơ bộ. Điều kiện bay cuối cùng được xác nhận trong quá trình lập kế hoạch và kiểm tra trước chuyến bay.',
   },
   en: {
     title: 'Flight area assessment',
@@ -78,5 +80,7 @@ export const flightAreaAssessmentCardMessages = defineMessages({
     legendArea: 'Monitoring area',
     legendRestricted: 'Restricted zone',
     legendPoint: 'Monitoring point',
+    mockModeNote: 'Simulation mode: live terrain, restricted-zone and nearby-area data is unavailable.',
+    disclaimer: 'This is a preliminary assessment. Final flight conditions are confirmed during planning and pre-flight checks.',
   },
 })

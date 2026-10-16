@@ -3,6 +3,7 @@ import { missionStatusTone } from '../../../shared/lib/statusTone'
 import { useI18n } from '../../../shared/i18n'
 import { setActiveMissionId } from '../api/liveMission'
 import { formatDeviceLabel } from '../lib/deviceLabel'
+import { hasAcknowledgedHandover } from '../lib/flightWorkflowStorage'
 import { formatDeadline } from '../lib/formatDeadline'
 import { operatorHref } from '../routes'
 import type { OperatorMission } from '../types/mission'
@@ -58,23 +59,26 @@ function actionFor(mission: OperatorMission, t: Messages) {
             }),
           }
   }
-  if (
-    !permissions ||
-    backendStatus === 'PENDING_REVIEW' ||
-    backendStatus === 'COMPLETED'
-  ) {
+  if (backendStatus === 'PENDING_REVIEW' || backendStatus === 'COMPLETED') {
     return {
       label: t.action.viewResult,
       cls: '',
       href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
     }
   }
+  if (permissions?.canStartMission && backendStatus === 'SCHEDULED') {
+    return {
+      label: t.action.startMission,
+      cls: 'odm-btn-ok',
+      href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+    }
+  }
   if (permissions) {
     if (
-      permissions.canCompleteMission ||
-      permissions.canSubmitMissionResult ||
       (backendStatus === 'PENDING_REVIEW' &&
-        permissions.canExecuteMonitoringChecklist)
+        (permissions.canCompleteMission ||
+          permissions.canSubmitMissionResult ||
+          permissions.canExecuteMonitoringChecklist))
     ) {
       return {
         label: t.action.viewResult,
@@ -108,7 +112,7 @@ function actionFor(mission: OperatorMission, t: Messages) {
       permissions.canMaintainDevice
     ) {
       return {
-        label: t.action.viewResult,
+        label: t.action.details,
         cls: '',
         href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
       }
@@ -128,6 +132,16 @@ function actionFor(mission: OperatorMission, t: Messages) {
     }
     if (permissions.canOperatePayload) {
       if (backendStatus === 'READY_TO_FLY') {
+        if (hasAcknowledgedHandover(mission.id)) {
+          return {
+            label: t.action.details,
+            cls: '',
+            href: operatorHref({
+              screen: 'missionDetail',
+              missionId: mission.id,
+            }),
+          }
+        }
         return {
           label: t.action.handover,
           cls: 'odm-btn-ok',
@@ -145,7 +159,7 @@ function actionFor(mission: OperatorMission, t: Messages) {
           href: operatorHref({ screen: 'preflight', missionId: mission.id }),
         }
       }
-      if (mission.status === 'ACCEPTED') {
+      if (backendStatus === 'SCHEDULED') {
         return {
           label: t.action.start,
           cls: 'odm-btn-ok',

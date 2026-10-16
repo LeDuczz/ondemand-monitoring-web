@@ -101,7 +101,6 @@ export type OrderDetail = {
   description?: string | null
   usagePurpose?: string | null
   flightPurpose?: string | null
-  priority?: string | null
   altitudeM?: number | null
   estimatedLengthM?: number | null
   siteContactName?: string | null
@@ -123,24 +122,24 @@ export type OrderDetail = {
   termsAcceptedAt?: string | null
   termsVersion?: string | null
   deliverables?: OrderDeliverableResponse[] | null
-  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  legalReviewStatus?: LegalReviewStatus | null
   flightAreaReviewReason?: string | null
   flightAreaReviewNote?: string | null
   requestedScopeFeasible?: boolean | null
   flightAreaReviewedById?: string | null
   flightAreaReviewedByName?: string | null
   flightAreaReviewedAt?: string | null
-  requiresFlightPermissionReview?: boolean | null
 }
 
-export type FlightAreaReviewStatus =
-  | 'PRELIMINARY_PASS'
-  | 'RESTRICTED'
-  | 'UNDETERMINED'
-  | 'UNSUITABLE'
+export type LegalReviewStatus =
+  | 'NOT_REVIEWED'
+  | 'NOT_REQUIRED'
+  | 'PENDING_PERMIT'
+  | 'APPROVED'
+  | 'REJECTED'
 
 export type FlightAreaReviewRequest = {
-  status: FlightAreaReviewStatus
+  status: LegalReviewStatus
   requestedScopeFeasible?: boolean | null
   reason?: string | null
   note?: string | null
@@ -267,7 +266,6 @@ export type OrderCreateResponse = {
   description: string
   usagePurpose?: string | null
   flightPurpose?: string | null
-  priority?: string | null
   altitudeM?: number | null
   estimatedLengthM?: number | null
   siteContactName?: string | null
@@ -302,14 +300,13 @@ export type OrderCreateResponse = {
   reviewById: string | null
   reviewByName: string | null
   reviewAt: string | null
-  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  legalReviewStatus?: LegalReviewStatus | null
   flightAreaReviewReason?: string | null
   flightAreaReviewNote?: string | null
   requestedScopeFeasible?: boolean | null
   flightAreaReviewedById?: string | null
   flightAreaReviewedByName?: string | null
   flightAreaReviewedAt?: string | null
-  requiresFlightPermissionReview?: boolean | null
   deliverables: OrderDeliverableResponse[]
   createdAt: string
   updatedAt: string

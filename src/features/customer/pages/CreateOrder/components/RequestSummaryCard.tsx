@@ -86,12 +86,7 @@ export function RequestSummaryCard(p: Props) {
         p.service
           ? localizeServiceName(p.service.id, lang, p.service.name)
           : t.noValue,
-        [
-          form.usagePurpose ? info.purposes[form.usagePurpose] : '',
-          form.priority !== 'NORMAL' ? info.priorities[form.priority] : '',
-        ]
-          .filter(Boolean)
-          .join(' · '),
+        form.usagePurpose ? info.purposes[form.usagePurpose] : '',
       ].filter(Boolean),
       step: 1,
     },

@@ -72,16 +72,17 @@ describe('Exact Mission result actions', () => {
         const button = screen.getByRole('button', {
           name: 'Gửi kết quả cho Manager',
         })
-        expect(button).toBeDisabled()
+        if (complete) expect(button).toBeEnabled()
+        else expect(button).toBeDisabled()
         fireEvent.click(button)
-        expect(onSubmit).not.toHaveBeenCalled()
+        expect(onSubmit).toHaveBeenCalledTimes(complete ? 1 : 0)
       }
       if (complete) {
         fireEvent.click(
           screen.getByRole('button', { name: 'Nghiệm thu Mission' }),
         )
         expect(onComplete).toHaveBeenCalledOnce()
-        expect(onSubmit).not.toHaveBeenCalled()
+        expect(onSubmit).toHaveBeenCalledTimes(submit ? 1 : 0)
       }
     },
   )

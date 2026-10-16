@@ -4,6 +4,7 @@ export type MissionPermissions = {
   canAttachChecklistEvidence?: boolean
   canDetachChecklistEvidence?: boolean
   canRespond: boolean
+  canStartMission?: boolean
   canControlFlight: boolean
   canOperatePayload: boolean
   canInspectDevice: boolean

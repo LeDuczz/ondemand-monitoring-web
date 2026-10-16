@@ -1035,7 +1035,7 @@ function UploadMediaContent({
                                   {item.backendMediaId && (
                                     <button
                                       type="button"
-                                      className="odm-btn"
+                                      className="odm-btn upload-media-attach-button"
                                       disabled={isBusy || !targetCount}
                                       onClick={() => {
                                         const mediaId = item.backendMediaId

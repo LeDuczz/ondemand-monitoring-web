@@ -131,7 +131,6 @@ export function OrderInfoCard({
           <Field icon="calendar" label={t.schedule} value={[schedule, time].filter(Boolean).join(' · ') || DASH} />
           <Field icon="clock" label={t.resultDeadline} value={order.resultDeadline ? new Date(order.resultDeadline).toLocaleDateString(locale) : DASH} />
           <Field icon="pin" label={t.address} value={order.address ?? DASH} />
-          <Field icon="info" label={t.priority} value={label(order.priority)} />
         </Section>
         <Section icon="drone" title={t.sectionScope} onSupplement={editable ? () => setEditing('scope') : undefined} editor={editing === 'scope' ? <OrderSectionEditor section="scope" order={order} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); onUpdated?.() }} /> : undefined}>
           <Field icon="target" label={t.flightPurpose} value={label(order.flightPurpose)} />

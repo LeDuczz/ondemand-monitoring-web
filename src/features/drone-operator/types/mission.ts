@@ -62,6 +62,7 @@ export type OperatorMissionPermissions = {
   canSubmitMissionResult?: boolean
   canExecuteMonitoringChecklist?: boolean
   canControlFlight: boolean
+  canStartMission?: boolean
   canOperatePayload: boolean
   canInspectDevice: boolean
   canMaintainDevice: boolean

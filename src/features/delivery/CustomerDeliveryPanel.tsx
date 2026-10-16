@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../shared/api/httpClient'
+import { Modal } from '../../shared/components/ui'
 import { formatVnd } from '../../shared/lib/formatVnd'
 import { financeApi } from '../finance/api'
 import { deliveryApi } from './api'
@@ -10,6 +11,7 @@ import './delivery.css'
 export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
   const [delivery, setDelivery] = useState<Delivery | null>(null)
   const [busy, setBusy] = useState(false)
+  const [acceptOpen, setAcceptOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [reason, setReason] = useState('')
@@ -52,13 +54,8 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
     ) : null
 
   async function accept() {
-    if (
-      !window.confirm(
-        'Tôi xác nhận đã xem các bản preview và chấp nhận kết quả giám sát được bàn giao.',
-      )
-    )
-      return
     await act(() => deliveryApi.accept(orderId))
+    setAcceptOpen(false)
   }
   async function revise() {
     if (!reason.trim()) {
@@ -253,13 +250,48 @@ export function CustomerDeliveryPanel({ orderId }: { orderId: string }) {
               <button
                 type="button"
                 className="odm-btn odm-btn-p delivery-primary-action"
-                onClick={() => void accept()}
+                onClick={() => setAcceptOpen(true)}
                 disabled={busy}
               >
                 {busy ? 'Đang xác nhận…' : 'Chấp nhận kết quả'}
               </button>
             </div>
           </div>
+        ) : null}
+        {acceptOpen ? (
+          <Modal
+            title="Chấp nhận kết quả"
+            subtitle="Xác nhận đã kiểm tra bản preview"
+            icon="shield"
+            width={480}
+            onClose={() => !busy && setAcceptOpen(false)}
+            footer={
+              <>
+                <button
+                  type="button"
+                  className="odm-btn odm-btn-gh"
+                  onClick={() => setAcceptOpen(false)}
+                  disabled={busy}
+                >
+                  Xem lại
+                </button>
+                <button
+                  type="button"
+                  className="odm-btn odm-btn-p"
+                  onClick={() => void accept()}
+                  disabled={busy}
+                >
+                  {busy ? 'Đang xác nhận…' : 'Xác nhận chấp nhận'}
+                </button>
+              </>
+            }
+          >
+            <p>
+              Tôi xác nhận đã xem các bản preview và chấp nhận kết quả giám sát
+              được bàn giao.
+            </p>
+            {error ? <p className="delivery-error" role="alert">{error}</p> : null}
+          </Modal>
         ) : null}
         {revisionOpen ? (
           <div className="delivery-revision">

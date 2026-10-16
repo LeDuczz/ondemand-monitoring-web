@@ -16,7 +16,6 @@ export function createDefaultForm(): FormState {
     title: '',
     usagePurpose: '',
     flightPurpose: 'SURVEY_MONITORING',
-    priority: 'NORMAL',
     description: '',
     address: '',
     latitude: '10.6402',

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -34,13 +34,11 @@ const emptyDraft: Draft = {
 
 export function ManagerPricingPanel({
   orderId,
-  decisionActions,
   onApproved,
   onChecklistReviewChanged,
   approveBlockedReason,
 }: {
   orderId: string
-  decisionActions?: ReactNode
   onApproved?: () => void
   onChecklistReviewChanged?: () => void
   /** Why approving is not allowed yet (approval criteria not met); null/undefined = allowed. */
@@ -131,34 +129,6 @@ export function ManagerPricingPanel({
     }
   }
 
-  async function saveDraft() {
-    if (!query.data) return null
-    setBusy(true)
-    setError(null)
-    setMessage(null)
-    try {
-      const quote = await financeApi.saveDraft(orderId, {
-        packagePrice: amount(draft.packagePrice),
-        discountAmount: amount(draft.discountAmount),
-        adjustmentAmount: amount(draft.adjustmentAmount),
-        managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: Object.fromEntries(
-          query.data.checklistItems
-            .filter((item) => item.reviewStatus === 'ADDITIONAL')
-            .map((item) => [item.id, amount(draft.prices[item.id])]),
-        ),
-      })
-      setMessage('Đã lưu báo giá nháp.')
-      query.reload()
-      return quote
-    } catch (cause) {
-      setError(errorMessage(cause))
-      return null
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function approve() {
     if (!query.data) return
     if (pendingCustomCount > 0) {
@@ -221,7 +191,6 @@ export function ManagerPricingPanel({
             {null}
             <div className="finance-quote-body">
               <div className="finance-quote-content">Đang tải báo giá...</div>
-              {decisionActions}
             </div>
           </aside>
         </div>
@@ -238,7 +207,6 @@ export function ManagerPricingPanel({
             {null}
             <div className="finance-quote-body">
               <div className="finance-quote-content" />
-              {decisionActions}
             </div>
           </aside>
         </div>
@@ -548,14 +516,6 @@ export function ManagerPricingPanel({
               {!accepted ? (
                 <div className="finance-actions">
                   <button
-                    className="odm-btn"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void saveDraft()}
-                  >
-                    Lưu nháp
-                  </button>
-                  <button
                     id="manager-approve-quote"
                     className="odm-btn odm-btn-p"
                     type="button"
@@ -577,7 +537,6 @@ export function ManagerPricingPanel({
                 </div>
               ) : null}
             </div>
-            {decisionActions}
           </div>
         </aside>
       </div>

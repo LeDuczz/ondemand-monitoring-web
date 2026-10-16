@@ -57,7 +57,19 @@ const STATUS_TONE = {
 } as const
 
 const STATUS_LABEL: Record<string, string> = {
+  WAITING_CREW_CONFIRMATION: 'Chờ các thành viên xác nhận',
+  WAITING_OPERATOR_ACCEPTANCE: 'Chờ người vận hành xác nhận',
+  SCHEDULED: 'Đã lên lịch',
+  CONNECTED: 'Đã kết nối thiết bị',
+  PREFLIGHT_CHECKING: 'Đang kiểm tra trước bay',
+  FAILED_PREFLIGHT: 'Kiểm tra trước bay không đạt',
+  READY_TO_FLY: 'Sẵn sàng bay',
+  IN_PROGRESS: 'Đang thực hiện',
+  RETURNING: 'Đang trở về',
+  POSTFLIGHT_CHECKING: 'Đang kiểm tra sau bay',
   PENDING_REVIEW: 'Chờ nghiệm thu',
+  PENDING_APPROVAL: 'Chờ Manager xử lý',
+  CANCELLED: 'Đã hủy',
   UNKNOWN: 'Trạng thái chưa hỗ trợ',
   PENDING: 'Chờ phản hồi',
   ACCEPTED: 'Đã nhận',
@@ -65,6 +77,11 @@ const STATUS_LABEL: Record<string, string> = {
   COMPLETED: 'Hoàn thành',
   REJECTED: 'Bị từ chối',
   FAILED: 'Không hoàn thành',
+}
+
+function missionStatusLabel(status?: string | null) {
+  if (!status) return 'Chưa xác định'
+  return STATUS_LABEL[status] ?? 'Trạng thái chưa hỗ trợ'
 }
 
 const GCS_CONNECTED_STATUSES = new Set([
@@ -91,7 +108,7 @@ function missionProgressBadge(status?: string | null) {
     return { tone: 'blue' as const, label: 'Quy trình: đã kết nối GCS' }
   }
   if (status === 'PREFLIGHT_CHECKING') {
-    return { tone: 'blue' as const, label: 'Quy trình: đang preflight' }
+    return { tone: 'blue' as const, label: 'Quy trình: đang kiểm tra trước bay' }
   }
   if (status === 'READY_TO_FLY') {
     return { tone: 'green' as const, label: 'Quy trình: sẵn sàng bàn giao' }
@@ -705,6 +722,24 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
     }
   }
 
+  async function handleStartWorkflow() {
+    setSubmitting(true)
+    setActionError(null)
+    try {
+      await missionApi.startMissionWorkflow(mission.id)
+      refreshWorkspace(false)
+    } catch (error) {
+      setActionError(
+        actionErrorMessage(
+          error,
+          'Không thể bắt đầu Mission. Hãy kiểm tra đủ 4 role đã chấp nhận.',
+        ),
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleReject(reason: string, notes: string) {
     setSubmitting(true)
     setActionError(null)
@@ -767,6 +802,9 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
     setResultSubmitting(true)
     setActionError(null)
     try {
+      if ((mission.backendStatus ?? mission.status) === 'PENDING_REVIEW') {
+        await missionApi.completeMission(mission.id)
+      }
       await submitResultToManager()
     } catch (error) {
       setActionError(error)
@@ -821,6 +859,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
         refreshWorkspace={refreshWorkspace}
         mediaRevision={mediaRevision}
         onAccept={handleAccept}
+        onStartWorkflow={handleStartWorkflow}
         onOpenReject={() => setShowReject(true)}
       />
 
@@ -887,6 +926,7 @@ function MissionDashboard({
   refreshWorkspace,
   mediaRevision,
   onAccept,
+  onStartWorkflow,
   onOpenReject,
 }: {
   mission: OperatorMission
@@ -899,6 +939,7 @@ function MissionDashboard({
   refreshWorkspace: () => void
   mediaRevision: number
   onAccept: () => void
+  onStartWorkflow: () => void
   onOpenReject: () => void
 }) {
   const deviceId = mission.deviceId
@@ -1040,7 +1081,12 @@ function MissionDashboard({
   return (
     <div>
       {/* ── Header ── */}
-      <MissionHeader mission={mission} access={access} />
+      <MissionHeader
+        mission={mission}
+        access={access}
+        submitting={submitting}
+        onStartWorkflow={onStartWorkflow}
+      />
 
       {resultActions}
 
@@ -1121,9 +1167,13 @@ function MissionDashboard({
 function MissionHeader({
   mission,
   access,
+  submitting,
+  onStartWorkflow,
 }: {
   mission: OperatorMission
   access?: MissionPermissions
+  submitting?: boolean
+  onStartWorkflow?: () => void
 }) {
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
   const stopping = missionHasSafeStop(mission)
@@ -1134,7 +1184,7 @@ function MissionHeader({
   const canConnectGcs =
     !stopping &&
     access?.canOperatePayload === true &&
-    (backendStatus === 'SCHEDULED' || mission.status === 'ACCEPTED') &&
+    backendStatus === 'SCHEDULED' &&
     !GCS_CONNECTED_STATUSES.has(backendStatus)
   const canRunPreflight =
     !stopping &&
@@ -1146,6 +1196,7 @@ function MissionHeader({
     access?.canUploadMedia === true &&
     (access?.canInspectDevice === true ||
       INSPECTION_MEDIA_STATUSES.has(mission.backendStatus ?? ''))
+  const showReviewDataShortcut = backendStatus !== 'PENDING_REVIEW'
   const showProgressBadge =
     progressBadge &&
     !(access?.canInspectDevice === true || access?.canUploadMedia === true)
@@ -1169,20 +1220,19 @@ function MissionHeader({
         </span>
         <StatusBadge tone={STATUS_TONE[mission.status]}>
           {missionStopLabel(mission) ??
-            STATUS_LABEL[mission.status] ??
-            mission.backendStatus ??
-            mission.status}
+            missionStatusLabel(mission.backendStatus ?? mission.status)}
         </StatusBadge>
 
         {/* spacer */}
         <div style={{ flex: 1 }} />
-        {access?.canExecuteMonitoringChecklist === true &&
+        {showReviewDataShortcut &&
+          access?.canExecuteMonitoringChecklist === true &&
           !canHandleInspectionMedia && (
             <a
               className="odm-btn"
               href={operatorHref({ screen: 'upload', missionId: mission.id })}
             >
-              Checklist & media
+              Checklist và dữ liệu
             </a>
           )}
 
@@ -1208,12 +1258,12 @@ function MissionHeader({
               Kiểm tra sau bay
             </a>
           )}
-        {canHandleInspectionMedia && (
+        {showReviewDataShortcut && canHandleInspectionMedia && (
           <a
             className="odm-btn"
             href={operatorHref({ screen: 'upload', missionId: mission.id })}
           >
-            Mở media nghiệm thu
+            Mở dữ liệu nghiệm thu
           </a>
         )}
         {showProgressBadge ? (
@@ -1231,8 +1281,21 @@ function MissionHeader({
               Dừng chuyến bay
             </a>
           ) : null
-        ) : mission.status === 'PENDING' && hasAccepted ? (
-          <StatusBadge tone="green">Bạn đã chấp nhận</StatusBadge>
+        ) : hasAccepted &&
+          (backendStatus === 'WAITING_CREW_CONFIRMATION' ||
+            backendStatus === 'WAITING_OPERATOR_ACCEPTANCE') ? (
+          access?.canStartMission ? (
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              disabled={submitting}
+              onClick={onStartWorkflow}
+            >
+              {submitting ? 'Đang bắt đầu...' : 'Bắt đầu Mission'}
+            </button>
+          ) : (
+            <StatusBadge tone="green">Đã chấp nhận</StatusBadge>
+          )
         ) : mission.status === 'PENDING' ? null : mission.backendStatus ===
             'READY_TO_FLY' && access?.canControlFlight ? (
           <a
@@ -1642,24 +1705,22 @@ function MissionInfoCard({ mission }: { mission: OperatorMission }) {
   return (
     <div className="odm-card">
       <div className="odm-card-header">
-        <span style={{ fontWeight: 700 }}>Thông tin mission</span>
+        <span style={{ fontWeight: 700 }}>Thông tin nhiệm vụ</span>
         <StatusBadge tone={STATUS_TONE[mission.status]}>
           {missionStopLabel(mission) ??
-            STATUS_LABEL[mission.status] ??
-            mission.backendStatus ??
-            mission.status}
+            missionStatusLabel(mission.backendStatus ?? mission.status)}
         </StatusBadge>
       </div>
       <div className="odm-card-body" style={{ padding: '10px 14px' }}>
         <InfoRow
           icon="#"
-          label="Mã mission"
+          label="Mã nhiệm vụ"
           value={mission.missionCode ?? mission.id}
         />
         <InfoRow
           icon="•"
           label="Trạng thái hệ thống"
-          value={mission.backendStatus ?? STATUS_LABEL[mission.status]}
+          value={missionStatusLabel(mission.backendStatus ?? mission.status)}
         />
         <InfoRow
           icon="📅"

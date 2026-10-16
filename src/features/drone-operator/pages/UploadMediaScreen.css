@@ -547,6 +547,16 @@
   margin-top: 6px;
   justify-content: center;
 }
+.upload-media-attach .upload-media-attach-button {
+  max-width: 100%;
+  min-height: 32px;
+  height: auto;
+  padding: 8px 10px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 
 /* ---------- Collapsible file table ---------- */
 .upload-media-table-wrap {

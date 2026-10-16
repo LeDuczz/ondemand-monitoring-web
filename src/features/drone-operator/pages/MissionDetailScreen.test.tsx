@@ -300,7 +300,7 @@ describe('MissionDetailScreen', () => {
     ).toBeNull()
   })
 
-  it('keeps multi-role acceptance and submission separate and refreshes capabilities', async () => {
+  it('lets a multi-role staff complete and submit in one action', async () => {
     vi.mocked(
       checklistExecutionApi.getMissionChecklistExecutions,
     ).mockResolvedValue({
@@ -338,19 +338,10 @@ describe('MissionDetailScreen', () => {
 
     render(<MissionDetailScreen missionId="m" />)
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Nghiệm thu Mission' }),
+      await screen.findByRole('button', { name: 'Gửi kết quả cho Manager' }),
     )
 
     await waitFor(() => expect(complete).toHaveBeenCalledWith('m'))
-    expect(submit).not.toHaveBeenCalled()
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('button', { name: 'Nghiệm thu Mission' }),
-      ).toBeNull(),
-    )
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Gửi kết quả cho Manager' }),
-    )
     await waitFor(() =>
       expect(submit).toHaveBeenCalledWith(
         'm',
@@ -435,7 +426,7 @@ describe('MissionDetailScreen', () => {
       canUploadMedia: true,
     })
     render(<MissionDetailScreen missionId="m" />)
-    await screen.findByText('Mở media nghiệm thu')
+    await screen.findByText('Mở dữ liệu nghiệm thu')
     expect(
       screen.queryByRole('button', { name: 'Gửi kết quả cho Manager' }),
     ).toBeNull()

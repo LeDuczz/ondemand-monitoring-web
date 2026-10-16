@@ -65,7 +65,7 @@ function card(
 describe('Mission result review card', () => {
   it('groups summary, readiness and actions with localized status and enabled approval', () => {
     card()
-    const review = screen.getByRole('region', { name: 'Kết quả Mission' })
+    const review = screen.getByRole('region', { name: 'Kết quả nhiệm vụ' })
     expect(within(review).getByText('Hoàn thành')).toBeInTheDocument()
     expect(within(review).getByText('Chờ duyệt')).toBeInTheDocument()
     expect(within(review).getByText('30 phút')).toBeInTheDocument()
@@ -254,7 +254,7 @@ describe('Mission result review card', () => {
   it('never displays or reviews a sibling result', () => {
     card({ result: { ...result, missionId: 'm2', summary: 'Sibling summary' } })
     expect(
-      screen.getByText('Chưa có kết quả Mission được gửi.'),
+      screen.getByText('Chưa có kết quả nhiệm vụ được gửi.'),
     ).toBeInTheDocument()
     expect(screen.queryByText('Sibling summary')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Duyệt kết quả' })).toBeNull()

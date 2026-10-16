@@ -5,13 +5,14 @@ import { missionApi } from '../../mission/api/missionApi'
 import { useActiveMission } from '../api/useActiveMission'
 import {
   backendPreflightTokenStorageKey,
+  handoverAcknowledgedStorageKey,
   preflightReadyStorageKey,
 } from '../lib/flightWorkflowStorage'
 import { formatDeviceLabel } from '../lib/deviceLabel'
 import { flightControlApi } from '../omss/api/flightControlApi'
 import { operatorHref } from '../routes'
 import { FlightStepHeader } from './FlightStepper'
-import { ConfirmedBanner, RevokedBanner } from './HandoverBanners'
+import { RevokedBanner } from './HandoverBanners'
 import { handoverScreenMessages } from './HandoverScreen.messages'
 
 /** OPR-05W — Bàn giao quyền điều khiển: 4 cam kết + tick tổng + xác nhận. */
@@ -33,7 +34,6 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
   ])
   const [ack, setAck] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const allChecked = checked.every(Boolean)
@@ -48,7 +48,7 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
       if (!mission.missionId || !deviceId)
         throw new Error(t.noDroneAssignedError)
       window.sessionStorage.setItem(
-        `fieldwise.operator.handoverAcknowledged.${mission.missionId}`,
+        handoverAcknowledgedStorageKey(mission.missionId),
         'true',
       )
       window.localStorage.setItem(
@@ -90,7 +90,7 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
         })
         return
       }
-      setConfirmed(true)
+      window.location.hash = operatorHref({ screen: 'missions' })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.confirmFailed)
     } finally {
@@ -119,8 +119,6 @@ export function HandoverScreen({ missionId }: { missionId?: string }) {
 
           {revoked ? (
             <RevokedBanner onReconfirm={() => setRevoked(false)} />
-          ) : confirmed ? (
-            <ConfirmedBanner />
           ) : (
             <>
               <div className="odm-card">

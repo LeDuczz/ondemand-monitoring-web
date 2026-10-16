@@ -31,8 +31,9 @@ export function missionResultActions(
     canComplete && data.checklist.readyForMissionCompletion === true
   const submitReady =
     canSubmit &&
-    status === 'COMPLETED' &&
-    data.checklist.readyForSubmission === true
+    data.checklist.readyForSubmission === true &&
+    (status === 'COMPLETED' ||
+      (status === 'PENDING_REVIEW' && completeReady))
   const remaining =
     data?.checklist.executions.filter(
       (row) => !['COMPLETED', 'UNABLE_TO_VERIFY'].includes(row.executionStatus),
@@ -103,7 +104,7 @@ export function MissionResultActions({
   if (!['PENDING_REVIEW', 'COMPLETED'].includes(status ?? '')) return null
   const reasonId = `result-readiness-${missionId}`
   const submitReason =
-    status !== 'COMPLETED'
+    status !== 'COMPLETED' && !state.completeReady
       ? 'Cần nghiệm thu Mission trước khi gửi kết quả.'
       : state.readinessReason
   return (

@@ -215,6 +215,13 @@ export const missionApi = {
     )
   },
 
+  startMissionWorkflow: async (missionId: string): Promise<Mission> => {
+    return request<Mission>(
+      `${API_BASE}/missions/${encodeURIComponent(missionId)}/start-operation`,
+      { method: 'POST' },
+    )
+  },
+
   rejectMyMission: async (
     missionId: string,
     reason: string,

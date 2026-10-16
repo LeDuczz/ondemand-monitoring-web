@@ -34,8 +34,6 @@ export const requestInfoPanelMessages = defineMessages({
       PARTNER_REPORT: 'Báo cáo cho đối tác',
       OTHER: 'Khác',
     },
-    priorityLabel: 'Mức ưu tiên',
-    priorities: { NORMAL: 'Bình thường', HIGH: 'Cao', URGENT: 'Khẩn cấp' },
     status: {
       ACTIVE: 'Đang tư vấn',
       NEED_MORE_INFO: 'Cần thêm thông tin',
@@ -83,8 +81,6 @@ export const requestInfoPanelMessages = defineMessages({
       PARTNER_REPORT: 'Partner report',
       OTHER: 'Other',
     },
-    priorityLabel: 'Priority',
-    priorities: { NORMAL: 'Normal', HIGH: 'High', URGENT: 'Urgent' },
     status: {
       ACTIVE: 'Consulting',
       NEED_MORE_INFO: 'More information needed',

@@ -129,23 +129,11 @@ describe('ManagerPricingPanel', () => {
     expect(screen.getByRole('button', { name: 'Duyệt báo giá' })).toBeEnabled()
     expect(screen.queryByLabelText('Giá gói (VND)')).not.toBeInTheDocument()
     expect(screen.getAllByText('Đánh giá công việc tùy chỉnh')).toHaveLength(2)
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
-
-    await waitFor(() =>
-      expect(save).toHaveBeenCalledWith('order-1', {
-        packagePrice: 6_300_000,
-        discountAmount: 0,
-        adjustmentAmount: 0,
-        managerNote: null,
-        additionalUnitPrices: { 'additional-1': 0 },
-        adjustmentReason: null,
-        adjustmentType: 'CORRECTION',
-        expectedPricingRevision: null,
-      }),
-    )
+    expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull()
+    expect(save).not.toHaveBeenCalled()
   })
 
-  it('keeps draft saving available but blocks approval while a custom item is pending', async () => {
+  it('removes draft saving and blocks approval while a custom item is pending', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -194,10 +182,7 @@ describe('ManagerPricingPanel', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Duyệt báo giá' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Lưu nháp' })).toBeEnabled()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
-    expect(await screen.findByText('Đã lưu báo giá nháp.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull()
     expect(approve).not.toHaveBeenCalled()
   })
 

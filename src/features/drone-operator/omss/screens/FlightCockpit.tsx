@@ -46,6 +46,9 @@ type Props = {
   referenceBusy?: boolean
   onCommand: (command: CockpitCommand) => void
   onReview: () => void
+  onStartFlight?: () => void
+  canStartFlight?: boolean
+  startingFlight?: boolean
   onFinishFlight?: () => void
   finishingFlight?: boolean
   onReferenceCapture?: () => void
@@ -524,6 +527,9 @@ export function FlightCockpit(props: Props) {
     canTerminate = false,
     onCommand,
     onReview,
+    onStartFlight,
+    canStartFlight = false,
+    startingFlight = false,
     onFinishFlight,
     finishingFlight,
   } = props
@@ -668,6 +674,33 @@ export function FlightCockpit(props: Props) {
         </div>
 
         <div className="fc-header__actions">
+          {onStartFlight && canStartFlight ? (
+            <button
+              type="button"
+              className="fc-start-flight fc-start-flight--header"
+              aria-label={
+                language === 'en' ? 'Start flight' : 'Bắt đầu chuyến bay'
+              }
+              disabled={busy || startingFlight}
+              onClick={onStartFlight}
+            >
+              <Ico name="takeoff" size={19} />
+              <span>
+                <strong>
+                  {startingFlight
+                    ? language === 'en'
+                      ? 'Starting...'
+                      : 'Đang bắt đầu...'
+                    : language === 'en'
+                      ? 'Start flight'
+                      : 'Bắt đầu chuyến bay'}
+                </strong>
+                <small>
+                  {language === 'en' ? 'Set In flight' : 'Đổi sang Đang bay'}
+                </small>
+              </span>
+            </button>
+          ) : null}
           <div className="fc-seg" role="group" aria-label={c.layout}>
             {(
               [

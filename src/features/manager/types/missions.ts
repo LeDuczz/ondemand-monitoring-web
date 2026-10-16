@@ -358,6 +358,7 @@ export type MissionStaffAssignmentResponse = {
   staffId: string
   staffName: string | null
   staffEmail: string | null
+  staffPhone: string | null
   assignedRole: 'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR'
   responseStatus: 'PENDING' | 'ACCEPTED' | 'REJECTED'
   assignedAt: string | null

@@ -107,7 +107,6 @@ export function buildOrderPayload(input: {
   const { form, aiAnalysisRequested } = input
   const latitude = toNumber(form.latitude, DEFAULT_LATITUDE)
   const longitude = toNumber(form.longitude, DEFAULT_LONGITUDE)
-  const permitStatus = form.permitStatus
   const lengthM = toNumber(form.estimatedLengthM, 0)
   return {
     title: truncateText(form.title, ORDER_TITLE_MAX_LENGTH),
@@ -115,7 +114,6 @@ export function buildOrderPayload(input: {
     serviceId: form.serviceId,
     usagePurpose: form.usagePurpose || undefined,
     flightPurpose: form.flightPurpose,
-    priority: form.priority,
     address: form.address.trim(),
     longitude,
     latitude,
@@ -124,21 +122,6 @@ export function buildOrderPayload(input: {
     siteContactName: form.siteContactName.trim() || undefined,
     siteContactPhone: form.siteContactPhone.trim() || undefined,
     accessNotes: form.accessNotes.trim() || undefined,
-    permitStatus,
-    permitNumber:
-      permitStatus === 'HAVE_PERMIT' ? form.permitNumber.trim() || undefined : undefined,
-    permitExpiresOn:
-      permitStatus === 'HAVE_PERMIT' ? form.permitExpiresOn || undefined : undefined,
-    permitDocuments:
-      permitStatus === 'HAVE_PERMIT'
-        ? form.permitDocuments.map((file) => ({
-            id: file.id,
-            fileName: file.fileName,
-            contentType: file.contentType,
-            sizeBytes: file.sizeBytes,
-            dataUrl: file.dataUrl,
-          }))
-        : undefined,
     monitoringRelationship: form.monitoringRelationship || undefined,
     monitoringAuthorizationConfirmed:
       form.monitoringAuthorizationConfirmed,
@@ -192,7 +175,6 @@ export function buildOrderPayload(input: {
             dataUrl: attachment.dataUrl,
           })),
           usagePurpose: form.usagePurpose || undefined,
-          priority: form.priority,
           consultationId: input.consultationId,
           readinessScore: input.score.score,
           aiAnalysisRequested,

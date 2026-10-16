@@ -385,11 +385,7 @@ export function OrderCustomerRequestDetails({
     { label: t.termsVersion, value: order.termsVersion },
   ]
 
-  const priorityLabel = text(order.priority)
-  const urgent = order.priority === 'URGENT' || order.priority === 'HIGH'
-  const hasSummary = Boolean(
-    order.title || order.description || priorityLabel,
-  )
+  const hasSummary = Boolean(order.title || order.description)
   const hasDetails =
     hasSummary ||
     visibleItems([
@@ -411,18 +407,6 @@ export function OrderCustomerRequestDetails({
           <OrderIcon name="file" size={18} />
           {t.customerRequestDetails}
         </span>
-        {priorityLabel ? (
-          <div className="odm-or-req-chips">
-            {priorityLabel ? (
-              <span
-                className={`odm-or-req-chip${urgent ? ' is-urgent' : ''}`}
-              >
-                <span className="odm-or-req-chip-label">{t.priority}:</span>
-                <strong>{priorityLabel}</strong>
-              </span>
-            ) : null}
-          </div>
-        ) : null}
       </header>
       <div className="odm-or-card-body odm-or-req-body">
         {hasSummary ? (

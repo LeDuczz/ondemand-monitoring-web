@@ -9,7 +9,6 @@ import {
   type FlightPurpose,
   type FormErrors,
   type FormState,
-  type RequestPriority,
   type UpdateField,
   type UsagePurpose,
 } from '../../../lib/createOrder/types'
@@ -28,7 +27,6 @@ const FLIGHT_PURPOSE_OPTIONS = [
   'OTHER',
 ] as const satisfies readonly FlightPurpose[]
 const PURPOSES = ['INTERNAL', 'LEGAL', 'PARTNER_REPORT', 'OTHER'] as const
-const PRIORITIES = ['NORMAL', 'HIGH', 'URGENT'] as const
 
 type Props = {
   form: FormState
@@ -88,7 +86,7 @@ export function RequestInfoPanel({
         </FormField>
         <div className="co-help">{t.flightPurposeHint}</div>
       </div>
-      <div className="co-two co-mt co-compact">
+      <div className="co-mt">
         <FormField id="co-purpose" label={t.purposeLabel}>
           <select
             id="co-purpose"
@@ -102,22 +100,6 @@ export function RequestInfoPanel({
             {PURPOSES.map((p) => (
               <option key={p} value={p}>
                 {t.purposes[p]}
-              </option>
-            ))}
-          </select>
-        </FormField>
-        <FormField id="co-priority" label={t.priorityLabel}>
-          <select
-            id="co-priority"
-            className="co-input"
-            value={form.priority}
-            onChange={(e) =>
-              update('priority', e.target.value as RequestPriority)
-            }
-          >
-            {PRIORITIES.map((p) => (
-              <option key={p} value={p}>
-                {t.priorities[p]}
               </option>
             ))}
           </select>

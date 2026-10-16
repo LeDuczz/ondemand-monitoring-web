@@ -61,6 +61,7 @@ export const operatorApi = {
           .getPermissions(mission.id)
           .then((value) => ({
             canControlFlight: value.canControlFlight,
+            canStartMission: value.canStartMission,
             canTerminateFlight: value.canTerminateFlight,
             canOperatePayload: value.canOperatePayload,
             canInspectDevice: value.canInspectDevice,

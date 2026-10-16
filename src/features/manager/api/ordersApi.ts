@@ -89,7 +89,6 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     description: order.description,
     usagePurpose: order.usagePurpose ?? null,
     flightPurpose: order.flightPurpose ?? null,
-    priority: order.priority ?? null,
     altitudeM: order.altitudeM ?? null,
     estimatedLengthM: order.estimatedLengthM ?? null,
     siteContactName: order.siteContactName ?? null,
@@ -111,15 +110,13 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     termsAcceptedAt: order.termsAcceptedAt ?? null,
     termsVersion: order.termsVersion ?? null,
     deliverables: order.deliverables ?? null,
-    flightAreaReviewStatus: order.flightAreaReviewStatus ?? null,
+    legalReviewStatus: order.legalReviewStatus ?? 'NOT_REVIEWED',
     flightAreaReviewReason: order.flightAreaReviewReason ?? null,
     flightAreaReviewNote: order.flightAreaReviewNote ?? null,
     requestedScopeFeasible: order.requestedScopeFeasible ?? null,
     flightAreaReviewedById: order.flightAreaReviewedById ?? null,
     flightAreaReviewedByName: order.flightAreaReviewedByName ?? null,
     flightAreaReviewedAt: order.flightAreaReviewedAt ?? null,
-    requiresFlightPermissionReview:
-      order.requiresFlightPermissionReview ?? false,
   }
 }
 
@@ -204,6 +201,17 @@ export const ordersApi = {
     return apiRequest<OrderCreateResponse>(
       `/api/orders/${encodeURIComponent(id)}/flight-area-review`,
       { method: 'POST', body: request },
+    )
+  },
+
+  resolveLegalReview(
+    id: string,
+    status: 'APPROVED' | 'REJECTED',
+    note?: string,
+  ): Promise<OrderCreateResponse> {
+    return apiRequest<OrderCreateResponse>(
+      `/api/orders/${encodeURIComponent(id)}/legal-review/resolve`,
+      { method: 'POST', body: { status, note } },
     )
   },
 

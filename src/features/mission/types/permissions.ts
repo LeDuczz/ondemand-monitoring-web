@@ -4,6 +4,7 @@ export type MissionPermissions = {
   canAttachChecklistEvidence?: boolean
   canDetachChecklistEvidence?: boolean
   canRespond: boolean
+  canStartMission?: boolean
   canControlFlight: boolean
   canOperatePayload: boolean
   canInspectDevice: boolean
@@ -28,6 +29,7 @@ export function mayPerformMissionAction(
   if (action === 'upload')
     return (
       permissions.canUploadMedia === true ||
+      permissions.canInspectDevice === true ||
       permissions.canControlFlight === true ||
       permissions.canExecuteMonitoringChecklist === true ||
       permissions.canSubmitMissionResult === true

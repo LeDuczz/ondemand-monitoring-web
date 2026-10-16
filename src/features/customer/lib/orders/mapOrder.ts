@@ -137,10 +137,10 @@ export function toOrderDetail(order: OrderCreateResponse): OrderDetailView {
   const row = toOrderRow(order)
   return {
     ...row,
+    legalReviewStatus: order.legalReviewStatus ?? 'NOT_REVIEWED',
     description: orNull(order.description),
     usagePurpose: orNull(order.usagePurpose),
     flightPurpose: orNull(order.flightPurpose),
-    priority: orNull(order.priority),
     altitudeM: orNull(order.altitudeM),
     estimatedLengthM: orNull(order.estimatedLengthM),
     siteContactName: orNull(order.siteContactName),

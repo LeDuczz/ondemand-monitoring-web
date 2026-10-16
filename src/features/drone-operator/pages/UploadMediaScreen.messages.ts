@@ -4,7 +4,19 @@ export const uploadMediaScreenMessages = defineMessages({
   vi: {
     stepTitle: 'Upload media',
     uploadPermissionNote:
-      'Upload ảnh cần Inspector đã nhận nhiệm vụ. Bạn vẫn có thể xem media và cập nhật checklist nếu được phân công giám sát.',
+      'Upload ảnh cần Pilot hoặc Inspector đã nhận nhiệm vụ. Bạn vẫn có thể xem media và cập nhật checklist nếu được phân công giám sát.',
+    inspectorContact: 'Liên hệ người nghiệm thu',
+    managerContact: 'Liên hệ Manager',
+    notUpdated: 'Chưa cập nhật',
+    phoneNotUpdated: 'Chưa cập nhật số điện thoại',
+    callInspector: (phone: string) => `Gọi ${phone}`,
+    callManager: (phone: string) => `Gọi ${phone}`,
+    responseStatus: (status?: string | null) =>
+      status === 'ACCEPTED'
+        ? 'Đã nhận nhiệm vụ'
+        : status === 'REJECTED'
+          ? 'Đã từ chối nhiệm vụ'
+          : 'Chờ nhận nhiệm vụ',
     checkingPermissions: 'Đang xác nhận quyền upload…',
     permissionsUnavailable:
       'Không tải được quyền upload. Bấm Làm mới để thử lại.',
@@ -55,7 +67,7 @@ export const uploadMediaScreenMessages = defineMessages({
     confirmDiscard: (fileName: string) =>
       `Xóa bản local ${fileName} trên Flight Controller?`,
     processing: 'Đang xử lý…',
-    approveUpload: 'Duyệt & upload',
+    approveUpload: 'Upload ảnh',
     deleteLocal: 'Xóa bản local',
     discard: 'Discard',
     loadMediaFailed: 'Không tải được media trên Flight Controller',
@@ -64,7 +76,19 @@ export const uploadMediaScreenMessages = defineMessages({
   },
   en: {
     uploadPermissionNote:
-      'Uploading requires an accepted Inspector assignment. You can still view media and update the checklist if assigned to monitoring.',
+      'Uploading requires an accepted Pilot or Inspector assignment. You can still view media and update the checklist if assigned to monitoring.',
+    inspectorContact: 'Inspector contact',
+    managerContact: 'Manager contact',
+    notUpdated: 'Not updated',
+    phoneNotUpdated: 'Phone number not updated',
+    callInspector: (phone: string) => `Call ${phone}`,
+    callManager: (phone: string) => `Call ${phone}`,
+    responseStatus: (status?: string | null) =>
+      status === 'ACCEPTED'
+        ? 'Assignment accepted'
+        : status === 'REJECTED'
+          ? 'Assignment rejected'
+          : 'Awaiting acceptance',
     checkingPermissions: 'Checking upload permissions…',
     permissionsUnavailable:
       'Could not load upload permissions. Refresh to retry.',
@@ -116,7 +140,7 @@ export const uploadMediaScreenMessages = defineMessages({
     confirmDiscard: (fileName: string) =>
       `Delete the local copy of ${fileName} on the Flight Controller?`,
     processing: 'Processing…',
-    approveUpload: 'Approve & upload',
+    approveUpload: 'Upload media',
     deleteLocal: 'Delete local copy',
     discard: 'Discard',
     loadMediaFailed: 'Could not load media from the Flight Controller',

@@ -15,7 +15,7 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
   onSaved: () => void
 }) {
   const [draft, setDraft] = useState<Record<string, string | boolean>>({
-    title: order.title, address: order.address ?? '', priority: order.priority ?? 'NORMAL',
+    title: order.title, address: order.address ?? '',
     preferredDateFrom: order.dateFrom ?? '', preferredDateTo: order.dateTo ?? '', resultDeadline: order.resultDeadline ?? '',
     flightPurpose: order.flightPurpose ?? 'SURVEY_MONITORING', usagePurpose: order.usagePurpose ?? '',
     altitudeM: order.altitudeM?.toString() ?? '', estimatedLengthM: order.estimatedLengthM?.toString() ?? '',
@@ -36,7 +36,7 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
   async function save() {
     setBusy(true); setError('')
     const keys: Record<EditableOrderSection, string[]> = {
-      general: ['title','address','priority','preferredDateFrom','preferredDateTo','resultDeadline'],
+      general: ['title','address','preferredDateFrom','preferredDateTo','resultDeadline'],
       scope: ['flightPurpose','usagePurpose','altitudeM','estimatedLengthM','recurrenceType','recurrenceOccurrences'],
       site: ['siteContactName','siteContactPhone','accessNotes','monitoringRelationship','weatherFallback'],
       permit: ['monitoringAuthorizationConfirmed','permitStatus','permitNumber','permitExpiresOn'],
@@ -66,7 +66,6 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
     {section === 'general' && <>
       <Field label="Tiêu đề"><input value={text('title')} onChange={(e) => set('title', e.target.value)} /></Field>
       <Field label="Địa điểm"><input value={text('address')} onChange={(e) => set('address', e.target.value)} /></Field>
-      <Field label="Mức ưu tiên"><select value={text('priority')} onChange={(e) => set('priority', e.target.value)}><option value="NORMAL">Bình thường</option><option value="HIGH">Cao</option><option value="URGENT">Khẩn cấp</option></select></Field>
       <Field label="Từ ngày"><input type="date" value={text('preferredDateFrom')} onChange={(e) => set('preferredDateFrom', e.target.value)} /></Field>
       <Field label="Đến ngày"><input type="date" value={text('preferredDateTo')} onChange={(e) => set('preferredDateTo', e.target.value)} /></Field>
       <Field label="Hạn nhận kết quả"><input type="date" value={text('resultDeadline')} onChange={(e) => set('resultDeadline', e.target.value)} /></Field>

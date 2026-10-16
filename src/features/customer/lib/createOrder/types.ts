@@ -82,7 +82,6 @@ export type MonitoringAuthorizationDocument = CustomerOrderAttachment & {
   documentName: string
   notes: string
 }
-export type RequestPriority = 'NORMAL' | 'HIGH' | 'URGENT'
 export type RecurrenceType = 'NONE' | 'WEEKLY' | 'MONTHLY'
 /** What to do when a flight cannot go ahead (weather, equipment, access, permit, safety). */
 export type WeatherFallback =
@@ -100,7 +99,6 @@ export type FormState = {
   usagePurpose: UsagePurpose
   /** Printed as the flight purpose on the flight-permit application. */
   flightPurpose: FlightPurpose
-  priority: RequestPriority
   description: string
   address: string
   latitude: string

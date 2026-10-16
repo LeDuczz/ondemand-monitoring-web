@@ -9,6 +9,9 @@ export type BackendMission = MissionStopMetadata & {
   orderTitle?: string | null
   serviceName?: string | null
   customerName?: string | null
+  managerName?: string | null
+  managerEmail?: string | null
+  managerPhone?: string | null
   status: string
   operatorId?: string | null
   staffId?: string | null
@@ -26,6 +29,11 @@ export type BackendMission = MissionStopMetadata & {
   droneName?: string | null
   staffAssignments?: Array<{
     staffId?: string | null
+    staffName?: string | null
+    staffEmail?: string | null
+    staffPhone?: string | null
+    assignedRole?:
+      'PILOT' | 'OPERATOR' | 'MAINTAINER' | 'INSPECTOR' | string | null
     responseStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | string | null
   }>
   latitude?: number | null
@@ -207,6 +215,9 @@ export function toOperatorMission(
     startTime: scheduled.time,
     endTime: end.time,
     serviceLabel: source.serviceName ?? source.mediaType ?? '—',
+    managerName: source.managerName ?? undefined,
+    managerEmail: source.managerEmail ?? undefined,
+    managerPhone: source.managerPhone ?? undefined,
     deviceId: source.deviceId ?? source.droneId ?? null,
     deviceCode: source.deviceCode ?? null,
     deviceSerialNumber: source.deviceSerialNumber ?? null,

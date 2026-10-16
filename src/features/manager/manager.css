@@ -1957,6 +1957,13 @@
 .odm-or-review-stage-actions .odm-btn-p {
   margin-left: auto;
 }
+.odm-or-review-stage-actions .odm-btn:disabled {
+  border-color: #cbd5e1;
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 1;
+}
 
 @media (max-width: 1699px) {
   .odm-or-review-page .odm-or-step-hint {
@@ -4448,6 +4455,38 @@ a.odm-or-btn-outline {
   flex-wrap: wrap;
 }
 
+.odm-md-headmain {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.odm-md-titlerow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.odm-or-subtitle.is-muted {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.odm-md-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--or-tx2);
+  font-size: 13px;
+}
+
+.odm-md-meta .odm-or-btn-outline {
+  text-decoration: none;
+}
+
 .odm-or-md-actions {
   display: flex;
   align-items: center;
@@ -4457,7 +4496,7 @@ a.odm-or-btn-outline {
 
 .odm-or-md-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   gap: 16px;
   align-items: start;
 }
@@ -4514,14 +4553,14 @@ a.odm-or-btn.odm-or-view-btn {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px 16px;
+  padding: 10px 14px;
   border: 1px solid var(--or-border);
   border-radius: 12px;
   background: var(--or-card);
 }
 
 .odm-or-md-kpi span {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--or-tx2);
 }
 
@@ -4543,16 +4582,6 @@ a.odm-or-btn.odm-or-view-btn {
 @media (max-width: 640px) {
   .odm-or-md-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.odm-or-md-grid {
-  grid-template-columns: minmax(0, 1fr) 340px;
-}
-
-@media (max-width: 1100px) {
-  .odm-or-md-grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -4702,7 +4731,7 @@ a.odm-or-btn.odm-or-view-btn {
 /* Mission map: keep the real aspect ratio, side panel for details */
 .odm-rm-card {
   display: grid;
-  grid-template-columns: minmax(520px, 1.45fr) minmax(320px, 0.85fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
 }
 
 .odm-rm-stage {
@@ -4715,7 +4744,7 @@ a.odm-or-btn.odm-or-view-btn {
 }
 
 .odm-rm-stage .odm-rm {
-  height: min(620px, 72vh);
+  height: clamp(320px, 50vh, 400px);
   width: auto;
   max-width: 100%;
   border-radius: 10px;
@@ -4725,8 +4754,8 @@ a.odm-or-btn.odm-or-view-btn {
   position: relative;
   width: 100%;
   min-width: 0;
-  height: min(620px, 72vh);
-  min-height: 520px;
+  height: clamp(320px, 50vh, 400px);
+  min-height: 320px;
   overflow: hidden;
   background: #111827;
   border-radius: 10px;
@@ -4874,8 +4903,8 @@ a.odm-or-btn.odm-or-view-btn {
   }
 
   .odm-rm-satellite {
-    height: clamp(360px, 70vw, 520px);
-    min-height: 360px;
+    height: clamp(300px, 70vw, 400px);
+    min-height: 300px;
   }
 }
 
@@ -5169,9 +5198,8 @@ a.odm-or-btn.odm-or-view-btn {
 }
 
 .odm-or-area-manager-review > strong { color: #166534; }
-.odm-or-area-manager-review > strong.is-restricted,
-.odm-or-area-manager-review > strong.is-undetermined { color: #a16207; }
-.odm-or-area-manager-review > strong.is-unsuitable { color: #b91c1c; }
+.odm-or-area-manager-review > strong.is-pending_permit { color: #a16207; }
+.odm-or-area-manager-review > strong.is-rejected { color: #b91c1c; }
 .odm-or-area-manager-review p { margin: 0; line-height: 1.5; }
 
 .odm-or-area-modal-backdrop {
@@ -5246,6 +5274,14 @@ a.odm-or-btn.odm-or-view-btn {
   font: inherit;
   font-weight: 400;
 }
+.odm-or-area-field small { color: var(--tx3); font-weight: 400; }
+.odm-or-area-char-count { margin-top: 5px; color: var(--tx3); font-size: 12px; text-align: right; }
+.odm-or-area-modal footer .odm-btn.is-danger {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+.odm-or-area-modal footer .odm-btn.is-danger:hover:not(:disabled) { background: #b91c1c; }
 .odm-or-area-permission-note {
   padding: 10px 12px;
   border-radius: 8px;
@@ -6417,4 +6453,62 @@ fieldset.odm-or-readonly {
   margin: 0;
   padding: 0;
   border: 0;
+}
+
+/* Mission detail — info panel, collapsible checklist */
+.odm-or-md-grid .odm-or-kv > div {
+  grid-template-columns: 124px minmax(0, 1fr);
+}
+
+.odm-or-md-grid .odm-or-kv dt {
+  color: var(--or-tx2);
+  font-size: 13px;
+}
+
+.odm-or-md-grid .odm-or-kv dd {
+  font-size: 14px;
+}
+
+.odm-or-md-grid .odm-or-crew-main strong,
+.odm-or-md-grid .odm-or-crew-main small {
+  overflow-wrap: anywhere;
+}
+
+.odm-md-collapse > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.odm-md-collapse > summary::-webkit-details-marker {
+  display: none;
+}
+
+.odm-md-collapse > summary::after {
+  content: '\25BE';
+  margin-left: auto;
+  color: var(--or-tx2);
+  transition: transform 0.15s;
+}
+
+.odm-md-collapse[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.odm-md-collapse-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.odm-md-collapse-meta {
+  color: var(--or-tx2);
+  font-size: 13.5px;
+}
+
+.odm-md-collapse[open] > summary {
+  border-bottom: 1px solid var(--or-border);
 }

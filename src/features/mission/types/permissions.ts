@@ -29,6 +29,7 @@ export function mayPerformMissionAction(
   if (action === 'upload')
     return (
       permissions.canUploadMedia === true ||
+      permissions.canInspectDevice === true ||
       permissions.canControlFlight === true ||
       permissions.canExecuteMonitoringChecklist === true ||
       permissions.canSubmitMissionResult === true

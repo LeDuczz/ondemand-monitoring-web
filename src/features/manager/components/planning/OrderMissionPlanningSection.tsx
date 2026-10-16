@@ -377,18 +377,16 @@ function OrderPlanningWorkspace({
                   >
                     {creating ? 'Đang tạo Mission' : 'Tạo thêm Mission'}
                   </button>
-                  <button
-                    type="button"
-                    className="odm-btn odm-btn-p"
-                    disabled={
-                      busy ||
-                      saving ||
-                      Boolean(creating)
-                    }
-                    onClick={() => void continueToResourceAssignment()}
-                  >
-                    Tiếp: Gán nguồn lực
-                  </button>
+                  {data.missions.length > 0 && (
+                    <button
+                      type="button"
+                      className="odm-btn odm-btn-p"
+                      disabled={busy || saving || Boolean(creating)}
+                      onClick={() => void continueToResourceAssignment()}
+                    >
+                      Tiếp: Gán nguồn lực
+                    </button>
+                  )}
                 </>
               )}
               {writable &&

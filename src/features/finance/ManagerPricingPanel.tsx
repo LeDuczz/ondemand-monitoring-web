@@ -185,38 +185,6 @@ export function ManagerPricingPanel({
     }
   }
 
-  async function saveDraft() {
-    if (!query.data) return null
-    setBusy(true)
-    setError(null)
-    setMessage(null)
-    try {
-      const quote = await financeApi.saveDraft(orderId, {
-        packagePrice: systemPrice,
-        discountAmount: 0,
-        adjustmentAmount: amount(draft.adjustmentAmount),
-        managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: Object.fromEntries(
-          query.data.checklistItems
-            .filter((item) => item.reviewStatus === 'ADDITIONAL')
-            .map((item) => [item.id, amount(draft.prices[item.id])]),
-        ),
-        adjustmentReason: draft.adjustmentReason.trim() || null,
-        adjustmentType: draft.adjustmentType,
-        expectedPricingRevision:
-          query.data.currentQuote?.pricingRevision ?? null,
-      })
-      setMessage('Đã lưu báo giá nháp.')
-      query.reload()
-      return quote
-    } catch (cause) {
-      setError(errorMessage(cause))
-      return null
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function approve() {
     if (!query.data) return
     if (pendingCustomCount > 0) {
@@ -798,14 +766,6 @@ export function ManagerPricingPanel({
                 </div>
               ) : !accepted ? (
                 <div className="finance-actions">
-                  <button
-                    className="odm-btn"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void saveDraft()}
-                  >
-                    Lưu nháp
-                  </button>
                   <button
                     id="manager-approve-quote"
                     className="odm-btn odm-btn-p"

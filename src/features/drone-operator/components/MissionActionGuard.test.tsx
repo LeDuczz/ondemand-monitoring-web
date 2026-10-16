@@ -40,6 +40,20 @@ describe('mission action guard', () => {
     )
     expect(await screen.findByText('Monitoring workspace')).toBeInTheDocument()
   })
+  it('lets the assigned inspector view Pilot uploads without upload permission', async () => {
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...permissions,
+      canMaintainDevice: false,
+      canInspectDevice: true,
+      canUploadMedia: false,
+    })
+    render(
+      <MissionActionGuard missionId="m1" action="upload">
+        <div>Readonly Pilot media</div>
+      </MissionActionGuard>,
+    )
+    expect(await screen.findByText('Readonly Pilot media')).toBeInTheDocument()
+  })
   it('does not render a flight screen for a maintainer', async () => {
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(permissions)
     render(

@@ -59,7 +59,7 @@ const STATUS_TONE = {
 const STATUS_LABEL: Record<string, string> = {
   WAITING_CREW_CONFIRMATION: 'Chờ các thành viên xác nhận',
   WAITING_OPERATOR_ACCEPTANCE: 'Chờ người vận hành xác nhận',
-  SCHEDULED: 'Đã lên lịch',
+  SCHEDULED: 'Đã bắt đầu Mission',
   CONNECTED: 'Đã kết nối thiết bị',
   PREFLIGHT_CHECKING: 'Đang kiểm tra trước bay',
   FAILED_PREFLIGHT: 'Kiểm tra trước bay không đạt',
@@ -678,6 +678,14 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
     setActiveMissionId(missionId)
   }, [missionId])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      query.reload()
+      monitoring.reload()
+    }, 5_000)
+    return () => window.clearInterval(timer)
+  }, [missionId, monitoring.reload, query.reload])
+
   if (query.loading && !query.data) return <LoadingState />
   if (query.error || !query.data || query.data.id !== missionId) {
     return (
@@ -833,6 +841,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             status={mission.backendStatus ?? mission.status}
             monitoring={monitoring}
             busy={submitting || resultSubmitting || query.loading}
+            showComplete={false}
             onComplete={() => void handleCompleteMission()}
             onSubmit={() => void handleSubmitResult()}
           />
@@ -845,6 +854,9 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             error={monitoring.error}
             canExecute={
               monitoring.data?.permissions.canExecuteMonitoringChecklist
+            }
+            canAssess={
+              monitoring.data?.permissions.canInspectDevice === true
             }
             canAttach={monitoring.data?.permissions.canAttachChecklistEvidence}
             canDetach={monitoring.data?.permissions.canDetachChecklistEvidence}
@@ -954,11 +966,15 @@ function MissionDashboard({
   const [postflightStatus, setPostflightStatus] =
     useState<PostflightCheckStatus | null>(null)
   const [tab, setTab] = useState<'overview' | 'checks' | 'media'>('overview')
+  const canViewMissionMedia =
+    access?.canInspectDevice === true ||
+    access?.canUploadMedia === true ||
+    mission.status === 'COMPLETED' ||
+    mission.backendStatus === 'PENDING_REVIEW'
   const tabs: Array<{ id: 'overview' | 'checks' | 'media'; label: string }> = [
     { id: 'overview', label: 'Tổng quan' },
     { id: 'checks', label: 'Kết quả kiểm tra thiết bị' },
-    ...(mission.status === 'COMPLETED' ||
-    mission.backendStatus === 'PENDING_REVIEW'
+    ...(canViewMissionMedia
       ? [{ id: 'media' as const, label: 'Ảnh & video' }]
       : []),
   ]
@@ -1148,9 +1164,7 @@ function MissionDashboard({
         </div>
       ) : null}
 
-      {tab === 'media' &&
-      (mission.status === 'COMPLETED' ||
-        mission.backendStatus === 'PENDING_REVIEW') ? (
+      {tab === 'media' && canViewMissionMedia ? (
         <MissionUploadedMedia
           missionId={mission.id}
           reviewStatus={resultApprovalStatus}
@@ -1193,10 +1207,10 @@ function MissionHeader({
       backendStatus,
     )
   const canHandleInspectionMedia =
-    access?.canUploadMedia === true &&
-    (access?.canInspectDevice === true ||
+    access?.canInspectDevice === true ||
+    access?.canCompleteMission === true ||
+    (access?.canUploadMedia === true &&
       INSPECTION_MEDIA_STATUSES.has(mission.backendStatus ?? ''))
-  const showReviewDataShortcut = backendStatus !== 'PENDING_REVIEW'
   const showProgressBadge =
     progressBadge &&
     !(access?.canInspectDevice === true || access?.canUploadMedia === true)
@@ -1225,8 +1239,7 @@ function MissionHeader({
 
         {/* spacer */}
         <div style={{ flex: 1 }} />
-        {showReviewDataShortcut &&
-          access?.canExecuteMonitoringChecklist === true &&
+        {access?.canExecuteMonitoringChecklist === true &&
           !canHandleInspectionMedia && (
             <a
               className="odm-btn"
@@ -1258,7 +1271,7 @@ function MissionHeader({
               Kiểm tra sau bay
             </a>
           )}
-        {showReviewDataShortcut && canHandleInspectionMedia && (
+        {canHandleInspectionMedia && (
           <a
             className="odm-btn"
             href={operatorHref({ screen: 'upload', missionId: mission.id })}

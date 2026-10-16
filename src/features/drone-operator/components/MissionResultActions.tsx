@@ -96,6 +96,7 @@ export function MissionResultActions({
   busy,
   onComplete,
   onSubmit,
+  showComplete = true,
 }: {
   missionId: string
   status?: string
@@ -103,13 +104,14 @@ export function MissionResultActions({
   busy: boolean
   onComplete: () => void
   onSubmit: () => void
+  showComplete?: boolean
 }) {
   const state = missionResultActions(missionId, status, monitoring)
   if (!['PENDING_REVIEW', 'COMPLETED'].includes(status ?? '')) return null
   const reasonId = `result-readiness-${missionId}`
   const submitReason =
     status !== 'COMPLETED' && !state.completeReady
-      ? 'Cần nghiệm thu Mission trước khi gửi kết quả.'
+      ? 'Cần xác nhận hoàn thành Mission trước khi gửi kết quả.'
       : state.readinessReason
   return (
     <section
@@ -135,9 +137,9 @@ export function MissionResultActions({
           </>
         )}
       </div>
-      {(state.canComplete || state.canSubmit) && (
+      {((showComplete && state.canComplete) || state.canSubmit) && (
         <div className="staff-result-buttons">
-          {state.canComplete && (
+          {showComplete && state.canComplete && (
             <button
               type="button"
               className="odm-btn odm-btn-p"
@@ -145,7 +147,7 @@ export function MissionResultActions({
               aria-describedby={!state.completeReady ? reasonId : undefined}
               onClick={onComplete}
             >
-              Nghiệm thu Mission
+              Xác nhận hoàn thành Mission
             </button>
           )}
           {state.canSubmit && (
@@ -162,9 +164,9 @@ export function MissionResultActions({
         </div>
       )}
       {((state.canSubmit && !state.submitReady) ||
-        (state.canComplete && !state.completeReady)) && (
+        (showComplete && state.canComplete && !state.completeReady)) && (
         <p id={reasonId} className="staff-result-reason">
-          {state.canComplete && !state.completeReady
+          {showComplete && state.canComplete && !state.completeReady
             ? state.readinessReason
             : submitReason}
         </p>

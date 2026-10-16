@@ -45,7 +45,7 @@ export const missionListPageMessages = defineMessages({
     accepted: 'Đã nhận',
     statusLabel: {
       ACCEPTED: 'Đã nhận',
-      SCHEDULED: 'Đã lên lịch',
+      SCHEDULED: 'Đã bắt đầu Mission',
       CONNECTED: 'Đã kết nối',
       PREFLIGHT_CHECKING: 'Đang precheck',
       FAILED_PREFLIGHT: 'Precheck lỗi',

@@ -52,6 +52,7 @@ interface Props {
   onAutoStartPlanConsumed: () => void
   onPreflightReady?: () => Promise<void>
   onReviewMedia?: () => void
+  onStartFlight?: () => Promise<void>
 }
 
 type FlightCommand =
@@ -3135,6 +3136,7 @@ export default function InFlightControl({
   onAutoStartPlanConsumed,
   onPreflightReady,
   onReviewMedia,
+  onStartFlight,
 }: Props) {
   const { t } = useI18n(inFlightControlMessages)
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
@@ -3147,6 +3149,7 @@ export default function InFlightControl({
   const [referenceBusy, setReferenceBusy] = useState(false)
   const referenceBusyRef = useRef(false)
   const [finishFlightBusy, setFinishFlightBusy] = useState(false)
+  const [startFlightBusy, setStartFlightBusy] = useState(false)
   const [streamRevision, setStreamRevision] = useState(0)
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -3487,6 +3490,17 @@ export default function InFlightControl({
         )
         setIsOnline(true)
 
+        // Keep the business mission lifecycle in sync with the real flight.
+        // Both a direct takeoff and "Fly to point" begin an actual flight, so
+        // neither command may leave Inspector screens stuck at READY_TO_FLY.
+        if (
+          (command === 'takeoff' || command === 'gps_target_start') &&
+          onStartFlight
+        ) {
+          const latestMission = await missionApi.getMissionById(missionKey)
+          if (latestMission.status === 'READY_TO_FLY') await onStartFlight()
+        }
+
         if (command === 'return_to_base') onRTB()
         if (command === 'emergency_stop') onEmergency()
       } catch (cause) {
@@ -3515,6 +3529,7 @@ export default function InFlightControl({
       mission.routePoints,
       onEmergency,
       onRTB,
+      onStartFlight,
       normalFlightAllowed,
       terminationAllowed,
       operationalMessage,
@@ -3657,6 +3672,29 @@ export default function InFlightControl({
     }
     navigateOperator(operatorHref({ screen: 'upload', missionId }))
   }, [mission.backendId, mission.id, onReviewMedia])
+  const handleStartFlight = useCallback(async () => {
+    if (!onStartFlight || startFlightBusy) return
+    setStartFlightBusy(true)
+    setLastCommand(
+      getLanguage() === 'en'
+        ? 'Starting flight...'
+        : 'Đang bắt đầu chuyến bay...',
+    )
+    try {
+      await onStartFlight()
+      setLastCommand(
+        getLanguage() === 'en'
+          ? 'Mission is in flight'
+          : 'Mission đã chuyển sang Đang bay',
+      )
+    } catch (error) {
+      setLastCommand(
+        error instanceof Error ? error.message : t.status.controllerOffline,
+      )
+    } finally {
+      setStartFlightBusy(false)
+    }
+  }, [onStartFlight, startFlightBusy, t.status.controllerOffline])
   const handleFinishFlight = useCallback(async () => {
     if (finishFlightBusy) return
     const missionId = mission.backendId ?? mission.id
@@ -3892,6 +3930,11 @@ export default function InFlightControl({
         referenceBusy={referenceBusy}
         onCommand={handleCommand}
         onReview={handleReviewMedia}
+        onStartFlight={
+          onStartFlight ? () => void handleStartFlight() : undefined
+        }
+        canStartFlight={controlStatus?.inAir !== true}
+        startingFlight={startFlightBusy}
         onFinishFlight={handleFinishFlight}
         finishingFlight={finishFlightBusy}
         onReferenceCapture={() => void handleReferenceCapture()}

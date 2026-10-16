@@ -33,6 +33,8 @@ export type OperatorMission = MissionStopMetadata & {
   acceptedAt?: string
   managerNote?: string
   managerName?: string
+  managerEmail?: string
+  managerPhone?: string
   respondBy?: string
   radiusMeters?: number
   ceilingMeters?: number

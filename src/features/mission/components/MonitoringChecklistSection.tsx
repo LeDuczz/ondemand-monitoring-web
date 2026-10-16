@@ -110,6 +110,7 @@ export function MonitoringChecklistSection({
   loading,
   error,
   canExecute = false,
+  canAssess = false,
   resultStatus,
   resultNote,
   resultKnown = true,
@@ -128,6 +129,7 @@ export function MonitoringChecklistSection({
   loading: boolean
   error?: unknown
   canExecute?: boolean
+  canAssess?: boolean
   resultStatus?: MissionResultApprovalStatus | null
   resultNote?: string | null
   resultKnown?: boolean
@@ -152,6 +154,9 @@ export function MonitoringChecklistSection({
     (a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id),
   )
   const done = rows.filter((row) => terminal(row.executionStatus)).length
+  const attachedEvidence = new Set(
+    rows.flatMap((row) => (row.evidence ?? []).map((item) => item.evidenceId)),
+  ).size
   if (compact) {
     const firstTodo = rows.find((row) => !terminal(row.executionStatus))
     const activeId =
@@ -169,8 +174,9 @@ export function MonitoringChecklistSection({
       >
         <header>
           <h2>Checklist nghiệm thu</h2>
-          <span className="mc-count">
-            {done} / {rows.length}
+          <span className="mc-count" title="Tiến độ hoàn tất checklist">
+            {done} / {rows.length} mục hoàn tất
+            <small>{attachedEvidence} bằng chứng đã gắn</small>
           </span>
         </header>
         <div className="mc-progress" aria-hidden="true">
@@ -322,6 +328,7 @@ export function MonitoringChecklistSection({
                         item={item}
                         missionId={missionId}
                         editable={editable}
+                        canAssess={canAssess}
                         rejected={resultStatus === 'REJECTED'}
                         refresh={refresh}
                         compact
@@ -525,6 +532,7 @@ export function MonitoringChecklistSection({
                 item={item}
                 missionId={missionId}
                 editable={editable}
+                canAssess={canAssess}
                 rejected={resultStatus === 'REJECTED'}
                 refresh={refresh}
               />
@@ -553,6 +561,7 @@ function ChecklistExecutionItem({
   item,
   missionId,
   editable,
+  canAssess,
   rejected,
   refresh,
   compact = false,
@@ -560,6 +569,7 @@ function ChecklistExecutionItem({
   item: MissionChecklistExecution
   missionId: string
   editable: boolean
+  canAssess: boolean
   rejected: boolean
   refresh: () => void
   compact?: boolean
@@ -693,6 +703,7 @@ function ChecklistExecutionItem({
                 Đánh giá
                 <select
                   value={assessment}
+                  disabled={!canAssess}
                   onChange={(event) =>
                     setAssessment(
                       event.target.value as ChecklistAssessmentStatus,
@@ -837,6 +848,7 @@ function ChecklistExecutionItem({
               Đánh giá
               <select
                 value={assessment}
+                disabled={!canAssess}
                 onChange={(event) =>
                   setAssessment(event.target.value as ChecklistAssessmentStatus)
                 }

@@ -29,6 +29,7 @@ export type ChecklistPriceBreakdown = {
   standardVideoDurationSeconds: number | null
   lines: ChecklistPriceLine[]
   subtotal: number
+  quotePending: boolean
 }
 
 /** `total = packageFee + checklistSubtotal`; order-specific factors are added by the Manager quote. */
@@ -47,6 +48,7 @@ export type ServicePricePreview = {
   total: number
   complete: boolean
   warnings: string[]
+  quotePending: boolean
 }
 
 export type AdminPreviewItem = {
@@ -72,6 +74,11 @@ export type CustomerQuoteItem = {
   requestedImageCount?: number
   requestedVideoCount?: number
 }
+export type ChecklistQuoteContext = {
+  areaHa?: number
+  lengthKm?: number
+  altitudeM?: number
+}
 
 export const checklistPricingApi = {
   defaultPrice: (serviceId: string, signal?: AbortSignal) =>
@@ -89,10 +96,11 @@ export const checklistPricingApi = {
     serviceId: string,
     items: CustomerQuoteItem[],
     signal?: AbortSignal,
+    context?: ChecklistQuoteContext,
   ) =>
     apiRequest<ServicePricePreview>('/api/pricing/checklist-quote', {
       method: 'POST',
-      body: { serviceId, items },
+      body: { serviceId, items, ...context },
       signal,
     }),
 }

@@ -69,6 +69,7 @@ const preview = (total = 370_000): ServicePricePreview => ({
   total,
   complete: true,
   warnings: [],
+  quotePending: false,
   checklists: [
     {
       checklistId: 'a',
@@ -109,6 +110,7 @@ const preview = (total = 370_000): ServicePricePreview => ({
           rounding: null,
         },
       ],
+      quotePending: false,
     },
   ],
 })
@@ -184,6 +186,12 @@ describe('Checklist create/edit with media pricing', () => {
           includedVideoCount: 2,
           standardVideoDurationSeconds: 45,
           pricingProfile: 'PREMIUM_2',
+          areaPricingEnabled: false,
+          lengthPricingEnabled: false,
+          altitudePricingEnabled: false,
+          includedAreaHa: 0,
+          includedLengthKm: 0,
+          includedAltitudeM: 0,
         },
       ),
     )

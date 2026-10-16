@@ -3,11 +3,62 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { financeApi } from './api'
 import { ManagerPricingPanel } from './ManagerPricingPanel'
+import { ApiError } from '../../shared/api/httpClient'
 
 afterEach(() => vi.restoreAllMocks())
 
 describe('ManagerPricingPanel', () => {
-  it('refreshes readiness after a checklist item is reviewed', async () => {
+  it('does not expose a custom baseline input and surfaces the structured-assessment message', async () => {
+    vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
+      orderId: 'order-1',
+      orderCode: 'ORD-1',
+      customerName: 'Customer',
+      serviceName: 'Site monitoring',
+      basePackagePrice: 5_000_000,
+      checklistItems: [
+        {
+          id: 'custom-1',
+          sourceChecklistId: null,
+          content: 'Inspect custom structure',
+          displayOrder: 1,
+          sourceType: 'CUSTOMER_CUSTOM',
+          reviewStatus: 'INCLUDED',
+          managerNote: null,
+          managerQuoteRequired: true,
+          managerQuotedPrice: null,
+        },
+      ],
+      currentQuote: null,
+      quoteHistory: [],
+    })
+    const save = vi.spyOn(financeApi, 'saveDraft').mockRejectedValueOnce(
+      new ApiError('Thiếu giá: Inspect custom structure', {
+        status: 409,
+        code: 'CUSTOM_WORK_PRICING_INCOMPLETE',
+        method: 'PUT',
+        path: '/api/manager/orders/order-1/quotes/draft',
+      }),
+    )
+
+    render(<ManagerPricingPanel orderId="order-1" />)
+    await screen.findByText('Inspect custom structure')
+    expect(
+      screen.queryByRole('spinbutton', {
+        name: 'Giá báo (VND): Inspect custom structure',
+      }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
+    expect(
+      await screen.findByText('Thiếu giá: Inspect custom structure'),
+    ).toBeInTheDocument()
+    expect(save).toHaveBeenLastCalledWith(
+      'order-1',
+      expect.objectContaining({ additionalUnitPrices: {} }),
+    )
+  })
+
+  it('shows package checklist as auto-priced without a review control', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -23,6 +74,8 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'SERVICE_TEMPLATE',
           reviewStatus: 'PENDING',
           managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
         },
       ],
       currentQuote: null,
@@ -36,6 +89,8 @@ describe('ManagerPricingPanel', () => {
       sourceType: 'SERVICE_TEMPLATE',
       reviewStatus: 'INCLUDED',
       managerNote: null,
+      managerQuoteRequired: false,
+      managerQuotedPrice: null,
     })
     const onChecklistReviewChanged = vi.fn()
 
@@ -46,11 +101,11 @@ describe('ManagerPricingPanel', () => {
       />,
     )
     await screen.findByText('Requirement awaiting review')
-    fireEvent.change(screen.getByRole('combobox', { name: 'Phân loại' }), {
-      target: { value: 'INCLUDED' },
-    })
-
-    await waitFor(() => expect(onChecklistReviewChanged).toHaveBeenCalled())
+    expect(
+      screen.queryByRole('combobox', { name: 'Phân loại' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Tự động tính giá')).toBeInTheDocument()
+    expect(onChecklistReviewChanged).not.toHaveBeenCalled()
   })
 
   it('shows the system breakdown and does not let a manager invent baseline prices', async () => {
@@ -93,6 +148,8 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'SERVICE_TEMPLATE',
           reviewStatus: 'INCLUDED',
           managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
         },
         {
           id: 'additional-1',
@@ -102,6 +159,8 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'CUSTOMER_CUSTOM',
           reviewStatus: 'ADDITIONAL',
           managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
         },
       ],
       currentQuote: null,
@@ -137,7 +196,7 @@ describe('ManagerPricingPanel', () => {
         discountAmount: 0,
         adjustmentAmount: 0,
         managerNote: null,
-        additionalUnitPrices: { 'additional-1': 0 },
+        additionalUnitPrices: {},
         adjustmentReason: null,
         adjustmentType: 'CORRECTION',
         expectedPricingRevision: null,
@@ -161,6 +220,8 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'CUSTOMER_CUSTOM',
           reviewStatus: 'PENDING',
           managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
         },
       ],
       currentQuote: null,
@@ -201,7 +262,7 @@ describe('ManagerPricingPanel', () => {
     expect(approve).not.toHaveBeenCalled()
   })
 
-  it('automatically includes pending package requirements when approving', async () => {
+  it('approves pending legacy package requirements without sending a review mutation', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -217,6 +278,8 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'SERVICE_TEMPLATE',
           reviewStatus: 'PENDING',
           managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
         },
       ],
       currentQuote: null,
@@ -232,6 +295,8 @@ describe('ManagerPricingPanel', () => {
         sourceType: 'SERVICE_TEMPLATE',
         reviewStatus: 'INCLUDED',
         managerNote: null,
+        managerQuoteRequired: false,
+        managerQuotedPrice: null,
       })
     const draft = {
       id: 'quote-1',
@@ -262,10 +327,7 @@ describe('ManagerPricingPanel', () => {
     fireEvent.click(button)
 
     await screen.findByText(/Duyệt báo giá thành công/)
-    expect(reviewItem).toHaveBeenCalledWith('order-1', 'package-1', {
-      status: 'INCLUDED',
-      managerNote: null,
-    })
+    expect(reviewItem).not.toHaveBeenCalled()
     expect(approve).toHaveBeenCalledTimes(1)
   })
 
@@ -285,6 +347,8 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'SERVICE_TEMPLATE' as const,
           reviewStatus: 'INCLUDED' as const,
           managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
         },
       ],
       currentQuote: null,

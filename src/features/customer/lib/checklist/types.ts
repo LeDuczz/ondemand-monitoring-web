@@ -17,6 +17,14 @@ export type ServiceChecklistItem = {
   required?: boolean
 }
 
+export type CatalogChecklistItem = {
+  id: string
+  content: string
+  version: number
+  includedImageCount: number
+  includedVideoCount: number
+}
+
 /**
  * Either the explicit evidence requirement (checklists without media) or the requested media counts.
  * The backend rejects both together and derives the acceptance thresholds from the requested counts.
@@ -36,7 +44,7 @@ export type ChecklistSnapshot = {
   sourceChecklistId: string | null
   content: string
   displayOrder: number
-  sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
+  sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_SELECTED' | 'CUSTOMER_CUSTOM'
   minimumEvidenceCount?: number
   requiredEvidenceType?: RequiredEvidenceType
   evidencePolicyVersion?: number
@@ -67,6 +75,8 @@ export type ChecklistRow = {
   requestedVideoCount: number
   /** The checklist cannot be removed from the order. */
   mandatory: boolean
+  /** True only when the checklist was automatically supplied by the selected package. */
+  packageItem?: boolean
 }
 
 /** A row is priced and verified by media counts as soon as it has an allowance or the customer asks for media. */

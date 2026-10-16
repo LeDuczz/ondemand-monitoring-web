@@ -248,6 +248,10 @@
   background: #eaf8ef;
   color: #168344;
 }
+.finance-review-badge.is-quote-pending {
+  background: #fff7e6;
+  color: #9a6700;
+}
 .finance-requirement.is-additional .finance-index,
 .finance-requirement.is-additional .finance-status-select select {
   background: #fff7e6;
@@ -904,8 +908,13 @@
 }
 
 @media (max-width: 420px) {
-  .od-page .customer-payment-stats { grid-template-columns: minmax(0, 1fr); }
-  .od-page .customer-payment-actions .odm-btn { width: 100%; justify-content: center; }
+  .od-page .customer-payment-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .od-page .customer-payment-actions .odm-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 @media (max-width: 680px) {
   .customer-payment-stats {

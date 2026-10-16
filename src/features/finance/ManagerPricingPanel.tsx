@@ -16,7 +16,6 @@ const statuses: Array<{
   value: Exclude<ChecklistReviewStatus, 'PENDING'>
   label: string
 }> = [
-  { value: 'INCLUDED', label: 'Đã gồm trong gói' },
   { value: 'ADDITIONAL', label: 'Tính phí bổ sung' },
   { value: 'DUPLICATE', label: 'Trùng lặp' },
   { value: 'REJECTED', label: 'Từ chối' },
@@ -31,7 +30,6 @@ type Draft = {
   adjustmentType:
     'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
   approvalNote: string
-  prices: Record<string, string>
 }
 const emptyDraft: Draft = {
   packagePrice: '0',
@@ -41,7 +39,6 @@ const emptyDraft: Draft = {
   adjustmentReason: '',
   adjustmentType: 'CORRECTION',
   approvalNote: '',
-  prices: {},
 }
 const emptyAssessment: CustomWorkAssessment = {
   estimatedFlightHours: null,
@@ -123,18 +120,13 @@ export function ManagerPricingPanel({
       adjustmentReason: quote.adjustmentReason ?? '',
       adjustmentType: quote.adjustmentType ?? 'CORRECTION',
       approvalNote: '',
-      prices: Object.fromEntries(
-        quote.items
-          .filter(
-            (item) => item.type === 'ADDITIONAL' && item.orderChecklistItemId,
-          )
-          .map((item) => [item.orderChecklistItemId!, String(item.unitPrice)]),
-      ),
     })
-  }, [query.data?.basePackagePrice, query.data?.currentQuote?.id])
+  }, [query.data])
 
   const pendingReviewCount = (query.data?.checklistItems ?? []).filter(
-    (item) => !item.reviewStatus || item.reviewStatus === 'PENDING',
+    (item) =>
+      item.sourceType !== 'SERVICE_TEMPLATE' &&
+      (!item.reviewStatus || item.reviewStatus === 'PENDING'),
   ).length
   const pendingCustomCount = (query.data?.checklistItems ?? []).filter(
     (item) =>
@@ -198,11 +190,7 @@ export function ManagerPricingPanel({
         discountAmount: 0,
         adjustmentAmount: amount(draft.adjustmentAmount),
         managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: Object.fromEntries(
-          query.data.checklistItems
-            .filter((item) => item.reviewStatus === 'ADDITIONAL')
-            .map((item) => [item.id, amount(draft.prices[item.id])]),
-        ),
+        additionalUnitPrices: {},
         adjustmentReason: draft.adjustmentReason.trim() || null,
         adjustmentType: draft.adjustmentType,
         expectedPricingRevision:
@@ -232,29 +220,12 @@ export function ManagerPricingPanel({
     setError(null)
     setMessage(null)
     try {
-      const pendingDefaults = query.data.checklistItems.filter(
-        (item) =>
-          (!item.reviewStatus || item.reviewStatus === 'PENDING') &&
-          item.sourceType === 'SERVICE_TEMPLATE',
-      )
-      await Promise.all(
-        pendingDefaults.map((item) =>
-          financeApi.reviewChecklist(orderId, item.id, {
-            status: 'INCLUDED',
-            managerNote: null,
-          }),
-        ),
-      )
       const quote = await financeApi.saveDraft(orderId, {
         packagePrice: systemPrice,
         discountAmount: 0,
         adjustmentAmount: amount(draft.adjustmentAmount),
         managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: Object.fromEntries(
-          query.data.checklistItems
-            .filter((item) => item.reviewStatus === 'ADDITIONAL')
-            .map((item) => [item.id, amount(draft.prices[item.id])]),
-        ),
+        additionalUnitPrices: {},
         adjustmentReason: draft.adjustmentReason.trim() || null,
         adjustmentType: draft.adjustmentType,
         expectedPricingRevision:
@@ -361,7 +332,8 @@ export function ManagerPricingPanel({
   ] as const
   const visibleItems = query.data.checklistItems.filter((item) =>
     filter === 'pending'
-      ? item.reviewStatus === 'PENDING'
+      ? item.sourceType !== 'SERVICE_TEMPLATE' &&
+        item.reviewStatus === 'PENDING'
       : filter === 'reviewed'
         ? item.reviewStatus !== 'PENDING'
         : filter === 'additional'
@@ -567,38 +539,45 @@ export function ManagerPricingPanel({
                     : 'Yêu cầu thêm của khách hàng'}
                 </span>
               </div>
-              <label className="finance-status-select">
-                <span className="finance-sr">Phân loại</span>
-                <select
-                  value={item.reviewStatus}
-                  disabled={accepted}
-                  onChange={(event) =>
-                    void updateReview(
-                      item,
-                      event.target.value as ChecklistReviewStatus,
-                    )
-                  }
-                >
-                  <option value="PENDING" disabled>
-                    Chưa xem xét
-                  </option>
-                  {statuses.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
+              {item.sourceType === 'SERVICE_TEMPLATE' ? (
+                <div className="finance-zero">Đã gồm trong gói</div>
+              ) : (
+                <label className="finance-status-select">
+                  <span className="finance-sr">Phân loại</span>
+                  <select
+                    value={item.reviewStatus}
+                    disabled={accepted}
+                    onChange={(event) =>
+                      void updateReview(
+                        item,
+                        event.target.value as ChecklistReviewStatus,
+                      )
+                    }
+                  >
+                    <option value="PENDING" disabled>
+                      Chưa xem xét
                     </option>
-                  ))}
-                </select>
-              </label>
+                    {statuses.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <div className="finance-zero">
-                {pricingLabel(item.difficultySnapshot ?? 'BASIC')} · hệ thống
-                tính giá
+                {item.sourceType === 'SERVICE_TEMPLATE'
+                  ? 'Hệ thống tính giá · Không cần Manager review'
+                  : `${pricingLabel(item.difficultySnapshot ?? 'BASIC')} · hệ thống tính giá`}
               </div>
               <span
                 className={`finance-review-badge is-${item.reviewStatus.toLowerCase()}`}
               >
-                {item.reviewStatus === 'PENDING'
-                  ? 'Chưa xem xét'
-                  : 'Đã xem xét'}
+                {item.sourceType === 'SERVICE_TEMPLATE'
+                  ? 'Tự động tính giá'
+                  : item.reviewStatus === 'PENDING'
+                    ? 'Chưa xem xét'
+                    : 'Đã xem xét'}
               </span>
               <button
                 type="button"
@@ -923,11 +902,10 @@ function signedDigits(value: string) {
 }
 function errorMessage(error: unknown) {
   if (error instanceof ApiError) {
+    if (error.code === 'CUSTOM_WORK_PRICING_INCOMPLETE') return error.message
     const messages: Record<string, string> = {
       ORDER_CHECKLIST_REVIEW_INVALID:
         'Danh sách yêu cầu chưa được xem xét đầy đủ. Hãy phân loại tất cả nội dung trước khi duyệt báo giá.',
-      CUSTOM_WORK_PRICING_INCOMPLETE:
-        'Vui lòng hoàn tất đánh giá công việc tùy chỉnh trước khi lập báo giá.',
       STALE_PRICING_REVISION:
         'Báo giá đã được cập nhật ở nơi khác. Vui lòng tải lại dữ liệu.',
       PRICING_ADJUSTMENT_REASON_REQUIRED: 'Vui lòng nhập lý do điều chỉnh giá.',

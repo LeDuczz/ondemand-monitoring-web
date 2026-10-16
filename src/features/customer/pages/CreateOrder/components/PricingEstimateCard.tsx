@@ -45,6 +45,11 @@ export function PricingEstimateCard({
           <span>{formatMoney(estimate.totalPrice, locale)}</span>
         </div>
         <p className="co-estimate-notice">{t.estimateNotice}</p>
+        {estimate.quotePending && (
+          <p className="co-notice" role="status">
+            {t.quotePending}
+          </p>
+        )}
       </div>
     )
   }

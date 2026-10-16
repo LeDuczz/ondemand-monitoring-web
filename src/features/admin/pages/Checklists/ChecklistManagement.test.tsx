@@ -110,9 +110,15 @@ describe('Admin checklist catalog', () => {
         'New checklist',
         'BASIC',
         {
+          altitudePricingEnabled: false,
+          areaPricingEnabled: false,
           basePrice: 0,
+          includedAltitudeM: 0,
+          includedAreaHa: 0,
           includedImageCount: 0,
+          includedLengthKm: 0,
           includedVideoCount: 0,
+          lengthPricingEnabled: false,
           pricingProfile: '',
         },
       ),
@@ -162,9 +168,15 @@ describe('Admin checklist catalog', () => {
         'Edited',
         'BASIC',
         {
+          altitudePricingEnabled: false,
+          areaPricingEnabled: false,
           basePrice: 0,
+          includedAltitudeM: 0,
+          includedAreaHa: 0,
           includedImageCount: 0,
+          includedLengthKm: 0,
           includedVideoCount: 0,
+          lengthPricingEnabled: false,
           pricingProfile: '',
         },
       ),
@@ -449,8 +461,14 @@ describe('Admin checklist visual structure and interaction', () => {
       )
       .mockResolvedValue(rows)
     render(<ServiceChecklistPage serviceId="s" />)
-    await screen.findByText('Không thể tải checklist dịch vụ.')
-    fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    const loadError = await screen.findByText(
+      'Không thể tải checklist dịch vụ.',
+    )
+    fireEvent.click(
+      within(loadError.closest('.odm-card')!).getByRole('button', {
+        name: 'Thử lại',
+      }),
+    )
     await screen.findByText(definition.content)
     expect(checklistsApi.template).toHaveBeenCalledTimes(2)
   })

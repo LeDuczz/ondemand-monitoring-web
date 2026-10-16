@@ -31,6 +31,9 @@ const messages = defineMessages({
     includedHint:
       'Giá của phần media đã bao gồm và giá media bổ sung là hai khoản riêng, mỗi khoản chỉ tính một lần.',
     block: 'khối',
+    awaitingManagerQuote: 'Chờ Manager báo giá',
+    quotePending:
+      'Các yêu cầu đang chờ Manager báo giá chưa được tính vào tổng này.',
   },
   en: {
     packageFee: 'Legacy catalog price (no checklist is priced yet)',
@@ -56,6 +59,9 @@ const messages = defineMessages({
     includedHint:
       'Included media and extra media are separate charges; each is billed exactly once.',
     block: 'block',
+    awaitingManagerQuote: 'Awaiting manager quote',
+    quotePending:
+      'Requirements awaiting a manager quote are excluded from this total.',
   },
 })
 
@@ -77,37 +83,41 @@ export function ChecklistBreakdown({ row }: { row: ChecklistPriceBreakdown }) {
         {t.videos} — {t.extra}: {row.extraImageCount} {t.images} ·{' '}
         {row.extraVideoCount} {t.videos}
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col" />
-            <th scope="col">{t.qty}</th>
-            <th scope="col">{t.unit}</th>
-            <th scope="col">{t.amount}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {row.lines.map((line, index) => (
-            <tr key={`${line.component}-${index}`}>
-              <td>{line.description}</td>
-              <td>
-                {line.quantity}
-                {line.blockSize ? ` ${t.block}` : ''}
-              </td>
-              <td>{formatVnd(line.unitPrice)}</td>
-              <td>{formatVnd(line.amount)}</td>
+      {row.quotePending ? (
+        <p className="price-bd-warning">{t.awaitingManagerQuote}</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" />
+              <th scope="col">{t.qty}</th>
+              <th scope="col">{t.unit}</th>
+              <th scope="col">{t.amount}</th>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <th scope="row" colSpan={3}>
-              {t.subtotal}
-            </th>
-            <td>{formatVnd(row.subtotal)}</td>
-          </tr>
-        </tfoot>
-      </table>
+          </thead>
+          <tbody>
+            {row.lines.map((line, index) => (
+              <tr key={`${line.component}-${index}`}>
+                <td>{line.description}</td>
+                <td>
+                  {line.quantity}
+                  {line.blockSize ? ` ${t.block}` : ''}
+                </td>
+                <td>{formatVnd(line.unitPrice)}</td>
+                <td>{formatVnd(line.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colSpan={3}>
+                {t.subtotal}
+              </th>
+              <td>{formatVnd(row.subtotal)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      )}
     </section>
   )
 }
@@ -136,6 +146,11 @@ export function PriceBreakdownView({
             ))}
           </ul>
         </div>
+      )}
+      {preview.quotePending && (
+        <p role="status" className="price-bd-warning">
+          {t.quotePending}
+        </p>
       )}
       {preview.priceSource === 'CHECKLISTS' && (
         <p className="price-bd-hint">{t.fromChecklists}</p>

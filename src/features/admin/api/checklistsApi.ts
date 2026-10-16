@@ -14,6 +14,12 @@ export type ChecklistDefinition = {
   includedVideoCount?: number
   standardVideoDurationSeconds?: number | null
   pricingProfile?: string | null
+  areaPricingEnabled?: boolean
+  lengthPricingEnabled?: boolean
+  altitudePricingEnabled?: boolean
+  includedAreaHa?: number
+  includedLengthKm?: number
+  includedAltitudeM?: number
 }
 /** Pricing configuration sent with create/edit; omitted fields keep the stored value. */
 export type ChecklistPricingInput = {
@@ -22,6 +28,12 @@ export type ChecklistPricingInput = {
   includedVideoCount?: number
   standardVideoDurationSeconds?: number | null
   pricingProfile?: string | null
+  areaPricingEnabled?: boolean
+  lengthPricingEnabled?: boolean
+  altitudePricingEnabled?: boolean
+  includedAreaHa?: number
+  includedLengthKm?: number
+  includedAltitudeM?: number
 }
 export type ChecklistPage = {
   items: ChecklistDefinition[]

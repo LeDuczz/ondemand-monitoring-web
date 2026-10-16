@@ -18,6 +18,7 @@ import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
 import { ChecklistQuoteCard } from '../../components/checklist/ChecklistQuoteCard'
 import { ChecklistSnapshotCard } from '../../components/checklist/ChecklistSnapshotCard'
 import { useOrderChecklist } from './useOrderChecklist'
+import { useChecklistQuote } from './useChecklistQuote'
 import { extraMedia, usesMedia } from './types'
 import type { ServiceChecklistItem } from './types'
 
@@ -69,6 +70,7 @@ const preview: ServicePricePreview = {
   total: 540_000,
   complete: true,
   warnings: [],
+  quotePending: false,
   checklists: [
     {
       checklistId: 'c-roof',
@@ -97,6 +99,7 @@ const preview: ServicePricePreview = {
           rounding: 'CEILING',
         },
       ],
+      quotePending: false,
     },
   ],
 }
@@ -257,18 +260,17 @@ describe('ChecklistQuoteCard', () => {
     const quote = vi
       .spyOn(checklistPricingApi, 'customerQuote')
       .mockResolvedValue(preview)
-    render(
-      <ChecklistQuoteCard
-        serviceId="A"
-        items={[
-          {
-            sourceChecklistId: 'c-roof',
-            requestedImageCount: 30,
-            requestedVideoCount: 3,
-          },
-        ]}
-      />,
+    const hook = renderHook(() =>
+      useChecklistQuote('A', [
+        {
+          sourceChecklistId: 'c-roof',
+          requestedImageCount: 30,
+          requestedVideoCount: 3,
+        },
+      ]),
     )
+    await waitFor(() => expect(hook.result.current.preview).toEqual(preview))
+    render(<ChecklistQuoteCard quote={hook.result.current} />)
     expect(await screen.findByText(/Phần ảnh bổ sung/)).toBeInTheDocument()
     expect(screen.getByText(/Bổ sung: 20 ảnh · 2 video/)).toBeInTheDocument()
     expect(screen.getAllByText(/540\.000/).length).toBeGreaterThan(0)
@@ -287,25 +289,27 @@ describe('ChecklistQuoteCard', () => {
 
   it('does not call the backend while the form is incomplete', async () => {
     const quote = vi.spyOn(checklistPricingApi, 'customerQuote')
-    render(<ChecklistQuoteCard serviceId="A" items={null} />)
+    renderHook(() => useChecklistQuote('A', null))
     await new Promise((resolve) => setTimeout(resolve, 600))
     expect(quote).not.toHaveBeenCalled()
   })
 
-  it('shows the explicit business error when a custom checklist cannot be priced', async () => {
+  it('shows the backend message when media pricing is not configured', async () => {
     vi.spyOn(checklistPricingApi, 'customerQuote').mockRejectedValue(
-      new ApiError('Chưa cấu hình giá cho checklist ngoài danh mục', {
+      new ApiError('Media pricing backend message', {
         status: 409,
-        code: 'CUSTOM_CHECKLIST_PRICING_NOT_CONFIGURED',
+        code: 'MEDIA_PRICING_NOT_CONFIGURED',
         method: 'POST',
         path: '/api/pricing/checklist-quote',
       }),
     )
-    render(
-      <ChecklistQuoteCard serviceId="A" items={[{ content: 'Tự thêm' }]} />,
+    const hook = renderHook(() =>
+      useChecklistQuote('A', [{ content: 'Tự thêm' }]),
     )
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Chưa cấu hình giá',
+    await waitFor(() => expect(hook.result.current.error).not.toBeNull())
+    render(<ChecklistQuoteCard quote={hook.result.current} />)
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Media pricing backend message',
     )
     expect(screen.queryByText(/0\s?₫/)).toBeNull()
   })

@@ -3,6 +3,8 @@ import { useI18n } from '../../../../shared/i18n'
 import { customerApi } from '../../api/customerApi'
 import { checklistError } from './errors'
 import { checklistMessages } from './messages'
+import { useChecklistQuote } from './useChecklistQuote'
+import type { ChecklistQuoteContext } from '../../../../shared/api/checklistPricingApi'
 import {
   normalizeContent,
   serializeChecklist,
@@ -21,7 +23,10 @@ const isCount = (value: number) =>
   Number.isInteger(value) && value >= 0 && value <= 500
 
 /** Scoped to one creation flow, never shared with historical order details. */
-export function useOrderChecklist(serviceId: string) {
+export function useOrderChecklist(
+  serviceId: string,
+  pricingContext?: ChecklistQuoteContext,
+) {
   const { t } = useI18n(checklistMessages)
   const [state, setState] = useState<State | null>(null)
   const [revision, setRevision] = useState(0)
@@ -52,7 +57,8 @@ export function useOrderChecklist(serviceId: string) {
           ) {
             throw new Error('Invalid template response')
           }
-          const rows = [...items]
+          const packageIds = new Set(items.map((item) => item.checklistId))
+          const packageRows = [...items]
             .filter((item) => item.serviceActive && item.checklistActive)
             .sort(
               (a, b) =>
@@ -73,8 +79,44 @@ export function useOrderChecklist(serviceId: string) {
               requestedImageCount: item.includedImageCount ?? 0,
               requestedVideoCount: item.includedVideoCount ?? 0,
               mandatory: item.required === true,
+              packageItem: true,
             }))
-          setState({ serviceId, status: 'ready', rows, error: null })
+          setState({
+            serviceId,
+            status: 'ready',
+            rows: packageRows,
+            error: null,
+          })
+          void customerApi
+            .getChecklistCatalog(controller.signal)
+            .then((catalog) => {
+              if (controller.signal.aborted || requestId !== sequence.current)
+                return
+              const catalogRows = catalog
+                .filter((item) => !packageIds.has(item.id))
+                .map((item) => ({
+                  key: `catalog-${item.id}`,
+                  sourceChecklistId: item.id,
+                  version: item.version,
+                  originalContent: item.content,
+                  content: item.content,
+                  selected: false,
+                  minimumEvidenceCount: 1,
+                  requiredEvidenceType: 'IMAGE_OR_VIDEO' as const,
+                  includedImageCount: item.includedImageCount ?? 0,
+                  includedVideoCount: item.includedVideoCount ?? 0,
+                  requestedImageCount: item.includedImageCount ?? 0,
+                  requestedVideoCount: item.includedVideoCount ?? 0,
+                  mandatory: false,
+                  packageItem: false,
+                }))
+              setState((previous) =>
+                previous?.serviceId === serviceId && previous.status === 'ready'
+                  ? { ...previous, rows: [...previous.rows, ...catalogRows] }
+                  : previous,
+              )
+            })
+            .catch(() => undefined)
         })
         .catch((error: unknown) => {
           if (controller.signal.aborted || requestId !== sequence.current)
@@ -142,6 +184,22 @@ export function useOrderChecklist(serviceId: string) {
   )
     validation = t.duplicate
 
+  const quoteItems =
+    status === 'ready' && !validation
+      ? selected.map((row) => ({
+          ...(row.sourceChecklistId
+            ? { sourceChecklistId: row.sourceChecklistId }
+            : { content: normalizeContent(row.content) }),
+          ...(usesMedia(row)
+            ? {
+                requestedImageCount: row.requestedImageCount,
+                requestedVideoCount: row.requestedVideoCount,
+              }
+            : {}),
+        }))
+      : null
+  const quote = useChecklistQuote(serviceId, quoteItems, pricingContext)
+
   function change(
     key: string,
     patch: Partial<
@@ -175,21 +233,9 @@ export function useOrderChecklist(serviceId: string) {
     error: status === 'error' ? checklistError(current?.error, true) : null,
     serviceId,
     selectedCount: selected.length,
+    quote,
     /** Choices and quantities for the backend price quote; null while the form is incomplete. */
-    quoteItems: () =>
-      status === 'ready' && !validation
-        ? selected.map((row) => ({
-            ...(row.sourceChecklistId
-              ? { sourceChecklistId: row.sourceChecklistId }
-              : { content: normalizeContent(row.content) }),
-            ...(usesMedia(row)
-              ? {
-                  requestedImageCount: row.requestedImageCount,
-                  requestedVideoCount: row.requestedVideoCount,
-                }
-              : {}),
-          }))
-        : null,
+    quoteItems: () => quoteItems,
     valid: status === 'ready' && !validation,
     change,
     add: () =>
@@ -215,6 +261,7 @@ export function useOrderChecklist(serviceId: string) {
                   requestedImageCount: 0,
                   requestedVideoCount: 0,
                   mandatory: false,
+                  packageItem: false,
                 },
               ],
             }

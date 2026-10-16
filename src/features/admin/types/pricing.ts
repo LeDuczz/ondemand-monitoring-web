@@ -4,6 +4,7 @@ export type PricingRule = {
     | 'PACKAGE'
     | 'DISTANCE'
     | 'AREA'
+    | 'ALTITUDE'
     | 'CHECKLIST'
     | 'OUTPUT'
     | 'RESOURCE'

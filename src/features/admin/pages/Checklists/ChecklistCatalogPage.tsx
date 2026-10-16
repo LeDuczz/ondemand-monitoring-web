@@ -410,6 +410,54 @@ function ChecklistEditor({
               {t.pricingProfileHint}
             </small>
           </FormField>
+          <div className="checklist-field-meta">
+            Chỉ bật chiều đo thực sự ảnh hưởng đến checklist này.
+          </div>
+          {(
+            [
+              ['areaPricingEnabled', 'Tính theo diện tích'],
+              ['lengthPricingEnabled', 'Tính theo chiều dài'],
+              ['altitudePricingEnabled', 'Tính theo độ cao'],
+            ] as const
+          ).map(([field, label]) => (
+            <label key={field} className="checklist-field-meta">
+              <input
+                type="checkbox"
+                checked={pricing[field]}
+                onChange={(event) =>
+                  setPricing({ ...pricing, [field]: event.target.checked })
+                }
+              />{' '}
+              {label}
+            </label>
+          ))}
+          <PricingNumber
+            id="checklist-included-area"
+            label="Diện tích đã bao gồm (ha)"
+            field="includedAreaHa"
+            step={0.001}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-included-length"
+            label="Chiều dài đã bao gồm (km)"
+            field="includedLengthKm"
+            step={0.001}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-included-altitude"
+            label="Độ cao đã bao gồm (m)"
+            field="includedAltitudeM"
+            step={0.01}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
         </fieldset>
         {error && (
           <p className="checklist-banner is-error" role="alert">
@@ -432,7 +480,10 @@ function PricingNumber({
 }: {
   id: string
   label: string
-  field: keyof ChecklistPricingForm
+  field: Exclude<
+    keyof ChecklistPricingForm,
+    'areaPricingEnabled' | 'lengthPricingEnabled' | 'altitudePricingEnabled'
+  >
   step?: number
   pricing: ChecklistPricingForm
   errors: ChecklistPricingErrors

@@ -14,6 +14,12 @@ describe('validatePricingForm', () => {
         includedImageCount: 0,
         includedVideoCount: 0,
         pricingProfile: '',
+        areaPricingEnabled: false,
+        lengthPricingEnabled: false,
+        altitudePricingEnabled: false,
+        includedAreaHa: 0,
+        includedLengthKm: 0,
+        includedAltitudeM: 0,
       },
     })
   })
@@ -34,6 +40,12 @@ describe('validatePricingForm', () => {
         includedVideoCount: 1,
         standardVideoDurationSeconds: 30,
         pricingProfile: 'STANDARD',
+        areaPricingEnabled: false,
+        lengthPricingEnabled: false,
+        altitudePricingEnabled: false,
+        includedAreaHa: 0,
+        includedLengthKm: 0,
+        includedAltitudeM: 0,
       },
     })
   })
@@ -71,6 +83,12 @@ describe('validatePricingForm', () => {
       includedVideoCount: '0',
       standardVideoDurationSeconds: '',
       pricingProfile: '',
+      areaPricingEnabled: false,
+      lengthPricingEnabled: false,
+      altitudePricingEnabled: false,
+      includedAreaHa: '0',
+      includedLengthKm: '0',
+      includedAltitudeM: '0',
     })
   })
 })

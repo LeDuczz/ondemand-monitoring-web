@@ -136,6 +136,7 @@ describe('MediaPricingEditor', () => {
         total: 1_000_000,
         complete: true,
         warnings: [],
+        quotePending: false,
       })
     render(<Harness initial={[tier(0, null, 50_000)]} />)
     await screen.findByRole('option', { name: 'Dịch vụ test' })

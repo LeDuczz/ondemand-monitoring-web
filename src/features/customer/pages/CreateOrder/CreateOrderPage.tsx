@@ -18,6 +18,7 @@ import { createOrderPageMessages } from './CreateOrderPage.messages'
 import './CreateOrder.css'
 import { useCreateOrderWizard } from './hooks/useCreateOrderWizard'
 import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
+import { selectionEstimate } from '../../lib/checklist/selectionEstimate'
 
 /** Customer wizard: service, monitoring content, location, schedule, then deliverables and submit. */
 export function CreateOrderPage() {
@@ -34,6 +35,10 @@ export function CreateOrderPage() {
     checklist,
   } = useCreateOrderWizard()
   const { form, step } = f
+  const estimate = selectionEstimate(
+    meta.pricingEstimate,
+    checklist.quote.preview,
+  )
 
   if (submit.createdId) {
     return (
@@ -102,7 +107,7 @@ export function CreateOrderPage() {
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
           setAiAnalysisRequested={f.setAiAnalysisRequested}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           footer={footer}
         />
@@ -112,7 +117,7 @@ export function CreateOrderPage() {
           selected={meta.services.find((s) => s.id === form.serviceId)}
           selectedCount={checklist.selectedCount}
           valid={checklist.valid}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           aiAnalysisRequested={f.aiAnalysisRequested}
           checklist={
@@ -138,7 +143,7 @@ export function CreateOrderPage() {
           preferredTimes={meta.preferredTimes}
           service={service}
           time={time}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           aiAnalysisRequested={f.aiAnalysisRequested}
           footer={footer}
@@ -158,7 +163,7 @@ export function CreateOrderPage() {
           reloadDeliverables={meta.reloadDeliverables}
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           onEdit={wizard.goTo}
           footer={footer}
@@ -177,7 +182,7 @@ export function CreateOrderPage() {
         <ConfirmSubmitModal
           form={form}
           service={service}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           submitting={submit.submitting}
           error={f.submitError}
           onConfirm={() => void submit.submit()}

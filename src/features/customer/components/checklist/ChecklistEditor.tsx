@@ -72,6 +72,15 @@ export function ChecklistEditor({
 
   const grouped = compact && view === 'group'
   const selectedTotal = rows.filter((row) => row.selected).length
+  const awaitingManagerQuote = (row: ChecklistRow) =>
+    !row.sourceChecklistId &&
+    row.selected &&
+    checklist.quote.preview?.checklists.some(
+      (priced) =>
+        priced.custom &&
+        priced.quotePending &&
+        normalizeContent(priced.content) === normalizeContent(row.content),
+    )
   const ordered = rows
     .map((row, index) => ({ row, index }))
     .sort((a, b) =>
@@ -219,6 +228,11 @@ export function ChecklistEditor({
             {!row.sourceChecklistId && (
               <span className="checklist-custom-tag">{t.custom}</span>
             )}
+            {awaitingManagerQuote(row) && (
+              <span className="checklist-custom-tag is-pending-quote">
+                {t.awaitingManagerQuote}
+              </span>
+            )}
           </span>
           <span className="checklist-evidence-summary">
             {row.minimumEvidenceCount} ·{' '}
@@ -272,10 +286,18 @@ export function ChecklistEditor({
             {!row.sourceChecklistId && (
               <span className="checklist-custom-tag">{t.custom}</span>
             )}
-            {row.sourceChecklistId && (
+            {awaitingManagerQuote(row) && (
+              <span className="checklist-custom-tag is-pending-quote">
+                {t.awaitingManagerQuote}
+              </span>
+            )}
+            {row.sourceChecklistId && row.packageItem !== false && (
               <span className="checklist-custom-tag is-default">
                 {t.defaultItem}
               </span>
+            )}
+            {row.sourceChecklistId && row.packageItem === false && (
+              <span className="checklist-custom-tag">{t.catalogItem}</span>
             )}
             {!row.sourceChecklistId && (
               <button
@@ -494,10 +516,7 @@ export function ChecklistEditor({
           <p className="checklist-hint">{t.none}</p>
         )}
         {ready && quote && checklist.serviceId && (
-          <ChecklistQuoteCard
-            serviceId={checklist.serviceId}
-            items={checklist.quoteItems()}
-          />
+          <ChecklistQuoteCard quote={checklist.quote} />
         )}
         {checklist.validation && (
           <p role="alert" className="co-notice is-danger">

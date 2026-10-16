@@ -19,6 +19,7 @@ import { SubmitBar } from './components/SubmitBar'
 import { customerCreateRequestPageMessages } from './CustomerCreateRequestPage.messages'
 import { useCreateRequest } from './hooks/useCreateRequest'
 import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
+import { selectionEstimate } from '../../lib/checklist/selectionEstimate'
 
 /**
  * Quick single-page variant of the create-order wizard, routed outside the
@@ -28,6 +29,10 @@ export function CustomerCreateRequestPage() {
   const { t } = useI18n(customerCreateRequestPageMessages)
   const r = useCreateRequest()
   const { form, errors, update, meta, submit } = r
+  const estimate = selectionEstimate(
+    meta.pricingEstimate,
+    r.checklist.quote.preview,
+  )
 
   return (
     <PortalLayout role="CUSTOMER" title={t.pageTitle} subtitle={t.pageSubtitle}>
@@ -81,7 +86,11 @@ export function CustomerCreateRequestPage() {
                 error={meta.deliverablesError}
                 onRetry={meta.reloadDeliverables}
               />
-              <DeliveryOptionsCard form={form} errors={errors} update={update} />
+              <DeliveryOptionsCard
+                form={form}
+                errors={errors}
+                update={update}
+              />
             </div>
           </div>
           <div className="co-grid">
@@ -94,7 +103,7 @@ export function CustomerCreateRequestPage() {
               aiAnalysisRequested={false}
             />
             <PricingEstimateCard
-              estimate={meta.pricingEstimate}
+              estimate={estimate}
               loading={meta.pricingLoading}
               hasService={Boolean(r.service)}
               aiAnalysisRequested={false}
@@ -114,7 +123,7 @@ export function CustomerCreateRequestPage() {
             <ConfirmSubmitModal
               form={form}
               service={r.service}
-              pricingEstimate={meta.pricingEstimate}
+              pricingEstimate={estimate}
               submitting={submit.submitting}
               error={r.submitError}
               onConfirm={() => void submit.submit()}

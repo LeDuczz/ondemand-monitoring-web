@@ -19,6 +19,7 @@ const base: ServicePricePreview = {
   total: 470_000,
   complete: true,
   warnings: [],
+  quotePending: false,
 }
 beforeEach(() => setLanguage('vi'))
 
@@ -59,6 +60,39 @@ describe('PriceBreakdownView price source', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Check roof: add a tier',
     )
+  })
+
+  it('replaces an unpriced checklist table and warns that it is excluded', () => {
+    render(
+      <PriceBreakdownView
+        preview={{
+          ...base,
+          quotePending: true,
+          checklists: [
+            {
+              checklistId: null,
+              content: 'Custom inspection',
+              pricingProfile: 'CUSTOM',
+              custom: true,
+              includedImageCount: 0,
+              includedVideoCount: 0,
+              requestedImageCount: 0,
+              requestedVideoCount: 0,
+              extraImageCount: 0,
+              extraVideoCount: 0,
+              standardVideoDurationSeconds: null,
+              lines: [],
+              subtotal: 0,
+              quotePending: true,
+            },
+          ],
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Chờ Manager báo giá')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/chưa được tính/)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 })
 

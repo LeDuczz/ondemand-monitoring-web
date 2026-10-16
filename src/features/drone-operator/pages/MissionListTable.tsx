@@ -177,9 +177,12 @@ function weekdayDdMm(
 export function MissionListTable({
   missions,
   now,
+  showSubmission = true,
 }: {
   missions: OperatorMission[]
   now: Date
+  /** The "sent to manager" column only matters once a Mission is finished. */
+  showSubmission?: boolean
 }) {
   const { t, lang, locale } = useI18n(missionListTableMessages)
   const today = now.toISOString().slice(0, 10)
@@ -212,19 +215,24 @@ export function MissionListTable({
             <th className="odm-opr-mission-code">{t.columns.code}</th>
             <th className="odm-opr-mission-job">{t.columns.job}</th>
             <th className="odm-opr-mission-time">{t.columns.time}</th>
-            <th className="odm-opr-mission-service">{t.columns.service}</th>
             <th className="odm-opr-mission-device">{t.columns.drone}</th>
             <th className="odm-opr-mission-status">{t.columns.status}</th>
-            <th className="odm-opr-mission-manager">
-              {t.columns.managerSubmission}
-            </th>
+            {showSubmission && (
+              <th className="odm-opr-mission-manager">
+                {t.columns.managerSubmission}
+              </th>
+            )}
             <th className="odm-opr-mission-deadline">{t.columns.deadline}</th>
             <th className="odm-opr-mission-action" />
           </tr>
         </thead>
         <tbody>
           {missions.map((mission) => {
-            const action = actionFor(mission, t)
+            const baseAction = actionFor(mission, t)
+            const action =
+              mission.status === 'PENDING' && baseAction.label === t.action.details
+                ? { ...baseAction, label: 'Xem & phản hồi', cls: 'odm-btn-p' }
+                : baseAction
             const deviceLabel = formatDeviceLabel(mission)
             return (
               <tr key={mission.id}>
@@ -250,6 +258,9 @@ export function MissionListTable({
                   <div className="odm-opr-mission-location">
                     {mission.location}
                   </div>
+                  {mission.serviceLabel ? (
+                    <span className="odm-opr-chip">{mission.serviceLabel}</span>
+                  ) : null}
                 </td>
                 <td>
                   <div className="odm-tn">
@@ -263,9 +274,6 @@ export function MissionListTable({
                       ? `${mission.startTime}–${mission.endTime}`
                       : '—'}
                   </div>
-                </td>
-                <td>
-                  <span className="odm-opr-chip">{mission.serviceLabel}</span>
                 </td>
                 <td className="odm-opr-mission-device">
                   {deviceLabel ? (
@@ -288,6 +296,7 @@ export function MissionListTable({
                           mission.status))}
                   </StatusBadge>
                 </td>
+                {showSubmission && (
                 <td>
                   {mission.status === 'COMPLETED' ||
                   mission.status === 'FAILED' ? (
@@ -308,6 +317,7 @@ export function MissionListTable({
                     <span style={{ color: 'var(--tx3)' }}>—</span>
                   )}
                 </td>
+                )}
                 <td>
                   <span className="odm-tn" style={{ fontWeight: 500 }}>
                     {formatDeadline(mission, now, lang)}

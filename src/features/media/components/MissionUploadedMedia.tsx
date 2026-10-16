@@ -105,9 +105,15 @@ function Gallery({
   const previewRequest = useRef<AbortController | null>(null)
   const dialog = useRef<HTMLDialogElement>(null)
 
+  const loadedScope = useRef<string | null>(null)
   useEffect(() => {
     const abort = new AbortController()
-    setLoading(true)
+    // Only the first load of a Mission/page replaces the list with a placeholder; background refreshes keep it on screen.
+    const scope = `${missionId}:${page}`
+    if (loadedScope.current !== scope) {
+      loadedScope.current = scope
+      setLoading(true)
+    }
     setError(null)
     void reader
       .list(missionId, page, abort.signal)

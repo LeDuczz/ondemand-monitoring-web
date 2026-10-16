@@ -30,8 +30,10 @@ const evidenceTypeLabel = (
       return 'Chỉ ảnh'
     case 'VIDEO':
       return 'Chỉ video'
+    case 'IMAGE_AND_VIDEO':
+      return 'Ảnh và video'
     default:
-      return 'Ảnh hoặc video'
+      return 'Ảnh hoặc video (cũ)'
   }
 }
 const assessments: Record<ChecklistAssessmentStatus, string> = {

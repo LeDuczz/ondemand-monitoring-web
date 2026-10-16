@@ -323,8 +323,9 @@
 /* ---------- Mission work table ---------- */
 
 .odm-opr-mission-table {
-  min-width: 1340px;
-  table-layout: fixed;
+  min-width: 0;
+  width: 100%;
+  table-layout: auto;
 }
 
 .odm-opr-mission-code {
@@ -332,8 +333,11 @@
 }
 
 .odm-opr-mission-job {
-  width: 230px;
-  min-width: 230px;
+  min-width: 220px;
+}
+.odm-opr-mission-job .odm-opr-chip {
+  display: inline-block;
+  margin-top: 6px;
 }
 
 .odm-opr-mission-time {
@@ -355,11 +359,16 @@
 
 .odm-opr-mission-deadline {
   width: 130px;
+  white-space: nowrap;
 }
 
 .odm-opr-mission-action {
-  width: 110px;
+  width: 130px;
   text-align: right;
+}
+.odm-opr-mission-table td.odm-opr-mission-action,
+.odm-opr-mission-table td:last-child {
+  white-space: nowrap;
 }
 
 .odm-opr-mission-title {
@@ -588,7 +597,7 @@
 
 /* ── Mission detail: waiting for pilot response ── */
 .mds-pending {
-  padding-bottom: 88px; /* room for the sticky action bar */
+  padding-bottom: 16px;
 }
 .mds-meta-line {
   margin: 0 0 12px 2px;
@@ -639,9 +648,10 @@
   padding: 0 16px 16px;
 }
 .mds-action-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 40;
+  position: static;
+  margin-bottom: 16px;
+  border-color: #b9ccf5 !important;
+  background: #f3f7ff !important;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

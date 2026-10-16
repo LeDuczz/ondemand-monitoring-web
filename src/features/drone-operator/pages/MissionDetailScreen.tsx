@@ -692,7 +692,8 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
     setActionError(null)
     try {
       await operatorApi.acceptMission(mission.id)
-      query.reload()
+      // Permissions (for example "operate payload" -> Connect GCS) come from the monitoring call, so reload it too.
+      refreshWorkspace(false)
     } catch (error) {
       setActionError(
         actionErrorMessage(
@@ -711,7 +712,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
     try {
       await operatorApi.rejectMission(mission.id, { reason, notes })
       setShowReject(false)
-      query.reload()
+      refreshWorkspace(false)
     } catch (error) {
       setActionError(
         actionErrorMessage(
@@ -967,6 +968,36 @@ function MissionDashboard({
             .join(' · ')}
         </p>
         <DecisionSummary mission={mission} />
+        <div
+          className="mds-action-bar"
+          role="region"
+          aria-label="Phản hồi nhiệm vụ"
+        >
+          <div className="mds-action-bar-text">
+            Bạn có muốn nhận nhiệm vụ này?
+            {!access?.canRespond && (
+              <small>Bạn chưa có quyền phản hồi nhiệm vụ này.</small>
+            )}
+          </div>
+          <div className="mds-action-bar-buttons">
+            <button
+              type="button"
+              className="odm-btn odm-btn-rd"
+              onClick={onOpenReject}
+              disabled={submitting || !access?.canRespond}
+            >
+              Từ chối
+            </button>
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={onAccept}
+              disabled={submitting || !access?.canRespond}
+            >
+              {submitting ? 'Đang xử lý...' : '✓ Chấp nhận nhiệm vụ'}
+            </button>
+          </div>
+        </div>
         {actionError ? (
           <div
             role="alert"
@@ -1003,36 +1034,6 @@ function MissionDashboard({
           </summary>
           <div className="mds-pending-checklist-body">{monitoringSection}</div>
         </details>
-        <div
-          className="mds-action-bar"
-          role="region"
-          aria-label="Phản hồi nhiệm vụ"
-        >
-          <div className="mds-action-bar-text">
-            Bạn có muốn nhận nhiệm vụ này?
-            {!access?.canRespond && (
-              <small>Bạn chưa có quyền phản hồi nhiệm vụ này.</small>
-            )}
-          </div>
-          <div className="mds-action-bar-buttons">
-            <button
-              type="button"
-              className="odm-btn odm-btn-rd"
-              onClick={onOpenReject}
-              disabled={submitting || !access?.canRespond}
-            >
-              Từ chối
-            </button>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              onClick={onAccept}
-              disabled={submitting || !access?.canRespond}
-            >
-              {submitting ? 'Đang xử lý...' : '✓ Chấp nhận nhiệm vụ'}
-            </button>
-          </div>
-        </div>
       </div>
     )
   }

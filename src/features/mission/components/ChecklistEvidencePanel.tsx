@@ -6,6 +6,7 @@ import {
 } from '../lib/evidenceProgress'
 import { ApiError } from '../../../shared/api/httpClient'
 import { createPortal } from 'react-dom'
+import { operatorHref } from '../../drone-operator/routes'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
 import type {
   EvidenceBlockingReason,
@@ -51,8 +52,10 @@ const evidenceTypeLabel = (
       return 'Chỉ ảnh'
     case 'VIDEO':
       return 'Chỉ video'
+    case 'IMAGE_AND_VIDEO':
+      return 'Ảnh và video'
     default:
-      return 'Ảnh hoặc video'
+      return 'Ảnh hoặc video (cũ)'
   }
 }
 const sourceLabel: Record<string, string> = {
@@ -177,10 +180,12 @@ function MissionEvidencePanel({
   }
   const needle = query.trim().toLowerCase()
   // Backend attachment eligibility is authoritative, not final-approval readiness.
-  const eligible = (candidates ?? []).filter((media) => media.attachable)
-  const shown = eligible.filter(
-    (media) => !needle || media.fileName.toLowerCase().includes(needle),
-  )
+  const everyCandidate = candidates ?? []
+  const eligible = everyCandidate.filter((media) => media.attachable)
+  // Media that cannot be attached stay visible, greyed out with the reason, so an empty-looking list is never a mystery.
+  const shown = [...everyCandidate]
+    .filter((media) => !needle || media.fileName.toLowerCase().includes(needle))
+    .sort((a, b) => Number(b.attachable) - Number(a.attachable))
   const attached = (media: EvidenceCandidate) =>
     media.alreadyAttachedExecutionIds.includes(item.id) ||
     Boolean(item.evidence?.some((link) => link.mediaId === media.mediaId))
@@ -499,9 +504,19 @@ function MissionEvidencePanel({
                 )}
                 {!mediaLoading && mediaError == null && shown.length === 0 && (
                   <p className="checklist-candidates-empty">
-                    {needle
-                      ? 'Không tìm thấy media phù hợp.'
-                      : 'Mission này chưa có media phù hợp để làm bằng chứng.'}
+                    {needle ? (
+                      'Không tìm thấy media phù hợp.'
+                    ) : (
+                      <>
+                        Mission này chưa có media nào được upload lên hệ thống.
+                        Ảnh/video đang nằm trên thiết bị chỉ hiện ở màn hình
+                        nghiệm thu: hãy{' '}
+                        <a href={operatorHref({ screen: 'upload', missionId })}>
+                          mở media nghiệm thu
+                        </a>{' '}
+                        để upload (hoặc gắn trực tiếp từ đó), rồi quay lại.
+                      </>
+                    )}
                   </p>
                 )}
                 {!mediaLoading &&
@@ -571,7 +586,8 @@ function MissionEvidencePanel({
                             {evidenceTypeLabel(item.requiredEvidenceType)}).
                           </small>
                         )}
-                        {!media.eligibleForOperationalReadiness && (
+                        {(!media.attachable ||
+                          !media.eligibleForOperationalReadiness) && (
                           <small>
                             {media.ineligibilityReason
                               ? evidenceReason[media.ineligibilityReason]

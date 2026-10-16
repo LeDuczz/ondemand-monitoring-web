@@ -153,12 +153,12 @@ function UploadMediaContent({
     markActiveMissionFlowStep(missionId, 5)
   }, [missionId])
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (options?: { background?: boolean }) => {
     if (!missionId) {
       setLoading(false)
       return
     }
-    permissions.reload()
+    if (!options?.background) permissions.reload()
     try {
       const mission = activeMission.data
       const deviceId = mission?.deviceId
@@ -253,6 +253,34 @@ function UploadMediaContent({
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  // Storage validation finishes in the background, after the upload itself. Keep asking the backend while any file
+  // is still being checked, so "Đang xác thực" turns into "Đã upload" without a manual reload.
+  const stillValidating = items.some((item) => {
+    const status =
+      (item.backendMediaId && statuses[item.backendMediaId]) || item.status
+    return status === 'VALIDATING' || status === 'UPLOADING'
+  })
+  const wasValidating = useRef(false)
+  useEffect(() => {
+    // Once the last file finishes, reload the checklist counts and library once (the reloads keep what is on screen).
+    if (wasValidating.current && !stillValidating) {
+      setChecklistRevision((value) => value + 1)
+    }
+    wasValidating.current = stillValidating
+  }, [stillValidating])
+  useEffect(() => {
+    if (!stillValidating || !missionId) return
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      if (Date.now() - startedAt > 3 * 60_000) {
+        window.clearInterval(timer)
+        return
+      }
+      void refresh({ background: true })
+    }, 2500)
+    return () => window.clearInterval(timer)
+  }, [stillValidating, missionId, refresh])
 
   async function approve(item: LocalMedia, manual = false) {
     if (!canManageMedia || !missionId) return false
@@ -514,12 +542,11 @@ function UploadMediaContent({
   const deviceLabel = activeMission.data
     ? formatDeviceLabel(activeMission.data)
     : items[0]?.deviceId
+  // Permissions and the Mission stay usable while a background reload runs; only a failure or a first load removes them.
   const canManageMedia =
-    !permissions.loading &&
     !permissions.error &&
     permissions.data?.canUploadMedia === true
   const missionStatus =
-    activeMission.loading ||
     activeMission.error ||
     activeMission.data?.id !== missionId
       ? undefined
@@ -1116,7 +1143,7 @@ function UploadMediaContent({
                 key={missionId}
                 missionId={missionId}
                 data={monitoring.data?.checklist}
-                loading={monitoring.loading}
+                loading={monitoring.loading && !monitoring.data}
                 error={monitoring.error}
                 resultKnown={actions.known}
                 resultStatus={monitoring.data?.result?.approvalStatus}

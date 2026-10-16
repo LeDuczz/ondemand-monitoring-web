@@ -1,10 +1,8 @@
 // Shared in-memory customer orders for the mock API.
 //   - `orders`: the legacy seed (customer-orders.json) used by the mock-only
 //     /api/customer/orders/* routes (cancel, draft, submit, analysis).
-//   - `createdOrders`: orders made through `POST /api/orders` (BE shape).
-// `listBeOrders()` projects both onto the BE `OrderCreateResponse` so
-// `GET /api/orders/mine` and `GET /api/orders/{id}` stay consistent with the
-// mock-only actions (a cancelled order shows up as CANCELLED).
+// `listBeOrders()` projects them onto the BE `OrderCreateResponse` shape for the
+// kept mock routes (cancel, mission-brief).
 import type { OrderCreateResponse } from '../../features/customer/api/orderApi'
 import type { OrderStatus } from '../../shared/types/domain'
 import { createCollection } from '../db'
@@ -24,9 +22,7 @@ export const customerAnalyses = createCollection(
   seed.aiAnalyses,
 ) as unknown as Record<string, CustomerAnalysis>
 
-export const createdOrders = createCollection<OrderCreateResponse[]>([])
-
-export const BE_ORDER_STATUSES = [
+const BE_ORDER_STATUSES = [
   'PENDING',
   'APPROVED',
   'REJECTED',
@@ -78,7 +74,7 @@ export function toBeOrder(o: SeedOrder): OrderCreateResponse {
 
 /** Newest first, like the BE list. */
 export function listBeOrders(): OrderCreateResponse[] {
-  return [...createdOrders, ...orders.map(toBeOrder)].sort((a, b) =>
+  return orders.map(toBeOrder).sort((a, b) =>
     String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')),
   )
 }

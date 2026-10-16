@@ -4,12 +4,16 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
 import '../../../../../mocks/index'
+import { stubCustomerBe } from '../../../tests/stubBeApi'
 import { setLanguage } from '../../../../../shared/i18n'
 import { customerMissionHistoryApi } from '../../../api/customerMissionHistoryApi'
 import { customerHref, parseCustomerRoute } from '../../../routes'
 import { MissionHistoryPage } from '../MissionHistoryPage'
 
-beforeEach(() => resetMockDb())
+beforeEach(() => {
+  resetMockDb()
+  stubCustomerBe()
+})
 afterEach(() => {
   resetMockDb()
   vi.restoreAllMocks()

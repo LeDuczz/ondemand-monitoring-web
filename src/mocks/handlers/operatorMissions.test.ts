@@ -207,22 +207,6 @@ describe('POST /api/operator/missions/:id/preflight', () => {
   })
 })
 
-describe('GET /api/operator/missions/:id/media', () => {
-  it('returns the seeded media queue for the mission', async () => {
-    const { status, payload } = await call(
-      'GET',
-      '/api/operator/missions/MSN-2609-0142-1/media',
-    )
-    expect(status).toBe(200)
-    expect(payload.data.files).toHaveLength(20)
-  })
-
-  it('404s for unknown mission', async () => {
-    const { status } = await call('GET', '/api/operator/missions/NOPE/media')
-    expect(status).toBe(404)
-  })
-})
-
 describe('POST /api/operator/missions/:id/media/:fileId/retry', () => {
   it('bumps the attempt and marks the file uploaded', async () => {
     const { status, payload } = await call(

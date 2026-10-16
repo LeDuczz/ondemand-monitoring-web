@@ -69,10 +69,4 @@ describe('POST /api/customer/orders/:id/cancel', () => {
     const { status } = await call('POST', '/api/customer/orders/no-such/cancel')
     expect(status).toBe(404)
   })
-
-  it('shows a cancelled order as CANCELLED in GET /api/orders/mine (BE shape)', async () => {
-    await call('POST', '/api/customer/orders/cus-ord-003/cancel')
-    const { payload } = await call('GET', '/api/orders/mine?status=CANCELLED')
-    expect(payload.data.map((o: any) => o.id)).toContain('cus-ord-003')
-  })
 })

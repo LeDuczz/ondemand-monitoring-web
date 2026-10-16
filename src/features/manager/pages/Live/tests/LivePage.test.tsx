@@ -2,18 +2,15 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
-import {
-  resetHttpTransport,
-  setHttpTransport,
-} from '../../../../../shared/api/httpClient'
+import { resetHttpTransport } from '../../../../../shared/api/httpClient'
 import { resetMockDb } from '../../../../../mocks/db'
-import { mockFetch } from '../../../../../mocks'
+import { stubMissionsList } from '../../../tests/stubMissionsList'
 import { setLanguage } from '../../../../../shared/i18n'
 import { LivePage } from '../LivePage'
 
 beforeEach(() => {
   resetMockDb()
-  setHttpTransport(mockFetch)
+  stubMissionsList()
 })
 afterEach(() => {
   resetMockDb()

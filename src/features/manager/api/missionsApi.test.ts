@@ -5,9 +5,9 @@ import {
   resetHttpTransport,
   setHttpTransport,
 } from '../../../shared/api/httpClient'
+import { stubApi, stubError } from '../../../test/stubApi'
 import { resetMockDb } from '../../../mocks/db'
 import { mockFetch } from '../../../mocks'
-import { ordersApi } from './ordersApi'
 import { missionsApi, toMissionCalendarItem } from './missionsApi'
 import type { MissionResponse } from '../types/missions'
 import type { CreateMissionRequest } from '../types/missions'
@@ -51,46 +51,56 @@ describe('missionsApi (mock mode)', () => {
     resetMockDb()
   })
 
-  it('createMission attaches a plan to the bare CREATED mission approve() makes', async () => {
-    setHttpTransport(mockFetch)
-    await ordersApi.approve('ord-2609-0157')
-    const mission = await missionsApi.createMission(
-      'ord-2609-0157',
-      validRequest,
-    )
+  it('createMission POSTs the request to /api/orders/{id}/missions', async () => {
+    const stub = stubApi([
+      {
+        method: 'POST',
+        path: '/api/orders/:id/missions',
+        respond: { id: 'msn-1', missionCode: 'MSN-2609-0157-1', flightPlan: null },
+      },
+    ])
+    const mission = await missionsApi.createMission('ord-1', validRequest)
     expect(mission.missionCode).toBe('MSN-2609-0157-1')
-    expect(mission.flightPlan).toBeNull()
-    expect(mission.scheduledStartAt).toBe(validRequest.scheduledStart)
+    expect(stub.calls).toHaveLength(1)
+    expect(stub.calls[0]).toMatchObject({
+      method: 'POST',
+      path: '/api/orders/ord-1/missions',
+      body: validRequest,
+    })
   })
 
-  it('createMission starts a new attempt when the mission already has a plan', async () => {
-    // msn-2609-0153-1 is seeded with a flight plan already attached (the
-    // MNG-05 default-state demo mission) — a second createMission call for
-    // the same order must not overwrite it.
-    setHttpTransport(mockFetch)
-    const mission = await missionsApi.createMission(
-      'ord-2609-0153',
-      validRequest,
-    )
-    expect(mission.missionCode).toBe('MSN-2609-0153-2')
-  })
-
-  it('createMission 409s for a non-APPROVED order', async () => {
-    setHttpTransport(mockFetch)
+  it('createMission surfaces a 409 for a non-APPROVED order', async () => {
+    stubApi([
+      {
+        method: 'POST',
+        path: '/api/orders/:id/missions',
+        respond: stubError(409, 'ORDER_NOT_APPROVED'),
+      },
+    ])
     await expect(
       missionsApi.createMission('ord-2609-0160', validRequest),
     ).rejects.toMatchObject({ status: 409 })
   })
 
-  it('getMission resolves the seeded demo mission', async () => {
-    setHttpTransport(mockFetch)
+  it('getMission GETs /api/missions/{id}', async () => {
+    const stub = stubApi([
+      {
+        path: '/api/missions/:id',
+        respond: ({ params }) => ({ id: params.id, orderCode: 'ORD-2609-0153' }),
+      },
+    ])
     const mission = await missionsApi.getMission('msn-2609-0153-1')
     expect(mission.orderCode).toBe('ORD-2609-0153')
-    expect(mission.nearestBase).toBe('Trạm Nhà Bè')
+    expect(stub.calls[0]).toMatchObject({
+      method: 'GET',
+      path: '/api/missions/msn-2609-0153-1',
+    })
   })
 
-  it('getMission 404s for an unknown id', async () => {
-    setHttpTransport(mockFetch)
+  it('getMission surfaces a 404 for an unknown id', async () => {
+    stubApi([
+      { path: '/api/missions/:id', respond: stubError(404, 'NOT_FOUND') },
+    ])
     await expect(
       missionsApi.getMission('does-not-exist'),
     ).rejects.toMatchObject({ status: 404 })
@@ -115,17 +125,32 @@ describe('missionsApi (mock mode)', () => {
     expect(suggestions.alternatives).toHaveLength(3)
   })
 
-  it('assignDrone assigns and moves the mission to RESOURCE_ASSIGNING', async () => {
-    setHttpTransport(mockFetch)
-    const mission = await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-01')
+  it('assignDrone POSTs the device to assign-device as MAIN', async () => {
+    const stub = stubApi([
+      {
+        method: 'POST',
+        path: '/api/missions/:id/assign-device',
+        respond: { id: 'msn-1', status: 'RESOURCE_ASSIGNING', droneId: 'drn-01' },
+      },
+    ])
+    const mission = await missionsApi.assignDrone('msn-1', 'drn-01')
     expect(mission.status).toBe('RESOURCE_ASSIGNING')
-    expect(mission.droneId).toBe('drn-01')
+    expect(stub.calls[0]).toMatchObject({
+      path: '/api/missions/msn-1/assign-device',
+      body: { deviceId: 'drn-01', deviceRole: 'MAIN' },
+    })
   })
 
-  it('assignDrone 409s SCHEDULE_CONFLICT for DRN-04 against the seeded booking', async () => {
-    setHttpTransport(mockFetch)
+  it('assignDrone surfaces SCHEDULE_CONFLICT as a 409 ApiError', async () => {
+    stubApi([
+      {
+        method: 'POST',
+        path: '/api/missions/:id/assign-device',
+        respond: stubError(409, 'SCHEDULE_CONFLICT'),
+      },
+    ])
     try {
-      await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-04')
+      await missionsApi.assignDrone('msn-1', 'DRN-04')
       throw new Error('expected rejection')
     } catch (err) {
       expect(err).toBeInstanceOf(ApiError)
@@ -134,59 +159,75 @@ describe('missionsApi (mock mode)', () => {
     }
   })
 
-  it('assignDrone then assignOperator moves the mission to WAITING_OPERATOR_ACCEPTANCE', async () => {
-    setHttpTransport(mockFetch)
-    const afterDrone = await missionsApi.assignDrone(
-      'msn-2609-0153-1',
-      'DRN-01',
-    )
-    expect(afterDrone.status).toBe('RESOURCE_ASSIGNING')
-    const afterOperator = await missionsApi.assignOperator(
-      'msn-2609-0153-1',
-      'HT',
-    )
-    expect(afterOperator.status).toBe('WAITING_OPERATOR_ACCEPTANCE')
+  it('assignOperator POSTs the staff to assign-staff', async () => {
+    const stub = stubApi([
+      {
+        method: 'POST',
+        path: '/api/missions/:id/assign-staff',
+        respond: { id: 'msn-1', status: 'WAITING_OPERATOR_ACCEPTANCE' },
+      },
+    ])
+    const mission = await missionsApi.assignOperator('msn-1', 'HT')
+    expect(mission.status).toBe('WAITING_OPERATOR_ACCEPTANCE')
+    expect(stub.calls[0]).toMatchObject({
+      path: '/api/missions/msn-1/assign-staff',
+      body: { staffId: 'HT', assignedRole: 'PILOT' },
+    })
   })
 
-  it('releaseAssignment requires a non-blank reason', async () => {
-    setHttpTransport(mockFetch)
-    await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-01')
-    await expect(
-      missionsApi.releaseAssignment(
-        'msn-2609-0153-1',
-        'mda-msn-2609-0153-1-drn-01',
-        '',
-      ),
-    ).rejects.toMatchObject({ status: 400 })
-  })
-
-  it('releaseAssignment releases the drone and returns the mission to CREATED', async () => {
-    setHttpTransport(mockFetch)
-    await missionsApi.assignDrone('msn-2609-0153-1', 'DRN-01')
+  it('releaseAssignment POSTs the reason to the release endpoint', async () => {
+    const stub = stubApi([
+      {
+        method: 'POST',
+        path: '/api/missions/:id/assignments/:aid/release',
+        respond: { id: 'msn-1', status: 'CREATED', droneId: null },
+      },
+    ])
     const released = await missionsApi.releaseAssignment(
-      'msn-2609-0153-1',
-      'mda-msn-2609-0153-1-drn-01',
+      'msn-1',
+      'mda-1',
       'Drone bị gọi bảo trì khẩn',
     )
     expect(released.status).toBe('CREATED')
     expect(released.droneId).toBeNull()
+    expect(stub.calls[0]).toMatchObject({
+      path: '/api/missions/msn-1/assignments/mda-1/release',
+      body: { releaseReason: 'Drone bị gọi bảo trì khẩn' },
+    })
+  })
+
+  it('releaseAssignment surfaces a 400 for a blank reason', async () => {
+    stubApi([
+      {
+        method: 'POST',
+        path: '/api/missions/:id/assignments/:aid/release',
+        respond: stubError(400, 'VALIDATION_ERROR'),
+      },
+    ])
+    await expect(
+      missionsApi.releaseAssignment('msn-1', 'mda-1', ''),
+    ).rejects.toMatchObject({ status: 400 })
   })
 })
 
 // ── P6 API client tests ───────────────────────────────────────────────────
 
 describe('missionsApi.listMissions', () => {
-  it('returns items array', async () => {
-    setHttpTransport(mockFetch)
+  it('returns the items array', async () => {
+    stubApi([
+      {
+        path: '/api/missions',
+        respond: { items: [{ id: 'm1', status: 'IN_FLIGHT' }] },
+      },
+    ])
     const result = await missionsApi.listMissions()
-    expect(Array.isArray(result.items)).toBe(true)
-    expect(result.items.length).toBeGreaterThan(0)
+    expect(result.items).toHaveLength(1)
   })
 
-  it('filters by status', async () => {
-    setHttpTransport(mockFetch)
-    const result = await missionsApi.listMissions({ status: 'IN_FLIGHT' })
-    expect(result.items.every((m) => m.status === 'IN_FLIGHT')).toBe(true)
+  it('sends the status filter as a query param', async () => {
+    const stub = stubApi([{ path: '/api/missions', respond: { items: [] } }])
+    await missionsApi.listMissions({ status: 'IN_FLIGHT' })
+    expect(stub.calls[0].query.get('status')).toBe('IN_FLIGHT')
   })
 })
 
@@ -233,13 +274,21 @@ describe('missionsApi.createIncident', () => {
 })
 
 describe('missionsApi.cancelMission', () => {
-  it('cancels the mission', async () => {
-    setHttpTransport(mockFetch)
-    const m = await missionsApi.cancelMission('msn-2609-0142-1', {
-      expectedPlanRevision: 0,
-      reason: 'Thời tiết xấu',
-    })
+  it('POSTs the reason to /api/missions/{id}/cancel', async () => {
+    const stub = stubApi([
+      {
+        method: 'POST',
+        path: '/api/missions/:id/cancel',
+        respond: { id: 'msn-2609-0142-1', status: 'CANCELLED' },
+      },
+    ])
+    const request = { expectedPlanRevision: 0, reason: 'Thời tiết xấu' }
+    const m = await missionsApi.cancelMission('msn-2609-0142-1', request)
     expect(m.status).toBe('CANCELLED')
+    expect(stub.calls[0]).toMatchObject({
+      path: '/api/missions/msn-2609-0142-1/cancel',
+      body: request,
+    })
   })
 })
 

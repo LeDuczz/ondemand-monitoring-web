@@ -1,31 +1,18 @@
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
 import {
-  resetHttpTransport,
-  setHttpTransport,
-} from '../../../../../shared/api/httpClient'
-import { resetMockDb } from '../../../../../mocks/db'
-import { mockFetch } from '../../../../../mocks'
-import '../../../../../mocks/index'
+  requestedUrls as urls,
+  useAdminUsersStub,
+} from '../../Accounts/tests/helpers'
+import { setHttpTransport } from '../../../../../shared/api/httpClient'
 import { setLanguage } from '../../../../../shared/i18n'
 import { BE_USER_ROLES } from '../../../api/adminUsersApi'
 import { RolesPage } from '../RolesPage'
 
-const urls: string[] = []
-
-beforeEach(() => {
-  resetMockDb()
-  urls.length = 0
-  setHttpTransport((i, init) => {
-    urls.push(String(i))
-    return mockFetch(i, init)
-  })
-})
+useAdminUsersStub()
 afterEach(() => {
-  resetMockDb()
-  resetHttpTransport()
   act(() => setLanguage('vi'))
 })
 

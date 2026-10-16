@@ -1,10 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 
 import '../../../mocks/index'
+import { stubCustomerBe } from '../tests/stubBeApi'
 import { customerMediaApi } from '../api/customerMediaApi'
 import { useNewMediaCount } from './useNewMediaCount'
 
+beforeEach(() => stubCustomerBe())
 afterEach(() => vi.restoreAllMocks())
 
 describe('useNewMediaCount', () => {

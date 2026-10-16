@@ -1,9 +1,7 @@
 // Mock handlers for MNG-10. Endpoints:
-//   GET    /api/maintenance-tickets?status=&droneId=&priority=   [TK]
 //   POST   /api/maintenance-tickets                              [ĐỀ XUẤT]
 //   PATCH  /api/maintenance-tickets/:id/status                  [ĐỀ XUẤT]
 //   PATCH  /api/maintenance-tickets/:id/assign                  [BE]
-//   PATCH  /api/maintenance-tickets/:id/resolve                 [BE]
 import type { TicketSeverity, TicketStatus } from '../../shared/types/domain'
 import { createCollection } from '../db'
 import { created, fail, ok, registerMockRoutes } from '../mockServer'
@@ -41,26 +39,6 @@ const VALID_TICKET_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
 }
 
 registerMockRoutes([
-  // ── MNG-10: list maintenance tickets [TK] ─────────────────────────────
-  {
-    method: 'GET',
-    path: '/api/maintenance-tickets',
-    handler: ({ query }) => {
-      const statusFilter = query.get('status') as TicketStatus | null
-      const droneIdFilter = query.get('droneId')
-      const priorityFilter = query.get('priority') as TicketSeverity | null
-
-      const items = tickets.filter((t) => {
-        if (statusFilter && t.status !== statusFilter) return false
-        if (droneIdFilter && t.droneId !== droneIdFilter) return false
-        if (priorityFilter && t.priority !== priorityFilter) return false
-        return true
-      })
-
-      return ok({ items, total: items.length })
-    },
-  },
-
   // ── MNG-10: create maintenance ticket [ĐỀ XUẤT] ──────────────────────
   {
     method: 'POST',
@@ -174,22 +152,6 @@ registerMockRoutes([
     },
   },
 
-  // ── BE: resolve ticket ────────────────────────────────────────────────
-  {
-    method: 'PATCH',
-    path: '/api/maintenance-tickets/:id/resolve',
-    handler: ({ params, body }) => {
-      const ticket = tickets.find(
-        (t) => t.id === params.id || t.code === params.id,
-      )
-      if (!ticket) return fail(404, 'NOT_FOUND', 'Không tìm thấy ticket')
-      const req = (body ?? {}) as { resolutionNotes?: string }
-      ticket.status = 'RESOLVED'
-      ticket.resolutionNotes = req.resolutionNotes ?? ticket.resolutionNotes
-      ticket.resolvedAt = ticket.resolvedAt ?? new Date().toISOString()
-      return ok(ticket, 'Đã xử lý ticket')
-    },
-  },
 ])
 
 /** Test-only escape hatch */

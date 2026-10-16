@@ -2,16 +2,12 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
-import { resetMockDb } from '../../../../../mocks/db'
-import '../../../../../mocks/index'
 import { setLanguage } from '../../../../../shared/i18n'
 import { customerApi } from '../../../api/customerApi'
 import type { OrderCreateResponse } from '../../../api/orderApi'
 import { OrdersPage } from '../OrdersPage'
 
-beforeEach(() => resetMockDb())
 afterEach(() => {
-  resetMockDb()
   vi.restoreAllMocks()
 })
 
@@ -21,6 +17,25 @@ const makeOrder = (n: number): OrderCreateResponse => ({
   title: `Order number ${n}`,
   orderStatus: 'PENDING',
   createdAt: `2026-09-${String(n).padStart(2, '0')}T00:00:00Z`,
+})
+
+const statuses = [
+  'PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'IN_PROGRESS',
+  'PENDING', 'APPROVED', 'CANCELLED', 'PENDING',
+] as const
+const orders9: OrderCreateResponse[] = statuses.map((orderStatus, i) => ({
+  ...makeOrder(i + 1),
+  orderStatus,
+  title:
+    i === 0
+      ? 'Kiểm tra tiến độ nhà xưởng KCN Hiệp Phước'
+      : i === 1
+        ? 'Giám sát cảng Cát Lái'
+        : `Order number ${i + 1}`,
+}))
+
+beforeEach(() => {
+  vi.spyOn(customerApi, 'listMyOrders').mockResolvedValue(orders9)
 })
 
 const rowsOf = () => within(screen.getByRole('table')).getAllByRole('row').slice(1)
@@ -68,7 +83,9 @@ describe('OrdersPage', () => {
     render(<OrdersPage />)
     await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Hoàn thành' }))
-    await waitFor(() => expect(rowsOf()).toHaveLength(1))
+    await waitFor(() =>
+      expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'COMPLETED' })),
+    )
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'COMPLETED' }))
     expect(screen.getByRole('button', { name: 'Hoàn thành' })).toHaveAttribute('aria-pressed', 'true')
   })

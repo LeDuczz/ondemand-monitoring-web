@@ -4,9 +4,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { setLanguage } from '../../../../../shared/i18n'
 import { CreateUserModal } from '../components/CreateUserModal'
-import { useMockTransport } from './helpers'
+import { useAdminUsersStub } from './helpers'
 
-useMockTransport()
+useAdminUsersStub()
 
 describe('CreateUserModal', () => {
   it('renders in vietnamese and english', () => {

@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
 import '../../../../../mocks/index'
+import { stubCreateOrderApi } from '../../../tests/stubCreateOrderApi'
 import { setLanguage } from '../../../../../shared/i18n'
 import { CreateOrderPage } from '../CreateOrderPage'
 import { customerApi } from '../../../api/customerApi'
@@ -17,6 +18,7 @@ const originalScrollIntoView = Object.getOwnPropertyDescriptor(
 
 beforeEach(() => {
   resetMockDb()
+  stubCreateOrderApi()
   localStorage.removeItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,

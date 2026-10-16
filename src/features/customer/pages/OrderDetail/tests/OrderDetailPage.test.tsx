@@ -2,14 +2,44 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 
-import { resetMockDb } from '../../../../../mocks/db'
-import '../../../../../mocks/index'
 import { setLanguage } from '../../../../../shared/i18n'
+import { customerApi } from '../../../api/customerApi'
+import type { OrderCreateResponse } from '../../../api/orderApi'
 import { OrderDetailPage } from '../OrderDetailPage'
 
-beforeEach(() => resetMockDb())
+const order = (
+  id: string,
+  orderStatus: string,
+  extra: Partial<OrderCreateResponse> = {},
+): OrderCreateResponse => ({
+  id,
+  customerId: 'c',
+  title: 'Tuần tra an ninh công trường Sala Riverside',
+  orderCode: 'ORD-2609-0149',
+  orderStatus,
+  createdAt: '2026-09-10T00:00:00Z',
+  updatedAt: '2026-09-10T00:00:00Z',
+  ...extra,
+})
+
+const fixtures: Record<string, OrderCreateResponse> = {
+  'cus-ord-003': order('cus-ord-003', 'PENDING'),
+  'cus-ord-005': order('cus-ord-005', 'APPROVED'),
+  'cus-ord-006': order('cus-ord-006', 'COMPLETED'),
+  'cus-ord-007': order('cus-ord-007', 'REJECTED', {
+    rejectReason: 'Khu vực nằm trong vùng kiểm soát không lưu sân bay TSN.',
+  }),
+}
+
+beforeEach(() => {
+  vi.spyOn(customerApi, 'listServices').mockResolvedValue([])
+  vi.spyOn(customerApi, 'getOrderById').mockImplementation(async (id: string) => {
+    const found = fixtures[id]
+    if (!found) throw new Error('not found')
+    return found
+  })
+})
 afterEach(() => {
-  resetMockDb()
   vi.restoreAllMocks()
 })
 

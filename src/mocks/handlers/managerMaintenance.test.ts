@@ -23,44 +23,6 @@ async function call(
 beforeEach(() => resetMockDb())
 afterEach(() => resetMockDb())
 
-describe('GET /api/maintenance-tickets', () => {
-  it('returns all tickets', async () => {
-    const { status, payload } = await call('GET', '/api/maintenance-tickets')
-    expect(status).toBe(200)
-    expect(payload.data.items.length).toBeGreaterThan(0)
-  })
-
-  it('filters by status', async () => {
-    const { payload } = await call(
-      'GET',
-      '/api/maintenance-tickets?status=OPEN',
-    )
-    for (const t of payload.data.items) {
-      expect(t.status).toBe('OPEN')
-    }
-  })
-
-  it('filters by droneId', async () => {
-    const { payload } = await call(
-      'GET',
-      '/api/maintenance-tickets?droneId=drn-07',
-    )
-    for (const t of payload.data.items) {
-      expect(t.droneId).toBe('drn-07')
-    }
-  })
-
-  it('filters by priority', async () => {
-    const { payload } = await call(
-      'GET',
-      '/api/maintenance-tickets?priority=CRITICAL',
-    )
-    for (const t of payload.data.items) {
-      expect(t.priority).toBe('CRITICAL')
-    }
-  })
-})
-
 describe('POST /api/maintenance-tickets', () => {
   it('400s when title is missing', async () => {
     const { status } = await call('POST', '/api/maintenance-tickets', {

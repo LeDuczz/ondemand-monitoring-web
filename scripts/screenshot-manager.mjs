@@ -12,8 +12,15 @@
 // Cognito and their password is not in the repo, so scripted login only works
 // against the in-app mock API. Run with MOCK=1 to spawn a mock-mode Vite
 // server (same env as playwright.config.ts) on port 5174 for the run. Without
-// MOCK=1 the script uses BASE_URL (default http://localhost:5173) as-is, which
-// only logs in if that server runs in mock mode.
+// MOCK=1 the script uses BASE_URL (default http://localhost:5173) as-is.
+//
+// `POST /api/auth/login` is served by the real backend and no longer has a
+// mock route, so under MOCK=1 the script answers that one request itself via
+// Playwright request interception (a canned login for the manager above).
+// Screens whose data comes from real-backend endpoints (dashboard, orders,
+// order review, drones, maintenance, mission list/detail, ...) render their
+// loading/error states under MOCK=1; only still-mocked endpoints (see
+// src/mocks/README.md) return data.
 import { chromium } from '@playwright/test'
 import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -122,6 +129,32 @@ async function login(lang) {
       localStorage.setItem('odm-lang', l)
     } catch {}
   }, lang)
+  if (MOCK) {
+    await ctx.route('**/api/auth/login', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          code: 'OK',
+          data: {
+            accessToken: manager.accessToken,
+            tokenType: 'Bearer',
+            expiresIn: 3600,
+            user: {
+              id: manager.id,
+              fullName: manager.fullName,
+              email: manager.email,
+              emailVerified: manager.emailVerified,
+              role: manager.role,
+              isActive: manager.isActive,
+              linkedProviders: ['LOCAL'],
+            },
+          },
+        }),
+      }),
+    )
+  }
   const page = await ctx.newPage()
   await page.goto(`${BASE}/#auth/login`)
   await page.locator('input#email').fill(manager.email)

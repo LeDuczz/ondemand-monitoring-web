@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
 import '../../../../../mocks/index'
+import { stubCreateOrderApi } from '../../../tests/stubCreateOrderApi'
 import { setLanguage } from '../../../../../shared/i18n'
 import { customerApi } from '../../../api/customerApi'
 import { ApiError } from '../../../../../shared/api/httpClient'
@@ -11,6 +12,7 @@ import { CustomerCreateRequestPage } from '../CustomerCreateRequestPage'
 
 beforeEach(() => {
   resetMockDb()
+  stubCreateOrderApi()
   // The simulation map metadata is a static file, not an API call.
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 })

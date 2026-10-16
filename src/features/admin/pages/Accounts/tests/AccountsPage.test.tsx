@@ -4,9 +4,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { setLanguage } from '../../../../../shared/i18n'
 import { AccountsPage } from '../AccountsPage'
-import { requestedUrls, useMockTransport } from './helpers'
+import { requestedUrls, useAdminUsersStub } from './helpers'
 
-useMockTransport()
+useAdminUsersStub()
 
 describe('AccountsPage', () => {
   it('renders the vietnamese title and switches to english', () => {

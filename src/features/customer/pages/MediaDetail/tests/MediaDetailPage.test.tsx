@@ -4,11 +4,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
 import '../../../../../mocks/index'
+import { stubCustomerBe } from '../../../tests/stubBeApi'
 import { setLanguage } from '../../../../../shared/i18n'
 import { customerMediaApi } from '../../../api/customerMediaApi'
 import { MediaDetailPage } from '../MediaDetailPage'
 
-beforeEach(() => resetMockDb())
+beforeEach(() => {
+  resetMockDb()
+  stubCustomerBe()
+})
 afterEach(() => {
   resetMockDb()
   vi.restoreAllMocks()

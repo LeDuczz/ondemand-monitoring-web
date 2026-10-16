@@ -7,11 +7,13 @@ import { customerMediaApi } from './api/customerMediaApi'
 
 import { resetMockDb } from '../../mocks/db'
 import '../../mocks/index'
+import { stubCustomerBe } from './tests/stubBeApi'
 import { setLanguage } from '../../shared/i18n'
 import { CustomerApp } from './CustomerApp'
 
 beforeEach(() => {
   resetMockDb()
+  stubCustomerBe()
   window.location.hash = '#portal/customer'
 })
 afterEach(() => {

@@ -16,6 +16,8 @@ import { Router } from '../../../app/router'
 import { supportApi, type SupportTicketDto } from '../../support/api/supportApi'
 import { CustomerApp } from '../CustomerApp'
 import { CustomerCreateRequestPage } from '../pages/CustomerCreateRequest'
+import { stubCustomerBe } from './stubBeApi'
+import { stubCreateOrderApi } from './stubCreateOrderApi'
 
 /**
  * Regression guard: after switching to English, no Vietnamese diacritic may
@@ -48,9 +50,9 @@ function collectSeedStrings(value: unknown, out: Set<string>) {
   }
 }
 
-/** Vietnamese string literals of the mock BE handlers (catalog, zones, missions). */
+/** Vietnamese string literals of the BE API stubs and fixtures (catalog, zones, missions). */
 const MOCK_HANDLER_SOURCES = import.meta.glob(
-  '../../../mocks/handlers/{catalogBe,customerCreateOrderBe,customerMissionHistoryBe}.ts',
+  './{stubBeApi,stubCreateOrderApi,createOrderFixtures}.ts',
   { query: '?raw', import: 'default', eager: true },
 ) as Record<string, string>
 function collectHandlerStrings(out: Set<string>) {
@@ -136,6 +138,8 @@ beforeEach(() => {
   resetMockDb()
   localStorage.clear()
   setLanguage('vi')
+  stubCustomerBe()
+  stubCreateOrderApi()
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 })
 afterEach(() => {

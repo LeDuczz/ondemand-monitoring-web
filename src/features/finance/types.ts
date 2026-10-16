@@ -13,6 +13,10 @@ export type PricingChecklistItem = {
   managerQuotedPrice: number | null
   systemCalculatedPrice?: number | null
   managerPriceAdjustmentReason?: string | null
+  managerApprovedAmount?: number | null
+  finalAmount?: number | null
+  priceDifferenceAmount?: number | null
+  priceDifferencePercent?: number | null
   requestedImageCount?: number
   requestedVideoCount?: number
   difficultySnapshot?: 'BASIC' | 'MEDIUM' | 'HARD' | 'VERY_HARD'

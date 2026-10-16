@@ -8,7 +8,7 @@ import { ApiError } from '../../shared/api/httpClient'
 afterEach(() => vi.restoreAllMocks())
 
 describe('ManagerPricingPanel', () => {
-  it('does not expose a custom baseline input and surfaces the structured-assessment message', async () => {
+  it('shows manager-required pricing and surfaces the backend incomplete message', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -42,11 +42,7 @@ describe('ManagerPricingPanel', () => {
 
     render(<ManagerPricingPanel orderId="order-1" />)
     await screen.findByText('Inspect custom structure')
-    expect(
-      screen.queryByRole('spinbutton', {
-        name: 'Giá báo (VND): Inspect custom structure',
-      }),
-    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('0')
 
     fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
     expect(
@@ -54,8 +50,111 @@ describe('ManagerPricingPanel', () => {
     ).toBeInTheDocument()
     expect(save).toHaveBeenLastCalledWith(
       'order-1',
-      expect.objectContaining({ additionalUnitPrices: {} }),
+      expect.objectContaining({ additionalUnitPrices: { 'custom-1': 0 } }),
     )
+  })
+
+  it('does not overwrite an edited item price when another checklist mutation refetches the review', async () => {
+    const review = {
+      orderId: 'order-1',
+      orderCode: 'ORD-1',
+      customerName: 'Customer',
+      serviceName: 'Site monitoring',
+      basePackagePrice: 5_000_000,
+      systemCalculation: {
+        policyId: 'policy-1',
+        policyVersion: 3,
+        currency: 'VND',
+        systemCalculatedAmount: 5_030_000,
+        customWork: true,
+        assessmentComplete: true,
+        items: [
+          {
+            category: 'RESOURCE' as const,
+            description: 'Custom work',
+            quantity: 1,
+            unitPrice: 30_000,
+            amount: 30_000,
+            orderChecklistItemId: 'additional-1',
+          },
+        ],
+      },
+      checklistItems: [
+        {
+          id: 'additional-1',
+          sourceChecklistId: null,
+          content: 'Extra requirement',
+          displayOrder: 1,
+          sourceType: 'CUSTOMER_CUSTOM' as const,
+          reviewStatus: 'ADDITIONAL' as const,
+          managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
+        },
+        {
+          id: 'pending-1',
+          sourceChecklistId: null,
+          content: 'Another requirement',
+          displayOrder: 2,
+          sourceType: 'CUSTOMER_CUSTOM' as const,
+          reviewStatus: 'PENDING' as const,
+          managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: null,
+        },
+      ],
+      currentQuote: null,
+      quoteHistory: [],
+    }
+    vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue(review)
+    vi.spyOn(financeApi, 'reviewChecklist').mockResolvedValue({
+      ...review.checklistItems[1],
+      reviewStatus: 'DUPLICATE',
+    })
+
+    render(<ManagerPricingPanel orderId="order-1" />)
+    const input = await screen.findByLabelText('Giá duyệt (VND)')
+    fireEvent.change(input, { target: { value: '30001' } })
+    fireEvent.change(screen.getAllByLabelText('Phân loại')[1], {
+      target: { value: 'DUPLICATE' },
+    })
+
+    await waitFor(() =>
+      expect(financeApi.getPricingReview).toHaveBeenCalledTimes(2),
+    )
+    expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('30001')
+    expect(screen.getByText(/\+1/)).toBeInTheDocument()
+  })
+
+  it('initializes prices from the newly selected order', async () => {
+    vi.spyOn(financeApi, 'getPricingReview').mockImplementation(async (id) => ({
+      orderId: id,
+      orderCode: id,
+      customerName: 'Customer',
+      serviceName: 'Site monitoring',
+      basePackagePrice: 5_000_000,
+      checklistItems: [
+        {
+          id: `${id}-item`,
+          sourceChecklistId: null,
+          content: `${id} requirement`,
+          displayOrder: 1,
+          sourceType: 'CUSTOMER_CUSTOM',
+          reviewStatus: 'ADDITIONAL',
+          managerNote: null,
+          managerQuoteRequired: false,
+          managerQuotedPrice: id === 'order-1' ? 30_000 : 45_000,
+        },
+      ],
+      currentQuote: null,
+      quoteHistory: [],
+    }))
+
+    const view = render(<ManagerPricingPanel orderId="order-1" />)
+    expect(await screen.findByLabelText('Giá duyệt (VND)')).toHaveValue('30000')
+    view.rerender(<ManagerPricingPanel orderId="order-2" />)
+    await screen.findByText('order-2 requirement')
+    expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('45000')
   })
 
   it('shows package checklist as auto-priced without a review control', async () => {

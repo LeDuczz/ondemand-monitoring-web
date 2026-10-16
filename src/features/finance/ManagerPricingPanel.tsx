@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -69,51 +69,54 @@ export function ManagerPricingPanel({
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [approvalSucceeded, setApprovalSucceeded] = useState(false)
+  const dirtyPriceIds = useRef(new Set<string>())
+  const initializedQuoteKey = useRef<string | null>(null)
 
   useEffect(() => {
     setApprovalSucceeded(false)
+    dirtyPriceIds.current.clear()
+    initializedQuoteKey.current = null
+    setDraft(emptyDraft)
   }, [orderId])
 
   useEffect(() => {
     const quote = query.data?.currentQuote
     if (!query.data) return
-    const prices = Object.fromEntries(
-      query.data.checklistItems
-        .filter((item) => item.sourceType !== 'SERVICE_TEMPLATE')
-        .map((item) => [
-          item.id,
-          String(
+    const quoteKey = quote
+      ? `${quote.id}:${quote.pricingRevision ?? quote.version}`
+      : `new:${orderId}`
+    setDraft((state) => {
+      const prices = { ...state.prices }
+      for (const item of query.data!.checklistItems) {
+        if (item.sourceType === 'SERVICE_TEMPLATE') continue
+        if (dirtyPriceIds.current.has(item.id)) continue
+        prices[item.id] = String(
+          item.managerApprovedAmount ??
             item.managerQuotedPrice ??
-              item.systemCalculatedPrice ??
-              checklistSystemPrice(
-                query.data!.systemCalculation?.items,
-                item.id,
-              ),
-          ),
-        ]),
-    )
-    if (!quote) {
-      setDraft((state) => ({
+            item.systemCalculatedPrice ??
+            checklistSystemPrice(query.data!.systemCalculation?.items, item.id),
+        )
+      }
+      const firstLoad = initializedQuoteKey.current !== quoteKey
+      initializedQuoteKey.current = quoteKey
+      if (!firstLoad) return { ...state, prices }
+      return {
         ...state,
         packagePrice: String(
-          query.data!.systemCalculation?.systemCalculatedAmount ??
+          quote?.packagePrice ??
+            query.data!.systemCalculation?.systemCalculatedAmount ??
             query.data!.basePackagePrice,
         ),
+        discountAmount: String(quote?.discountAmount ?? 0),
+        adjustmentAmount: '0',
+        managerNote: quote?.managerNote ?? '',
+        adjustmentReason: quote?.adjustmentReason ?? '',
+        adjustmentType: quote?.adjustmentType ?? 'CORRECTION',
+        approvalNote: '',
         prices,
-      }))
-      return
-    }
-    setDraft({
-      packagePrice: String(quote.packagePrice),
-      discountAmount: String(quote.discountAmount),
-      adjustmentAmount: '0',
-      managerNote: quote.managerNote ?? '',
-      adjustmentReason: quote.adjustmentReason ?? '',
-      adjustmentType: quote.adjustmentType ?? 'CORRECTION',
-      approvalNote: '',
-      prices,
+      }
     })
-  }, [query.data])
+  }, [orderId, query.data])
 
   const pendingReviewCount = (query.data?.checklistItems ?? []).filter(
     (item) =>
@@ -132,11 +135,7 @@ export function ManagerPricingPanel({
     query.data?.systemCalculation?.systemCalculatedAmount ??
     amount(draft.packagePrice)
   const checklistAdjustment = (query.data?.checklistItems ?? [])
-    .filter(
-      (item) =>
-        item.sourceType !== 'SERVICE_TEMPLATE' &&
-        item.reviewStatus === 'ADDITIONAL',
-    )
+    .filter(isManagerPriced)
     .reduce(
       (sum, item) =>
         sum +
@@ -186,6 +185,7 @@ export function ManagerPricingPanel({
         expectedPricingRevision:
           query.data.currentQuote?.pricingRevision ?? null,
       })
+      dirtyPriceIds.current.clear()
       setMessage('Đã lưu báo giá nháp.')
       query.reload()
       return quote
@@ -225,6 +225,7 @@ export function ManagerPricingPanel({
         expectedPricingRevision:
           query.data.currentQuote?.pricingRevision ?? null,
       })
+      dirtyPriceIds.current.clear()
       await financeApi.approveQuote(orderId, quote.id)
       setApprovalSucceeded(true)
       onApproved?.()
@@ -441,14 +442,14 @@ export function ManagerPricingPanel({
                       ),
                   )}
                 </small>
-                {item.sourceType !== 'SERVICE_TEMPLATE' &&
-                item.reviewStatus === 'ADDITIONAL' ? (
+                {isManagerPriced(item) ? (
                   <MoneyInput
                     label="Giá duyệt"
                     value={
                       draft.prices[item.id] ??
                       String(
-                        item.managerQuotedPrice ??
+                        item.managerApprovedAmount ??
+                          item.managerQuotedPrice ??
                           item.systemCalculatedPrice ??
                           checklistSystemPrice(
                             query.data?.systemCalculation?.items,
@@ -457,12 +458,38 @@ export function ManagerPricingPanel({
                       )
                     }
                     onChange={(value) =>
-                      setDraft((state) => ({
-                        ...state,
-                        prices: { ...state.prices, [item.id]: value },
-                      }))
+                      setDraft((state) => {
+                        dirtyPriceIds.current.add(item.id)
+                        return {
+                          ...state,
+                          prices: { ...state.prices, [item.id]: value },
+                        }
+                      })
                     }
                     disabled={accepted}
+                  />
+                ) : null}
+                {isManagerPriced(item) ? (
+                  <PriceDifference
+                    system={
+                      item.systemCalculatedPrice ??
+                      checklistSystemPrice(
+                        query.data?.systemCalculation?.items,
+                        item.id,
+                      )
+                    }
+                    proposed={amount(
+                      draft.prices[item.id] ??
+                        String(
+                          item.managerApprovedAmount ??
+                            item.managerQuotedPrice ??
+                            item.systemCalculatedPrice ??
+                            checklistSystemPrice(
+                              query.data?.systemCalculation?.items,
+                              item.id,
+                            ),
+                        ),
+                    )}
                   />
                 ) : null}
               </div>
@@ -473,7 +500,8 @@ export function ManagerPricingPanel({
                   ? 'Tự động tính giá'
                   : item.reviewStatus === 'PENDING'
                     ? 'Chưa xem xét'
-                    : item.reviewStatus === 'ADDITIONAL' &&
+                    : isManagerPriced(item) &&
+                        item.managerApprovedAmount == null &&
                         item.managerQuotedPrice == null
                       ? 'Chờ duyệt giá'
                       : 'Đã xem xét'}
@@ -677,6 +705,28 @@ function Row({
     </div>
   )
 }
+function PriceDifference({
+  system,
+  proposed,
+}: {
+  system: number
+  proposed: number
+}) {
+  const difference = proposed - system
+  const percent = system === 0 ? null : (difference / system) * 100
+  const sign = difference > 0 ? '+' : ''
+  return (
+    <small className={difference === 0 ? '' : 'finance-price-difference'}>
+      Chênh lệch: {sign}
+      {formatVnd(difference)}
+      {percent == null
+        ? ''
+        : ` (${percent > 0 ? '+' : ''}${percent.toLocaleString('vi-VN', {
+            maximumFractionDigits: 4,
+          })}%)`}
+    </small>
+  )
+}
 function amount(value: string | undefined) {
   const parsed = Number(value ?? 0)
   return Number.isSafeInteger(parsed) ? parsed : 0
@@ -698,19 +748,24 @@ function approvedPrices(
 ) {
   return Object.fromEntries(
     items
-      .filter(
-        (item) =>
-          item.sourceType !== 'SERVICE_TEMPLATE' &&
-          item.reviewStatus === 'ADDITIONAL',
-      )
+      .filter(isManagerPriced)
       .map((item) => [
         item.id,
         draft.prices[item.id] == null
-          ? (item.managerQuotedPrice ??
+          ? (item.managerApprovedAmount ??
+            item.managerQuotedPrice ??
             item.systemCalculatedPrice ??
             checklistSystemPrice(lines, item.id))
           : amount(draft.prices[item.id]),
       ]),
+  )
+}
+function isManagerPriced(item: PricingChecklistItem) {
+  return (
+    item.sourceType !== 'SERVICE_TEMPLATE' &&
+    item.reviewStatus !== 'REJECTED' &&
+    item.reviewStatus !== 'DUPLICATE' &&
+    (item.managerQuoteRequired || item.reviewStatus === 'ADDITIONAL')
   )
 }
 function digits(value: string) {

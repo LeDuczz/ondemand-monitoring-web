@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
+import { ApiError } from '../../../../../shared/api/httpClient'
 import {
   pricingDescription,
   pricingLabel,
@@ -34,14 +35,9 @@ export function PricingPolicyTab() {
   async function createDraft() {
     if (!active) return
     await run(async () => {
-      await adminApi.createPricingPolicy(
-        payload({
-          ...active,
-          name: `Chính sách giá phiên bản ${active.version + 1}`,
-        }),
-      )
+      await adminApi.clonePricingPolicy(active.id)
       query.reload()
-    }, 'Đã tạo chính sách giá nháp mới.')
+    }, 'Đã nhân bản chính sách đang áp dụng thành bản nháp mới.')
   }
   const mediaValid = !draft || validateMediaRules(draft.rules).length === 0
   async function save() {
@@ -65,9 +61,11 @@ export function PricingPolicyTab() {
     try {
       await action()
       setMessage(success)
-    } catch {
+    } catch (cause) {
       setError(
-        'Không thể cập nhật chính sách giá. Vui lòng kiểm tra dữ liệu và thử lại.',
+        cause instanceof ApiError
+          ? cause.message
+          : 'Không thể cập nhật chính sách giá. Vui lòng kiểm tra dữ liệu và thử lại.',
       )
     } finally {
       setBusy(false)
@@ -85,6 +83,46 @@ export function PricingPolicyTab() {
         : current,
     )
   }
+  function addRule() {
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            rules: [
+              ...current.rules,
+              {
+                category: 'AREA',
+                calculationType: 'PER_BLOCK',
+                ruleKey: `NEW_RULE_${current.rules.length + 1}`,
+                description: 'Quy tắc mới',
+                minValue: 0,
+                maxValue: null,
+                fixedAmount: 0,
+                baseAmount: null,
+                percentage: null,
+                unitSize: 1,
+                multiplier: null,
+                priority: current.rules.length,
+                enabled: true,
+                roundingMode: 'CEILING',
+              },
+            ],
+          }
+        : current,
+    )
+  }
+  function removeRule(index: number) {
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            rules: current.rules
+              .filter((_, i) => i !== index)
+              .map((rule, priority) => ({ ...rule, priority })),
+          }
+        : current,
+    )
+  }
 
   return (
     <section className="adm-card pricing-policy-admin">
@@ -97,13 +135,21 @@ export function PricingPolicyTab() {
           </p>
         </div>
         {!draft && (
-          <button
-            className="odm-btn odm-btn-p"
-            disabled={!active || busy}
-            onClick={() => void createDraft()}
-          >
-            Tạo bản nháp từ chính sách đang áp dụng
-          </button>
+          <div>
+            {active ? (
+              <p role="note">
+                Chính sách đang áp dụng không thể chỉnh sửa. Hãy nhân bản để tạo
+                một phiên bản DRAFT rồi chỉnh sửa và phát hành.
+              </p>
+            ) : null}
+            <button
+              className="odm-btn odm-btn-p"
+              disabled={!active || busy}
+              onClick={() => void createDraft()}
+            >
+              Nhân bản thành DRAFT
+            </button>
+          </div>
         )}
       </div>
       {(query.data ?? []).map((policy) => (
@@ -157,16 +203,76 @@ export function PricingPolicyTab() {
             />
           </div>
           <div className="pricing-rules">
-            <h3>Quy tắc tính giá</h3>
+            <div className="adm-card-head">
+              <h3>Quy tắc tính giá</h3>
+              <button className="odm-btn" type="button" onClick={addRule}>
+                Thêm quy tắc
+              </button>
+            </div>
             {draft.rules.map((rule, index) =>
               isMediaRule(rule) ? null : (
                 <div
                   className="pricing-rule-row"
                   key={`${rule.category}-${rule.ruleKey}`}
                 >
-                  <b>
-                    {pricingLabel(rule.category)} / {pricingLabel(rule.ruleKey)}
-                  </b>
+                  <label>
+                    <span>Nhóm giá</span>
+                    <select
+                      value={rule.category}
+                      onChange={(event) =>
+                        updateRule(index, {
+                          category: event.target
+                            .value as PricingRule['category'],
+                          roundingMode: [
+                            'AREA',
+                            'DISTANCE',
+                            'ALTITUDE',
+                          ].includes(event.target.value)
+                            ? rule.roundingMode
+                            : null,
+                        })
+                      }
+                    >
+                      {categories.map((category) => (
+                        <option key={category} value={category}>
+                          {pricingLabel(category)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Cách tính</span>
+                    <select
+                      value={rule.calculationType}
+                      onChange={(event) => {
+                        const calculationType = event.target
+                          .value as PricingRule['calculationType']
+                        const block = ['PER_BLOCK', 'TIERED_BLOCK'].includes(
+                          calculationType,
+                        )
+                        updateRule(index, {
+                          calculationType,
+                          unitSize: block ? (rule.unitSize ?? 1) : null,
+                          roundingMode: block ? rule.roundingMode : null,
+                        })
+                      }}
+                    >
+                      {calculationTypes.map((calculationType) => (
+                        <option key={calculationType} value={calculationType}>
+                          {pricingLabel(calculationType)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Mã quy tắc</span>
+                    <input
+                      value={rule.ruleKey}
+                      onChange={(event) =>
+                        updateRule(index, { ruleKey: event.target.value })
+                      }
+                    />
+                  </label>
                   <input
                     aria-label={`Mô tả ${pricingLabel(rule.ruleKey)}`}
                     value={pricingDescription(rule.description)}
@@ -179,6 +285,25 @@ export function PricingPolicyTab() {
                     value={rule.minValue ?? 0}
                     onChange={(v) => updateRule(index, { minValue: v })}
                   />
+                  {isDimensionBlockRule(rule) ? (
+                    <label>
+                      <span>Làm tròn</span>
+                      <select
+                        value={rule.roundingMode ?? 'CEILING'}
+                        onChange={(event) =>
+                          updateRule(index, {
+                            roundingMode: event.target.value as NonNullable<
+                              PricingRule['roundingMode']
+                            >,
+                          })
+                        }
+                      >
+                        <option value="CEILING">Làm tròn lên</option>
+                        <option value="FLOOR">Làm tròn xuống</option>
+                        <option value="HALF_UP">Làm tròn gần nhất</option>
+                      </select>
+                    </label>
+                  ) : null}
                   <NumberField
                     label="Giá trị tối đa"
                     value={rule.maxValue ?? 0}
@@ -209,6 +334,23 @@ export function PricingPolicyTab() {
                     value={rule.multiplier ?? 0}
                     onChange={(v) => updateRule(index, { multiplier: v })}
                   />
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={rule.enabled}
+                      onChange={(event) =>
+                        updateRule(index, { enabled: event.target.checked })
+                      }
+                    />
+                    Đang bật
+                  </label>
+                  <button
+                    className="odm-btn"
+                    type="button"
+                    onClick={() => removeRule(index)}
+                  >
+                    Xóa quy tắc
+                  </button>
                 </div>
               ),
             )}
@@ -273,10 +415,44 @@ function payload(policy: PricingPolicy): PricingPolicyPayload {
     minimumPriceRatio: policy.minimumPriceRatio,
     minimumPrice: policy.minimumPrice,
     rules: policy.rules.map(
-      (rule) =>
+      (rule, priority) =>
         Object.fromEntries(
-          Object.entries(rule).filter(([key]) => key !== 'id'),
+          Object.entries({ ...rule, priority }).filter(([key]) => key !== 'id'),
         ) as PricingRule,
     ),
   }
+}
+
+const categories: PricingRule['category'][] = [
+  'PACKAGE',
+  'DISTANCE',
+  'AREA',
+  'ALTITUDE',
+  'CHECKLIST',
+  'OUTPUT',
+  'RESOURCE',
+  'TERRAIN',
+  'CONDITION',
+  'PERMIT',
+  'DISCOUNT',
+  'MANAGER_ADJUSTMENT',
+]
+
+const calculationTypes: PricingRule['calculationType'][] = [
+  'FIXED',
+  'PERCENT_OF_BASE',
+  'PER_UNIT',
+  'PER_BLOCK',
+  'TIERED_BLOCK',
+  'MULTIPLIER',
+  'RESOURCE_BASED',
+  'ACTUAL_COST',
+  'MANUAL_QUOTE',
+]
+
+function isDimensionBlockRule(rule: PricingRule) {
+  return (
+    ['AREA', 'DISTANCE', 'ALTITUDE'].includes(rule.category) &&
+    ['PER_BLOCK', 'TIERED_BLOCK'].includes(rule.calculationType)
+  )
 }

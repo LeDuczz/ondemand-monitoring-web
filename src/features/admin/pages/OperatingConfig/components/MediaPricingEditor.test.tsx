@@ -213,4 +213,62 @@ describe('PricingPolicyTab with MEDIA rules', () => {
     })
     expect(body.rules[0]).not.toHaveProperty('id')
   })
+
+  it('keeps the active policy read-only and clones it on the server', async () => {
+    const active = { ...draft, id: 'active-1', status: 'ACTIVE' as const }
+    const list = vi
+      .spyOn(adminApi, 'listPricingPolicies')
+      .mockResolvedValueOnce([active])
+      .mockResolvedValue([active, draft])
+    const clone = vi
+      .spyOn(adminApi, 'clonePricingPolicy')
+      .mockResolvedValue(draft)
+
+    render(<PricingPolicyTab />)
+    expect(
+      await screen.findByText(/Chính sách đang áp dụng không thể chỉnh sửa/),
+    ).toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Nhân bản thành DRAFT' }),
+    )
+
+    await waitFor(() => expect(clone).toHaveBeenCalledWith('active-1'))
+    await waitFor(() => expect(list).toHaveBeenCalledTimes(2))
+    expect(await screen.findByLabelText('Tên chính sách')).toHaveValue('Draft')
+  })
+
+  it('adds, edits, enables and removes ordinary draft rules before saving', async () => {
+    vi.spyOn(adminApi, 'listPricingPolicies').mockResolvedValue([
+      { ...draft, rules: [tier(0, null, 50_000)] },
+    ])
+    const update = vi
+      .spyOn(adminApi, 'updatePricingPolicy')
+      .mockResolvedValue(draft)
+
+    render(<PricingPolicyTab />)
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Thêm quy tắc' }))[0],
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Xóa quy tắc' }))
+    expect(screen.queryByLabelText('Mã quy tắc')).not.toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Thêm quy tắc' })[0])
+    fireEvent.change(screen.getByLabelText('Mã quy tắc'), {
+      target: { value: 'AREA_EXTRA' },
+    })
+    fireEvent.change(screen.getByLabelText('Giá trị tối đa'), {
+      target: { value: '100' },
+    })
+    fireEvent.click(screen.getByLabelText('Đang bật'))
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu bản nháp' }))
+
+    await waitFor(() => expect(update).toHaveBeenCalled())
+    expect(update.mock.calls[0][1].rules.at(-1)).toMatchObject({
+      category: 'AREA',
+      calculationType: 'PER_BLOCK',
+      ruleKey: 'AREA_EXTRA',
+      maxValue: 100,
+      enabled: false,
+      roundingMode: 'CEILING',
+    })
+  })
 })

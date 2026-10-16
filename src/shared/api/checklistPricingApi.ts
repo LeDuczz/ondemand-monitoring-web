@@ -32,7 +32,9 @@ export type ChecklistPriceBreakdown = {
   quotePending: boolean
 }
 
-/** `total = packageFee + checklistSubtotal`; order-specific factors are added by the Manager quote. */
+/** `total = checklistSubtotal + sum(addOns)`; order-specific factors are added by the Manager quote. */
+export type PriceAddOn = { key: string; description: string; amount: number }
+
 export type ServicePricePreview = {
   serviceId: string
   serviceName: string
@@ -40,8 +42,8 @@ export type ServicePricePreview = {
   policyId: string
   policyVersion: number
   draftPolicy: boolean
-  /** CHECKLISTS: the default price is only the checklists. LEGACY_BASE_PRICE: no default checklist is priced yet. */
-  priceSource: 'CHECKLISTS' | 'LEGACY_BASE_PRICE'
+  /** CHECKLISTS: the price is the sum of the checklists. UNPRICED: no default checklist carries a price yet. */
+  priceSource: 'CHECKLISTS' | 'UNPRICED'
   packageFee: number
   checklists: ChecklistPriceBreakdown[]
   checklistSubtotal: number
@@ -49,6 +51,8 @@ export type ServicePricePreview = {
   complete: boolean
   warnings: string[]
   quotePending: boolean
+  /** Order-level extras priced by the policy (for example AI image analysis). */
+  addOns?: PriceAddOn[]
 }
 
 export type AdminPreviewItem = {
@@ -62,7 +66,6 @@ export type AdminPreviewItem = {
 }
 export type AdminPreviewRequest = {
   serviceId: string
-  packageFee?: number
   policyId?: string
   items?: AdminPreviewItem[]
 }
@@ -78,6 +81,7 @@ export type ChecklistQuoteContext = {
   areaHa?: number
   lengthKm?: number
   altitudeM?: number
+  aiAnalysisRequested?: boolean
 }
 
 export const checklistPricingApi = {

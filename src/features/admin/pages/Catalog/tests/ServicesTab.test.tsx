@@ -66,7 +66,7 @@ describe('ServicesTab', () => {
     fireEvent.change(screen.getByLabelText(/Tên dịch vụ/), {
       target: { value: 'Dịch vụ thử' },
     })
-    fireEvent.change(screen.getByLabelText(/Đơn giá gói/), {
+    fireEvent.change(screen.getByLabelText(/Giá danh mục cũ/), {
       target: { value: '1800000' },
     })
     fireEvent.click(screen.getByText('Lưu'))
@@ -90,7 +90,7 @@ describe('ServicesTab', () => {
       /Tên dịch vụ/,
     )) as HTMLInputElement
     expect(name.value).toBe('Giám sát công trình')
-    expect(screen.getByLabelText(/Đơn giá gói/)).toHaveValue(3_500_000)
+    expect(screen.getByLabelText(/Giá danh mục cũ/)).toHaveValue(3_500_000)
     expect(
       (screen.getByLabelText(/Mô tả/) as HTMLTextAreaElement).value,
     ).toContain('công trình')

@@ -45,14 +45,14 @@ describe('PricingEstimateCard', () => {
     )
   })
 
-  it('replaces only the service price with the checklist quote', () => {
+  it('takes the service price and add-ons from the checklist quote', () => {
     expect(
       selectionEstimate(
         {
           serviceId: 'service-1',
           servicePrice: 3_200_000,
           additionalRequirements: [],
-          totalPrice: 3_450_000,
+          totalPrice: 3_200_000,
         },
         {
           serviceId: 'service-1',
@@ -65,16 +65,22 @@ describe('PricingEstimateCard', () => {
           packageFee: 0,
           checklists: [],
           checklistSubtotal: 900_000,
-          total: 900_000,
+          total: 1_400_000,
           complete: false,
           warnings: [],
           quotePending: true,
+          addOns: [
+            { key: 'AI_IMAGE_ANALYSIS', description: 'AI', amount: 500_000 },
+          ],
         },
       ),
     ).toMatchObject({
       servicePrice: 900_000,
-      totalPrice: 1_150_000,
+      totalPrice: 1_400_000,
       quotePending: true,
+      additionalRequirements: [
+        { type: 'AI_IMAGE_ANALYSIS', additionalPrice: 500_000 },
+      ],
     })
   })
 })

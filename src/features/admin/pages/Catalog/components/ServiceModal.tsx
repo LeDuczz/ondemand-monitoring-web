@@ -56,15 +56,14 @@ function ServiceForm({ service, onClose, onSaved }: Props) {
     return () => URL.revokeObjectURL(url)
   }, [image, removeImage, service?.imageUrl])
 
-  /** What-if: the stored default checklists with the package fee currently typed, nothing is saved. */
+  /** The stored default checklists priced by the active policy; nothing is saved. */
   async function checkPrice() {
-    if (!service?.id || !Number.isSafeInteger(values.basePrice)) return
+    if (!service?.id) return
     setPriceCheckError(null)
     try {
       setPriceCheck(
         await checklistPricingApi.adminPreview({
           serviceId: service.id,
-          packageFee: values.basePrice,
         }),
       )
     } catch {

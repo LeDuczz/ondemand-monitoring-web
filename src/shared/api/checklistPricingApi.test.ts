@@ -27,7 +27,6 @@ it('posts the unsaved what-if configuration to the admin preview', async () => {
   const fetch = transport()
   await checklistPricingApi.adminPreview({
     serviceId: 's',
-    packageFee: 900_000,
     items: [{ checklistId: 'a', basePrice: 1 }],
   })
   expect(new URL(fetch.mock.calls[0][0]).pathname).toBe(
@@ -36,7 +35,6 @@ it('posts the unsaved what-if configuration to the admin preview', async () => {
   expect(fetch.mock.calls[0][1].method).toBe('POST')
   expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
     serviceId: 's',
-    packageFee: 900_000,
     items: [{ checklistId: 'a', basePrice: 1 }],
   })
 })

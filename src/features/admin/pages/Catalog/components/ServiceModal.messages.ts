@@ -9,9 +9,9 @@ export const serviceModalMessages = defineMessages({
     name: 'Tên dịch vụ',
     namePlaceholder: 'VD: Kiểm tra mái nhà',
     description: 'Mô tả',
-    basePrice: 'Đơn giá gói (VND)',
+    basePrice: 'Giá danh mục cũ (VND)',
     basePriceHint:
-      'Giá gói cũ của danh mục, chỉ được dùng khi chưa có checklist mặc định nào có giá. Khi đã có, giá mặc định của dịch vụ chỉ bằng tổng giá các checklist mặc định (cấu hình ở trang Checklist dịch vụ) và giá này không được cộng thêm.',
+      'Chỉ để lưu trữ và đọc lại các đơn cũ; không còn dùng để tính giá. Giá dịch vụ bằng tổng giá các checklist mặc định (cấu hình ở trang Checklist dịch vụ).',
     previewTitle: 'Giá mặc định tính từ checklist',
     previewButton: 'Kiểm tra giá mặc định',
     previewError: 'Không thể tính giá mặc định.',
@@ -37,9 +37,9 @@ export const serviceModalMessages = defineMessages({
     name: 'Service name',
     namePlaceholder: 'e.g. Roof inspection',
     description: 'Description',
-    basePrice: 'Package price (VND)',
+    basePrice: 'Legacy catalog price (VND)',
     basePriceHint:
-      'The legacy catalog price, used only while no default checklist is priced. Once one is, the default service price is just the sum of the default checklists (configured on the Service checklist page) and this value is not added.',
+      'Kept only so older orders can be read back; it no longer prices anything. The service price is the sum of its default checklists (configured on the Service checklist page).',
     previewTitle: 'Default price derived from checklists',
     previewButton: 'Check the default price',
     previewError: 'Unable to calculate the default price.',

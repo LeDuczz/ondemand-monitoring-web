@@ -24,27 +24,24 @@ const base: ServicePricePreview = {
 beforeEach(() => setLanguage('vi'))
 
 describe('PriceBreakdownView price source', () => {
-  it('shows only the checklists and no legacy package row when checklists carry the price', () => {
+  it('shows the checklists as the whole price', () => {
     render(<PriceBreakdownView preview={base} />)
-    expect(screen.queryByText(/Giá gói cũ/)).toBeNull()
-    expect(screen.getByText(/không cộng thêm giá gói cũ/)).toBeInTheDocument()
+    expect(screen.getByText(/tổng giá các checklist/)).toBeInTheDocument()
     expect(screen.getAllByText(/470\.000/).length).toBeGreaterThan(0)
   })
 
-  it('names the legacy catalog price explicitly when no checklist is priced', () => {
+  it('says the service is unpriced when no default checklist is priced', () => {
     render(
       <PriceBreakdownView
         preview={{
           ...base,
-          priceSource: 'LEGACY_BASE_PRICE',
-          packageFee: 1_000_000,
+          priceSource: 'UNPRICED',
           checklistSubtotal: 0,
-          total: 1_000_000,
+          total: 0,
         }}
       />,
     )
-    expect(screen.getByText(/Giá gói cũ của danh mục/)).toBeInTheDocument()
-    expect(screen.queryByText(/không cộng thêm giá gói cũ/)).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent(/chưa có checklist/)
   })
 
   it('lists warnings for checklists the policy cannot price', () => {

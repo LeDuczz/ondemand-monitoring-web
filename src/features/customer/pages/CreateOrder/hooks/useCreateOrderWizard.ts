@@ -61,6 +61,7 @@ export function useCreateOrderWizard() {
     areaHa: Number(calcArea(form.radiusM)),
     lengthKm: Number(form.estimatedLengthM || 0) / 1000,
     altitudeM: Number.isFinite(form.altitudeM) ? form.altitudeM : 0,
+    aiAnalysisRequested: f.aiAnalysisRequested,
   })
   const meta = useCreateOrderMeta(
     form.serviceId,

@@ -7,7 +7,7 @@ export type ServiceResponse = {
   description?: string
   basePrice: number
   defaultPrice?: number
-  priceSource?: 'CHECKLISTS' | 'LEGACY_BASE_PRICE'
+  priceSource?: 'CHECKLISTS' | 'UNPRICED'
   imageUrl?: string | null
   fallbackImageUrl?: string | null
   isActive: boolean

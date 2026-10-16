@@ -8,7 +8,7 @@ export type AdminService = {
   basePrice: number
   /** Sum of the default checklists (or the legacy price while none is priced). */
   defaultPrice?: number
-  priceSource?: 'CHECKLISTS' | 'LEGACY_BASE_PRICE'
+  priceSource?: 'CHECKLISTS' | 'UNPRICED'
   imageUrl?: string | null
   isActive: boolean
   createdAt: string | null

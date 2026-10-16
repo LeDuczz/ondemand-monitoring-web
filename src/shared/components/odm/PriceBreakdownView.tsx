@@ -8,9 +8,10 @@ import './priceBreakdown.css'
 
 const messages = defineMessages({
   vi: {
-    packageFee: 'Giá gói cũ của danh mục (chưa có checklist nào có giá)',
-    fromChecklists:
-      'Giá mặc định của dịch vụ chỉ gồm giá các checklist; không cộng thêm giá gói cũ.',
+    unpriced:
+      'Dịch vụ này chưa có checklist mặc định nào có giá. Hãy cấu hình giá checklist để dịch vụ có giá.',
+    addOns: 'Dịch vụ bổ sung',
+    fromChecklists: 'Giá dịch vụ là tổng giá các checklist.',
     checklists: 'Checklist',
     total: 'Tổng (chưa gồm các yếu tố theo đơn như quãng đường, diện tích)',
     policy: 'Chính sách giá',
@@ -36,9 +37,10 @@ const messages = defineMessages({
       'Các yêu cầu đang chờ Manager báo giá chưa được tính vào tổng này.',
   },
   en: {
-    packageFee: 'Legacy catalog price (no checklist is priced yet)',
-    fromChecklists:
-      'The default service price is only the sum of its checklists; no legacy package price is added.',
+    unpriced:
+      'This service has no priced default checklist yet. Price its checklists to give the service a price.',
+    addOns: 'Add-ons',
+    fromChecklists: 'The service price is the sum of its checklists.',
     checklists: 'Checklists',
     total: 'Total (excludes order-specific factors such as distance and area)',
     policy: 'Pricing policy',
@@ -125,10 +127,8 @@ export function ChecklistBreakdown({ row }: { row: ChecklistPriceBreakdown }) {
 /** Read-only price breakdown shared by the Admin service page and the customer quote. */
 export function PriceBreakdownView({
   preview,
-  showPackageFee = true,
 }: {
   preview: ServicePricePreview
-  showPackageFee?: boolean
 }) {
   const { t } = useI18n(messages)
   return (
@@ -155,11 +155,10 @@ export function PriceBreakdownView({
       {preview.priceSource === 'CHECKLISTS' && (
         <p className="price-bd-hint">{t.fromChecklists}</p>
       )}
-      {showPackageFee && preview.priceSource === 'LEGACY_BASE_PRICE' && (
-        <div className="price-bd-row">
-          <span>{t.packageFee}</span>
-          <strong>{formatVnd(preview.packageFee)}</strong>
-        </div>
+      {preview.priceSource === 'UNPRICED' && (
+        <p role="status" className="price-bd-warning">
+          {t.unpriced}
+        </p>
       )}
       {preview.checklists.length === 0 ? (
         <p className="price-bd-empty">{t.none}</p>
@@ -175,6 +174,14 @@ export function PriceBreakdownView({
         <span>{t.checklists}</span>
         <strong>{formatVnd(preview.checklistSubtotal)}</strong>
       </div>
+      {(preview.addOns ?? []).map((addOn) => (
+        <div className="price-bd-row" key={addOn.key}>
+          <span>
+            {t.addOns}: {addOn.description}
+          </span>
+          <strong>{formatVnd(addOn.amount)}</strong>
+        </div>
+      ))}
       <div className="price-bd-row price-bd-total">
         <span>{t.total}</span>
         <strong>{formatVnd(preview.total)}</strong>

@@ -151,6 +151,14 @@ export const ordersApi = {
     })
   },
 
+  /** `GET /api/orders/managed?status=` [BE]: every order, newest first. */
+  getManaged(status?: string, signal?: AbortSignal): Promise<OrderCreateResponse[]> {
+    return apiRequest<OrderCreateResponse[]>('/api/orders/managed', {
+      query: status ? { status } : undefined,
+      signal,
+    })
+  },
+
   /** `GET /api/orders/approved` [BE]. */
   getApproved(signal?: AbortSignal): Promise<OrderCreateResponse[]> {
     return apiRequest<OrderCreateResponse[]>('/api/orders/approved', {

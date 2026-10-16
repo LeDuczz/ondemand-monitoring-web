@@ -966,3 +966,186 @@
 .odm-workspace-rank.is-finished { color: var(--or-green, #178a4c); }
 .odm-workspace-rank.is-active { color: var(--or-primary-fg, #0b3fa8); }
 .odm-workspace-rank.is-blocked { color: var(--or-red, #d92d20); }
+
+
+/* Order planning page polish */
+.odm-plan-heading :is(h1, h2) {
+  letter-spacing: normal;
+  font-weight: 700;
+}
+.odm-planning-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 0;
+  border: 0;
+}
+.odm-planning-metrics > div {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  background: var(--sf);
+}
+.odm-planning-metrics dt {
+  order: 2;
+  font-size: 12.5px;
+}
+.odm-planning-metrics dd {
+  order: 1;
+  font-size: 24px;
+  line-height: 1.1;
+}
+.odm-planning-payment-gate {
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+.odm-planning-payment-gate .odm-gate-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.odm-planning-payment-gate .odm-gate-head strong {
+  font-size: 15px;
+}
+.odm-planning-payment-gate p,
+.odm-planning-payment-gate span {
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.odm-planning-payment-gate .odm-btn {
+  margin-top: 0;
+}
+.odm-gate-deposit {
+  display: grid;
+  gap: 6px;
+}
+.odm-gate-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(128, 81, 0, 0.15);
+  overflow: hidden;
+}
+.odm-gate-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #d97706;
+}
+.odm-plan-empty {
+  padding: 16px 18px;
+  text-align: left;
+}
+.odm-plan-empty h3 {
+  font-size: 15px;
+}
+.odm-plan-empty p {
+  font-size: 13.5px;
+}
+
+
+/* Planning workspace polish: compact Mission cards, calmer detail panel */
+.odm-workspace-choice {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+.odm-workspace-choice .odm-workspace-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.odm-workspace-choice .odm-workspace-readiness > span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.odm-workspace-choice .odm-workspace-readiness .is-ready {
+  background: #e8f6ee;
+  color: #166534;
+}
+.odm-workspace-choice .odm-workspace-readiness .is-missing {
+  background: #fff4dc;
+  color: #92560a;
+}
+.odm-workspace-choice-action {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--bd);
+  font-weight: 600;
+}
+.odm-planning-bulk {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.odm-planning-bulk .odm-btn {
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+.odm-planning-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  background: var(--sf);
+  cursor: pointer;
+}
+.odm-planning-item:hover {
+  border-color: #9bb8f0;
+}
+.odm-planning-item > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.odm-planning-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: var(--tx2);
+  font-size: 11.5px;
+}
+.odm-planning-tag.is-customer {
+  background: #fff4dc;
+  color: #92560a;
+}
+.odm-planning-editor summary {
+  font-weight: 700;
+  padding: 10px 0;
+}
+.odm-mission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bd);
+}
+.odm-mission-actions .odm-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.odm-planning-actions {
+  align-items: center;
+}
+.odm-planning-next-hint {
+  margin-left: auto;
+  color: #92560a;
+  font-size: 13px;
+}

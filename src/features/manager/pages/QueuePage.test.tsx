@@ -162,4 +162,30 @@ describe('QueuePage', () => {
     expect(screen.getByText('Order review queue')).toBeInTheDocument()
     expect(screen.getByText('2 pending review · 0 ready for planning')).toBeInTheDocument()
   })
+
+  it('keeps every order reachable under "Tất cả đơn hàng" with a status filter', async () => {
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
+    vi.mocked(planningApi.getOrderMissions).mockImplementation(async (id: string) =>
+      id === 'o-running' ? ([{ status: 'RESOURCE_ASSIGNING' }] as MissionResponse[]) : [],
+    )
+    vi.spyOn(ordersApi, 'getManaged').mockResolvedValue([
+      { ...rows[0], id: 'o-running', orderCode: 'ORD-RUN', orderStatus: 'APPROVED' },
+      { ...rows[0], id: 'o-approved', orderCode: 'ORD-A', orderStatus: 'APPROVED' },
+      { ...rows[0], id: 'o-done', orderCode: 'ORD-DONE', orderStatus: 'COMPLETED' },
+    ])
+    render(<QueuePage />)
+    await waitFor(() => screen.getByText('ORD-A'))
+    expect(screen.getByText('ORD-DONE')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đang thực hiện' }))
+    expect(screen.getByText('ORD-RUN')).toBeInTheDocument()
+    expect(screen.queryByText('ORD-A')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Hoàn tất' }))
+    expect(screen.queryByText('ORD-RUN')).toBeNull()
+    expect(screen.getByText('ORD-DONE')).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Xem' })[0]).toHaveAttribute(
+      'href',
+      '#portal/manager/orders/o-done',
+    )
+  })
 })

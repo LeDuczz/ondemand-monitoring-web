@@ -326,4 +326,7 @@ export type OrderChecklistSnapshot = {
   /** Optional for historical pre-policy snapshots. */
   minimumEvidenceCount?: number
   requiredEvidenceType?: RequiredEvidenceType
+  /** Evidence policy V3: independent minimums when the type is IMAGE_AND_VIDEO. */
+  minimumImageCount?: number
+  minimumVideoCount?: number
 }

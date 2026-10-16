@@ -123,7 +123,7 @@ describe('ManagerPricingPanel', () => {
       expect(financeApi.getPricingReview).toHaveBeenCalledTimes(2),
     )
     expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('30001')
-    expect(screen.getByText(/\+1/)).toBeInTheDocument()
+    expect(screen.getAllByText(/\+1/).length).toBeGreaterThan(0)
   })
 
   it('initializes prices from the newly selected order', async () => {
@@ -284,7 +284,7 @@ describe('ManagerPricingPanel', () => {
     })
 
     render(<ManagerPricingPanel orderId="order-1" />)
-    await screen.findByText('Extra requirement')
+    await screen.findAllByText('Extra requirement')
     expect(screen.getByRole('button', { name: 'Duyệt báo giá' })).toBeEnabled()
     expect(screen.queryByLabelText('Giá gói (VND)')).not.toBeInTheDocument()
     expect(

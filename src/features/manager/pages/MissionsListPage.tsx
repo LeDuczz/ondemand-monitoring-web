@@ -12,7 +12,6 @@ import { missionsApi } from '../api/missionsApi'
 import { assignmentReadiness } from '../lib/assignmentReadiness'
 import { deliveryApi } from '../../delivery/api'
 import type { DeliveryStatus as WorkflowDeliveryStatus } from '../../delivery/types'
-import { ordersApi } from '../api/ordersApi'
 import { formatOrderCode } from '../components/orderReview/format'
 import {
   STAFF_RESPONSE_LABELS,
@@ -329,19 +328,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
       }),
     [statusFilter],
   )
-  const approvedOrdersQuery = useApiQuery(
-    (signal) => ordersApi.getApproved(signal),
-    [],
-  )
-
   const missions = useMemo(() => query.data?.items ?? [], [query.data?.items])
-  const approvedOrders = useMemo(
-    () => approvedOrdersQuery.data ?? [],
-    [approvedOrdersQuery.data],
-  )
-  const setupOrders = approvedOrders
-  const showApprovedOrders =
-    statusFilter === 'ALL' || statusFilter === 'CREATED'
   const selected =
     missions.find((mission) => mission.id === selectedMission) ?? null
   const [orderDeliveryStatuses, setOrderDeliveryStatuses] = useState<
@@ -464,22 +451,6 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
           </button>
         ))}
       </div>
-
-      {showApprovedOrders && setupOrders.length > 0 && (
-        <section className="odm-card" aria-label={t.approvedOrders.title}>
-          <h2>{t.approvedOrders.title}</h2>
-          {setupOrders.map((order) => (
-            <a
-              key={order.id}
-              className="odm-btn"
-              href={managerHref({ screen: 'orderReview', orderId: order.id })}
-            >
-              {formatOrderCode(order.orderCode ?? order.id)} ·{' '}
-              {t.approvedOrders.action}
-            </a>
-          ))}
-        </section>
-      )}
 
       <div
         className={`odm-or-list-layout${selectedMission ? ' has-panel' : ''}`}

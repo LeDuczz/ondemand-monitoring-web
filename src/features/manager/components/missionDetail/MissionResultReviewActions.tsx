@@ -36,7 +36,7 @@ export function MissionResultReviewActions({
     setError(null)
     try {
       if (reject) await missionsApi.rejectMissionResult(resultId, note)
-      else await missionsApi.approveMissionResult(resultId)
+      else await missionsApi.approveMissionResult(resultId, note)
       setNote('')
       onReviewed()
     } catch (cause) {
@@ -64,8 +64,10 @@ export function MissionResultReviewActions({
         <>
           <div className="odm-result-review-note">
             <div className="odm-result-review-note-label">
-              <label htmlFor={noteId}>Lý do từ chối</label>
-              <span>Không bắt buộc</span>
+              <label htmlFor={noteId}>Ghi chú / lý do</label>
+              <span>
+                Cần khi từ chối, hoặc khi duyệt dù thiếu ảnh/video so với đơn
+              </span>
             </div>
             <textarea
               id={noteId}
@@ -73,7 +75,7 @@ export function MissionResultReviewActions({
               onChange={(event) => setNote(event.target.value)}
               disabled={busy}
               rows={3}
-              placeholder="Nhập lý do nếu cần từ chối kết quả…"
+              placeholder="Nhập lý do (ít nhất 10 ký tự) nếu từ chối hoặc duyệt khi còn thiếu media…"
             />
           </div>
           {!ready && !disabledReasonId && (

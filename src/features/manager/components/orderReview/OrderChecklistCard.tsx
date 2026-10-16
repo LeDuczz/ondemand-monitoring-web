@@ -38,14 +38,19 @@ export function OrderChecklistCard({
                 {(item.minimumEvidenceCount !== undefined ||
                   item.requiredEvidenceType !== undefined) && (
                   <span className="odm-or-checklist-evidence">
-                    {t.evidenceRequirement(
-                      item.minimumEvidenceCount ?? 1,
-                      item.requiredEvidenceType === 'IMAGE'
-                        ? t.image
-                        : item.requiredEvidenceType === 'VIDEO'
-                          ? t.video
-                          : t.imageOrVideo,
-                    )}
+                    {item.requiredEvidenceType === 'IMAGE_AND_VIDEO'
+                      ? t.imageAndVideoRequirement(
+                          item.minimumImageCount ?? 0,
+                          item.minimumVideoCount ?? 0,
+                        )
+                      : t.evidenceRequirement(
+                          item.minimumEvidenceCount ?? 1,
+                          item.requiredEvidenceType === 'IMAGE'
+                            ? t.image
+                            : item.requiredEvidenceType === 'VIDEO'
+                              ? t.video
+                              : t.imageOrVideo,
+                        )}
                   </span>
                 )}
               </li>

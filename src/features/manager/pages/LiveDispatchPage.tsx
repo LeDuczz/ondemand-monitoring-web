@@ -1403,6 +1403,9 @@ function LiveDispatchContent({
   const missingRoles = roleSummary.filter(
     (item) => item.names.length === 0,
   ).length
+  const missingRoleNames = roleSummary
+    .filter((item) => item.names.length === 0)
+    .map((item) => t.roles[item.role])
   const stepHint: Record<DispatchStep, string> = {
     order: t.orderFooterHint,
     mission: t.missionFooterHint,
@@ -1686,6 +1689,12 @@ function LiveDispatchContent({
                 className="odm-or-card-body"
                 style={{ display: 'grid', gap: 14 }}
               >
+                {current && (
+                  <p className="odm-assign-mission">
+                    <strong>{current.missionCode}</strong>
+                    <span>{scheduleText}</span>
+                  </p>
+                )}
                 <p className="odm-or-muted" style={{ margin: 0 }}>
                   {t.roleHelp} {t.staffAvailabilityHint}
                 </p>
@@ -1710,6 +1719,30 @@ function LiveDispatchContent({
                         <span className="odm-or-muted" style={{ fontSize: 12 }}>
                           {t.roleDescriptions[role]}
                         </span>
+                        {selected.length > 0 &&
+                          missionRoles.some(
+                            (other) => (staffByRole[other] ?? []).length === 0,
+                          ) && (
+                            <button
+                              type="button"
+                              className="odm-or-link-btn odm-or-bulk-assign"
+                              onClick={() => {
+                                setStaffByRole(
+                                  Object.fromEntries(
+                                    missionRoles.map((other) => [
+                                      other,
+                                      (staffByRole[other] ?? []).length > 0
+                                        ? staffByRole[other]
+                                        : [selected[0]],
+                                    ]),
+                                  ) as typeof staffByRole,
+                                )
+                                setError(null)
+                              }}
+                            >
+                              Dùng người này cho các vai trò còn trống
+                            </button>
+                          )}
                         <StaffCombobox
                           role={role}
                           staff={operators.data ?? []}
@@ -1974,6 +2007,11 @@ function LiveDispatchContent({
                 <OrderIcon name="info" size={18} />
               </span>
               <span>{stepHint[activeStep]}</span>
+              {activeStep === 'staff' && missingRoleNames.length > 0 && (
+                <strong className="odm-or-actionbar-missing">
+                  Còn thiếu: {missingRoleNames.join(', ')}
+                </strong>
+              )}
             </div>
             <div className="odm-or-actionbar-actions">
               <button
@@ -1987,7 +2025,12 @@ function LiveDispatchContent({
               {activeStep !== 'confirm' ? (
                 <button
                   type="button"
-                  className="odm-or-btn odm-or-btn-blue"
+                  className={`odm-or-btn odm-or-btn-blue${
+                    (activeStep === 'staff' && missingRoles > 0) ||
+                    (activeStep === 'device' && selectedDrones.length === 0)
+                      ? ' is-blocked'
+                      : ''
+                  }`}
                   onClick={goNext}
                 >
                   {t.next}

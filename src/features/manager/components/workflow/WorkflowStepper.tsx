@@ -52,9 +52,12 @@ function StateIcon({ state, number }: { state: StageState; number: number }) {
 export function WorkflowStepper({
   order,
   mission,
+  compactOrder = false,
 }: {
   order: WorkflowOrderLayer
   mission?: WorkflowMissionLayer
+  /** When the Order phase is complete, show it as one slim line instead of five finished steps. */
+  compactOrder?: boolean
 }) {
   const { t } = useI18n(workflowStepperMessages)
   const { progress } = order
@@ -75,9 +78,14 @@ export function WorkflowStepper({
         ? 'is-done'
         : 'is-current'
 
+  const collapseOrder =
+    compactOrder && progress.current === 'complete' && !progress.terminal
   return (
     <nav className="odm-or-card odm-wf" aria-label={t.ariaLabel}>
-      <section className="odm-wf-layer" aria-label={t.orderLayer}>
+      <section
+        className={`odm-wf-layer${collapseOrder ? ' is-collapsed' : ''}`}
+        aria-label={t.orderLayer}
+      >
         <header className="odm-wf-head">
           <span className="odm-wf-eyebrow">{t.orderLayer}</span>
           {order.statusLabel || orderNote ? (
@@ -87,7 +95,7 @@ export function WorkflowStepper({
             </span>
           ) : null}
         </header>
-        <ol className="odm-wf-steps">
+        <ol className="odm-wf-steps" hidden={collapseOrder}>
           {ORDER_STAGES.map((stage, index) => {
             const state = orderStageState(stage, progress)
             const copy = t.orderStages[stage]

@@ -73,7 +73,9 @@ export function MissionChecklistAssignmentEditor({
     >
       <summary>
         Checklist ·{' '}
-        {query.data?.assignments.filter((a) => a.active).length ?? '…'} mục
+        {editable
+          ? `${selected.length}/${items.length} mục được chọn`
+          : `${query.data?.assignments.filter((a) => a.active).length ?? '…'} mục`}
       </summary>
       {query.loading && <p role="status">Đang tải phân công…</p>}
       {query.error ? (
@@ -109,6 +111,32 @@ export function MissionChecklistAssignmentEditor({
       )}
       {editable && (
         <>
+          {items.length > 1 && (
+            <div className="odm-planning-bulk">
+              <button
+                type="button"
+                className="odm-btn"
+                disabled={busy || query.loading || selected.length === items.length}
+                onClick={() => {
+                  setDirty(true)
+                  setSelected(items.map((item) => item.id))
+                }}
+              >
+                Chọn tất cả
+              </button>
+              <button
+                type="button"
+                className="odm-btn"
+                disabled={busy || query.loading || selected.length === 0}
+                onClick={() => {
+                  setDirty(true)
+                  setSelected([])
+                }}
+              >
+                Bỏ chọn
+              </button>
+            </div>
+          )}
           <fieldset
             disabled={
               !editable || busy || query.loading || Boolean(query.error)
@@ -133,7 +161,13 @@ export function MissionChecklistAssignmentEditor({
                   />
                   <span>
                     {item.content}
-                    <small>
+                    <small
+                      className={
+                        item.sourceType === 'SERVICE_TEMPLATE'
+                          ? 'odm-planning-tag'
+                          : 'odm-planning-tag is-customer'
+                      }
+                    >
                       {item.sourceType === 'SERVICE_TEMPLATE'
                         ? 'Mẫu dịch vụ'
                         : 'Khách hàng bổ sung'}

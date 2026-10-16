@@ -62,6 +62,12 @@ export const financeApi = {
     apiRequest<Invoice>(`/api/orders/${encodeURIComponent(orderId)}/invoice`, {
       signal,
     }),
+  /** Re-checks the order's pending VNPAY payments with VNPAY itself and returns the current invoice. */
+  refreshOrderPayments: (orderId: string) =>
+    apiRequest<Invoice>(
+      `/api/manager/orders/${encodeURIComponent(orderId)}/payments/refresh`,
+      { method: 'POST' },
+    ),
   getManagerInvoice: (orderId: string, signal?: AbortSignal) =>
     apiRequest<Invoice>(
       `/api/manager/orders/${encodeURIComponent(orderId)}/invoice`,

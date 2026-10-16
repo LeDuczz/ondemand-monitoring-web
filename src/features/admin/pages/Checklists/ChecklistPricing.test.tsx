@@ -290,7 +290,7 @@ describe('Service default checklists and price', () => {
         basePriceOverride: null,
         includedImageCountOverride: 20,
         includedVideoCountOverride: null,
-        pricingProfileOverride: null,
+        pricingProfileOverride: 'STANDARD',
         required: true,
         expectedVersion: 4,
       }),

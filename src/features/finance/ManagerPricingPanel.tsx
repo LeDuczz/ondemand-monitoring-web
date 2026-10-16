@@ -164,8 +164,24 @@ export function ManagerPricingPanel({
     }
   }
 
+  /** The backend wants a meaningful reason (at least 10 characters) whenever the total differs from the system price. */
+  function reasonProblem() {
+    const adjusted = checklistAdjustment !== 0 || amount(draft.adjustmentAmount) !== 0
+    const length = draft.adjustmentReason.trim().length
+    if (!adjusted || length >= MIN_REASON_LENGTH) return null
+    return length === 0
+      ? 'Vui lòng nhập lý do điều chỉnh giá.'
+      : `Lý do điều chỉnh cần ít nhất ${MIN_REASON_LENGTH} ký tự (hiện có ${length}).`
+  }
+
   async function saveDraft() {
     if (!query.data) return null
+    const problem = reasonProblem()
+    if (problem) {
+      setMessage(null)
+      setError(problem)
+      return null
+    }
     setBusy(true)
     setError(null)
     setMessage(null)
@@ -199,6 +215,12 @@ export function ManagerPricingPanel({
 
   async function approve() {
     if (!query.data) return
+    const problem = reasonProblem()
+    if (problem) {
+      setMessage(null)
+      setError(problem)
+      return
+    }
     if (pendingCustomCount > 0) {
       setMessage(null)
       setError(
@@ -547,30 +569,35 @@ export function ManagerPricingPanel({
           className="odm-or-card finance-quote"
           aria-label="Tóm tắt báo giá"
         >
-          <header className="finance-heading">
+          <header className="finance-heading finance-quote-heading">
             <h2>Tóm tắt báo giá</h2>
+            <span className="finance-policy-pill">
+              Chính sách giá v
+              {query.data.systemCalculation?.policyVersion ??
+                query.data.currentQuote?.pricingPolicyVersion ??
+                '—'}
+            </span>
           </header>
           <div className="finance-quote-body">
             <div className="finance-quote-content">
-              <div className="finance-system-breakdown">
-                <strong>
-                  GIÁ HỆ THỐNG · Chính sách phiên bản
-                  {query.data.systemCalculation?.policyVersion ??
-                    query.data.currentQuote?.pricingPolicyVersion ??
-                    '—'}
-                </strong>
-                {(query.data.systemCalculation?.items ?? []).map(
-                  (item, index) => (
-                    <div key={`${item.category}-${index}`}>
-                      <span>{pricingDescription(item.description)}</span>
-                      <b>{formatVnd(item.amount)}</b>
-                    </div>
-                  ),
-                )}
-              </div>
+              <QuoteBreakdown
+                items={query.data.systemCalculation?.items ?? []}
+                checklistItems={query.data.checklistItems}
+              />
               <dl className="finance-summary">
                 <Row label="Giá hệ thống" value={systemPrice} />
-                <Row label="Điều chỉnh" value={checklistAdjustment} />
+                <Row
+                  label="Điều chỉnh"
+                  value={checklistAdjustment}
+                  signed
+                  tone={
+                    checklistAdjustment > 0
+                      ? 'up'
+                      : checklistAdjustment < 0
+                        ? 'down'
+                        : undefined
+                  }
+                />
                 <Row label="Tổng báo giá" value={total} total />
               </dl>
               {!reviewComplete && (
@@ -578,23 +605,33 @@ export function ManagerPricingPanel({
                   Còn {pendingReviewCount} nội dung cần xem xét trước khi duyệt.
                 </p>
               )}
-              <label className="finance-quote-note">
-                <span>
-                  Lý do điều chỉnh giá checklist (bắt buộc khi khác giá hệ
-                  thống)
-                </span>
-                <textarea
-                  rows={3}
-                  value={draft.adjustmentReason}
-                  disabled={accepted}
-                  onChange={(event) =>
-                    setDraft((state) => ({
-                      ...state,
-                      adjustmentReason: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+              {checklistAdjustment !== 0 || draft.adjustmentReason ? (
+                <label className="finance-quote-note">
+                  <span>
+                    Lý do điều chỉnh giá{' '}
+                    <em>(bắt buộc, ít nhất {MIN_REASON_LENGTH} ký tự)</em>
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={draft.adjustmentReason}
+                    disabled={accepted}
+                    aria-invalid={
+                      checklistAdjustment !== 0 &&
+                      draft.adjustmentReason.trim().length < MIN_REASON_LENGTH
+                    }
+                    onChange={(event) =>
+                      setDraft((state) => ({
+                        ...state,
+                        adjustmentReason: event.target.value,
+                      }))
+                    }
+                  />
+                  <small>
+                    {draft.adjustmentReason.trim().length}/{MIN_REASON_LENGTH}{' '}
+                    ký tự tối thiểu
+                  </small>
+                </label>
+              ) : null}
               <label className="finance-quote-note">
                 <span>Ghi chú báo giá (tùy chọn)</span>
                 <textarea
@@ -629,14 +666,6 @@ export function ManagerPricingPanel({
               {!accepted ? (
                 <div className="finance-actions">
                   <button
-                    className="odm-btn"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void saveDraft()}
-                  >
-                    Lưu nháp
-                  </button>
-                  <button
                     id="manager-approve-quote"
                     className="odm-btn odm-btn-p"
                     type="button"
@@ -654,6 +683,14 @@ export function ManagerPricingPanel({
                     onClick={() => void approve()}
                   >
                     {approved ? 'Đã duyệt thành công' : 'Duyệt báo giá'}
+                  </button>
+                  <button
+                    className="odm-btn"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void saveDraft()}
+                  >
+                    Lưu nháp
                   </button>
                 </div>
               ) : null}
@@ -693,15 +730,22 @@ function Row({
   label,
   value,
   total = false,
+  signed = false,
+  tone,
 }: {
   label: string
   value: number
   total?: boolean
+  signed?: boolean
+  tone?: 'up' | 'down'
 }) {
   return (
     <div className={total ? 'is-total' : ''}>
       <dt>{label}</dt>
-      <dd>{formatVnd(value)}</dd>
+      <dd className={tone ? `is-${tone}` : undefined}>
+        {signed && value > 0 ? '+' : ''}
+        {formatVnd(value)}
+      </dd>
     </div>
   )
 }
@@ -768,6 +812,8 @@ function isManagerPriced(item: PricingChecklistItem) {
     (item.managerQuoteRequired || item.reviewStatus === 'ADDITIONAL')
   )
 }
+const MIN_REASON_LENGTH = 10
+
 function digits(value: string) {
   return value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '') || '0'
 }
@@ -779,7 +825,7 @@ function errorMessage(error: unknown) {
         'Danh sách yêu cầu chưa được xem xét đầy đủ. Hãy phân loại tất cả nội dung trước khi duyệt báo giá.',
       STALE_PRICING_REVISION:
         'Báo giá đã được cập nhật ở nơi khác. Vui lòng tải lại dữ liệu.',
-      PRICING_ADJUSTMENT_REASON_REQUIRED: 'Vui lòng nhập lý do điều chỉnh giá.',
+      PRICING_ADJUSTMENT_REASON_REQUIRED: `Lý do điều chỉnh giá cần ít nhất ${MIN_REASON_LENGTH} ký tự.`,
       PRICING_SELF_APPROVAL_NOT_ALLOWED:
         'Người đề xuất không thể tự phê duyệt điều chỉnh giá.',
       PRICING_OVERRIDE_EXCEEDS_LIMIT:
@@ -800,4 +846,80 @@ function errorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
     : 'Không thể xử lý yêu cầu. Vui lòng thử lại.'
+}
+
+/** System price lines grouped per checklist (with a subtotal each), then the order-level lines. */
+function QuoteBreakdown({
+  items,
+  checklistItems,
+}: {
+  items: Array<{
+    category: string
+    description: string
+    amount: number
+    orderChecklistItemId?: string | null
+  }>
+  checklistItems: PricingChecklistItem[]
+}) {
+  const groups = new Map<string, typeof items>()
+  const orderLevel: typeof items = []
+  for (const item of items) {
+    const id = item.orderChecklistItemId
+    if (!id) {
+      orderLevel.push(item)
+      continue
+    }
+    groups.set(id, [...(groups.get(id) ?? []), item])
+  }
+  if (items.length === 0) return null
+  return (
+    <div className="finance-breakdown" aria-label="Chi tiết giá hệ thống">
+      {[...groups.entries()].map(([id, lines]) => {
+        const name =
+          checklistItems.find((entry) => entry.id === id)?.content ?? 'Nội dung'
+        const subtotal = lines.reduce((sum, line) => sum + line.amount, 0)
+        return (
+          <section key={id} className="finance-breakdown-group">
+            <header>
+              <strong title={name}>{name}</strong>
+              <b>{formatVnd(subtotal)}</b>
+            </header>
+            <ul>
+              {lines.map((line, index) => (
+                <li key={`${line.category}-${index}`}>
+                  <span>{lineLabel(line.description, name)}</span>
+                  <span>{formatVnd(line.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+      {orderLevel.length > 0 && (
+        <section className="finance-breakdown-group">
+          <header>
+            <strong>Theo đơn hàng</strong>
+            <b>
+              {formatVnd(orderLevel.reduce((sum, line) => sum + line.amount, 0))}
+            </b>
+          </header>
+          <ul>
+            {orderLevel.map((line, index) => (
+              <li key={`${line.category}-${index}`}>
+                <span>{pricingDescription(line.description)}</span>
+                <span>{formatVnd(line.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  )
+}
+
+/** Engine descriptions are "<checklist> · <line>"; inside a group the checklist name is already the heading. */
+function lineLabel(description: string, checklistName: string) {
+  const text = pricingDescription(description)
+  const prefix = `${checklistName.length <= 80 ? checklistName : checklistName.slice(0, 77) + '...'} · `
+  return text.startsWith(prefix) ? text.slice(prefix.length) : text
 }

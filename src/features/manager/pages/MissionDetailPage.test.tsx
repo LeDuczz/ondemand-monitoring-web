@@ -172,6 +172,8 @@ describe('Manager Mission Detail monitoring review', () => {
   it('uses the satellite mission map on result review', async () => {
     render(<MissionDetailPage missionId="m" />)
 
+    // A finished Mission is reviewed from its media first; the map is a collapsed reference.
+    fireEvent.click(await screen.findByText('Bản đồ & đường bay'))
     expect(
       await screen.findByRole('application', {
         name: 'Bản đồ vệ tinh mission',

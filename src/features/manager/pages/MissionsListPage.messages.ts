@@ -16,15 +16,6 @@ export const missionsListPageMessages = defineMessages({
     continueSetup: 'Tiếp tục thiết lập',
     view: 'Xem',
     viewDetail: 'Xem chi tiết & kết quả',
-    approvedOrders: {
-      title: 'Đơn đã duyệt — kế hoạch Mission',
-      count: (n: number) => `${n} đơn cần thiết lập`,
-      description:
-        'Xem toàn bộ Mission và quản lý kế hoạch thực hiện của từng Order.',
-      action: 'Mở kế hoạch Order',
-      empty: 'Không còn đơn đã duyệt nào cần tạo nhiệm vụ.',
-      status: 'Đã duyệt',
-    },
     fields: {
       order: 'Đơn hàng:',
       service: 'Dịch vụ:',
@@ -85,15 +76,6 @@ export const missionsListPageMessages = defineMessages({
     continueSetup: 'Continue setup →',
     view: 'View',
     viewDetail: 'View details & results',
-    approvedOrders: {
-      title: 'Approved orders — Mission planning',
-      count: (n: number) => `${n} orders need setup`,
-      description:
-        'View all Missions and manage each Order execution plan.',
-      action: 'Open Order planning →',
-      empty: 'No approved orders need a new mission.',
-      status: 'Approved',
-    },
     fields: {
       order: 'Order:',
       service: 'Service:',

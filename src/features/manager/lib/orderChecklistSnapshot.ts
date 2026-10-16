@@ -38,11 +38,12 @@ export function readOrderChecklistSnapshot(
       (entry.minimumEvidenceCount !== undefined &&
         (!Number.isSafeInteger(entry.minimumEvidenceCount) ||
           (entry.minimumEvidenceCount as number) < 0 ||
-          (entry.minimumEvidenceCount as number) > 50)) ||
+          (entry.minimumEvidenceCount as number) >
+            (entry.requiredEvidenceType === 'IMAGE_AND_VIDEO' ? 1000 : 50))) ||
       (entry.requiredEvidenceType !== undefined &&
-        !(['IMAGE', 'VIDEO', 'IMAGE_OR_VIDEO'] as const).includes(
-          entry.requiredEvidenceType as RequiredEvidenceType,
-        )) ||
+        !(
+          ['IMAGE', 'VIDEO', 'IMAGE_AND_VIDEO', 'IMAGE_OR_VIDEO'] as const
+        ).includes(entry.requiredEvidenceType as RequiredEvidenceType)) ||
       (entry.displayOrder as number) < 0
     )
       return fail()
@@ -69,6 +70,12 @@ export function readOrderChecklistSnapshot(
       ...(entry.minimumEvidenceCount === undefined
         ? {}
         : { minimumEvidenceCount: entry.minimumEvidenceCount as number }),
+      ...(Number.isSafeInteger(entry.minimumImageCount)
+        ? { minimumImageCount: entry.minimumImageCount as number }
+        : {}),
+      ...(Number.isSafeInteger(entry.minimumVideoCount)
+        ? { minimumVideoCount: entry.minimumVideoCount as number }
+        : {}),
       ...(entry.requiredEvidenceType === undefined
         ? {}
         : {

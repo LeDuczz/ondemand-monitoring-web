@@ -60,6 +60,35 @@ export function parseOverrides(
   }
 }
 
+/**
+ * Numbers equal to what the checklist already provides are saved as "inherit" so later checklist edits still flow through.
+ * The pricing profile is not chosen here: it is always sent explicitly (the existing override, else the checklist's
+ * profile, else DEFAULT).
+ */
+function inheritWhenUnchanged(
+  value: ServiceChecklistPricingInput,
+  row: ServiceChecklist,
+): ServiceChecklistPricingInput {
+  return {
+    ...value,
+    basePriceOverride:
+      value.basePriceOverride === row.checklistBasePrice
+        ? null
+        : value.basePriceOverride,
+    includedImageCountOverride:
+      value.includedImageCountOverride === row.checklistIncludedImageCount
+        ? null
+        : value.includedImageCountOverride,
+    includedVideoCountOverride:
+      value.includedVideoCountOverride === row.checklistIncludedVideoCount
+        ? null
+        : value.includedVideoCountOverride,
+  }
+}
+
+const inheritedProfile = (row: ServiceChecklist) =>
+  (row.checklistPricingProfile ?? 'DEFAULT').toUpperCase()
+
 export function ServiceChecklistPricingModal({
   serviceId,
   rows,
@@ -75,10 +104,19 @@ export function ServiceChecklistPricingModal({
 }) {
   const { t } = useI18n(checklistMessages)
   const [form, setForm] = useState<Form>({
-    basePrice: row.basePriceOverride?.toString() ?? '',
-    images: row.includedImageCountOverride?.toString() ?? '',
-    videos: row.includedVideoCountOverride?.toString() ?? '',
-    profile: row.pricingProfileOverride ?? '',
+    // Pre-filled with the effective value so nothing has to be typed; unchanged values are saved as "inherit".
+    basePrice: (row.basePriceOverride ?? row.checklistBasePrice ?? 0).toString(),
+    images: (
+      row.includedImageCountOverride ??
+      row.checklistIncludedImageCount ??
+      0
+    ).toString(),
+    videos: (
+      row.includedVideoCountOverride ??
+      row.checklistIncludedVideoCount ??
+      0
+    ).toString(),
+    profile: row.pricingProfileOverride ?? inheritedProfile(row),
     required: row.required === true,
   })
   const [busy, setBusy] = useState(false)
@@ -92,7 +130,7 @@ export function ServiceChecklistPricingModal({
       return null
     }
     setError(null)
-    return parsed.value
+    return inheritWhenUnchanged(parsed.value, row)
   }
 
   async function check() {
@@ -224,18 +262,6 @@ export function ServiceChecklistPricingModal({
           'videos',
           row.checklistIncludedVideoCount,
         )}
-        <FormField id="svc-cl-profile" label={t.pricingProfile}>
-          <input
-            id="svc-cl-profile"
-            className="odm-inp"
-            maxLength={60}
-            placeholder={`${t.inheritedValue}: ${row.checklistPricingProfile ?? 'DEFAULT'}`}
-            value={form.profile}
-            onChange={(event) =>
-              setForm({ ...form, profile: event.target.value })
-            }
-          />
-        </FormField>
         <label className="adm-check">
           <input
             type="checkbox"

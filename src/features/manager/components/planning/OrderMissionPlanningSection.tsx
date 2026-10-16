@@ -110,6 +110,7 @@ function OrderPlanningWorkspace({
   const saving = Object.values(drafts).some((draft) => draft.busy)
   const dirty = Object.values(drafts).some((draft) => draft.dirty)
   const [message, setMessage] = useState('')
+  const [checkingPayment, setCheckingPayment] = useState(false)
   const [coverageWarning, setCoverageWarning] = useState('')
   const [reason, setReason] = useState('')
   const [amending, setAmending] = useState(false)
@@ -255,6 +256,28 @@ function OrderPlanningWorkspace({
     }
   }
 
+  /** Asks VNPAY about pending deposits (the notification may not reach this server), then reloads the plan. */
+  async function checkPayment() {
+    setMessage('')
+    if (!data?.invoice) {
+      setMessage('Khách hàng chưa chấp nhận báo giá nên chưa có khoản đặt cọc để kiểm tra.')
+      query.reload()
+      return
+    }
+    setCheckingPayment(true)
+    try {
+      await financeApi.refreshOrderPayments(orderId)
+      setMessage(
+        'Đã đối soát với VNPAY. Trạng thái đặt cọc đã được cập nhật.',
+      )
+    } catch (cause) {
+      setMessage(planningError(cause))
+    } finally {
+      setCheckingPayment(false)
+      query.reload()
+    }
+  }
+
   async function continueToResourceAssignment() {
     if (!data || !selected || !onAssignResources || !writable || busy || saving)
       return
@@ -333,22 +356,53 @@ function OrderPlanningWorkspace({
           />
           {!depositPaid && data.order.status === 'APPROVED' ? (
             <div className="odm-planning-payment-gate" role="status">
-              <strong>Đang chờ khách hàng thanh toán đặt cọc</strong>
+              <div className="odm-gate-head">
+                <strong>Đang chờ khách hàng thanh toán đặt cọc</strong>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={checkingPayment}
+                  onClick={() => void checkPayment()}
+                >
+                  {checkingPayment ? 'Đang kiểm tra…' : 'Kiểm tra thanh toán'}
+                </button>
+              </div>
               <p>
-                Báo giá đã được gửi. Tạo Mission và chốt kế hoạch sẽ được mở
-                sau khi hệ thống xác nhận khoản đặt cọc.
+                Tạo Mission và chốt kế hoạch sẽ được mở sau khi hệ thống xác
+                nhận khoản đặt cọc.
               </p>
               {data.invoice ? (
-                <span>
-                  Đã thanh toán {data.invoice.paidAmount.toLocaleString('vi-VN')} /{' '}
-                  {data.invoice.depositAmount.toLocaleString('vi-VN')} ₫ tiền đặt cọc
-                </span>
+                <div className="odm-gate-deposit">
+                  <div
+                    className="odm-gate-bar"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={data.invoice.depositAmount}
+                    aria-valuenow={data.invoice.paidAmount}
+                  >
+                    <span
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          data.invoice.depositAmount > 0
+                            ? (data.invoice.paidAmount /
+                                data.invoice.depositAmount) *
+                                100
+                            : 0,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span>
+                    Đã thanh toán {data.invoice.paidAmount.toLocaleString('vi-VN')} /{' '}
+                    {data.invoice.depositAmount.toLocaleString('vi-VN')} ₫ tiền đặt cọc
+                  </span>
+                </div>
               ) : (
-                <span>Khách hàng chưa chấp nhận báo giá hoặc chưa phát hành hóa đơn.</span>
+                <span>
+                  Khách hàng chưa chấp nhận báo giá hoặc chưa phát hành hóa đơn.
+                </span>
               )}
-              <button type="button" className="odm-btn" onClick={query.reload}>
-                Kiểm tra thanh toán
-              </button>
             </div>
           ) : null}
           {coverageWarning && (
@@ -360,7 +414,7 @@ function OrderPlanningWorkspace({
             <div className="odm-planning-complete" role="status">
               <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
               <a className="odm-btn odm-btn-p" href="#portal/manager/orders">
-                Chốt kế hoạch
+                Về danh sách đơn
               </a>
             </div>
           )}
@@ -376,6 +430,12 @@ function OrderPlanningWorkspace({
                   >
                     {creating ? 'Đang tạo Mission' : 'Tạo thêm Mission'}
                   </button>
+                  {!data.plan.coverage.coverageReady && (
+                    <span className="odm-planning-next-hint" role="note">
+                      Còn {data.plan.coverage.uncovered} checklist chưa gán cho
+                      Mission nào. Gán đủ rồi mới tiếp tục được.
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="odm-btn odm-btn-p"

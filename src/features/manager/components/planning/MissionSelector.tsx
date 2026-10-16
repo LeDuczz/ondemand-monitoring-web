@@ -95,35 +95,38 @@ export function MissionSelector({
                 mission.scheduledEndAt,
               )}
             </small>
-            <span className="odm-workspace-plan-state">
-              {historical ? 'Lịch sử · chỉ xem' : scope?.finalizedPlanRevision != null ? 'Đã chốt' : 'Đang lập kế hoạch'}
-            </span>
             <span className="odm-workspace-readiness">
-              <span className={count > 0 || noChecklist ? 'is-ready' : 'is-missing'}>
-                {count > 0 || noChecklist ? '✓' : '!'} Checklist {noChecklist ? '—' : count}
+              <span
+                className={count > 0 || noChecklist ? 'is-ready' : 'is-missing'}
+                title={
+                  count > 0 || noChecklist
+                    ? 'Đã phân công checklist'
+                    : 'Cần phân công checklist'
+                }
+              >
+                {count > 0 || noChecklist ? '✓' : '!'} Checklist{' '}
+                {noChecklist ? '—' : count}
               </span>
-              <span className={device ? 'is-ready' : 'is-missing'}>
+              <span
+                className={device ? 'is-ready' : 'is-missing'}
+                title={device ? 'Đã có thiết bị' : 'Chưa phân công thiết bị'}
+              >
                 {device ? '✓' : '!'} Thiết bị
               </span>
-              <span className={!missing.length ? 'is-ready' : 'is-missing'}>
+              <span
+                className={!missing.length ? 'is-ready' : 'is-missing'}
+                title={
+                  missing.length
+                    ? `Thiếu: ${missing.map((role) => STAFF_ROLE_LABELS[role]).join(', ')}`
+                    : 'Đủ nhân sự'
+                }
+              >
                 {!missing.length ? '✓' : '!'} Nhân sự {4 - missing.length}/4
               </span>
             </span>
-            {!historical && (
-              <small>
-                {plan.planStatus === 'DRAFT'
-                  ? count > 0 || noChecklist
-                    ? 'Đã phân công checklist'
-                    : 'Cần phân công checklist'
-                  : device && !missing.length
-                    ? 'Đủ phân công tài nguyên'
-                    : 'Cần bổ sung tài nguyên'}
-              </small>
-            )}
-            {missing.length > 0 && !historical && (
-              <small>
-                Thiếu:{' '}
-                {missing.map((role) => STAFF_ROLE_LABELS[role]).join(', ')}
+            {historical && (
+              <small className="odm-workspace-plan-state">
+                Lịch sử · chỉ xem
               </small>
             )}
             {mission.replacesMissionId && (

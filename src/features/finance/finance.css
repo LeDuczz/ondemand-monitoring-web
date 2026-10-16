@@ -1144,3 +1144,144 @@
     grid-column: auto;
   }
 }
+
+
+/* Quote summary (manager): grouped breakdown, clear totals, stacked actions */
+.finance-quote-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.finance-policy-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.finance-breakdown {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.finance-breakdown-group {
+  border: 1px solid var(--or-border, #e3e8ef);
+  border-radius: 10px;
+  background: #fafbfd;
+  overflow: hidden;
+}
+.finance-breakdown-group > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  font-size: 13px;
+}
+.finance-breakdown-group > header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.finance-breakdown-group > header b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.finance-breakdown-group ul {
+  margin: 0;
+  padding: 4px 12px 8px;
+  list-style: none;
+}
+.finance-breakdown-group li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  color: var(--or-tx2, #667085);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.finance-breakdown-group li span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.finance-summary dd.is-up {
+  color: #b45309;
+}
+.finance-summary dd.is-down {
+  color: #047857;
+}
+.finance-quote .finance-quote-note em {
+  color: var(--or-tx2, #667085);
+  font-style: normal;
+  font-weight: 400;
+}
+.finance-quote .finance-quote-note textarea[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+.finance-quote .finance-alert {
+  margin: 0 0 12px;
+}
+.finance-quote .finance-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 0;
+  margin-top: 4px;
+}
+.finance-quote .finance-actions .odm-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+
+/* Customer quote: lines grouped per checklist */
+.customer-quote-groups {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.customer-quote-group {
+  border: 1px solid var(--ui-border, #e3e8ef);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.customer-quote-group > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--ui-surface-2, #f1f5f9);
+  font-size: 13px;
+}
+.customer-quote-group > header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.customer-quote-group ul {
+  margin: 0;
+  padding: 4px 12px 8px;
+  list-style: none;
+}
+.customer-quote-group li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  color: var(--ui-text-2, #667085);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.customer-quote-group header b,
+.customer-quote-group li span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

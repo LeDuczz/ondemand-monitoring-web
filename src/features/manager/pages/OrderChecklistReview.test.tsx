@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -15,6 +16,8 @@ import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import type { OrderChecklistSnapshot } from '../types/orders'
 import { OrderReviewPage } from './OrderReviewPage'
+import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
+import { orderReviewPageMessages } from './OrderReviewPage.messages'
 
 const snapshot: OrderChecklistSnapshot[] = [
   {
@@ -23,6 +26,8 @@ const snapshot: OrderChecklistSnapshot[] = [
     sourceType: 'SERVICE_TEMPLATE',
     content: 'Check emergency exits on floors 1-3',
     displayOrder: 2,
+    minimumEvidenceCount: 3,
+    requiredEvidenceType: 'VIDEO',
   },
   {
     id: 'kept',
@@ -86,6 +91,148 @@ afterEach(() => {
 })
 
 describe('Manager historical checklist review through Order API', () => {
+  it.each(['vi', 'en'] as const)(
+    'renders mixed historical content/provenance read only in %s, without fetching the catalog',
+    async (language) => {
+      setLanguage(language)
+      render(
+        <OrderChecklistCard
+          order={backendOrder as unknown as import('../types/orders').OrderDetail}
+          t={orderReviewPageMessages[language]}
+        />,
+      )
+      const region = await screen.findByRole('region', {
+        name:
+          language === 'vi' ? 'Nội dung giám sát' : 'Monitoring requirements',
+      })
+      expect(
+        within(region)
+          .getAllByRole('listitem')
+          .map((item) => item.querySelector('p')?.textContent),
+      ).toEqual([
+        'Check PPE',
+        'Check temporary barriers',
+        'Check emergency exits on floors 1-3',
+      ])
+      expect(
+        within(region).getAllByText(
+          language === 'vi' ? 'Nội dung từ dịch vụ' : 'Service requirement',
+        ),
+      ).toHaveLength(2)
+      expect(
+        within(region).getByText(
+          language === 'vi'
+            ? 'Nội dung khách hàng bổ sung'
+            : 'Customer-added requirement',
+        ),
+      ).toBeInTheDocument()
+      expect(
+        within(region).getByText(
+          language === 'vi'
+            ? 'Bằng chứng: tối thiểu 3 · Video'
+            : 'Evidence: at least 3 · Video',
+        ),
+      ).toBeInTheDocument()
+      for (const role of ['button', 'checkbox', 'textbox'])
+        expect(within(region).queryByRole(role)).not.toBeInTheDocument()
+      expect(within(region).queryByText('C1')).not.toBeInTheDocument()
+      expect(snapshot.map((item) => item.id)).toEqual([
+        'edited',
+        'kept',
+        'custom',
+      ])
+    },
+  )
+
+  it('keeps requirement metadata optional for legacy snapshots', async () => {
+    const { readOrderChecklistSnapshot } =
+      await import('../lib/orderChecklistSnapshot')
+    const legacy = readOrderChecklistSnapshot(
+      {
+        checklistItems: [
+          {
+            id: 'legacy',
+            sourceChecklistId: 'C-LEGACY',
+            sourceType: 'SERVICE_TEMPLATE',
+            content: 'Legacy item',
+            displayOrder: 0,
+          },
+        ],
+        checklistSnapshotAt: '2025-01-01T00:00:00Z',
+      },
+      'order-history',
+    )
+    expect(legacy.checklistItems[0]).not.toHaveProperty('minimumEvidenceCount')
+    expect(legacy.checklistItems[0]).not.toHaveProperty('requiredEvidenceType')
+    const partial = readOrderChecklistSnapshot(
+      {
+        checklistItems: [
+          {
+            id: 'partial',
+            sourceChecklistId: null,
+            sourceType: 'CUSTOMER_CUSTOM',
+            content: 'Partial metadata',
+            displayOrder: 0,
+            requiredEvidenceType: 'VIDEO',
+          },
+        ],
+        checklistSnapshotAt: '2025-01-01T00:00:00Z',
+      },
+      'order-history',
+    )
+    expect(partial.checklistItems[0]).toMatchObject({
+      requiredEvidenceType: 'VIDEO',
+    })
+    expect(partial.checklistItems[0]).not.toHaveProperty('minimumEvidenceCount')
+  })
+
+  it('renders the evidence requirement as plain read-only snapshot metadata', async () => {
+    render(
+      <OrderChecklistCard
+        order={{
+          ...backendOrder,
+          checklistItems: [
+            {
+              ...snapshot[2],
+              minimumEvidenceCount: 2,
+              requiredEvidenceType: 'IMAGE',
+            },
+          ],
+        } as unknown as import('../types/orders').OrderDetail}
+        t={orderReviewPageMessages.vi}
+      />,
+    )
+    const region = await screen.findByRole('region', {
+      name: 'Nội dung giám sát',
+    })
+    expect(
+      within(region).getByText('Bằng chứng: tối thiểu 2 · Ảnh'),
+    ).toBeInTheDocument()
+    expect(within(region).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(region).queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('renders a service-only snapshot', async () => {
+    render(
+      <OrderChecklistCard
+        order={{
+          ...backendOrder,
+          checklistItems: snapshot.filter(
+            (item) => item.sourceType === 'SERVICE_TEMPLATE',
+          ),
+        } as unknown as import('../types/orders').OrderDetail}
+        t={orderReviewPageMessages.vi}
+      />,
+    )
+    const region = await screen.findByRole('region', {
+      name: 'Nội dung giám sát',
+    })
+    expect(within(region).getAllByRole('listitem')).toHaveLength(2)
+    expect(
+      within(region).queryByText('Nội dung khách hàng bổ sung'),
+    ).not.toBeInTheDocument()
+  })
+
   it('does not duplicate the checklist in the order-information step', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
@@ -207,6 +354,8 @@ describe('Manager historical checklist review through Order API', () => {
     { checklistSnapshotAt: 'invalid-date' },
     { checklistItems: [{ ...snapshot[0], displayOrder: -1 }] },
     { checklistItems: [{ ...snapshot[0], content: '' }] },
+    { checklistItems: [{ ...snapshot[0], minimumEvidenceCount: 51 }] },
+    { checklistItems: [{ ...snapshot[0], requiredEvidenceType: 'AUDIO' }] },
     { checklistItems: [{ ...snapshot[0], sourceChecklistId: null }] },
     { checklistItems: [{ ...snapshot[2], sourceChecklistId: 'fake-source' }] },
     { checklistItems: [snapshot[0], snapshot[0]] },

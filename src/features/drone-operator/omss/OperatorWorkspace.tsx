@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n'
 import type { Screen, Mission, Drone, FlightToken, NavId } from './types'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from './api/flightControlApi'
+import { startFailureJournalReplay } from '../../media/api/uploadFailureJournal'
 import type { FlightControlStatus } from './api/flightControlApi'
 import { operatorWorkspaceMessages } from './i18n/operatorWorkspace'
 
@@ -280,6 +281,19 @@ function createAssignedDrone(mission: Mission): Drone {
 }
 
 export default function OperatorWorkspace() {
+  // Replay journalled upload failures on mount and on reconnect. Bounded backoff runs only
+  // while events remain unacknowledged, so there is no permanent polling loop. Startup is
+  // deferred so the replay driver never competes with the workspace's initial data load.
+  useEffect(() => {
+    let dispose: (() => void) | undefined
+    const timer = window.setTimeout(() => {
+      dispose = startFailureJournalReplay()
+    }, 0)
+    return () => {
+      window.clearTimeout(timer)
+      dispose?.()
+    }
+  }, [])
   const { t } = useI18n(operatorWorkspaceMessages)
   const acceptInFlight = useRef(false)
   const authenticatedUser = authSession.getUser()

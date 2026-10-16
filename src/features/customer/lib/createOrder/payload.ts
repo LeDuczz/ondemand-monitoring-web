@@ -33,7 +33,11 @@ export function withAdditionalRequirementChecklist(
     ? checklistItems
     : [
         ...checklistItems,
-        { contentOverride: AI_IMAGE_ANALYSIS_REQUIREMENT },
+        {
+          contentOverride: AI_IMAGE_ANALYSIS_REQUIREMENT,
+          minimumEvidenceCount: 1,
+          requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        },
       ]
 }
 

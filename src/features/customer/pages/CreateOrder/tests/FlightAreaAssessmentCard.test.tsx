@@ -88,6 +88,24 @@ describe('FlightAreaAssessmentCard', () => {
     expect(screen.getByText(DISCLAIMER)).toBeInTheDocument()
   })
 
+  it('localizes mock-only assessment copy in English', () => {
+    act(() => setLanguage('en'))
+    render(<FlightAreaAssessmentCard state={state({ data: data({
+      assessment: {
+        level: 'NEEDS_REVIEW',
+        disclaimer: DISCLAIMER,
+        findings: [{
+          code: 'MOCK_MODE',
+          severity: 'INFO',
+          message: 'Chế độ mock: không có dữ liệu thật về địa hình, vùng hạn chế hay khu vực xung quanh.',
+        }],
+      },
+    }) })} requestedAltitudeAglM={60} />)
+
+    expect(screen.getByText(/Simulation mode/)).toBeInTheDocument()
+    expect(screen.getByText(/This is a preliminary assessment/)).toBeInTheDocument()
+  })
+
   it('lists the most severe findings first', () => {
     const findings = [
       { code: 'BUILDINGS_PRESENT', severity: 'INFO' as const, message: 'Có 34 công trình.' },

@@ -159,6 +159,35 @@ describe('Exact Mission result actions', () => {
     ).toBeNull()
     expect(screen.getByText('Chờ duyệt')).toBeInTheDocument()
   })
+  it('explains wrong evidence type and insufficient evidence from backend blockers', () => {
+    expect(
+      staffResultError(
+        new ApiError(
+          'Checklist item requires at least 3 VIDEO evidence asset(s); current eligible count is 1. Blockers: EVIDENCE_TYPE_NOT_ELIGIBLE, INSUFFICIENT_EVIDENCE',
+          {
+            code: 'CHECKLIST_NOT_READY',
+            status: 409,
+            method: 'POST',
+            path: '/result',
+          },
+        ),
+      ),
+    ).toContain('media sai loại')
+    expect(
+      staffResultError(
+        new ApiError(
+          'Blockers: INSUFFICIENT_EVIDENCE; requires 4, current eligible count is 2',
+          {
+            code: 'CHECKLIST_NOT_READY',
+            status: 409,
+            method: 'POST',
+            path: '/result',
+          },
+        ),
+      ),
+    ).toContain('bổ sung phần còn thiếu')
+  })
+
   it('never renders raw exception text or codes', () => {
     expect(staffResultError(new Error('SECRET_BACKEND_ENUM'))).not.toContain(
       'SECRET',

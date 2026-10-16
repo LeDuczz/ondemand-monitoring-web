@@ -1,3 +1,4 @@
+import type { ChecklistInput } from '../checklist/types'
 import { describe, expect, it } from 'vitest'
 
 import { createDefaultForm } from './draftStorage'
@@ -41,22 +42,38 @@ describe('withAdditionalRequirementChecklist', () => {
   it('adds the AI add-on as a customer requirement for manager pricing review', () => {
     expect(
       withAdditionalRequirementChecklist(
-        [{ sourceChecklistId: 'default', expectedChecklistVersion: 1 }],
+        [
+          {
+            sourceChecklistId: 'default',
+            expectedChecklistVersion: 1,
+            minimumEvidenceCount: 1,
+            requiredEvidenceType: 'IMAGE_OR_VIDEO',
+          },
+        ],
         true,
       ),
     ).toEqual([
-      { sourceChecklistId: 'default', expectedChecklistVersion: 1 },
+      {
+        sourceChecklistId: 'default',
+        expectedChecklistVersion: 1,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+      },
       {
         contentOverride:
           'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE_OR_VIDEO',
       },
     ])
   })
 
   it('does not add the requirement when unselected or already present', () => {
-    const item = {
+    const item: ChecklistInput = {
       contentOverride:
         'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
+      minimumEvidenceCount: 1,
+      requiredEvidenceType: 'IMAGE_OR_VIDEO',
     }
     expect(withAdditionalRequirementChecklist([item], false)).toEqual([item])
     expect(withAdditionalRequirementChecklist([item], true)).toEqual([item])

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { authSession } from '../features/auth/api/authApi'
 import { managerApi } from '../features/manager/api/dashboardApi'
+import { ordersApi } from '../features/manager/api/ordersApi'
 import type { ManagerDashboardResponse } from '../features/manager/types/dashboard'
 import { Router } from './router'
 
@@ -160,6 +161,7 @@ describe('Router - manager routes (#portal/manager*)', () => {
 
   it('routes nested #portal/manager/... hashes to the Manager area too', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleDashboard)
+    vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
     window.location.hash = '#portal/manager/orders'
     render(<Router />)
 

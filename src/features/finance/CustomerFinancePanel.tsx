@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
+import { useI18n } from '../../shared/i18n'
 import { formatVnd } from '../../shared/lib/formatVnd'
+import {
+  pricingDescription,
+  pricingLabel,
+} from '../../shared/lib/pricingPresentation'
 import { financeApi } from './api'
+import { customerFinancePanelMessages } from './CustomerFinancePanel.messages'
 import type { Invoice, Quote } from './types'
 import './finance.css'
 
@@ -10,6 +16,15 @@ export type CustomerFinanceState = {
   quote: Quote | null
   invoice: Invoice | null
   loading: boolean
+}
+
+const invoiceStatusLabels: Record<string, string> = {
+  ISSUED: 'Chờ thanh toán',
+  PARTIALLY_PAID: 'Đã thanh toán một phần',
+  PAID: 'Đã thanh toán',
+  OVERDUE: 'Quá hạn',
+  CANCELLED: 'Đã hủy',
+  REFUNDED: 'Đã hoàn tiền',
 }
 
 export function CustomerFinancePanel({
@@ -23,6 +38,7 @@ export function CustomerFinancePanel({
 }) {
   const legalReady =
     legalStatus == null || legalStatus === 'NOT_REQUIRED' || legalStatus === 'APPROVED'
+  const { t } = useI18n(customerFinancePanelMessages)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,12 +54,12 @@ export function CustomerFinancePanel({
     ])
     if (quoteResult.status === 'fulfilled') setQuote(quoteResult.value)
     else if (!isNotFound(quoteResult.reason))
-      setError(messageOf(quoteResult.reason))
+      setError(messageOf(quoteResult.reason, t))
     if (invoiceResult.status === 'fulfilled') setInvoice(invoiceResult.value)
     else if (!isNotFound(invoiceResult.reason))
-      setError(messageOf(invoiceResult.reason))
+      setError(messageOf(invoiceResult.reason, t))
     setLoading(false)
-  }, [orderId])
+  }, [orderId, t])
 
   useEffect(() => {
     void load()
@@ -61,26 +77,26 @@ export function CustomerFinancePanel({
       setInvoice(await financeApi.acceptQuote(orderId, quote.id))
       await load()
     } catch (cause) {
-      setError(messageOf(cause))
+      setError(messageOf(cause, t))
     } finally {
       setBusy(false)
     }
   }
 
-  async function pay(kind: 'deposit' | 'final') {
+  async function pay(type: 'deposit' | 'final') {
     if (!invoice) return
     setBusy(true)
     setError(null)
     try {
       const payment =
-        kind === 'deposit'
+        type === 'deposit'
           ? await financeApi.createDeposit(invoice.id)
           : await financeApi.createFinalPayment(invoice.id)
       if (!payment.paymentUrl)
-        throw new Error('Cổng thanh toán chưa trả về checkout URL.')
+        throw new Error(t.missingPaymentUrl)
       window.location.assign(payment.paymentUrl)
     } catch (cause) {
-      setError(messageOf(cause))
+      setError(messageOf(cause, t))
       setBusy(false)
     }
   }
@@ -88,7 +104,7 @@ export function CustomerFinancePanel({
   if (loading && !quote && !invoice)
     return (
       <section className="ui-card customer-finance-card">
-        Đang tải báo giá...
+        {t.loading}
       </section>
     )
   if (!quote && !invoice && !error) return null
@@ -100,8 +116,8 @@ export function CustomerFinancePanel({
     >
       <header className="customer-finance-head">
         <div>
-          <h2 id="customer-quote-title">Báo giá và thanh toán</h2>
-          <p>Giá được manager xác nhận theo phạm vi yêu cầu của đơn.</p>
+          <h2 id="customer-quote-title">{t.title}</h2>
+          <p>{t.description}</p>
         </div>
         {quote ? (
           <span className="finance-status">Báo giá v{quote.version}</span>
@@ -118,14 +134,18 @@ export function CustomerFinancePanel({
                   <span>
                     <b>
                       {item.type === 'INCLUDED' ? '✓ ' : ''}
-                      {item.description}
+                      {pricingDescription(item.description)}
                     </b>
                     <small>
                       {item.type === 'ADDITIONAL'
                         ? 'Yêu cầu bổ sung'
                         : item.type === 'PACKAGE'
                           ? 'Gói dịch vụ'
-                          : 'Đã bao gồm'}
+                          : item.type === 'MANAGER_ADJUSTMENT'
+                            ? 'Điều chỉnh đã được phê duyệt'
+                            : item.type === 'DISCOUNT'
+                              ? 'Ưu đãi tự động'
+                              : 'Đã bao gồm'}
                     </small>
                   </span>
                   <strong>{formatVnd(item.amount)}</strong>
@@ -141,7 +161,7 @@ export function CustomerFinancePanel({
           </dl>
           {quote.managerNote ? (
             <p className="customer-manager-note">
-              <b>Ghi chú của manager:</b> {quote.managerNote}
+              <b>Ghi chú của quản lý:</b> {quote.managerNote}
             </p>
           ) : null}
           {!legalReady ? (
@@ -180,14 +200,7 @@ export function CustomerFinancePanel({
             <span
               className={`finance-status is-${invoice.status.toLowerCase()}`}
             >
-              {{
-                ISSUED: 'Chờ thanh toán',
-                PARTIALLY_PAID: 'Đã thanh toán một phần',
-                PAID: 'Đã thanh toán',
-                OVERDUE: 'Quá hạn',
-                CANCELLED: 'Đã hủy',
-                REFUNDED: 'Đã hoàn tiền',
-              }[invoice.status]}
+              {invoiceStatusLabels[invoice.status] ?? pricingLabel(invoice.status)}
             </span>
           </div>
           <div className="customer-payment-stats">
@@ -210,7 +223,7 @@ export function CustomerFinancePanel({
           ) : invoice.status !== 'PAID' ? (
             <div className="customer-deposit-notice is-ready">
               <b>Đã nhận tiền đặt cọc</b>
-              <span>Mission đã được mở khóa cho quy trình vận hành.</span>
+              <span>Nhiệm vụ đã được mở khóa cho quy trình vận hành.</span>
             </div>
           ) : null}
           <div className="finance-actions customer-payment-actions">
@@ -275,11 +288,28 @@ function PaymentStat({ label, value }: { label: string; value: number }) {
 function isNotFound(error: unknown) {
   return error instanceof ApiError && error.status === 404
 }
-function messageOf(error: unknown) {
-  if (error instanceof ApiError && error.code === 'PAYMENT_PROVIDER_ERROR') {
-    return 'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.'
+function messageOf(error: unknown, t: (typeof customerFinancePanelMessages)['vi']) {
+  if (error instanceof ApiError) {
+    if (error.code === 'NETWORK_ERROR') {
+      return t.networkError
+    }
+    if (error.code === 'PAYMENT_PROVIDER_ERROR') {
+      return 'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.'
+    }
+    const messages: Record<string, string> = {
+      INVOICE_ALREADY_PAID: 'Hóa đơn này đã được thanh toán đầy đủ.',
+      INVOICE_NOT_PAYABLE: 'Hóa đơn hiện không thể thanh toán.',
+      DEPOSIT_ALREADY_SATISFIED: 'Khoản đặt cọc đã được thanh toán.',
+      ACTIVE_PAYMENT_EXISTS: 'Đang có một giao dịch thanh toán chưa hoàn tất.',
+      QUOTE_NOT_APPROVED: 'Báo giá chưa được phê duyệt.',
+      QUOTE_NOT_CURRENT: 'Báo giá này không còn là phiên bản hiện hành.',
+    }
+    if (error.code && messages[error.code]) {
+      return messages[error.code]
+    }
+    return t.loadError
   }
   return error instanceof Error
     ? error.message
-    : 'Không thể tải dữ liệu tài chính.'
+    : t.loadError
 }

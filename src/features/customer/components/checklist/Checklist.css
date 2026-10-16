@@ -45,7 +45,9 @@
   background: var(--ui-surface);
   border: 1px solid #dce3ec;
   border-radius: 12px;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
 }
 .checklist-card .checklist-row:focus-within {
   border-color: var(--ui-primary);
@@ -172,7 +174,10 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 .checklist-card .checklist-add:hover:not(:disabled) {
   background: #f8fafc;
@@ -210,10 +215,73 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+.checklist-snapshot-content {
+  display: block;
+}
+.checklist-snapshot-evidence {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 @media (max-width: 600px) {
   .checklist-row {
     padding: 10px 12px;
   }
+}
+
+.checklist-evidence-requirements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-surface-2);
+}
+.checklist-evidence-requirements label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ui-text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.checklist-evidence-field-label {
+  color: var(--ui-text-2);
+}
+.checklist-evidence-requirements input,
+.checklist-evidence-requirements select {
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 7px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 13px;
+}
+.checklist-evidence-requirements input {
+  width: 76px;
+}
+.checklist-evidence-summary {
+  flex: none;
+  margin-left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.checklist-card .checklist-row.is-compact .checklist-length-with-evidence {
+  display: none;
 }
 
 /* ---------- Compact variant (create-order step 4) ---------- */
@@ -500,7 +568,10 @@
 /* ---------- UX polish: aligned rows, clear states ---------- */
 .checklist-card .checklist-row.is-compact {
   gap: 12px;
-  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .checklist-card .checklist-row.is-compact:hover {
   background: #f8fafc;

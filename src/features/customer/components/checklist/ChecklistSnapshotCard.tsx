@@ -30,7 +30,22 @@ export function ChecklistSnapshotCard({
                   a.displayOrder - b.displayOrder || a.id.localeCompare(b.id),
               )
               .map((item) => (
-                <li key={item.id}>{item.content}</li>
+                <li key={item.id}>
+                  <span className="checklist-snapshot-content">
+                    {item.content}
+                  </span>
+                  {(item.minimumEvidenceCount !== undefined ||
+                    item.requiredEvidenceType !== undefined) && (
+                    <span className="checklist-snapshot-evidence">
+                      {item.minimumEvidenceCount ?? 1} ·{' '}
+                      {item.requiredEvidenceType === 'IMAGE'
+                        ? t.image
+                        : item.requiredEvidenceType === 'VIDEO'
+                          ? t.video
+                          : t.imageOrVideo}
+                    </span>
+                  )}
+                </li>
               ))}
           </ol>
         ) : (

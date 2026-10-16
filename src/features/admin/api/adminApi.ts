@@ -22,8 +22,17 @@ import type {
   UpdateRulePayload,
 } from '../types/aiKnowledge'
 import type { AuditLogFilters, AuditLogPage } from '../types/auditLog'
+import type { PricingPolicy, PricingPolicyPayload } from '../types/pricing'
 
 export const adminApi = {
+  listPricingPolicies: (signal?: AbortSignal) =>
+    apiRequest<PricingPolicy[]>('/api/admin/pricing-policies', { signal }),
+  createPricingPolicy: (body: PricingPolicyPayload) =>
+    apiRequest<PricingPolicy>('/api/admin/pricing-policies', { method: 'POST', body }),
+  updatePricingPolicy: (id: string, body: PricingPolicyPayload) =>
+    apiRequest<PricingPolicy>(`/api/admin/pricing-policies/${encodeURIComponent(id)}`, { method: 'PUT', body }),
+  publishPricingPolicy: (id: string) =>
+    apiRequest<PricingPolicy>(`/api/admin/pricing-policies/${encodeURIComponent(id)}/publish`, { method: 'POST' }),
   // Dashboard
   getDashboard: (signal?: AbortSignal) =>
     apiRequest<AdminDashboard>('/api/admin/dashboard', { signal }),

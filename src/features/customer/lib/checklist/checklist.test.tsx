@@ -330,6 +330,33 @@ describe('Order checklist state and editor', () => {
       screen.queryByLabelText('Nội dung giám sát 3'),
     ).not.toBeInTheDocument()
   })
+
+  it('does not display unselected catalog items outside the service package', async () => {
+    vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
+    const loadCatalog = vi
+      .spyOn(customerApi, 'getChecklistCatalog')
+      .mockResolvedValue([
+        {
+          id: 'outside-package',
+          content: 'Outside package',
+          version: 4,
+          includedImageCount: 0,
+          includedVideoCount: 0,
+        },
+      ])
+
+    function Editor() {
+      return <ChecklistEditor checklist={useOrderChecklist('A')} />
+    }
+
+    render(<Editor />)
+    await screen.findByText('First')
+    await waitFor(() => expect(loadCatalog).toHaveBeenCalled())
+
+    expect(screen.getByText('Second')).toBeInTheDocument()
+    expect(screen.queryByText('Outside package')).not.toBeInTheDocument()
+    expect(screen.queryByText('Danh mục bổ sung')).not.toBeInTheDocument()
+  })
 })
 
 it.each(['vi', 'en'] as const)(

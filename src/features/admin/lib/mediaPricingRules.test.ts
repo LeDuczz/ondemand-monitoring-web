@@ -67,7 +67,7 @@ describe('validateMediaRules', () => {
         ...newMediaRule(profile, 'INCLUDED_IMAGE', []),
         includedQuantity: 5,
       }) as PricingRule
-    expect(issues([allowance('CUSTOM')])).toEqual([])
+    expect(issues([allowance('GENERIC_CUSTOMER_ADDED')])).toEqual([])
     expect(issues([allowance('STANDARD')])).toContain('ALLOWANCE')
   })
   it('ignores rules of other categories', () => {

@@ -9,7 +9,6 @@ import {
 } from '../../shared/lib/pricingPresentation'
 import { financeApi } from './api'
 import type { ChecklistReviewStatus, PricingChecklistItem } from './types'
-import type { CustomWorkAssessment } from './types'
 import './finance.css'
 
 const statuses: Array<{
@@ -30,6 +29,7 @@ type Draft = {
   adjustmentType:
     'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
   approvalNote: string
+  prices: Record<string, string>
 }
 const emptyDraft: Draft = {
   packagePrice: '0',
@@ -39,22 +39,7 @@ const emptyDraft: Draft = {
   adjustmentReason: '',
   adjustmentType: 'CORRECTION',
   approvalNote: '',
-}
-const emptyAssessment: CustomWorkAssessment = {
-  estimatedFlightHours: null,
-  estimatedDistanceKm: null,
-  estimatedAreaHa: null,
-  pilotCount: 1,
-  droneCount: 1,
-  batteryUnits: 0,
-  terrain: 'FLAT',
-  thermalRequired: false,
-  multispectralRequired: false,
-  aiReportRequired: false,
-  nightOperation: false,
-  specialEquipment: null,
-  otherCostDrivers: null,
-  assessmentComplete: false,
+  prices: {},
 }
 
 export function ManagerPricingPanel({
@@ -75,12 +60,6 @@ export function ManagerPricingPanel({
     (signal) => financeApi.getPricingReview(orderId, signal),
     [orderId],
   )
-  const assessmentQuery = useApiQuery(
-    (signal) => financeApi.getAssessment(orderId, signal),
-    [orderId],
-  )
-  const [assessment, setAssessment] =
-    useState<CustomWorkAssessment>(emptyAssessment)
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState<
@@ -96,12 +75,23 @@ export function ManagerPricingPanel({
   }, [orderId])
 
   useEffect(() => {
-    setAssessment(assessmentQuery.data ?? emptyAssessment)
-  }, [assessmentQuery.data])
-
-  useEffect(() => {
     const quote = query.data?.currentQuote
     if (!query.data) return
+    const prices = Object.fromEntries(
+      query.data.checklistItems
+        .filter((item) => item.sourceType !== 'SERVICE_TEMPLATE')
+        .map((item) => [
+          item.id,
+          String(
+            item.managerQuotedPrice ??
+              item.systemCalculatedPrice ??
+              checklistSystemPrice(
+                query.data!.systemCalculation?.items,
+                item.id,
+              ),
+          ),
+        ]),
+    )
     if (!quote) {
       setDraft((state) => ({
         ...state,
@@ -109,17 +99,19 @@ export function ManagerPricingPanel({
           query.data!.systemCalculation?.systemCalculatedAmount ??
             query.data!.basePackagePrice,
         ),
+        prices,
       }))
       return
     }
     setDraft({
       packagePrice: String(quote.packagePrice),
       discountAmount: String(quote.discountAmount),
-      adjustmentAmount: String(quote.adjustmentAmount),
+      adjustmentAmount: '0',
       managerNote: quote.managerNote ?? '',
       adjustmentReason: quote.adjustmentReason ?? '',
       adjustmentType: quote.adjustmentType ?? 'CORRECTION',
       approvalNote: '',
+      prices,
     })
   }, [query.data])
 
@@ -139,7 +131,21 @@ export function ManagerPricingPanel({
   const systemPrice =
     query.data?.systemCalculation?.systemCalculatedAmount ??
     amount(draft.packagePrice)
-  const total = systemPrice + amount(draft.adjustmentAmount)
+  const checklistAdjustment = (query.data?.checklistItems ?? [])
+    .filter(
+      (item) =>
+        item.sourceType !== 'SERVICE_TEMPLATE' &&
+        item.reviewStatus === 'ADDITIONAL',
+    )
+    .reduce(
+      (sum, item) =>
+        sum +
+        amount(draft.prices[item.id]) -
+        (item.systemCalculatedPrice ??
+          checklistSystemPrice(query.data?.systemCalculation?.items, item.id)),
+      0,
+    )
+  const total = systemPrice + checklistAdjustment
 
   async function updateReview(
     item: PricingChecklistItem,
@@ -159,26 +165,6 @@ export function ManagerPricingPanel({
     }
   }
 
-  async function saveAssessment() {
-    setBusy(true)
-    setError(null)
-    try {
-      await financeApi.saveAssessment(orderId, {
-        ...assessment,
-        assessmentComplete: true,
-      })
-      setMessage(
-        'Đã lưu đánh giá công việc tùy chỉnh và tính lại giá hệ thống.',
-      )
-      assessmentQuery.reload()
-      query.reload()
-    } catch (cause) {
-      setError(errorMessage(cause))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function saveDraft() {
     if (!query.data) return null
     setBusy(true)
@@ -190,7 +176,11 @@ export function ManagerPricingPanel({
         discountAmount: 0,
         adjustmentAmount: amount(draft.adjustmentAmount),
         managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: {},
+        additionalUnitPrices: approvedPrices(
+          query.data.checklistItems,
+          draft,
+          query.data.systemCalculation?.items,
+        ),
         adjustmentReason: draft.adjustmentReason.trim() || null,
         adjustmentType: draft.adjustmentType,
         expectedPricingRevision:
@@ -225,51 +215,22 @@ export function ManagerPricingPanel({
         discountAmount: 0,
         adjustmentAmount: amount(draft.adjustmentAmount),
         managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: {},
+        additionalUnitPrices: approvedPrices(
+          query.data.checklistItems,
+          draft,
+          query.data.systemCalculation?.items,
+        ),
         adjustmentReason: draft.adjustmentReason.trim() || null,
         adjustmentType: draft.adjustmentType,
         expectedPricingRevision:
           query.data.currentQuote?.pricingRevision ?? null,
       })
-      if (amount(draft.adjustmentAmount) !== 0) {
-        setMessage('Đã gửi điều chỉnh giá cho quản lý khác phê duyệt.')
-        query.reload()
-        return
-      }
       await financeApi.approveQuote(orderId, quote.id)
       setApprovalSucceeded(true)
       onApproved?.()
       setMessage(
         'Duyệt báo giá thành công. Báo giá đã sẵn sàng để khách hàng chấp nhận.',
       )
-      query.reload()
-    } catch (cause) {
-      setError(errorMessage(cause))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function decidePricing(approvedDecision: boolean) {
-    const quote = query.data?.currentQuote
-    if (!quote?.pricingRevision) return
-    setBusy(true)
-    setError(null)
-    setMessage(null)
-    try {
-      await financeApi.decidePricing(
-        orderId,
-        quote.id,
-        quote.pricingRevision,
-        approvedDecision,
-        draft.approvalNote.trim() || null,
-      )
-      setMessage(
-        approvedDecision
-          ? 'Đã phê duyệt điều chỉnh giá.'
-          : 'Đã từ chối điều chỉnh giá.',
-      )
-      if (approvedDecision) onApproved?.()
       query.reload()
     } catch (cause) {
       setError(errorMessage(cause))
@@ -315,12 +276,6 @@ export function ManagerPricingPanel({
   const approved =
     approvalSucceeded || query.data.currentQuote?.status === 'APPROVED'
   const accepted = query.data.currentQuote?.status === 'ACCEPTED_BY_CUSTOMER'
-  const pendingSecondManager =
-    query.data.currentQuote?.pricingApprovalStatus === 'PENDING_SECOND_MANAGER'
-  const canDecidePricing =
-    pendingSecondManager &&
-    query.data.currentQuote?.adjustmentRequestedById !==
-      query.data.currentManagerId
   const additionalCount = query.data.checklistItems.filter(
     (item) => item.reviewStatus === 'ADDITIONAL',
   ).length
@@ -413,104 +368,6 @@ export function ManagerPricingPanel({
             ? 'Checklist đã hoàn tất và có thể duyệt báo giá.'
             : `Còn ${pendingReviewCount} nội dung cần chọn cách tính giá trước khi duyệt.`}
         </div>
-        {query.data.systemCalculation?.customWork ? (
-          <section className="finance-custom-assessment">
-            <h3>Đánh giá công việc tùy chỉnh</h3>
-            <p>Nhập các yếu tố chi phí; hệ thống sẽ tự động tính giá cơ sở.</p>
-            <div className="finance-assessment-grid">
-              <AssessmentNumber
-                label="Quãng đường (km)"
-                value={assessment.estimatedDistanceKm}
-                onChange={(value) =>
-                  setAssessment({ ...assessment, estimatedDistanceKm: value })
-                }
-              />
-              <AssessmentNumber
-                label="Diện tích (ha)"
-                value={assessment.estimatedAreaHa}
-                onChange={(value) =>
-                  setAssessment({ ...assessment, estimatedAreaHa: value })
-                }
-              />
-              <AssessmentNumber
-                label="Giờ bay"
-                value={assessment.estimatedFlightHours}
-                onChange={(value) =>
-                  setAssessment({ ...assessment, estimatedFlightHours: value })
-                }
-              />
-              <AssessmentNumber
-                label="Số nhân sự điều khiển"
-                value={assessment.pilotCount}
-                onChange={(value) =>
-                  setAssessment({ ...assessment, pilotCount: value })
-                }
-              />
-              <AssessmentNumber
-                label="Số thiết bị bay"
-                value={assessment.droneCount}
-                onChange={(value) =>
-                  setAssessment({ ...assessment, droneCount: value })
-                }
-              />
-              <AssessmentNumber
-                label="Số bộ pin"
-                value={assessment.batteryUnits}
-                onChange={(value) =>
-                  setAssessment({ ...assessment, batteryUnits: value })
-                }
-              />
-              <label>
-                <span>Địa hình</span>
-                <select
-                  value={assessment.terrain}
-                  onChange={(e) =>
-                    setAssessment({
-                      ...assessment,
-                      terrain: e.target
-                        .value as CustomWorkAssessment['terrain'],
-                    })
-                  }
-                >
-                  <option value="FLAT">Bằng phẳng</option>
-                  <option value="MOUNTAIN">Đồi núi</option>
-                  <option value="HIGH_RISE">Nhà cao tầng</option>
-                  <option value="DAM_RESERVOIR">Đập/hồ chứa</option>
-                  <option value="HARD_TO_ACCESS">Khó tiếp cận</option>
-                </select>
-              </label>
-            </div>
-            <div className="finance-assessment-checks">
-              {(
-                [
-                  ['thermalRequired', 'Ảnh nhiệt'],
-                  ['multispectralRequired', 'Ảnh đa phổ'],
-                  ['aiReportRequired', 'Báo cáo phân tích AI'],
-                  ['nightOperation', 'Bay đêm'],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key}>
-                  <input
-                    type="checkbox"
-                    checked={assessment[key]}
-                    onChange={(e) =>
-                      setAssessment({ ...assessment, [key]: e.target.checked })
-                    }
-                  />{' '}
-                  {label}
-                </label>
-              ))}
-            </div>
-            <button
-              className="odm-btn"
-              type="button"
-              disabled={busy}
-              onClick={() => void saveAssessment()}
-            >
-              Lưu đánh giá và tính lại
-            </button>
-          </section>
-        ) : null}
         <div className="finance-checklist">
           <div className="finance-table-head" aria-hidden="true">
             <span>#</span>
@@ -538,6 +395,14 @@ export function ManagerPricingPanel({
                     ? 'Yêu cầu mặc định của gói'
                     : 'Yêu cầu thêm của khách hàng'}
                 </span>
+                {(item.requestedImageCount ?? 0) +
+                  (item.requestedVideoCount ?? 0) >
+                0 ? (
+                  <span>
+                    Khách yêu cầu: {item.requestedImageCount ?? 0} ảnh ·{' '}
+                    {item.requestedVideoCount ?? 0} video
+                  </span>
+                ) : null}
               </div>
               {item.sourceType === 'SERVICE_TEMPLATE' ? (
                 <div className="finance-zero">Đã gồm trong gói</div>
@@ -565,10 +430,41 @@ export function ManagerPricingPanel({
                   </select>
                 </label>
               )}
-              <div className="finance-zero">
-                {item.sourceType === 'SERVICE_TEMPLATE'
-                  ? 'Hệ thống tính giá · Không cần Manager review'
-                  : `${pricingLabel(item.difficultySnapshot ?? 'BASIC')} · hệ thống tính giá`}
+              <div className="finance-item-price">
+                <small>
+                  Giá hệ thống:{' '}
+                  {formatVnd(
+                    item.systemCalculatedPrice ??
+                      checklistSystemPrice(
+                        query.data?.systemCalculation?.items,
+                        item.id,
+                      ),
+                  )}
+                </small>
+                {item.sourceType !== 'SERVICE_TEMPLATE' &&
+                item.reviewStatus === 'ADDITIONAL' ? (
+                  <MoneyInput
+                    label="Giá duyệt"
+                    value={
+                      draft.prices[item.id] ??
+                      String(
+                        item.managerQuotedPrice ??
+                          item.systemCalculatedPrice ??
+                          checklistSystemPrice(
+                            query.data?.systemCalculation?.items,
+                            item.id,
+                          ),
+                      )
+                    }
+                    onChange={(value) =>
+                      setDraft((state) => ({
+                        ...state,
+                        prices: { ...state.prices, [item.id]: value },
+                      }))
+                    }
+                    disabled={accepted}
+                  />
+                ) : null}
               </div>
               <span
                 className={`finance-review-badge is-${item.reviewStatus.toLowerCase()}`}
@@ -577,7 +473,10 @@ export function ManagerPricingPanel({
                   ? 'Tự động tính giá'
                   : item.reviewStatus === 'PENDING'
                     ? 'Chưa xem xét'
-                    : 'Đã xem xét'}
+                    : item.reviewStatus === 'ADDITIONAL' &&
+                        item.managerQuotedPrice == null
+                      ? 'Chờ duyệt giá'
+                      : 'Đã xem xét'}
               </span>
               <button
                 type="button"
@@ -643,10 +542,7 @@ export function ManagerPricingPanel({
               </div>
               <dl className="finance-summary">
                 <Row label="Giá hệ thống" value={systemPrice} />
-                <Row
-                  label="Điều chỉnh"
-                  value={amount(draft.adjustmentAmount)}
-                />
+                <Row label="Điều chỉnh" value={checklistAdjustment} />
                 <Row label="Tổng báo giá" value={total} total />
               </dl>
               {!reviewComplete && (
@@ -654,58 +550,23 @@ export function ManagerPricingPanel({
                   Còn {pendingReviewCount} nội dung cần xem xét trước khi duyệt.
                 </p>
               )}
-              <details className="finance-adjustments">
-                <summary>Điều chỉnh báo giá</summary>
-                <div className="finance-pricing-grid">
-                  <div className="finance-inputs">
-                    <label>
-                      <span>Loại điều chỉnh</span>
-                      <select
-                        value={draft.adjustmentType}
-                        disabled={accepted || pendingSecondManager}
-                        onChange={(event) =>
-                          setDraft((state) => ({
-                            ...state,
-                            adjustmentType: event.target
-                              .value as Draft['adjustmentType'],
-                          }))
-                        }
-                      >
-                        <option value="DISCOUNT">Giảm giá</option>
-                        <option value="CORRECTION">Hiệu chỉnh</option>
-                        <option value="PROMOTION">Khuyến mãi</option>
-                        <option value="COMPENSATION">Bồi hoàn</option>
-                        <option value="GOODWILL">Thiện chí</option>
-                      </select>
-                    </label>
-                    <MoneyInput
-                      label="Điều chỉnh (+/-)"
-                      value={draft.adjustmentAmount}
-                      onChange={(value) =>
-                        setDraft((state) => ({
-                          ...state,
-                          adjustmentAmount: signedDigits(value),
-                        }))
-                      }
-                      disabled={accepted || pendingSecondManager}
-                    />
-                    <label className="finance-quote-note">
-                      <span>Lý do điều chỉnh (bắt buộc khi khác 0)</span>
-                      <textarea
-                        rows={3}
-                        value={draft.adjustmentReason}
-                        disabled={accepted || pendingSecondManager}
-                        onChange={(event) =>
-                          setDraft((state) => ({
-                            ...state,
-                            adjustmentReason: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
-                  </div>
-                </div>
-              </details>
+              <label className="finance-quote-note">
+                <span>
+                  Lý do điều chỉnh giá checklist (bắt buộc khi khác giá hệ
+                  thống)
+                </span>
+                <textarea
+                  rows={3}
+                  value={draft.adjustmentReason}
+                  disabled={accepted}
+                  onChange={(event) =>
+                    setDraft((state) => ({
+                      ...state,
+                      adjustmentReason: event.target.value,
+                    }))
+                  }
+                />
+              </label>
               <label className="finance-quote-note">
                 <span>Ghi chú báo giá (tùy chọn)</span>
                 <textarea
@@ -737,49 +598,7 @@ export function ManagerPricingPanel({
                   {message}
                 </p>
               ) : null}
-              {canDecidePricing ? (
-                <div className="finance-adjustment-review">
-                  <p>
-                    <b>{query.data.currentQuote?.adjustmentRequestedByName}</b>{' '}
-                    đề xuất{' '}
-                    {formatVnd(
-                      query.data.currentQuote?.managerAdjustmentAmount ?? 0,
-                    )}
-                  </p>
-                  <p>{query.data.currentQuote?.adjustmentReason}</p>
-                  {(query.data.currentQuote?.riskFlags ?? []).map((flag) => (
-                    <span className="finance-risk" key={flag}>
-                      {pricingLabel(flag)}
-                    </span>
-                  ))}
-                  <textarea
-                    aria-label="Ghi chú phê duyệt"
-                    value={draft.approvalNote}
-                    onChange={(event) =>
-                      setDraft((state) => ({
-                        ...state,
-                        approvalNote: event.target.value,
-                      }))
-                    }
-                  />
-                  <div className="finance-actions">
-                    <button
-                      className="odm-btn"
-                      disabled={busy}
-                      onClick={() => void decidePricing(false)}
-                    >
-                      Từ chối
-                    </button>
-                    <button
-                      className="odm-btn odm-btn-p"
-                      disabled={busy}
-                      onClick={() => void decidePricing(true)}
-                    >
-                      Phê duyệt điều chỉnh
-                    </button>
-                  </div>
-                </div>
-              ) : !accepted ? (
+              {!accepted ? (
                 <div className="finance-actions">
                   <button
                     className="odm-btn"
@@ -796,7 +615,6 @@ export function ManagerPricingPanel({
                     disabled={
                       busy ||
                       approved ||
-                      pendingSecondManager ||
                       pendingCustomCount > 0 ||
                       Boolean(approveBlockedReason)
                     }
@@ -807,13 +625,7 @@ export function ManagerPricingPanel({
                     }
                     onClick={() => void approve()}
                   >
-                    {pendingSecondManager
-                      ? 'Đang chờ quản lý khác phê duyệt'
-                      : approved
-                        ? 'Đã duyệt thành công'
-                        : amount(draft.adjustmentAmount) !== 0
-                          ? 'Gửi phê duyệt điều chỉnh'
-                          : 'Duyệt báo giá'}
+                    {approved ? 'Đã duyệt thành công' : 'Duyệt báo giá'}
                   </button>
                 </div>
               ) : null}
@@ -849,31 +661,6 @@ function MoneyInput({
     </label>
   )
 }
-function AssessmentNumber({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: number | null
-  onChange: (value: number | null) => void
-}) {
-  return (
-    <label>
-      <span>{label}</span>
-      <input
-        type="number"
-        min="0"
-        value={value ?? ''}
-        onChange={(event) =>
-          onChange(
-            event.target.value === '' ? null : Number(event.target.value),
-          )
-        }
-      />
-    </label>
-  )
-}
 function Row({
   label,
   value,
@@ -894,11 +681,40 @@ function amount(value: string | undefined) {
   const parsed = Number(value ?? 0)
   return Number.isSafeInteger(parsed) ? parsed : 0
 }
+function checklistSystemPrice(
+  lines:
+    Array<{ orderChecklistItemId?: string | null; amount: number }> | undefined,
+  itemId: string,
+) {
+  return (lines ?? [])
+    .filter((line) => line.orderChecklistItemId === itemId)
+    .reduce((sum, line) => sum + line.amount, 0)
+}
+function approvedPrices(
+  items: PricingChecklistItem[],
+  draft: Draft,
+  lines:
+    Array<{ orderChecklistItemId?: string | null; amount: number }> | undefined,
+) {
+  return Object.fromEntries(
+    items
+      .filter(
+        (item) =>
+          item.sourceType !== 'SERVICE_TEMPLATE' &&
+          item.reviewStatus === 'ADDITIONAL',
+      )
+      .map((item) => [
+        item.id,
+        draft.prices[item.id] == null
+          ? (item.managerQuotedPrice ??
+            item.systemCalculatedPrice ??
+            checklistSystemPrice(lines, item.id))
+          : amount(draft.prices[item.id]),
+      ]),
+  )
+}
 function digits(value: string) {
   return value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '') || '0'
-}
-function signedDigits(value: string) {
-  return `${value.startsWith('-') ? '-' : ''}${digits(value)}`
 }
 function errorMessage(error: unknown) {
   if (error instanceof ApiError) {

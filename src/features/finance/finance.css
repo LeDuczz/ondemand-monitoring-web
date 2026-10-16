@@ -226,6 +226,28 @@
   margin: 0;
   font-size: 13px;
 }
+.finance-item-price {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.finance-item-price small {
+  color: var(--or-tx2, #667085);
+  overflow-wrap: anywhere;
+}
+.finance-item-price label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 11px;
+}
+.finance-item-price input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 4px 7px;
+}
 .finance-review-badge {
   display: inline-flex;
   align-items: center;
@@ -996,4 +1018,129 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+/* Manager pricing lives inside a shell with its own navigation width, so
+   viewport breakpoints alone are not enough to prevent the quote/invoice
+   workspace from overflowing its actual content column. */
+.odm-or-review-section {
+  container-type: inline-size;
+}
+
+.finance-workspace {
+  width: 100%;
+  max-width: 100%;
+  container-type: inline-size;
+}
+
+.finance-panel,
+.finance-sidebar,
+.finance-quote,
+.finance-quote-body,
+.finance-quote-content,
+.finance-system-breakdown,
+.finance-summary {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.finance-workspace .finance-heading {
+  flex-wrap: wrap;
+}
+
+.finance-workspace .finance-heading > :first-child {
+  min-width: 0;
+}
+
+.finance-workspace .finance-status,
+.finance-system-breakdown > strong,
+.finance-system-breakdown > div > span,
+.finance-summary dt {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.finance-system-breakdown > div > b,
+.finance-summary dd {
+  flex: none;
+  white-space: nowrap;
+}
+
+.finance-quote .finance-actions > *,
+.finance-quote .odm-or-actionbar-actions > * {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.finance-quote .finance-actions .odm-btn,
+.finance-quote .odm-or-actionbar-actions .odm-or-btn {
+  height: auto;
+  min-height: 36px;
+}
+
+@container (max-width: 1100px) {
+  .finance-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .finance-quote {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@container (max-width: 900px) {
+  .finance-table-head {
+    display: none;
+  }
+
+  .finance-workspace .finance-checklist {
+    padding-inline: 10px;
+  }
+
+  .finance-workspace .finance-requirement {
+    grid-template-columns: 36px minmax(0, 1fr) 34px;
+    align-items: start;
+    gap: 8px;
+    padding: 12px 6px;
+  }
+
+  .finance-workspace .finance-requirement-main {
+    grid-column: 2;
+  }
+
+  .finance-workspace .finance-status-select,
+  .finance-workspace .finance-requirement > .finance-zero,
+  .finance-workspace .finance-item-price,
+  .finance-workspace .finance-review-badge {
+    grid-column: 2 / -1;
+    justify-self: stretch;
+  }
+
+  .finance-workspace .finance-review-badge {
+    width: auto;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .finance-workspace .finance-chevron {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .finance-workspace .finance-note {
+    grid-column: 2 / -1;
+  }
+
+  .finance-quote .finance-actions,
+  .finance-quote .odm-or-actionbar-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .finance-quote .odm-or-actionbar-actions .odm-or-btn-primary {
+    grid-column: auto;
+  }
 }

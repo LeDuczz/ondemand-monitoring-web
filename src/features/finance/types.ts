@@ -11,6 +11,10 @@ export type PricingChecklistItem = {
   managerNote: string | null
   managerQuoteRequired: boolean
   managerQuotedPrice: number | null
+  systemCalculatedPrice?: number | null
+  managerPriceAdjustmentReason?: string | null
+  requestedImageCount?: number
+  requestedVideoCount?: number
   difficultySnapshot?: 'BASIC' | 'MEDIUM' | 'HARD' | 'VERY_HARD'
 }
 
@@ -108,27 +112,6 @@ export type PricingBreakdown = {
   customWork: boolean
   assessmentComplete: boolean
   items: PricingBreakdownItem[]
-}
-
-export type CustomWorkAssessment = {
-  id?: string
-  orderId?: string
-  estimatedFlightHours: number | null
-  estimatedDistanceKm: number | null
-  estimatedAreaHa: number | null
-  pilotCount: number | null
-  droneCount: number | null
-  batteryUnits: number | null
-  terrain:
-    'FLAT' | 'MOUNTAIN' | 'HIGH_RISE' | 'DAM_RESERVOIR' | 'HARD_TO_ACCESS'
-  thermalRequired: boolean
-  multispectralRequired: boolean
-  aiReportRequired: boolean
-  nightOperation: boolean
-  specialEquipment: string | null
-  otherCostDrivers: string | null
-  assessmentComplete: boolean
-  version?: number
 }
 
 export type Invoice = {

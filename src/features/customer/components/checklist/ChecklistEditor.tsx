@@ -34,6 +34,12 @@ export function ChecklistEditor({
 }) {
   const { t } = useI18n(checklistMessages)
   const { status, rows } = checklist
+  // Catalog entries outside the selected service package are kept in state for
+  // identity/pricing purposes, but they must not look like service defaults.
+  // They become visible only after the customer explicitly selects them.
+  const visibleRows = rows.filter(
+    (row) => row.packageItem !== false || row.selected,
+  )
   const ready = status === 'ready'
   const compact = variant === 'compact'
   const [editingKey, setEditingKey] = useState<string | null>(null)
@@ -41,16 +47,16 @@ export function ChecklistEditor({
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'list' | 'group'>('list')
   const openNewRow = useRef(false)
-  const previousCount = useRef(rows.length)
+  const previousCount = useRef(visibleRows.length)
 
   // A row added by the user opens straight into edit mode.
   useEffect(() => {
-    if (openNewRow.current && rows.length > previousCount.current) {
-      setEditingKey(rows[rows.length - 1].key)
+    if (openNewRow.current && visibleRows.length > previousCount.current) {
+      setEditingKey(visibleRows[visibleRows.length - 1].key)
     }
     openNewRow.current = false
-    previousCount.current = rows.length
-  }, [rows])
+    previousCount.current = visibleRows.length
+  }, [visibleRows])
 
   useEffect(() => {
     if (editingKey)
@@ -61,7 +67,7 @@ export function ChecklistEditor({
   const searching = compact && needle !== ''
   const hiddenCount =
     compact && !showAll && !searching
-      ? Math.max(0, rows.length - COMPACT_VISIBLE)
+      ? Math.max(0, visibleRows.length - COMPACT_VISIBLE)
       : 0
   const addRow = () => {
     openNewRow.current = true
@@ -71,7 +77,7 @@ export function ChecklistEditor({
   }
 
   const grouped = compact && view === 'group'
-  const selectedTotal = rows.filter((row) => row.selected).length
+  const selectedTotal = visibleRows.filter((row) => row.selected).length
   const awaitingManagerQuote = (row: ChecklistRow) =>
     !row.sourceChecklistId &&
     row.selected &&
@@ -81,7 +87,7 @@ export function ChecklistEditor({
         priced.quotePending &&
         normalizeContent(priced.content) === normalizeContent(row.content),
     )
-  const ordered = rows
+  const ordered = visibleRows
     .map((row, index) => ({ row, index }))
     .sort((a, b) =>
       grouped ? Number(b.row.selected) - Number(a.row.selected) : 0,
@@ -93,7 +99,7 @@ export function ChecklistEditor({
         (pos === 0 || all[pos - 1].row.selected !== entry.row.selected)
           ? entry.row.selected
             ? t.groupSelected(selectedTotal)
-            : t.groupUnselected(rows.length - selectedTotal)
+            : t.groupUnselected(visibleRows.length - selectedTotal)
           : null,
     }))
   const renderRow = (row: ChecklistRow, index: number) => {
@@ -384,29 +390,29 @@ export function ChecklistEditor({
       >
         <p className="checklist-hint">{t.hint}</p>
         {ready && <p className="checklist-pricing-notice">{t.pricingNotice}</p>}
-        {compact && ready && rows.length > 0 && (
+        {compact && ready && visibleRows.length > 0 && (
           <div className="checklist-toolbar">
             <label className="checklist-selectall">
               <input
                 type="checkbox"
                 disabled={disabled}
-                checked={rows.every((row) => row.selected)}
+                checked={visibleRows.every((row) => row.selected)}
                 onChange={(event) => {
-                  for (const row of rows)
+                  for (const row of visibleRows)
                     if (row.selected !== event.target.checked)
                       checklist.change(row.key, {
                         selected: event.target.checked,
                       })
                 }}
               />
-              {t.selectAll(rows.length)}
+              {t.selectAll(visibleRows.length)}
             </label>
             <button
               type="button"
               className="checklist-clear"
               disabled={disabled || checklist.selectedCount === 0}
               onClick={() => {
-                for (const row of rows)
+                for (const row of visibleRows)
                   if (row.selected)
                     checklist.change(row.key, { selected: false })
               }}
@@ -469,7 +475,7 @@ export function ChecklistEditor({
             </button>
           </div>
         )}
-        {ready && !rows.length && <p>{t.empty}</p>}
+        {ready && !visibleRows.length && <p>{t.empty}</p>}
         <fieldset disabled={disabled || !ready} className="checklist-fields">
           {ordered.map(({ row, index, heading }) => (
             <Fragment key={row.key}>
@@ -486,7 +492,7 @@ export function ChecklistEditor({
               {t.showMore(hiddenCount)}
             </button>
           )}
-          {compact && showAll && rows.length > COMPACT_VISIBLE && (
+          {compact && showAll && visibleRows.length > COMPACT_VISIBLE && (
             <button
               type="button"
               className="checklist-more"
@@ -497,10 +503,10 @@ export function ChecklistEditor({
           )}
           {searching &&
             ready &&
-            rows.length > 0 &&
-            !rows.some((row) => row.content.toLowerCase().includes(needle)) && (
-              <p className="checklist-hint">{t.noMatch}</p>
-            )}
+            visibleRows.length > 0 &&
+            !visibleRows.some((row) =>
+              row.content.toLowerCase().includes(needle),
+            ) && <p className="checklist-hint">{t.noMatch}</p>}
           {ready && !compact && (
             <button
               type="button"

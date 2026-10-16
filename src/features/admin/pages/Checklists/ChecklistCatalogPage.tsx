@@ -353,6 +353,12 @@ function ChecklistEditor({
         <fieldset className="checklist-pricing">
           <legend>{t.pricingSection}</legend>
           <p className="checklist-field-meta">{t.pricingHint}</p>
+          <p className="checklist-banner">
+            {t.mediaPolicyHint}{' '}
+            <a href={adminHref({ screen: 'operatingConfig' })}>
+              {t.openPricingPolicy}
+            </a>
+          </p>
           <PricingNumber
             id="checklist-base-price"
             label={t.basePrice}

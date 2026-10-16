@@ -108,7 +108,7 @@ describe('ManagerPricingPanel', () => {
     expect(onChecklistReviewChanged).not.toHaveBeenCalled()
   })
 
-  it('shows the system breakdown and does not let a manager invent baseline prices', async () => {
+  it('shows the system price and lets the manager approve a customer-added item unchanged', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -136,6 +136,7 @@ describe('ManagerPricingPanel', () => {
             quantity: 1,
             unitPrice: 1_300_000,
             amount: 1_300_000,
+            orderChecklistItemId: 'additional-1',
           },
         ],
       },
@@ -148,7 +149,7 @@ describe('ManagerPricingPanel', () => {
           sourceType: 'SERVICE_TEMPLATE',
           reviewStatus: 'INCLUDED',
           managerNote: null,
-          managerQuoteRequired: false,
+          managerQuoteRequired: true,
           managerQuotedPrice: null,
         },
         {
@@ -187,7 +188,10 @@ describe('ManagerPricingPanel', () => {
     await screen.findByText('Extra requirement')
     expect(screen.getByRole('button', { name: 'Duyệt báo giá' })).toBeEnabled()
     expect(screen.queryByLabelText('Giá gói (VND)')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Đánh giá công việc tùy chỉnh')).toHaveLength(2)
+    expect(
+      screen.queryByRole('heading', { name: 'Đánh giá công việc tùy chỉnh' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('1300000')
     fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
 
     await waitFor(() =>
@@ -196,7 +200,7 @@ describe('ManagerPricingPanel', () => {
         discountAmount: 0,
         adjustmentAmount: 0,
         managerNote: null,
-        additionalUnitPrices: {},
+        additionalUnitPrices: { 'additional-1': 1_300_000 },
         adjustmentReason: null,
         adjustmentType: 'CORRECTION',
         expectedPricingRevision: null,

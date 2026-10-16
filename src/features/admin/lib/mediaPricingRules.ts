@@ -12,7 +12,7 @@ export const MEDIA_COMPONENTS: MediaPricingComponent[] = [
   'EXTRA_VIDEO',
 ]
 export const ROUNDING_MODES: PricingRounding[] = ['CEILING', 'FLOOR', 'HALF_UP']
-export const CUSTOM_PROFILE = 'CUSTOM'
+export const CUSTOM_PROFILE = 'GENERIC_CUSTOMER_ADDED'
 const PROFILE = /^[A-Z0-9_]{1,60}$/
 
 export const isMediaRule = (rule: PricingRule) => rule.category === 'MEDIA'

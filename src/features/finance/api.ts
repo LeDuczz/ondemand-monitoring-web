@@ -6,14 +6,9 @@ import type {
   PricingChecklistItem,
   PricingReview,
   Quote,
-  CustomWorkAssessment,
 } from './types'
 
 export const financeApi = {
-  getAssessment: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<CustomWorkAssessment | null>(`/api/manager/orders/${encodeURIComponent(orderId)}/pricing-assessment`, { signal }),
-  saveAssessment: (orderId: string, body: CustomWorkAssessment) =>
-    apiRequest<CustomWorkAssessment>(`/api/manager/orders/${encodeURIComponent(orderId)}/pricing-assessment`, { method: 'PUT', body }),
   getPricingReview: (orderId: string, signal?: AbortSignal) =>
     apiRequest<PricingReview>(
       `/api/manager/orders/${encodeURIComponent(orderId)}/pricing`,
@@ -37,7 +32,8 @@ export const financeApi = {
       managerNote: string | null
       additionalUnitPrices: Record<string, number>
       adjustmentReason?: string | null
-      adjustmentType?: 'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
+      adjustmentType?:
+        'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
       expectedPricingRevision?: number | null
     },
   ) =>
@@ -52,11 +48,6 @@ export const financeApi = {
     apiRequest<Quote>(
       `/api/manager/orders/${encodeURIComponent(orderId)}/quotes/${encodeURIComponent(quoteId)}/approve`,
       { method: 'POST' },
-    ),
-  decidePricing: (orderId: string, quoteId: string, pricingRevision: number, approved: boolean, note: string | null) =>
-    apiRequest<Quote>(
-      `/api/manager/orders/${encodeURIComponent(orderId)}/quotes/${encodeURIComponent(quoteId)}/pricing-decision`,
-      { method: 'POST', body: { pricingRevision, approved, note } },
     ),
   getQuote: (orderId: string, signal?: AbortSignal) =>
     apiRequest<Quote>(`/api/orders/${encodeURIComponent(orderId)}/quote`, {
@@ -90,10 +81,7 @@ export const financeApi = {
         method: 'POST',
       },
     ),
-  getPaymentByReference: (
-    transactionReference: string,
-    signal?: AbortSignal,
-  ) =>
+  getPaymentByReference: (transactionReference: string, signal?: AbortSignal) =>
     apiRequest<Payment>(
       `/api/payments/by-reference/${encodeURIComponent(transactionReference)}`,
       { signal },

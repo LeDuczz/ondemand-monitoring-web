@@ -68,6 +68,9 @@ export const checklistMessages = defineMessages({
     pricingSection: 'Giá và định mức media',
     pricingHint:
       'Giá ảnh/video đã bao gồm và giá ảnh/video bổ sung được cấu hình trong Chính sách giá (theo hồ sơ giá). Ở đây chỉ nhập giá công việc và định mức đã bao gồm.',
+    mediaPolicyHint:
+      'Lưu giá công việc tại đây không tạo giá cho ảnh/video vượt định mức. Hồ sơ DEFAULT phải có bậc Ảnh bổ sung và Video bổ sung bắt đầu từ 0 trong một Chính sách giá đã phát hành.',
+    openPricingPolicy: 'Mở cấu hình Chính sách giá',
     basePrice: 'Giá công việc kiểm tra (VND)',
     includedImages: 'Số ảnh đã bao gồm',
     includedVideos: 'Số video đã bao gồm',
@@ -158,6 +161,9 @@ export const checklistMessages = defineMessages({
     pricingSection: 'Price and media allowance',
     pricingHint:
       'Included-media and extra-media prices are configured in the pricing policy (per pricing profile). Enter only the inspection price and the included allowance here.',
+    mediaPolicyHint:
+      'Saving the inspection price here does not create a price for media above the allowance. The DEFAULT profile needs Extra image and Extra video tiers starting at 0 in a published Pricing Policy.',
+    openPricingPolicy: 'Open Pricing Policy configuration',
     basePrice: 'Inspection price (VND)',
     includedImages: 'Included images',
     includedVideos: 'Included videos',

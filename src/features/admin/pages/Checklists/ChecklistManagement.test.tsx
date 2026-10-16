@@ -106,7 +106,7 @@ describe('Admin checklist catalog', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     await waitFor(() =>
-      expect(checklistsApi.create).toHaveBeenCalledWith('New checklist'),
+      expect(checklistsApi.create).toHaveBeenCalledWith('New checklist', 'BASIC'),
     )
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
@@ -148,7 +148,7 @@ describe('Admin checklist catalog', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     await waitFor(() =>
-      expect(checklistsApi.update).toHaveBeenCalledWith('a', 'Edited'),
+      expect(checklistsApi.update).toHaveBeenCalledWith('a', 'Edited', 'BASIC'),
     )
     await waitFor(() => expect(checklistsApi.list).toHaveBeenCalledTimes(2))
   })

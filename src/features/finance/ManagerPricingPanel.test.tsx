@@ -7,13 +7,83 @@ import { ManagerPricingPanel } from './ManagerPricingPanel'
 afterEach(() => vi.restoreAllMocks())
 
 describe('ManagerPricingPanel', () => {
-  it('submits package and additional prices as separate backend inputs', async () => {
+  it('refreshes readiness after a checklist item is reviewed', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
       customerName: 'Customer',
       serviceName: 'Site monitoring',
       basePackagePrice: 5_000_000,
+      checklistItems: [
+        {
+          id: 'pending-1',
+          sourceChecklistId: 'template-1',
+          content: 'Requirement awaiting review',
+          displayOrder: 1,
+          sourceType: 'SERVICE_TEMPLATE',
+          reviewStatus: 'PENDING',
+          managerNote: null,
+        },
+      ],
+      currentQuote: null,
+      quoteHistory: [],
+    })
+    vi.spyOn(financeApi, 'reviewChecklist').mockResolvedValue({
+      id: 'pending-1',
+      sourceChecklistId: 'template-1',
+      content: 'Requirement awaiting review',
+      displayOrder: 1,
+      sourceType: 'SERVICE_TEMPLATE',
+      reviewStatus: 'INCLUDED',
+      managerNote: null,
+    })
+    const onChecklistReviewChanged = vi.fn()
+
+    render(
+      <ManagerPricingPanel
+        orderId="order-1"
+        onChecklistReviewChanged={onChecklistReviewChanged}
+      />,
+    )
+    await screen.findByText('Requirement awaiting review')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Phân loại' }), {
+      target: { value: 'INCLUDED' },
+    })
+
+    await waitFor(() => expect(onChecklistReviewChanged).toHaveBeenCalled())
+  })
+
+  it('shows the system breakdown and does not let a manager invent baseline prices', async () => {
+    vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
+      orderId: 'order-1',
+      orderCode: 'ORD-1',
+      customerName: 'Customer',
+      serviceName: 'Site monitoring',
+      basePackagePrice: 5_000_000,
+      systemCalculation: {
+        policyId: 'policy-1',
+        policyVersion: 3,
+        currency: 'VND',
+        systemCalculatedAmount: 6_300_000,
+        customWork: true,
+        assessmentComplete: true,
+        items: [
+          {
+            category: 'PACKAGE',
+            description: 'Site monitoring',
+            quantity: 1,
+            unitPrice: 5_000_000,
+            amount: 5_000_000,
+          },
+          {
+            category: 'RESOURCE',
+            description: 'Custom work assessment',
+            quantity: 1,
+            unitPrice: 1_300_000,
+            amount: 1_300_000,
+          },
+        ],
+      },
       checklistItems: [
         {
           id: 'included-1',
@@ -57,21 +127,20 @@ describe('ManagerPricingPanel', () => {
     render(<ManagerPricingPanel orderId="order-1" />)
     await screen.findByText('Extra requirement')
     expect(screen.getByRole('button', { name: 'Duyệt báo giá' })).toBeEnabled()
-    await waitFor(() =>
-      expect(screen.getByLabelText('Giá gói (VND)')).toHaveValue('5000000'),
-    )
-    fireEvent.change(screen.getByLabelText('Đơn giá thêm (VND)'), {
-      target: { value: '1300000' },
-    })
+    expect(screen.queryByLabelText('Giá gói (VND)')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Đánh giá công việc tùy chỉnh')).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
 
     await waitFor(() =>
       expect(save).toHaveBeenCalledWith('order-1', {
-        packagePrice: 5_000_000,
+        packagePrice: 6_300_000,
         discountAmount: 0,
         adjustmentAmount: 0,
         managerNote: null,
-        additionalUnitPrices: { 'additional-1': 1_300_000 },
+        additionalUnitPrices: { 'additional-1': 0 },
+        adjustmentReason: null,
+        adjustmentType: 'CORRECTION',
+        expectedPricingRevision: null,
       }),
     )
   })
@@ -118,7 +187,7 @@ describe('ManagerPricingPanel', () => {
     render(<ManagerPricingPanel orderId="order-1" />)
 
     await screen.findByText('Requirement awaiting review')
-    expect(screen.getByText('0/1 nội dung đã review')).toBeInTheDocument()
+    expect(screen.getByText('0/1 nội dung đã xem xét')).toBeInTheDocument()
     expect(
       screen.getByText(
         'Còn 1 nội dung cần chọn cách tính giá trước khi duyệt.',
@@ -153,20 +222,32 @@ describe('ManagerPricingPanel', () => {
       currentQuote: null,
       quoteHistory: [],
     })
-    const reviewItem = vi.spyOn(financeApi, 'reviewChecklist').mockResolvedValue({
-      id: 'package-1',
-      sourceChecklistId: 'template-1',
-      content: 'Package requirement',
-      displayOrder: 1,
-      sourceType: 'SERVICE_TEMPLATE',
-      reviewStatus: 'INCLUDED',
-      managerNote: null,
-    })
+    const reviewItem = vi
+      .spyOn(financeApi, 'reviewChecklist')
+      .mockResolvedValue({
+        id: 'package-1',
+        sourceChecklistId: 'template-1',
+        content: 'Package requirement',
+        displayOrder: 1,
+        sourceType: 'SERVICE_TEMPLATE',
+        reviewStatus: 'INCLUDED',
+        managerNote: null,
+      })
     const draft = {
-      id: 'quote-1', orderId: 'order-1', version: 1, status: 'DRAFT' as const,
-      packagePrice: 5_000_000, additionalAmount: 0, discountAmount: 0,
-      adjustmentAmount: 0, totalAmount: 5_000_000, managerNote: null,
-      approvedByName: null, approvedAt: null, acceptedAt: null, items: [],
+      id: 'quote-1',
+      orderId: 'order-1',
+      version: 1,
+      status: 'DRAFT' as const,
+      packagePrice: 5_000_000,
+      additionalAmount: 0,
+      discountAmount: 0,
+      adjustmentAmount: 0,
+      totalAmount: 5_000_000,
+      managerNote: null,
+      approvedByName: null,
+      approvedAt: null,
+      acceptedAt: null,
+      items: [],
     }
     vi.spyOn(financeApi, 'saveDraft').mockResolvedValue(draft)
     const approve = vi.spyOn(financeApi, 'approveQuote').mockResolvedValue({

@@ -64,7 +64,7 @@ export function ConsultationChat({ chat }: Props) {
   )
 
   return (
-    <details className="co-ai-assist">
+    <details className="co-ai-assist" open>
       <summary>
         <span>
           <strong>{t.summaryTitle}</strong>

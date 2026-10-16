@@ -64,6 +64,10 @@ async function fillLocation() {
   fireEvent.change(await screen.findByLabelText(/Địa chỉ\/khu vực/), {
     target: { value: 'KCN Long Hậu' },
   })
+  fireEvent.click(screen.getByLabelText('Chủ sở hữu / Chủ đầu tư'))
+  fireEvent.click(
+    screen.getByLabelText(/Tôi xác nhận mình có quyền yêu cầu giám sát/),
+  )
   next('Thời gian')
 }
 

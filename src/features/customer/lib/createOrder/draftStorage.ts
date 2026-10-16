@@ -1,5 +1,13 @@
 import { todayPlus } from './format'
-import type { FormState, Step, StoredCreateOrderDraft } from './types'
+import {
+  DELIVERY_METHODS,
+  RESULT_FORMATS,
+  type DeliveryMethod,
+  type FormState,
+  type ResultFormat,
+  type Step,
+  type StoredCreateOrderDraft,
+} from './types'
 
 export const CREATE_ORDER_DRAFT_STORAGE_KEY = 'odm.customer.createOrderDraft.v2'
 
@@ -7,12 +15,16 @@ export function createDefaultForm(): FormState {
   return {
     title: '',
     usagePurpose: '',
+    flightPurpose: 'SURVEY_MONITORING',
     priority: 'NORMAL',
     description: '',
     address: '',
     latitude: '10.6402',
     longitude: '106.6912',
     radiusM: 300,
+    monitoringRelationship: '',
+    monitoringAuthorizationConfirmed: false,
+    monitoringAuthorizationDocuments: [],
     altitudeM: 60,
     estimatedLengthM: '',
     siteContactName: '',
@@ -20,10 +32,12 @@ export function createDefaultForm(): FormState {
     accessNotes: '',
     permitStatus: 'NONE',
     permitNumber: '',
+    permitExpiresOn: '',
+    permitDocuments: [],
     areaFiles: [],
     serviceId: '',
-    preferredDateFrom: todayPlus(1),
-    preferredDateTo: todayPlus(1),
+    preferredDateFrom: todayPlus(7),
+    preferredDateTo: todayPlus(7),
     preferredTimeId: '',
     recurrenceType: 'NONE',
     recurrenceOccurrences: 4,
@@ -49,7 +63,33 @@ export function readStoredDraft(): StoredCreateOrderDraft | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = window.localStorage.getItem(CREATE_ORDER_DRAFT_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as StoredCreateOrderDraft) : null
+    if (!raw) return null
+    const draft = JSON.parse(raw) as StoredCreateOrderDraft
+    if (!draft.form) return draft
+    return {
+      ...draft,
+      form: {
+        ...draft.form,
+        // Drafts saved before permit evidence existed have neither field.
+        flightPurpose:
+          draft.form.flightPurpose === 'AGRICULTURE'
+            ? 'SURVEY_MONITORING'
+            : (draft.form.flightPurpose ?? 'SURVEY_MONITORING'),
+        permitExpiresOn: draft.form.permitExpiresOn ?? '',
+        permitDocuments: draft.form.permitDocuments ?? [],
+        monitoringRelationship: draft.form.monitoringRelationship ?? '',
+        monitoringAuthorizationConfirmed:
+          draft.form.monitoringAuthorizationConfirmed ?? false,
+        monitoringAuthorizationDocuments:
+          draft.form.monitoringAuthorizationDocuments ?? [],
+        resultFormats: draft.form.resultFormats.filter((value) =>
+          RESULT_FORMATS.includes(value as ResultFormat),
+        ) as ResultFormat[],
+        deliveryMethods: draft.form.deliveryMethods.filter((value) =>
+          DELIVERY_METHODS.includes(value as DeliveryMethod),
+        ) as DeliveryMethod[],
+      },
+    }
   } catch {
     return null
   }

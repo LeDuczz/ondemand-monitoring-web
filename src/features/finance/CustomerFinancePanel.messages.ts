@@ -8,7 +8,7 @@ export const customerFinancePanelMessages = defineMessages({
     networkError: 'Không thể kết nối tới máy chủ. Vui lòng thử lại.',
     paymentProviderError:
       'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.',
-    missingPaymentUrl: 'Cổng thanh toán chưa trả về checkout URL.',
+    missingPaymentUrl: 'Cổng thanh toán chưa trả về đường dẫn thanh toán.',
     loadError: 'Không thể tải dữ liệu tài chính.',
   },
   en: {

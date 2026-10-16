@@ -7,7 +7,12 @@ import { estimatedAreaHa } from './format'
 import { OrderIcon, type OrderIconName } from './OrderIcon'
 import { resolveOrderGpsCenter } from './orderGps'
 
-type InfoRow = { icon: OrderIconName; label: string; value: ReactNode }
+type InfoTile = {
+  icon: OrderIconName
+  label: string
+  value: ReactNode
+  copyText?: string
+}
 
 function centerLabel(order: OrderDetail) {
   const resolved = resolveOrderGpsCenter(order.center)
@@ -34,28 +39,46 @@ function locationLabel(order: OrderDetail, t: OrderReviewMessages) {
   return order.addressText ?? '—'
 }
 
-function InfoColumn({ rows }: { rows: InfoRow[] }) {
+function InfoTileCard({
+  tile,
+  copyLabel,
+}: {
+  tile: InfoTile
+  copyLabel: string
+}) {
+  const { copyText } = tile
   return (
-    <dl className="odm-or-info-col">
-      {rows.map((row) => (
-        <div key={row.label} className="odm-or-info-row">
-          <dt>
-            <OrderIcon name={row.icon} size={16} />
-            {row.label}
-          </dt>
-          <dd>{row.value}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="odm-or-svc-tile">
+      <span className="odm-or-svc-ico" aria-hidden="true">
+        <OrderIcon name={tile.icon} size={20} />
+      </span>
+      <div className="odm-or-svc-tile-text">
+        <dt>{tile.label}</dt>
+        <dd>{tile.value}</dd>
+      </div>
+      {copyText ? (
+        <button
+          type="button"
+          className="odm-or-svc-copy"
+          aria-label={`${copyLabel}: ${tile.label}`}
+          onClick={() => void navigator.clipboard?.writeText(copyText)}
+        >
+          <OrderIcon name="copy" size={15} />
+        </button>
+      ) : null}
+    </div>
   )
 }
 
 export function OrderServiceInfo({
   order,
   t,
+  hideService = false,
 }: {
   order: OrderDetail
   t: OrderReviewMessages
+  /** Skip the service tile when a banner above already shows it. */
+  hideService?: boolean
 }) {
   const areaHa = estimatedAreaHa(order.radiusM)
   const preferred =
@@ -64,17 +87,21 @@ export function OrderServiceInfo({
       order.preferredTimeName,
       order.preferredWindow,
     ) || null
+  const resolvedCenter = resolveOrderGpsCenter(order.center)
 
-  const left: InfoRow[] = [
-    { icon: 'service', label: t.service, value: order.serviceName },
-    { icon: 'clock', label: t.preferredWindow, value: preferred ?? '—' },
-  ]
-  const right: InfoRow[] = [
+  const tiles: InfoTile[] = []
+  if (!hideService) {
+    tiles.push({ icon: 'service', label: t.service, value: order.serviceName })
+  }
+  tiles.push(
     { icon: 'pin', label: t.locationLabel, value: locationLabel(order, t) },
     {
       icon: 'target',
       label: t.centerCoords,
       value: centerLabel(order),
+      copyText: resolvedCenter
+        ? `${resolvedCenter.center.lat}, ${resolvedCenter.center.lon}`
+        : undefined,
     },
     {
       icon: 'radius',
@@ -86,15 +113,14 @@ export function OrderServiceInfo({
       label: t.estimatedArea,
       value: areaHa != null ? `${areaHa} ha` : '—',
     },
-  ]
+  )
   if (order.nearestBase) {
-    right.push({
+    tiles.push({
       icon: 'drone',
       label: t.nearestBase,
       value: order.nearestBase,
     })
   }
-
   return (
     <section className="odm-or-card">
       <header className="odm-or-card-head">
@@ -104,21 +130,22 @@ export function OrderServiceInfo({
         </span>
       </header>
       <div className="odm-or-card-body odm-or-cq">
-        <div className="odm-or-info-grid">
-          <InfoColumn rows={left} />
-          <InfoColumn rows={right} />
-        </div>
-        {order.purpose ? (
-          <div className="odm-or-ai">
-            <span className="odm-or-ai-badge" aria-hidden="true">
-              AI
+        <dl className="odm-or-svc-grid">
+          <div className="odm-or-svc-time">
+            <span className="odm-or-svc-ico" aria-hidden="true">
+              <OrderIcon name="calendar" size={30} />
             </span>
-            <div>
-              <div className="odm-or-ai-title">{t.aiSummary}</div>
-              <p className="odm-or-ai-text">{order.purpose}</p>
+            <div className="odm-or-svc-tile-text">
+              <dt>{t.preferredWindow}</dt>
+              <dd>{preferred ?? '—'}</dd>
             </div>
           </div>
-        ) : null}
+          <div className="odm-or-svc-tiles">
+            {tiles.map((tile) => (
+              <InfoTileCard key={tile.label} tile={tile} copyLabel={t.copy} />
+            ))}
+          </div>
+        </dl>
       </div>
     </section>
   )

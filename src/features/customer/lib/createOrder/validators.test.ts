@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createDefaultForm } from './draftStorage'
+import { todayPlus } from './format'
 import { validateStep, type ValidationMessages } from './validators'
 
 const msg: ValidationMessages = {
@@ -12,6 +13,7 @@ const msg: ValidationMessages = {
   serviceId: 'service',
   title: 'title',
   preferredDateFrom: 'from',
+  preferredDateTooSoon: 'tooSoon',
   preferredDateTo: 'to',
   preferredDateOrder: 'order',
   preferredTimeId: 'time',
@@ -26,9 +28,21 @@ const msg: ValidationMessages = {
   siteContactPhone: 'phone',
   permitStatus: (n) => `permit:${n}`,
   permitNumber: 'permitNumber',
+  permitDocuments: 'permitDocuments',
+  permitExpiresOn: 'permitExpiresOn',
+  permitExpired: 'permitExpired',
+  monitoringRelationship: 'monitoringRelationship',
+  monitoringAuthorizationConfirmed: 'monitoringAuthorizationConfirmed',
+  monitoringAuthorizationDocuments: 'monitoringAuthorizationDocuments',
 }
 const okLocation = { monitoringValid: true, blockedZoneNames: [] }
-const withService = { ...createDefaultForm(), serviceId: 's', title: 't' }
+const withService = {
+  ...createDefaultForm(),
+  serviceId: 's',
+  title: 't',
+  monitoringRelationship: 'OWNER' as const,
+  monitoringAuthorizationConfirmed: true,
+}
 
 describe('validateStep', () => {
   it('step 1 requires a service and a title', () => {
@@ -56,16 +70,30 @@ describe('validateStep', () => {
   it('step 3 reports zone problems, restricted zone winning over outside zone', () => {
     const form = { ...withService, address: 'A' }
     expect(
-      validateStep(3, form, { monitoringValid: false, blockedZoneNames: [] }, msg).address,
+      validateStep(
+        3,
+        form,
+        { monitoringValid: false, blockedZoneNames: [] },
+        msg,
+      ).address,
     ).toBe('outside')
     expect(
-      validateStep(3, form, { monitoringValid: false, blockedZoneNames: ['X', 'Y'] }, msg)
-        .address,
+      validateStep(
+        3,
+        form,
+        { monitoringValid: false, blockedZoneNames: ['X', 'Y'] },
+        msg,
+      ).address,
     ).toBe('blocked:X, Y')
   })
 
   it('step 3 rejects non-numeric coordinates', () => {
-    const form = { ...withService, address: 'A', latitude: 'abc', longitude: 'x' }
+    const form = {
+      ...withService,
+      address: 'A',
+      latitude: 'abc',
+      longitude: 'x',
+    }
     const errors = validateStep(3, form, okLocation, msg)
     expect(errors.latitude).toBe('latitude')
     expect(errors.longitude).toBe('longitude')
@@ -75,13 +103,26 @@ describe('validateStep', () => {
     const form = {
       ...withService,
       address: 'A',
-      preferredDateFrom: '2026-10-05',
-      preferredDateTo: '2026-10-01',
+      preferredDateFrom: todayPlus(8),
+      preferredDateTo: todayPlus(7),
     }
     expect(validateStep(4, form, okLocation, msg)).toEqual({
       preferredDateTo: 'order',
       preferredTimeId: 'time',
     })
+  })
+
+  it('step 4 requires at least 7 days of advance notice', () => {
+    const form = {
+      ...withService,
+      address: 'A',
+      preferredDateFrom: todayPlus(6),
+      preferredDateTo: todayPlus(7),
+      preferredTimeId: 'pt',
+    }
+    expect(validateStep(4, form, okLocation, msg).preferredDateFrom).toBe(
+      'tooSoon',
+    )
   })
 
   it('step 5 also requires a deliverable and passes for a complete form', () => {
@@ -91,17 +132,50 @@ describe('validateStep', () => {
       termsAccepted: 'terms',
     })
     expect(
-      validateStep(5, { ...base, deliverableTypeId: 'dt', termsAccepted: true }, okLocation, msg),
+      validateStep(
+        5,
+        { ...base, deliverableTypeId: 'dt', termsAccepted: true },
+        okLocation,
+        msg,
+      ),
     ).toEqual({})
   })
 
+  it('requires monitoring authorization only when submitting', () => {
+    const form = {
+      ...withService,
+      address: 'A',
+      preferredTimeId: 'pt',
+      deliverableTypeId: 'dt',
+      monitoringRelationship: '' as const,
+      monitoringAuthorizationConfirmed: false,
+    }
+    expect(validateStep(4, form, okLocation, msg)).toEqual({})
+    expect(validateStep(5, form, okLocation, msg)).toMatchObject({
+      monitoringRelationship: 'monitoringRelationship',
+      monitoringAuthorizationConfirmed: 'monitoringAuthorizationConfirmed',
+    })
+  })
+
   it('step 5 requires a result format, a delivery method and accepted terms', () => {
-    const base = { ...withService, address: 'A', preferredTimeId: 'pt', deliverableTypeId: 'dt' }
-    expect(validateStep(5, base, okLocation, msg)).toEqual({ termsAccepted: 'terms' })
+    const base = {
+      ...withService,
+      address: 'A',
+      preferredTimeId: 'pt',
+      deliverableTypeId: 'dt',
+    }
+    expect(validateStep(5, base, okLocation, msg)).toEqual({
+      termsAccepted: 'terms',
+    })
     expect(
       validateStep(
         5,
-        { ...base, termsAccepted: true, resultFormats: [], deliveryMethods: [] },
+        {
+          ...base,
+          termsAccepted: true,
+          resultFormats: [],
+          deliveryMethods: [],
+        },
         okLocation,
         msg,
       ),
@@ -109,7 +183,13 @@ describe('validateStep', () => {
   })
 
   it('step 3 validates altitude, length and contact phone', () => {
-    const form = { ...withService, address: 'A', altitudeM: 200, estimatedLengthM: '-5', siteContactPhone: 'abc' }
+    const form = {
+      ...withService,
+      address: 'A',
+      altitudeM: 200,
+      estimatedLengthM: '-5',
+      siteContactPhone: 'abc',
+    }
     expect(validateStep(3, form, okLocation, msg)).toEqual({
       altitudeM: 'altitude',
       estimatedLengthM: 'length',
@@ -117,26 +197,128 @@ describe('validateStep', () => {
     })
   })
 
-  it('step 3 requires a permit answer near the airport', () => {
-    const near = { ...withService, address: 'A', latitude: '10.8150', longitude: '106.6600' }
-    expect(validateStep(3, near, okLocation, msg).permitStatus).toBe('permit:Sân bay Tân Sơn Nhất')
-    expect(validateStep(3, { ...near, permitStatus: 'NEED_SUPPORT' }, okLocation, msg)).toEqual({})
-    expect(validateStep(3, { ...near, permitStatus: 'HAVE_PERMIT' }, okLocation, msg).permitNumber).toBe('permitNumber')
+  it('step 3 validates a permit only when the customer declares one', () => {
+    const near = {
+      ...withService,
+      address: 'A',
+      latitude: '10.8150',
+      longitude: '106.6600',
+    }
+    expect(validateStep(3, near, okLocation, msg)).toEqual({})
     expect(
-      validateStep(3, { ...near, permitStatus: 'HAVE_PERMIT', permitNumber: 'GP-1' }, okLocation, msg),
+      validateStep(
+        3,
+        { ...near, permitStatus: 'NEED_SUPPORT' },
+        okLocation,
+        msg,
+      ),
+    ).toEqual({})
+    expect(
+      validateStep(3, { ...near, permitStatus: 'HAVE_PERMIT' }, okLocation, msg)
+        .permitNumber,
+    ).toBe('permitNumber')
+    // A number alone is not enough: the file and a validity date are required too.
+    expect(
+      validateStep(
+        3,
+        { ...near, permitStatus: 'HAVE_PERMIT', permitNumber: 'GP-1' },
+        okLocation,
+        msg,
+      ),
+    ).toEqual({
+      permitDocuments: 'permitDocuments',
+      permitExpiresOn: 'permitExpiresOn',
+    })
+    const file = {
+      id: 'f',
+      fileName: 'p.pdf',
+      contentType: 'application/pdf',
+      sizeBytes: 10,
+      dataUrl: 'data:',
+    }
+    const complete = {
+      ...near,
+      permitStatus: 'HAVE_PERMIT' as const,
+      permitNumber: 'GP-1',
+      permitDocuments: [file],
+      preferredDateTo: '2026-10-12',
+    }
+    expect(
+      validateStep(
+        3,
+        { ...complete, permitExpiresOn: '2026-12-31' },
+        okLocation,
+        msg,
+      ),
     ).toEqual({})
   })
 
+  it('rejects a permit that expires before the flight date', () => {
+    const file = {
+      id: 'f',
+      fileName: 'p.pdf',
+      contentType: 'application/pdf',
+      sizeBytes: 10,
+      dataUrl: 'data:',
+    }
+    const form = {
+      ...withService,
+      address: 'A',
+      latitude: '10.8150',
+      longitude: '106.6600',
+      permitStatus: 'HAVE_PERMIT' as const,
+      permitNumber: 'GP-1',
+      permitDocuments: [file],
+      preferredDateTo: '2026-10-12',
+      permitExpiresOn: '2026-10-11',
+    }
+    expect(validateStep(3, form, okLocation, msg).permitExpiresOn).toBe(
+      'permitExpired',
+    )
+  })
+
   it('step 4 checks the result deadline and recurrence count', () => {
-    const base = { ...withService, address: 'A', preferredDateFrom: '2026-10-10', preferredDateTo: '2026-10-12', preferredTimeId: 't' }
+    const base = {
+      ...withService,
+      address: 'A',
+      preferredDateFrom: todayPlus(7),
+      preferredDateTo: todayPlus(9),
+      preferredTimeId: 't',
+    }
     expect(validateStep(4, base, okLocation, msg)).toEqual({})
-    expect(validateStep(4, { ...base, resultDeadline: '2026-10-11' }, okLocation, msg).resultDeadline).toBe('deadline')
-    expect(validateStep(4, { ...base, resultDeadline: '2026-10-12' }, okLocation, msg).resultDeadline).toBeUndefined()
+    expect(
+      validateStep(
+        4,
+        { ...base, resultDeadline: todayPlus(8) },
+        okLocation,
+        msg,
+      ).resultDeadline,
+    ).toBe('deadline')
+    expect(
+      validateStep(
+        4,
+        { ...base, resultDeadline: todayPlus(9) },
+        okLocation,
+        msg,
+      ).resultDeadline,
+    ).toBeUndefined()
     const weekly = { ...base, recurrenceType: 'WEEKLY' as const }
-    expect(validateStep(4, { ...weekly, recurrenceOccurrences: 1 }, okLocation, msg).recurrenceOccurrences).toBe('occurrences')
-    expect(validateStep(4, { ...weekly, recurrenceOccurrences: 53 }, okLocation, msg).recurrenceOccurrences).toBe('occurrences')
-    expect(validateStep(4, { ...weekly, recurrenceOccurrences: 4 }, okLocation, msg).recurrenceOccurrences).toBeUndefined()
+    expect(
+      validateStep(4, { ...weekly, recurrenceOccurrences: 1 }, okLocation, msg)
+        .recurrenceOccurrences,
+    ).toBe('occurrences')
+    expect(
+      validateStep(4, { ...weekly, recurrenceOccurrences: 53 }, okLocation, msg)
+        .recurrenceOccurrences,
+    ).toBe('occurrences')
+    expect(
+      validateStep(4, { ...weekly, recurrenceOccurrences: 4 }, okLocation, msg)
+        .recurrenceOccurrences,
+    ).toBeUndefined()
     // A stale count is ignored while the request does not repeat.
-    expect(validateStep(4, { ...base, recurrenceOccurrences: 1 }, okLocation, msg).recurrenceOccurrences).toBeUndefined()
+    expect(
+      validateStep(4, { ...base, recurrenceOccurrences: 1 }, okLocation, msg)
+        .recurrenceOccurrences,
+    ).toBeUndefined()
   })
 })

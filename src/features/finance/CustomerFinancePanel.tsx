@@ -3,6 +3,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../shared/api/httpClient'
 import { useI18n } from '../../shared/i18n'
 import { formatVnd } from '../../shared/lib/formatVnd'
+import {
+  pricingDescription,
+  pricingLabel,
+} from '../../shared/lib/pricingPresentation'
 import { financeApi } from './api'
 import type { Invoice, Quote } from './types'
 import { customerFinancePanelMessages } from './CustomerFinancePanel.messages'
@@ -101,14 +105,18 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
                   <span>
                     <b>
                       {item.type === 'INCLUDED' ? '✓ ' : ''}
-                      {item.description}
+                      {pricingDescription(item.description)}
                     </b>
                     <small>
                       {item.type === 'ADDITIONAL'
                         ? 'Yêu cầu bổ sung'
                         : item.type === 'PACKAGE'
                           ? 'Gói dịch vụ'
-                          : 'Đã bao gồm'}
+                          : item.type === 'MANAGER_ADJUSTMENT'
+                            ? 'Điều chỉnh đã được phê duyệt'
+                            : item.type === 'DISCOUNT'
+                              ? 'Ưu đãi tự động'
+                              : 'Đã bao gồm'}
                     </small>
                   </span>
                   <strong>{formatVnd(item.amount)}</strong>
@@ -124,7 +132,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
           </dl>
           {quote.managerNote ? (
             <p className="customer-manager-note">
-              <b>Ghi chú của manager:</b> {quote.managerNote}
+              <b>Ghi chú của quản lý:</b> {quote.managerNote}
             </p>
           ) : null}
           {quote.status === 'APPROVED' && !invoice ? (
@@ -153,7 +161,7 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <span
               className={`finance-status is-${invoice.status.toLowerCase()}`}
             >
-              {invoice.status}
+              {pricingLabel(invoice.status)}
             </span>
           </div>
           <div className="customer-payment-stats">
@@ -169,14 +177,14 @@ export function CustomerFinancePanel({ orderId }: { orderId: string }) {
             <div className="customer-deposit-notice">
               <b>Đang chờ đặt cọc</b>
               <span>
-                Mission đã được tạo nhưng chỉ bắt đầu phân bổ nguồn lực sau khi
+                Nhiệm vụ đã được tạo nhưng chỉ bắt đầu phân bổ nguồn lực sau khi
                 khoản đặt cọc được xác nhận.
               </span>
             </div>
           ) : invoice.status !== 'PAID' ? (
             <div className="customer-deposit-notice is-ready">
               <b>Đã nhận tiền đặt cọc</b>
-              <span>Mission đã được mở khóa cho quy trình vận hành.</span>
+              <span>Nhiệm vụ đã được mở khóa cho quy trình vận hành.</span>
             </div>
           ) : null}
           <div className="finance-actions customer-payment-actions">
@@ -242,11 +250,25 @@ function isNotFound(error: unknown) {
   return error instanceof ApiError && error.status === 404
 }
 function messageOf(error: unknown, t: (typeof customerFinancePanelMessages)['vi']) {
-  if (error instanceof ApiError && error.code === 'NETWORK_ERROR') {
-    return t.networkError
-  }
-  if (error instanceof ApiError && error.code === 'PAYMENT_PROVIDER_ERROR') {
-    return t.paymentProviderError
+  if (error instanceof ApiError) {
+    if (error.code === 'NETWORK_ERROR') {
+      return t.networkError
+    }
+    if (error.code === 'PAYMENT_PROVIDER_ERROR') {
+      return t.paymentProviderError
+    }
+    const messages: Record<string, string> = {
+      INVOICE_ALREADY_PAID: 'Hóa đơn này đã được thanh toán đầy đủ.',
+      INVOICE_NOT_PAYABLE: 'Hóa đơn hiện không thể thanh toán.',
+      DEPOSIT_ALREADY_SATISFIED: 'Khoản đặt cọc đã được thanh toán.',
+      ACTIVE_PAYMENT_EXISTS: 'Đang có một giao dịch thanh toán chưa hoàn tất.',
+      QUOTE_NOT_APPROVED: 'Báo giá chưa được phê duyệt.',
+      QUOTE_NOT_CURRENT: 'Báo giá này không còn là phiên bản hiện hành.',
+    }
+    if (error.code && messages[error.code]) {
+      return messages[error.code]
+    }
+    return t.loadError
   }
   return error instanceof Error
     ? error.message

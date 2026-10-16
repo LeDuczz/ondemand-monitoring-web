@@ -84,7 +84,9 @@ describe('CustomerFinancePanel', () => {
 
     await waitFor(() => expect(createDeposit).toHaveBeenCalledWith('invoice-1'))
     expect(
-      await screen.findByText('Cổng thanh toán chưa trả về checkout URL.'),
+      await screen.findByText(
+        'Cổng thanh toán chưa trả về đường dẫn thanh toán.',
+      ),
     ).toBeInTheDocument()
   })
 })

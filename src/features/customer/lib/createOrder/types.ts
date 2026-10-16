@@ -45,16 +45,52 @@ export type SimulationZone = {
   coordinates: [number, number][]
 }
 
-export type UsagePurpose = '' | 'INTERNAL' | 'LEGAL' | 'PARTNER_REPORT' | 'OTHER'
+export type UsagePurpose =
+  '' | 'INTERNAL' | 'LEGAL' | 'PARTNER_REPORT' | 'OTHER'
+/** Flight purpose per Decree 288/2025/ND-CP, Article 4.3 — only the classes this service sells. */
+export const FLIGHT_PURPOSES = [
+  'SURVEY_MONITORING',
+  'AGRICULTURE',
+  'CONSTRUCTION_MONITORING',
+  'INDUSTRIAL_INSPECTION',
+  'AREA_MONITORING',
+  'FOREST_MONITORING',
+  'OTHER',
+] as const
+export type FlightPurpose = (typeof FLIGHT_PURPOSES)[number]
 export type PermitStatus = 'NONE' | 'HAVE_PERMIT' | 'NEED_SUPPORT'
+export const MONITORING_RELATIONSHIPS = [
+  'OWNER',
+  'AUTHORIZED_PERSON',
+  'CONTRACTOR',
+  'MANAGER_OR_SUPERVISOR',
+  'OTHER',
+] as const
+export type MonitoringRelationship = (typeof MONITORING_RELATIONSHIPS)[number]
+export const AUTHORIZATION_DOCUMENT_TYPES = [
+  'OWNERSHIP_PROOF',
+  'OWNER_CONSENT',
+  'AUTHORIZATION_LETTER',
+  'SERVICE_CONTRACT',
+  'ASSIGNMENT_LETTER',
+  'OTHER',
+] as const
+export type AuthorizationDocumentType =
+  (typeof AUTHORIZATION_DOCUMENT_TYPES)[number]
+export type MonitoringAuthorizationDocument = CustomerOrderAttachment & {
+  documentType: AuthorizationDocumentType
+  documentName: string
+  notes: string
+}
 export type RequestPriority = 'NORMAL' | 'HIGH' | 'URGENT'
 export type RecurrenceType = 'NONE' | 'WEEKLY' | 'MONTHLY'
 /** What to do when a flight cannot go ahead (weather, equipment, access, permit, safety). */
-export type WeatherFallback = 'AUTO_RESCHEDULE' | 'CONTACT_CUSTOMER' | 'CANCEL_ORDER'
+export type WeatherFallback =
+  'AUTO_RESCHEDULE' | 'CONTACT_CUSTOMER' | 'CANCEL_ORDER'
 
-export const RESULT_FORMATS = ['PHOTO', 'VIDEO', 'PDF_REPORT', 'ORTHOMOSAIC', 'MODEL_3D'] as const
+export const RESULT_FORMATS = ['PHOTO', 'VIDEO', 'PDF_REPORT'] as const
 export type ResultFormat = (typeof RESULT_FORMATS)[number]
-export const DELIVERY_METHODS = ['DOWNLOAD', 'EMAIL', 'API'] as const
+export const DELIVERY_METHODS = ['DOWNLOAD', 'EMAIL'] as const
 export type DeliveryMethod = (typeof DELIVERY_METHODS)[number]
 export const RETENTION_DAYS = [30, 90, 180, 365] as const
 export type RetentionDays = (typeof RETENTION_DAYS)[number]
@@ -62,12 +98,17 @@ export type RetentionDays = (typeof RETENTION_DAYS)[number]
 export type FormState = {
   title: string
   usagePurpose: UsagePurpose
+  /** Printed as the flight purpose on the flight-permit application. */
+  flightPurpose: FlightPurpose
   priority: RequestPriority
   description: string
   address: string
   latitude: string
   longitude: string
   radiusM: number
+  monitoringRelationship: MonitoringRelationship | ''
+  monitoringAuthorizationConfirmed: boolean
+  monitoringAuthorizationDocuments: MonitoringAuthorizationDocument[]
   altitudeM: number
   /** Optional estimated length in metres (roads, runways, pipelines). */
   estimatedLengthM: string
@@ -76,6 +117,10 @@ export type FormState = {
   accessNotes: string
   permitStatus: PermitStatus
   permitNumber: string
+  /** Last day the permit is valid (ISO date); required with HAVE_PERMIT. */
+  permitExpiresOn: string
+  /** Permit files (PDF or image); required with HAVE_PERMIT. */
+  permitDocuments: CustomerOrderAttachment[]
   /** KML / GeoJSON / drawings describing the area. */
   areaFiles: CustomerOrderAttachment[]
   serviceId: string
@@ -93,7 +138,7 @@ export type FormState = {
   mediaType: 'IMAGE' | 'VIDEO'
   quantity: number
   resolution: string
-  /** Result formats wanted (photo, video, PDF report, orthomosaic, 3D model); at least one. */
+  /** Result formats wanted (photo, video, PDF report); at least one. */
   resultFormats: ResultFormat[]
   /** How the result is received; at least one. */
   deliveryMethods: DeliveryMethod[]

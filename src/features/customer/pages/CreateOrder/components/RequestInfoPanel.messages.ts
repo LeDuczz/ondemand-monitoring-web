@@ -15,9 +15,25 @@ export const requestInfoPanelMessages = defineMessages({
     waitingForService: 'Chờ chọn dịch vụ',
     descriptionLabel: 'Ghi chú tổng quan',
     descriptionPlaceholder: 'Bối cảnh, lưu ý hoặc yêu cầu bổ sung nếu cần...',
+    flightPurposeLabel: 'Mục đích bay',
+    flightPurposeHint:
+      'Theo Nghị định 288/2025/NĐ-CP, dùng để lập hồ sơ xin phép bay.',
+    flightPurposes: {
+      SURVEY_MONITORING: 'Đo đạc, khảo sát, giám sát từ trên cao',
+      CONSTRUCTION_MONITORING: 'Giám sát tiến độ công trình',
+      INDUSTRIAL_INSPECTION: 'Kiểm tra nhà xưởng và cơ sở sản xuất',
+      AREA_MONITORING: 'Giám sát khu vực',
+      FOREST_MONITORING: 'Giám sát tài nguyên rừng',
+      OTHER: 'Mục đích khác',
+    },
     purposeLabel: 'Mục đích sử dụng',
     purposePlaceholder: 'Chọn mục đích',
-    purposes: { INTERNAL: 'Nội bộ', LEGAL: 'Pháp lý', PARTNER_REPORT: 'Báo cáo cho đối tác', OTHER: 'Khác' },
+    purposes: {
+      INTERNAL: 'Nội bộ',
+      LEGAL: 'Pháp lý',
+      PARTNER_REPORT: 'Báo cáo cho đối tác',
+      OTHER: 'Khác',
+    },
     priorityLabel: 'Mức ưu tiên',
     priorities: { NORMAL: 'Bình thường', HIGH: 'Cao', URGENT: 'Khẩn cấp' },
     status: {
@@ -37,7 +53,8 @@ export const requestInfoPanelMessages = defineMessages({
     titleLabel: 'Title',
     titlePlaceholder: 'E.g. Monitor progress on the east construction site',
     understood: 'What the AI understood',
-    noSummary: 'The AI does not have enough information to summarise your needs yet.',
+    noSummary:
+      'The AI does not have enough information to summarise your needs yet.',
     aiSuggested: 'AI suggestion',
     noSuggestion: 'No suggestion yet',
     selectedService: 'Selected service',
@@ -45,10 +62,27 @@ export const requestInfoPanelMessages = defineMessages({
     consultationStatus: 'Consultation status',
     waitingForService: 'Waiting for a service',
     descriptionLabel: 'General notes',
-    descriptionPlaceholder: 'Context, caveats or extra requirements if needed...',
+    descriptionPlaceholder:
+      'Context, caveats or extra requirements if needed...',
+    flightPurposeLabel: 'Flight purpose',
+    flightPurposeHint:
+      'Per Decree 288/2025/ND-CP; used to prepare the flight-permit application.',
+    flightPurposes: {
+      SURVEY_MONITORING: 'Surveying, mapping and aerial monitoring',
+      CONSTRUCTION_MONITORING: 'Construction progress monitoring',
+      INDUSTRIAL_INSPECTION: 'Factory and industrial facility inspection',
+      AREA_MONITORING: 'Area monitoring',
+      FOREST_MONITORING: 'Forest resource monitoring',
+      OTHER: 'Other purpose',
+    },
     purposeLabel: 'Intended use',
     purposePlaceholder: 'Select a purpose',
-    purposes: { INTERNAL: 'Internal', LEGAL: 'Legal', PARTNER_REPORT: 'Partner report', OTHER: 'Other' },
+    purposes: {
+      INTERNAL: 'Internal',
+      LEGAL: 'Legal',
+      PARTNER_REPORT: 'Partner report',
+      OTHER: 'Other',
+    },
     priorityLabel: 'Priority',
     priorities: { NORMAL: 'Normal', HIGH: 'High', URGENT: 'Urgent' },
     status: {

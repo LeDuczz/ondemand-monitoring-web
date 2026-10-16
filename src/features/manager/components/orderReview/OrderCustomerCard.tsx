@@ -61,10 +61,7 @@ export function OrderCustomerCard({
         </div>
         <ul className="odm-or-contact">
           {rows.map((row) => (
-            <li
-              key={row.icon}
-              className={row.value ? undefined : 'is-empty'}
-            >
+            <li key={row.icon} className={row.value ? undefined : 'is-empty'}>
               <OrderIcon name={row.icon} size={16} />
               <span>{row.value || row.empty}</span>
             </li>

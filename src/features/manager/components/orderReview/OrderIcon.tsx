@@ -36,6 +36,10 @@ export type OrderIconName =
   | 'database'
   | 'resolution'
   | 'stack'
+  | 'altitude'
+  | 'download'
+  | 'shield'
+  | 'cloud'
 
 const paths: Record<OrderIconName, ReactNode> = {
   pin: (
@@ -164,7 +168,9 @@ const paths: Record<OrderIconName, ReactNode> = {
       <path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22" />
     </>
   ),
-  ai: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />,
+  ai: (
+    <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />
+  ),
   file: (
     <>
       <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
@@ -206,6 +212,17 @@ const paths: Record<OrderIconName, ReactNode> = {
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="M7 15v-6M7 12h3M10 15v-6M14 9h2.5a1.5 1.5 0 0 1 0 3H14zM14 12h2.5a1.5 1.5 0 0 1 0 3H14z" />
     </>
+  ),
+  altitude: <path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4" />,
+  download: <path d="M12 4v10M8 10l4 4 4-4M5 19h14" />,
+  shield: (
+    <>
+      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  cloud: (
+    <path d="M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.3A3.4 3.4 0 0 1 17 18z" />
   ),
   stack: (
     <>

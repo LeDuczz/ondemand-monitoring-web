@@ -2,12 +2,14 @@ import type { ReactNode } from 'react'
 
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import type { OrderDetail } from '../../types/orders'
-import { OrderIcon } from './OrderIcon'
+import { OrderIcon, type OrderIconName } from './OrderIcon'
 import { humanizeMediaRequirement } from './format'
 
 type DetailItem = {
   label: string
   value: ReactNode
+  icon?: OrderIconName
+  tone?: 'green' | 'blue' | 'orange' | 'purple'
 }
 
 const enumLabels: Record<string, string> = {
@@ -15,6 +17,12 @@ const enumLabels: Record<string, string> = {
   LEGAL: 'Pháp lý',
   PARTNER_REPORT: 'Báo cáo cho đối tác',
   OTHER: 'Khác',
+  AGRICULTURE: 'Phục vụ nông nghiệp',
+  SURVEY_MONITORING: 'Đo đạc, khảo sát, giám sát từ trên cao',
+  CONSTRUCTION_MONITORING: 'Giám sát tiến độ công trình',
+  INDUSTRIAL_INSPECTION: 'Kiểm tra nhà xưởng và cơ sở sản xuất',
+  AREA_MONITORING: 'Giám sát khu vực',
+  FOREST_MONITORING: 'Giám sát tài nguyên rừng',
   NORMAL: 'Bình thường',
   HIGH: 'Cao',
   URGENT: 'Khẩn cấp',
@@ -70,21 +78,6 @@ function dateTime(value: string | null | undefined): string | null {
 
 function visibleItems(items: DetailItem[]) {
   return items.filter((item) => item.value != null && item.value !== '')
-}
-
-function DetailGrid({ items }: { items: DetailItem[] }) {
-  const visible = visibleItems(items)
-  if (visible.length === 0) return null
-  return (
-    <div className="odm-or-detail-grid">
-      {visible.map((item) => (
-        <div key={item.label} className="odm-or-detail-metric">
-          <span>{item.label}</span>
-          <strong>{item.value}</strong>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 function requirementValue(value: unknown): string | null {
@@ -240,6 +233,35 @@ function requirementItems(
     .filter((item): item is DetailItem => item != null)
 }
 
+function FactList({ items }: { items: DetailItem[] }) {
+  const visible = visibleItems(items)
+  if (visible.length === 0) return null
+  return (
+    <dl className="odm-or-req-facts">
+      {visible.map((item) => (
+        <div
+          key={item.label}
+          className={
+            item.icon
+              ? `has-icon${item.tone ? ` tone-${item.tone}` : ''}`
+              : undefined
+          }
+        >
+          <dt>
+            {item.icon ? (
+              <span className="odm-or-req-ico" aria-hidden="true">
+                <OrderIcon name={item.icon} size={20} />
+              </span>
+            ) : null}
+            <span>{item.label}</span>
+          </dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
 export function OrderCustomerRequestDetails({
   order,
   t,
@@ -265,29 +287,90 @@ export function OrderCustomerRequestDetails({
   const resultFormats =
     resultFormatsFromDeliverables(order) ?? list(order.resultFormats)
 
-  const summaryItems: DetailItem[] = [
-    { label: t.orderTitle, value: order.title },
-    { label: t.requestDescription, value: order.description },
-    { label: t.usagePurpose, value: text(order.usagePurpose) },
-    { label: t.priority, value: text(order.priority) },
+  // What the manager needs first: how fast, how high, how long, what comes out.
+  const keyFacts: DetailItem[] = [
+    {
+      label: t.flightPurpose,
+      icon: 'target',
+      tone: 'green',
+      value: text(order.flightPurpose),
+    },
     {
       label: t.flightAltitude,
+      icon: 'altitude',
+      tone: 'blue',
       value: order.altitudeM != null ? `${order.altitudeM} m` : null,
     },
     {
       label: t.estimatedLength,
+      icon: 'radius',
       value:
         order.estimatedLengthM != null ? `${order.estimatedLengthM} m` : null,
     },
-    { label: t.siteContact, value: contact },
-    { label: t.accessNotes, value: order.accessNotes },
-    { label: t.permitInfo, value: permit || null },
-    { label: t.permitRequired, value: text(order.permitRequired) },
-    { label: t.recurrence, value: recurrence },
-    { label: t.weatherFallback, value: text(order.weatherFallback) },
-    { label: t.resultDeadline, value: dateOnly(order.resultDeadline) },
-    { label: t.resultFormats, value: resultFormats },
-    { label: t.deliveryMethods, value: list(order.deliveryMethods) },
+    {
+      label: t.resultDeadline,
+      icon: 'clock',
+      tone: 'blue',
+      value: dateOnly(order.resultDeadline),
+    },
+    {
+      label: t.resultFormats,
+      icon: 'doc',
+      tone: 'orange',
+      value: resultFormats,
+    },
+    {
+      label: t.deliveryMethods,
+      icon: 'download',
+      tone: 'purple',
+      value: list(order.deliveryMethods),
+    },
+  ]
+
+  // Operational context, still visible but visually secondary.
+  const extraFacts: DetailItem[] = [
+    { label: t.siteContact, icon: 'user', value: contact },
+    { label: t.accessNotes, icon: 'info', value: order.accessNotes },
+    { label: t.permitInfo, icon: 'doc', tone: 'blue', value: permit || null },
+    {
+      label: 'Hiệu lực đến',
+      value: dateOnly(order.permitExpiresOn),
+    },
+    {
+      label: 'Tệp giấy phép',
+      value:
+        order.permitDocuments && order.permitDocuments.length > 0 ? (
+          <span className="odm-or-req-files">
+            {order.permitDocuments.map((file) => (
+              <a
+                key={file.id}
+                href={file.dataUrl}
+                download={file.fileName}
+                title={file.fileName}
+              >
+                {file.fileName}
+              </a>
+            ))}
+          </span>
+        ) : null,
+    },
+    {
+      label: t.permitRequired,
+      icon: 'shield',
+      tone: 'green',
+      value: text(order.permitRequired),
+    },
+    { label: t.recurrence, icon: 'refresh', tone: 'orange', value: recurrence },
+    {
+      label: t.weatherFallback,
+      icon: 'cloud',
+      tone: 'purple',
+      value: text(order.weatherFallback),
+    },
+  ]
+
+  // Technical / legal record: collapsed by default.
+  const legalFacts: DetailItem[] = [
     {
       label: t.dataRetention,
       value:
@@ -299,37 +382,66 @@ export function OrderCustomerRequestDetails({
     { label: t.termsVersion, value: order.termsVersion },
   ]
 
+  const priorityLabel = text(order.priority)
+  const purposeLabel = text(order.usagePurpose)
+  const urgent = order.priority === 'URGENT' || order.priority === 'HIGH'
+  const hasSummary = Boolean(
+    order.title || order.description || priorityLabel || purposeLabel,
+  )
   const hasDetails =
-    visibleItems(summaryItems).length > 0 ||
+    hasSummary ||
+    visibleItems([...keyFacts, ...extraFacts, ...legalFacts]).length > 0 ||
     (order.deliverables != null && order.deliverables.length > 0) ||
     (order.mediaRequirements != null && order.mediaRequirements.length > 0)
 
   if (!hasDetails) return null
 
   return (
-    <section className="odm-or-card">
+    <section className="odm-or-card odm-or-req">
       <header className="odm-or-card-head">
         <span className="odm-or-card-title">
           <OrderIcon name="file" size={18} />
           {t.customerRequestDetails}
         </span>
+        {priorityLabel || purposeLabel ? (
+          <div className="odm-or-req-chips">
+            {priorityLabel ? (
+              <span
+                className={`odm-or-req-chip${urgent ? ' is-urgent' : ''}`}
+                title={t.priority}
+              >
+                {priorityLabel}
+              </span>
+            ) : null}
+            {purposeLabel ? (
+              <span className="odm-or-req-chip" title={t.usagePurpose}>
+                {purposeLabel}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </header>
-      <div className="odm-or-card-body odm-or-detail-stack">
+      <div className="odm-or-card-body odm-or-req-body">
+        {hasSummary ? (
+          <div className="odm-or-req-hero">
+            <div className="odm-or-req-hero-text">
+              {order.title ? <h3>{order.title}</h3> : null}
+              {order.description ? <p>{order.description}</p> : null}
+            </div>
+          </div>
+        ) : null}
+
+        <FactList items={keyFacts} />
+
         {!order.deliverables?.length && order.mediaRequirements?.length ? (
-          <section className="odm-or-detail-section">
+          <div className="odm-or-req-deliverables">
             {order.mediaRequirements.map((requirement, index) => (
               <p key={index}>
                 {humanizeMediaRequirement(requirement.label, t)}
               </p>
             ))}
-          </section>
-        ) : null}
-        <section className="odm-or-detail-section">
-          <div className="odm-or-detail-section-head">
-            <h3>{t.customerEnteredInfo}</h3>
           </div>
-          <DetailGrid items={summaryItems} />
-        </section>
+        ) : null}
 
         {order.deliverables?.map((deliverable, index) => {
           const items = requirementItems(deliverable.requirement)
@@ -339,32 +451,22 @@ export function OrderCustomerRequestDetails({
           )
           const addOns = addOnItems(deliverable.requirement)
           return (
-            <section
+            <div
               key={
                 deliverable.id || `${deliverable.deliverableTypeId}-${index}`
               }
-              className="odm-or-detail-section"
+              className="odm-or-req-deliverable"
             >
-              <div className="odm-or-detail-section-head">
-                <h3>
+              <div className="odm-or-req-deliverable-head">
+                <strong>
                   {deliverable.deliverableTypeName || `${t.mediaN(index + 1)}`}
-                </h3>
-                {deliverable.defaultFormat &&
-                deliverable.defaultFormat !==
-                  deliverable.deliverableTypeName ? (
-                  <span className="odm-or-pill">
-                    {text(deliverable.defaultFormat) ??
-                      deliverable.defaultFormat}
+                </strong>
+                {summary.length > 0 ? (
+                  <span className="odm-or-req-summary">
+                    {summary.join(' · ')}
                   </span>
                 ) : null}
               </div>
-              {summary.length > 0 ? (
-                <div className="odm-or-package-summary">
-                  {summary.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
-              ) : null}
               {addOns.length > 0 ? (
                 <div className="odm-or-addon-list">
                   <span>Yêu cầu bổ sung</span>
@@ -373,15 +475,28 @@ export function OrderCustomerRequestDetails({
                   ))}
                 </div>
               ) : null}
-              {items.length > 0 ? <DetailGrid items={items} /> : null}
+              {items.length > 0 ? <FactList items={items} /> : null}
               {summary.length === 0 &&
               addOns.length === 0 &&
               items.length === 0 ? (
                 <p className="odm-or-detail-note">{t.noData}</p>
               ) : null}
-            </section>
+            </div>
           )
         })}
+
+        {visibleItems(extraFacts).length > 0 ? (
+          <div className="odm-or-req-extra">
+            <FactList items={extraFacts} />
+          </div>
+        ) : null}
+
+        {visibleItems(legalFacts).length > 0 ? (
+          <details className="odm-or-req-legal">
+            <summary>Pháp lý và điều khoản</summary>
+            <FactList items={legalFacts} />
+          </details>
+        ) : null}
       </div>
     </section>
   )

@@ -16,6 +16,8 @@ import { setLanguage } from '../../../shared/i18n'
 import { ordersApi } from '../api/ordersApi'
 import type { OrderChecklistSnapshot } from '../types/orders'
 import { OrderReviewPage } from './OrderReviewPage'
+import { OrderChecklistCard } from '../components/orderReview/OrderChecklistCard'
+import { orderReviewPageMessages } from './OrderReviewPage.messages'
 
 const snapshot: OrderChecklistSnapshot[] = [
   {
@@ -93,8 +95,12 @@ describe('Manager historical checklist review through Order API', () => {
     'renders mixed historical content/provenance read only in %s, without fetching the catalog',
     async (language) => {
       setLanguage(language)
-      const transport = serveOrder()
-      render(<OrderReviewPage orderId="order-history" />)
+      render(
+        <OrderChecklistCard
+          order={backendOrder as unknown as import('../types/orders').OrderDetail}
+          t={orderReviewPageMessages[language]}
+        />,
+      )
       const region = await screen.findByRole('region', {
         name:
           language === 'vi' ? 'Nội dung giám sát' : 'Monitoring requirements',
@@ -130,9 +136,6 @@ describe('Manager historical checklist review through Order API', () => {
       for (const role of ['button', 'checkbox', 'textbox'])
         expect(within(region).queryByRole(role)).not.toBeInTheDocument()
       expect(within(region).queryByText('C1')).not.toBeInTheDocument()
-      expect(
-        transport.mock.calls.some(([url]) => url.includes('/api/services/')),
-      ).toBe(false)
       expect(snapshot.map((item) => item.id)).toEqual([
         'edited',
         'kept',
@@ -184,17 +187,21 @@ describe('Manager historical checklist review through Order API', () => {
   })
 
   it('renders the evidence requirement as plain read-only snapshot metadata', async () => {
-    serveOrder({
-      ...backendOrder,
-      checklistItems: [
-        {
-          ...snapshot[2],
-          minimumEvidenceCount: 2,
-          requiredEvidenceType: 'IMAGE',
-        },
-      ],
-    })
-    render(<OrderReviewPage orderId="order-history" />)
+    render(
+      <OrderChecklistCard
+        order={{
+          ...backendOrder,
+          checklistItems: [
+            {
+              ...snapshot[2],
+              minimumEvidenceCount: 2,
+              requiredEvidenceType: 'IMAGE',
+            },
+          ],
+        } as unknown as import('../types/orders').OrderDetail}
+        t={orderReviewPageMessages.vi}
+      />,
+    )
     const region = await screen.findByRole('region', {
       name: 'Nội dung giám sát',
     })
@@ -206,13 +213,17 @@ describe('Manager historical checklist review through Order API', () => {
   })
 
   it('renders a service-only snapshot', async () => {
-    serveOrder({
-      ...backendOrder,
-      checklistItems: snapshot.filter(
-        (item) => item.sourceType === 'SERVICE_TEMPLATE',
-      ),
-    })
-    render(<OrderReviewPage orderId="order-history" />)
+    render(
+      <OrderChecklistCard
+        order={{
+          ...backendOrder,
+          checklistItems: snapshot.filter(
+            (item) => item.sourceType === 'SERVICE_TEMPLATE',
+          ),
+        } as unknown as import('../types/orders').OrderDetail}
+        t={orderReviewPageMessages.vi}
+      />,
+    )
     const region = await screen.findByRole('region', {
       name: 'Nội dung giám sát',
     })
@@ -222,36 +233,17 @@ describe('Manager historical checklist review through Order API', () => {
     ).not.toBeInTheDocument()
   })
 
-  it.each([
-    [
-      'vi',
-      '2026-10-04T00:00:00Z',
-      'Khách hàng đã gửi yêu cầu không kèm nội dung giám sát.',
-    ],
-    ['vi', null, 'Đơn hàng này chưa có bản chốt nội dung giám sát.'],
-    [
-      'en',
-      '2026-10-04T00:00:00Z',
-      'The customer submitted this order without monitoring requirements.',
-    ],
-    [
-      'en',
-      null,
-      'No monitoring requirements snapshot is available for this order.',
-    ],
-  ] as const)(
-    'distinguishes empty/legacy in %s with timestamp %s',
-    async (language, timestamp, text) => {
-      setLanguage(language)
-      serveOrder({
-        ...backendOrder,
-        checklistItems: [],
-        checklistSnapshotAt: timestamp,
-      })
-      render(<OrderReviewPage orderId="order-history" />)
-      expect(await screen.findByText(text)).toBeInTheDocument()
-    },
-  )
+  it('does not duplicate the checklist in the order-information step', async () => {
+    const transport = serveOrder()
+    render(<OrderReviewPage orderId="order-history" />)
+    await screen.findByText('Dịch vụ và yêu cầu media')
+    expect(
+      screen.queryByRole('region', { name: 'Nội dung giám sát' }),
+    ).not.toBeInTheDocument()
+    expect(
+      transport.mock.calls.some(([url]) => url.includes('/api/services/')),
+    ).toBe(false)
+  })
 
   it('does not show an empty snapshot while Order Detail is loading', async () => {
     let resolve!: (value: Response) => void
@@ -268,7 +260,9 @@ describe('Manager historical checklist review through Order API', () => {
       screen.queryByRole('region', { name: 'Nội dung giám sát' }),
     ).not.toBeInTheDocument()
     await act(async () => resolve(response(backendOrder)))
-    expect(await screen.findByText('Check PPE')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: 'Nội dung giám sát' }),
+    ).not.toBeInTheDocument()
   })
 
   it.each(['http', 'malformed'] as const)(
@@ -303,7 +297,7 @@ describe('Manager historical checklist review through Order API', () => {
   it('does not expose the legacy approve-and-schedule bypass', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
-    await screen.findByText('Check PPE')
+    await screen.findByText('Dịch vụ và yêu cầu media')
     expect(
       screen.queryByRole('button', { name: 'Duyệt & lên lịch' }),
     ).not.toBeInTheDocument()
@@ -316,7 +310,8 @@ describe('Manager historical checklist review through Order API', () => {
   it('requires rejection reason and posts only the existing Order decision', async () => {
     const transport = serveOrder()
     render(<OrderReviewPage orderId="order-history" />)
-    await screen.findByText('Check PPE')
+    await screen.findByText('Dịch vụ và yêu cầu media')
+    fireEvent.click(screen.getByText('Checklist & báo giá'))
     fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
     expect(screen.getByText('Lý do là bắt buộc')).toBeInTheDocument()

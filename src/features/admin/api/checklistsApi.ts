@@ -7,6 +7,7 @@ export type ChecklistDefinition = {
   createdAt: string
   updatedAt: string | null
   version: number
+  difficulty?: 'BASIC' | 'MEDIUM' | 'HARD' | 'VERY_HARD'
 }
 export type ChecklistPage = {
   items: ChecklistDefinition[]
@@ -49,16 +50,16 @@ export const checklistsApi = {
       signal,
     })
   },
-  create(content: string) {
+  create(content: string, difficulty?: ChecklistDefinition['difficulty']) {
     return apiRequest<ChecklistDefinition>(catalog, {
       method: 'POST',
-      body: { content },
+      body: { content, ...(difficulty ? { difficulty } : {}) },
     })
   },
-  update(id: string, content: string) {
+  update(id: string, content: string, difficulty?: ChecklistDefinition['difficulty']) {
     return apiRequest<ChecklistDefinition>(`${catalog}/${enc(id)}`, {
       method: 'PUT',
-      body: { content },
+      body: { content, ...(difficulty ? { difficulty } : {}) },
     })
   },
   status(id: string, active: boolean) {

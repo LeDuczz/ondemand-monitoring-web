@@ -231,6 +231,9 @@ function ChecklistEditor({
 }) {
   const { t } = useI18n(checklistMessages)
   const [content, setContent] = useState(row?.content ?? '')
+  const [difficulty, setDifficulty] = useState<
+    NonNullable<ChecklistDefinition['difficulty']>
+  >(row?.difficulty ?? 'BASIC')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   async function submit(event: FormEvent) {
@@ -244,8 +247,8 @@ function ChecklistEditor({
     setBusy(true)
     setError(null)
     try {
-      if (row) await checklistsApi.update(row.id, value)
-      else await checklistsApi.create(value)
+      if (row) await checklistsApi.update(row.id, value, difficulty)
+      else await checklistsApi.create(value, difficulty)
       saved()
     } catch (cause) {
       setError(checklistError(cause, t))
@@ -304,6 +307,21 @@ function ChecklistEditor({
           <span>{t.contentHint}</span>
           <span>{content.length}/500</span>
         </div>
+        <FormField id="checklist-difficulty" label="Độ khó tính giá" required>
+          <select
+            id="checklist-difficulty"
+            className="odm-inp"
+            value={difficulty}
+            onChange={(event) =>
+              setDifficulty(event.target.value as typeof difficulty)
+            }
+          >
+            <option value="BASIC">Cơ bản</option>
+            <option value="MEDIUM">Trung bình</option>
+            <option value="HARD">Khó</option>
+            <option value="VERY_HARD">Rất khó</option>
+          </select>
+        </FormField>
         {error && (
           <p className="checklist-banner is-error" role="alert">
             {error}

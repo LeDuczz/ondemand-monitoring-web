@@ -29,6 +29,8 @@ export const createOrderPageMessages = defineMessages({
       serviceId: 'Chọn dịch vụ giám sát.',
       title: 'Nhập tiêu đề yêu cầu.',
       preferredDateFrom: 'Chọn ngày bắt đầu.',
+      preferredDateTooSoon:
+        'Ngày bay sớm nhất phải cách ngày tạo yêu cầu ít nhất 7 ngày để ODMS chuẩn bị thủ tục giấy phép bay.',
       preferredDateTo: 'Chọn ngày kết thúc.',
       preferredDateOrder: 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.',
       preferredTimeId: 'Chọn khung giờ.',
@@ -44,6 +46,14 @@ export const createOrderPageMessages = defineMessages({
       permitStatus: (zoneName: string) =>
         `Khu vực nằm trong vùng cần xin phép bay (${zoneName}). Hãy cho biết bạn đã có giấy phép hay cần hỗ trợ.`,
       permitNumber: 'Nhập số giấy phép bay.',
+      permitDocuments: 'Đính kèm tệp giấy phép bay (PDF hoặc ảnh).',
+      permitExpiresOn: 'Chọn ngày hết hạn của giấy phép.',
+      permitExpired: 'Giấy phép hết hạn trước ngày bay. Hãy dùng giấy phép còn hiệu lực đến hết ngày bay.',
+      monitoringRelationship: 'Chọn quan hệ của bạn với khu vực giám sát.',
+      monitoringAuthorizationConfirmed:
+        'Bạn cần xác nhận quyền yêu cầu giám sát trước khi gửi.',
+      monitoringAuthorizationDocuments:
+        'Hoàn tất tên và tệp đính kèm cho từng tài liệu đã thêm.',
     },
     scoreNotes: {
       missingAddress: 'Thiếu địa chỉ mô tả khu vực giám sát.',
@@ -81,6 +91,8 @@ export const createOrderPageMessages = defineMessages({
       serviceId: 'Select a monitoring service.',
       title: 'Enter a request title.',
       preferredDateFrom: 'Select a start date.',
+      preferredDateTooSoon:
+        'The earliest flight date must be at least 7 days after the request date so ODMS can prepare the flight permit procedures.',
       preferredDateTo: 'Select an end date.',
       preferredDateOrder: 'End date must be on or after the start date.',
       preferredTimeId: 'Select a time window.',
@@ -96,6 +108,14 @@ export const createOrderPageMessages = defineMessages({
       permitStatus: (zoneName: string) =>
         `The area is inside airspace that needs a flight permit (${zoneName}). Tell us whether you hold a permit or need support.`,
       permitNumber: 'Enter the flight permit number.',
+      permitDocuments: 'Attach the flight permit file (PDF or image).',
+      permitExpiresOn: 'Choose the permit expiry date.',
+      permitExpired: 'The permit expires before the flight date. Use a permit valid through the flight date.',
+      monitoringRelationship: 'Select your relationship to the monitoring area.',
+      monitoringAuthorizationConfirmed:
+        'Confirm your right to request monitoring before submitting.',
+      monitoringAuthorizationDocuments:
+        'Complete the name and attachment for every added document.',
     },
     scoreNotes: {
       missingAddress: 'Missing an address describing the monitoring area.',

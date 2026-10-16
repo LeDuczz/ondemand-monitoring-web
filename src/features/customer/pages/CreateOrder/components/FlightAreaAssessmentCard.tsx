@@ -27,6 +27,20 @@ export function FlightAreaAssessmentCard({ state, requestedAltitudeAglM }: Props
     new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)
   const data = state.data
   const refreshing = state.status === 'loading' && data !== null
+  if (
+    !data ||
+    (!data.elevation.available &&
+      !data.restrictedZones.dataAvailable &&
+      !data.osmContext.available)
+  ) {
+    return null
+  }
+  const visibleFindings = data.assessment.findings.filter(
+    (finding) =>
+      !finding.code.includes('DATA_UNAVAILABLE') &&
+      !finding.code.includes('PROVIDER_UNAVAILABLE') &&
+      !finding.code.includes('OSM_UNAVAILABLE'),
+  )
 
   return (
     <Card
@@ -47,78 +61,55 @@ export function FlightAreaAssessmentCard({ state, requestedAltitudeAglM }: Props
       }
     >
       {state.status === 'loading' && <span className="co-fa-progress" aria-hidden="true" />}
-      {state.status === 'idle' && !data && <p className="co-hint">{t.idle}</p>}
-      {state.status === 'loading' && !data && (
-        <div className="co-fa-skeleton" role="status" aria-label={t.loading}>
-          {[3, 2, 3].map((rows, group) => (
-            <div className="co-fa-skel-group" key={group}>
-              {Array.from({ length: rows }, (_, row) => (
-                <div className="co-fa-skel-row" key={row}>
-                  <span />
-                  <span />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-      {state.status === 'error' && (
-        <div className="co-notice is-warning" role="alert">
-          {t.error}{' '}
-          <button type="button" className="co-fa-retry" onClick={state.retry}>
-            {t.retry}
-          </button>
-        </div>
-      )}
       {data && (
         <div className={`co-fa-body${refreshing ? ' is-refreshing' : ''}`} aria-busy={refreshing}>
-          <dl className="co-fa-rows">
-            <Row label={t.terrain} value={terrain(data, t, number)} />
-            <Row
-              label={t.requested}
-              value={t.agl(number(data.elevation.requestedAltitudeAglMeters ?? requestedAltitudeAglM))}
-            />
-            <Row
-              label={t.estimated}
-              value={
-                data.elevation.estimatedFlightAltitudeAmslMeters != null
-                  ? t.amsl(number(data.elevation.estimatedFlightAltitudeAmslMeters))
-                  : t.unknown
-              }
-            />
-          </dl>
-          <dl className="co-fa-rows">
-            <Row label={t.restricted} value={restricted(data, t)} />
-            <Row
-              label={t.nearest}
-              value={
-                data.restrictedZones.nearestRestrictedZoneDistanceMeters != null
-                  ? t.meters(number(data.restrictedZones.nearestRestrictedZoneDistanceMeters))
-                  : t.unknown
-              }
-            />
-          </dl>
-          <dl className="co-fa-rows">
-            <Row label={t.buildings} value={data.osmContext.available ? number(data.osmContext.buildingCount) : t.unknown} />
+          {data.elevation.available && (
+            <dl className="co-fa-rows">
+              <Row label={t.terrain} value={terrain(data, t, number)} />
+              <Row
+                label={t.requested}
+                value={t.agl(number(data.elevation.requestedAltitudeAglMeters ?? requestedAltitudeAglM))}
+              />
+              {data.elevation.estimatedFlightAltitudeAmslMeters != null && (
+                <Row
+                  label={t.estimated}
+                  value={t.amsl(number(data.elevation.estimatedFlightAltitudeAmslMeters))}
+                />
+              )}
+            </dl>
+          )}
+          {data.restrictedZones.dataAvailable && (
+            <dl className="co-fa-rows">
+              <Row label={t.restricted} value={restricted(data, t)} />
+              {data.restrictedZones.nearestRestrictedZoneDistanceMeters != null && (
+                <Row
+                  label={t.nearest}
+                  value={t.meters(number(data.restrictedZones.nearestRestrictedZoneDistanceMeters))}
+                />
+              )}
+            </dl>
+          )}
+          {data.osmContext.available && (
+            <dl className="co-fa-rows">
+            <Row label={t.buildings} value={number(data.osmContext.buildingCount)} />
             <Row
               label={t.towers}
               value={
-                data.osmContext.available
-                  ? number(data.osmContext.towerCount + data.osmContext.mastCount + data.osmContext.powerTowerCount)
-                  : t.unknown
+                number(data.osmContext.towerCount + data.osmContext.mastCount + data.osmContext.powerTowerCount)
               }
             />
             <Row
               label={t.aerodrome}
-              value={data.osmContext.available ? (data.osmContext.aerodromeNearby ? t.yes : t.no) : t.unknown}
+              value={data.osmContext.aerodromeNearby ? t.yes : t.no}
             />
             {data.osmContext.helipadNearby && <Row label={t.helipad} value={t.yes} />}
-          </dl>
-          {data.assessment.findings.length > 0 && (
+            </dl>
+          )}
+          {visibleFindings.length > 0 && (
             <div className="co-fa-findings">
               <div className="co-block-title">{t.findings}</div>
               <ul>
-                {[...data.assessment.findings]
+                {[...visibleFindings]
                   .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
                   .map((finding) => (
                     <li key={finding.code} className={`is-${finding.severity.toLowerCase()}`}>

@@ -92,6 +92,8 @@ export type ServiceOption = {
   name: string
   description?: string
   basePrice: number
+  /** Default price from the default checklists; falls back to basePrice while none is priced. */
+  defaultPrice?: number
   imageUrl?: string | null
   fallbackImageUrl?: string | null
   isActive?: boolean

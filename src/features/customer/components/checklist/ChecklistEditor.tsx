@@ -3,9 +3,15 @@ import { Icon } from '../../../../shared/components/Icon'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
-import { normalizeContent, type ChecklistRow } from '../../lib/checklist/types'
+import {
+  extraMedia,
+  normalizeContent,
+  usesMedia,
+  type ChecklistRow,
+} from '../../lib/checklist/types'
 import type { OrderChecklistEditorState } from '../../lib/checklist/useOrderChecklist'
 import type { RequiredEvidenceType } from '../../../../shared/types/domain'
+import { ChecklistQuoteCard } from './ChecklistQuoteCard'
 import './Checklist.css'
 
 /** Rows shown before "show more" in the compact variant. */
@@ -16,12 +22,15 @@ export function ChecklistEditor({
   disabled = false,
   onReload,
   variant = 'full',
+  quote = false,
 }: {
   checklist: OrderChecklistEditorState
   disabled?: boolean
   onReload?: () => void
   /** `compact` renders one-line rows; a row expands to a textarea on edit. */
   variant?: 'full' | 'compact'
+  /** Show the backend-calculated price of the selection (needs an authenticated customer). */
+  quote?: boolean
 }) {
   const { t } = useI18n(checklistMessages)
   const { status, rows } = checklist
@@ -92,6 +101,7 @@ export function ChecklistEditor({
         className="checklist-check"
         checked={row.selected}
         aria-label={t.select(index + 1)}
+        disabled={row.mandatory}
         onChange={(event) =>
           checklist.change(row.key, {
             selected: event.target.checked,
@@ -99,7 +109,48 @@ export function ChecklistEditor({
         }
       />
     )
-    const evidenceRequirements = (
+    const mediaInput = (
+      field: 'requestedImageCount' | 'requestedVideoCount',
+      label: string,
+    ) => (
+      <label>
+        <span className="checklist-evidence-field-label">{label}</span>
+        <input
+          type="number"
+          min={0}
+          max={500}
+          step={1}
+          value={row[field]}
+          disabled={!row.selected}
+          aria-label={`${label} ${index + 1}`}
+          onChange={(event) =>
+            checklist.change(row.key, {
+              [field]:
+                event.target.value === '' ? 0 : Number(event.target.value),
+            })
+          }
+        />
+      </label>
+    )
+    const mediaRequirements = (
+      <div className="checklist-evidence-requirements">
+        {mediaInput('requestedImageCount', t.requestedImages)}
+        {mediaInput('requestedVideoCount', t.requestedVideos)}
+        <small className="checklist-hint">
+          {t.includedMedia(row.includedImageCount, row.includedVideoCount)}
+          {' · '}
+          {t.extraMedia(
+            extraMedia(row.requestedImageCount, row.includedImageCount),
+            extraMedia(row.requestedVideoCount, row.includedVideoCount),
+          )}
+          {' · '}
+          {t.mediaAcceptanceNote}
+        </small>
+      </div>
+    )
+    const evidenceRequirements = usesMedia(row) ? (
+      mediaRequirements
+    ) : (
       <div className="checklist-evidence-requirements">
         <label>
           <span className="checklist-evidence-field-label">
@@ -141,6 +192,8 @@ export function ChecklistEditor({
             <option value="IMAGE_OR_VIDEO">{t.imageOrVideo}</option>
           </select>
         </label>
+        {mediaInput('requestedImageCount', t.requestedImages)}
+        {mediaInput('requestedVideoCount', t.requestedVideos)}
       </div>
     )
     if (!expanded) {
@@ -233,7 +286,12 @@ export function ChecklistEditor({
                 {t.remove}
               </button>
             )}
-            {row.sourceChecklistId && (
+            {row.mandatory && (
+              <span className="checklist-custom-tag" title={t.mandatoryHint}>
+                {t.mandatory}
+              </span>
+            )}
+            {row.sourceChecklistId && !row.mandatory && (
               <button
                 type="button"
                 className="checklist-remove"
@@ -434,6 +492,12 @@ export function ChecklistEditor({
         </fieldset>
         {ready && checklist.selectedCount === 0 && (
           <p className="checklist-hint">{t.none}</p>
+        )}
+        {ready && quote && checklist.serviceId && (
+          <ChecklistQuoteCard
+            serviceId={checklist.serviceId}
+            items={checklist.quoteItems()}
+          />
         )}
         {checklist.validation && (
           <p role="alert" className="co-notice is-danger">

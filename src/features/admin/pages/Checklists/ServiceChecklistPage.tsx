@@ -12,7 +12,10 @@ import {
 } from '../../../../shared/components/ui'
 import { catalogApi, type ServiceResponse } from '../../api/catalogApi'
 import { checklistsApi, type ServiceChecklist } from '../../api/checklistsApi'
+import { formatVnd } from '../../../../shared/lib/formatVnd'
 import { adminHref } from '../../routes'
+import { ServicePricePreviewCard } from './ServicePricePreviewCard'
+import { ServiceChecklistPricingModal } from './ServiceChecklistPricingModal'
 import { checklistMessages } from './checklists.messages'
 import { checklistError } from './checklistError'
 import {
@@ -85,6 +88,9 @@ function ServiceTemplateEditor({
   )
   const [picker, setPicker] = useState(false)
   const [removing, setRemoving] = useState<ServiceChecklist | null>(null)
+  const [pricing, setPricing] = useState<ServiceChecklist | null>(null)
+  // Bumped after every successful change so the default-price preview is recomputed by the backend.
+  const [priceRevision, setPriceRevision] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const rows = [...(query.data ?? [])].sort(
@@ -97,6 +103,7 @@ function ServiceTemplateEditor({
     try {
       await operation()
       setRemoving(null)
+      setPriceRevision((value) => value + 1)
       query.reload()
     } catch (cause) {
       setError(checklistError(cause, t))
@@ -226,8 +233,22 @@ function ServiceTemplateEditor({
                     {!row.checklistActive && (
                       <StatusBadge tone="neutral">{t.inactive}</StatusBadge>
                     )}
+                    {row.required && (
+                      <StatusBadge tone="warning">
+                        {t.requiredBadge}
+                      </StatusBadge>
+                    )}
+                    <PricingChips row={row} />
                   </div>
                   <div className="checklist-actions">
+                    <button
+                      type="button"
+                      className="odm-btn odm-btn-gh"
+                      disabled={busy}
+                      onClick={() => setPricing(row)}
+                    >
+                      {t.pricingEdit}
+                    </button>
                     <ChecklistIconButton
                       icon="arrow-up"
                       label={t.up + ': ' + row.content}
@@ -262,7 +283,25 @@ function ServiceTemplateEditor({
             </ol>
           ))}
       </Card>
+      <ServicePricePreviewCard
+        serviceId={serviceId}
+        refreshKey={priceRevision}
+      />
       <p className="checklist-banner">{t.future}</p>
+      {pricing && (
+        <ServiceChecklistPricingModal
+          key={pricing.id}
+          serviceId={serviceId}
+          rows={rows}
+          row={pricing}
+          close={() => setPricing(null)}
+          saved={() => {
+            setPricing(null)
+            setPriceRevision((value) => value + 1)
+            query.reload()
+          }}
+        />
+      )}
       {picker && (
         <ChecklistPicker
           serviceId={serviceId}
@@ -270,6 +309,7 @@ function ServiceTemplateEditor({
           close={() => setPicker(false)}
           saved={() => {
             setPicker(false)
+            setPriceRevision((value) => value + 1)
             query.reload()
           }}
         />
@@ -315,6 +355,37 @@ function ServiceTemplateEditor({
         </Modal>
       )}
     </>
+  )
+}
+
+/** Effective price and allowance of a row; marks which values are service overrides. */
+function PricingChips({ row }: { row: ServiceChecklist }) {
+  const { t } = useI18n(checklistMessages)
+  const chip = (text: string, override: boolean) => (
+    <span
+      className={'checklist-pricing-chip' + (override ? ' is-override' : '')}
+      title={override ? t.overrideValue : t.inheritedValue}
+    >
+      {text}
+      {override ? ' *' : ''}
+    </span>
+  )
+  return (
+    <div className="checklist-actions" style={{ justifyContent: 'flex-start' }}>
+      {chip(formatVnd(row.basePrice ?? 0), row.basePriceOverride != null)}
+      {chip(
+        `${row.includedImageCount ?? 0} ${t.imagesShort}`,
+        row.includedImageCountOverride != null,
+      )}
+      {chip(
+        `${row.includedVideoCount ?? 0} ${t.videosShort}`,
+        row.includedVideoCountOverride != null,
+      )}
+      {chip(
+        row.pricingProfile ?? 'DEFAULT',
+        row.pricingProfileOverride != null,
+      )}
+    </div>
   )
 }
 

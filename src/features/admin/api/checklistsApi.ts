@@ -8,6 +8,20 @@ export type ChecklistDefinition = {
   updatedAt: string | null
   version: number
   difficulty?: 'BASIC' | 'MEDIUM' | 'HARD' | 'VERY_HARD'
+  /** Price of the inspection work itself (whole VND). Media is priced by the pricing profile. */
+  basePrice?: number
+  includedImageCount?: number
+  includedVideoCount?: number
+  standardVideoDurationSeconds?: number | null
+  pricingProfile?: string | null
+}
+/** Pricing configuration sent with create/edit; omitted fields keep the stored value. */
+export type ChecklistPricingInput = {
+  basePrice?: number
+  includedImageCount?: number
+  includedVideoCount?: number
+  standardVideoDurationSeconds?: number | null
+  pricingProfile?: string | null
 }
 export type ChecklistPage = {
   items: ChecklistDefinition[]
@@ -28,6 +42,30 @@ export type ServiceChecklist = {
   displayOrder: number
   version: number
   checklistVersion: number
+  required?: boolean
+  /** Effective values: the association override, else inherited from the checklist. */
+  basePrice?: number
+  includedImageCount?: number
+  includedVideoCount?: number
+  pricingProfile?: string | null
+  standardVideoDurationSeconds?: number | null
+  basePriceOverride?: number | null
+  includedImageCountOverride?: number | null
+  includedVideoCountOverride?: number | null
+  pricingProfileOverride?: string | null
+  checklistBasePrice?: number
+  checklistIncludedImageCount?: number
+  checklistIncludedVideoCount?: number
+  checklistPricingProfile?: string | null
+}
+/** Replaces the per-service overrides; null inherits the checklist definition. */
+export type ServiceChecklistPricingInput = {
+  basePriceOverride: number | null
+  includedImageCountOverride: number | null
+  includedVideoCountOverride: number | null
+  pricingProfileOverride: string | null
+  required: boolean
+  expectedVersion?: number
 }
 const enc = encodeURIComponent
 const catalog = '/api/admin/checklists'
@@ -50,16 +88,25 @@ export const checklistsApi = {
       signal,
     })
   },
-  create(content: string, difficulty?: ChecklistDefinition['difficulty']) {
+  create(
+    content: string,
+    difficulty?: ChecklistDefinition['difficulty'],
+    pricing?: ChecklistPricingInput,
+  ) {
     return apiRequest<ChecklistDefinition>(catalog, {
       method: 'POST',
-      body: { content, ...(difficulty ? { difficulty } : {}) },
+      body: { content, ...(difficulty ? { difficulty } : {}), ...pricing },
     })
   },
-  update(id: string, content: string, difficulty?: ChecklistDefinition['difficulty']) {
+  update(
+    id: string,
+    content: string,
+    difficulty?: ChecklistDefinition['difficulty'],
+    pricing?: ChecklistPricingInput,
+  ) {
     return apiRequest<ChecklistDefinition>(`${catalog}/${enc(id)}`, {
       method: 'PUT',
-      body: { content, ...(difficulty ? { difficulty } : {}) },
+      body: { content, ...(difficulty ? { difficulty } : {}), ...pricing },
     })
   },
   status(id: string, active: boolean) {
@@ -81,6 +128,16 @@ export const checklistsApi = {
       method: 'POST',
       body: { checklistId, displayOrder },
     })
+  },
+  updatePricing(
+    serviceId: string,
+    checklistId: string,
+    input: ServiceChecklistPricingInput,
+  ) {
+    return apiRequest<ServiceChecklist>(
+      `${template(serviceId)}/${enc(checklistId)}/pricing`,
+      { method: 'PUT', body: input },
+    )
   },
   remove(serviceId: string, checklistId: string) {
     return apiRequest<void>(`${template(serviceId)}/${enc(checklistId)}`, {

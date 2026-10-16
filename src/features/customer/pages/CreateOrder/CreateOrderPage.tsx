@@ -118,6 +118,7 @@ export function CreateOrderPage() {
           checklist={
             <ChecklistEditor
               variant="compact"
+              quote
               checklist={checklist}
               disabled={submit.submitting}
               onReload={() => f.setSubmitError(null)}

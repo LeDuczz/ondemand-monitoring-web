@@ -6,6 +6,7 @@ import { checklistMessages } from './messages'
 import {
   normalizeContent,
   serializeChecklist,
+  usesMedia,
   type ChecklistRow,
 } from './types'
 
@@ -15,6 +16,9 @@ type State = {
   rows: ChecklistRow[]
   error: unknown
 }
+
+const isCount = (value: number) =>
+  Number.isInteger(value) && value >= 0 && value <= 500
 
 /** Scoped to one creation flow, never shared with historical order details. */
 export function useOrderChecklist(serviceId: string) {
@@ -64,6 +68,11 @@ export function useOrderChecklist(serviceId: string) {
               minimumEvidenceCount: item.minimumEvidenceCount ?? 1,
               requiredEvidenceType:
                 item.requiredEvidenceType ?? 'IMAGE_OR_VIDEO',
+              includedImageCount: item.includedImageCount ?? 0,
+              includedVideoCount: item.includedVideoCount ?? 0,
+              requestedImageCount: item.includedImageCount ?? 0,
+              requestedVideoCount: item.includedVideoCount ?? 0,
+              mandatory: item.required === true,
             }))
           setState({ serviceId, status: 'ready', rows, error: null })
         })
@@ -113,6 +122,21 @@ export function useOrderChecklist(serviceId: string) {
   )
     validation = t.invalidEvidenceType
   else if (
+    selected.some(
+      (row) =>
+        !isCount(row.requestedImageCount) || !isCount(row.requestedVideoCount),
+    )
+  )
+    validation = t.invalidMediaCount
+  else if (
+    selected.some(
+      (row) =>
+        row.includedImageCount + row.includedVideoCount > 0 &&
+        row.requestedImageCount + row.requestedVideoCount < 1,
+    )
+  )
+    validation = t.mediaRequired
+  else if (
     new Set(selected.map((row) => normalizeContent(row.content).toLowerCase()))
       .size !== selected.length
   )
@@ -123,7 +147,12 @@ export function useOrderChecklist(serviceId: string) {
     patch: Partial<
       Pick<
         ChecklistRow,
-        'content' | 'selected' | 'minimumEvidenceCount' | 'requiredEvidenceType'
+        | 'content'
+        | 'selected'
+        | 'minimumEvidenceCount'
+        | 'requiredEvidenceType'
+        | 'requestedImageCount'
+        | 'requestedVideoCount'
       >
     >,
   ) {
@@ -144,7 +173,23 @@ export function useOrderChecklist(serviceId: string) {
     status,
     validation,
     error: status === 'error' ? checklistError(current?.error, true) : null,
+    serviceId,
     selectedCount: selected.length,
+    /** Choices and quantities for the backend price quote; null while the form is incomplete. */
+    quoteItems: () =>
+      status === 'ready' && !validation
+        ? selected.map((row) => ({
+            ...(row.sourceChecklistId
+              ? { sourceChecklistId: row.sourceChecklistId }
+              : { content: normalizeContent(row.content) }),
+            ...(usesMedia(row)
+              ? {
+                  requestedImageCount: row.requestedImageCount,
+                  requestedVideoCount: row.requestedVideoCount,
+                }
+              : {}),
+          }))
+        : null,
     valid: status === 'ready' && !validation,
     change,
     add: () =>
@@ -165,6 +210,11 @@ export function useOrderChecklist(serviceId: string) {
                   selected: true,
                   minimumEvidenceCount: 1,
                   requiredEvidenceType: 'IMAGE_OR_VIDEO',
+                  includedImageCount: 0,
+                  includedVideoCount: 0,
+                  requestedImageCount: 0,
+                  requestedVideoCount: 0,
+                  mandatory: false,
                 },
               ],
             }

@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  evidenceCountLabel,
+  evidenceShortfall,
+  isPerTypeEvidence,
+} from '../lib/evidenceProgress'
 import { ApiError } from '../../../shared/api/httpClient'
 import { createPortal } from 'react-dom'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
@@ -184,7 +189,7 @@ function MissionEvidencePanel({
   const unableToVerify = item.executionStatus === 'UNABLE_TO_VERIFY'
   const configuredRequired = item.minimumEvidenceCount ?? 0
   const have = item.eligibleEvidenceCount ?? 0
-  const remaining = Math.max(0, configuredRequired - have)
+  const remaining = evidenceShortfall(item)
   const links = item.evidence ?? []
   const unableExplanation = item.unableToVerifyReason
     ? `Quy trình ngoại lệ: Miễn nộp bằng chứng do không thể xác minh (Lý do: "${item.unableToVerifyReason}").`
@@ -194,7 +199,9 @@ function MissionEvidencePanel({
       <div className="ce-head">
         <span>Bằng chứng · {evidenceTypeLabel(item.requiredEvidenceType)}</span>
         <span className="ce-count">
-          {have} / {configuredRequired}
+          {isPerTypeEvidence(item)
+            ? evidenceCountLabel(item)
+            : `${have} / ${configuredRequired}`}
         </span>
       </div>
       {unableToVerify ? (

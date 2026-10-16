@@ -34,17 +34,28 @@ export function ChecklistSnapshotCard({
                   <span className="checklist-snapshot-content">
                     {item.content}
                   </span>
-                  {(item.minimumEvidenceCount !== undefined ||
-                    item.requiredEvidenceType !== undefined) && (
+                  {item.evidencePolicyVersion === 3 && (
                     <span className="checklist-snapshot-evidence">
-                      {item.minimumEvidenceCount ?? 1} ·{' '}
-                      {item.requiredEvidenceType === 'IMAGE'
-                        ? t.image
-                        : item.requiredEvidenceType === 'VIDEO'
-                          ? t.video
-                          : t.imageOrVideo}
+                      {t.requestedImages}: {item.requestedImageCount ?? 0} ·{' '}
+                      {t.requestedVideos}: {item.requestedVideoCount ?? 0} ·{' '}
+                      {t.includedMedia(
+                        item.includedImageCountSnapshot ?? 0,
+                        item.includedVideoCountSnapshot ?? 0,
+                      )}
                     </span>
                   )}
+                  {item.evidencePolicyVersion !== 3 &&
+                    (item.minimumEvidenceCount !== undefined ||
+                      item.requiredEvidenceType !== undefined) && (
+                      <span className="checklist-snapshot-evidence">
+                        {item.minimumEvidenceCount ?? 1} ·{' '}
+                        {item.requiredEvidenceType === 'IMAGE'
+                          ? t.image
+                          : item.requiredEvidenceType === 'VIDEO'
+                            ? t.video
+                            : t.imageOrVideo}
+                      </span>
+                    )}
                 </li>
               ))}
           </ol>

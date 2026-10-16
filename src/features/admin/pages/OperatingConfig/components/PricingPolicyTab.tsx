@@ -7,6 +7,8 @@ import {
   pricingPolicyName,
 } from '../../../../../shared/lib/pricingPresentation'
 import { adminApi } from '../../../api/adminApi'
+import { MediaPricingEditor } from './MediaPricingEditor'
+import { isMediaRule, validateMediaRules } from '../../../lib/mediaPricingRules'
 import type {
   PricingPolicy,
   PricingPolicyPayload,
@@ -41,15 +43,16 @@ export function PricingPolicyTab() {
       query.reload()
     }, 'Đã tạo chính sách giá nháp mới.')
   }
+  const mediaValid = !draft || validateMediaRules(draft.rules).length === 0
   async function save() {
-    if (!draft) return
+    if (!draft || !mediaValid) return
     await run(async () => {
       await adminApi.updatePricingPolicy(draft.id, payload(draft))
       query.reload()
     }, 'Đã lưu chính sách giá nháp.')
   }
   async function publish() {
-    if (!draft) return
+    if (!draft || !mediaValid) return
     await run(async () => {
       await adminApi.publishPricingPolicy(draft.id)
       query.reload()
@@ -155,70 +158,77 @@ export function PricingPolicyTab() {
           </div>
           <div className="pricing-rules">
             <h3>Quy tắc tính giá</h3>
-            {draft.rules.map((rule, index) => (
-              <div
-                className="pricing-rule-row"
-                key={`${rule.category}-${rule.ruleKey}`}
-              >
-                <b>
-                  {pricingLabel(rule.category)} / {pricingLabel(rule.ruleKey)}
-                </b>
-                <input
-                  aria-label={`Mô tả ${pricingLabel(rule.ruleKey)}`}
-                  value={pricingDescription(rule.description)}
-                  onChange={(e) =>
-                    updateRule(index, { description: e.target.value })
-                  }
-                />
-                <NumberField
-                  label="Giá trị tối thiểu"
-                  value={rule.minValue ?? 0}
-                  onChange={(v) => updateRule(index, { minValue: v })}
-                />
-                <NumberField
-                  label="Giá trị tối đa"
-                  value={rule.maxValue ?? 0}
-                  onChange={(v) => updateRule(index, { maxValue: v || null })}
-                />
-                <NumberField
-                  label="Kích thước mỗi đơn vị"
-                  value={rule.unitSize ?? 0}
-                  onChange={(v) => updateRule(index, { unitSize: v || null })}
-                />
-                <NumberField
-                  label="Số tiền cố định"
-                  value={rule.fixedAmount ?? 0}
-                  onChange={(v) => updateRule(index, { fixedAmount: v })}
-                />
-                <NumberField
-                  label="Mức giá cơ sở"
-                  value={rule.baseAmount ?? 0}
-                  onChange={(v) => updateRule(index, { baseAmount: v })}
-                />
-                <NumberField
-                  label="Tỷ lệ phần trăm"
-                  value={rule.percentage ?? 0}
-                  onChange={(v) => updateRule(index, { percentage: v })}
-                />
-                <NumberField
-                  label="Hệ số"
-                  value={rule.multiplier ?? 0}
-                  onChange={(v) => updateRule(index, { multiplier: v })}
-                />
-              </div>
-            ))}
+            {draft.rules.map((rule, index) =>
+              isMediaRule(rule) ? null : (
+                <div
+                  className="pricing-rule-row"
+                  key={`${rule.category}-${rule.ruleKey}`}
+                >
+                  <b>
+                    {pricingLabel(rule.category)} / {pricingLabel(rule.ruleKey)}
+                  </b>
+                  <input
+                    aria-label={`Mô tả ${pricingLabel(rule.ruleKey)}`}
+                    value={pricingDescription(rule.description)}
+                    onChange={(e) =>
+                      updateRule(index, { description: e.target.value })
+                    }
+                  />
+                  <NumberField
+                    label="Giá trị tối thiểu"
+                    value={rule.minValue ?? 0}
+                    onChange={(v) => updateRule(index, { minValue: v })}
+                  />
+                  <NumberField
+                    label="Giá trị tối đa"
+                    value={rule.maxValue ?? 0}
+                    onChange={(v) => updateRule(index, { maxValue: v || null })}
+                  />
+                  <NumberField
+                    label="Kích thước mỗi đơn vị"
+                    value={rule.unitSize ?? 0}
+                    onChange={(v) => updateRule(index, { unitSize: v || null })}
+                  />
+                  <NumberField
+                    label="Số tiền cố định"
+                    value={rule.fixedAmount ?? 0}
+                    onChange={(v) => updateRule(index, { fixedAmount: v })}
+                  />
+                  <NumberField
+                    label="Mức giá cơ sở"
+                    value={rule.baseAmount ?? 0}
+                    onChange={(v) => updateRule(index, { baseAmount: v })}
+                  />
+                  <NumberField
+                    label="Tỷ lệ phần trăm"
+                    value={rule.percentage ?? 0}
+                    onChange={(v) => updateRule(index, { percentage: v })}
+                  />
+                  <NumberField
+                    label="Hệ số"
+                    value={rule.multiplier ?? 0}
+                    onChange={(v) => updateRule(index, { multiplier: v })}
+                  />
+                </div>
+              ),
+            )}
           </div>
+          <MediaPricingEditor
+            rules={draft.rules}
+            draftId={draft.id}
+            onChange={(rules) => setDraft({ ...draft, rules })}
+          />
           <div className="finance-actions">
             <button
               className="odm-btn"
-              disabled={busy}
+              disabled={busy || !mediaValid}
               onClick={() => void save()}
             >
               Lưu bản nháp
             </button>
             <button
               className="odm-btn odm-btn-p"
-              disabled={busy}
+              disabled={busy || !mediaValid}
               onClick={() => void publish()}
             >
               Phát hành

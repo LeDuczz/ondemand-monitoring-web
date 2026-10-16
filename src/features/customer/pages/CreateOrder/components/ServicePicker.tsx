@@ -111,7 +111,7 @@ export function ServicePicker({
             <div className="co-service-desc">
               {suggested.description || t.defaultDescription}
             </div>
-            <strong>{formatMoney(suggested.basePrice, locale)}</strong>
+            <strong>{formatMoney(suggested.defaultPrice ?? suggested.basePrice, locale)}</strong>
             <button
               type="button"
               className="odm-btn odm-btn-sm"
@@ -175,7 +175,7 @@ export function ServicePicker({
               <span className="co-service-desc">
                 {service.description || t.defaultDescription}
               </span>
-              <strong>{formatMoney(service.basePrice, locale)}</strong>
+              <strong>{formatMoney(service.defaultPrice ?? service.basePrice, locale)}</strong>
             </button>
           )
         })}

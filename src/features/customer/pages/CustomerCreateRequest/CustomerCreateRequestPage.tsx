@@ -59,6 +59,7 @@ export function CustomerCreateRequestPage() {
                 onSelect={(id) => update('serviceId', id)}
               />
               <ChecklistEditor
+                quote
                 checklist={r.checklist}
                 disabled={submit.submitting}
                 onReload={r.clearSubmitError}

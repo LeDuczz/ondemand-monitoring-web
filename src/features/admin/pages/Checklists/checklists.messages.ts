@@ -63,6 +63,35 @@ export const checklistMessages = defineMessages({
     noneUsed: 'Chưa có dịch vụ sử dụng.',
     emptyTemplate: 'Chưa có checklist mặc định',
     saving: 'Đang lưu...',
+    imagesShort: 'ảnh',
+    videosShort: 'video',
+    pricingSection: 'Giá và định mức media',
+    pricingHint:
+      'Giá ảnh/video đã bao gồm và giá ảnh/video bổ sung được cấu hình trong Chính sách giá (theo hồ sơ giá). Ở đây chỉ nhập giá công việc và định mức đã bao gồm.',
+    basePrice: 'Giá công việc kiểm tra (VND)',
+    includedImages: 'Số ảnh đã bao gồm',
+    includedVideos: 'Số video đã bao gồm',
+    videoDuration: 'Thời lượng video tiêu chuẩn (giây)',
+    pricingProfile: 'Hồ sơ giá (pricing profile)',
+    pricingProfileHint:
+      'Để trống để dùng hồ sơ DEFAULT. Chỉ gồm chữ, số và dấu gạch dưới.',
+    invalidPricing:
+      'Giá và định mức phải là số nguyên không âm: ảnh/video tối đa 500, thời lượng 1–7200 giây.',
+    priceColumn: 'Giá / định mức',
+    inheritedValue: 'Kế thừa',
+    overrideValue: 'Ghi đè',
+    requiredBadge: 'Bắt buộc',
+    pricingEdit: 'Cấu hình giá',
+    pricingTitle: 'Giá và định mức theo dịch vụ',
+    pricingOverrideHint:
+      'Để trống để kế thừa từ checklist. Thay đổi chỉ áp dụng cho dịch vụ này và không làm đổi checklist hay dịch vụ khác.',
+    requiredLabel: 'Bắt buộc: khách hàng không được bỏ checklist này khỏi đơn',
+    previewTitle: 'Giá mặc định của dịch vụ',
+    previewHint:
+      'Giá mặc định = tổng giá các checklist mặc định theo chính sách giá đang áp dụng (giá gói cũ chỉ dùng khi chưa checklist nào có giá).',
+    previewError: 'Không thể tính giá mặc định.',
+    previewLoading: 'Đang tính giá...',
+    whatIf: 'Xem thử giá với cấu hình chưa lưu',
   },
   en: {
     title: 'Checklist catalog',
@@ -124,5 +153,35 @@ export const checklistMessages = defineMessages({
     noneUsed: 'Not used by any service.',
     emptyTemplate: 'No checklist assigned.',
     saving: 'Saving...',
+    imagesShort: 'images',
+    videosShort: 'videos',
+    pricingSection: 'Price and media allowance',
+    pricingHint:
+      'Included-media and extra-media prices are configured in the pricing policy (per pricing profile). Enter only the inspection price and the included allowance here.',
+    basePrice: 'Inspection price (VND)',
+    includedImages: 'Included images',
+    includedVideos: 'Included videos',
+    videoDuration: 'Standard video duration (seconds)',
+    pricingProfile: 'Pricing profile',
+    pricingProfileHint:
+      'Leave empty for the DEFAULT profile. Letters, digits and underscore only.',
+    invalidPricing:
+      'Prices and allowances must be non-negative whole numbers: at most 500 images/videos, duration 1-7200 seconds.',
+    priceColumn: 'Price / allowance',
+    inheritedValue: 'Inherited',
+    overrideValue: 'Override',
+    requiredBadge: 'Required',
+    pricingEdit: 'Configure pricing',
+    pricingTitle: 'Per-service price and allowance',
+    pricingOverrideHint:
+      'Leave empty to inherit from the checklist. Changes apply to this service only and never alter the checklist or other services.',
+    requiredLabel:
+      'Required: customers cannot remove this checklist from an order',
+    previewTitle: 'Default service price',
+    previewHint:
+      'Default price = the sum of the default checklists under the active pricing policy (the legacy package price is only used while no checklist is priced).',
+    previewError: 'Unable to calculate the default price.',
+    previewLoading: 'Calculating price...',
+    whatIf: 'Preview price with unsaved configuration',
   },
 })

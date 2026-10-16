@@ -48,6 +48,22 @@ export const checklistMessages = defineMessages({
     invalidEvidenceCount:
       'Số bằng chứng tối thiểu phải là số nguyên từ 1 đến 50.',
     invalidEvidenceType: 'Vui lòng chọn loại bằng chứng hợp lệ.',
+    invalidMediaCount: 'Số ảnh và số video phải là số nguyên từ 0 đến 500.',
+    mediaRequired: 'Mỗi nội dung cần ít nhất một ảnh hoặc một video.',
+    requestedImages: 'Số ảnh yêu cầu',
+    requestedVideos: 'Số video yêu cầu',
+    includedMedia: (images: number, videos: number) =>
+      `Đã bao gồm: ${images} ảnh · ${videos} video`,
+    extraMedia: (images: number, videos: number) =>
+      `Bổ sung: ${images} ảnh · ${videos} video`,
+    mediaAcceptanceNote: 'Nghiệm thu cần đủ số ảnh và đủ số video đã yêu cầu.',
+    mandatory: 'Bắt buộc',
+    mandatoryHint: 'Nội dung bắt buộc của dịch vụ, không thể bỏ khỏi đơn.',
+    quoteTitle: 'Chi phí nội dung giám sát',
+    quoteHint:
+      'Giá do hệ thống tính từ cấu hình hiện hành; Manager vẫn xem xét và gửi báo giá cuối cùng.',
+    quoteLoading: 'Đang tính giá…',
+    quoteFailed: 'Không thể tính chi phí lúc này.',
     limit: 'Chỉ được chọn tối đa 100 nội dung.',
     loadFailed:
       'Không thể tải nội dung giám sát. Vui lòng thử lại trước khi gửi.',
@@ -115,6 +131,24 @@ export const checklistMessages = defineMessages({
     duplicate: 'Selected requirements must not have duplicate content.',
     invalidEvidenceCount:
       'Minimum evidence count must be a whole number from 1 to 50.',
+    invalidMediaCount:
+      'Image and video counts must be whole numbers from 0 to 500.',
+    mediaRequired: 'Each requirement needs at least one image or video.',
+    requestedImages: 'Requested images',
+    requestedVideos: 'Requested videos',
+    includedMedia: (images: number, videos: number) =>
+      `Included: ${images} images · ${videos} videos`,
+    extraMedia: (images: number, videos: number) =>
+      `Extra: ${images} images · ${videos} videos`,
+    mediaAcceptanceNote:
+      'Acceptance requires both the requested images and the requested videos.',
+    mandatory: 'Required',
+    mandatoryHint: 'A required item of this service; it cannot be removed.',
+    quoteTitle: 'Monitoring requirements cost',
+    quoteHint:
+      'The price is calculated by the system from the current configuration; a manager still reviews it and sends the final quote.',
+    quoteLoading: 'Calculating price…',
+    quoteFailed: 'Unable to calculate the cost right now.',
     invalidEvidenceType: 'Select a valid evidence type.',
     limit: 'Select at most 100 requirements.',
     loadFailed: 'Unable to load requirements. Please retry before submitting.',

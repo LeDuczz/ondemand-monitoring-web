@@ -161,7 +161,6 @@ function OrderPlanningWorkspace({
         status: mission.status,
       })),
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, depositPaid, selectedId])
   const allAssigned = writablePlanComplete()
   function writablePlanComplete() {

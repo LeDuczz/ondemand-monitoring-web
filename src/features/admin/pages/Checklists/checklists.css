@@ -294,3 +294,31 @@
     justify-content: space-between;
   }
 }
+
+.checklist-pricing {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 12px 16px 16px;
+  margin: 0;
+}
+.checklist-pricing legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+.checklist-pricing .checklist-field-meta {
+  margin: 0;
+}
+.checklist-pricing-chip {
+  font-size: 12px;
+  color: var(--tx3);
+}
+.checklist-pricing-chip.is-override {
+  color: var(--tx);
+  font-weight: 600;
+}
+.checklist-preview-card {
+  display: grid;
+  gap: 12px;
+}

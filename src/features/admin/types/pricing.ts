@@ -1,7 +1,28 @@
 export type PricingRule = {
   id?: string
-  category: 'PACKAGE' | 'DISTANCE' | 'AREA' | 'CHECKLIST' | 'OUTPUT' | 'RESOURCE' | 'TERRAIN' | 'CONDITION' | 'PERMIT' | 'DISCOUNT' | 'MANAGER_ADJUSTMENT'
-  calculationType: 'FIXED' | 'PERCENT_OF_BASE' | 'PER_UNIT' | 'PER_BLOCK' | 'TIERED_BLOCK' | 'MULTIPLIER' | 'RESOURCE_BASED' | 'ACTUAL_COST' | 'MANUAL_QUOTE'
+  category:
+    | 'PACKAGE'
+    | 'DISTANCE'
+    | 'AREA'
+    | 'CHECKLIST'
+    | 'OUTPUT'
+    | 'RESOURCE'
+    | 'TERRAIN'
+    | 'CONDITION'
+    | 'PERMIT'
+    | 'DISCOUNT'
+    | 'MANAGER_ADJUSTMENT'
+    | 'MEDIA'
+  calculationType:
+    | 'FIXED'
+    | 'PERCENT_OF_BASE'
+    | 'PER_UNIT'
+    | 'PER_BLOCK'
+    | 'TIERED_BLOCK'
+    | 'MULTIPLIER'
+    | 'RESOURCE_BASED'
+    | 'ACTUAL_COST'
+    | 'MANUAL_QUOTE'
   ruleKey: string
   description: string
   minValue: number | null
@@ -13,7 +34,20 @@ export type PricingRule = {
   multiplier: number | null
   priority: number
   enabled: boolean
+  /** MEDIA rules only. */
+  pricingProfile?: string | null
+  mediaComponent?: MediaPricingComponent | null
+  includedQuantity?: number | null
+  roundingMode?: PricingRounding | null
 }
+
+export type MediaPricingComponent =
+  | 'CHECKLIST_BASE'
+  | 'INCLUDED_IMAGE'
+  | 'INCLUDED_VIDEO'
+  | 'EXTRA_IMAGE'
+  | 'EXTRA_VIDEO'
+export type PricingRounding = 'CEILING' | 'FLOOR' | 'HALF_UP'
 
 export type PricingPolicy = {
   id: string
@@ -31,4 +65,7 @@ export type PricingPolicy = {
   rules: PricingRule[]
 }
 
-export type PricingPolicyPayload = Omit<PricingPolicy, 'id' | 'version' | 'status' | 'currency'>
+export type PricingPolicyPayload = Omit<
+  PricingPolicy,
+  'id' | 'version' | 'status' | 'currency'
+>

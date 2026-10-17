@@ -75,7 +75,7 @@ describe('Admin checklist catalog', () => {
     render(<ChecklistCatalogPage />)
     await screen.findByText(definition.content)
     expect(checklistsApi.services).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Dịch vụ sử dụng' }))
+    fireEvent.click(screen.getByRole('button', { name: /dịch vụ ·/ }))
     expect(
       await screen.findByRole('link', { name: 'Dịch vụ test' }),
     ).toHaveAttribute('href', '#portal/admin/services/s/checklists')
@@ -454,7 +454,7 @@ describe('Admin checklist visual structure and interaction', () => {
   it('groups service summary and template section with styled header navigation', async () => {
     render(<ServiceChecklistPage serviceId="s" />)
     expect(
-      screen.getByRole('heading', { name: 'Checklist dịch vụ' }),
+      screen.getByRole('heading', { name: 'Cấu hình dịch vụ' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Mở danh mục checklist' }),

@@ -283,7 +283,7 @@ describe('Service default checklists and price', () => {
 
   it('saves per-service overrides with the association version and leaves blanks inherited', async () => {
     render(<ServiceChecklistPage serviceId="s" />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình giá' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
     fireEvent.change(screen.getByLabelText(/Số ảnh đã bao gồm/), {
       target: { value: '20' },
     })
@@ -303,7 +303,7 @@ describe('Service default checklists and price', () => {
 
   it('previews an unsaved override without saving it', async () => {
     render(<ServiceChecklistPage serviceId="s" />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình giá' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
     fireEvent.change(screen.getByLabelText(/Giá công việc kiểm tra/), {
       target: { value: '250000' },
     })
@@ -323,7 +323,7 @@ describe('Service default checklists and price', () => {
 
   it('does not send an invalid override', async () => {
     render(<ServiceChecklistPage serviceId="s" />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình giá' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
     fireEvent.change(screen.getByLabelText(/Số video đã bao gồm/), {
       target: { value: '-3' },
     })

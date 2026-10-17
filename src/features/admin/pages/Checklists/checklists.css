@@ -322,3 +322,111 @@
   display: grid;
   gap: 12px;
 }
+
+/* ---- Unified checklist configuration dialog ---- */
+.checklist-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--odm-border, #e2e8f0);
+  overflow-x: auto;
+}
+.checklist-tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.checklist-tab:hover {
+  color: #1d4ed8;
+}
+.checklist-tab.is-active {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+}
+.checklist-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--odm-border, #e2e8f0);
+  /* Long forms scroll inside the dialog; keep Save and Cancel in reach. */
+  position: sticky;
+  bottom: 0;
+  background: var(--odm-surface, #fff);
+}
+.checklist-banner.is-warning {
+  background: #fff7df;
+  border-color: #f0c36a;
+  color: #805100;
+  display: grid;
+  gap: 8px;
+}
+.checklist-banner.is-warning p {
+  margin: 0;
+}
+.checklist-fork {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px dashed #93c5fd;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.05);
+}
+.checklist-fork p {
+  margin: 0;
+}
+.checklist-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.checklist-history > li {
+  padding: 10px 12px;
+  border: 1px solid var(--odm-border, #e2e8f0);
+  border-radius: 10px;
+}
+.checklist-history-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.checklist-history-changes {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.checklist-history-changes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.checklist-history-changes li > span:first-child {
+  font-weight: 600;
+}
+.checklist-history-changes del {
+  color: #b91c1c;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.checklist-history-changes ins {
+  color: #166534;
+  text-decoration: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

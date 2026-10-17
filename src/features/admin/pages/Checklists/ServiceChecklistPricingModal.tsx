@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n'
-import { FormField, Modal } from '../../../../shared/components/ui'
+import { FormField } from '../../../../shared/components/ui'
 import { PriceBreakdownView } from '../../../../shared/components/odm/PriceBreakdownView'
 import {
   checklistPricingApi,
@@ -89,7 +89,11 @@ function inheritWhenUnchanged(
 const inheritedProfile = (row: ServiceChecklist) =>
   (row.checklistPricingProfile ?? 'DEFAULT').toUpperCase()
 
-export function ServiceChecklistPricingModal({
+/**
+ * What changes only for this service: price, media allowance, profile and whether the customer may drop the checklist.
+ * Everything else about the checklist is shared and lives in the "shared content" tab.
+ */
+export function ServiceApplyForm({
   serviceId,
   rows,
   row,
@@ -105,7 +109,11 @@ export function ServiceChecklistPricingModal({
   const { t } = useI18n(checklistMessages)
   const [form, setForm] = useState<Form>({
     // Pre-filled with the effective value so nothing has to be typed; unchanged values are saved as "inherit".
-    basePrice: (row.basePriceOverride ?? row.checklistBasePrice ?? 0).toString(),
+    basePrice: (
+      row.basePriceOverride ??
+      row.checklistBasePrice ??
+      0
+    ).toString(),
     images: (
       row.includedImageCountOverride ??
       row.checklistIncludedImageCount ??
@@ -204,81 +212,69 @@ export function ServiceChecklistPricingModal({
   )
 
   return (
-    <Modal
-      width={720}
-      icon="clipboard"
-      title={t.pricingTitle}
-      subtitle={row.content}
-      onClose={() => {
-        if (!busy) close()
-      }}
-      footer={
-        <>
-          <button
-            type="button"
-            className="odm-btn odm-btn-gh"
-            disabled={busy}
-            onClick={close}
-          >
-            {t.cancel}
-          </button>
-          <button
-            type="button"
-            className="odm-btn"
-            disabled={busy}
-            onClick={() => void check()}
-          >
-            {t.whatIf}
-          </button>
-          <button
-            type="button"
-            className="odm-btn odm-btn-p"
-            disabled={busy}
-            onClick={() => void save()}
-          >
-            {busy ? t.saving : t.save}
-          </button>
-        </>
-      }
-    >
-      <div className="checklist-dialog">
-        <p className="checklist-field-meta">{t.pricingOverrideHint}</p>
-        {field(
-          'svc-cl-base',
-          t.basePrice,
-          'basePrice',
-          row.checklistBasePrice,
-          1000,
-        )}
-        {field(
-          'svc-cl-images',
-          t.includedImages,
-          'images',
-          row.checklistIncludedImageCount,
-        )}
-        {field(
-          'svc-cl-videos',
-          t.includedVideos,
-          'videos',
-          row.checklistIncludedVideoCount,
-        )}
-        <label className="adm-check">
-          <input
-            type="checkbox"
-            checked={form.required}
-            onChange={(event) =>
-              setForm({ ...form, required: event.target.checked })
-            }
-          />
-          <span>{t.requiredLabel}</span>
-        </label>
-        {error && (
-          <p className="checklist-banner is-error" role="alert">
-            {error}
-          </p>
-        )}
-        {preview && <PriceBreakdownView preview={preview} />}
+    <div className="checklist-dialog">
+      <p className="checklist-field-meta">{t.pricingOverrideHint}</p>
+      {field(
+        'svc-cl-base',
+        t.basePrice,
+        'basePrice',
+        row.checklistBasePrice,
+        1000,
+      )}
+      {field(
+        'svc-cl-images',
+        t.includedImages,
+        'images',
+        row.checklistIncludedImageCount,
+      )}
+      {field(
+        'svc-cl-videos',
+        t.includedVideos,
+        'videos',
+        row.checklistIncludedVideoCount,
+      )}
+      <label className="adm-check">
+        <input
+          type="checkbox"
+          checked={form.required}
+          onChange={(event) =>
+            setForm({ ...form, required: event.target.checked })
+          }
+        />
+        <span>{t.requiredLabel}</span>
+      </label>
+      {error && (
+        <p className="checklist-banner is-error" role="alert">
+          {error}
+        </p>
+      )}
+      {preview && <PriceBreakdownView preview={preview} />}
+      <div className="checklist-form-actions">
+        <button
+          type="button"
+          className="odm-btn odm-btn-gh"
+          disabled={busy}
+          onClick={close}
+        >
+          {t.cancel}
+        </button>
+        <button
+          type="button"
+          className="odm-btn"
+          disabled={busy}
+          onClick={() => void check()}
+        >
+          {t.whatIf}
+        </button>
+        <button
+          type="button"
+          className="odm-btn odm-btn-p"
+          disabled={busy}
+          onClick={() => void save()}
+        >
+          {busy ? t.saving : t.save}
+        </button>
       </div>
-    </Modal>
+    </div>
   )
 }

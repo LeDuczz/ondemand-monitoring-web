@@ -56,6 +56,16 @@ export type ChecklistSnapshot = {
   requestedVideoCount?: number
   pricingProfileSnapshot?: string | null
   basePriceSnapshot?: number
+  pricingStatus?:
+    | 'AUTO_PRICED'
+    | 'NEEDS_MANAGER_REVIEW'
+    | 'APPROVED'
+    | 'ADJUSTED_AND_APPROVED'
+    | 'DUPLICATE'
+    | 'REJECTED'
+    | 'BLOCKED_BY_POLICY'
+  priceAvailable?: boolean
+  approvedPrice?: number | null
 }
 
 export type ChecklistRow = {

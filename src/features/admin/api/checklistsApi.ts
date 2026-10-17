@@ -88,13 +88,14 @@ export const checklistsApi = {
     active: boolean | undefined,
     page: number,
     signal?: AbortSignal,
+    size = 20,
   ) {
     return apiRequest<ChecklistPage>(catalog, {
       query: {
         search: search.trim() || undefined,
         active,
         page,
-        size: 20,
+        size,
         sort: 'createdAt,desc',
       },
       signal,

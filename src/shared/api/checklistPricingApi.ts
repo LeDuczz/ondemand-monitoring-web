@@ -68,6 +68,9 @@ export type AdminPreviewRequest = {
   serviceId: string
   policyId?: string
   items?: AdminPreviewItem[]
+  areaHa?: number
+  lengthKm?: number
+  altitudeM?: number
 }
 
 /** Customer input is choices and quantities only; the backend owns every price. */

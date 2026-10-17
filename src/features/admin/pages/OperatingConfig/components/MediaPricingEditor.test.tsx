@@ -11,6 +11,7 @@ import { MediaPricingEditor } from './MediaPricingEditor'
 import { PricingPolicyTab } from './PricingPolicyTab'
 import { adminApi } from '../../../api/adminApi'
 import { catalogApi } from '../../../api/catalogApi'
+import { checklistsApi } from '../../../api/checklistsApi'
 import { newMediaRule } from '../../../lib/mediaPricingRules'
 import { checklistPricingApi } from '../../../../../shared/api/checklistPricingApi'
 import { setLanguage } from '../../../../../shared/i18n'
@@ -21,6 +22,25 @@ beforeEach(() => {
   vi.spyOn(catalogApi, 'listServices').mockResolvedValue([
     { id: 's', name: 'Dịch vụ test', basePrice: 1_000_000, isActive: true },
   ])
+  vi.spyOn(checklistsApi, 'list').mockResolvedValue({
+    items: [{
+      id: 'checklist-x',
+      content: 'Kiểm tra tình trạng tổng thể công trình',
+      isActive: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: null,
+      version: 1,
+      basePrice: 100_000,
+      includedImageCount: 1,
+      includedVideoCount: 1,
+      pricingProfile: 'STANDARD',
+    }],
+    page: 0,
+    totalItems: 1,
+    totalPages: 1,
+    first: true,
+    last: true,
+  })
 })
 afterEach(() => vi.restoreAllMocks())
 
@@ -119,6 +139,28 @@ describe('MediaPricingEditor', () => {
     expect(screen.getByText(/Cần sửa trước khi lưu: 1/)).toBeInTheDocument()
   })
 
+  it('adds an extra-image rule targeted to a selected checklist', async () => {
+    const seen: PricingRule[][] = []
+    render(<Harness initial={[]} onRules={(rules) => seen.push(rules)} />)
+
+    fireEvent.change(await screen.findByLabelText('Checklist áp dụng'), {
+      target: { value: 'checklist-x' },
+    })
+    expect(screen.getByText(/Giá cơ bản: 100\.000 VND/)).toBeInTheDocument()
+    expect(screen.getByText(/Đã bao gồm: 1 ảnh · 1 video/)).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Thành phần'), {
+      target: { value: 'EXTRA_IMAGE' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm quy tắc' }))
+
+    expect(seen.at(-1)?.at(-1)).toMatchObject({
+      checklistDefinitionId: 'checklist-x',
+      checklistDefinitionName: 'Kiểm tra tình trạng tổng thể công trình',
+      pricingProfile: 'STANDARD',
+      mediaComponent: 'EXTRA_IMAGE',
+    })
+  })
+
   it('previews a price with the saved draft policy', async () => {
     const adminPreview = vi
       .spyOn(checklistPricingApi, 'adminPreview')
@@ -145,6 +187,10 @@ describe('MediaPricingEditor', () => {
       expect(adminPreview).toHaveBeenCalledWith({
         serviceId: 's',
         policyId: 'draft-1',
+        items: undefined,
+        areaHa: 0,
+        lengthKm: 0,
+        altitudeM: 0,
       }),
     )
     expect(

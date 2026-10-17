@@ -39,6 +39,11 @@ export function CreateOrderPage() {
     meta.pricingEstimate,
     checklist.quote.preview,
   )
+  const additionalChecklists = checklist.rows.filter(
+    (row) => row.selected && row.packageItem === false,
+  )
+  const packageChecklists = checklist.rows.filter((row) => row.packageItem === true)
+  const packageSelectedCount = packageChecklists.filter((row) => row.selected).length
 
   if (submit.createdId) {
     return (
@@ -109,6 +114,7 @@ export function CreateOrderPage() {
           setAiAnalysisRequested={f.setAiAnalysisRequested}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
+          additionalChecklists={additionalChecklists}
           footer={footer}
         />
       )}
@@ -116,7 +122,9 @@ export function CreateOrderPage() {
         <ContentStep
           selected={meta.services.find((s) => s.id === form.serviceId)}
           selectedCount={checklist.selectedCount}
-          totalCount={checklist.totalCount}
+          packageSelectedCount={packageSelectedCount}
+          packageCount={packageChecklists.length}
+          additionalChecklists={additionalChecklists}
           valid={checklist.valid}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
@@ -147,6 +155,7 @@ export function CreateOrderPage() {
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           aiAnalysisRequested={f.aiAnalysisRequested}
+          additionalChecklists={additionalChecklists}
           footer={footer}
         />
       )}
@@ -167,6 +176,9 @@ export function CreateOrderPage() {
           aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
+          additionalChecklists={additionalChecklists}
+          packageSelectedCount={packageSelectedCount}
+          packageCount={packageChecklists.length}
           onEdit={wizard.goTo}
           footer={footer}
         />

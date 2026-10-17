@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { defineMessages, useI18n } from '../../../../../shared/i18n'
@@ -8,6 +8,7 @@ import {
   type ServicePricePreview,
 } from '../../../../../shared/api/checklistPricingApi'
 import { catalogApi } from '../../../api/catalogApi'
+import { checklistsApi } from '../../../api/checklistsApi'
 import {
   CUSTOM_PROFILE,
   MEDIA_COMPONENTS,
@@ -29,6 +30,13 @@ const messages = defineMessages({
     extraSection: 'Media bổ sung (theo bậc, tính trên số lượng vượt định mức)',
     profile: 'Hồ sơ giá',
     component: 'Thành phần',
+    checklistTarget: 'Checklist áp dụng',
+    profileFallback: 'Không chọn — quy tắc theo hồ sơ giá',
+    checklistSection: 'CẤU HÌNH GIÁ THEO CHECKLIST',
+    basePrice: 'Giá cơ bản',
+    includedScope: 'Đã bao gồm',
+    configured: 'Đã cấu hình',
+    inherited: 'Dùng quy tắc hồ sơ/DEFAULT',
     price: 'Giá (VND)',
     pricePerBlock: 'Giá mỗi khối (VND)',
     from: 'Từ (vượt định mức)',
@@ -65,6 +73,12 @@ const messages = defineMessages({
       'Định mức chỉ áp dụng cho ảnh/video đã bao gồm của hồ sơ GENERIC_CUSTOMER_ADDED (0–500).',
     previewTitle: 'Xem thử giá theo bản nháp đã lưu',
     previewService: 'Dịch vụ',
+    previewChecklist: 'Checklist',
+    requestedImages: 'Số ảnh yêu cầu',
+    requestedVideos: 'Số video yêu cầu',
+    area: 'Diện tích (ha)',
+    length: 'Chiều dài (km)',
+    altitude: 'Độ cao (m)',
     previewButton: 'Xem thử',
     previewHint: 'Lưu bản nháp trước; bản xem thử dùng đúng bản nháp đã lưu.',
     previewError: 'Không thể xem thử giá.',
@@ -77,6 +91,13 @@ const messages = defineMessages({
     extraSection: 'Extra media (tiers over the quantity beyond the allowance)',
     profile: 'Pricing profile',
     component: 'Component',
+    checklistTarget: 'Target checklist',
+    profileFallback: 'None — pricing-profile fallback rule',
+    checklistSection: 'CHECKLIST PRICING CONFIGURATION',
+    basePrice: 'Base price',
+    includedScope: 'Included scope',
+    configured: 'Configured',
+    inherited: 'Uses profile/DEFAULT rule',
     price: 'Price (VND)',
     pricePerBlock: 'Price per block (VND)',
     from: 'From (beyond allowance)',
@@ -113,6 +134,12 @@ const messages = defineMessages({
       'An allowance only applies to included images/videos of the GENERIC_CUSTOMER_ADDED profile (0-500).',
     previewTitle: 'Preview a price with the saved draft',
     previewService: 'Service',
+    previewChecklist: 'Checklist',
+    requestedImages: 'Requested images',
+    requestedVideos: 'Requested videos',
+    area: 'Area (ha)',
+    length: 'Length (km)',
+    altitude: 'Altitude (m)',
     previewButton: 'Preview',
     previewHint: 'Save the draft first; the preview uses the saved draft.',
     previewError: 'Unable to preview the price.',
@@ -129,10 +156,20 @@ export function MediaPricingEditor({
   onChange: (rules: PricingRule[]) => void
 }) {
   const { t } = useI18n(messages)
+  const checklists = useApiQuery(
+    (signal) => checklistsApi.list('', true, 0, signal, 200),
+    [],
+  )
   const [profile, setProfile] = useState('')
+  const [checklistId, setChecklistId] = useState('')
   const [component, setComponent] =
     useState<MediaPricingComponent>('INCLUDED_IMAGE')
   const problems = validateMediaRules(rules)
+  const selectedChecklist = checklists.data?.items.find((item) => item.id === checklistId)
+  useEffect(() => {
+    if (selectedChecklist)
+      setProfile((selectedChecklist.pricingProfile ?? 'DEFAULT').toUpperCase())
+  }, [selectedChecklist])
   const indexed = rules
     .map((rule, index) => ({ rule, index }))
     .filter((entry) => isMediaRule(entry.rule))
@@ -155,7 +192,7 @@ export function MediaPricingEditor({
         data-testid="media-rule"
       >
         <b>
-          {rule.pricingProfile} · {t[rule.mediaComponent ?? 'INCLUDED_IMAGE']}
+          {rule.checklistDefinitionName ?? rule.pricingProfile} · {t[rule.mediaComponent ?? 'INCLUDED_IMAGE']}
         </b>
         {tier && (
           <>
@@ -270,6 +307,25 @@ export function MediaPricingEditor({
       <h3>{t.title}</h3>
       <p>{t.intro}</p>
       <p>{t.customHint}</p>
+      <label>
+        <span>{t.checklistTarget}</span>
+        <select value={checklistId} onChange={(event) => setChecklistId(event.target.value)}>
+          <option value="">{t.profileFallback}</option>
+          {(checklists.data?.items ?? []).map((checklist) => (
+            <option key={checklist.id} value={checklist.id}>{checklist.content}</option>
+          ))}
+        </select>
+      </label>
+      {selectedChecklist && (
+        <section className="pricing-checklist-summary" aria-label={t.checklistSection}>
+          <h4>{t.checklistSection}</h4>
+          <strong>{selectedChecklist.content}</strong>
+          <p>{t.basePrice}: {(selectedChecklist.basePrice ?? 0).toLocaleString('vi-VN')} VND</p>
+          <p>{t.includedScope}: {selectedChecklist.includedImageCount ?? 0} ảnh · {selectedChecklist.includedVideoCount ?? 0} video</p>
+          <p>Extra Image: {rules.some((rule) => rule.checklistDefinitionId === checklistId && rule.mediaComponent === 'EXTRA_IMAGE') ? t.configured : t.inherited}</p>
+          <p>Extra Video: {rules.some((rule) => rule.checklistDefinitionId === checklistId && rule.mediaComponent === 'EXTRA_VIDEO') ? t.configured : t.inherited}</p>
+        </section>
+      )}
       {indexed.length === 0 && <p>{t.empty}</p>}
       {included.length > 0 && <h4>{t.includedSection}</h4>}
       {included.map((e) => row(e.rule, e.index))}
@@ -304,7 +360,16 @@ export function MediaPricingEditor({
           className="odm-btn"
           disabled={!/^[A-Za-z0-9_]{1,60}$/.test(profile.trim())}
           onClick={() => {
-            onChange([...rules, newMediaRule(profile, component, rules)])
+            onChange([
+              ...rules,
+              newMediaRule(
+                profile,
+                component,
+                rules,
+                component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO' ? checklistId || null : null,
+                component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO' ? selectedChecklist?.content ?? null : null,
+              ),
+            ])
           }}
         >
           {t.add}
@@ -323,7 +388,17 @@ export function MediaPricingEditor({
 function DraftPreview({ draftId }: { draftId: string }) {
   const { t } = useI18n(messages)
   const services = useApiQuery((signal) => catalogApi.listServices(signal), [])
+  const checklists = useApiQuery(
+    (signal) => checklistsApi.list('', true, 0, signal, 200),
+    [],
+  )
   const [serviceId, setServiceId] = useState('')
+  const [checklistId, setChecklistId] = useState('')
+  const [requestedImages, setRequestedImages] = useState(0)
+  const [requestedVideos, setRequestedVideos] = useState(0)
+  const [areaHa, setAreaHa] = useState(0)
+  const [lengthKm, setLengthKm] = useState(0)
+  const [altitudeM, setAltitudeM] = useState(0)
   const [preview, setPreview] = useState<ServicePricePreview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const selected = serviceId || services.data?.[0]?.id || ''
@@ -335,6 +410,12 @@ function DraftPreview({ draftId }: { draftId: string }) {
         await checklistPricingApi.adminPreview({
           serviceId: selected,
           policyId: draftId,
+          items: checklistId
+            ? [{ checklistId, requestedImageCount: requestedImages, requestedVideoCount: requestedVideos }]
+            : undefined,
+          areaHa,
+          lengthKm,
+          altitudeM,
         }),
       )
     } catch {
@@ -356,6 +437,20 @@ function DraftPreview({ draftId }: { draftId: string }) {
           ))}
         </select>
       </label>{' '}
+      <label>
+        <span>{t.previewChecklist}</span>
+        <select value={checklistId} onChange={(e) => setChecklistId(e.target.value)}>
+          <option value="">—</option>
+          {(checklists.data?.items ?? []).map((checklist) => (
+            <option key={checklist.id} value={checklist.id}>{checklist.content}</option>
+          ))}
+        </select>
+      </label>{' '}
+      <label><span>{t.requestedImages}</span><input type="number" min={0} max={500} value={requestedImages} onChange={(e) => setRequestedImages(Number(e.target.value))} /></label>{' '}
+      <label><span>{t.requestedVideos}</span><input type="number" min={0} max={500} value={requestedVideos} onChange={(e) => setRequestedVideos(Number(e.target.value))} /></label>{' '}
+      <label><span>{t.area}</span><input type="number" min={0} value={areaHa} onChange={(e) => setAreaHa(Number(e.target.value))} /></label>{' '}
+      <label><span>{t.length}</span><input type="number" min={0} value={lengthKm} onChange={(e) => setLengthKm(Number(e.target.value))} /></label>{' '}
+      <label><span>{t.altitude}</span><input type="number" min={0} value={altitudeM} onChange={(e) => setAltitudeM(Number(e.target.value))} /></label>{' '}
       <button type="button" className="odm-btn" onClick={() => void run()}>
         {t.previewButton}
       </button>

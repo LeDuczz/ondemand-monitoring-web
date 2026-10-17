@@ -65,8 +65,8 @@ export function validateMediaRules(rules: PricingRule[]): MediaRuleProblem[] {
       if (min < 0) add('NEGATIVE')
       if (rule.maxValue != null && rule.maxValue <= min) add('RANGE')
       if (rule.enabled)
-        groups.set(`${rule.pricingProfile}:${rule.mediaComponent}`, [
-          ...(groups.get(`${rule.pricingProfile}:${rule.mediaComponent}`) ??
+        groups.set(`${rule.checklistDefinitionId ?? '*'}:${rule.pricingProfile}:${rule.mediaComponent}`, [
+          ...(groups.get(`${rule.checklistDefinitionId ?? '*'}:${rule.pricingProfile}:${rule.mediaComponent}`) ??
             []),
           index,
         ])
@@ -105,6 +105,8 @@ export function newMediaRule(
   profile: string,
   component: MediaPricingComponent,
   existing: PricingRule[],
+  checklistDefinitionId?: string | null,
+  checklistDefinitionName?: string | null,
 ): PricingRule {
   const normalized = profile.trim().toUpperCase()
   const tier = component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO'
@@ -112,6 +114,7 @@ export function newMediaRule(
     (rule) =>
       isMediaRule(rule) &&
       rule.pricingProfile === normalized &&
+      (rule.checklistDefinitionId ?? null) === (checklistDefinitionId ?? null) &&
       rule.mediaComponent === component,
   )
   // Continue the schedule where the last bounded tier ends.
@@ -122,7 +125,8 @@ export function newMediaRule(
       )
     : null
   let sequence = siblings.length + 1
-  let ruleKey = `${normalized}:${component}:${sequence}`
+  const targetKey = checklistDefinitionId ? `CHECKLIST_${checklistDefinitionId}` : normalized
+  let ruleKey = `${targetKey}:${component}:${sequence}`
   while (existing.some((rule) => rule.ruleKey === ruleKey))
     ruleKey = `${normalized}:${component}:${++sequence}`
   return {
@@ -140,6 +144,8 @@ export function newMediaRule(
     priority: existing.length,
     enabled: true,
     pricingProfile: normalized,
+    checklistDefinitionId: checklistDefinitionId ?? null,
+    checklistDefinitionName: checklistDefinitionName ?? null,
     mediaComponent: component,
     includedQuantity: null,
     roundingMode: tier ? 'CEILING' : null,

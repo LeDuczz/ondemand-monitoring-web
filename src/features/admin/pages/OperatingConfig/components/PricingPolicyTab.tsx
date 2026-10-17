@@ -417,7 +417,9 @@ function payload(policy: PricingPolicy): PricingPolicyPayload {
     rules: policy.rules.map(
       (rule, priority) =>
         Object.fromEntries(
-          Object.entries({ ...rule, priority }).filter(([key]) => key !== 'id'),
+          Object.entries({ ...rule, priority }).filter(
+            ([key]) => key !== 'id' && key !== 'checklistDefinitionName',
+          ),
         ) as PricingRule,
     ),
   }

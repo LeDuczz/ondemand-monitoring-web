@@ -33,6 +33,11 @@ export function CustomerCreateRequestPage() {
     meta.pricingEstimate,
     r.checklist.quote.preview,
   )
+  const additionalChecklists = r.checklist.rows.filter(
+    (row) => row.selected && row.packageItem === false,
+  )
+  const packageChecklists = r.checklist.rows.filter((row) => row.packageItem === true)
+  const packageSelectedCount = packageChecklists.filter((row) => row.selected).length
 
   return (
     <PortalLayout role="CUSTOMER" title={t.pageTitle} subtitle={t.pageSubtitle}>
@@ -101,12 +106,19 @@ export function CustomerCreateRequestPage() {
               deliverable={r.deliverable}
               consultation={null}
               aiAnalysisRequested={false}
+              checklistCounts={{
+                total: packageSelectedCount + additionalChecklists.length,
+                packageSelected: packageSelectedCount,
+                packageTotal: packageChecklists.length,
+                additional: additionalChecklists.length,
+              }}
             />
             <PricingEstimateCard
               estimate={estimate}
               loading={meta.pricingLoading}
               hasService={Boolean(r.service)}
               aiAnalysisRequested={false}
+              additionalChecklists={additionalChecklists}
             />
           </div>
 

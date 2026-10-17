@@ -82,11 +82,10 @@ export function ChecklistEditor({
   const grouped = compact && view === 'group'
   const selectedTotal = visibleRows.filter((row) => row.selected).length
   const awaitingManagerQuote = (row: ChecklistRow) =>
-    !row.sourceChecklistId &&
+    (row.packageItem === false || !row.sourceChecklistId) &&
     row.selected &&
     checklist.quote.preview?.checklists.some(
       (priced) =>
-        priced.custom &&
         priced.quotePending &&
         normalizeContent(priced.content) === normalizeContent(row.content),
     )
@@ -245,9 +244,14 @@ export function ChecklistEditor({
               <span className="checklist-custom-tag">{t.custom}</span>
             )}
             {awaitingManagerQuote(row) && (
-              <span className="checklist-custom-tag is-pending-quote">
-                {t.awaitingManagerQuote}
-              </span>
+              <>
+                <span className="checklist-custom-tag is-pending-quote">
+                  Dịch vụ theo yêu cầu
+                </span>
+                <small className="checklist-hint">
+                  Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager duyệt yêu cầu.
+                </small>
+              </>
             )}
           </span>
           <span className="checklist-evidence-summary">

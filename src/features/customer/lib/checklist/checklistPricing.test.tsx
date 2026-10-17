@@ -339,4 +339,24 @@ describe('ChecklistSnapshotCard', () => {
     expect(screen.getByText(/Số video yêu cầu: 3/)).toBeInTheDocument()
     expect(screen.getByText(/Đã bao gồm: 10 ảnh · 1 video/)).toBeInTheDocument()
   })
+
+  it('shows no amount while a customer-added checklist awaits manager pricing', () => {
+    render(<ChecklistSnapshotCard items={[{
+      id: 'custom-1', sourceChecklistId: null, content: 'Kiểm tra mái phía sau',
+      displayOrder: 0, sourceType: 'CUSTOMER_CUSTOM', pricingStatus: 'NEEDS_MANAGER_REVIEW',
+      priceAvailable: false, approvedPrice: null,
+    }]} />)
+    expect(screen.getByText('Đang chờ Manager xem xét giá.')).toBeInTheDocument()
+    expect(screen.queryByText(/880.000/)).not.toBeInTheDocument()
+  })
+
+  it('shows only the approved additional-service price', () => {
+    render(<ChecklistSnapshotCard items={[{
+      id: 'custom-1', sourceChecklistId: null, content: 'Kiểm tra mái phía sau',
+      displayOrder: 0, sourceType: 'CUSTOMER_CUSTOM', pricingStatus: 'ADJUSTED_AND_APPROVED',
+      priceAvailable: true, approvedPrice: 800_000,
+    }]} />)
+    expect(screen.getByText(/Dịch vụ bổ sung: 800.000/)).toBeInTheDocument()
+    expect(screen.queryByText(/880.000/)).not.toBeInTheDocument()
+  })
 })

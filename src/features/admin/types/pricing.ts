@@ -37,6 +37,9 @@ export type PricingRule = {
   enabled: boolean
   /** MEDIA rules only. */
   pricingProfile?: string | null
+  /** Optional catalog checklist target. Null means profile/global fallback. */
+  checklistDefinitionId?: string | null
+  checklistDefinitionName?: string | null
   mediaComponent?: MediaPricingComponent | null
   includedQuantity?: number | null
   roundingMode?: PricingRounding | null

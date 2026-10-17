@@ -393,3 +393,57 @@
     padding: 12px;
   }
 }
+
+
+/* Mission cards for the customer: readable facts, status colours, aligned action */
+.cr-heading h1,
+.cr-heading h2,
+.cr-heading h3 {
+  letter-spacing: normal;
+}
+.cr-missions .cr-mission {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cr-mission-facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.cr-mission-facts > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+.cr-mission-facts dt {
+  color: var(--tx3, #64748b);
+  font-size: 13px;
+}
+.cr-mission-facts dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cr-mission-unavailable {
+  margin: 0;
+  color: var(--tx3, #64748b);
+  font-size: 13.5px;
+}
+.cr-mission .cr-mission-link {
+  align-self: flex-start;
+  margin-top: auto;
+}
+.cr-status--completed { background: #e8f6ee; color: #166534; }
+.cr-status--active { background: #e6f0ff; color: #1d4ed8; }
+.cr-status--review { background: #eef2ff; color: #3730a3; }
+.cr-status--scheduled { background: #e0f2fe; color: #075985; }
+.cr-status--waiting { background: #fff4dc; color: #92560a; }
+.cr-status--failed,
+.cr-status--cancelled { background: #fdecec; color: #991b1b; }
+.cr-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}

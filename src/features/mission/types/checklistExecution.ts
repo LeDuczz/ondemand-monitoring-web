@@ -25,6 +25,11 @@ export type MissionChecklistExecution = {
   minimumEvidenceCount?: number
   requiredEvidenceType?: RequiredEvidenceType
   eligibleEvidenceCount?: number
+  /** Evidence policy V3: both per-type thresholds must be met. */
+  minimumImageCount?: number
+  minimumVideoCount?: number
+  eligibleImageCount?: number
+  eligibleVideoCount?: number
   evidenceRequirementSatisfied?: boolean
   evidenceReady?: boolean
   blockingReasons?: EvidenceBlockingReason[]

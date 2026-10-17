@@ -13,6 +13,8 @@ type Props = {
   /** Monitoring-content editor. */
   checklist: ReactNode
   selectedCount: number
+  /** Checklists the customer can pick from (not the hard server cap). */
+  totalCount: number
   /** False while the list is loading or has invalid items; shows a short reason. */
   valid: boolean
   pricingEstimate: ServicePricingEstimate | null
@@ -40,7 +42,7 @@ export function ContentStep(p: Props) {
                     : t.notSelected
                 }
               />
-              <Metric label={t.selectedCount} value={t.count(p.selectedCount)} />
+              <Metric label={t.selectedCount} value={t.count(p.selectedCount, p.totalCount)} />
             </div>
             <p className="co-hint co-mt">{p.valid ? t.hint : t.invalid}</p>
           </Card>

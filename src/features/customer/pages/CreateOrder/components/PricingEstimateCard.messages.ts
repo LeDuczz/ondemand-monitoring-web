@@ -12,6 +12,8 @@ export const pricingEstimateMessages = defineMessages({
     unavailable:
       'Chưa lấy được báo giá cho dịch vụ này. Chi phí sẽ được xác nhận khi duyệt.',
     pickService: 'Chọn dịch vụ để xem chi phí dự kiến.',
+    quotePending:
+      'Các yêu cầu bạn thêm chưa được tính trong tổng dự kiến. Manager sẽ báo giá sau khi xem xét.',
   },
   en: {
     title: 'Estimated cost',
@@ -24,5 +26,7 @@ export const pricingEstimateMessages = defineMessages({
     unavailable:
       'No quote is available for this service yet. The cost is confirmed on approval.',
     pickService: 'Select a service to see the estimated cost.',
+    quotePending:
+      'Requirements you added are excluded from this estimate. A manager will quote them after review.',
   },
 })

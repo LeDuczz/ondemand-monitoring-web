@@ -18,6 +18,13 @@ import { adminHref } from '../../routes'
 import { checklistMessages } from './checklists.messages'
 import { checklistError } from './checklistError'
 import { Icon } from '../../../../shared/components/Icon'
+import { formatVnd } from '../../../../shared/lib/formatVnd'
+import {
+  pricingToForm,
+  validatePricingForm,
+  type ChecklistPricingErrors,
+  type ChecklistPricingForm,
+} from '../../lib/checklistPricing'
 import { ChecklistPagination, ChecklistLoadError } from './ChecklistUi'
 
 export function ChecklistCatalogPage() {
@@ -124,6 +131,7 @@ export function ChecklistCatalogPage() {
                   <tr>
                     <th>{t.content}</th>
                     <th>{t.filter}</th>
+                    <th>{t.priceColumn}</th>
                     <th>{t.usage}</th>
                     <th>{t.updated}</th>
                     <th>{t.actions}</th>
@@ -141,6 +149,13 @@ export function ChecklistCatalogPage() {
                         >
                           {row.isActive ? t.active : t.inactive}
                         </StatusBadge>
+                      </td>
+                      <td className="adm-cell-mono">
+                        {formatVnd(row.basePrice ?? 0)}
+                        <br />
+                        {row.includedImageCount ?? 0} {t.imagesShort} ·{' '}
+                        {row.includedVideoCount ?? 0} {t.videosShort}
+                        {row.pricingProfile ? ` · ${row.pricingProfile}` : ''}
                       </td>
                       <td>
                         <button
@@ -234,6 +249,10 @@ function ChecklistEditor({
   const [difficulty, setDifficulty] = useState<
     NonNullable<ChecklistDefinition['difficulty']>
   >(row?.difficulty ?? 'BASIC')
+  const [pricing, setPricing] = useState<ChecklistPricingForm>(
+    pricingToForm(row ?? {}),
+  )
+  const [pricingErrors, setPricingErrors] = useState<ChecklistPricingErrors>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   async function submit(event: FormEvent) {
@@ -243,12 +262,20 @@ function ChecklistEditor({
       setError(t.required)
       return
     }
+    const checked = validatePricingForm(pricing)
+    if (!checked.ok) {
+      setPricingErrors(checked.errors)
+      setError(t.invalidPricing)
+      return
+    }
+    setPricingErrors({})
     if (busy) return
     setBusy(true)
     setError(null)
     try {
-      if (row) await checklistsApi.update(row.id, value, difficulty)
-      else await checklistsApi.create(value, difficulty)
+      if (row)
+        await checklistsApi.update(row.id, value, difficulty, checked.value)
+      else await checklistsApi.create(value, difficulty, checked.value)
       saved()
     } catch (cause) {
       setError(checklistError(cause, t))
@@ -289,6 +316,7 @@ function ChecklistEditor({
       <form
         id="checklist-editor"
         className="checklist-dialog"
+        noValidate
         onSubmit={(event) => void submit(event)}
       >
         <FormField id="checklist-content" label={t.content} required>
@@ -322,6 +350,121 @@ function ChecklistEditor({
             <option value="VERY_HARD">Rất khó</option>
           </select>
         </FormField>
+        <fieldset className="checklist-pricing">
+          <legend>{t.pricingSection}</legend>
+          <p className="checklist-field-meta">{t.pricingHint}</p>
+          <p className="checklist-banner">
+            {t.mediaPolicyHint}{' '}
+            <a href={adminHref({ screen: 'operatingConfig' })}>
+              {t.openPricingPolicy}
+            </a>
+          </p>
+          <PricingNumber
+            id="checklist-base-price"
+            label={t.basePrice}
+            field="basePrice"
+            step={1000}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-included-images"
+            label={t.includedImages}
+            field="includedImageCount"
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-included-videos"
+            label={t.includedVideos}
+            field="includedVideoCount"
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-video-duration"
+            label={t.videoDuration}
+            field="standardVideoDurationSeconds"
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <FormField
+            id="checklist-pricing-profile"
+            label={t.pricingProfile}
+            error={pricingErrors.pricingProfile ? t.invalidPricing : undefined}
+          >
+            <input
+              id="checklist-pricing-profile"
+              className="odm-inp"
+              list="checklist-pricing-profiles"
+              maxLength={60}
+              value={pricing.pricingProfile}
+              aria-describedby="checklist-pricing-profile-hint"
+              aria-invalid={pricingErrors.pricingProfile !== undefined}
+              onChange={(event) =>
+                setPricing({ ...pricing, pricingProfile: event.target.value })
+              }
+            />
+            <datalist id="checklist-pricing-profiles">
+              <option value="DEFAULT" />
+            </datalist>
+            <small id="checklist-pricing-profile-hint">
+              {t.pricingProfileHint}
+            </small>
+          </FormField>
+          <div className="checklist-field-meta">
+            Chỉ bật chiều đo thực sự ảnh hưởng đến checklist này.
+          </div>
+          {(
+            [
+              ['areaPricingEnabled', 'Tính theo diện tích'],
+              ['lengthPricingEnabled', 'Tính theo chiều dài'],
+              ['altitudePricingEnabled', 'Tính theo độ cao'],
+            ] as const
+          ).map(([field, label]) => (
+            <label key={field} className="checklist-field-meta">
+              <input
+                type="checkbox"
+                checked={pricing[field]}
+                onChange={(event) =>
+                  setPricing({ ...pricing, [field]: event.target.checked })
+                }
+              />{' '}
+              {label}
+            </label>
+          ))}
+          <PricingNumber
+            id="checklist-included-area"
+            label="Diện tích đã bao gồm (ha)"
+            field="includedAreaHa"
+            step={0.001}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-included-length"
+            label="Chiều dài đã bao gồm (km)"
+            field="includedLengthKm"
+            step={0.001}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+          <PricingNumber
+            id="checklist-included-altitude"
+            label="Độ cao đã bao gồm (m)"
+            field="includedAltitudeM"
+            step={0.01}
+            pricing={pricing}
+            errors={pricingErrors}
+            setPricing={setPricing}
+          />
+        </fieldset>
         {error && (
           <p className="checklist-banner is-error" role="alert">
             {error}
@@ -329,6 +472,50 @@ function ChecklistEditor({
         )}
       </form>
     </Modal>
+  )
+}
+
+function PricingNumber({
+  id,
+  label,
+  field,
+  step = 1,
+  pricing,
+  errors,
+  setPricing,
+}: {
+  id: string
+  label: string
+  field: Exclude<
+    keyof ChecklistPricingForm,
+    'areaPricingEnabled' | 'lengthPricingEnabled' | 'altitudePricingEnabled'
+  >
+  step?: number
+  pricing: ChecklistPricingForm
+  errors: ChecklistPricingErrors
+  setPricing: (next: ChecklistPricingForm) => void
+}) {
+  const { t } = useI18n(checklistMessages)
+  return (
+    <FormField
+      id={id}
+      label={label}
+      error={errors[field] ? t.invalidPricing : undefined}
+    >
+      <input
+        id={id}
+        className="odm-inp"
+        type="number"
+        min={0}
+        step={step}
+        inputMode="numeric"
+        value={pricing[field]}
+        aria-invalid={errors[field] !== undefined}
+        onChange={(event) =>
+          setPricing({ ...pricing, [field]: event.target.value })
+        }
+      />
+    </FormField>
   )
 }
 

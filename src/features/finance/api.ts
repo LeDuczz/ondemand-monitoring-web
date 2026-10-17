@@ -6,14 +6,9 @@ import type {
   PricingChecklistItem,
   PricingReview,
   Quote,
-  CustomWorkAssessment,
 } from './types'
 
 export const financeApi = {
-  getAssessment: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<CustomWorkAssessment | null>(`/api/manager/orders/${encodeURIComponent(orderId)}/pricing-assessment`, { signal }),
-  saveAssessment: (orderId: string, body: CustomWorkAssessment) =>
-    apiRequest<CustomWorkAssessment>(`/api/manager/orders/${encodeURIComponent(orderId)}/pricing-assessment`, { method: 'PUT', body }),
   getPricingReview: (orderId: string, signal?: AbortSignal) =>
     apiRequest<PricingReview>(
       `/api/manager/orders/${encodeURIComponent(orderId)}/pricing`,
@@ -37,7 +32,8 @@ export const financeApi = {
       managerNote: string | null
       additionalUnitPrices: Record<string, number>
       adjustmentReason?: string | null
-      adjustmentType?: 'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
+      adjustmentType?:
+        'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
       expectedPricingRevision?: number | null
     },
   ) =>
@@ -53,11 +49,6 @@ export const financeApi = {
       `/api/manager/orders/${encodeURIComponent(orderId)}/quotes/${encodeURIComponent(quoteId)}/approve`,
       { method: 'POST' },
     ),
-  decidePricing: (orderId: string, quoteId: string, pricingRevision: number, approved: boolean, note: string | null) =>
-    apiRequest<Quote>(
-      `/api/manager/orders/${encodeURIComponent(orderId)}/quotes/${encodeURIComponent(quoteId)}/pricing-decision`,
-      { method: 'POST', body: { pricingRevision, approved, note } },
-    ),
   getQuote: (orderId: string, signal?: AbortSignal) =>
     apiRequest<Quote>(`/api/orders/${encodeURIComponent(orderId)}/quote`, {
       signal,
@@ -71,6 +62,12 @@ export const financeApi = {
     apiRequest<Invoice>(`/api/orders/${encodeURIComponent(orderId)}/invoice`, {
       signal,
     }),
+  /** Re-checks the order's pending VNPAY payments with VNPAY itself and returns the current invoice. */
+  refreshOrderPayments: (orderId: string) =>
+    apiRequest<Invoice>(
+      `/api/manager/orders/${encodeURIComponent(orderId)}/payments/refresh`,
+      { method: 'POST' },
+    ),
   getManagerInvoice: (orderId: string, signal?: AbortSignal) =>
     apiRequest<Invoice>(
       `/api/manager/orders/${encodeURIComponent(orderId)}/invoice`,
@@ -90,10 +87,7 @@ export const financeApi = {
         method: 'POST',
       },
     ),
-  getPaymentByReference: (
-    transactionReference: string,
-    signal?: AbortSignal,
-  ) =>
+  getPaymentByReference: (transactionReference: string, signal?: AbortSignal) =>
     apiRequest<Payment>(
       `/api/payments/by-reference/${encodeURIComponent(transactionReference)}`,
       { signal },

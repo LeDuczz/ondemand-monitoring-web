@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react'
 
+import { useI18n } from '../../../../../shared/i18n'
+import { monitoringAuthorizationMessages } from './MonitoringAuthorizationSection.messages'
+
 import {
   AUTHORIZATION_DOCUMENT_TYPES,
   MONITORING_RELATIONSHIPS,
@@ -14,31 +17,11 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024
 const MAX_DOCUMENTS = 10
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
-const relationshipLabels: Record<
-  (typeof MONITORING_RELATIONSHIPS)[number],
-  string
-> = {
-  OWNER: 'Chủ sở hữu / Chủ đầu tư',
-  AUTHORIZED_PERSON: 'Người được ủy quyền',
-  CONTRACTOR: 'Nhà thầu / Đơn vị thi công',
-  MANAGER_OR_SUPERVISOR: 'Đơn vị quản lý / Tư vấn giám sát',
-  OTHER: 'Khác',
-}
-
-const documentTypeLabels: Record<AuthorizationDocumentType, string> = {
-  OWNERSHIP_PROOF: 'Giấy tờ sở hữu / quyền sử dụng',
-  OWNER_CONSENT: 'Văn bản chấp thuận của chủ sở hữu',
-  AUTHORIZATION_LETTER: 'Giấy ủy quyền',
-  SERVICE_CONTRACT: 'Hợp đồng liên quan',
-  ASSIGNMENT_LETTER: 'Văn bản giao nhiệm vụ',
-  OTHER: 'Tài liệu khác',
-}
-
-function readDataUrl(file: File) {
+function readDataUrl(file: File, readError: string) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result ?? ''))
-    reader.onerror = () => reject(new Error('Không thể đọc tệp.'))
+    reader.onerror = () => reject(new Error(readError))
     reader.readAsDataURL(file)
   })
 }
@@ -65,6 +48,7 @@ export function MonitoringAuthorizationSection({
   errors: FormErrors
   update: UpdateField
 }) {
+  const { t } = useI18n(monitoringAuthorizationMessages)
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({})
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({})
   const documents = form.monitoringAuthorizationDocuments
@@ -86,19 +70,19 @@ export function MonitoringAuthorizationSection({
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setUploadErrors((current) => ({
         ...current,
-        [id]: 'Chỉ hỗ trợ tệp PDF, JPG hoặc PNG.',
+        [id]: t.unsupportedType,
       }))
       return
     }
     if (file.size > MAX_FILE_BYTES) {
       setUploadErrors((current) => ({
         ...current,
-        [id]: 'Tệp vượt quá dung lượng tối đa 5 MB.',
+        [id]: t.tooLarge,
       }))
       return
     }
     try {
-      const dataUrl = await readDataUrl(file)
+      const dataUrl = await readDataUrl(file, t.readError)
       patchDocument(id, {
         fileName: file.name,
         contentType: file.type,
@@ -115,7 +99,7 @@ export function MonitoringAuthorizationSection({
     } catch (cause) {
       setUploadErrors((current) => ({
         ...current,
-        [id]: cause instanceof Error ? cause.message : 'Không thể đọc tệp.',
+        [id]: cause instanceof Error ? cause.message : t.readError,
       }))
     }
   }
@@ -124,16 +108,13 @@ export function MonitoringAuthorizationSection({
     <section className="co-authz" aria-labelledby="co-authz-title">
       <div className="co-authz-head">
         <div>
-          <h3 id="co-authz-title">Quyền giám sát khu vực</h3>
-          <p>
-            Xác nhận bạn có quyền yêu cầu giám sát tại khu vực đã chọn. ODMS có
-            thể yêu cầu tài liệu chứng minh trước khi thực hiện nhiệm vụ.
-          </p>
+          <h3 id="co-authz-title">{t.title}</h3>
+          <p>{t.intro}</p>
         </div>
       </div>
 
       <fieldset className="co-authz-fieldset">
-        <legend>Quan hệ của bạn với khu vực</legend>
+        <legend>{t.relationship}</legend>
         <div className="co-authz-relationships">
           {MONITORING_RELATIONSHIPS.map((relationship) => (
             <label key={relationship}>
@@ -143,7 +124,7 @@ export function MonitoringAuthorizationSection({
                 checked={form.monitoringRelationship === relationship}
                 onChange={() => update('monitoringRelationship', relationship)}
               />
-              <span>{relationshipLabels[relationship]}</span>
+              <span>{t.relationships[relationship]}</span>
             </label>
           ))}
         </div>
@@ -154,8 +135,8 @@ export function MonitoringAuthorizationSection({
 
       <div className="co-authz-docs-head">
         <div>
-          <strong>Tài liệu xác nhận quyền giám sát</strong>
-          <span>Không bắt buộc. Có thể thêm nhiều tài liệu.</span>
+          <strong>{t.docsTitle}</strong>
+          <span>{t.docsHint}</span>
         </div>
         <button
           type="button"
@@ -168,7 +149,7 @@ export function MonitoringAuthorizationSection({
             ])
           }
         >
-          + Thêm tài liệu
+          {t.addDocument}
         </button>
       </div>
 
@@ -177,7 +158,7 @@ export function MonitoringAuthorizationSection({
           {documents.map((document, index) => (
             <div className="co-authz-document" key={document.id}>
               <div className="co-authz-document-title">
-                <strong>Tài liệu {index + 1}</strong>
+                <strong>{t.document(index + 1)}</strong>
                 <button
                   type="button"
                   onClick={() =>
@@ -187,12 +168,12 @@ export function MonitoringAuthorizationSection({
                     )
                   }
                 >
-                  Xóa
+                  {t.remove}
                 </button>
               </div>
               <div className="co-authz-document-grid">
                 <label>
-                  <span>Loại tài liệu</span>
+                  <span>{t.documentType}</span>
                   <select
                     className="co-input"
                     value={document.documentType}
@@ -205,13 +186,13 @@ export function MonitoringAuthorizationSection({
                   >
                     {AUTHORIZATION_DOCUMENT_TYPES.map((type) => (
                       <option key={type} value={type}>
-                        {documentTypeLabels[type]}
+                        {t.documentTypes[type]}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label>
-                  <span>Tên tài liệu</span>
+                  <span>{t.documentName}</span>
                   <input
                     className="co-input"
                     value={document.documentName}
@@ -225,7 +206,7 @@ export function MonitoringAuthorizationSection({
                 </label>
               </div>
               <label>
-                <span>Ghi chú <small>(không bắt buộc)</small></span>
+                <span>{t.notes} <small>{t.optional}</small></span>
                 <input
                   className="co-input"
                   value={document.notes}
@@ -236,7 +217,7 @@ export function MonitoringAuthorizationSection({
                 />
               </label>
               <input
-                aria-label={`Tệp tài liệu ${index + 1}`}
+                aria-label={t.fileAria(index + 1)}
                 ref={(node) => {
                   fileInputs.current[document.id] = node
                 }}
@@ -249,12 +230,12 @@ export function MonitoringAuthorizationSection({
                 }}
               />
               <div className="co-authz-file">
-                <span>{document.fileName || 'Chưa chọn tệp'}</span>
+                <span>{document.fileName || t.noFile}</span>
                 <button
                   type="button"
                   onClick={() => fileInputs.current[document.id]?.click()}
                 >
-                  {document.fileName ? 'Thay thế' : 'Chọn tệp'}
+                  {document.fileName ? t.replace : t.chooseFile}
                 </button>
               </div>
               {uploadErrors[document.id] ? (
@@ -280,20 +261,14 @@ export function MonitoringAuthorizationSection({
             update('monitoringAuthorizationConfirmed', event.target.checked)
           }
         />
-        <span>
-          Tôi xác nhận mình có quyền yêu cầu giám sát tại khu vực đã chọn và
-          chịu trách nhiệm về tính chính xác của thông tin đã cung cấp.
-        </span>
+        <span>{t.confirm}</span>
       </label>
       {errors.monitoringAuthorizationConfirmed ? (
         <div className="ui-field-error">
           {errors.monitoringAuthorizationConfirmed}
         </div>
       ) : null}
-      <p className="co-authz-note">
-        Xác nhận này là khai báo của khách hàng và chưa phải kết quả xác minh của
-        Manager.
-      </p>
+      <p className="co-authz-note">{t.note}</p>
     </section>
   )
 }

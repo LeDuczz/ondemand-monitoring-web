@@ -1,5 +1,6 @@
 import { useI18n } from '../../../../shared/i18n'
 import type { CustomerMissionSummary } from '../../api/customerMissionReportApi'
+import { fmtDate, fmtDateTime } from '../../lib/orderStatus'
 import { customerHref } from '../../routes'
 import { customerReportMessages } from './messages'
 
@@ -52,20 +53,18 @@ export function CustomerMissionCard({
           {t.statuses[category]}
         </span>
       </div>
-      {mission.scopeLabel && (
-        <p>
-          {t.scope}: {mission.scopeLabel}
-        </p>
-      )}
-      <p>
-        {t.schedule}:{' '}
-        {mission.scheduledStartAt
-          ? new Date(mission.scheduledStartAt).toLocaleString(locale)
-          : t.unscheduled}
-        {mission.scheduledEndAt && (
-          <> → {new Date(mission.scheduledEndAt).toLocaleString(locale)}</>
+      <dl className="cr-mission-facts">
+        {mission.scopeLabel && (
+          <div>
+            <dt>{t.scope}</dt>
+            <dd>{mission.scopeLabel}</dd>
+          </div>
         )}
-      </p>
+        <div>
+          <dt>{t.schedule}</dt>
+          <dd>{scheduleText(mission, locale, t.unscheduled)}</dd>
+        </div>
+      </dl>
       {original && (
         <p>
           {t.replaces} <a href={link(original)}>{original.missionCode}</a>.{' '}
@@ -77,10 +76,12 @@ export function CustomerMissionCard({
           {t.replacedBy} <a href={link(m)}>{m.missionCode}</a>
         </p>
       ))}
-      {showLink && !mission.reportAvailable && <p>{t.unavailable}</p>}
+      {showLink && !mission.reportAvailable && (
+        <p className="cr-mission-unavailable">{t.unavailable}</p>
+      )}
       {showLink && (
         <a
-          className="odm-btn odm-btn-gh"
+          className={`odm-btn cr-mission-link${mission.reportAvailable ? ' odm-btn-p' : ' odm-btn-gh'}`}
           href={link(mission)}
           aria-label={`${mission.reportAvailable ? t.view : t.details} ${mission.missionCode}`}
         >
@@ -89,4 +90,20 @@ export function CustomerMissionCard({
       )}
     </article>
   )
+}
+
+/** `25/10/2026 07:04 → 08:04` when both ends fall on the same day, otherwise both full date-times. */
+function scheduleText(
+  mission: CustomerMissionSummary,
+  locale: 'vi-VN' | 'en-US',
+  fallback: string,
+) {
+  if (!mission.scheduledStartAt) return fallback
+  const start = mission.scheduledStartAt
+  const end = mission.scheduledEndAt
+  if (!end) return fmtDateTime(start, locale)
+  const sameDay = fmtDate(start, locale) === fmtDate(end, locale)
+  return sameDay
+    ? `${fmtDateTime(start, locale)} → ${new Date(end).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`
+    : `${fmtDateTime(start, locale)} → ${fmtDateTime(end, locale)}`
 }

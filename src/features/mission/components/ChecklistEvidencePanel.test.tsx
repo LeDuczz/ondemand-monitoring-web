@@ -128,14 +128,25 @@ describe('Checklist evidence', () => {
     ])
     render(<ChecklistEvidencePanel {...props} />)
     fireEvent.click(screen.getByText('Thêm bằng chứng từ media Mission'))
+    const dialog = within(await screen.findByRole('dialog'))
     expect(
-      await screen.findByText(
-        'Mission này chưa có media phù hợp để làm bằng chứng.',
-      ),
+      await dialog.findByText(/Nguồn media không hợp lệ/),
     ).toBeInTheDocument()
     expect(
-      within(screen.getByRole('dialog')).queryByText('Gắn media'),
-    ).not.toBeInTheDocument()
+      dialog.getByRole('button', { name: /Gắn media|Đã gắn/ }),
+    ).toBeDisabled()
+  })
+  it('explains an empty Mission and links to the upload screen', async () => {
+    vi.spyOn(checklistEvidenceApi, 'candidates').mockResolvedValue([])
+    render(<ChecklistEvidencePanel {...props} />)
+    fireEvent.click(screen.getByText('Thêm bằng chứng từ media Mission'))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(
+      await dialog.findByText(/chưa có media nào được upload/),
+    ).toBeInTheDocument()
+    expect(
+      dialog.getByRole('link', { name: 'mở media nghiệm thu' }),
+    ).toHaveAttribute('href', expect.stringContaining('upload'))
   })
   it('shows backend eligible count, type, and remaining count; UNABLE_TO_VERIFY remains exempt', () => {
     render(
@@ -446,12 +457,9 @@ describe('Evidence picker Mission-scoped loading', () => {
     ])
     render(<ChecklistEvidencePanel {...props} item={emptyItem} />)
     open()
-    await screen.findByText(
-      'Mission này chưa có media phù hợp để làm bằng chứng.',
-    )
-    expect(
-      within(screen.getByRole('dialog')).queryByText('capture.jpg'),
-    ).not.toBeInTheDocument()
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(await dialog.findByText('Media đã bị từ chối.')).toBeInTheDocument()
+    expect(dialog.getByRole('button', { name: 'Gắn media' })).toBeDisabled()
   })
   it('resets on Mission changes, aborts M1 and cannot display a late M1 response in M2', async () => {
     let resolve!: (value: EvidenceCandidate[]) => void

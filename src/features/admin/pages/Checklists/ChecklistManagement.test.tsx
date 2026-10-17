@@ -106,7 +106,22 @@ describe('Admin checklist catalog', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     await waitFor(() =>
-      expect(checklistsApi.create).toHaveBeenCalledWith('New checklist', 'BASIC'),
+      expect(checklistsApi.create).toHaveBeenCalledWith(
+        'New checklist',
+        'BASIC',
+        {
+          altitudePricingEnabled: false,
+          areaPricingEnabled: false,
+          basePrice: 0,
+          includedAltitudeM: 0,
+          includedAreaHa: 0,
+          includedImageCount: 0,
+          includedLengthKm: 0,
+          includedVideoCount: 0,
+          lengthPricingEnabled: false,
+          pricingProfile: '',
+        },
+      ),
     )
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
@@ -148,7 +163,23 @@ describe('Admin checklist catalog', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     await waitFor(() =>
-      expect(checklistsApi.update).toHaveBeenCalledWith('a', 'Edited', 'BASIC'),
+      expect(checklistsApi.update).toHaveBeenCalledWith(
+        'a',
+        'Edited',
+        'BASIC',
+        {
+          altitudePricingEnabled: false,
+          areaPricingEnabled: false,
+          basePrice: 0,
+          includedAltitudeM: 0,
+          includedAreaHa: 0,
+          includedImageCount: 0,
+          includedLengthKm: 0,
+          includedVideoCount: 0,
+          lengthPricingEnabled: false,
+          pricingProfile: '',
+        },
+      ),
     )
     await waitFor(() => expect(checklistsApi.list).toHaveBeenCalledTimes(2))
   })
@@ -430,8 +461,14 @@ describe('Admin checklist visual structure and interaction', () => {
       )
       .mockResolvedValue(rows)
     render(<ServiceChecklistPage serviceId="s" />)
-    await screen.findByText('Không thể tải checklist dịch vụ.')
-    fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    const loadError = await screen.findByText(
+      'Không thể tải checklist dịch vụ.',
+    )
+    fireEvent.click(
+      within(loadError.closest('.odm-card')!).getByRole('button', {
+        name: 'Thử lại',
+      }),
+    )
     await screen.findByText(definition.content)
     expect(checklistsApi.template).toHaveBeenCalledTimes(2)
   })

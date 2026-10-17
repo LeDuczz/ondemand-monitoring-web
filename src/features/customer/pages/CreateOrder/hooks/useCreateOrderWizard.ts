@@ -22,15 +22,33 @@ import { useWizard } from './useWizard'
 import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import type { FormErrors, FormState } from '../../../lib/createOrder/types'
+import { calcArea } from '../../../lib/createOrder/payload'
 
 const formFields = new Set<keyof FormState>([
-  'serviceId', 'title', 'address', 'latitude', 'longitude', 'altitudeM',
-  'estimatedLengthM', 'siteContactPhone', 'permitStatus', 'permitNumber',
-  'permitDocuments', 'permitExpiresOn', 'monitoringRelationship',
-  'monitoringAuthorizationConfirmed', 'monitoringAuthorizationDocuments',
-  'preferredDateFrom', 'preferredDateTo', 'preferredTimeId', 'resultDeadline',
-  'recurrenceOccurrences', 'deliverableTypeId', 'resultFormats',
-  'deliveryMethods', 'termsAccepted',
+  'serviceId',
+  'title',
+  'address',
+  'latitude',
+  'longitude',
+  'altitudeM',
+  'estimatedLengthM',
+  'siteContactPhone',
+  'permitStatus',
+  'permitNumber',
+  'permitDocuments',
+  'permitExpiresOn',
+  'monitoringRelationship',
+  'monitoringAuthorizationConfirmed',
+  'monitoringAuthorizationDocuments',
+  'preferredDateFrom',
+  'preferredDateTo',
+  'preferredTimeId',
+  'resultDeadline',
+  'recurrenceOccurrences',
+  'deliverableTypeId',
+  'resultFormats',
+  'deliveryMethods',
+  'termsAccepted',
 ])
 
 /** Wires every wizard hook together; the page only renders the result. */
@@ -39,7 +57,12 @@ export function useCreateOrderWizard() {
   const stored = useMemo(readStoredDraft, [])
   const f = useCreateOrderForm(stored)
   const { form, step } = f
-  const checklist = useOrderChecklist(form.serviceId)
+  const checklist = useOrderChecklist(form.serviceId, {
+    areaHa: Number(calcArea(form.radiusM)),
+    lengthKm: Number(form.estimatedLengthM || 0) / 1000,
+    altitudeM: Number.isFinite(form.altitudeM) ? form.altitudeM : 0,
+    aiAnalysisRequested: f.aiAnalysisRequested,
+  })
   const meta = useCreateOrderMeta(
     form.serviceId,
     f.aiAnalysisRequested,
@@ -110,7 +133,11 @@ export function useCreateOrderWizard() {
       // message rather than in the `errors` map.
       if (/preferredDateFrom must be at least 7 days/i.test(error.message)) {
         fieldErrors.preferredDateFrom = t.validation.preferredDateTooSoon
-      } else if (/preferredDateFrom must be before or equal to preferredDateTo/i.test(error.message)) {
+      } else if (
+        /preferredDateFrom must be before or equal to preferredDateTo/i.test(
+          error.message,
+        )
+      ) {
         fieldErrors.preferredDateTo = t.validation.preferredDateOrder
       }
 
@@ -121,6 +148,8 @@ export function useCreateOrderWizard() {
     },
     buildPayload: () => ({
       ...buildOrderPayload({
+        mediaTotals: checklist.mediaTotals,
+        deliverableOptions: meta.deliverables,
         form,
         score,
         consultationId,

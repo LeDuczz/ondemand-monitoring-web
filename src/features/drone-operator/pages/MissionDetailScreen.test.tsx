@@ -352,6 +352,42 @@ describe('MissionDetailScreen', () => {
     )
   })
 
+  it('shows "Kết nối GCS" right after accepting, without a reload', async () => {
+    const pending = {
+      ...mission,
+      status: 'PENDING' as const,
+      backendStatus: 'WAITING_OPERATOR_ACCEPTANCE',
+      myResponseStatus: 'PENDING',
+    }
+    vi.spyOn(operatorApi, 'getMission').mockResolvedValue(pending as never)
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...noActions,
+      canRespond: true,
+    })
+    vi.spyOn(operatorApi, 'acceptMission').mockImplementation(async () => {
+      vi.mocked(operatorApi.getMission).mockResolvedValue({
+        ...mission,
+        status: 'ACCEPTED',
+        backendStatus: 'SCHEDULED',
+        myResponseStatus: 'ACCEPTED',
+      } as never)
+      vi.mocked(missionApi.getPermissions).mockResolvedValue({
+        ...noActions,
+        canOperatePayload: true,
+      })
+      return {} as never
+    })
+
+    render(<MissionDetailScreen missionId="m" />)
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Chấp nhận nhiệm vụ/ }),
+    )
+
+    expect(
+      await screen.findByRole('link', { name: 'Kết nối GCS' }),
+    ).toBeInTheDocument()
+  })
+
   it('does not show the removed completion button before evidence readiness', async () => {
     vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({

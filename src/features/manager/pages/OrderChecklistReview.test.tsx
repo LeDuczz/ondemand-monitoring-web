@@ -1,9 +1,7 @@
 import {
   act,
-  fireEvent,
   render,
   screen,
-  waitFor,
   within,
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -305,35 +303,6 @@ describe('Manager historical checklist review through Order API', () => {
       ([, init]) => init?.method === 'POST',
     )
     expect(writes).toHaveLength(0)
-  })
-
-  it('requires rejection reason and posts only the existing Order decision', async () => {
-    const transport = serveOrder()
-    render(<OrderReviewPage orderId="order-history" />)
-    await screen.findByText('Lịch thực hiện & khu vực giám sát')
-    fireEvent.click(screen.getByText('Quyết định'))
-    fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
-    expect(screen.getByText('Lý do là bắt buộc')).toBeInTheDocument()
-    expect(
-      transport.mock.calls.some(([, init]) => init?.method === 'POST'),
-    ).toBe(false)
-    fireEvent.change(
-      screen.getByPlaceholderText('Khách hàng sẽ nhìn thấy nội dung này'),
-      { target: { value: 'Requirements outside service scope' } },
-    )
-    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
-    await waitFor(() =>
-      expect(window.location.hash).toBe('#portal/manager/orders'),
-    )
-    const writes = transport.mock.calls.filter(
-      ([, init]) => init?.method === 'POST',
-    )
-    expect(writes).toHaveLength(1)
-    expect(JSON.parse(String(writes[0][1]?.body))).toEqual({
-      decision: 'REJECTED',
-      reason: 'Requirements outside service scope',
-    })
   })
 
   it('preserves snapshot fields on legacy Manager projections too', async () => {

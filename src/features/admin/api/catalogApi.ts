@@ -6,6 +6,8 @@ export type ServiceResponse = {
   name: string
   description?: string
   basePrice: number
+  defaultPrice?: number
+  priceSource?: 'CHECKLISTS' | 'UNPRICED'
   imageUrl?: string | null
   fallbackImageUrl?: string | null
   isActive: boolean

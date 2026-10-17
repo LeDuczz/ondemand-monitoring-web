@@ -17,6 +17,8 @@ import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
 import { requestSummaryCardMessages } from './RequestSummaryCard.messages'
 
 type Props = {
+  /** Images and videos requested in the checklists. */
+  mediaTotals?: { images: number; videos: number }
   form: FormState
   service?: ServiceOption
   time?: PreferredTimeOption
@@ -67,12 +69,13 @@ export function RequestSummaryCard(p: Props) {
       ? `${dateFrom} → ${dateTo}`
       : dateFrom
   const timeWindow = p.time ? localizeTimeslot(p.time, lang) : ''
-  const quantity =
-    Number.isFinite(form.quantity) && form.quantity > 0 ? form.quantity : 0
   const result = [
-    t[form.mediaType],
-    form.resolution,
-    quantity ? t.quantityUnit(form.mediaType, quantity) : '',
+    p.mediaTotals?.images
+      ? t.quantityUnit('IMAGE', p.mediaTotals.images)
+      : '',
+    p.mediaTotals?.videos
+      ? t.quantityUnit('VIDEO', p.mediaTotals.videos)
+      : '',
   ]
     .filter(Boolean)
     .join(' · ')

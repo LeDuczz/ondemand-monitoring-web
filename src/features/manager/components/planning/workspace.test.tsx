@@ -266,7 +266,10 @@ async function saveChecklist(id: string, indices: number[]) {
 }
 describe('Order-centric workspace', () => {
   it('plans split checklist, finalizes and enters the original wizard without an inline resource form', async () => {
-    render(<OrderMissionPlanningSection orderId="o" />)
+    const onAssign = vi.fn()
+    const view = render(
+      <OrderMissionPlanningSection orderId="o" onAssignResources={onAssign} />,
+    )
     await screen.findByRole('link', { name: 'M1' })
     expect(
       screen.queryByRole('region', { name: 'Tài nguyên m1' }),
@@ -277,12 +280,15 @@ describe('Order-centric workspace', () => {
     expect(screen.getByText('Đã phân công').parentElement).toHaveTextContent(
       '5',
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Chốt kế hoạch' }))
-    fireEvent.click(
-      within(
-        await screen.findByRole('dialog', { name: 'Chốt kế hoạch?' }),
-      ).getByRole('button', { name: 'Chốt kế hoạch' }),
+    // "Next" locks the plan and hands over to resource assignment in one step.
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp: Gán nguồn lực' }))
+    await waitFor(() =>
+      expect(planningApi.finalizeExecutionPlan).toHaveBeenCalledTimes(1),
     )
+    expect(onAssign).toHaveBeenCalled()
+    // The parent leaves this screen after "Next"; reopen the Order to see the locked plan.
+    view.unmount()
+    render(<OrderMissionPlanningSection orderId="o" />)
     await screen.findByRole('button', { name: 'Điều chỉnh kế hoạch' })
     choose('m1')
     fireEvent.click(
@@ -315,7 +321,9 @@ describe('Order-centric workspace', () => {
       )[0],
     ).toBeChecked()
     expect(planningApi.updateMissionChecklistAssignments).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Chốt kế hoạch' })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+    ).toBeInTheDocument()
   })
   it('returns from resource Mission selection to the same Order planning workspace', async () => {
     finalized = true

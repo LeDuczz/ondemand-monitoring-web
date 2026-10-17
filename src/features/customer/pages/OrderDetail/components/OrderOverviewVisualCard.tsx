@@ -85,13 +85,14 @@ function ReadonlyOrderMap({
     }
   }, [layerLabels.satellite, layerLabels.street, order.latitude, order.longitude, order.radiusM])
 
-  return <div ref={container} className="od-order-map" aria-label="Bản đồ khu vực giám sát" />
+  return <div ref={container} className="od-order-map" aria-label={layerLabels.street === 'Map' ? 'Monitoring area map' : 'Bản đồ khu vực giám sát'} />
 }
 
 export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
   const { lang } = useLanguage()
+  const en = lang === 'en'
   const layerLabels =
-    lang === 'en'
+    en
       ? { street: 'Map', satellite: 'Satellite' }
       : { street: 'Bản đồ', satellite: 'Vệ tinh' }
   const services = useApiQuery((signal) => customerApi.listServices(signal), [])
@@ -110,7 +111,7 @@ export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
   )
 
   return (
-    <section className="od-overview-visual" aria-label="Tổng quan dịch vụ và vị trí">
+    <section className="od-overview-visual" aria-label={en ? 'Service and location overview' : 'Tổng quan dịch vụ và vị trí'}>
       <div className="od-service-hero">
         {image ? (
           <img src={image} alt="" onError={() => setFailed((items) => [...items, image])} />
@@ -120,7 +121,7 @@ export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
           </div>
         )}
         <div className="od-service-hero-overlay">
-          <span>Dịch vụ đã chọn</span>
+          <span>{en ? 'Selected service' : 'Dịch vụ đã chọn'}</span>
           <strong>{serviceName || order.serviceName || '—'}</strong>
           {service?.description ? <p>{service.description}</p> : null}
         </div>
@@ -131,12 +132,12 @@ export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
         ) : (
           <div className="od-map-empty">
             <OrderIcon name="pin" size={24} />
-            <span>Order chưa có tọa độ khu vực giám sát.</span>
+            <span>{en ? 'This order has no monitoring-area coordinates yet.' : 'Order chưa có tọa độ khu vực giám sát.'}</span>
           </div>
         )}
         <div className="od-map-caption">
-          <strong>{order.address || 'Vị trí giám sát'}</strong>
-          <span>{order.radiusM != null ? `Phạm vi ${order.radiusM} m` : 'Chưa có bán kính'}</span>
+          <strong>{order.address || (en ? 'Monitoring location' : 'Vị trí giám sát')}</strong>
+          <span>{order.radiusM != null ? (en ? `Radius ${order.radiusM} m` : `Phạm vi ${order.radiusM} m`) : en ? 'No radius' : 'Chưa có bán kính'}</span>
         </div>
       </div>
     </section>

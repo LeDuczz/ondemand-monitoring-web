@@ -6,15 +6,35 @@ export type PricingChecklistItem = {
   sourceChecklistId: string | null
   content: string
   displayOrder: number
-  sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
+  sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_SELECTED' | 'CUSTOMER_CUSTOM'
   reviewStatus: ChecklistReviewStatus
   managerNote: string | null
+  managerQuoteRequired: boolean
+  managerQuotedPrice: number | null
+  systemCalculatedPrice?: number | null
+  managerPriceAdjustmentReason?: string | null
+  managerApprovedAmount?: number | null
+  finalAmount?: number | null
+  priceDifferenceAmount?: number | null
+  priceDifferencePercent?: number | null
+  requestedImageCount?: number
+  requestedVideoCount?: number
   difficultySnapshot?: 'BASIC' | 'MEDIUM' | 'HARD' | 'VERY_HARD'
 }
 
 export type PricingCategory =
-  | 'PACKAGE' | 'DISTANCE' | 'AREA' | 'CHECKLIST' | 'OUTPUT' | 'RESOURCE'
-  | 'TERRAIN' | 'CONDITION' | 'PERMIT' | 'DISCOUNT' | 'MANAGER_ADJUSTMENT'
+  | 'PACKAGE'
+  | 'DISTANCE'
+  | 'AREA'
+  | 'ALTITUDE'
+  | 'CHECKLIST'
+  | 'OUTPUT'
+  | 'RESOURCE'
+  | 'TERRAIN'
+  | 'CONDITION'
+  | 'PERMIT'
+  | 'DISCOUNT'
+  | 'MANAGER_ADJUSTMENT'
 
 export type QuoteItem = {
   id: string
@@ -53,17 +73,30 @@ export type Quote = {
   pricingPolicyVersion?: number
   systemCalculatedAmount?: number
   managerAdjustmentAmount?: number
-  adjustmentType?: 'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION' | null
+  adjustmentType?:
+    'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION' | null
   adjustmentReason?: string | null
   adjustmentRequestedById?: string | null
   adjustmentRequestedByName?: string | null
   adjustmentRequestedAt?: string | null
-  pricingApprovalStatus?: 'NOT_REQUIRED' | 'PENDING_SECOND_MANAGER' | 'APPROVED' | 'REJECTED' | 'BLOCKED_BY_POLICY'
+  pricingApprovalStatus?:
+    | 'NOT_REQUIRED'
+    | 'PENDING_SECOND_MANAGER'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'BLOCKED_BY_POLICY'
   pricingApprovedByName?: string | null
   pricingApprovedAt?: string | null
   pricingApprovalNote?: string | null
   pricingRevision?: number
-  riskFlags?: Array<'ZERO_PRICE' | 'HIGH_DISCOUNT' | 'BELOW_MINIMUM_PRICE' | 'CUSTOM_WORK_OVERRIDE' | 'LARGE_MARKUP' | 'REPEATED_OVERRIDE'>
+  riskFlags?: Array<
+    | 'ZERO_PRICE'
+    | 'HIGH_DISCOUNT'
+    | 'BELOW_MINIMUM_PRICE'
+    | 'CUSTOM_WORK_OVERRIDE'
+    | 'LARGE_MARKUP'
+    | 'REPEATED_OVERRIDE'
+  >
 }
 
 export type PricingBreakdownItem = {
@@ -72,6 +105,7 @@ export type PricingBreakdownItem = {
   quantity: number
   unitPrice: number
   amount: number
+  orderChecklistItemId?: string | null
 }
 
 export type PricingBreakdown = {
@@ -82,26 +116,6 @@ export type PricingBreakdown = {
   customWork: boolean
   assessmentComplete: boolean
   items: PricingBreakdownItem[]
-}
-
-export type CustomWorkAssessment = {
-  id?: string
-  orderId?: string
-  estimatedFlightHours: number | null
-  estimatedDistanceKm: number | null
-  estimatedAreaHa: number | null
-  pilotCount: number | null
-  droneCount: number | null
-  batteryUnits: number | null
-  terrain: 'FLAT' | 'MOUNTAIN' | 'HIGH_RISE' | 'DAM_RESERVOIR' | 'HARD_TO_ACCESS'
-  thermalRequired: boolean
-  multispectralRequired: boolean
-  aiReportRequired: boolean
-  nightOperation: boolean
-  specialEquipment: string | null
-  otherCostDrivers: string | null
-  assessmentComplete: boolean
-  version?: number
 }
 
 export type Invoice = {

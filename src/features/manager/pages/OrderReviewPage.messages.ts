@@ -9,7 +9,9 @@ export const orderReviewPageMessages = defineMessages({
       `Bằng chứng: tối thiểu ${count} · ${type}`,
     image: 'Ảnh',
     video: 'Video',
-    imageOrVideo: 'Ảnh hoặc video',
+    imageOrVideo: 'Ảnh hoặc video (cũ)',
+    imageAndVideoRequirement: (images: number, videos: number) =>
+      `Bằng chứng: tối thiểu ${images} ảnh + ${videos} video`,
     requirementsHistory:
       'Nội dung đã chốt khi khách hàng gửi yêu cầu · Chỉ xem, không thay đổi theo danh mục dịch vụ hiện tại.',
     requirementsEmpty: 'Khách hàng đã gửi yêu cầu không kèm nội dung giám sát.',
@@ -195,7 +197,9 @@ export const orderReviewPageMessages = defineMessages({
       `Evidence: at least ${count} · ${type}`,
     image: 'Image',
     video: 'Video',
-    imageOrVideo: 'Image or video',
+    imageOrVideo: 'Image or video (legacy)',
+    imageAndVideoRequirement: (images: number, videos: number) =>
+      `Evidence: at least ${images} images + ${videos} videos`,
     requirementsHistory:
       'Requirements saved on customer submission · Read only, independent of the current service catalog.',
     requirementsEmpty:

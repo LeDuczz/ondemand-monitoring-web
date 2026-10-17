@@ -185,7 +185,7 @@ describe('Mission result review card', () => {
     card({ onReviewed: refresh })
     fireEvent.click(screen.getByRole('button', { name: 'Duyệt kết quả' }))
     await waitFor(() => expect(refresh).toHaveBeenCalledOnce())
-    expect(approve).toHaveBeenCalledWith('result-1')
+    expect(approve).toHaveBeenCalledWith('result-1', '')
     expect(media).not.toHaveBeenCalled()
   })
   it('renders the full-width optional rejection note and keeps rejection unchanged', async () => {
@@ -194,7 +194,7 @@ describe('Mission result review card', () => {
       .mockResolvedValue(result)
     const refresh = vi.fn()
     card({ onReviewed: refresh })
-    const note = screen.getByRole('textbox', { name: 'Lý do từ chối' })
+    const note = screen.getByRole('textbox', { name: 'Ghi chú / lý do' })
     expect(note).toHaveAttribute('rows', '3')
     fireEvent.change(note, {
       target: { value: 'Cần chụp lại khu vực phía Bắc.' },

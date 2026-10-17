@@ -273,7 +273,7 @@ export const operatorMediaApi = {
         checksumSha256: item.checksumSha256,
       }
       await recordUploadFailure(event)
-      let failure: UploadPlan | null = null
+      let failure: UploadPlan | null
       try {
         failure = await reportJournaledFailure(event, attemptPath)
       } catch {

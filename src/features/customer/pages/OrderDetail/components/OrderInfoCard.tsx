@@ -5,7 +5,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
 import { useTimeslotLabel } from '../../../hooks/usePreferredTimes'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
-import { fmtDateTime } from '../../../lib/orderStatus'
+import { fmtDate, fmtDateTime } from '../../../lib/orderStatus'
 import { formatDateRange } from '../../../lib/orders/format'
 import type { OrderDetailView } from '../../../lib/orders/types'
 import { CardTitle } from './CardTitle'
@@ -71,6 +71,7 @@ function Section({
   editor?: ReactNode
   children: ReactNode
 }) {
+  const { t } = useI18n(orderInfoCardMessages)
   return (
     <section className={wide ? 'od-info-section is-wide' : 'od-info-section'}>
       <div className="od-info-section-heading">
@@ -82,7 +83,7 @@ function Section({
         </h3>
         {onSupplement ? (
           <button type="button" className="od-info-edit" onClick={onSupplement}>
-            Chỉnh sửa
+            {t.edit}
           </button>
         ) : null}
       </div>
@@ -129,7 +130,7 @@ export function OrderInfoCard({
           />
           <Field icon="calendar" label={t.createdAt} value={order.createdAt ? fmtDateTime(order.createdAt, locale) : DASH} />
           <Field icon="calendar" label={t.schedule} value={[schedule, time].filter(Boolean).join(' · ') || DASH} />
-          <Field icon="clock" label={t.resultDeadline} value={order.resultDeadline ? new Date(order.resultDeadline).toLocaleDateString(locale) : DASH} />
+          <Field icon="clock" label={t.resultDeadline} value={order.resultDeadline ? fmtDate(order.resultDeadline, locale) : DASH} />
           <Field icon="pin" label={t.address} value={order.address ?? DASH} />
         </Section>
         <Section icon="drone" title={t.sectionScope} onSupplement={editable ? () => setEditing('scope') : undefined} editor={editing === 'scope' ? <OrderSectionEditor section="scope" order={order} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); onUpdated?.() }} /> : undefined}>
@@ -139,7 +140,7 @@ export function OrderInfoCard({
           <Field icon="target" label={t.radius} value={order.radiusM != null ? `${order.radiusM} m` : DASH} num />
           <Field icon="altitude" label={t.altitude} value={order.altitudeM != null ? `${order.altitudeM} m` : DASH} num />
           <Field icon="radius" label={t.estimatedLength} value={order.estimatedLengthM != null ? `${order.estimatedLengthM} m` : DASH} num />
-          <Field icon="refresh" label={t.recurrence} value={order.recurrenceType && order.recurrenceType !== 'NONE' ? `${label(order.recurrenceType)}${order.recurrenceOccurrences ? ` · ${order.recurrenceOccurrences} lần` : ''}` : label(order.recurrenceType)} />
+          <Field icon="refresh" label={t.recurrence} value={order.recurrenceType && order.recurrenceType !== 'NONE' ? `${label(order.recurrenceType)}${order.recurrenceOccurrences ? ` · ${t.times(order.recurrenceOccurrences)}` : ''}` : label(order.recurrenceType)} />
         </Section>
         <Section icon="pin" title={t.sectionSite} onSupplement={editable ? () => setEditing('site') : undefined} editor={editing === 'site' ? <OrderSectionEditor section="site" order={order} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); onUpdated?.() }} /> : undefined}>
           <Field icon="user" label={t.siteContact} value={[order.siteContactName, order.siteContactPhone].filter(Boolean).join(' · ') || DASH} />
@@ -151,15 +152,15 @@ export function OrderInfoCard({
           <Field icon="check" label={t.authorization} value={order.monitoringAuthorizationConfirmed ? t.yes : t.no} />
           <Field icon="shield" label={t.permitRequired} value={order.permitRequired == null ? DASH : order.permitRequired ? t.yes : t.no} />
           <Field icon="doc" label={t.permit} value={[label(order.permitStatus), order.permitNumber, order.permitZoneName].filter((value) => value && value !== DASH).join(' · ') || DASH} />
-          <Field icon="calendar" label={t.permitExpiry} value={order.permitExpiresOn ? new Date(order.permitExpiresOn).toLocaleDateString(locale) : DASH} />
+          <Field icon="calendar" label={t.permitExpiry} value={order.permitExpiresOn ? fmtDate(order.permitExpiresOn, locale) : DASH} />
           <Field icon="file" label={t.permitFiles} value={order.permitDocuments.map((file) => file.fileName).join(', ') || DASH} />
           <Field icon="file" label={t.authorizationFiles} value={order.monitoringAuthorizationDocuments.map((file) => file.documentName || file.fileName).join(', ') || DASH} />
         </Section>
         <Section icon="database" title={t.sectionResult} onSupplement={editable ? () => setEditing('result') : undefined} editor={editing === 'result' ? <OrderSectionEditor section="result" order={order} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); onUpdated?.() }} /> : undefined}>
           <Field icon="media" label={t.resultFormats} value={join(order.resultFormats)} />
           <Field icon="download" label={t.deliveryMethods} value={join(order.deliveryMethods)} />
-          <Field icon="clock" label={t.retention} value={order.dataRetentionDays != null ? `${order.dataRetentionDays} ngày` : DASH} />
-          <Field icon="check" label={t.terms} value={[order.termsVersion, order.termsAcceptedAt ? fmtDateTime(order.termsAcceptedAt, locale) : null].filter(Boolean).join(' · ') || DASH} />
+          <Field icon="clock" label={t.retention} value={order.dataRetentionDays != null ? t.days(order.dataRetentionDays) : DASH} />
+          <Field icon="check" label={t.terms} value={order.termsAcceptedAt ? `${fmtDateTime(order.termsAcceptedAt, locale)}${order.termsVersion ? ` · ${t.termsVersion(order.termsVersion)}` : ''}` : DASH} />
         </Section>
         {order.description && (
           <Section icon="file" title={t.description} onSupplement={editable ? () => setEditing('description') : undefined} editor={editing === 'description' ? <OrderSectionEditor section="description" order={order} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); onUpdated?.() }} /> : undefined}>

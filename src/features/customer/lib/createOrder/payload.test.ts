@@ -47,7 +47,7 @@ describe('withAdditionalRequirementChecklist', () => {
             sourceChecklistId: 'default',
             expectedChecklistVersion: 1,
             minimumEvidenceCount: 1,
-            requiredEvidenceType: 'IMAGE_OR_VIDEO',
+            requiredEvidenceType: 'IMAGE',
           },
         ],
         true,
@@ -57,13 +57,13 @@ describe('withAdditionalRequirementChecklist', () => {
         sourceChecklistId: 'default',
         expectedChecklistVersion: 1,
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       },
       {
         contentOverride:
           'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
         minimumEvidenceCount: 1,
-        requiredEvidenceType: 'IMAGE_OR_VIDEO',
+        requiredEvidenceType: 'IMAGE',
       },
     ])
   })
@@ -73,7 +73,7 @@ describe('withAdditionalRequirementChecklist', () => {
       contentOverride:
         'AI phân tích hình ảnh để hỗ trợ phát hiện và đánh dấu các dấu hiệu bất thường.',
       minimumEvidenceCount: 1,
-      requiredEvidenceType: 'IMAGE_OR_VIDEO',
+      requiredEvidenceType: 'IMAGE',
     }
     expect(withAdditionalRequirementChecklist([item], false)).toEqual([item])
     expect(withAdditionalRequirementChecklist([item], true)).toEqual([item])

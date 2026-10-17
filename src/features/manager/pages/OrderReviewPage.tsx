@@ -88,6 +88,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
             </p>
           </div>
           <WorkflowStepper
+            compactOrder
             order={{
               progress: { current: 'complete', waiting: false, terminal: null },
             }}
@@ -100,14 +101,15 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               assignStep >= 8 ? 'review' : 'resources',
             )}
           />
-          <OrderServiceBanner
-            serviceName={orderQuery.data.serviceName}
-            serviceDescription={orderQuery.data.serviceDescription}
-            deliverables={orderDeliverableLabels(orderQuery.data, locale)}
-            deliverablesLabel={t.deliverableFormat}
-            eyebrow={t.serviceEyebrow}
-            meta={<OrderBannerMeta order={orderQuery.data} locale={locale} />}
-          />
+          <div className="odm-assign-context" aria-label={t.serviceEyebrow}>
+            <strong>{orderQuery.data.serviceName}</strong>
+            {orderDeliverableLabels(orderQuery.data, locale).length > 0 && (
+              <span>
+                {t.deliverableFormat}:{' '}
+                {orderDeliverableLabels(orderQuery.data, locale).join(', ')}
+              </span>
+            )}
+          </div>
         </div>
         <OrderResourceAssignmentWizard
           orderId={orderId}
@@ -117,7 +119,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               : assigningMissionId
           }
           embedded
-          returnLabel="Chốt kế hoạch"
+          returnLabel="Hoàn tất phân công"
           onStepChange={setAssignStep}
           onClose={() => {
             setAssigningMissionId(null)

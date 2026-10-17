@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { evidenceCountLabel, evidenceShortfall } from '../lib/evidenceProgress'
 import { ApiError } from '../../../shared/api/httpClient'
 import { checklistExecutionApi } from '../api/checklistExecutionApi'
 import type {
@@ -29,8 +30,10 @@ const evidenceTypeLabel = (
       return 'Chỉ ảnh'
     case 'VIDEO':
       return 'Chỉ video'
+    case 'IMAGE_AND_VIDEO':
+      return 'Ảnh và video'
     default:
-      return 'Ảnh hoặc video'
+      return 'Ảnh hoặc video (cũ)'
   }
 }
 const assessments: Record<ChecklistAssessmentStatus, string> = {
@@ -241,8 +244,7 @@ export function MonitoringChecklistSection({
               const missing =
                 finished &&
                 item.executionStatus === 'COMPLETED' &&
-                ((item.eligibleEvidenceCount ?? 0) <
-                  (item.minimumEvidenceCount ?? 0) ||
+                (evidenceShortfall(item) > 0 ||
                   Boolean(
                     item.blockingReasons?.some((reason) =>
                       [
@@ -284,24 +286,14 @@ export function MonitoringChecklistSection({
                     <span className="mc-text">
                       <span className="mc-title">{item.content}</span>
                       <span className="mc-sub">
-                        {item.eligibleEvidenceCount ?? 0}/
                         {item.executionStatus === 'UNABLE_TO_VERIFY'
-                          ? 0
-                          : (item.minimumEvidenceCount ?? 0)}{' '}
+                          ? `${item.eligibleEvidenceCount ?? 0}/0`
+                          : evidenceCountLabel(item)}{' '}
                         bằng chứng ·{' '}
                         {evidenceTypeLabel(item.requiredEvidenceType)}
                         {item.executionStatus !== 'UNABLE_TO_VERIFY' &&
-                          (item.minimumEvidenceCount ?? 0) >
-                            (item.eligibleEvidenceCount ?? 0) && (
-                            <>
-                              {' '}
-                              · còn thiếu{' '}
-                              {Math.max(
-                                0,
-                                (item.minimumEvidenceCount ?? 0) -
-                                  (item.eligibleEvidenceCount ?? 0),
-                              )}
-                            </>
+                          evidenceShortfall(item) > 0 && (
+                            <> · còn thiếu {evidenceShortfall(item)}</>
                           )}
                         {item.blockingReasons?.includes(
                           'EVIDENCE_TYPE_NOT_ELIGIBLE',

@@ -186,7 +186,6 @@ describe('Manager Mission Detail monitoring review', () => {
       await screen.findByRole('tab', { name: 'Thông tin đơn hàng' }),
     )
     expect(await screen.findByText('Kiểm tra nhà xưởng')).toBeInTheDocument()
-    expect(screen.getByText('Thông tin khách đã nhập')).toBeInTheDocument()
     expect(screen.getByText('customer@example.com')).toBeInTheDocument()
   })
   it('hides the flight plan tab after mission completion', async () => {

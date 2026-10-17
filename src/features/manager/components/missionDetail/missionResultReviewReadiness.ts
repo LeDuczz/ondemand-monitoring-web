@@ -89,6 +89,7 @@ export function missionResultReviewErrorMessage(error: unknown): string {
       return 'Kết quả không còn chờ duyệt. Vui lòng tải lại.'
     if (error.code === 'CHECKLIST_NOT_READY')
       return 'Checklist hoặc media chưa sẵn sàng. Vui lòng kiểm tra lại trước khi duyệt kết quả.'
+    if (error.code === 'ORDER_MEDIA_QUANTITY_NOT_MET') return error.message
     if (error.code === 'MISSION_STATUS_INVALID')
       return 'Trạng thái Mission đã thay đổi. Vui lòng tải lại kết quả.'
     if (error.code === 'CONCURRENT_UPDATE')

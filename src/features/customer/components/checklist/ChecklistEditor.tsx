@@ -3,9 +3,18 @@ import { Icon } from '../../../../shared/components/Icon'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
-import { normalizeContent, type ChecklistRow } from '../../lib/checklist/types'
+import {
+  extraMedia,
+  normalizeContent,
+  singleEvidenceCount,
+  usesMedia,
+  withEvidenceType,
+  withSingleEvidenceCount,
+  type ChecklistRow,
+} from '../../lib/checklist/types'
 import type { OrderChecklistEditorState } from '../../lib/checklist/useOrderChecklist'
 import type { RequiredEvidenceType } from '../../../../shared/types/domain'
+import { ChecklistQuoteCard } from './ChecklistQuoteCard'
 import './Checklist.css'
 
 /** Rows shown before "show more" in the compact variant. */
@@ -16,15 +25,24 @@ export function ChecklistEditor({
   disabled = false,
   onReload,
   variant = 'full',
+  quote = false,
 }: {
   checklist: OrderChecklistEditorState
   disabled?: boolean
   onReload?: () => void
   /** `compact` renders one-line rows; a row expands to a textarea on edit. */
   variant?: 'full' | 'compact'
+  /** Show the backend-calculated price of the selection (needs an authenticated customer). */
+  quote?: boolean
 }) {
   const { t } = useI18n(checklistMessages)
   const { status, rows } = checklist
+  // Catalog entries outside the selected service package are kept in state for
+  // identity/pricing purposes, but they must not look like service defaults.
+  // They become visible only after the customer explicitly selects them.
+  const visibleRows = rows.filter(
+    (row) => row.packageItem !== false || row.selected,
+  )
   const ready = status === 'ready'
   const compact = variant === 'compact'
   const [editingKey, setEditingKey] = useState<string | null>(null)
@@ -32,16 +50,16 @@ export function ChecklistEditor({
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'list' | 'group'>('list')
   const openNewRow = useRef(false)
-  const previousCount = useRef(rows.length)
+  const previousCount = useRef(visibleRows.length)
 
   // A row added by the user opens straight into edit mode.
   useEffect(() => {
-    if (openNewRow.current && rows.length > previousCount.current) {
-      setEditingKey(rows[rows.length - 1].key)
+    if (openNewRow.current && visibleRows.length > previousCount.current) {
+      setEditingKey(visibleRows[visibleRows.length - 1].key)
     }
     openNewRow.current = false
-    previousCount.current = rows.length
-  }, [rows])
+    previousCount.current = visibleRows.length
+  }, [visibleRows])
 
   useEffect(() => {
     if (editingKey)
@@ -52,7 +70,7 @@ export function ChecklistEditor({
   const searching = compact && needle !== ''
   const hiddenCount =
     compact && !showAll && !searching
-      ? Math.max(0, rows.length - COMPACT_VISIBLE)
+      ? Math.max(0, visibleRows.length - COMPACT_VISIBLE)
       : 0
   const addRow = () => {
     openNewRow.current = true
@@ -62,8 +80,17 @@ export function ChecklistEditor({
   }
 
   const grouped = compact && view === 'group'
-  const selectedTotal = rows.filter((row) => row.selected).length
-  const ordered = rows
+  const selectedTotal = visibleRows.filter((row) => row.selected).length
+  const awaitingManagerQuote = (row: ChecklistRow) =>
+    !row.sourceChecklistId &&
+    row.selected &&
+    checklist.quote.preview?.checklists.some(
+      (priced) =>
+        priced.custom &&
+        priced.quotePending &&
+        normalizeContent(priced.content) === normalizeContent(row.content),
+    )
+  const ordered = visibleRows
     .map((row, index) => ({ row, index }))
     .sort((a, b) =>
       grouped ? Number(b.row.selected) - Number(a.row.selected) : 0,
@@ -75,7 +102,7 @@ export function ChecklistEditor({
         (pos === 0 || all[pos - 1].row.selected !== entry.row.selected)
           ? entry.row.selected
             ? t.groupSelected(selectedTotal)
-            : t.groupUnselected(rows.length - selectedTotal)
+            : t.groupUnselected(visibleRows.length - selectedTotal)
           : null,
     }))
   const renderRow = (row: ChecklistRow, index: number) => {
@@ -92,6 +119,7 @@ export function ChecklistEditor({
         className="checklist-check"
         checked={row.selected}
         aria-label={t.select(index + 1)}
+        disabled={row.mandatory}
         onChange={(event) =>
           checklist.change(row.key, {
             selected: event.target.checked,
@@ -99,48 +127,98 @@ export function ChecklistEditor({
         }
       />
     )
+    const numberInput = (
+      label: string,
+      value: number,
+      min: number,
+      max: number,
+      onChange: (value: number) => void,
+    ) => (
+      <label>
+        <span className="checklist-evidence-field-label">{label}</span>
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={1}
+          value={value}
+          disabled={!row.selected}
+          aria-label={`${label} ${index + 1}`}
+          onChange={(event) =>
+            onChange(event.target.value === '' ? 0 : Number(event.target.value))
+          }
+        />
+      </label>
+    )
+    const bothTypes = row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
     const evidenceRequirements = (
       <div className="checklist-evidence-requirements">
-        <label>
-          <span className="checklist-evidence-field-label">
-            {t.evidenceCountLabel}
-          </span>
-          <input
-            type="number"
-            min={1}
-            max={50}
-            step={1}
-            value={row.minimumEvidenceCount}
-            disabled={!row.selected}
-            aria-label={t.evidenceCount(index + 1)}
-            onChange={(event) =>
-              checklist.change(row.key, {
-                minimumEvidenceCount:
-                  event.target.value === '' ? 0 : Number(event.target.value),
-              })
-            }
-          />
-        </label>
         <label>
           <span className="checklist-evidence-field-label">
             {t.evidenceTypeLabel}
           </span>
           <select
-            value={row.requiredEvidenceType}
+            value={
+              row.requiredEvidenceType === 'IMAGE_OR_VIDEO'
+                ? 'IMAGE_AND_VIDEO'
+                : row.requiredEvidenceType
+            }
             disabled={!row.selected}
             aria-label={t.evidenceType(index + 1)}
             onChange={(event) =>
-              checklist.change(row.key, {
-                requiredEvidenceType: event.target
-                  .value as RequiredEvidenceType,
-              })
+              checklist.change(
+                row.key,
+                withEvidenceType(
+                  row,
+                  event.target.value as RequiredEvidenceType,
+                ),
+              )
             }
           >
             <option value="IMAGE">{t.image}</option>
             <option value="VIDEO">{t.video}</option>
-            <option value="IMAGE_OR_VIDEO">{t.imageOrVideo}</option>
+            <option value="IMAGE_AND_VIDEO">{t.imageAndVideo}</option>
           </select>
         </label>
+        {bothTypes ? (
+          <>
+            {numberInput(
+              t.minimumImagesLabel,
+              row.requestedImageCount,
+              1,
+              500,
+              (value) => checklist.change(row.key, { requestedImageCount: value }),
+            )}
+            {numberInput(
+              t.minimumVideosLabel,
+              row.requestedVideoCount,
+              1,
+              500,
+              (value) => checklist.change(row.key, { requestedVideoCount: value }),
+            )}
+          </>
+        ) : (
+          numberInput(
+            t.evidenceCountLabel,
+            singleEvidenceCount(row),
+            1,
+            usesMedia(row) ? 500 : 50,
+            (value) =>
+              checklist.change(row.key, withSingleEvidenceCount(row, value)),
+          )
+        )}
+        {usesMedia(row) && (
+          <small className="checklist-hint">
+            {t.includedMedia(row.includedImageCount, row.includedVideoCount)}
+            {' · '}
+            {t.extraMedia(
+              extraMedia(row.requestedImageCount, row.includedImageCount),
+              extraMedia(row.requestedVideoCount, row.includedVideoCount),
+            )}
+            {' · '}
+            {t.mediaAcceptanceNote}
+          </small>
+        )}
       </div>
     )
     if (!expanded) {
@@ -166,14 +244,21 @@ export function ChecklistEditor({
             {!row.sourceChecklistId && (
               <span className="checklist-custom-tag">{t.custom}</span>
             )}
+            {awaitingManagerQuote(row) && (
+              <span className="checklist-custom-tag is-pending-quote">
+                {t.awaitingManagerQuote}
+              </span>
+            )}
           </span>
           <span className="checklist-evidence-summary">
-            {row.minimumEvidenceCount} ·{' '}
-            {row.requiredEvidenceType === 'IMAGE'
-              ? t.image
-              : row.requiredEvidenceType === 'VIDEO'
-                ? t.video
-                : t.imageOrVideo}
+            {row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
+              ? t.imageAndVideoSummary(
+                  row.requestedImageCount,
+                  row.requestedVideoCount,
+                )
+              : `${singleEvidenceCount(row)} · ${
+                  row.requiredEvidenceType === 'VIDEO' ? t.video : t.image
+                }`}
           </span>
           <span className="checklist-length checklist-length-with-evidence">
             {row.content.length} / 500
@@ -219,10 +304,18 @@ export function ChecklistEditor({
             {!row.sourceChecklistId && (
               <span className="checklist-custom-tag">{t.custom}</span>
             )}
-            {row.sourceChecklistId && (
+            {awaitingManagerQuote(row) && (
+              <span className="checklist-custom-tag is-pending-quote">
+                {t.awaitingManagerQuote}
+              </span>
+            )}
+            {row.sourceChecklistId && row.packageItem !== false && (
               <span className="checklist-custom-tag is-default">
                 {t.defaultItem}
               </span>
+            )}
+            {row.sourceChecklistId && row.packageItem === false && (
+              <span className="checklist-custom-tag">{t.catalogItem}</span>
             )}
             {!row.sourceChecklistId && (
               <button
@@ -233,7 +326,12 @@ export function ChecklistEditor({
                 {t.remove}
               </button>
             )}
-            {row.sourceChecklistId && (
+            {row.mandatory && (
+              <span className="checklist-custom-tag" title={t.mandatoryHint}>
+                {t.mandatory}
+              </span>
+            )}
+            {row.sourceChecklistId && !row.mandatory && (
               <button
                 type="button"
                 className="checklist-remove"
@@ -287,7 +385,7 @@ export function ChecklistEditor({
         actions={
           <>
             <span className="checklist-hint">
-              {t.count(checklist.selectedCount)}
+              {t.count(checklist.selectedCount, checklist.totalCount)}
             </span>
             {compact && ready && (
               <button
@@ -304,29 +402,29 @@ export function ChecklistEditor({
       >
         <p className="checklist-hint">{t.hint}</p>
         {ready && <p className="checklist-pricing-notice">{t.pricingNotice}</p>}
-        {compact && ready && rows.length > 0 && (
+        {compact && ready && visibleRows.length > 0 && (
           <div className="checklist-toolbar">
             <label className="checklist-selectall">
               <input
                 type="checkbox"
                 disabled={disabled}
-                checked={rows.every((row) => row.selected)}
+                checked={visibleRows.every((row) => row.selected)}
                 onChange={(event) => {
-                  for (const row of rows)
+                  for (const row of visibleRows)
                     if (row.selected !== event.target.checked)
                       checklist.change(row.key, {
                         selected: event.target.checked,
                       })
                 }}
               />
-              {t.selectAll(rows.length)}
+              {t.selectAll(visibleRows.length)}
             </label>
             <button
               type="button"
               className="checklist-clear"
               disabled={disabled || checklist.selectedCount === 0}
               onClick={() => {
-                for (const row of rows)
+                for (const row of visibleRows)
                   if (row.selected)
                     checklist.change(row.key, { selected: false })
               }}
@@ -389,7 +487,7 @@ export function ChecklistEditor({
             </button>
           </div>
         )}
-        {ready && !rows.length && <p>{t.empty}</p>}
+        {ready && !visibleRows.length && <p>{t.empty}</p>}
         <fieldset disabled={disabled || !ready} className="checklist-fields">
           {ordered.map(({ row, index, heading }) => (
             <Fragment key={row.key}>
@@ -406,7 +504,7 @@ export function ChecklistEditor({
               {t.showMore(hiddenCount)}
             </button>
           )}
-          {compact && showAll && rows.length > COMPACT_VISIBLE && (
+          {compact && showAll && visibleRows.length > COMPACT_VISIBLE && (
             <button
               type="button"
               className="checklist-more"
@@ -417,10 +515,10 @@ export function ChecklistEditor({
           )}
           {searching &&
             ready &&
-            rows.length > 0 &&
-            !rows.some((row) => row.content.toLowerCase().includes(needle)) && (
-              <p className="checklist-hint">{t.noMatch}</p>
-            )}
+            visibleRows.length > 0 &&
+            !visibleRows.some((row) =>
+              row.content.toLowerCase().includes(needle),
+            ) && <p className="checklist-hint">{t.noMatch}</p>}
           {ready && !compact && (
             <button
               type="button"
@@ -434,6 +532,9 @@ export function ChecklistEditor({
         </fieldset>
         {ready && checklist.selectedCount === 0 && (
           <p className="checklist-hint">{t.none}</p>
+        )}
+        {ready && quote && checklist.serviceId && (
+          <ChecklistQuoteCard quote={checklist.quote} />
         )}
         {checklist.validation && (
           <p role="alert" className="co-notice is-danger">

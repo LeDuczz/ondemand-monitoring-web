@@ -69,6 +69,7 @@ export type ServicePricingEstimate = {
     additionalPrice: number
   }>
   totalPrice: number
+  quotePending?: boolean
 }
 
 export type GeoJsonPolygon = {
@@ -81,6 +82,8 @@ export type ServiceOption = {
   name: string
   description?: string
   basePrice: number
+  /** Default price from the default checklists; falls back to basePrice while none is priced. */
+  defaultPrice?: number
   imageUrl?: string | null
   fallbackImageUrl?: string | null
   isActive?: boolean
@@ -181,7 +184,11 @@ export type FlightAreaAssessment = {
   }
   assessment: {
     level: FlightAreaRiskLevel
-    findings: Array<{ code: string; severity: FlightAreaFindingSeverity; message: string }>
+    findings: Array<{
+      code: string
+      severity: FlightAreaFindingSeverity
+      message: string
+    }>
     disclaimer: string
   }
 }
@@ -297,6 +304,11 @@ function toCustomerOrderItem(order: OrderCreateResponse): CustomerOrderItem {
 }
 
 export const customerApi = {
+  getChecklistCatalog: (signal?: AbortSignal) =>
+    apiRequest<import('../lib/checklist/types').CatalogChecklistItem[]>(
+      '/api/checklists/catalog',
+      { signal },
+    ),
   getServiceChecklist: (serviceId: string, signal?: AbortSignal) =>
     apiRequest<ServiceChecklistItem[]>(
       `/api/services/${encodeURIComponent(serviceId)}/checklists`,
@@ -352,7 +364,10 @@ export const customerApi = {
     }),
 
   /** `GET /api/flight-area-assessment` [BE]: advisory aggregate, never approves or rejects an order. */
-  getFlightAreaAssessment: (query: FlightAreaAssessmentQuery, signal?: AbortSignal) =>
+  getFlightAreaAssessment: (
+    query: FlightAreaAssessmentQuery,
+    signal?: AbortSignal,
+  ) =>
     apiRequest<FlightAreaAssessment>('/api/flight-area-assessment', {
       query: {
         latitude: query.latitude.toFixed(7),

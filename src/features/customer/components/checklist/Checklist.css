@@ -92,6 +92,10 @@
   font-size: 11px;
   font-weight: 600;
 }
+.checklist-card .checklist-custom-tag.is-pending-quote {
+  background: #fff7e6;
+  color: #9a6700;
+}
 .checklist-card .checklist-remove {
   margin-left: auto;
   padding: 2px 6px;

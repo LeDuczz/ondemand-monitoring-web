@@ -430,12 +430,15 @@ export const missionsApi = {
   },
 
   /** `POST /api/manager/mission-results/{resultId}/approve` [BE]. Makes the mission result customer-deliverable. */
-  approveMissionResult(resultId: string): Promise<MissionResultResponse> {
+  approveMissionResult(
+    resultId: string,
+    note?: string,
+  ): Promise<MissionResultResponse> {
     return apiRequest<MissionResultResponse>(
       `/api/manager/mission-results/${resultId}/approve`,
       {
         method: 'POST',
-        body: {},
+        body: note?.trim() ? { note: note.trim() } : {},
       },
     )
   },

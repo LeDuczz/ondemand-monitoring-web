@@ -126,37 +126,21 @@ export function CustomerFinancePanel({
 
       {quote ? (
         <div className="customer-quote-body">
-          <div className="customer-quote-items">
-            {quote.items
-              .filter((item) => item.type !== 'ADJUSTMENT')
-              .map((item) => (
-                <div key={item.id}>
-                  <span>
-                    <b>
-                      {item.type === 'INCLUDED' ? '✓ ' : ''}
-                      {pricingDescription(item.description)}
-                    </b>
-                    <small>
-                      {item.type === 'ADDITIONAL'
-                        ? 'Yêu cầu bổ sung'
-                        : item.type === 'PACKAGE'
-                          ? 'Gói dịch vụ'
-                          : item.type === 'MANAGER_ADJUSTMENT'
-                            ? 'Điều chỉnh đã được phê duyệt'
-                            : item.type === 'DISCOUNT'
-                              ? 'Ưu đãi tự động'
-                              : 'Đã bao gồm'}
-                    </small>
-                  </span>
-                  <strong>{formatVnd(item.amount)}</strong>
-                </div>
-              ))}
-          </div>
+          <QuoteLines items={quote.items} />
           <dl className="finance-summary customer-summary">
-            <Summary label="Giá gói" value={quote.packagePrice} />
-            <Summary label="Chi phí bổ sung" value={quote.additionalAmount} />
-            <Summary label="Giảm giá" value={-quote.discountAmount} />
-            <Summary label="Điều chỉnh" value={quote.adjustmentAmount} />
+            {quote.packagePrice !== 0 && (
+              <Summary label="Giá gói" value={quote.packagePrice} />
+            )}
+            <Summary
+              label={quote.packagePrice !== 0 ? 'Chi phí bổ sung' : 'Chi phí dịch vụ'}
+              value={quote.additionalAmount}
+            />
+            {quote.discountAmount !== 0 && (
+              <Summary label="Giảm giá" value={-quote.discountAmount} />
+            )}
+            {quote.adjustmentAmount !== 0 && (
+              <Summary label="Điều chỉnh" value={quote.adjustmentAmount} />
+            )}
             <Summary label="Tổng cộng" value={quote.totalAmount} total />
           </dl>
           {quote.managerNote ? (
@@ -312,4 +296,80 @@ function messageOf(error: unknown, t: (typeof customerFinancePanelMessages)['vi'
   return error instanceof Error
     ? error.message
     : t.loadError
+}
+
+
+const KIND_LABELS: Record<string, string> = {
+  ADDITIONAL: 'Yêu cầu bổ sung',
+  PACKAGE: 'Gói dịch vụ',
+  MANAGER_ADJUSTMENT: 'Điều chỉnh đã được phê duyệt',
+  DISCOUNT: 'Ưu đãi tự động',
+}
+
+/** Quote lines grouped per checklist (heading + subtotal), then the order-level lines. */
+function QuoteLines({ items }: { items: Quote['items'] }) {
+  const lines = items.filter((item) => item.type !== 'ADJUSTMENT')
+  const groups = new Map<string, Quote['items']>()
+  const orderLevel: Quote['items'] = []
+  for (const line of lines) {
+    if (!line.orderChecklistItemId) {
+      orderLevel.push(line)
+      continue
+    }
+    groups.set(line.orderChecklistItemId, [
+      ...(groups.get(line.orderChecklistItemId) ?? []),
+      line,
+    ])
+  }
+  const sum = (rows: Quote['items']) =>
+    rows.reduce((total, row) => total + row.amount, 0)
+  return (
+    <div className="customer-quote-groups">
+      {[...groups.entries()].map(([id, rows]) => {
+        const name = (pricingDescription(rows[0].description).split(' · ')[0]) || 'Nội dung'
+        return (
+          <section key={id} className="customer-quote-group">
+            <header>
+              <strong title={name}>{name}</strong>
+              <b>{formatVnd(sum(rows))}</b>
+            </header>
+            <ul>
+              {rows.map((row) => (
+                <li key={row.id}>
+                  <span>{lineText(row, name)}</span>
+                  <span>{formatVnd(row.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+      {orderLevel.length > 0 && (
+        <section className="customer-quote-group">
+          <header>
+            <strong>Theo đơn hàng</strong>
+            <b>{formatVnd(sum(orderLevel))}</b>
+          </header>
+          <ul>
+            {orderLevel.map((row) => (
+              <li key={row.id}>
+                <span>{lineText(row)}</span>
+                <span>{formatVnd(row.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  )
+}
+
+function lineText(row: Quote['items'][number], checklistName?: string) {
+  if (row.type === 'MANAGER_ADJUSTMENT') {
+    const reason = row.description.split(' · ').slice(1).join(' · ')
+    return reason ? `${KIND_LABELS.MANAGER_ADJUSTMENT}: ${reason}` : KIND_LABELS.MANAGER_ADJUSTMENT
+  }
+  const text = pricingDescription(row.description)
+  const prefix = checklistName ? `${checklistName} · ` : ''
+  return prefix && text.startsWith(prefix) ? text.slice(prefix.length) : text
 }

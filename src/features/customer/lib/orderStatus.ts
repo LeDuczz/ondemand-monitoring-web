@@ -149,12 +149,14 @@ export function fmtDate(iso: string, locale: 'vi-VN' | 'en-US'): string {
   })
 }
 
+/** Date first, then the time: `17/10/2026 02:44` (vi) / `10/17/2026, 02:44 AM` (en). */
 export function fmtDateTime(iso: string, locale: 'vi-VN' | 'en-US'): string {
-  return new Date(iso).toLocaleString(locale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+  const date = new Date(iso)
+  const time = date.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   })
+  return locale === 'vi-VN'
+    ? `${fmtDate(iso, locale)} ${time}`
+    : `${fmtDate(iso, locale)}, ${time}`
 }

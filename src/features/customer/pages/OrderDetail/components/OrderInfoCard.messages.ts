@@ -3,6 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const orderInfoCardMessages = defineMessages({
   vi: {
     title: 'Chi tiết đơn hàng',
+    edit: 'Chỉnh sửa',
     subtitle: 'Xem đầy đủ thông tin yêu cầu và điều kiện thực hiện',
     sectionGeneral: 'Thông tin chung', sectionScope: 'Phạm vi giám sát', sectionSite: 'Thông tin hiện trường',
     sectionPermit: 'Quyền & giấy phép', sectionResult: 'Kết quả & dữ liệu',
@@ -21,10 +22,14 @@ export const orderInfoCardMessages = defineMessages({
     permit: 'Giấy phép bay', permitRequired: 'Yêu cầu giấy phép', permitExpiry: 'Hiệu lực giấy phép',
     permitFiles: 'Tệp giấy phép', authorizationFiles: 'Tệp xác nhận quyền',
     resultFormats: 'Định dạng kết quả', deliveryMethods: 'Cách bàn giao', retention: 'Thời gian lưu dữ liệu',
+    termsVersion: (version: string) => `phiên bản ${version}`,
+    days: (n: number) => `${n} ngày`,
+    times: (n: number) => `${n} lần`,
     terms: 'Điều khoản đã chấp nhận', executionPlan: 'Kế hoạch thực hiện', yes: 'Có', no: 'Không',
   },
   en: {
     title: 'Order details',
+    edit: 'Edit',
     subtitle: 'Full request information and execution conditions',
     sectionGeneral: 'General', sectionScope: 'Monitoring scope', sectionSite: 'Site information',
     sectionPermit: 'Authorization & permits', sectionResult: 'Results & data',
@@ -43,6 +48,9 @@ export const orderInfoCardMessages = defineMessages({
     permit: 'Flight permit', permitRequired: 'Permit required', permitExpiry: 'Permit expiry',
     permitFiles: 'Permit files', authorizationFiles: 'Authorization files',
     resultFormats: 'Result formats', deliveryMethods: 'Delivery methods', retention: 'Data retention',
+    termsVersion: (version: string) => `version ${version}`,
+    days: (n: number) => `${n} days`,
+    times: (n: number) => `${n} times`,
     terms: 'Accepted terms', executionPlan: 'Execution plan', yes: 'Yes', no: 'No',
   },
 })

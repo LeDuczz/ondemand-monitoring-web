@@ -51,6 +51,16 @@ function localizeLabel(label: string, locale: 'vi-VN' | 'en-US') {
   )
 }
 
+/** Photo / video / report collapse to one kind each; anything else is its own kind. */
+function resultKind(label: string) {
+  const text = label.toLowerCase()
+  if (/video/.test(text)) return 'video'
+  if (/ảnh nhiệt|thermal/.test(text)) return 'thermal'
+  if (/ảnh|photo|image/.test(text)) return 'photo'
+  if (/báo cáo|report|pdf/.test(text)) return 'report'
+  return text
+}
+
 /** Unique, non-empty labels of what the order actually delivers. */
 export function orderDeliverableLabels(
   order: OrderDetail,
@@ -65,7 +75,8 @@ export function orderDeliverableLabels(
   for (const item of raw) {
     const raw = clean(item)
     const label = raw ? localizeLabel(raw, locale) : null
-    const key = label?.toLowerCase()
+    // "Ảnh chụp" (deliverable type) and "Ảnh" (PHOTO format) are the same result: keep one.
+    const key = label ? resultKind(label) : undefined
     if (!label || !key || seen.has(key)) continue
     seen.add(key)
     labels.push(label)

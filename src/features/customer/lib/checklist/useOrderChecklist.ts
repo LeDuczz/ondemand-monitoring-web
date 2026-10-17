@@ -73,6 +73,10 @@ export function useOrderChecklist(
               version: item.checklistVersion,
               originalContent: item.content,
               content: item.content,
+              description: item.description,
+              executionSteps: item.executionSteps,
+              inputRequirements: item.inputRequirements,
+              expectedOutputs: item.expectedOutputs,
               selected: true,
               minimumEvidenceCount: item.minimumEvidenceCount ?? 1,
               requiredEvidenceType: evidenceTypeFor(
@@ -105,6 +109,10 @@ export function useOrderChecklist(
                   version: item.version,
                   originalContent: item.content,
                   content: item.content,
+                  description: item.description,
+                  executionSteps: item.executionSteps,
+                  inputRequirements: item.inputRequirements,
+                  expectedOutputs: item.expectedOutputs,
                   selected: false,
                   minimumEvidenceCount: 1,
                   requiredEvidenceType: evidenceTypeFor(

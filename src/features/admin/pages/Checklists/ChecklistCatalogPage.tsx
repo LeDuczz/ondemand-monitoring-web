@@ -235,6 +235,13 @@ export function ChecklistCatalogPage() {
   )
 }
 
+/** One entry per non-empty line, trimmed; the order is the order of the lines. */
+const toLines = (text: string) =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
 function ChecklistEditor({
   row,
   close,
@@ -253,6 +260,10 @@ function ChecklistEditor({
     pricingToForm(row ?? {}),
   )
   const [pricingErrors, setPricingErrors] = useState<ChecklistPricingErrors>({})
+  const [description, setDescription] = useState(row?.description ?? '')
+  const [steps, setSteps] = useState((row?.executionSteps ?? []).join('\n'))
+  const [inputs, setInputs] = useState((row?.inputRequirements ?? []).join('\n'))
+  const [outputs, setOutputs] = useState((row?.expectedOutputs ?? []).join('\n'))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   async function submit(event: FormEvent) {
@@ -269,13 +280,39 @@ function ChecklistEditor({
       return
     }
     setPricingErrors({})
+    const guidance = {
+      description: description.trim(),
+      executionSteps: toLines(steps),
+      inputRequirements: toLines(inputs),
+      expectedOutputs: toLines(outputs),
+    }
+    if (
+      guidance.description.length > 4000 ||
+      [
+        guidance.executionSteps,
+        guidance.inputRequirements,
+        guidance.expectedOutputs,
+      ].some(
+        (list) => list.length > 30 || list.some((line) => line.length > 500),
+      )
+    ) {
+      setError(t.guidanceInvalid)
+      return
+    }
     if (busy) return
     setBusy(true)
     setError(null)
     try {
       if (row)
-        await checklistsApi.update(row.id, value, difficulty, checked.value)
-      else await checklistsApi.create(value, difficulty, checked.value)
+        await checklistsApi.update(row.id, value, difficulty, {
+          ...checked.value,
+          ...guidance,
+        })
+      else
+        await checklistsApi.create(value, difficulty, {
+          ...checked.value,
+          ...guidance,
+        })
       saved()
     } catch (cause) {
       setError(checklistError(cause, t))
@@ -335,6 +372,44 @@ function ChecklistEditor({
           <span>{t.contentHint}</span>
           <span>{content.length}/500</span>
         </div>
+        <FormField id="checklist-description" label={t.descriptionLabel}>
+          <textarea
+            id="checklist-description"
+            className="odm-inp"
+            rows={3}
+            maxLength={4000}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            aria-describedby="checklist-description-hint"
+          />
+        </FormField>
+        <div id="checklist-description-hint" className="checklist-field-meta">
+          <span>{t.descriptionHint}</span>
+          <span>{description.length}/4000</span>
+        </div>
+        {(
+          [
+            ['steps', t.stepsLabel, t.stepsHint, steps, setSteps],
+            ['inputs', t.inputsLabel, t.inputsHint, inputs, setInputs],
+            ['outputs', t.outputsLabel, t.outputsHint, outputs, setOutputs],
+          ] as const
+        ).map(([key, label, hint, value, setValue]) => (
+          <div key={key}>
+            <FormField id={`checklist-${key}`} label={label}>
+              <textarea
+                id={`checklist-${key}`}
+                className="odm-inp"
+                rows={3}
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                aria-describedby={`checklist-${key}-hint`}
+              />
+            </FormField>
+            <div id={`checklist-${key}-hint`} className="checklist-field-meta">
+              <span>{hint}</span>
+            </div>
+          </div>
+        ))}
         <FormField id="checklist-difficulty" label="Độ khó tính giá" required>
           <select
             id="checklist-difficulty"

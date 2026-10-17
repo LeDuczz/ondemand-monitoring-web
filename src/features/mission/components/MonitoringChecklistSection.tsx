@@ -11,6 +11,7 @@ import type {
 } from '../types/checklistExecution'
 import type { MissionResultApprovalStatus } from '../types/mission'
 import './MonitoringChecklistSection.css'
+import { ChecklistGuidance } from '../../../shared/components/ChecklistGuidance'
 import {
   ChecklistEvidencePanel,
   evidenceReason,
@@ -315,6 +316,7 @@ export function MonitoringChecklistSection({
                   </button>
                   {open && (
                     <div className="mc-detail">
+                      <ChecklistGuidance guidance={item} defaultOpen />
                       <ChecklistExecutionItem
                         key={`${missionId}:${item.id}`}
                         item={item}
@@ -766,6 +768,7 @@ function ChecklistExecutionItem({
   return (
     <div className="monitoring-item">
       {!compact && <h3>{item.content}</h3>}
+      {!compact && <ChecklistGuidance guidance={item} defaultOpen />}
       {(!compact || item.assessmentStatus !== 'NOT_ASSESSED') && (
         <div className="monitoring-meta">
           {!compact && (

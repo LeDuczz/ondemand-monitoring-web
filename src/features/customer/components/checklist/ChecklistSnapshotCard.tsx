@@ -5,6 +5,7 @@ import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
 import type { ChecklistSnapshot } from '../../lib/checklist/types'
 import './Checklist.css'
+import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
 import { formatVnd } from '../../../../shared/lib/formatVnd'
 
 export function ChecklistSnapshotCard({
@@ -35,6 +36,10 @@ export function ChecklistSnapshotCard({
                   <span className="checklist-snapshot-content">
                     {item.content}
                   </span>
+                  <ChecklistGuidance
+                    guidance={item}
+                    sections={['description', 'outputs']}
+                  />
                   {item.evidencePolicyVersion === 3 && (
                     <span className="checklist-snapshot-evidence">
                       {t.requestedImages}: {item.requestedImageCount ?? 0} ·{' '}

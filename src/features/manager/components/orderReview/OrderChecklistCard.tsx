@@ -2,6 +2,7 @@ import type { OrderDetail } from '../../types/orders'
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { OrderIcon } from './OrderIcon'
 import './OrderChecklistCard.css'
+import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
 
 export function OrderChecklistCard({
   order,
@@ -30,6 +31,7 @@ export function OrderChecklistCard({
             {items.map((item) => (
               <li key={item.id}>
                 <p className="odm-or-checklist-content">{item.content}</p>
+                <ChecklistGuidance guidance={item} />
                 <span className="odm-or-checklist-source">
                   {item.sourceType === 'CUSTOMER_CUSTOM'
                     ? t.customerRequirement

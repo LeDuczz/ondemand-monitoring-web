@@ -3,6 +3,10 @@ import { apiRequest } from '../../../shared/api/httpClient'
 export type ChecklistDefinition = {
   id: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   isActive: boolean
   createdAt: string
   updatedAt: string | null
@@ -20,6 +24,13 @@ export type ChecklistDefinition = {
   includedAreaHa?: number
   includedLengthKm?: number
   includedAltitudeM?: number
+}
+/** Description and work guidance sent with create/edit; omitted keeps the stored value, empty clears it. */
+export type ChecklistGuidanceInput = {
+  description?: string
+  executionSteps?: string[]
+  inputRequirements?: string[]
+  expectedOutputs?: string[]
 }
 /** Pricing configuration sent with create/edit; omitted fields keep the stored value. */
 export type ChecklistPricingInput = {
@@ -50,6 +61,10 @@ export type ServiceChecklist = {
   serviceActive: boolean
   checklistId: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   checklistActive: boolean
   displayOrder: number
   version: number
@@ -104,7 +119,7 @@ export const checklistsApi = {
   create(
     content: string,
     difficulty?: ChecklistDefinition['difficulty'],
-    pricing?: ChecklistPricingInput,
+    pricing?: ChecklistPricingInput & ChecklistGuidanceInput,
   ) {
     return apiRequest<ChecklistDefinition>(catalog, {
       method: 'POST',
@@ -115,7 +130,7 @@ export const checklistsApi = {
     id: string,
     content: string,
     difficulty?: ChecklistDefinition['difficulty'],
-    pricing?: ChecklistPricingInput,
+    pricing?: ChecklistPricingInput & ChecklistGuidanceInput,
   ) {
     return apiRequest<ChecklistDefinition>(`${catalog}/${enc(id)}`, {
       method: 'PUT',

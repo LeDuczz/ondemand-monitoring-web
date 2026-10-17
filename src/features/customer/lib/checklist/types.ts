@@ -5,6 +5,10 @@ export type ServiceChecklistItem = {
   serviceId: string
   checklistId: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   displayOrder: number
   checklistVersion: number
   serviceActive: boolean
@@ -20,6 +24,10 @@ export type ServiceChecklistItem = {
 export type CatalogChecklistItem = {
   id: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   version: number
   includedImageCount: number
   includedVideoCount: number
@@ -43,6 +51,10 @@ export type ChecklistSnapshot = {
   id: string
   sourceChecklistId: string | null
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   displayOrder: number
   sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_SELECTED' | 'CUSTOMER_CUSTOM'
   minimumEvidenceCount?: number
@@ -74,6 +86,10 @@ export type ChecklistRow = {
   version: number | null
   originalContent: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   selected: boolean
   minimumEvidenceCount: number
   requiredEvidenceType: RequiredEvidenceType

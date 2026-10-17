@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Icon } from '../../../../shared/components/Icon'
+import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
@@ -288,6 +289,11 @@ export function ChecklistEditor({
               <Icon name="trash" width={16} height={16} aria-hidden="true" />
             </button>
           )}
+          {row.sourceChecklistId ? (
+            <div className="checklist-guidance">
+              <ChecklistGuidance guidance={row} />
+            </div>
+          ) : null}
         </div>
       )
     }

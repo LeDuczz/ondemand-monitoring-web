@@ -427,6 +427,19 @@ registerMockRoutes([
               ?.content ??
             '',
           displayOrder,
+          ...(item.sourceChecklistId
+            ? (() => {
+                const source = template.find(
+                  (row) => row.checklistId === item.sourceChecklistId,
+                )
+                return {
+                  description: source?.description,
+                  executionSteps: source?.executionSteps,
+                  inputRequirements: source?.inputRequirements,
+                  expectedOutputs: source?.expectedOutputs,
+                }
+              })()
+            : {}),
           sourceType: item.sourceChecklistId
             ? 'SERVICE_TEMPLATE'
             : 'CUSTOMER_CUSTOM',

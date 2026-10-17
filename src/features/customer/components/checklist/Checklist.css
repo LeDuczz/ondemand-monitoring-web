@@ -631,3 +631,12 @@
 .checklist-card.is-compact .checklist-row:not(.is-compact) {
   flex: none;
 }
+
+/* Guidance under a catalog row: always on its own line below the row controls. */
+.checklist-card .checklist-row.is-compact {
+  flex-wrap: wrap;
+}
+.checklist-card .checklist-row .checklist-guidance {
+  flex: 0 0 100%;
+  padding-left: 40px;
+}

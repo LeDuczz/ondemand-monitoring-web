@@ -181,6 +181,10 @@ describe('Checklist create/edit with media pricing', () => {
         'Kiểm tra cột',
         'BASIC',
         {
+          description: '',
+          executionSteps: [],
+          inputRequirements: [],
+          expectedOutputs: [],
           basePrice: 150_000,
           includedImageCount: 20,
           includedVideoCount: 2,

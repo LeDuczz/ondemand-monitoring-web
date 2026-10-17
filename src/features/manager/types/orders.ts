@@ -319,6 +319,10 @@ export type OrderChecklistSnapshot = {
   sourceChecklistId: string | null
   sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   displayOrder: number
   /** Optional for historical pre-policy snapshots. */
   minimumEvidenceCount?: number

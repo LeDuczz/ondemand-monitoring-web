@@ -3,6 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const orderInfoCardMessages = defineMessages({
   vi: {
     title: 'Chi tiết đơn hàng',
+    edit: 'Chỉnh sửa',
     subtitle: 'Xem đầy đủ thông tin yêu cầu và điều kiện thực hiện',
     sectionGeneral: 'Thông tin chung', sectionScope: 'Phạm vi giám sát', sectionSite: 'Thông tin hiện trường',
     sectionPermit: 'Quyền & giấy phép', sectionResult: 'Kết quả & dữ liệu',
@@ -13,7 +14,7 @@ export const orderInfoCardMessages = defineMessages({
     service: 'Dịch vụ',
     schedule: 'Ngày mong muốn',
     description: 'Mô tả thêm',
-    usagePurpose: 'Mục đích sử dụng', flightPurpose: 'Mục đích bay', priority: 'Mức ưu tiên',
+    usagePurpose: 'Mục đích sử dụng', flightPurpose: 'Mục đích bay',
     altitude: 'Độ cao bay', estimatedLength: 'Chiều dài ước tính', resultDeadline: 'Hạn nhận kết quả',
     recurrence: 'Lịch lặp', weatherFallback: 'Phương án khi có sự cố',
     siteContact: 'Liên hệ hiện trường', accessNotes: 'Điều kiện ra vào',
@@ -28,6 +29,7 @@ export const orderInfoCardMessages = defineMessages({
   },
   en: {
     title: 'Order details',
+    edit: 'Edit',
     subtitle: 'Full request information and execution conditions',
     sectionGeneral: 'General', sectionScope: 'Monitoring scope', sectionSite: 'Site information',
     sectionPermit: 'Authorization & permits', sectionResult: 'Results & data',
@@ -38,7 +40,7 @@ export const orderInfoCardMessages = defineMessages({
     service: 'Service',
     schedule: 'Preferred dates',
     description: 'Additional description',
-    usagePurpose: 'Usage purpose', flightPurpose: 'Flight purpose', priority: 'Priority',
+    usagePurpose: 'Usage purpose', flightPurpose: 'Flight purpose',
     altitude: 'Flight altitude', estimatedLength: 'Estimated length', resultDeadline: 'Result deadline',
     recurrence: 'Recurrence', weatherFallback: 'Incident fallback',
     siteContact: 'On-site contact', accessNotes: 'Access conditions',

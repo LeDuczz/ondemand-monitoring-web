@@ -448,13 +448,15 @@
 .finance-quote .finance-actions {
   padding: 10px 0 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 .finance-quote .finance-actions .odm-btn {
   justify-content: center;
-  height: 36px;
-  font-size: 12px;
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 700;
 }
 .finance-quote .finance-actions .odm-btn-p {
   border-color: #bfd4ff;

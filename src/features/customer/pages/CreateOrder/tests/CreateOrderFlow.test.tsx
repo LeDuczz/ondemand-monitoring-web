@@ -272,6 +272,51 @@ describe('CreateOrderPage wizard', () => {
     ).toBeNull()
   })
 
+  /** Fills the whole wizard up to the confirm dialog. */
+  async function openConfirmDialog() {
+    await renderWizard()
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
+    )
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    await screen.findByRole('dialog')
+  }
+
+  it('shows stale recovery after creation fails, without auto retry', async () => {
+    const create = vi.spyOn(customerApi, 'createOrder').mockRejectedValue(
+      new ApiError('internal detail', {
+        status: 409,
+        code: 'ORDER_CHECKLIST_TEMPLATE_CHANGED',
+        method: 'POST',
+        path: '/api/orders',
+      }),
+    )
+    await openConfirmDialog()
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByText('internal detail')).not.toBeInTheDocument()
+    expect(create).toHaveBeenCalledTimes(1)
+  }, 15_000)
+
+  it('shows the API error inside the dialog and stays on the form', async () => {
+    vi.spyOn(customerApi, 'createOrder').mockRejectedValue(
+      new Error('Vùng bị từ chối'),
+    )
+    await openConfirmDialog()
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+    expect(
+      await screen.findByText('Không thể gửi yêu cầu. Vui lòng thử lại.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Vùng bị từ chối')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  }, 15_000)
+
   it('routes a backend preferredDateFrom error back to the schedule field', async () => {
     vi.spyOn(customerApi, 'createOrder').mockRejectedValueOnce(
       new ApiError(

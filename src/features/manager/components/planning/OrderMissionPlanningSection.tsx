@@ -430,24 +430,22 @@ function OrderPlanningWorkspace({
                   >
                     {creating ? 'Đang tạo Mission' : 'Tạo thêm Mission'}
                   </button>
-                  {!data.plan.coverage.coverageReady && (
+                  {data.missions.length > 0 && !data.plan.coverage.coverageReady && (
                     <span className="odm-planning-next-hint" role="note">
                       Còn {data.plan.coverage.uncovered} checklist chưa gán cho
                       Mission nào. Gán đủ rồi mới tiếp tục được.
                     </span>
                   )}
-                  <button
-                    type="button"
-                    className="odm-btn odm-btn-p"
-                    disabled={
-                      busy ||
-                      saving ||
-                      Boolean(creating)
-                    }
-                    onClick={() => void continueToResourceAssignment()}
-                  >
-                    Tiếp: Gán nguồn lực
-                  </button>
+                  {data.missions.length > 0 && (
+                    <button
+                      type="button"
+                      className="odm-btn odm-btn-p"
+                      disabled={busy || saving || Boolean(creating)}
+                      onClick={() => void continueToResourceAssignment()}
+                    >
+                      Tiếp: Gán nguồn lực
+                    </button>
+                  )}
                 </>
               )}
               {writable &&

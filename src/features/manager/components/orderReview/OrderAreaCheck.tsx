@@ -8,7 +8,7 @@ import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { ordersApi } from '../../api/ordersApi'
 import { managerHref } from '../../routes'
 import type {
-  FlightAreaReviewStatus,
+  LegalReviewStatus,
   OrderDetail,
 } from '../../types/orders'
 import { OrderLocationCard } from './OrderLocationCard'
@@ -23,7 +23,7 @@ export function OrderAreaCheck({
 }: {
   order: OrderDetail
   t: OrderReviewMessages
-  onReviewSaved?: (status: FlightAreaReviewStatus) => void
+  onReviewSaved?: (status: LegalReviewStatus) => void
 }) {
   const [review, setReview] = useState(() => areaReviewFromOrder(order))
   const [reviewOpen, setReviewOpen] = useState(false)
@@ -214,7 +214,7 @@ export function OrderAreaCheck({
 }
 
 type SavedAreaReview = {
-  status: FlightAreaReviewStatus
+  status: LegalReviewStatus
   requestedScopeFeasible: boolean | null
   reason: string | null
   note: string | null
@@ -223,9 +223,9 @@ type SavedAreaReview = {
 }
 
 function areaReviewFromOrder(order: OrderDetail): SavedAreaReview | null {
-  if (!order.flightAreaReviewStatus) return null
+  if (!order.legalReviewStatus || order.legalReviewStatus === 'NOT_REVIEWED') return null
   return {
-    status: order.flightAreaReviewStatus,
+    status: order.legalReviewStatus,
     requestedScopeFeasible: order.requestedScopeFeasible ?? null,
     reason: order.flightAreaReviewReason ?? null,
     note: order.flightAreaReviewNote ?? null,
@@ -243,7 +243,9 @@ function ManagerAreaReview({
   review: SavedAreaReview | null
   onEdit: () => void
 }) {
+  const [resolutionStatus, setResolutionStatus] = useState<'APPROVED' | 'REJECTED' | null>(null)
   return (
+    <>
     <div className="odm-or-area-manager-review">
       {review ? (
         <>
@@ -265,7 +267,17 @@ function ManagerAreaReview({
           <button type="button" className="odm-or-btn-outline" onClick={onEdit}>
             Chỉnh sửa đánh giá
           </button>
-          {review.status === 'UNSUITABLE' ? (
+          {review.status === 'PENDING_PERMIT' ? (
+            <div className="odm-or-area-secondary-actions">
+              <button type="button" onClick={() => setResolutionStatus('APPROVED')}>
+                Đã có giấy phép
+              </button>
+              <button type="button" className="is-danger" onClick={() => setResolutionStatus('REJECTED')}>
+                Không được cấp phép
+              </button>
+            </div>
+          ) : null}
+          {review.status === 'REJECTED' ? (
             <div className="odm-or-area-secondary-actions">
               <button type="button" onClick={() => void resolveUnsuitable(order, review, 'NEED_INFO')}>
                 Yêu cầu khách đổi khu vực
@@ -286,17 +298,25 @@ function ManagerAreaReview({
         </>
       )}
     </div>
+    {resolutionStatus ? (
+      <PermitResolutionDialog
+        order={order}
+        status={resolutionStatus}
+        onClose={() => setResolutionStatus(null)}
+      />
+    ) : null}
+    </>
   )
 }
 
 const REVIEW_OPTIONS: Array<{
-  status: FlightAreaReviewStatus
+  status: LegalReviewStatus
   label: string
   hint: string
 }> = [
-  { status: 'PRELIMINARY_PASS', label: 'Đạt sơ bộ', hint: 'Không phát hiện vấn đề cần chặn.' },
-  { status: 'RESTRICTED', label: 'Cần xử lý/giấy phép', hint: 'Có điều kiện nhưng có thể tiếp tục chuẩn bị Mission.' },
-  { status: 'UNSUITABLE', label: 'Không phù hợp', hint: 'Khu vực hiện tại không thể thực hiện theo yêu cầu.' },
+  { status: 'NOT_REQUIRED', label: 'Đạt sơ bộ', hint: 'Không cần xác minh giấy phép thêm.' },
+  { status: 'PENDING_PERMIT', label: 'Cần xác minh giấy phép', hint: 'Tạm dừng thanh toán trong khi Manager xử lý bên ngoài hệ thống.' },
+  { status: 'REJECTED', label: 'Không phù hợp', hint: 'Khu vực hiện tại không thể thực hiện theo yêu cầu.' },
 ]
 
 const UNSUITABLE_REASONS = [
@@ -313,14 +333,12 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
   onClose: () => void
   onSaved: (review: SavedAreaReview) => void
 }) {
-  const [status, setStatus] = useState<FlightAreaReviewStatus | null>(
-    initial?.status === 'UNDETERMINED' ? null : (initial?.status ?? null),
-  )
+  const [status, setStatus] = useState<LegalReviewStatus | null>(initial?.status ?? null)
   const [reason, setReason] = useState(initial?.reason ?? '')
   const [note, setNote] = useState(initial?.note ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const reasonRequired = status === 'UNSUITABLE'
+  const reasonRequired = status === 'REJECTED'
 
   async function save() {
     if (!status) return setError('Chọn một kết quả đánh giá.')
@@ -334,7 +352,7 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
         note: note.trim() || null,
       })
       onSaved({
-        status: result.flightAreaReviewStatus ?? status,
+        status: result.legalReviewStatus ?? status,
         requestedScopeFeasible: result.requestedScopeFeasible ?? null,
         reason: result.flightAreaReviewReason ?? (reason.trim() || null),
         note: result.flightAreaReviewNote ?? (note.trim() || null),
@@ -372,9 +390,9 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
             </label>
           ))}
         </div>
-        {status === 'RESTRICTED' ? (
+        {status === 'PENDING_PERMIT' ? (
           <p className="odm-or-area-permission-note">
-            Đơn có thể tiếp tục. Điều kiện giấy phép sẽ được xử lý sau khi Mission và kế hoạch bay được xác định.
+            Cần xác minh giấy phép trước khi đơn hàng được duyệt thực hiện. Khách hàng chưa thể thanh toán cho đến khi Manager cập nhật kết quả xác minh.
           </p>
         ) : null}
         {reasonRequired ? (
@@ -401,8 +419,88 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
   )
 }
 
-function areaReviewLabel(status: FlightAreaReviewStatus) {
-  return REVIEW_OPTIONS.find((option) => option.status === status)?.label ?? status
+function areaReviewLabel(status: LegalReviewStatus) {
+  const labels: Record<LegalReviewStatus, string> = {
+    NOT_REVIEWED: 'Chưa đánh giá',
+    NOT_REQUIRED: 'Đạt sơ bộ',
+    PENDING_PERMIT: 'Đang xác minh giấy phép',
+    APPROVED: 'Đã có giấy phép',
+    REJECTED: 'Không được cấp phép',
+  }
+  return labels[status]
+}
+
+function PermitResolutionDialog({ order, status, onClose }: {
+  order: OrderDetail
+  status: 'APPROVED' | 'REJECTED'
+  onClose: () => void
+}) {
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const approved = status === 'APPROVED'
+
+  async function confirm() {
+    setSaving(true)
+    setError('')
+    try {
+      await ordersApi.resolveLegalReview(order.id, status, note.trim() || undefined)
+      window.location.reload()
+    } catch {
+      setError('Không thể cập nhật kết quả xác minh. Vui lòng thử lại.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="odm-or-area-modal-backdrop" role="presentation" onMouseDown={(event) => {
+      if (!saving && event.target === event.currentTarget) onClose()
+    }}>
+      <section className="odm-or-area-modal" role="dialog" aria-modal="true" aria-labelledby="permit-resolution-title">
+        <header>
+          <div>
+            <h3 id="permit-resolution-title">
+              {approved ? 'Xác nhận đã có giấy phép' : 'Xác nhận không được cấp phép'}
+            </h3>
+            <p>
+              {approved
+                ? 'Đơn hàng sẽ đủ điều kiện để tiếp tục duyệt và thanh toán.'
+                : 'Đơn hàng sẽ bị chặn duyệt và thanh toán.'}
+            </p>
+          </div>
+          <button type="button" aria-label="Đóng" disabled={saving} onClick={onClose}>×</button>
+        </header>
+        <div className="odm-or-area-modal-context">
+          <b>{order.title || 'Yêu cầu giám sát'}</b>
+          <span>{order.code}</span>
+        </div>
+        <label className="odm-or-area-field">
+          Ghi chú <small>(không bắt buộc)</small>
+          <textarea
+            rows={4}
+            value={note}
+            maxLength={1000}
+            autoFocus
+            placeholder={approved ? 'Nhập thông tin giấy phép hoặc nội dung đã xác minh…' : 'Nhập lý do hoặc kết quả xác minh…'}
+            onChange={(event) => setNote(event.target.value)}
+          />
+        </label>
+        <div className="odm-or-area-char-count">{note.length}/1000</div>
+        {error ? <p className="odm-or-area-error" role="alert">{error}</p> : null}
+        <footer>
+          <button type="button" className="odm-btn" disabled={saving} onClick={onClose}>Hủy</button>
+          <button
+            type="button"
+            className={`odm-btn ${approved ? 'odm-btn-p' : 'is-danger'}`}
+            disabled={saving}
+            onClick={() => void confirm()}
+          >
+            {saving ? 'Đang cập nhật…' : 'Xác nhận'}
+          </button>
+        </footer>
+      </section>
+    </div>
+  )
 }
 
 async function resolveUnsuitable(

@@ -3,12 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { financeApi } from './api'
 import { ManagerPricingPanel } from './ManagerPricingPanel'
-import { ApiError } from '../../shared/api/httpClient'
 
 afterEach(() => vi.restoreAllMocks())
 
 describe('ManagerPricingPanel', () => {
-  it('shows manager-required pricing and surfaces the backend incomplete message', async () => {
+  it('shows manager-required pricing without a draft button', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -31,27 +30,11 @@ describe('ManagerPricingPanel', () => {
       currentQuote: null,
       quoteHistory: [],
     })
-    const save = vi.spyOn(financeApi, 'saveDraft').mockRejectedValueOnce(
-      new ApiError('Thiếu giá: Inspect custom structure', {
-        status: 409,
-        code: 'CUSTOM_WORK_PRICING_INCOMPLETE',
-        method: 'PUT',
-        path: '/api/manager/orders/order-1/quotes/draft',
-      }),
-    )
-
     render(<ManagerPricingPanel orderId="order-1" />)
     await screen.findByText('Inspect custom structure')
     expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('0')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
-    expect(
-      await screen.findByText('Thiếu giá: Inspect custom structure'),
-    ).toBeInTheDocument()
-    expect(save).toHaveBeenLastCalledWith(
-      'order-1',
-      expect.objectContaining({ additionalUnitPrices: { 'custom-1': 0 } }),
-    )
+    // Draft saving was removed: the manager only approves, and the backend reports missing prices there.
+    expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull()
   })
 
   it('does not overwrite an edited item price when another checklist mutation refetches the review', async () => {
@@ -291,23 +274,12 @@ describe('ManagerPricingPanel', () => {
       screen.queryByRole('heading', { name: 'Đánh giá công việc tùy chỉnh' }),
     ).not.toBeInTheDocument()
     expect(screen.getByLabelText('Giá duyệt (VND)')).toHaveValue('1300000')
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
-
-    await waitFor(() =>
-      expect(save).toHaveBeenCalledWith('order-1', {
-        packagePrice: 6_300_000,
-        discountAmount: 0,
-        adjustmentAmount: 0,
-        managerNote: null,
-        additionalUnitPrices: { 'additional-1': 1_300_000 },
-        adjustmentReason: null,
-        adjustmentType: 'CORRECTION',
-        expectedPricingRevision: null,
-      }),
-    )
+    // Draft saving was removed from the manager flow.
+    expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull()
+    expect(save).not.toHaveBeenCalled()
   })
 
-  it('keeps draft saving available but blocks approval while a custom item is pending', async () => {
+  it('removes draft saving and blocks approval while a custom item is pending', async () => {
     vi.spyOn(financeApi, 'getPricingReview').mockResolvedValue({
       orderId: 'order-1',
       orderCode: 'ORD-1',
@@ -358,10 +330,7 @@ describe('ManagerPricingPanel', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Duyệt báo giá' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Lưu nháp' })).toBeEnabled()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }))
-    expect(await screen.findByText('Đã lưu báo giá nháp.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull()
     expect(approve).not.toHaveBeenCalled()
   })
 

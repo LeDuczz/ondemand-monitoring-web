@@ -1,5 +1,4 @@
 // MNG-08: Mission detail & result page (opened from the mission list).
-import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
 import { checklistExecutionApi } from '../../mission/api/checklistExecutionApi'
@@ -27,10 +26,8 @@ import {
   CheckItemsList,
   DetailSection,
   MetricTile,
-  PlanDetail,
   STAFF_RESPONSE_LABELS,
   STAFF_ROLE_LABELS,
-  WeatherResultDetail,
   assignmentTone,
   checkLabel,
   formatDateTime,
@@ -49,7 +46,7 @@ import { missionDetailPageMessages } from './MissionDetailPage.messages'
 import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import '../manager.css'
 
-type MissionDetailTab = 'overview' | 'order' | 'plan' | 'checks'
+type MissionDetailTab = 'overview' | 'order' | 'checks'
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
   return <MissionDetail key={missionId} missionId={missionId} />
@@ -211,34 +208,41 @@ function MissionDetail({ missionId }: { missionId: string }) {
     detail.result?.completedAt ??
     null
 
-  const mediaText = (mission.mediaSummary ?? mission.mediaType ?? '')
-    .replace(/\s*\((?:IMAGE|VIDEO|PHOTO)\)/g, '')
-    .trim()
-  // The KPI strip already shows customer, start time and device; the list keeps what it does not.
-  const rows: Array<{ label: string; value: string }> = (
-    [
-      {
-        label: t.fields.order,
-        value: mission.orderCode ? formatOrderCode(mission.orderCode) : '',
-      },
-      { label: t.fields.service, value: mission.serviceName ?? '' },
-      {
-        label: t.fields.scheduledEnd,
-        value: formatDateTime(mission.scheduledEndAt ?? null, locale),
-      },
-      { label: t.fields.started, value: formatDateTime(startedAt, locale) },
-      { label: t.fields.completed, value: formatDateTime(completedAt, locale) },
-      { label: t.fields.address, value: mission.address ?? '' },
-      {
-        label: t.fields.coordinates,
-        value:
-          mission.latitude !== null && mission.longitude !== null
-            ? `${mission.latitude}, ${mission.longitude}`
-            : '',
-      },
-      { label: t.fields.mediaType, value: mediaText },
-    ] as Array<{ label: string; value: string }>
-  ).filter((row) => row.value && row.value !== '—')
+  const rows: Array<{ label: string; value: string }> = [
+    {
+      label: t.fields.order,
+      value: mission.orderCode ? formatOrderCode(mission.orderCode) : '—',
+    },
+    { label: t.fields.service, value: mission.serviceName ?? '—' },
+    {
+      label: t.fields.scheduledStart,
+      value: formatDateTime(mission.scheduledStartAt, locale),
+    },
+    {
+      label: t.fields.scheduledEnd,
+      value: formatDateTime(mission.scheduledEndAt ?? null, locale),
+    },
+    {
+      label: t.fields.started,
+      value: startedAt ? formatDateTime(startedAt, locale) : t.notRecorded,
+    },
+    {
+      label: t.fields.completed,
+      value: completedAt ? formatDateTime(completedAt, locale) : t.notRecorded,
+    },
+    { label: t.fields.address, value: mission.address ?? '—' },
+    {
+      label: t.fields.coordinates,
+      value:
+        mission.latitude !== null && mission.longitude !== null
+          ? `${mission.latitude}, ${mission.longitude}`
+          : '—',
+    },
+    {
+      label: t.fields.mediaType,
+      value: mission.mediaSummary ?? mission.mediaType ?? '—',
+    },
+  ]
   const failure = mission.failureReason ?? mission.rejectionReason
   if (failure) rows.push({ label: t.fields.failure, value: failure })
 
@@ -258,246 +262,82 @@ function MissionDetail({ missionId }: { missionId: string }) {
       value: staff.length > 0 ? t.crewAccepted(accepted, staff.length) : '—',
     },
     { label: t.kpi.media, value: String(mediaCount) },
-    {
-      label:
-        detail.result?.durationSeconds != null
-          ? t.kpi.actualDuration
-          : t.kpi.plannedDuration,
-      value: formatDuration(
-        detail.result?.durationSeconds ?? plan?.plannedDurationSec,
-      ),
-    },
-  ].filter(
-    (item) =>
-      !(item.label === t.kpi.media && mediaCount === 0) && item.value !== '—',
-  )
-
+    detail.result?.durationSeconds != null
+      ? {
+          label: t.kpi.actualDuration,
+          value: formatDuration(detail.result.durationSeconds),
+        }
+      : {
+          label: t.kpi.duration,
+          value:
+            plan?.plannedDurationSec != null
+              ? t.plannedSuffix(formatDuration(plan.plannedDurationSec))
+              : t.notRecorded,
+        },
+  ]
   /** What the manager can do about this Mission right now. */
   const nextStep = missionNextStep(mission.status, accepted, staff.length)
-  const showPlanTab = mission.status !== 'COMPLETED'
-  const activeTab: MissionDetailTab =
-    showPlanTab || tab !== 'plan' ? tab : 'overview'
+  const isCompleted = mission.status === 'COMPLETED'
+  const resultApproved = detail.result?.approvalStatus === 'APPROVED'
+  const meaningfulText = (value: string | null | undefined) =>
+    value && value.trim().length > 2 ? value.trim() : null
+  const headline = meaningfulText(mission.orderTitle)
+  const note = meaningfulText(mission.description)
+  const checklistExecutions = checklist.data?.executions ?? []
+  const compliantCount = checklistExecutions.filter(
+    (item) => item.assessmentStatus === 'COMPLIANT',
+  ).length
+  const activeTab: MissionDetailTab = tab
   const tabs: Array<{ id: MissionDetailTab; label: string }> = [
     { id: 'overview', label: t.tabs.overview },
     { id: 'order', label: t.tabs.order },
-    ...(showPlanTab ? [{ id: 'plan' as const, label: t.tabs.plan }] : []),
     { id: 'checks', label: t.tabs.checks },
   ]
   const waypoints = [...(plan?.waypoints ?? [])].sort(
     (a, b) => a.sequence - b.sequence,
   )
 
-  const mapBlock = (
-    <>
-          <section className="odm-or-card odm-rm-card">
-            <div className="odm-rm-stage">
-              <MissionSatelliteMap
-                missionId={mission.id}
-                latitude={mission.latitude}
-                longitude={mission.longitude}
-              />
-            </div>
-            <div className="odm-rm-side">
-              <h3>{t.map.title}</h3>
-              <dl className="odm-or-kv">
-                <div>
-                  <dt>{t.kpi.drone}</dt>
-                  <dd>{deviceLabel}</dd>
-                </div>
-                {waypoints.length > 0 && (
-                  <div>
-                    <dt>{t.map.waypoint}</dt>
-                    <dd>{waypoints.length}</dd>
-                  </div>
-                )}
-                {plan?.plannedDistanceM != null && (
-                  <div>
-                    <dt>{t.map.distance}</dt>
-                    <dd>{formatNumber(plan.plannedDistanceM, ' m')}</dd>
-                  </div>
-                )}
-                {plan?.maxPlannedAltitudeM != null && (
-                  <div>
-                    <dt>{t.map.altitude}</dt>
-                    <dd>{formatNumber(plan.maxPlannedAltitudeM, ' m')}</dd>
-                  </div>
-                )}
-              </dl>
-              {waypoints.length === 0 && plan?.plannedDistanceM == null ? (
-                <p className="odm-or-muted">
-                  Chưa có kế hoạch bay chi tiết. Đường nối chỉ thể hiện
-                  điểm xuất phát và điểm giám sát.
-                </p>
-              ) : null}
-              <ul className="odm-rm-key">
-                <li>
-                  <i className="is-home" />
-                  {t.map.home}
-                </li>
-                <li>
-                  <i className="is-line" />
-                  {t.map.route}
-                </li>
-                <li>
-                  <i className="is-wp" />
-                  {t.map.waypoint}
-                </li>
-                <li>
-                  <i className="is-target" />
-                  {t.map.target}
-                </li>
-              </ul>
-              {waypoints.length > 0 ? (
-                <ul className="odm-rm-wps">
-                  {waypoints.map((point, index) => (
-                    <li key={point.id}>
-                      <b>
-                        {index === 0
-                          ? 'H'
-                          : index === waypoints.length - 1
-                            ? 'T'
-                            : point.sequence}
-                      </b>
-                      <strong>{waypointReasonLabel(point.reason)}</strong>
-                      <span>{formatNumber(point.altitudeM, ' m')}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          </section>
-    </>
-  )
-
-  const reviewBlock = (
-    <>
-          <MissionResultReviewCard
-            mission={mission}
-            result={detail.result}
-            checklist={checklist.data}
-            checklistLoading={checklist.loading}
-            checklistFailed={!!checklist.error}
-            refreshing={loading}
-            mediaCount={detail.media.length}
-            locale={locale}
-            onReviewed={refreshDetail}
-            onViewMedia={() => {
-              mediaLibrary.current?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-              })
-              mediaLibrary.current?.focus({ preventScroll: true })
-            }}
-          />
-    </>
-  )
-
-  const weatherBlock = (
-    <>
-          <section className="odm-or-card">
-            <div className="odm-or-card-body">
-              <DetailSection title={t.weatherResultCard}>
-                <WeatherResultDetail
-                  weather={detail.weather}
-                  locale={locale}
-                />
-              </DetailSection>
-            </div>
-          </section>
-    </>
-  )
-
-  const checklistBlock = (
-    <>
-          <MonitoringChecklistSection
-            hideImplementationHints
-            missionId={mission.id}
-            data={
-              checklist.data?.missionId === missionId
-                ? checklist.data
-                : undefined
-            }
-            loading={checklist.loading}
-            error={
-              checklist.error
-                ? new Error(
-                    'Không thể tải checklist của Mission này. Vui lòng thử lại.',
-                  )
-                : undefined
-            }
-            resultStatus={detail.result?.approvalStatus}
-            resultNote={detail.result?.reviewNote}
-            refresh={() => {
-              checklist.reload()
-              refreshDetail()
-            }}
-          />
-    </>
-  )
-
-  const mediaBlock = (
-    <>
-          <section
-            ref={mediaLibrary}
-            tabIndex={-1}
-            aria-label="Thư viện media"
-          >
-            <MissionUploadedMedia
-              missionId={mission.id}
-              missionStatus={mission.status}
-              reader={staffMissionMediaReader}
-              reviewStatus={detail.result?.approvalStatus ?? null}
-              approveMedia={async (mediaId) => {
-                await missionsApi.approveMissionMedia(missionId, mediaId)
-                refreshDetail()
-              }}
-            />
-          </section>
-    </>
-  )
-
-  const deliveryBlock = (
-    <>
-          {mission.status === 'COMPLETED' ? (
-            <ManagerDeliveryPanel
-              orderId={mission.orderId}
-              refreshKey={revision}
-            />
-          ) : null}
-    </>
-  )
-
-  // Reviewing a finished Mission: the decision and the material to judge it come first; the map is reference only.
-  const reviewMode = mission.status === 'COMPLETED'
-
   return (
     <div className="odm-or">
       {backLink}
       <div className="odm-or-pagehead odm-or-md-head">
-        <div>
-          <h1 className="odm-or-title odm-mono">{mission.missionCode}</h1>
-          <p className="odm-or-subtitle">{mission.orderTitle}</p>
+        <div className="odm-md-headmain">
+          <div className="odm-md-titlerow">
+            <h1 className="odm-or-title odm-mono">{mission.missionCode}</h1>
+            {missionStopLabel(mission) ? (
+              <StatusBadge tone="yellow">
+                {missionStopLabel(mission)}
+              </StatusBadge>
+            ) : (
+              <StatusBadge
+                kind="mission"
+                status={mission.status}
+                tone={missionStatusTone[mission.status]}
+              />
+            )}
+          </div>
+          <p className={`odm-or-subtitle${headline ? '' : ' is-muted'}`}>
+            {headline ?? t.noDescription}
+          </p>
+          <div className="odm-md-meta">
+            {mission.orderCode ? (
+              <span>{formatOrderCode(mission.orderCode)}</span>
+            ) : null}
+            <span>{formatDateTime(mission.scheduledStartAt, locale)}</span>
+            <a
+              className="odm-or-btn-outline"
+              href={managerHref({
+                screen: 'orderReview',
+                orderId: mission.orderId,
+              })}
+            >
+              {t.viewOrderPlan}
+              <OrderIcon name="arrow-right" size={13} />
+            </a>
+          </div>
         </div>
-        <div className="odm-or-md-actions">
-          {missionStopLabel(mission) ? (
-            <StatusBadge tone="yellow">{missionStopLabel(mission)}</StatusBadge>
-          ) : (
-            <StatusBadge
-              kind="mission"
-              status={mission.status}
-              tone={missionStatusTone[mission.status]}
-            />
-          )}
-          <a
-            className="odm-or-btn-outline"
-            href={managerHref({
-              screen: 'orderReview',
-              orderId: mission.orderId,
-            })}
-          >
-            Mở kế hoạch Order
-          </a>
-          {canSetup ? (
+        {canSetup ? (
+          <div className="odm-or-md-actions">
             <a
               className="odm-or-btn odm-or-btn-blue"
               href={managerHref({
@@ -507,9 +347,16 @@ function MissionDetail({ missionId }: { missionId: string }) {
             >
               {t.continueSetup}
             </a>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
+
+      {nextStep ? (
+        <div className={`odm-md-next is-${nextStep.tone}`} role="status">
+          <strong>{nextStep.title}</strong>
+          <span>{nextStep.detail}</span>
+        </div>
+      ) : null}
 
       <div className="odm-or-md-kpis">
         {kpis.map((item) => (
@@ -519,13 +366,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
           </div>
         ))}
       </div>
-
-      {nextStep ? (
-        <div className={`odm-md-next is-${nextStep.tone}`} role="status">
-          <strong>{nextStep.title}</strong>
-          <span>{nextStep.detail}</span>
-        </div>
-      ) : null}
 
       <div className="odm-or-md-grid">
         <div className="odm-or-col">
@@ -546,89 +386,310 @@ function MissionDetail({ missionId }: { missionId: string }) {
 
           {activeTab === 'overview' ? (
             <>
-              {reviewMode ? (
+              {isCompleted ? (
                 <>
-                  {reviewBlock}
-                  {mediaBlock}
-                  {checklistBlock}
-                  {weatherBlock}
-                  <MapFold>{mapBlock}</MapFold>
-                  {deliveryBlock}
+                  <MissionResultReviewCard
+                    mission={mission}
+                    result={detail.result}
+                    checklist={checklist.data}
+                    checklistLoading={checklist.loading}
+                    checklistFailed={!!checklist.error}
+                    refreshing={loading}
+                    mediaCount={detail.media.length}
+                    locale={locale}
+                    onReviewed={refreshDetail}
+                    onViewMedia={() => {
+                      mediaLibrary.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                      mediaLibrary.current?.focus({ preventScroll: true })
+                    }}
+                  />
+
+                  {isCompleted && resultApproved ? (
+                    <ManagerDeliveryPanel
+                      orderId={mission.orderId}
+                      refreshKey={revision}
+                    />
+                  ) : null}
+
+                  <section
+                    ref={mediaLibrary}
+                    tabIndex={-1}
+                    aria-label="Thư viện media"
+                  >
+                    <MissionUploadedMedia
+                      missionId={mission.id}
+                      missionStatus={mission.status}
+                      reader={staffMissionMediaReader}
+                      reviewStatus={detail.result?.approvalStatus ?? null}
+                    />
+                  </section>
+                  {isCompleted && resultApproved ? (
+                    <details className="odm-or-card odm-md-collapse">
+                      <summary>
+                        <span className="odm-md-collapse-title">
+                          {t.checklistAcceptance}
+                        </span>
+                        <span className="odm-md-collapse-meta">
+                          {checklistExecutions.length > 0
+                            ? t.checklistCompliant(
+                                compliantCount,
+                                checklistExecutions.length,
+                              )
+                            : t.checklistLoading}
+                        </span>
+                        <span className="odm-or-pill odm-or-pill-green">
+                          {t.checklistAccepted}
+                        </span>
+                      </summary>
+                      <MonitoringChecklistSection
+                        hideImplementationHints
+                        missionId={mission.id}
+                        data={
+                          checklist.data?.missionId === missionId
+                            ? checklist.data
+                            : undefined
+                        }
+                        loading={checklist.loading}
+                        error={
+                          checklist.error
+                            ? new Error(
+                                'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+                              )
+                            : undefined
+                        }
+                        resultStatus={detail.result?.approvalStatus}
+                        resultNote={detail.result?.reviewNote}
+                        refresh={() => {
+                          checklist.reload()
+                          refreshDetail()
+                        }}
+                      />
+                    </details>
+                  ) : (
+                    <MonitoringChecklistSection
+                      hideImplementationHints
+                      missionId={mission.id}
+                      data={
+                        checklist.data?.missionId === missionId
+                          ? checklist.data
+                          : undefined
+                      }
+                      loading={checklist.loading}
+                      error={
+                        checklist.error
+                          ? new Error(
+                              'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+                            )
+                          : undefined
+                      }
+                      resultStatus={detail.result?.approvalStatus}
+                      resultNote={detail.result?.reviewNote}
+                      refresh={() => {
+                        checklist.reload()
+                        refreshDetail()
+                      }}
+                    />
+                  )}
+                  <section className="odm-or-card odm-rm-card">
+                    <div className="odm-rm-stage">
+                      <MissionSatelliteMap
+                        missionId={mission.id}
+                        latitude={mission.latitude}
+                        longitude={mission.longitude}
+                      />
+                    </div>
+                    <div className="odm-rm-side">
+                      <h3>{t.map.title}</h3>
+                      <dl className="odm-or-kv">
+                        <div>
+                          <dt>{t.map.waypoint}</dt>
+                          <dd>{waypoints.length}</dd>
+                        </div>
+                        <div>
+                          <dt>{t.map.distance}</dt>
+                          <dd>{formatNumber(plan?.plannedDistanceM, ' m')}</dd>
+                        </div>
+                        <div>
+                          <dt>{t.map.altitude}</dt>
+                          <dd>
+                            {formatNumber(plan?.maxPlannedAltitudeM, ' m')}
+                          </dd>
+                        </div>
+                      </dl>
+                      <ul className="odm-rm-key">
+                        <li>
+                          <i className="is-home" />
+                          {t.map.home}
+                        </li>
+                        <li>
+                          <i className="is-line" />
+                          {t.map.route}
+                        </li>
+                        <li>
+                          <i className="is-wp" />
+                          {t.map.waypoint}
+                        </li>
+                        <li>
+                          <i className="is-target" />
+                          {t.map.target}
+                        </li>
+                      </ul>
+                      {waypoints.length > 0 ? (
+                        <ul className="odm-rm-wps">
+                          {waypoints.map((point, index) => (
+                            <li key={point.id}>
+                              <b>
+                                {index === 0
+                                  ? 'H'
+                                  : index === waypoints.length - 1
+                                    ? 'T'
+                                    : point.sequence}
+                              </b>
+                              <strong>
+                                {waypointReasonLabel(point.reason)}
+                              </strong>
+                              <span>{formatNumber(point.altitudeM, ' m')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </section>
                 </>
               ) : (
                 <>
-                  {mapBlock}
-                  {reviewBlock}
-                  {weatherBlock}
-                  {checklistBlock}
-                  {mediaBlock}
-                  {deliveryBlock}
+                  <section className="odm-or-card odm-rm-card">
+                    <div className="odm-rm-stage">
+                      <MissionSatelliteMap
+                        missionId={mission.id}
+                        latitude={mission.latitude}
+                        longitude={mission.longitude}
+                      />
+                    </div>
+                    <div className="odm-rm-side">
+                      <h3>{t.map.title}</h3>
+                      <dl className="odm-or-kv">
+                        <div>
+                          <dt>{t.map.waypoint}</dt>
+                          <dd>{waypoints.length}</dd>
+                        </div>
+                        <div>
+                          <dt>{t.map.distance}</dt>
+                          <dd>{formatNumber(plan?.plannedDistanceM, ' m')}</dd>
+                        </div>
+                        <div>
+                          <dt>{t.map.altitude}</dt>
+                          <dd>
+                            {formatNumber(plan?.maxPlannedAltitudeM, ' m')}
+                          </dd>
+                        </div>
+                      </dl>
+                      <ul className="odm-rm-key">
+                        <li>
+                          <i className="is-home" />
+                          {t.map.home}
+                        </li>
+                        <li>
+                          <i className="is-line" />
+                          {t.map.route}
+                        </li>
+                        <li>
+                          <i className="is-wp" />
+                          {t.map.waypoint}
+                        </li>
+                        <li>
+                          <i className="is-target" />
+                          {t.map.target}
+                        </li>
+                      </ul>
+                      {waypoints.length > 0 ? (
+                        <ul className="odm-rm-wps">
+                          {waypoints.map((point, index) => (
+                            <li key={point.id}>
+                              <b>
+                                {index === 0
+                                  ? 'H'
+                                  : index === waypoints.length - 1
+                                    ? 'T'
+                                    : point.sequence}
+                              </b>
+                              <strong>
+                                {waypointReasonLabel(point.reason)}
+                              </strong>
+                              <span>{formatNumber(point.altitudeM, ' m')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </section>
+
+                  <MissionResultReviewCard
+                    mission={mission}
+                    result={detail.result}
+                    checklist={checklist.data}
+                    checklistLoading={checklist.loading}
+                    checklistFailed={!!checklist.error}
+                    refreshing={loading}
+                    mediaCount={detail.media.length}
+                    locale={locale}
+                    onReviewed={refreshDetail}
+                    onViewMedia={() => {
+                      mediaLibrary.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                      mediaLibrary.current?.focus({ preventScroll: true })
+                    }}
+                  />
+
+                  {isCompleted && resultApproved ? (
+                    <ManagerDeliveryPanel
+                      orderId={mission.orderId}
+                      refreshKey={revision}
+                    />
+                  ) : null}
+
+                  <MonitoringChecklistSection
+                    hideImplementationHints
+                    missionId={mission.id}
+                    data={
+                      checklist.data?.missionId === missionId
+                        ? checklist.data
+                        : undefined
+                    }
+                    loading={checklist.loading}
+                    error={
+                      checklist.error
+                        ? new Error(
+                            'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+                          )
+                        : undefined
+                    }
+                    resultStatus={detail.result?.approvalStatus}
+                    resultNote={detail.result?.reviewNote}
+                    refresh={() => {
+                      checklist.reload()
+                      refreshDetail()
+                    }}
+                  />
+                  <section
+                    ref={mediaLibrary}
+                    tabIndex={-1}
+                    aria-label="Thư viện media"
+                  >
+                    <MissionUploadedMedia
+                      missionId={mission.id}
+                      missionStatus={mission.status}
+                      reader={staffMissionMediaReader}
+                      reviewStatus={detail.result?.approvalStatus ?? null}
+                    />
+                  </section>
                 </>
               )}
-            </>
-          ) : null}
-
-          {activeTab === 'plan' ? (
-            <>
-              <section className="odm-or-card">
-                <div className="odm-or-card-body">
-                  <DetailSection
-                    title={t.planCard}
-                    badge={plan?.feasibilityStatus}
-                  >
-                    <PlanDetail
-                      plan={plan}
-                      postcheck={postcheck}
-                      precheckItems={preflight?.items}
-                    />
-                  </DetailSection>
-                </div>
-              </section>
-              <section className="odm-or-card">
-                <div className="odm-or-card-body">
-                  <DetailSection
-                    title={t.waypoints.title}
-                    badge={String(waypoints.length)}
-                  >
-                    {waypoints.length === 0 ? (
-                      <div className="odm-or-empty">{t.waypoints.empty}</div>
-                    ) : (
-                      <div className="odm-or-table-scroll">
-                        <table className="odm-or-table">
-                          <thead>
-                            <tr>
-                              <th>{t.waypoints.columns.seq}</th>
-                              <th>{t.waypoints.columns.type}</th>
-                              <th>{t.waypoints.columns.x}</th>
-                              <th>{t.waypoints.columns.y}</th>
-                              <th>{t.waypoints.columns.altitude}</th>
-                              <th>{t.waypoints.columns.speed}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {waypoints.map((point) => (
-                              <tr key={point.id}>
-                                <td className="odm-mono">{point.sequence}</td>
-                                <td>{waypointReasonLabel(point.reason)}</td>
-                                <td className="odm-mono">
-                                  {point.simX.toFixed(2)}
-                                </td>
-                                <td className="odm-mono">
-                                  {point.simY.toFixed(2)}
-                                </td>
-                                <td>{formatNumber(point.altitudeM, ' m')}</td>
-                                <td>
-                                  {formatNumber(point.plannedSpeedMps, ' m/s')}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </DetailSection>
-                </div>
-              </section>
             </>
           ) : null}
 
@@ -652,23 +713,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
 
           {activeTab === 'checks' ? (
             <>
-              <section className="odm-or-card">
-                <div className="odm-or-card-body">
-                  <DetailSection
-                    title={t.weatherResultCard}
-                    badge={
-                      detail.weather
-                        ? checkLabel(detail.weather.status)
-                        : undefined
-                    }
-                  >
-                    <WeatherResultDetail
-                      weather={detail.weather}
-                      locale={locale}
-                    />
-                  </DetailSection>
-                </div>
-              </section>
               <section className="odm-or-card">
                 <div className="odm-or-card-body">
                   <DetailSection
@@ -756,6 +800,26 @@ function MissionDetail({ missionId }: { missionId: string }) {
           <section className="odm-or-card">
             <header className="odm-or-card-head">
               <span className="odm-or-card-title">
+                <OrderIcon name="doc" size={18} />
+                {t.infoCard}
+              </span>
+            </header>
+            <div className="odm-or-card-body">
+              <dl className="odm-or-kv">
+                {rows.map((row) => (
+                  <div key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {note ? <p className="odm-or-detail-note">{note}</p> : null}
+            </div>
+          </section>
+
+          <section className="odm-or-card">
+            <header className="odm-or-card-head">
+              <span className="odm-or-card-title">
                 <OrderIcon name="users" size={18} />
                 {t.crewCard}
               </span>
@@ -824,28 +888,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
               )}
             </div>
           </section>
-
-          <section className="odm-or-card">
-            <header className="odm-or-card-head">
-              <span className="odm-or-card-title">
-                <OrderIcon name="doc" size={18} />
-                {t.infoCard}
-              </span>
-            </header>
-            <div className="odm-or-card-body">
-              <dl className="odm-or-kv">
-                {rows.map((row) => (
-                  <div key={row.label}>
-                    <dt>{row.label}</dt>
-                    <dd>{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {mission.description ? (
-                <p className="odm-or-detail-note">{mission.description}</p>
-              ) : null}
-            </div>
-          </section>
         </aside>
       </div>
     </div>
@@ -876,26 +918,10 @@ function missionNextStep(
       return { tone: 'bad', title: 'Không đạt kiểm tra trước bay', detail: 'Xem tab Kết quả check, xử lý rồi cho đội bay kiểm tra lại.' }
     case 'PENDING_REVIEW':
       return { tone: 'go', title: 'Chờ duyệt kết quả', detail: 'Xem media và checklist rồi duyệt hoặc yêu cầu bổ sung.' }
-    case 'COMPLETED':
-      return { tone: 'done', title: 'Nhiệm vụ đã hoàn thành', detail: 'Kết quả đã sẵn sàng để bàn giao cho khách.' }
     case 'FAILED':
     case 'CANCELLED':
       return { tone: 'bad', title: status === 'FAILED' ? 'Nhiệm vụ thất bại' : 'Nhiệm vụ đã hủy', detail: 'Có thể tạo Mission thay thế trong kế hoạch Order.' }
     default:
       return null
   }
-}
-
-/** Reference map for a finished Mission. It mounts only when opened (a hidden map cannot size itself). */
-function MapFold({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <details
-      className="odm-md-map-fold"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary>Bản đồ & đường bay</summary>
-      {open ? children : null}
-    </details>
-  )
 }

@@ -172,8 +172,6 @@ describe('Manager Mission Detail monitoring review', () => {
   it('uses the satellite mission map on result review', async () => {
     render(<MissionDetailPage missionId="m" />)
 
-    // A finished Mission is reviewed from its media first; the map is a collapsed reference.
-    fireEvent.click(await screen.findByText('Bản đồ & đường bay'))
     expect(
       await screen.findByRole('application', {
         name: 'Bản đồ vệ tinh mission',
@@ -188,7 +186,6 @@ describe('Manager Mission Detail monitoring review', () => {
       await screen.findByRole('tab', { name: 'Thông tin đơn hàng' }),
     )
     expect(await screen.findByText('Kiểm tra nhà xưởng')).toBeInTheDocument()
-    expect(screen.getByText('Thông tin khách đã nhập')).toBeInTheDocument()
     expect(screen.getByText('customer@example.com')).toBeInTheDocument()
   })
   it('hides the flight plan tab after mission completion', async () => {
@@ -200,17 +197,16 @@ describe('Manager Mission Detail monitoring review', () => {
       screen.getByRole('tab', { name: 'Kết quả check' }),
     ).toBeInTheDocument()
   })
-  it('shows the recorded weather result on manager review', async () => {
+  it('does not show weather on manager mission detail', async () => {
     render(<MissionDetailPage missionId="m" />)
 
-    expect(await screen.findByText('Kết quả thời tiết')).toBeInTheDocument()
+    await screen.findByText('Kết quả nhiệm vụ')
+    expect(screen.queryByText('Kết quả thời tiết')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Kết quả check' }))
+    expect(screen.queryByText('Kết quả thời tiết')).not.toBeInTheDocument()
     expect(
-      screen.getByText('Thời tiết phù hợp để cất cánh.'),
-    ).toBeInTheDocument()
-    expect(screen.getByText('4,2 m/s')).toBeInTheDocument()
-    expect(
-      screen.getByText('Thời tiết ổn định, đủ điều kiện bay mô phỏng.'),
-    ).toBeInTheDocument()
+      screen.queryByText('Thời tiết phù hợp để cất cánh.'),
+    ).not.toBeInTheDocument()
   })
   it.each(['DRAFT', 'REJECTED', 'APPROVED'] as const)(
     '%s cannot be approved/rejected',

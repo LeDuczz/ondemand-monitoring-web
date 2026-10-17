@@ -234,7 +234,7 @@ function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, 
       />
       <div className="co-map-key" aria-label={legend.legendTitle}>
         <span><i className="co-map-key-area" />{legend.legendArea}</span>
-        <span><i className="co-map-key-zone" />Vùng sân bay Tân Sơn Nhất</span>
+        <span><i className="co-map-key-zone" />{legend.legendAirport}</span>
         <span><i className="co-map-key-point" />{legend.legendPoint}</span>
       </div>
       {invalidCoordinates ? (
@@ -359,23 +359,17 @@ export function LocationStep({ form, errors, update }: Props) {
           features={assessment.data?.osmContext.importantFeatures ?? []}
         />
         <section className="airspace-status airspace-self-check">
-          <strong>Tự kiểm tra vùng bay</strong>
-          <span>
-            ODMS không tự xác nhận quyền bay. Bạn hãy nhập vùng yêu cầu trên
-            cổng thông tin chính thức để tự kiểm tra.
-          </span>
+          <strong>{t.selfCheckTitle}</strong>
+          <span>{t.selfCheckBody}</span>
           <a
             className="odm-btn odm-btn-p airspace-check-button"
             href="https://cambay.mod.gov.vn/"
             target="_blank"
             rel="noreferrer"
           >
-            Mở cổng kiểm tra vùng bay ↗
+            {t.selfCheckOpen}
           </a>
-          <small>
-            Sau khi kiểm tra, quay lại ODMS và khai báo giấy phép hoặc chọn cần
-            hỗ trợ xin phép.
-          </small>
+          <small>{t.selfCheckAfter}</small>
         </section>
         <FlightAreaAssessmentCard state={assessment} requestedAltitudeAglM={form.altitudeM} />
         </div>

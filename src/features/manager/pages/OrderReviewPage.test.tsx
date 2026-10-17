@@ -436,39 +436,6 @@ describe('OrderReviewPage', () => {
     expect(screen.queryByText('RỦI RO')).not.toBeInTheDocument()
   })
 
-  it('requires a reason before confirming reject, and a chip fills it in', async () => {
-    mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
-    render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
-    await openPricingStep()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
-    expect(screen.getByText('Lý do là bắt buộc')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Vùng cấm bay' }))
-    expect(
-      screen.getByPlaceholderText('Khách hàng sẽ nhìn thấy nội dung này'),
-    ).toHaveValue('Vùng cấm bay')
-  })
-
-  it('navigates back to the queue after a successful reject', async () => {
-    mockHappyPath(feasibleAnalysis)
-    vi.spyOn(ordersApi, 'submitApproval').mockResolvedValue(undefined)
-    render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByText('Lê Quốc Bảo'))
-    await openPricingStep()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Vùng cấm bay' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
-
-    await waitFor(() =>
-      expect(window.location.hash).toBe('#portal/manager/orders'),
-    )
-  })
-
   it('approves the quote before entering inline Order planning', async () => {
     mockHappyPath(feasibleAnalysis)
     const approveSpy = vi
@@ -603,6 +570,5 @@ describe('OrderReviewPage', () => {
     act(() => setLanguage('en'))
 
     expect(screen.getByRole('heading', { name: 'Order details' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
   })
 })

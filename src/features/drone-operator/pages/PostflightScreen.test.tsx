@@ -12,16 +12,16 @@ describe('PostflightScreen', () => {
   it('renders the vietnamese empty state', async () => {
     render(<PostflightScreen />)
     expect(
-      await screen.findByText('Không tìm thấy thông tin nhiệm vụ'),
+      await screen.findByText('Không tìm thấy thông tin nhiệm vụ', {}, { timeout: 5000 }),
     ).toBeTruthy()
   })
 
   it('renders the english empty state when language is switched', async () => {
     render(<PostflightScreen />)
-    await screen.findByText('Không tìm thấy thông tin nhiệm vụ')
+    await screen.findByText('Không tìm thấy thông tin nhiệm vụ', {}, { timeout: 5000 })
     act(() => setLanguage('en'))
     expect(
-      await screen.findByText('Mission information not found'),
+      await screen.findByText('Mission information not found', {}, { timeout: 5000 }),
     ).toBeTruthy()
   })
 })

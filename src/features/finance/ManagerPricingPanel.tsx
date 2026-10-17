@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -44,13 +44,11 @@ const emptyDraft: Draft = {
 
 export function ManagerPricingPanel({
   orderId,
-  decisionActions,
   onApproved,
   onChecklistReviewChanged,
   approveBlockedReason,
 }: {
   orderId: string
-  decisionActions?: ReactNode
   onApproved?: () => void
   onChecklistReviewChanged?: () => void
   /** Why approving is not allowed yet (approval criteria not met); null/undefined = allowed. */
@@ -174,45 +172,6 @@ export function ManagerPricingPanel({
       : `Lý do điều chỉnh cần ít nhất ${MIN_REASON_LENGTH} ký tự (hiện có ${length}).`
   }
 
-  async function saveDraft() {
-    if (!query.data) return null
-    const problem = reasonProblem()
-    if (problem) {
-      setMessage(null)
-      setError(problem)
-      return null
-    }
-    setBusy(true)
-    setError(null)
-    setMessage(null)
-    try {
-      const quote = await financeApi.saveDraft(orderId, {
-        packagePrice: systemPrice,
-        discountAmount: 0,
-        adjustmentAmount: amount(draft.adjustmentAmount),
-        managerNote: draft.managerNote.trim() || null,
-        additionalUnitPrices: approvedPrices(
-          query.data.checklistItems,
-          draft,
-          query.data.systemCalculation?.items,
-        ),
-        adjustmentReason: draft.adjustmentReason.trim() || null,
-        adjustmentType: draft.adjustmentType,
-        expectedPricingRevision:
-          query.data.currentQuote?.pricingRevision ?? null,
-      })
-      dirtyPriceIds.current.clear()
-      setMessage('Đã lưu báo giá nháp.')
-      query.reload()
-      return quote
-    } catch (cause) {
-      setError(errorMessage(cause))
-      return null
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function approve() {
     if (!query.data) return
     const problem = reasonProblem()
@@ -273,7 +232,6 @@ export function ManagerPricingPanel({
             {null}
             <div className="finance-quote-body">
               <div className="finance-quote-content">Đang tải báo giá...</div>
-              {decisionActions}
             </div>
           </aside>
         </div>
@@ -290,7 +248,6 @@ export function ManagerPricingPanel({
             {null}
             <div className="finance-quote-body">
               <div className="finance-quote-content" />
-              {decisionActions}
             </div>
           </aside>
         </div>
@@ -684,18 +641,9 @@ export function ManagerPricingPanel({
                   >
                     {approved ? 'Đã duyệt thành công' : 'Duyệt báo giá'}
                   </button>
-                  <button
-                    className="odm-btn"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void saveDraft()}
-                  >
-                    Lưu nháp
-                  </button>
                 </div>
               ) : null}
             </div>
-            {decisionActions}
           </div>
         </aside>
       </div>

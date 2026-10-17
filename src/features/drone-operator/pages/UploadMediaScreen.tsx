@@ -546,6 +546,10 @@ function UploadMediaContent({
   const canManageMedia =
     !permissions.error &&
     permissions.data?.canUploadMedia === true
+  const inspector = activeMission.data?.staffAssignments?.find(
+    (assignment) => assignment.assignedRole === 'INSPECTOR',
+  )
+  const showManagerContact = permissions.data?.canInspectDevice === true
   const missionStatus =
     activeMission.error ||
     activeMission.data?.id !== missionId
@@ -568,9 +572,13 @@ function UploadMediaContent({
         (Date.parse(a.capturedAt) || 0) - (Date.parse(b.capturedAt) || 0)
       return sort === 'newest' ? -diff : diff
     })
-  const backRoute = missionId
-    ? operatorHref({ screen: 'missionDetail', missionId })
-    : operatorHref({ screen: 'flight', missionId: missionId ?? undefined })
+  // Upload media is part of the active flight flow, so the back action should
+  // consistently return the operator to the cockpit, including mission-scoped
+  // upload pages.
+  const backRoute = operatorHref({
+    screen: 'flight',
+    missionId: missionId ?? undefined,
+  })
 
   function buildMissionResultPayload() {
     const mission = activeMission.data
@@ -699,7 +707,7 @@ function UploadMediaContent({
             <div className="upload-media-bar-actions">
               <a className="odm-btn upload-media-btn-ghost" href={backRoute}>
                 <span aria-hidden="true">←</span>
-                {missionId ? t.backToResult : t.backToCockpit}
+                {t.backToCockpit}
               </a>
               <button
                 type="button"
@@ -779,13 +787,65 @@ function UploadMediaContent({
           )}
           {loading && <p>{t.loadingMedia}</p>}
           {missionId && !canManageMedia && (
-            <p role="status" className="upload-media-notice">
-              {permissions.error
-                ? t.permissionsUnavailable
-                : permissions.loading
-                  ? t.checkingPermissions
-                  : t.uploadPermissionNote}
-            </p>
+            <div
+              role="status"
+              className="upload-media-notice upload-media-contact"
+            >
+              <p>
+                {permissions.error
+                  ? t.permissionsUnavailable
+                  : permissions.loading
+                    ? t.checkingPermissions
+                    : t.uploadPermissionNote}
+              </p>
+              {!permissions.loading && !permissions.error && inspector ? (
+                <div className="upload-media-contact-row">
+                  <div>
+                    <strong>
+                      {showManagerContact
+                        ? t.managerContact
+                        : t.inspectorContact}
+                    </strong>
+                    <span>
+                      {showManagerContact
+                        ? activeMission.data?.managerName || t.notUpdated
+                        : inspector.staffName || t.notUpdated}
+                    </span>
+                    <small>
+                      {showManagerContact
+                        ? activeMission.data?.managerEmail || t.notUpdated
+                        : `${t.responseStatus(inspector.responseStatus)}${
+                            inspector.staffEmail
+                              ? ` · ${inspector.staffEmail}`
+                              : ''
+                          }`}
+                    </small>
+                  </div>
+                  {(
+                    showManagerContact
+                      ? activeMission.data?.managerPhone
+                      : inspector.staffPhone
+                  ) ? (
+                    <a
+                      className="odm-btn odm-btn-p"
+                      href={`tel:${
+                        showManagerContact
+                          ? activeMission.data?.managerPhone
+                          : inspector.staffPhone
+                      }`}
+                    >
+                      {showManagerContact
+                        ? t.callManager(activeMission.data?.managerPhone ?? '')
+                        : t.callInspector(inspector.staffPhone ?? '')}
+                    </a>
+                  ) : (
+                    <span className="upload-media-contact-missing">
+                      {t.phoneNotUpdated}
+                    </span>
+                  )}
+                </div>
+              ) : null}
+            </div>
           )}
           <div className="upload-media-workspace">
             <div className="upload-media-files">
@@ -1062,7 +1122,7 @@ function UploadMediaContent({
                                   {item.backendMediaId && (
                                     <button
                                       type="button"
-                                      className="odm-btn"
+                                      className="odm-btn upload-media-attach-button"
                                       disabled={isBusy || !targetCount}
                                       onClick={() => {
                                         const mediaId = item.backendMediaId
@@ -1128,10 +1188,17 @@ function UploadMediaContent({
                   />
                 </details>
               ) : null}
-              {canManageMedia && missionId ? (
+              {missionId ? (
                 <div className="upload-media-uploaded">
                   <MissionUploadedMedia
                     missionId={missionId}
+                    missionStatus={missionStatus}
+                    approveMedia={
+                      permissions.data?.canInspectDevice === true
+                        ? (mediaId) =>
+                            operatorMissionMediaApi.approve(missionId, mediaId)
+                        : undefined
+                    }
                     onChanged={refreshWorkspace}
                     refreshKey={checklistRevision}
                   />
@@ -1150,6 +1217,9 @@ function UploadMediaContent({
                 resultNote={monitoring.data?.result?.reviewNote}
                 canExecute={
                   monitoring.data?.permissions.canExecuteMonitoringChecklist
+                }
+                canAssess={
+                  monitoring.data?.permissions.canInspectDevice === true
                 }
                 canAttach={
                   monitoring.data?.permissions.canAttachChecklistEvidence

@@ -10,12 +10,6 @@ export const confirmSubmitModalMessages = defineMessages({
     mediaValue: (images: number, videos: number) =>
       `${images} ảnh · ${videos} video`,
     timeWindow: 'Khung giờ',
-    priority: 'Mức ưu tiên',
-    priorities: {
-      NORMAL: 'Bình thường',
-      HIGH: 'Cao',
-      URGENT: 'Khẩn cấp',
-    } as Record<string, string>,
     area: 'Vùng bay',
     areaValue: (radius: number, ha: string) =>
       `Bán kính ${radius} m · khoảng ${ha} ha`,
@@ -53,12 +47,6 @@ export const confirmSubmitModalMessages = defineMessages({
     mediaValue: (images: number, videos: number) =>
       `${images} photos · ${videos} videos`,
     timeWindow: 'Time window',
-    priority: 'Priority',
-    priorities: {
-      NORMAL: 'Normal',
-      HIGH: 'High',
-      URGENT: 'Urgent',
-    } as Record<string, string>,
     area: 'Flight area',
     areaValue: (radius: number, ha: string) =>
       `Radius ${radius} m · about ${ha} ha`,

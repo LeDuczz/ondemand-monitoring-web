@@ -33,22 +33,11 @@ export type CreateOrderPayload = {
   resultDeadline?: string
   usagePurpose?: string
   flightPurpose?: string
-  priority?: string
   altitudeM?: number
   estimatedLengthM?: number
   siteContactName?: string
   siteContactPhone?: string
   accessNotes?: string
-  permitStatus?: string
-  permitNumber?: string
-  permitExpiresOn?: string
-  permitDocuments?: Array<{
-    id: string
-    fileName: string
-    contentType: string
-    sizeBytes: number
-    dataUrl: string
-  }>
   monitoringRelationship?: string
   monitoringAuthorizationConfirmed?: boolean
   monitoringAuthorizationDocuments?: Array<{

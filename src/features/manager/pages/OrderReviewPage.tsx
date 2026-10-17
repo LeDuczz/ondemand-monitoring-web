@@ -9,7 +9,6 @@ import {
 } from '../../../shared/lib/statusTone'
 import { ordersApi } from '../api/ordersApi'
 import { InternalNoteCard } from '../components/orderReview/InternalNoteCard'
-import { OrderApprovalActions } from '../components/orderReview/OrderApprovalActions'
 import { OrderAttachmentsCard } from '../components/orderReview/OrderAttachmentsCard'
 import { OrderCustomerCard } from '../components/orderReview/OrderCustomerCard'
 import { OrderReadinessCard } from '../components/orderReview/OrderReadinessCard'
@@ -42,7 +41,7 @@ import {
 } from './OrderReviewPage.messages'
 import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
 import '../manager.css'
-import type { FlightAreaReviewStatus } from '../types/orders'
+import type { LegalReviewStatus } from '../types/orders'
 
 type PageMessages = OrderReviewMessages
 type ReviewStep = 1 | 2 | 3 | 4
@@ -62,7 +61,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   const [assignStep, setAssignStep] = useState<6 | 7 | 8>(6)
   const [reviewStep, setReviewStep] = useState<ReviewStep>(1)
   const [areaReviewStatus, setAreaReviewStatus] =
-    useState<FlightAreaReviewStatus | null>(null)
+    useState<LegalReviewStatus | null>(null)
   // A completed Order stage reopened read-only; null = the live (current) screen.
   const [viewStage, setViewStage] = useState<OrderStage | null>(null)
   const [planning, setPlanning] = useState<PlanningWorkflowInfo | null>(null)
@@ -71,7 +70,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     null,
   )
   useEffect(() => {
-    setAreaReviewStatus(orderQuery.data?.flightAreaReviewStatus ?? null)
+    setAreaReviewStatus(orderQuery.data?.legalReviewStatus ?? null)
   }, [orderQuery.data])
   if (navigateHome) {
     window.location.hash = managerHref({ screen: 'orderQueue' })
@@ -310,15 +309,15 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
             onNext={() => goToStep(3)}
             nextLabel="Tiếp: Điều kiện duyệt"
             nextDisabled={
-              areaReviewStatus !== 'PRELIMINARY_PASS' &&
-              areaReviewStatus !== 'RESTRICTED'
+              areaReviewStatus !== 'NOT_REQUIRED' &&
+              areaReviewStatus !== 'APPROVED'
             }
             hint={
               areaReviewStatus == null
                 ? 'Manager cần đánh giá khu vực trước khi tiếp tục'
-                : areaReviewStatus === 'UNDETERMINED'
-                  ? 'Đang chờ xác minh thêm về khu vực'
-                  : areaReviewStatus === 'UNSUITABLE'
+                : areaReviewStatus === 'PENDING_PERMIT'
+                  ? 'Đang xác minh giấy phép ngoài hệ thống; chưa thể duyệt hoặc thanh toán'
+                  : areaReviewStatus === 'REJECTED'
                     ? 'Hãy yêu cầu khách đổi khu vực hoặc từ chối đơn'
                     : null
             }
@@ -361,16 +360,6 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
               onApproved={handleApproved}
               onChecklistReviewChanged={readinessQuery.reload}
               approveBlockedReason={approveBlockedReason}
-              decisionActions={
-                <OrderApprovalActions
-                  orderId={order.id}
-                  orderCode={order.code}
-                  t={t}
-                  onApproved={handleApproved}
-                  onDecisionDone={() => setNavigateHome(true)}
-                  showApprove={false}
-                />
-              }
             />
           </section>
           </ReadOnlyScope>

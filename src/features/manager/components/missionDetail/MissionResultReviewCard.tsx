@@ -97,7 +97,7 @@ export function MissionResultReviewCard({
     >
       <div className="odm-result-review-summary">
         <header className="odm-result-review-heading">
-          <h2 id={headingId}>Kết quả Mission</h2>
+          <h2 id={headingId}>Kết quả nhiệm vụ</h2>
           {matchingResult && (
             <div className="odm-or-result-line">
               <span
@@ -127,7 +127,11 @@ export function MissionResultReviewCard({
               </div>
               <div>
                 <dt>Thời lượng</dt>
-                <dd>{formatDuration(matchingResult.durationSeconds)}</dd>
+                <dd>
+                  {matchingResult.durationSeconds == null
+                    ? 'Chưa ghi nhận'
+                    : formatDuration(matchingResult.durationSeconds)}
+                </dd>
               </div>
               <div>
                 <dt>Media</dt>
@@ -142,7 +146,7 @@ export function MissionResultReviewCard({
           </>
         ) : (
           <p className="odm-result-review-empty">
-            Chưa có kết quả Mission được gửi.
+            Chưa có kết quả nhiệm vụ được gửi.
           </p>
         )}
       </div>

@@ -19,6 +19,7 @@ export const missionListTableMessages = defineMessages({
       viewResult: 'Xem kết quả',
       respond: 'Phản hồi',
       start: 'Bắt đầu',
+      startMission: 'Bắt đầu Mission',
       details: 'Chi tiết',
     },
     managerSubmissionLabel: {
@@ -69,6 +70,7 @@ export const missionListTableMessages = defineMessages({
       viewResult: 'View result',
       respond: 'Respond',
       start: 'Start',
+      startMission: 'Start Mission',
       details: 'Details',
     },
     managerSubmissionLabel: {

@@ -29,11 +29,15 @@ const invoiceStatusLabels: Record<string, string> = {
 
 export function CustomerFinancePanel({
   orderId,
+  legalStatus,
   onStateChange,
 }: {
   orderId: string
+  legalStatus?: 'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
   onStateChange?: (state: CustomerFinanceState) => void
 }) {
+  const legalReady =
+    legalStatus == null || legalStatus === 'NOT_REQUIRED' || legalStatus === 'APPROVED'
   const { t } = useI18n(customerFinancePanelMessages)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
@@ -144,7 +148,17 @@ export function CustomerFinancePanel({
               <b>Ghi chú của quản lý:</b> {quote.managerNote}
             </p>
           ) : null}
-          {quote.status === 'APPROVED' && !invoice ? (
+          {!legalReady ? (
+            <div className="customer-deposit-notice">
+              <b>{legalStatus === 'REJECTED' ? 'Đơn hàng không thể thực hiện' : 'Đang xác minh điều kiện khu vực bay'}</b>
+              <span>
+                {legalStatus === 'REJECTED'
+                  ? 'Đơn hàng không thể thực hiện do điều kiện khu vực bay.'
+                  : 'Chúng tôi đang xác minh các điều kiện cần thiết trước khi đơn hàng có thể tiếp tục.'}
+              </span>
+            </div>
+          ) : null}
+          {quote.status === 'APPROVED' && !invoice && legalReady ? (
             <button
               className="odm-btn odm-btn-p"
               type="button"
@@ -197,7 +211,7 @@ export function CustomerFinancePanel({
             </div>
           ) : null}
           <div className="finance-actions customer-payment-actions">
-            {invoice.paidAmount < invoice.depositAmount ? (
+            {invoice.paidAmount < invoice.depositAmount && legalReady ? (
               <button
                 className="odm-btn odm-btn-p"
                 type="button"

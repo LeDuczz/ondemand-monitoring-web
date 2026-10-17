@@ -94,7 +94,7 @@ describe('HandoverScreen', () => {
     expect(missionApi.handoverMyMission).toHaveBeenCalledWith('mission-1')
   })
 
-  it('keeps an operator-only staff member on the handover confirmation', async () => {
+  it('returns an operator-only staff member to the mission list after handover', async () => {
     window.location.hash = '#portal/staff/handover/mission-1'
     vi.mocked(useActiveMission).mockReturnValue({
       data: {
@@ -133,7 +133,8 @@ describe('HandoverScreen', () => {
       screen.getByRole('button', { name: 'Xác nhận bàn giao' }),
     )
 
-    expect(await screen.findByText(/Bạn đã xác nhận bàn giao/)).toBeTruthy()
-    expect(window.location.hash).toBe('#portal/staff/handover/mission-1')
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#portal/staff/missions'),
+    )
   })
 })

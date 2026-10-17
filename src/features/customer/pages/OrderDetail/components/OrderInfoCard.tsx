@@ -71,6 +71,7 @@ function Section({
   editor?: ReactNode
   children: ReactNode
 }) {
+  const { t } = useI18n(orderInfoCardMessages)
   return (
     <section className={wide ? 'od-info-section is-wide' : 'od-info-section'}>
       <div className="od-info-section-heading">
@@ -82,7 +83,7 @@ function Section({
         </h3>
         {onSupplement ? (
           <button type="button" className="od-info-edit" onClick={onSupplement}>
-            Chỉnh sửa
+            {t.edit}
           </button>
         ) : null}
       </div>
@@ -131,7 +132,6 @@ export function OrderInfoCard({
           <Field icon="calendar" label={t.schedule} value={[schedule, time].filter(Boolean).join(' · ') || DASH} />
           <Field icon="clock" label={t.resultDeadline} value={order.resultDeadline ? fmtDate(order.resultDeadline, locale) : DASH} />
           <Field icon="pin" label={t.address} value={order.address ?? DASH} />
-          <Field icon="info" label={t.priority} value={label(order.priority)} />
         </Section>
         <Section icon="drone" title={t.sectionScope} onSupplement={editable ? () => setEditing('scope') : undefined} editor={editing === 'scope' ? <OrderSectionEditor section="scope" order={order} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); onUpdated?.() }} /> : undefined}>
           <Field icon="target" label={t.flightPurpose} value={label(order.flightPurpose)} />

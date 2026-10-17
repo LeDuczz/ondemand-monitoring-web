@@ -12,6 +12,7 @@ import { setActiveMissionId } from '../api/liveMission'
 import { computeKpis } from '../lib/computeKpis'
 import { demoNow } from '../lib/demoNow'
 import { formatDeviceLabel } from '../lib/deviceLabel'
+import { hasAcknowledgedHandover } from '../lib/flightWorkflowStorage'
 import { filterMissions, missionsByTab } from '../lib/filterMissions'
 import { operatorHref } from '../routes'
 import type { OperatorMission, OperatorMissionTab } from '../types/mission'
@@ -84,6 +85,12 @@ function railActionFor(mission: OperatorMission, t: Messages) {
       }),
     }
   }
+  if (status === 'PENDING_REVIEW' || status === 'COMPLETED') {
+    return {
+      label: t.viewResult,
+      href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+    }
+  }
   if (
     permissions?.canMaintainDevice &&
     (status === 'RETURNING' || status === 'POSTFLIGHT_CHECKING')
@@ -104,6 +111,12 @@ function railActionFor(mission: OperatorMission, t: Messages) {
       href: operatorHref({ screen: 'upload', missionId: mission.id }),
     }
   }
+  if (permissions?.canStartMission && status === 'SCHEDULED') {
+    return {
+      label: t.startMission,
+      href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+    }
+  }
   if (
     permissions?.canControlFlight &&
     (status === 'IN_FLIGHT' ||
@@ -116,6 +129,12 @@ function railActionFor(mission: OperatorMission, t: Messages) {
     }
   }
   if (permissions?.canOperatePayload && status === 'READY_TO_FLY') {
+    if (hasAcknowledgedHandover(mission.id)) {
+      return {
+        label: t.details,
+        href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
+      }
+    }
     return {
       label: t.handover,
       href: operatorHref({ screen: 'handover', missionId: mission.id }),
@@ -132,14 +151,14 @@ function railActionFor(mission: OperatorMission, t: Messages) {
       href: operatorHref({ screen: 'preflight', missionId: mission.id }),
     }
   }
-  if (permissions?.canOperatePayload) {
+  if (permissions?.canOperatePayload && status === 'SCHEDULED') {
     return {
       label: t.connect,
       href: operatorHref({ screen: 'connect', missionId: mission.id }),
     }
   }
   return {
-    label: t.viewResult,
+    label: t.details,
     href: operatorHref({ screen: 'missionDetail', missionId: mission.id }),
   }
 }
@@ -480,6 +499,9 @@ function NextFlightCard({
   const status = latestMissionStatus(mission)
   const statusLabel =
     missionStopLabel(mission) ??
+    (status === 'READY_TO_FLY' && hasAcknowledgedHandover(mission.id)
+      ? t.handedOver
+      : undefined) ??
     (t.statusLabel as Record<string, string>)[status] ??
     (t.statusLabel as Record<string, string>)[mission.status] ??
     status

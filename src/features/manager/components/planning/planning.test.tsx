@@ -362,9 +362,11 @@ describe('Manager multi-Mission planning', () => {
     expect(screen.getByText('Phân công lặp').parentElement).toHaveTextContent(
       '1',
     )
-    expect(screen.getByRole('button', { name: 'Chốt kế hoạch' })).toBeEnabled()
+    expect(
+      screen.getByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+    ).toBeEnabled()
   })
-  it('does not repeat uncovered items in the summary and disables finalize', async () => {
+  it('does not repeat uncovered items in the summary and refuses to continue', async () => {
     vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({
       ...plan,
       coverage: {
@@ -375,10 +377,20 @@ describe('Manager multi-Mission planning', () => {
         uncoveredItemIds: ['E'],
       },
     })
-    render(<OrderMissionPlanningSection orderId="o" />)
-    expect(
-      await screen.findByRole('button', { name: 'Chốt kế hoạch' }),
-    ).toBeDisabled()
+    const onAssign = vi.fn()
+    const finalize = vi.spyOn(planningApi, 'finalizeExecutionPlan')
+    render(<OrderMissionPlanningSection orderId="o" onAssignResources={onAssign} />)
+    expect(await screen.findByRole('note')).toHaveTextContent(
+      'Còn 1 checklist chưa gán',
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+    )
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Còn checklist chưa được gán',
+    )
+    expect(onAssign).not.toHaveBeenCalled()
+    expect(finalize).not.toHaveBeenCalled()
     expect(
       screen.queryByRole('list', { name: 'Checklist chưa phủ' }),
     ).not.toBeInTheDocument()
@@ -486,15 +498,16 @@ describe('Manager multi-Mission planning', () => {
         amendmentReason: 'Weather',
       }
     })
+    const view = render(
+      <OrderMissionPlanningSection orderId="o" onAssignResources={vi.fn()} />,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: /^M1/ }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+    )
+    await waitFor(() => expect(planningApi.finalizeExecutionPlan).toHaveBeenCalled())
+    view.unmount()
     render(<OrderMissionPlanningSection orderId="o" />)
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Chốt kế hoạch' }),
-    )
-    fireEvent.click(
-      within(
-        await screen.findByRole('dialog', { name: 'Chốt kế hoạch?' }),
-      ).getByRole('button', { name: 'Chốt kế hoạch' }),
-    )
     fireEvent.click(
       await screen.findByRole('button', { name: 'Điều chỉnh kế hoạch' }),
     )

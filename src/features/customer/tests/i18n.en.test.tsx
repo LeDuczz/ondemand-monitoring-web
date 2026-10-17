@@ -296,23 +296,25 @@ describe('Customer portal i18n (vi -> en)', () => {
     })
     await settled()
     expect(viLines()).toEqual([])
+    // The right-to-monitor declaration is required before moving on.
+    fireEvent.click(screen.getByLabelText('Owner / Investor'))
+    fireEvent.click(screen.getByLabelText(/I confirm that I am entitled/))
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
     await screen.findByLabelText(/Preferred time window/)
     await settled()
     expect(viLines()).toEqual([])
 
     // Step 4: choose a time window to reach the deliverables/review step.
-    fireEvent.change(screen.getByLabelText(/Preferred time window/), {
-      target: { value: 'pt-1' },
-    })
+    const time = screen.getByLabelText(/Preferred time window/) as HTMLSelectElement
+    await waitFor(() => expect(time.options.length).toBeGreaterThan(1))
+    fireEvent.change(time, { target: { value: time.options[1].value } })
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
-    const deliverable = (await screen.findByLabelText(/Deliverable type/)) as HTMLSelectElement
-    await waitFor(() => expect(deliverable.value).not.toBe(''))
+    await screen.findByText('Result formats')
     await settled()
     expect(viLines()).toEqual([])
 
     // Step 5 and the confirmation dialog.
-    fireEvent.click(screen.getByLabelText(/I have read and accept/))
+    fireEvent.click(screen.getByLabelText(/I confirm the monitoring purpose/))
     fireEvent.click(await screen.findByRole('button', { name: 'Submit request' }))
     await screen.findByRole('dialog')
     await settled()

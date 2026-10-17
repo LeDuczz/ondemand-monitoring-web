@@ -77,12 +77,6 @@ export function ConfirmSubmitModal(p: Props) {
             <dd>{localizeTimeslot(p.time, lang)}</dd>
           </>
         )}
-        {form.priority !== 'NORMAL' && (
-          <>
-            <dt>{t.priority}</dt>
-            <dd>{t.priorities[form.priority] ?? form.priority}</dd>
-          </>
-        )}
         <dt>{t.location}</dt>
         <dd>{form.address || '—'}</dd>
         <dt>{t.area}</dt>

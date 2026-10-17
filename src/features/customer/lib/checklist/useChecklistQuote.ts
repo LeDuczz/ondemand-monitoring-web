@@ -62,7 +62,12 @@ export function useChecklistQuote(
       ? (JSON.parse(contextKey) as ChecklistQuoteContext)
       : undefined
     const controller = new AbortController()
-    setState({ preview: null, error: null, loading: true })
+    // Keep the previous price (same service) on screen while the new one is calculated.
+    setState((previous) => ({
+      preview: previous.preview?.serviceId === serviceId ? previous.preview : null,
+      error: null,
+      loading: true,
+    }))
     const timer = window.setTimeout(() => {
       const request = requestContext
         ? checklistPricingApi.customerQuote(

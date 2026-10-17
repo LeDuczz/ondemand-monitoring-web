@@ -8,6 +8,7 @@ import type {
   ServicePricingEstimate,
 } from '../../../api/customerApi'
 import type { FormErrors, FormState, Step, UpdateField } from '../../../lib/createOrder/types'
+import type { ChecklistRow } from '../../../lib/checklist/types'
 import { DeliverablesCard } from './DeliverablesCard'
 import { DeliveryOptionsCard } from './DeliveryOptionsCard'
 import { PricingEstimateCard } from './PricingEstimateCard'
@@ -29,6 +30,9 @@ type Props = {
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
+  additionalChecklists: ChecklistRow[]
+  packageSelectedCount: number
+  packageCount: number
   /** Jump back to an earlier step from the summary. */
   onEdit: (step: Step) => void
   /** Wizard actions, rendered at the bottom of the sticky summary panel. */
@@ -63,6 +67,12 @@ export function ReviewStep(p: Props) {
           deliverable={p.deliverable}
           consultation={p.consultation}
           aiAnalysisRequested={p.aiAnalysisRequested}
+          checklistCounts={{
+            total: p.packageSelectedCount + p.additionalChecklists.length,
+            packageSelected: p.packageSelectedCount,
+            packageTotal: p.packageCount,
+            additional: p.additionalChecklists.length,
+          }}
           onEdit={p.onEdit}
         />
         <PricingEstimateCard
@@ -70,6 +80,7 @@ export function ReviewStep(p: Props) {
           loading={p.pricingLoading}
           hasService={Boolean(p.service)}
           aiAnalysisRequested={p.aiAnalysisRequested}
+          additionalChecklists={p.additionalChecklists}
         />
         {p.footer && <div className="co-summary-cta">{p.footer}</div>}
       </aside>

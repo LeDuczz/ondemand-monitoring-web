@@ -619,15 +619,93 @@
   color: #fff;
 }
 
-/* Long lists: the rows scroll inside the card; header and toolbar stay put. */
+/* The list flows with the page; a second scroll box inside the page made the wheel jump between the two. */
 .checklist-card.is-compact .checklist-fields {
-  max-height: min(48vh, 440px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
   padding: 2px 6px 2px 2px;
+}
+.checklist-row-price {
+  flex: none;
+  min-width: 96px;
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.checklist-card .checklist-row.is-removed .checklist-row-price {
+  display: none;
+}
+.checklist-quote-details {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+.checklist-quote-details > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.checklist-quote-details > summary::-webkit-details-marker {
+  display: none;
+}
+.checklist-quote-details > summary > span::before {
+  content: '▸';
+  margin-right: 6px;
+  color: #94a3b8;
+}
+.checklist-quote-details[open] > summary > span::before {
+  content: '▾';
+}
+.checklist-quote-body {
+  display: grid;
+  gap: 10px;
+  padding: 4px 14px 14px;
+}
+.checklist-quote-line {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid #f1f5f9;
+}
+.checklist-quote-line header,
+.checklist-quote-sum {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+.checklist-quote-line ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: #64748b;
+}
+.checklist-quote-line li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.checklist-quote-sum.is-total {
+  padding-top: 8px;
+  border-top: 1px solid #cbd5e1;
+  font-size: 15px;
+  font-weight: 700;
 }
 .checklist-card.is-compact .checklist-row.is-compact,
 .checklist-card.is-compact .checklist-row:not(.is-compact) {
   flex: none;
+}
+
+/* Guidance under a catalog row: always on its own line below the row controls. */
+.checklist-card .checklist-row.is-compact {
+  flex-wrap: wrap;
+}
+.checklist-card .checklist-row .checklist-guidance {
+  flex: 0 0 100%;
+  padding-left: 40px;
 }

@@ -25,6 +25,12 @@ type Props = {
   deliverable?: ServiceDeliverableOption
   consultation: CustomerConsultation | null
   aiAnalysisRequested: boolean
+  checklistCounts?: {
+    total: number
+    packageSelected: number
+    packageTotal: number
+    additional: number
+  }
   onEdit?: (step: Step) => void
 }
 
@@ -93,6 +99,24 @@ export function RequestSummaryCard(p: Props) {
       ].filter(Boolean),
       step: 1,
     },
+    ...(p.checklistCounts
+      ? [
+          {
+            key: 'checklists',
+            icon: 'check' as const,
+            label: t.monitoringContent,
+            lines: [
+              t.totalContent(p.checklistCounts.total),
+              t.packageContent(
+                p.checklistCounts.packageSelected,
+                p.checklistCounts.packageTotal,
+              ),
+              t.additionalContent(p.checklistCounts.additional),
+            ],
+            step: 2 as Step,
+          },
+        ]
+      : []),
     {
       key: 'location',
       icon: 'map-pin',

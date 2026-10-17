@@ -5,6 +5,8 @@ import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
 import type { ChecklistSnapshot } from '../../lib/checklist/types'
 import './Checklist.css'
+import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
+import { formatVnd } from '../../../../shared/lib/formatVnd'
 
 export function ChecklistSnapshotCard({
   items = [],
@@ -34,6 +36,10 @@ export function ChecklistSnapshotCard({
                   <span className="checklist-snapshot-content">
                     {item.content}
                   </span>
+                  <ChecklistGuidance
+                    guidance={item}
+                    sections={['description', 'outputs']}
+                  />
                   {item.evidencePolicyVersion === 3 && (
                     <span className="checklist-snapshot-evidence">
                       {t.requestedImages}: {item.requestedImageCount ?? 0} ·{' '}
@@ -58,6 +64,21 @@ export function ChecklistSnapshotCard({
                               : t.imageOrVideo}
                       </span>
                     )}
+                  {item.sourceType !== 'SERVICE_TEMPLATE' && (
+                    <span className="checklist-snapshot-evidence">
+                      {item.priceAvailable ? (
+                        item.pricingStatus === 'DUPLICATE' ? (
+                          'Không tính phí — yêu cầu đã được bao gồm trong dịch vụ hiện tại.'
+                        ) : item.pricingStatus === 'REJECTED' ? (
+                          'Yêu cầu không được chấp thuận · 0 ₫'
+                        ) : (
+                          <>Dịch vụ bổ sung: {formatVnd(item.approvedPrice ?? 0)}</>
+                        )
+                      ) : (
+                        'Đang chờ Manager xem xét giá.'
+                      )}
+                    </span>
+                  )}
                 </li>
               ))}
           </ol>

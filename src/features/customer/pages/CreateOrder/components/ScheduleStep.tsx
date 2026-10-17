@@ -9,6 +9,7 @@ import type {
 } from '../../../api/customerApi'
 import { calcArea } from '../../../lib/createOrder/payload'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import type { ChecklistRow } from '../../../lib/checklist/types'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { localizeTimeslot } from '../../../lib/i18n/timeslots'
 import { PricingEstimateCard } from './PricingEstimateCard'
@@ -26,6 +27,7 @@ type Props = {
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
   aiAnalysisRequested: boolean
+  additionalChecklists: ChecklistRow[]
   /** Wizard actions, rendered in the sticky bottom bar. */
   footer?: ReactNode
 }
@@ -144,6 +146,7 @@ export function ScheduleStep(p: Props) {
             loading={p.pricingLoading}
             hasService={Boolean(p.service)}
             aiAnalysisRequested={p.aiAnalysisRequested}
+            additionalChecklists={p.additionalChecklists}
           />
         </aside>
       </div>

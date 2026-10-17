@@ -3,7 +3,15 @@ import { apiRequest } from '../../../shared/api/httpClient'
 export type ChecklistDefinition = {
   id: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   isActive: boolean
+  /** How many services include this checklist; editing its content changes all of them. */
+  usedByServiceCount?: number
+  /** How many order lines were taken from it (existing orders keep their own frozen copy). */
+  usedByOrderCount?: number
   createdAt: string
   updatedAt: string | null
   version: number
@@ -20,6 +28,13 @@ export type ChecklistDefinition = {
   includedAreaHa?: number
   includedLengthKm?: number
   includedAltitudeM?: number
+}
+/** Description and work guidance sent with create/edit; omitted keeps the stored value, empty clears it. */
+export type ChecklistGuidanceInput = {
+  description?: string
+  executionSteps?: string[]
+  inputRequirements?: string[]
+  expectedOutputs?: string[]
 }
 /** Pricing configuration sent with create/edit; omitted fields keep the stored value. */
 export type ChecklistPricingInput = {
@@ -50,11 +65,17 @@ export type ServiceChecklist = {
   serviceActive: boolean
   checklistId: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   checklistActive: boolean
   displayOrder: number
   version: number
   checklistVersion: number
   required?: boolean
+  /** How many services include this checklist (this one included). */
+  usedByServiceCount?: number
   /** Effective values: the association override, else inherited from the checklist. */
   basePrice?: number
   includedImageCount?: number
@@ -79,22 +100,83 @@ export type ServiceChecklistPricingInput = {
   required: boolean
   expectedVersion?: number
 }
+export type ChecklistAuditAction =
+  | 'CHECKLIST_CREATED'
+  | 'CHECKLIST_UPDATED'
+  | 'CHECKLIST_ACTIVATED'
+  | 'CHECKLIST_DEACTIVATED'
+  | 'SERVICE_CHECKLIST_ASSIGNED'
+  | 'SERVICE_CHECKLIST_UPDATED'
+  | 'SERVICE_CHECKLIST_REMOVED'
+  | 'SERVICE_CHECKLIST_REORDERED'
+  | 'SERVICE_CHECKLIST_FORKED'
+export type ChecklistAuditChange = {
+  field: string
+  from: string | null
+  to: string | null
+}
+export type ChecklistAudit = {
+  id: string
+  action: ChecklistAuditAction
+  checklistId: string | null
+  checklistContent: string | null
+  serviceId: string | null
+  serviceName: string | null
+  actorId: string | null
+  actorName: string | null
+  changes: ChecklistAuditChange[]
+  createdAt: string
+}
+export type ChecklistAuditPage = {
+  items: ChecklistAudit[]
+  page: number
+  totalItems: number
+  totalPages: number
+  first: boolean
+  last: boolean
+}
 const enc = encodeURIComponent
 const catalog = '/api/admin/checklists'
 const template = (id: string) => `/api/admin/services/${enc(id)}/checklists`
 export const checklistsApi = {
+  get(id: string, signal?: AbortSignal) {
+    return apiRequest<ChecklistDefinition>(`${catalog}/${enc(id)}`, { signal })
+  },
+  /** Gives the service its own copy of a shared checklist; the other services keep the original. */
+  fork(serviceId: string, checklistId: string) {
+    return apiRequest<ServiceChecklist>(
+      `${template(serviceId)}/${enc(checklistId)}/fork`,
+      { method: 'POST' },
+    )
+  },
+  /** Change history of the checklist library and of service templates, newest first. */
+  audits(
+    filter: { checklistId?: string; serviceId?: string; page?: number },
+    signal?: AbortSignal,
+  ) {
+    return apiRequest<ChecklistAuditPage>('/api/admin/checklist-audits', {
+      query: {
+        checklistId: filter.checklistId,
+        serviceId: filter.serviceId,
+        page: filter.page ?? 0,
+        size: 20,
+      },
+      signal,
+    })
+  },
   list(
     search: string,
     active: boolean | undefined,
     page: number,
     signal?: AbortSignal,
+    size = 20,
   ) {
     return apiRequest<ChecklistPage>(catalog, {
       query: {
         search: search.trim() || undefined,
         active,
         page,
-        size: 20,
+        size,
         sort: 'createdAt,desc',
       },
       signal,
@@ -103,7 +185,7 @@ export const checklistsApi = {
   create(
     content: string,
     difficulty?: ChecklistDefinition['difficulty'],
-    pricing?: ChecklistPricingInput,
+    pricing?: ChecklistPricingInput & ChecklistGuidanceInput,
   ) {
     return apiRequest<ChecklistDefinition>(catalog, {
       method: 'POST',
@@ -114,7 +196,7 @@ export const checklistsApi = {
     id: string,
     content: string,
     difficulty?: ChecklistDefinition['difficulty'],
-    pricing?: ChecklistPricingInput,
+    pricing?: ChecklistPricingInput & ChecklistGuidanceInput,
   ) {
     return apiRequest<ChecklistDefinition>(`${catalog}/${enc(id)}`, {
       method: 'PUT',

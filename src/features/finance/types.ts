@@ -99,6 +99,21 @@ export type Quote = {
   >
 }
 
+/** Customer-safe quote: no system amount, manager difference/reason, audit or risk flags. */
+export type CustomerQuote = {
+  id: string
+  orderId: string
+  version: number
+  status: Quote['status']
+  estimatedBaseAmount: number
+  approvedAdditionalServiceAmount: number
+  finalOrderAmount: number
+  pricingFinalized: boolean
+  approvedAt: string | null
+  acceptedAt: string | null
+  items: QuoteItem[]
+}
+
 export type PricingBreakdownItem = {
   category: PricingCategory
   description: string

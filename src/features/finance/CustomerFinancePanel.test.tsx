@@ -4,20 +4,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../shared/api/httpClient'
 import { financeApi } from './api'
 import { CustomerFinancePanel } from './CustomerFinancePanel'
-import type { Invoice, Payment, Quote } from './types'
+import type { CustomerQuote, Invoice, Payment } from './types'
 
-const quote: Quote = {
+const quote: CustomerQuote = {
   id: 'quote-1',
   orderId: 'order-1',
   version: 1,
   status: 'APPROVED',
-  packagePrice: 5_000_000,
-  additionalAmount: 0,
-  discountAmount: 0,
-  adjustmentAmount: 0,
-  totalAmount: 5_000_000,
-  managerNote: null,
-  approvedByName: 'Manager',
+  estimatedBaseAmount: 5_000_000,
+  approvedAdditionalServiceAmount: 0,
+  finalOrderAmount: 5_000_000,
+  pricingFinalized: true,
   approvedAt: '2026-10-06T08:00:00Z',
   acceptedAt: null,
   items: [],

@@ -6,6 +6,7 @@ import type {
   PricingChecklistItem,
   PricingReview,
   Quote,
+  CustomerQuote,
 } from './types'
 
 export const financeApi = {
@@ -50,7 +51,7 @@ export const financeApi = {
       { method: 'POST' },
     ),
   getQuote: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<Quote>(`/api/orders/${encodeURIComponent(orderId)}/quote`, {
+    apiRequest<CustomerQuote>(`/api/orders/${encodeURIComponent(orderId)}/quote`, {
       signal,
     }),
   acceptQuote: (orderId: string, quoteId: string) =>

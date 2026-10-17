@@ -9,6 +9,10 @@ export type MissionChecklistExecution = {
   id: string
   orderChecklistItemId: string
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   displayOrder: number
   sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
   executionStatus: ChecklistExecutionStatus

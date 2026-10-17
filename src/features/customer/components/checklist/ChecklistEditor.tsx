@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Icon } from '../../../../shared/components/Icon'
+import { formatVnd } from '../../../../shared/lib/formatVnd'
+import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { checklistMessages } from '../../lib/checklist/messages'
@@ -82,13 +84,20 @@ export function ChecklistEditor({
   const grouped = compact && view === 'group'
   const selectedTotal = visibleRows.filter((row) => row.selected).length
   const awaitingManagerQuote = (row: ChecklistRow) =>
-    !row.sourceChecklistId &&
+    (row.packageItem === false || !row.sourceChecklistId) &&
     row.selected &&
     checklist.quote.preview?.checklists.some(
       (priced) =>
-        priced.custom &&
         priced.quotePending &&
         normalizeContent(priced.content) === normalizeContent(row.content),
+    )
+  /** The backend price of a selected row, matched the same way the quote is ordered. */
+  const priceOf = (row: ChecklistRow) =>
+    checklist.quote.preview?.checklists.find((priced) =>
+      row.sourceChecklistId
+        ? priced.checklistId === row.sourceChecklistId
+        : priced.custom &&
+          normalizeContent(priced.content) === normalizeContent(row.content),
     )
   const ordered = visibleRows
     .map((row, index) => ({ row, index }))
@@ -245,9 +254,14 @@ export function ChecklistEditor({
               <span className="checklist-custom-tag">{t.custom}</span>
             )}
             {awaitingManagerQuote(row) && (
-              <span className="checklist-custom-tag is-pending-quote">
-                {t.awaitingManagerQuote}
-              </span>
+              <>
+                <span className="checklist-custom-tag is-pending-quote">
+                  Dịch vụ theo yêu cầu
+                </span>
+                <small className="checklist-hint">
+                  Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager duyệt yêu cầu.
+                </small>
+              </>
             )}
           </span>
           <span className="checklist-evidence-summary">
@@ -260,6 +274,14 @@ export function ChecklistEditor({
                   row.requiredEvidenceType === 'VIDEO' ? t.video : t.image
                 }`}
           </span>
+          {(() => {
+            const priced = row.selected ? priceOf(row) : undefined
+            return priced && !priced.quotePending ? (
+              <span className="checklist-row-price">
+                {formatVnd(priced.subtotal)}
+              </span>
+            ) : null
+          })()}
           <span className="checklist-length checklist-length-with-evidence">
             {row.content.length} / 500
           </span>
@@ -284,6 +306,11 @@ export function ChecklistEditor({
               <Icon name="trash" width={16} height={16} aria-hidden="true" />
             </button>
           )}
+          {row.sourceChecklistId ? (
+            <div className="checklist-guidance">
+              <ChecklistGuidance guidance={row} />
+            </div>
+          ) : null}
         </div>
       )
     }

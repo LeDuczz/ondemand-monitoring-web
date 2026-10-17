@@ -9,11 +9,11 @@ import {
 } from '../../shared/lib/pricingPresentation'
 import { financeApi } from './api'
 import { customerFinancePanelMessages } from './CustomerFinancePanel.messages'
-import type { Invoice, Quote } from './types'
+import type { CustomerQuote, Invoice } from './types'
 import './finance.css'
 
 export type CustomerFinanceState = {
-  quote: Quote | null
+  quote: CustomerQuote | null
   invoice: Invoice | null
   loading: boolean
 }
@@ -39,7 +39,7 @@ export function CustomerFinancePanel({
   const legalReady =
     legalStatus == null || legalStatus === 'NOT_REQUIRED' || legalStatus === 'APPROVED'
   const { t } = useI18n(customerFinancePanelMessages)
-  const [quote, setQuote] = useState<Quote | null>(null)
+  const [quote, setQuote] = useState<CustomerQuote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -128,26 +128,14 @@ export function CustomerFinancePanel({
         <div className="customer-quote-body">
           <QuoteLines items={quote.items} />
           <dl className="finance-summary customer-summary">
-            {quote.packagePrice !== 0 && (
-              <Summary label="Giá gói" value={quote.packagePrice} />
-            )}
             <Summary
-              label={quote.packagePrice !== 0 ? 'Chi phí bổ sung' : 'Chi phí dịch vụ'}
-              value={quote.additionalAmount}
+              label="Chi phí dự kiến"
+              value={quote.estimatedBaseAmount}
             />
-            {quote.discountAmount !== 0 && (
-              <Summary label="Giảm giá" value={-quote.discountAmount} />
-            )}
-            {quote.adjustmentAmount !== 0 && (
-              <Summary label="Điều chỉnh" value={quote.adjustmentAmount} />
-            )}
-            <Summary label="Tổng cộng" value={quote.totalAmount} total />
+            <Summary label="Dịch vụ bổ sung" value={quote.approvedAdditionalServiceAmount} />
+            <Summary label="Tổng đơn hàng" value={quote.finalOrderAmount} total />
           </dl>
-          {quote.managerNote ? (
-            <p className="customer-manager-note">
-              <b>Ghi chú của quản lý:</b> {quote.managerNote}
-            </p>
-          ) : null}
+          <p className="co-estimate-notice">Báo giá dự kiến chưa bao gồm dịch vụ theo yêu cầu.</p>
           {!legalReady ? (
             <div className="customer-deposit-notice">
               <b>{legalStatus === 'REJECTED' ? 'Đơn hàng không thể thực hiện' : 'Đang xác minh điều kiện khu vực bay'}</b>
@@ -307,10 +295,10 @@ const KIND_LABELS: Record<string, string> = {
 }
 
 /** Quote lines grouped per checklist (heading + subtotal), then the order-level lines. */
-function QuoteLines({ items }: { items: Quote['items'] }) {
+function QuoteLines({ items }: { items: CustomerQuote['items'] }) {
   const lines = items.filter((item) => item.type !== 'ADJUSTMENT')
-  const groups = new Map<string, Quote['items']>()
-  const orderLevel: Quote['items'] = []
+  const groups = new Map<string, CustomerQuote['items']>()
+  const orderLevel: CustomerQuote['items'] = []
   for (const line of lines) {
     if (!line.orderChecklistItemId) {
       orderLevel.push(line)
@@ -321,7 +309,7 @@ function QuoteLines({ items }: { items: Quote['items'] }) {
       line,
     ])
   }
-  const sum = (rows: Quote['items']) =>
+  const sum = (rows: CustomerQuote['items']) =>
     rows.reduce((total, row) => total + row.amount, 0)
   return (
     <div className="customer-quote-groups">
@@ -364,7 +352,7 @@ function QuoteLines({ items }: { items: Quote['items'] }) {
   )
 }
 
-function lineText(row: Quote['items'][number], checklistName?: string) {
+function lineText(row: CustomerQuote['items'][number], checklistName?: string) {
   if (row.type === 'MANAGER_ADJUSTMENT') {
     const reason = row.description.split(' · ').slice(1).join(' · ')
     return reason ? `${KIND_LABELS.MANAGER_ADJUSTMENT}: ${reason}` : KIND_LABELS.MANAGER_ADJUSTMENT

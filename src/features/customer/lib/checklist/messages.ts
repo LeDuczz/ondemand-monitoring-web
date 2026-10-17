@@ -72,6 +72,10 @@ export const checklistMessages = defineMessages({
     quoteHint:
       'Giá do hệ thống tính từ cấu hình hiện hành; Manager vẫn xem xét và gửi báo giá cuối cùng.',
     quoteLoading: 'Đang tính giá…',
+    quoteTotal: 'Tổng dự kiến',
+    quoteAddOns: 'Dịch vụ bổ sung',
+    quoteAwaiting: 'Chờ Manager báo giá',
+    quoteNote: 'Chưa gồm các yếu tố theo từng đơn như quãng đường và diện tích.',
     quoteFailed: 'Không thể tính chi phí lúc này.',
     limit: 'Chỉ được chọn tối đa 100 nội dung.',
     loadFailed:
@@ -166,6 +170,10 @@ export const checklistMessages = defineMessages({
     quoteHint:
       'The price is calculated by the system from the current configuration; a manager still reviews it and sends the final quote.',
     quoteLoading: 'Calculating price…',
+    quoteTotal: 'Estimated total',
+    quoteAddOns: 'Add-ons',
+    quoteAwaiting: 'Awaiting manager quote',
+    quoteNote: 'Excludes order-specific factors such as distance and area.',
     quoteFailed: 'Unable to calculate the cost right now.',
     invalidEvidenceType: 'Select a valid evidence type.',
     limit: 'Select at most 100 requirements.',

@@ -441,6 +441,16 @@ textarea.co-input {
   overflow-wrap: anywhere;
 }
 
+.co-money-pending {
+  align-items: baseline;
+}
+
+.co-money-pending strong {
+  max-width: 58%;
+  color: var(--ui-warning-text);
+  text-align: right;
+}
+
 .co-money-total {
   padding-top: var(--ui-space-2);
   border-top: 1px solid var(--ui-border);
@@ -457,6 +467,45 @@ textarea.co-input {
   color: var(--ui-warning-text);
   font-size: 13px;
   line-height: 1.55;
+}
+
+.co-additional-services {
+  margin-top: var(--ui-space-2);
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--ui-border);
+}
+
+.co-additional-services h3 {
+  margin: 0 0 var(--ui-space-2);
+  color: var(--ui-text);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.co-additional-services ul {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.co-additional-services li {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-2);
+}
+
+.co-additional-services li > span {
+  color: var(--ui-text-muted);
+}
+
+.co-additional-services .co-additional-status {
+  color: var(--ui-warning-text);
+  font-weight: 600;
 }
 
 /* ---------- Map ---------- */

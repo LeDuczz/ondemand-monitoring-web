@@ -15,7 +15,7 @@ import { checklistsApi, type ServiceChecklist } from '../../api/checklistsApi'
 import { formatVnd } from '../../../../shared/lib/formatVnd'
 import { adminHref } from '../../routes'
 import { ServicePricePreviewCard } from './ServicePricePreviewCard'
-import { ServiceChecklistPricingModal } from './ServiceChecklistPricingModal'
+import { ChecklistConfigModal } from './ChecklistConfigModal'
 import { checklistMessages } from './checklists.messages'
 import { checklistError } from './checklistError'
 import {
@@ -238,6 +238,11 @@ function ServiceTemplateEditor({
                         {t.requiredBadge}
                       </StatusBadge>
                     )}
+                    {(row.usedByServiceCount ?? 0) > 1 && (
+                      <StatusBadge tone="info">
+                        {t.sharedBadge(row.usedByServiceCount ?? 0)}
+                      </StatusBadge>
+                    )}
                     <PricingChips row={row} />
                   </div>
                   <div className="checklist-actions">
@@ -247,7 +252,7 @@ function ServiceTemplateEditor({
                       disabled={busy}
                       onClick={() => setPricing(row)}
                     >
-                      {t.pricingEdit}
+                      {t.configure}
                     </button>
                     <ChecklistIconButton
                       icon="arrow-up"
@@ -289,11 +294,14 @@ function ServiceTemplateEditor({
       />
       <p className="checklist-banner">{t.future}</p>
       {pricing && (
-        <ServiceChecklistPricingModal
+        <ChecklistConfigModal
           key={pricing.id}
-          serviceId={serviceId}
-          rows={rows}
-          row={pricing}
+          service={{
+            id: serviceId,
+            name: service?.name ?? serviceId,
+            rows,
+            row: pricing,
+          }}
           close={() => setPricing(null)}
           saved={() => {
             setPricing(null)

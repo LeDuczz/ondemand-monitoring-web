@@ -6,9 +6,16 @@ export const checklistMessages = defineMessages({
     title: 'Thư viện checklist',
     configTitle: 'Cấu hình checklist',
     configure: 'Cấu hình',
-    tabContent: 'Nội dung dùng chung',
-    tabService: 'Áp dụng cho dịch vụ này',
     tabHistory: 'Lịch sử thay đổi',
+    historyBack: 'Quay lại cấu hình',
+    sectionContent: 'Nội dung',
+    sectionPricing: 'Giá và định mức',
+    sectionAdvanced: 'Nâng cao (chiều đo, độ khó, thời lượng video)',
+    columnBase: 'Giá trị gốc',
+    columnService: 'Riêng cho dịch vụ này',
+    inheritPlaceholder: 'Dùng giá trị gốc',
+    pricingScopeHint:
+      'Cột "Giá trị gốc" áp dụng cho mọi dịch vụ dùng checklist này. Cột "Riêng cho dịch vụ này" chỉ áp dụng cho dịch vụ đang mở; để trống để dùng giá trị gốc.',
     sharedWarning: (n: number) =>
       `Checklist này đang dùng ở ${n} dịch vụ. Sửa nội dung, mô tả hoặc giá gốc sẽ đổi cho tất cả các dịch vụ đó. Đơn đã tạo không bị ảnh hưởng.`,
     sharedAck: (n: number) => `Tôi hiểu thay đổi này áp dụng cho ${n} dịch vụ`,
@@ -166,7 +173,7 @@ export const checklistMessages = defineMessages({
     requiredLabel: 'Bắt buộc: khách hàng không được bỏ checklist này khỏi đơn',
     previewTitle: 'Giá mặc định của dịch vụ',
     previewHint:
-      'Giá mặc định = tổng giá các checklist mặc định theo chính sách giá đang áp dụng (giá gói cũ chỉ dùng khi chưa checklist nào có giá).',
+      'Tổng giá các checklist của dịch vụ theo Chính sách giá đang áp dụng. Bấm vào một checklist để xem cách tính.',
     previewError: 'Không thể tính giá mặc định.',
     previewLoading: 'Đang tính giá...',
     whatIf: 'Xem thử giá với cấu hình chưa lưu',
@@ -176,9 +183,16 @@ export const checklistMessages = defineMessages({
     title: 'Checklist library',
     configTitle: 'Checklist configuration',
     configure: 'Configure',
-    tabContent: 'Shared content',
-    tabService: 'Applies to this service',
     tabHistory: 'Change history',
+    historyBack: 'Back to configuration',
+    sectionContent: 'Content',
+    sectionPricing: 'Price and allowance',
+    sectionAdvanced: 'Advanced (dimensions, difficulty, video length)',
+    columnBase: 'Base value',
+    columnService: 'This service only',
+    inheritPlaceholder: 'Use base value',
+    pricingScopeHint:
+      'The "Base value" column applies to every service that uses this checklist. "This service only" applies to the open service; leave it blank to use the base value.',
     sharedWarning: (n: number) =>
       `This checklist is used by ${n} services. Changing its content, description or base price changes all of them. Existing orders are not affected.`,
     sharedAck: (n: number) =>
@@ -336,7 +350,7 @@ export const checklistMessages = defineMessages({
       'Required: customers cannot remove this checklist from an order',
     previewTitle: 'Default service price',
     previewHint:
-      'Default price = the sum of the default checklists under the active pricing policy (the legacy package price is only used while no checklist is priced).',
+      'The sum of the service checklists under the active pricing policy. Open a checklist to see how it is calculated.',
     previewError: 'Unable to calculate the default price.',
     previewLoading: 'Calculating price...',
     whatIf: 'Preview price with unsaved configuration',

@@ -137,7 +137,9 @@ describe('Admin checklist catalog', () => {
       target: { value: 'Kiểm tra mái' },
     })
     fireEvent.change(screen.getByLabelText('Các bước thực hiện'), {
-      target: { value: Array.from({ length: 31 }, (_, i) => `Bước ${i}`).join('\n') },
+      target: {
+        value: Array.from({ length: 31 }, (_, i) => `Bước ${i}`).join('\n'),
+      },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     expect(await screen.findByText(/tối đa 30 dòng/)).toBeInTheDocument()
@@ -168,7 +170,6 @@ describe('Admin checklist catalog', () => {
           includedLengthKm: 0,
           includedVideoCount: 0,
           lengthPricingEnabled: false,
-          pricingProfile: '',
         },
       ),
     )
@@ -197,7 +198,9 @@ describe('Admin checklist catalog', () => {
   it('rejects whitespace content locally', async () => {
     render(<ChecklistCatalogPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Thêm checklist' }))
-    fireEvent.change(screen.getByRole('textbox', { name: /Nội dung/ }), { target: { value: '   ' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Nội dung/ }), {
+      target: { value: '   ' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('1 đến 500')
     expect(checklistsApi.create).not.toHaveBeenCalled()
@@ -230,7 +233,6 @@ describe('Admin checklist catalog', () => {
           includedLengthKm: 0,
           includedVideoCount: 0,
           lengthPricingEnabled: false,
-          pricingProfile: '',
         },
       ),
     )

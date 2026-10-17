@@ -6,29 +6,21 @@ import { Modal } from '../../../../shared/components/ui'
 import {
   checklistsApi,
   type ChecklistDefinition,
-  type ServiceChecklist,
 } from '../../api/checklistsApi'
 import { checklistMessages } from './checklists.messages'
 import { checklistError } from './checklistError'
 import { ChecklistLoadError } from './ChecklistUi'
-import { ChecklistContentForm } from './ChecklistContentForm'
+import {
+  ChecklistConfigForm,
+  type ConfigServiceContext,
+} from './ChecklistConfigForm'
 import { ChecklistHistoryPanel } from './ChecklistHistoryPanel'
-import { ServiceApplyForm } from './ServiceChecklistPricingModal'
 
-type Tab = 'content' | 'service' | 'history'
-
-/** The service whose template the checklist is being configured in. */
-export type ConfigServiceContext = {
-  id: string
-  name: string
-  rows: ServiceChecklist[]
-  row: ServiceChecklist
-}
+export type { ConfigServiceContext }
 
 /**
- * The one place a checklist is edited. Opened from the library (shared content and history) or from a
- * service template (adds the "applies to this service" tab and the private-copy offer), so the same screen
- * answers both "what is this checklist" and "how does this service use it".
+ * The one place a checklist is configured: content, price and, when opened from a service template, how that
+ * service uses it. The change history is one click away but is not a second place to edit.
  */
 export function ChecklistConfigModal({
   checklist,
@@ -45,15 +37,10 @@ export function ChecklistConfigModal({
   const { t } = useI18n(checklistMessages)
   const creating = !checklist && !service
   const checklistId = checklist?.id ?? service?.row.checklistId
-  const [tab, setTab] = useState<Tab>(service ? 'service' : 'content')
-  const tabs: Array<{ id: Tab; label: string }> = [
-    { id: 'content', label: t.tabContent },
-    ...(service ? [{ id: 'service' as const, label: t.tabService }] : []),
-    ...(checklistId ? [{ id: 'history' as const, label: t.tabHistory }] : []),
-  ]
+  const [showHistory, setShowHistory] = useState(false)
   return (
     <Modal
-      width={640}
+      width={720}
       icon="clipboard"
       title={creating ? t.add : t.configTitle}
       subtitle={
@@ -63,71 +50,39 @@ export function ChecklistConfigModal({
       }
       onClose={close}
     >
-      {!creating && (
-        <div
-          className="checklist-tabs"
-          role="tablist"
-          aria-label={t.configTitle}
-        >
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              id={`checklist-tab-${item.id}`}
-              aria-selected={tab === item.id}
-              aria-controls="checklist-tabpanel"
-              className={
-                'checklist-tab' + (tab === item.id ? ' is-active' : '')
-              }
-              onClick={() => setTab(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+      {checklistId && (
+        <div className="checklist-modal-tools">
+          <button
+            type="button"
+            className="odm-btn odm-btn-gh odm-btn-sm"
+            aria-pressed={showHistory}
+            onClick={() => setShowHistory((value) => !value)}
+          >
+            {showHistory ? t.historyBack : t.tabHistory}
+          </button>
         </div>
       )}
-      <div
-        id="checklist-tabpanel"
-        role={creating ? undefined : 'tabpanel'}
-        aria-labelledby={creating ? undefined : `checklist-tab-${tab}`}
-      >
-        {tab === 'content' &&
-          (checklist || creating ? (
-            <ChecklistContentForm
-              key={checklist?.id ?? 'new'}
-              row={checklist}
-              close={close}
-              saved={saved}
-            />
-          ) : (
-            service && (
-              <ServiceContentTab
-                service={service}
-                close={close}
-                saved={saved}
-              />
-            )
-          ))}
-        {tab === 'service' && service && (
-          <ServiceApplyForm
-            serviceId={service.id}
-            rows={service.rows}
-            row={service.row}
-            close={close}
-            saved={saved}
-          />
-        )}
-        {tab === 'history' && checklistId && (
-          <ChecklistHistoryPanel checklistId={checklistId} />
-        )}
-      </div>
+      {showHistory && checklistId ? (
+        <ChecklistHistoryPanel checklistId={checklistId} />
+      ) : checklist || creating ? (
+        <ChecklistConfigForm
+          key={checklist?.id ?? 'new'}
+          row={checklist}
+          service={service}
+          close={close}
+          saved={saved}
+        />
+      ) : (
+        service && (
+          <ServiceFormLoader service={service} close={close} saved={saved} />
+        )
+      )}
     </Modal>
   )
 }
 
-/** Shared content opened from a service: loads the library checklist and offers a private copy when it is shared. */
-function ServiceContentTab({
+/** Opened from a service: loads the library checklist, then shows the form with this service's column. */
+function ServiceFormLoader({
   service,
   close,
   saved,
@@ -152,9 +107,10 @@ function ServiceContentTab({
     )
   const definition = query.data
   return (
-    <ChecklistContentForm
+    <ChecklistConfigForm
       key={definition.id}
       row={definition}
+      service={service}
       close={close}
       saved={saved}
       extra={
@@ -198,8 +154,7 @@ function ForkOffer({
   }
   return (
     <div className="checklist-fork">
-      <strong>{t.forkTitle}</strong>
-      <p className="checklist-field-meta">{t.forkHint}</p>
+      <span>{t.forkTitle}</span>
       {confirming ? (
         <div className="checklist-form-actions">
           <span>{t.forkConfirm}</span>
@@ -223,7 +178,8 @@ function ForkOffer({
       ) : (
         <button
           type="button"
-          className="odm-btn"
+          className="odm-btn odm-btn-sm"
+          title={t.forkHint}
           onClick={() => setConfirming(true)}
         >
           {t.fork}

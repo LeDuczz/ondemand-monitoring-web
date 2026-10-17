@@ -2,7 +2,7 @@ import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
 import { LoadingState } from '../../../../shared/components/odm/StateView'
-import { PriceBreakdownView } from '../../../../shared/components/odm/PriceBreakdownView'
+import { ServicePriceSummary } from './ServicePriceSummary'
 import { checklistPricingApi } from '../../../../shared/api/checklistPricingApi'
 import { checklistMessages } from './checklists.messages'
 import { ChecklistLoadError } from './ChecklistUi'
@@ -41,7 +41,7 @@ export function ServicePricePreviewCard({
           />
         )}
         {!query.loading && query.error === undefined && query.data && (
-          <PriceBreakdownView preview={query.data} />
+          <ServicePriceSummary preview={query.data} />
         )}
       </div>
     </Card>

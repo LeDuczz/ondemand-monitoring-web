@@ -78,6 +78,7 @@ beforeEach(() => {
   vi.spyOn(checklistsApi, 'list').mockResolvedValue(page())
   vi.spyOn(checklistsApi, 'get').mockResolvedValue(shared)
   vi.spyOn(checklistsApi, 'update').mockResolvedValue(shared)
+  vi.spyOn(checklistsApi, 'updatePricing').mockResolvedValue(link())
   vi.spyOn(checklistsApi, 'template').mockResolvedValue([link()])
   vi.spyOn(checklistsApi, 'fork').mockResolvedValue(link({ checklistId: 'a2' }))
   vi.spyOn(checklistsApi, 'audits').mockResolvedValue({
@@ -117,6 +118,11 @@ describe('Library page', () => {
     expect(within(dialog).getByRole('note')).toHaveTextContent(
       'đang dùng ở 3 dịch vụ',
     )
+    // Nothing changed yet, so there is nothing to acknowledge.
+    expect(within(dialog).getByRole('button', { name: 'Lưu' })).toBeEnabled()
+    fireEvent.change(within(dialog).getByLabelText(/Mô tả chi tiết/), {
+      target: { value: 'Mô tả mới' },
+    })
     const save = within(dialog).getByRole('button', { name: 'Lưu' })
     expect(save).toBeDisabled()
     fireEvent.click(
@@ -139,6 +145,9 @@ describe('Library page', () => {
     )
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).queryByRole('note')).toBeNull()
+    fireEvent.change(within(dialog).getByLabelText(/Mô tả chi tiết/), {
+      target: { value: 'Mô tả mới' },
+    })
     expect(within(dialog).getByRole('button', { name: 'Lưu' })).toBeEnabled()
   })
 
@@ -148,7 +157,7 @@ describe('Library page', () => {
       await screen.findByRole('button', { name: 'Sửa checklist' }),
     )
     fireEvent.click(
-      await screen.findByRole('tab', { name: 'Lịch sử thay đổi' }),
+      await screen.findByRole('button', { name: 'Lịch sử thay đổi' }),
     )
     expect(
       await screen.findByText('Sửa nội dung dùng chung'),
@@ -177,7 +186,7 @@ describe('Library page', () => {
       await screen.findByRole('button', { name: 'Sửa checklist' }),
     )
     fireEvent.click(
-      await screen.findByRole('tab', { name: 'Lịch sử thay đổi' }),
+      await screen.findByRole('button', { name: 'Lịch sử thay đổi' }),
     )
     expect(
       await screen.findByText('Chưa có thay đổi nào được ghi nhận.'),
@@ -191,34 +200,132 @@ describe('Service configuration page', () => {
     expect(await screen.findByText('Dùng ở 3 dịch vụ')).toBeInTheDocument()
   })
 
-  it('opens one dialog with the per-service settings first and the shared content one tab away', async () => {
+  it('splits the form into a content page and a price page instead of one long scroll', async () => {
     render(<ServiceChecklistPage serviceId="s" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
     const dialog = await screen.findByRole('dialog')
     expect(
-      within(dialog).getByRole('tab', {
-        name: 'Áp dụng cho dịch vụ này',
+      await within(dialog).findByRole('tab', {
+        name: 'Nội dung',
         selected: true,
       }),
     ).toBeInTheDocument()
-    expect(
-      within(dialog).getByLabelText(/Giá công việc kiểm tra/),
-    ).toBeInTheDocument()
-    fireEvent.click(
-      within(dialog).getByRole('tab', { name: 'Nội dung dùng chung' }),
-    )
-    expect(await within(dialog).findByLabelText(/Mô tả chi tiết/)).toHaveValue(
+    expect(within(dialog).getByLabelText(/Mô tả chi tiết/)).toBeVisible()
+    expect(within(dialog).getByLabelText(/Mô tả chi tiết/)).toHaveValue(
       'Phạm vi kiểm tra mái',
     )
+    // The price page is not on screen until it is opened.
+    expect(
+      within(dialog).getByLabelText('Giá công việc kiểm tra (VND)'),
+    ).not.toBeVisible()
+    fireEvent.click(
+      within(dialog).getByRole('tab', { name: 'Giá và định mức' }),
+    )
+    // Both scopes of the same price sit side by side, with labels that tell them apart.
+    expect(
+      within(dialog).getByLabelText('Giá công việc kiểm tra (VND)'),
+    ).toBeVisible()
+    expect(
+      within(dialog).getByLabelText('Giá công việc kiểm tra (VND)'),
+    ).toHaveValue(200_000)
+    expect(
+      within(dialog).getByLabelText(
+        'Riêng cho dịch vụ này: Giá công việc kiểm tra (VND)',
+      ),
+    ).toHaveValue(null)
+    expect(within(dialog).getByLabelText(/Mô tả chi tiết/)).not.toBeVisible()
     expect(checklistsApi.get).toHaveBeenCalledWith('a', expect.anything())
+  })
+
+  it('takes the admin to the page that has the problem', async () => {
+    render(<ServiceChecklistPage serviceId="s" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Giá và định mức' }))
+    fireEvent.change(
+      screen.getByLabelText('Riêng cho dịch vụ này: Số ảnh đã bao gồm'),
+      {
+        target: { value: '-3' },
+      },
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(
+      screen.getByRole('tab', { name: 'Giá và định mức', selected: true }),
+    ).toBeInTheDocument()
+    // An empty content jumps back to the content page.
+    fireEvent.click(screen.getByRole('tab', { name: 'Nội dung' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /^Nội dung/ }), {
+      target: { value: '' },
+    })
+    fireEvent.click(screen.getByRole('tab', { name: 'Giá và định mức' }))
+    // The content change touches a shared checklist, so it has to be acknowledged before saving.
+    fireEvent.click(
+      screen.getByLabelText('Tôi hiểu thay đổi này áp dụng cho 3 dịch vụ'),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tab', { name: 'Nội dung', selected: true }),
+      ).toBeInTheDocument(),
+    )
+  })
+
+  it('lets the admin change only this service without touching the shared checklist or acknowledging anything', async () => {
+    render(<ServiceChecklistPage serviceId="s" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
+    fireEvent.change(
+      await screen.findByLabelText(
+        'Riêng cho dịch vụ này: Giá công việc kiểm tra (VND)',
+      ),
+      { target: { value: '700000' } },
+    )
+    const save = screen.getByRole('button', { name: 'Lưu' })
+    expect(save).toBeEnabled()
+    fireEvent.click(save)
+    await waitFor(() =>
+      expect(checklistsApi.updatePricing).toHaveBeenCalledTimes(1),
+    )
+    expect(checklistsApi.update).not.toHaveBeenCalled()
+  })
+
+  it('asks for acknowledgement before a shared change and saves both parts in order', async () => {
+    render(<ServiceChecklistPage serviceId="s" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
+    fireEvent.change(
+      await screen.findByLabelText('Giá công việc kiểm tra (VND)'),
+      {
+        target: { value: '900000' },
+      },
+    )
+    fireEvent.change(
+      screen.getByLabelText('Riêng cho dịch vụ này: Số ảnh đã bao gồm'),
+      { target: { value: '20' } },
+    )
+    const save = screen.getByRole('button', { name: 'Lưu' })
+    expect(save).toBeDisabled()
+    fireEvent.click(
+      screen.getByLabelText('Tôi hiểu thay đổi này áp dụng cho 3 dịch vụ'),
+    )
+    fireEvent.click(save)
+    await waitFor(() =>
+      expect(checklistsApi.updatePricing).toHaveBeenCalledTimes(1),
+    )
+    expect(checklistsApi.update).toHaveBeenCalledWith(
+      'a',
+      'Kiểm tra mái nhà',
+      'BASIC',
+      expect.objectContaining({ basePrice: 900_000 }),
+    )
+    expect(
+      vi.mocked(checklistsApi.update).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(checklistsApi.updatePricing).mock.invocationCallOrder[0],
+    )
   })
 
   it('offers a private copy of a shared checklist and moves only this service onto it', async () => {
     render(<ServiceChecklistPage serviceId="s" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
-    fireEvent.click(
-      await screen.findByRole('tab', { name: 'Nội dung dùng chung' }),
-    )
     expect(
       await screen.findByText('Chỉ muốn đổi cho dịch vụ này?'),
     ).toBeInTheDocument()
@@ -247,9 +354,6 @@ describe('Service configuration page', () => {
     })
     render(<ServiceChecklistPage serviceId="s" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
-    fireEvent.click(
-      await screen.findByRole('tab', { name: 'Nội dung dùng chung' }),
-    )
     await screen.findByLabelText(/Mô tả chi tiết/)
     expect(screen.queryByText('Chỉ muốn đổi cho dịch vụ này?')).toBeNull()
     expect(screen.queryByRole('note')).toBeNull()
@@ -274,7 +378,7 @@ describe('Service configuration page', () => {
     render(<ServiceChecklistPage serviceId="s" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Cấu hình' }))
     fireEvent.click(
-      await screen.findByRole('tab', { name: 'Lịch sử thay đổi' }),
+      await screen.findByRole('button', { name: 'Lịch sử thay đổi' }),
     )
     expect(
       await screen.findByText('Sửa cấu hình theo dịch vụ'),

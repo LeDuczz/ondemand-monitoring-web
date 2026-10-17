@@ -20,7 +20,7 @@ describe('PricingEstimateCard', () => {
       />,
     )
 
-    expect(screen.getByText(/Đây là giá gói dự kiến/)).toBeInTheDocument()
+    expect(screen.getByText(/Đây là chi phí dự kiến/)).toBeInTheDocument()
     expect(screen.getByText(/báo giá cuối cùng/)).toBeInTheDocument()
     expect(screen.queryByText('Dịch vụ bổ sung')).not.toBeInTheDocument()
   })

@@ -3,14 +3,14 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const pricingEstimateMessages = defineMessages({
   vi: {
     title: 'Chi phí dự kiến',
-    servicePrice: 'Giá gói cơ bản',
+    servicePrice: 'Nội dung giám sát',
     aiAnalysis: 'AI phân tích hình ảnh',
     total: 'Tổng dự kiến',
     additionalServiceRow: 'Dịch vụ bổ sung',
     additionalPending: (count: number) =>
       count > 1 ? `${count} nội dung · Chờ Manager duyệt báo giá` : 'Chờ Manager duyệt báo giá',
     estimateNotice:
-      'Đây là giá gói dự kiến. Việc thêm, sửa hoặc bỏ nội dung giám sát có thể làm thay đổi chi phí; manager sẽ review và gửi báo giá cuối cùng để bạn xác nhận trước khi thanh toán.',
+      'Đây là chi phí dự kiến. Việc thêm, sửa hoặc bỏ nội dung giám sát có thể làm thay đổi chi phí; manager sẽ review và gửi báo giá cuối cùng để bạn xác nhận trước khi thanh toán.',
     loading: 'Đang tính chi phí...',
     unavailable:
       'Chưa lấy được báo giá cho dịch vụ này. Chi phí sẽ được xác nhận khi duyệt.',
@@ -23,14 +23,14 @@ export const pricingEstimateMessages = defineMessages({
   },
   en: {
     title: 'Estimated cost',
-    servicePrice: 'Base package price',
+    servicePrice: 'Monitoring content',
     aiAnalysis: 'AI image analysis',
     total: 'Estimated total',
     additionalServiceRow: 'Additional services',
     additionalPending: (count: number) =>
       count > 1 ? `${count} items · Waiting for Manager quote approval` : 'Waiting for Manager quote approval',
     estimateNotice:
-      'This is the estimated package price. Adding, editing, or removing monitoring requirements may change the cost; a manager will review them and send the final quote for your confirmation before payment.',
+      'This is the estimated cost. Adding, editing, or removing monitoring requirements may change the cost; a manager will review them and send the final quote for your confirmation before payment.',
     loading: 'Calculating cost...',
     unavailable:
       'No quote is available for this service yet. The cost is confirmed on approval.',

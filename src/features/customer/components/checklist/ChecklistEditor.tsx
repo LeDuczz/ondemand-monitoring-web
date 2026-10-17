@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Icon } from '../../../../shared/components/Icon'
+import { formatVnd } from '../../../../shared/lib/formatVnd'
 import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
@@ -89,6 +90,14 @@ export function ChecklistEditor({
       (priced) =>
         priced.quotePending &&
         normalizeContent(priced.content) === normalizeContent(row.content),
+    )
+  /** The backend price of a selected row, matched the same way the quote is ordered. */
+  const priceOf = (row: ChecklistRow) =>
+    checklist.quote.preview?.checklists.find((priced) =>
+      row.sourceChecklistId
+        ? priced.checklistId === row.sourceChecklistId
+        : priced.custom &&
+          normalizeContent(priced.content) === normalizeContent(row.content),
     )
   const ordered = visibleRows
     .map((row, index) => ({ row, index }))
@@ -265,6 +274,14 @@ export function ChecklistEditor({
                   row.requiredEvidenceType === 'VIDEO' ? t.video : t.image
                 }`}
           </span>
+          {(() => {
+            const priced = row.selected ? priceOf(row) : undefined
+            return priced && !priced.quotePending ? (
+              <span className="checklist-row-price">
+                {formatVnd(priced.subtotal)}
+              </span>
+            ) : null
+          })()}
           <span className="checklist-length checklist-length-with-evidence">
             {row.content.length} / 500
           </span>

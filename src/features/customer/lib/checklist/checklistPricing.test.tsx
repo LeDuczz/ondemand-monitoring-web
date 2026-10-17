@@ -341,22 +341,122 @@ describe('ChecklistSnapshotCard', () => {
   })
 
   it('shows no amount while a customer-added checklist awaits manager pricing', () => {
-    render(<ChecklistSnapshotCard items={[{
-      id: 'custom-1', sourceChecklistId: null, content: 'Kiểm tra mái phía sau',
-      displayOrder: 0, sourceType: 'CUSTOMER_CUSTOM', pricingStatus: 'NEEDS_MANAGER_REVIEW',
-      priceAvailable: false, approvedPrice: null,
-    }]} />)
-    expect(screen.getByText('Đang chờ Manager xem xét giá.')).toBeInTheDocument()
+    render(
+      <ChecklistSnapshotCard
+        items={[
+          {
+            id: 'custom-1',
+            sourceChecklistId: null,
+            content: 'Kiểm tra mái phía sau',
+            displayOrder: 0,
+            sourceType: 'CUSTOMER_CUSTOM',
+            pricingStatus: 'NEEDS_MANAGER_REVIEW',
+            priceAvailable: false,
+            approvedPrice: null,
+          },
+        ]}
+      />,
+    )
+    expect(
+      screen.getByText('Đang chờ Manager xem xét giá.'),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/880.000/)).not.toBeInTheDocument()
   })
 
   it('shows only the approved additional-service price', () => {
-    render(<ChecklistSnapshotCard items={[{
-      id: 'custom-1', sourceChecklistId: null, content: 'Kiểm tra mái phía sau',
-      displayOrder: 0, sourceType: 'CUSTOMER_CUSTOM', pricingStatus: 'ADJUSTED_AND_APPROVED',
-      priceAvailable: true, approvedPrice: 800_000,
-    }]} />)
+    render(
+      <ChecklistSnapshotCard
+        items={[
+          {
+            id: 'custom-1',
+            sourceChecklistId: null,
+            content: 'Kiểm tra mái phía sau',
+            displayOrder: 0,
+            sourceType: 'CUSTOMER_CUSTOM',
+            pricingStatus: 'ADJUSTED_AND_APPROVED',
+            priceAvailable: true,
+            approvedPrice: 800_000,
+          },
+        ]}
+      />,
+    )
     expect(screen.getByText(/Dịch vụ bổ sung: 800.000/)).toBeInTheDocument()
     expect(screen.queryByText(/880.000/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Cost shown where the customer chooses', () => {
+  it('puts the price on each selected row and folds the explanation away', async () => {
+    vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
+    vi.spyOn(checklistPricingApi, 'customerQuote').mockResolvedValue(preview)
+    function Harness() {
+      const checklist = useOrderChecklist('A')
+      return <ChecklistEditor variant="compact" quote checklist={checklist} />
+    }
+    const { container } = render(<Harness />)
+    // The price of the roof checklist sits on its own row.
+    const row = (await screen.findByText('Kiểm tra mái')).closest(
+      '.checklist-row',
+    )!
+    await waitFor(() => expect(row).toHaveTextContent('540.000'))
+    // The explanation is a folded section, free of internal pricing terms.
+    const details = container.querySelector('details.checklist-quote-details')!
+    expect(details).not.toHaveAttribute('open')
+    expect(details).not.toHaveTextContent('STANDARD')
+    expect(details).not.toHaveTextContent('Hồ sơ giá')
+    expect(details).not.toHaveTextContent('Đơn giá')
+    expect(details).toHaveTextContent('Tổng dự kiến')
+  })
+
+  it('does not scroll the list inside the page', async () => {
+    vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
+    function Harness() {
+      const checklist = useOrderChecklist('A')
+      return <ChecklistEditor variant="compact" checklist={checklist} />
+    }
+    const { container } = render(<Harness />)
+    await screen.findByText('Kiểm tra mái')
+    const list = container.querySelector('.checklist-fields') as HTMLElement
+    expect(list.style.overflowY).toBe('')
+    expect(list.style.maxHeight).toBe('')
+  })
+
+  it('keeps the last price on screen while a new one is calculated', async () => {
+    vi.spyOn(checklistPricingApi, 'customerQuote')
+      .mockResolvedValueOnce(preview)
+      .mockImplementationOnce(
+        () => new Promise(() => undefined) as Promise<ServicePricePreview>,
+      )
+    const hook = renderHook(
+      ({ images }) =>
+        useChecklistQuote('A', [
+          { sourceChecklistId: 'c-roof', requestedImageCount: images },
+        ]),
+      { initialProps: { images: 10 } },
+    )
+    await waitFor(() =>
+      expect(hook.result.current.preview?.total).toBe(540_000),
+    )
+    hook.rerender({ images: 20 })
+    await waitFor(() => expect(hook.result.current.loading).toBe(true))
+    // Never falls back to nothing (and so to another figure) while the next price is being worked out.
+    expect(hook.result.current.preview?.total).toBe(540_000)
+  })
+
+  it('drops the old price when the service changes', async () => {
+    vi.spyOn(checklistPricingApi, 'customerQuote')
+      .mockResolvedValueOnce(preview)
+      .mockImplementationOnce(
+        () => new Promise(() => undefined) as Promise<ServicePricePreview>,
+      )
+    const hook = renderHook(
+      ({ service }) =>
+        useChecklistQuote(service, [{ sourceChecklistId: 'c-roof' }]),
+      { initialProps: { service: 'A' } },
+    )
+    await waitFor(() => expect(hook.result.current.preview).not.toBeNull())
+    hook.rerender({ service: 'B' })
+    await waitFor(() => expect(hook.result.current.loading).toBe(true))
+    expect(hook.result.current.preview).toBeNull()
   })
 })

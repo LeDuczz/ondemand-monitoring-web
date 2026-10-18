@@ -12,7 +12,7 @@ import { clearMissionCreationKey, missionCreationKey } from '../api/missionCreat
 import { OrderIcon, type OrderIconName } from '../components/orderReview/OrderIcon'
 import { formatOrderCode, humanizeMediaRequirement } from '../components/orderReview/format'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
-import { preferredLabel } from '../lib/viLabels'
+import { preferredRangeLabel } from '../lib/viLabels'
 import { managerHref } from '../routes'
 import type { OrderMissionBrief } from '../types/orders'
 import { createMissionPageMessages } from './CreateMissionPage.messages'
@@ -508,7 +508,14 @@ function CreateMissionForm({
             </header>
             <div className="odm-or-card-body">
               <div className="odm-or-bigvalue">
-                {preferredLabel(brief.preferredDate, brief.preferredTimeName)}
+                {preferredRangeLabel(
+                  brief.preferredDateFrom || brief.preferredDate,
+                  brief.preferredDateTo,
+                  brief.preferredTimeName,
+                )}
+                {timePart(brief.preferredDateFrom)
+                  ? ` · ${timePart(brief.preferredDateFrom)}${timePart(brief.preferredDateTo) ? `–${timePart(brief.preferredDateTo)}` : ''}`
+                  : ''}
               </div>
               <p className="odm-or-muted">{t.customerTimeWindowHint}</p>
             </div>

@@ -687,9 +687,24 @@
   gap: 16px;
   align-items: start;
 }
-.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:first-child,
 .odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:last-child {
   display: none;
+}
+/* Customer's requested window: full-width highlight above the two columns. */
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:first-child {
+  grid-column: 1 / -1;
+  order: 0;
+  background: var(--blue-bg, #eff6ff);
+  border-color: var(--blue-bd, #bfdbfe);
+}
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:first-child .odm-or-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+.odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:first-child .odm-or-muted {
+  margin: 0;
 }
 .odm-plan-page.is-embedded > .odm-or-grid > .odm-or-col:first-child > section:nth-child(2) {
   order: 2;

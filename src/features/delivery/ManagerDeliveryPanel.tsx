@@ -113,8 +113,7 @@ export function ManagerDeliveryPanel({
                 <h3 id="manager-assets-title">Media gửi cho khách hàng</h3>
                 <p>
                   {selected.length}/{delivery.assets.length} tệp đang được chọn
-                </p>
-              </div>
+                </p>              </div>
               {canReleasePreview ? (
                 <button
                   type="button"
@@ -161,8 +160,7 @@ export function ManagerDeliveryPanel({
                         {asset.type.toUpperCase().includes('VIDEO')
                           ? 'Video'
                           : 'Hình ảnh'}{' '}
-                        · Tệp #{index + 1}
-                      </small>
+                        · Tệp #{index + 1}                      </small>
                     </span>
                   </label>
                 )

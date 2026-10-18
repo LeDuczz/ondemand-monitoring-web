@@ -26,7 +26,7 @@ export const confirmSubmitModalMessages = defineMessages({
     service: 'Dịch vụ',
     location: 'Địa điểm',
     dates: 'Ngày bay mong muốn',
-    altitude: 'Độ cao bay',
+    altitude: 'Độ cao giám sát mong muốn',
     contact: 'Liên hệ hiện trường',
     permit: 'Giấy phép bay',
     permitHave: (number: string) => `Đã có giấy phép ${number}`,

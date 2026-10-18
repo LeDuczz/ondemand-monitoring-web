@@ -19,7 +19,7 @@ export const requestSummaryCardMessages = defineMessages({
     deadline: (d: string) => `Cần kết quả trước ${d}`,
     fallbackValues: { AUTO_RESCHEDULE: 'Nếu không bay được: tự dời lịch', CONTACT_CUSTOMER: 'Nếu không bay được: hỏi bạn trước', CANCEL_ORDER: 'Nếu không bay được: hủy yêu cầu' },
     edit: 'Sửa',
-    altitude: (m: number) => `Độ cao bay ${m} m`,
+    altitude: (m: number) => `Độ cao giám sát mong muốn ${m} m`,
     length: (m: number) => `Chiều dài ${m} m`,
     areaFiles: (n: number) => `${n} tệp khu vực`,
     contact: 'Liên hệ hiện trường',

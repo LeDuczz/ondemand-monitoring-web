@@ -297,6 +297,9 @@ describe('Customer portal i18n (vi -> en)', () => {
     await settled()
     expect(viLines()).toEqual([])
     // The right-to-monitor declaration is required before moving on.
+    fireEvent.change(screen.getByLabelText(/Contact person/), { target: { value: 'An' } })
+    fireEvent.change(screen.getByLabelText(/Phone number/), { target: { value: '0901234567' } })
+    fireEvent.change(screen.getByLabelText(/Access conditions/), { target: { value: 'Main gate' } })
     fireEvent.click(screen.getByLabelText('Owner / Investor'))
     fireEvent.click(screen.getByLabelText(/I confirm that I am entitled/))
     fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))

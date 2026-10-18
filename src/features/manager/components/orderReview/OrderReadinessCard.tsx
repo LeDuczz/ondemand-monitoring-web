@@ -40,6 +40,16 @@ const contextualAnswerLabels: Record<string, Record<Answer, string>> = {
     WARN: 'Trung bình',
     FAIL: 'Cao',
   },
+  SITE_ACCESS: {
+    PASS: 'Đã liên hệ, đồng ý',
+    WARN: 'Đã liên hệ, đồng ý',
+    FAIL: 'Chưa liên hệ được / không đồng ý',
+  },
+}
+
+const failNotePlaceholders: Record<string, string> = {
+  SITE_ACCESS:
+    'Lý do (bắt buộc): vd. đã gọi nhiều lần không liên lạc được, hoặc chủ đất từ chối',
 }
 
 const criterionDescriptionOverrides: Record<string, string> = {}
@@ -296,7 +306,10 @@ export function OrderReadinessCard({
                         value={note}
                         disabled={!editable}
                         placeholder={
-                          needsNote ? 'Lý do không đạt (bắt buộc)' : 'Ghi chú'
+                          needsNote
+                            ? (failNotePlaceholders[c.code] ??
+                              'Lý do không đạt (bắt buộc)')
+                            : 'Ghi chú'
                         }
                         aria-label={`Ghi chú: ${criterionTitleOverrides[c.code] ?? c.title}`}
                         onChange={(event) =>

@@ -85,11 +85,11 @@ export function SiteDetailsPanel({ form, errors, update }: Props) {
       <Fold
         title={t.contactSection}
         hint={t.contactHint}
-        filled={Boolean(form.siteContactName || form.siteContactPhone || form.accessNotes)}
-        hasError={Boolean(errors.siteContactPhone)}
+        filled
+        hasError={Boolean(errors.siteContactName || errors.siteContactPhone || errors.accessNotes)}
       >
       <div className="co-two co-mt">
-        <FormField id="co-contact-name" label={t.contactNameLabel}>
+        <FormField id="co-contact-name" label={t.contactNameLabel} required error={errors.siteContactName}>
           <input
             id="co-contact-name"
             className="co-input"
@@ -99,7 +99,7 @@ export function SiteDetailsPanel({ form, errors, update }: Props) {
             onChange={(e) => update('siteContactName', e.target.value)}
           />
         </FormField>
-        <FormField id="co-contact-phone" label={t.contactPhoneLabel} error={errors.siteContactPhone}>
+        <FormField id="co-contact-phone" label={t.contactPhoneLabel} required error={errors.siteContactPhone}>
           <input
             id="co-contact-phone"
             className="co-input"
@@ -112,7 +112,7 @@ export function SiteDetailsPanel({ form, errors, update }: Props) {
         </FormField>
       </div>
       <div className="co-mt">
-        <FormField id="co-access-notes" label={t.accessNotesLabel}>
+        <FormField id="co-access-notes" label={t.accessNotesLabel} required error={errors.accessNotes}>
           <textarea
             id="co-access-notes"
             className="co-input"

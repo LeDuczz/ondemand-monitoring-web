@@ -15,7 +15,7 @@ export const orderInfoCardMessages = defineMessages({
     schedule: 'Ngày mong muốn',
     description: 'Mô tả thêm',
     usagePurpose: 'Mục đích sử dụng', flightPurpose: 'Mục đích bay',
-    altitude: 'Độ cao bay', estimatedLength: 'Chiều dài ước tính', resultDeadline: 'Hạn nhận kết quả',
+    altitude: 'Độ cao giám sát mong muốn', estimatedLength: 'Chiều dài ước tính', resultDeadline: 'Hạn nhận kết quả',
     recurrence: 'Lịch lặp', weatherFallback: 'Phương án khi có sự cố',
     siteContact: 'Liên hệ hiện trường', accessNotes: 'Điều kiện ra vào',
     relationship: 'Quan hệ với khu vực', authorization: 'Xác nhận quyền giám sát',

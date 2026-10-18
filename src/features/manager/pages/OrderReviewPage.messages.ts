@@ -148,7 +148,7 @@ export const orderReviewPageMessages = defineMessages({
     requestDescription: 'Mô tả / ghi chú',
     usagePurpose: 'Mục đích sử dụng',
     flightPurpose: 'Mục đích bay',
-    flightAltitude: 'Độ cao bay',
+    flightAltitude: 'Độ cao giám sát mong muốn',
     estimatedLength: 'Độ dài tuyến',
     siteContact: 'Liên hệ hiện trường',
     accessNotes: 'Điều kiện ra vào',

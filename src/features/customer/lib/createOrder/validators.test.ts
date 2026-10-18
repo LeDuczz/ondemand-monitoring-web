@@ -26,6 +26,9 @@ const msg: ValidationMessages = {
   altitudeM: 'altitude',
   estimatedLengthM: 'length',
   siteContactPhone: 'phone',
+  siteContactName: 'contactName',
+  siteContactPhoneRequired: 'phoneRequired',
+  accessNotes: 'accessNotes',
   permitStatus: (n) => `permit:${n}`,
   permitNumber: 'permitNumber',
   permitDocuments: 'permitDocuments',
@@ -38,6 +41,9 @@ const msg: ValidationMessages = {
 const okLocation = { monitoringValid: true, blockedZoneNames: [] }
 const withService = {
   ...createDefaultForm(),
+  siteContactName: 'An',
+  siteContactPhone: '0901234567',
+  accessNotes: 'Cổng chính',
   serviceId: 's',
   title: 't',
   monitoringRelationship: 'OWNER' as const,

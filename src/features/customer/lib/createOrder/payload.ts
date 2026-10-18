@@ -176,7 +176,7 @@ export function buildOrderPayload(input: {
     estimatedLengthM: lengthM > 0 ? lengthM : undefined,
     siteContactName: form.siteContactName.trim() || undefined,
     siteContactPhone: form.siteContactPhone.trim() || undefined,
-    accessNotes: form.accessNotes.trim() || undefined,
+    accessNotes: buildAccessNotes(form),
     monitoringRelationship: form.monitoringRelationship || undefined,
     monitoringAuthorizationConfirmed:
       form.monitoringAuthorizationConfirmed,
@@ -269,4 +269,8 @@ function buildDeliverables(input: {
       ...(index === 0 ? input.detail : {}),
     },
   }))
+}
+
+function buildAccessNotes(form: FormState): string | undefined {
+  return form.accessNotes.trim() || undefined
 }

@@ -51,6 +51,8 @@ export type MediaPricingComponent =
   | 'INCLUDED_VIDEO'
   | 'EXTRA_IMAGE'
   | 'EXTRA_VIDEO'
+  | 'INCLUDED_AREA'
+  | 'EXTRA_AREA'
 export type PricingRounding = 'CEILING' | 'FLOOR' | 'HALF_UP'
 
 export type PricingPolicy = {

@@ -23,18 +23,20 @@ beforeEach(() => {
     { id: 's', name: 'Dịch vụ test', basePrice: 1_000_000, isActive: true },
   ])
   vi.spyOn(checklistsApi, 'list').mockResolvedValue({
-    items: [{
-      id: 'checklist-x',
-      content: 'Kiểm tra tình trạng tổng thể công trình',
-      isActive: true,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: null,
-      version: 1,
-      basePrice: 100_000,
-      includedImageCount: 1,
-      includedVideoCount: 1,
-      pricingProfile: 'STANDARD',
-    }],
+    items: [
+      {
+        id: 'checklist-x',
+        content: 'Kiểm tra tình trạng tổng thể công trình',
+        isActive: true,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: null,
+        version: 1,
+        basePrice: 100_000,
+        includedImageCount: 1,
+        includedVideoCount: 1,
+        pricingProfile: 'STANDARD',
+      },
+    ],
     page: 0,
     totalItems: 1,
     totalPages: 1,
@@ -225,9 +227,13 @@ describe('PricingPolicyTab with MEDIA rules', () => {
       .spyOn(adminApi, 'publishPricingPolicy')
       .mockResolvedValue(draft)
     render(<PricingPolicyTab />)
-    const save = await screen.findByRole('button', { name: 'Lưu bản nháp' })
+    const save = (
+      await screen.findAllByRole('button', { name: 'Lưu bản nháp' })
+    )[0]
     expect(save).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Phát hành' })).toBeDisabled()
+    expect(
+      screen.getAllByRole('button', { name: 'Phát hành' })[0],
+    ).toBeDisabled()
     fireEvent.click(save)
     expect(update).not.toHaveBeenCalled()
     expect(publish).not.toHaveBeenCalled()
@@ -243,7 +249,9 @@ describe('PricingPolicyTab with MEDIA rules', () => {
       .spyOn(adminApi, 'updatePricingPolicy')
       .mockResolvedValue(valid)
     render(<PricingPolicyTab />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Lưu bản nháp' }))
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Lưu bản nháp' }))[0],
+    )
     await waitFor(() => expect(update).toHaveBeenCalled())
     const body = update.mock.calls[0][1]
     expect(body.rules).toHaveLength(2)
@@ -293,8 +301,9 @@ describe('PricingPolicyTab with MEDIA rules', () => {
 
     render(<PricingPolicyTab />)
     fireEvent.click(
-      (await screen.findAllByRole('button', { name: 'Thêm quy tắc' }))[0],
+      await screen.findByRole('tab', { name: /Quy tắc nâng cao/ }),
     )
+    fireEvent.click(screen.getAllByRole('button', { name: 'Thêm quy tắc' })[0])
     fireEvent.click(screen.getByRole('button', { name: 'Xóa quy tắc' }))
     expect(screen.queryByLabelText('Mã quy tắc')).not.toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('button', { name: 'Thêm quy tắc' })[0])
@@ -305,7 +314,7 @@ describe('PricingPolicyTab with MEDIA rules', () => {
       target: { value: '100' },
     })
     fireEvent.click(screen.getByLabelText('Đang bật'))
-    fireEvent.click(screen.getByRole('button', { name: 'Lưu bản nháp' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Lưu bản nháp' })[0])
 
     await waitFor(() => expect(update).toHaveBeenCalled())
     expect(update.mock.calls[0][1].rules.at(-1)).toMatchObject({
@@ -316,5 +325,28 @@ describe('PricingPolicyTab with MEDIA rules', () => {
       enabled: false,
       roundingMode: 'CEILING',
     })
+  })
+
+  it('cancels an edit session: confirms before dropping changes, then offers to continue the draft', async () => {
+    vi.spyOn(adminApi, 'listPricingPolicies').mockResolvedValue([
+      { ...draft, rules: [tier(0, null, 50_000)] },
+    ])
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<PricingPolicyTab />)
+    fireEvent.change(await screen.findByLabelText('Tên chính sách'), {
+      target: { value: 'Changed' },
+    })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Hủy thay đổi' })[0])
+    expect(confirm).toHaveBeenCalledTimes(1)
+    expect(
+      await screen.findByRole('button', {
+        name: 'Tiếp tục chỉnh sửa bản nháp',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText('Tên chính sách')).not.toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Tiếp tục chỉnh sửa bản nháp' }),
+    )
+    expect(await screen.findByLabelText('Tên chính sách')).toHaveValue('Draft')
   })
 })

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  migrateLegacyCustomerAdded,
   newMediaRule,
   validateMediaRules,
   type MediaRuleIssue,
 } from './mediaPricingRules'
-import type { PricingRule } from '../types/pricing'
+import type { MediaPricingComponent, PricingRule } from '../types/pricing'
 
 const tier = (
   from: number,
@@ -90,5 +91,46 @@ describe('newMediaRule', () => {
     expect(rule.minValue).toBeNull()
     expect(rule.unitSize).toBeNull()
     expect(rule.calculationType).toBe('FIXED')
+  })
+})
+
+describe('migrateLegacyCustomerAdded', () => {
+  const legacy = (component: MediaPricingComponent, extra = {}) => ({
+    ...newMediaRule('CUSTOM', component, []),
+    ruleKey: `CUSTOM:${component}`,
+    ...extra,
+  })
+
+  it('moves legacy CUSTOM customer-added rules to GENERIC_CUSTOMER_ADDED', () => {
+    const out = migrateLegacyCustomerAdded([
+      legacy('CHECKLIST_BASE', { fixedAmount: 200_000 }),
+      legacy('INCLUDED_AREA', { includedQuantity: 15 }),
+    ])
+    expect(out.map((r) => r.pricingProfile)).toEqual([
+      'GENERIC_CUSTOMER_ADDED',
+      'GENERIC_CUSTOMER_ADDED',
+    ])
+    expect(out[0].ruleKey).toBe('GENERIC_CUSTOMER_ADDED:CHECKLIST_BASE')
+    expect(out[0].fixedAmount).toBe(200_000)
+    expect(out[1].includedQuantity).toBe(15)
+  })
+
+  it('drops a legacy rule when the generic one exists and leaves other rules alone', () => {
+    const generic = {
+      ...newMediaRule('GENERIC_CUSTOMER_ADDED', 'CHECKLIST_BASE', []),
+      fixedAmount: 300_000,
+    }
+    const tier = newMediaRule('DEFAULT', 'EXTRA_IMAGE', [])
+    const out = migrateLegacyCustomerAdded([
+      legacy('CHECKLIST_BASE'),
+      generic,
+      tier,
+    ])
+    expect(out).toEqual([generic, tier])
+  })
+
+  it('returns the same array when there is nothing to migrate', () => {
+    const rules = [newMediaRule('DEFAULT', 'EXTRA_IMAGE', [])]
+    expect(migrateLegacyCustomerAdded(rules)).toBe(rules)
   })
 })

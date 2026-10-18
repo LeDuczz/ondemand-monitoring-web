@@ -460,3 +460,49 @@ describe('Cost shown where the customer chooses', () => {
     expect(hook.result.current.preview).toBeNull()
   })
 })
+
+describe('Repeating orders', () => {
+  it('tells the customer the price already covers every visit', async () => {
+    const repeated = {
+      ...preview,
+      occurrences: 4,
+      total: 2_160_000,
+      checklistSubtotal: 2_160_000,
+    }
+    vi.spyOn(checklistPricingApi, 'customerQuote').mockResolvedValue(repeated)
+    const hook = renderHook(() =>
+      useChecklistQuote('A', [{ sourceChecklistId: 'c-roof' }], {
+        occurrences: 4,
+      }),
+    )
+    await waitFor(() =>
+      expect(hook.result.current.preview?.occurrences).toBe(4),
+    )
+    const { container } = render(
+      <ChecklistQuoteCard quote={hook.result.current} />,
+    )
+    expect(container.querySelector('details')).toHaveTextContent(
+      'Giá đã nhân cho 4 lần thực hiện theo lịch định kỳ.',
+    )
+    expect(checklistPricingApi.customerQuote).toHaveBeenCalledWith(
+      'A',
+      [{ sourceChecklistId: 'c-roof' }],
+      expect.any(AbortSignal),
+      { occurrences: 4 },
+    )
+  })
+
+  it('says nothing about visits for a single-visit order', async () => {
+    vi.spyOn(checklistPricingApi, 'customerQuote').mockResolvedValue(preview)
+    const hook = renderHook(() =>
+      useChecklistQuote('A', [{ sourceChecklistId: 'c-roof' }]),
+    )
+    await waitFor(() => expect(hook.result.current.preview).not.toBeNull())
+    const { container } = render(
+      <ChecklistQuoteCard quote={hook.result.current} />,
+    )
+    expect(container.querySelector('details')).not.toHaveTextContent(
+      'lần thực hiện',
+    )
+  })
+})

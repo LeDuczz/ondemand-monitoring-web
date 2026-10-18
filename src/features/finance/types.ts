@@ -175,4 +175,6 @@ export type PricingReview = {
   quoteHistory: Quote[]
   systemCalculation?: PricingBreakdown
   currentManagerId?: string
+  managerMaxDiscountPercent?: number | null
+  managerMaxMarkupPercent?: number | null
 }

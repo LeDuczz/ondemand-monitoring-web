@@ -39,6 +39,11 @@ function QuoteDetails({ preview }: { preview: ServicePricePreview }) {
       </summary>
       <div className="checklist-quote-body">
         <p className="checklist-hint">{t.quoteHint}</p>
+        {(preview.occurrences ?? 1) > 1 && (
+          <p className="checklist-hint">
+            {t.quoteOccurrences(preview.occurrences ?? 1)}
+          </p>
+        )}
         {preview.warnings.length > 0 && (
           <div role="alert" className="co-notice is-danger">
             <ul>

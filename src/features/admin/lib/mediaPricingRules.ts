@@ -10,9 +10,13 @@ export const MEDIA_COMPONENTS: MediaPricingComponent[] = [
   'INCLUDED_VIDEO',
   'EXTRA_IMAGE',
   'EXTRA_VIDEO',
+  'INCLUDED_AREA',
+  'EXTRA_AREA',
 ]
 export const ROUNDING_MODES: PricingRounding[] = ['CEILING', 'FLOOR', 'HALF_UP']
 export const CUSTOM_PROFILE = 'GENERIC_CUSTOMER_ADDED'
+// Older policies keep their customer-added allowances under this profile; the backend still accepts it.
+const LEGACY_CUSTOM_PROFILE = 'CUSTOM'
 const PROFILE = /^[A-Z0-9_]{1,60}$/
 
 export const isMediaRule = (rule: PricingRule) => rule.category === 'MEDIA'
@@ -65,20 +69,27 @@ export function validateMediaRules(rules: PricingRule[]): MediaRuleProblem[] {
       if (min < 0) add('NEGATIVE')
       if (rule.maxValue != null && rule.maxValue <= min) add('RANGE')
       if (rule.enabled)
-        groups.set(`${rule.checklistDefinitionId ?? '*'}:${rule.pricingProfile}:${rule.mediaComponent}`, [
-          ...(groups.get(`${rule.checklistDefinitionId ?? '*'}:${rule.pricingProfile}:${rule.mediaComponent}`) ??
-            []),
-          index,
-        ])
+        groups.set(
+          `${rule.checklistDefinitionId ?? '*'}:${rule.pricingProfile}:${rule.mediaComponent}`,
+          [
+            ...(groups.get(
+              `${rule.checklistDefinitionId ?? '*'}:${rule.pricingProfile}:${rule.mediaComponent}`,
+            ) ?? []),
+            index,
+          ],
+        )
     }
     if (
       rule.includedQuantity != null &&
       (rule.includedQuantity < 0 ||
         rule.includedQuantity > 500 ||
         !Number.isInteger(rule.includedQuantity) ||
-        (rule.pricingProfile ?? '').toUpperCase() !== CUSTOM_PROFILE ||
+        ![CUSTOM_PROFILE, LEGACY_CUSTOM_PROFILE].includes(
+          (rule.pricingProfile ?? '').toUpperCase(),
+        ) ||
         (rule.mediaComponent !== 'INCLUDED_IMAGE' &&
-          rule.mediaComponent !== 'INCLUDED_VIDEO'))
+          rule.mediaComponent !== 'INCLUDED_VIDEO' &&
+          rule.mediaComponent !== 'INCLUDED_AREA'))
     )
       add('ALLOWANCE')
   })
@@ -114,7 +125,8 @@ export function newMediaRule(
     (rule) =>
       isMediaRule(rule) &&
       rule.pricingProfile === normalized &&
-      (rule.checklistDefinitionId ?? null) === (checklistDefinitionId ?? null) &&
+      (rule.checklistDefinitionId ?? null) ===
+        (checklistDefinitionId ?? null) &&
       rule.mediaComponent === component,
   )
   // Continue the schedule where the last bounded tier ends.
@@ -125,7 +137,9 @@ export function newMediaRule(
       )
     : null
   let sequence = siblings.length + 1
-  const targetKey = checklistDefinitionId ? `CHECKLIST_${checklistDefinitionId}` : normalized
+  const targetKey = checklistDefinitionId
+    ? `CHECKLIST_${checklistDefinitionId}`
+    : normalized
   let ruleKey = `${targetKey}:${component}:${sequence}`
   while (existing.some((rule) => rule.ruleKey === ruleKey))
     ruleKey = `${normalized}:${component}:${++sequence}`
@@ -150,4 +164,51 @@ export function newMediaRule(
     includedQuantity: null,
     roundingMode: tier ? 'CEILING' : null,
   }
+}
+
+const CUSTOMER_ADDED_COMPONENTS: MediaPricingComponent[] = [
+  'CHECKLIST_BASE',
+  'INCLUDED_IMAGE',
+  'INCLUDED_VIDEO',
+  'INCLUDED_AREA',
+  'EXTRA_AREA',
+]
+
+/**
+ * Customer-added prices used to be stored under the CUSTOM profile. A draft keeps a single set: the legacy rule becomes the
+ * GENERIC_CUSTOMER_ADDED one, or is dropped when that one already exists. Returns the same array when nothing changes.
+ */
+export function migrateLegacyCustomerAdded(
+  rules: PricingRule[],
+): PricingRule[] {
+  const profile = (rule: PricingRule) =>
+    (rule.pricingProfile ?? '').toUpperCase()
+  const global = (rule: PricingRule) =>
+    isMediaRule(rule) && !rule.checklistDefinitionId
+  const legacy = (rule: PricingRule) =>
+    global(rule) &&
+    profile(rule) === LEGACY_CUSTOM_PROFILE &&
+    CUSTOMER_ADDED_COMPONENTS.includes(
+      rule.mediaComponent as MediaPricingComponent,
+    )
+  if (!rules.some(legacy)) return rules
+  const covered = (component: MediaPricingComponent | null | undefined) =>
+    rules.some(
+      (rule) =>
+        global(rule) &&
+        profile(rule) === CUSTOM_PROFILE &&
+        rule.mediaComponent === component,
+    )
+  return rules.flatMap((rule) => {
+    if (!legacy(rule)) return [rule]
+    if (covered(rule.mediaComponent)) return []
+    return [
+      {
+        ...rule,
+        pricingProfile: CUSTOM_PROFILE,
+        ruleKey: rule.ruleKey.replace(/^CUSTOM:/i, `${CUSTOM_PROFILE}:`),
+        description: rule.description.replace(/^CUSTOM/i, CUSTOM_PROFILE),
+      },
+    ]
+  })
 }

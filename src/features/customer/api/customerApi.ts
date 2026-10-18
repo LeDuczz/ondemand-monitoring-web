@@ -70,6 +70,8 @@ export type ServicePricingEstimate = {
   }>
   totalPrice: number
   quotePending?: boolean
+  /** Visits of a repeating order; the figures already include them. */
+  occurrences?: number
 }
 
 export type GeoJsonPolygon = {

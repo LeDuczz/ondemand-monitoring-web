@@ -91,8 +91,7 @@ export function ManagerPricingPanel({
         prices[item.id] = String(
           item.managerApprovedAmount ??
             item.managerQuotedPrice ??
-            item.systemCalculatedPrice ??
-            checklistSystemPrice(query.data!.systemCalculation?.items, item.id),
+            liveSystemPrice(item, query.data!.systemCalculation?.items),
         )
       }
       const firstLoad = initializedQuoteKey.current !== quoteKey
@@ -132,14 +131,36 @@ export function ManagerPricingPanel({
   const systemPrice =
     query.data?.systemCalculation?.systemCalculatedAmount ??
     amount(draft.packagePrice)
+  // Until the draft prices are initialised an item is at its own starting price, i.e. not adjusted.
+  const startingPrices = approvedPrices(
+    query.data?.checklistItems ?? [],
+    draft,
+    query.data?.systemCalculation?.items,
+  )
+  const priceRange = (system: number) =>
+    priceLimits(
+      system,
+      query.data?.managerMaxDiscountPercent,
+      query.data?.managerMaxMarkupPercent,
+    )
+  const outOfRangeCount = (query.data?.checklistItems ?? []).filter((item) => {
+    if (!isManagerPriced(item)) return false
+    const system = liveSystemPrice(item, query.data?.systemCalculation?.items)
+    const range = priceRange(system)
+    const price = startingPrices[item.id]
+    return (
+      range !== null &&
+      price !== system &&
+      (price < range.min || price > range.max)
+    )
+  }).length
   const checklistAdjustment = (query.data?.checklistItems ?? [])
     .filter(isManagerPriced)
     .reduce(
       (sum, item) =>
         sum +
-        amount(draft.prices[item.id]) -
-        (item.systemCalculatedPrice ??
-          checklistSystemPrice(query.data?.systemCalculation?.items, item.id)),
+        startingPrices[item.id] -
+        liveSystemPrice(item, query.data?.systemCalculation?.items),
       0,
     )
   const total = systemPrice + checklistAdjustment
@@ -164,7 +185,8 @@ export function ManagerPricingPanel({
 
   /** The backend wants a meaningful reason (at least 10 characters) whenever the total differs from the system price. */
   function reasonProblem() {
-    const adjusted = checklistAdjustment !== 0 || amount(draft.adjustmentAmount) !== 0
+    const adjusted =
+      checklistAdjustment !== 0 || amount(draft.adjustmentAmount) !== 0
     const length = draft.adjustmentReason.trim().length
     if (!adjusted || length >= MIN_REASON_LENGTH) return null
     return length === 0
@@ -178,6 +200,13 @@ export function ManagerPricingPanel({
     if (problem) {
       setMessage(null)
       setError(problem)
+      return
+    }
+    if (outOfRangeCount > 0) {
+      setMessage(null)
+      setError(
+        `Còn ${outOfRangeCount} mục có giá duyệt ngoài khoảng cho phép. Sửa các mục báo đỏ rồi duyệt lại.`,
+      )
       return
     }
     if (pendingCustomCount > 0) {
@@ -205,6 +234,8 @@ export function ManagerPricingPanel({
         adjustmentType: draft.adjustmentType,
         expectedPricingRevision:
           query.data.currentQuote?.pricingRevision ?? null,
+        expectedPolicyVersion:
+          query.data.systemCalculation?.policyVersion ?? null,
       })
       dirtyPriceIds.current.clear()
       await financeApi.approveQuote(orderId, quote.id)
@@ -216,6 +247,11 @@ export function ManagerPricingPanel({
       query.reload()
     } catch (cause) {
       setError(errorMessage(cause))
+      if (cause instanceof ApiError && cause.code === 'STALE_PRICING_POLICY') {
+        // Show the Manager the prices that now apply; typed prices would be judged against the old ones.
+        dirtyPriceIds.current.clear()
+        query.reload()
+      }
     } finally {
       setBusy(false)
     }
@@ -414,11 +450,7 @@ export function ManagerPricingPanel({
                 <small>
                   Giá hệ thống:{' '}
                   {formatVnd(
-                    item.systemCalculatedPrice ??
-                      checklistSystemPrice(
-                        query.data?.systemCalculation?.items,
-                        item.id,
-                      ),
+                    liveSystemPrice(item, query.data?.systemCalculation?.items),
                   )}
                 </small>
                 {isManagerPriced(item) ? (
@@ -429,10 +461,9 @@ export function ManagerPricingPanel({
                       String(
                         item.managerApprovedAmount ??
                           item.managerQuotedPrice ??
-                          item.systemCalculatedPrice ??
-                          checklistSystemPrice(
+                          liveSystemPrice(
+                            item,
                             query.data?.systemCalculation?.items,
-                            item.id,
                           ),
                       )
                     }
@@ -450,22 +481,24 @@ export function ManagerPricingPanel({
                 ) : null}
                 {isManagerPriced(item) ? (
                   <PriceDifference
-                    system={
-                      item.systemCalculatedPrice ??
-                      checklistSystemPrice(
+                    system={liveSystemPrice(
+                      item,
+                      query.data?.systemCalculation?.items,
+                    )}
+                    range={priceRange(
+                      liveSystemPrice(
+                        item,
                         query.data?.systemCalculation?.items,
-                        item.id,
-                      )
-                    }
+                      ),
+                    )}
                     proposed={amount(
                       draft.prices[item.id] ??
                         String(
                           item.managerApprovedAmount ??
                             item.managerQuotedPrice ??
-                            item.systemCalculatedPrice ??
-                            checklistSystemPrice(
+                            liveSystemPrice(
+                              item,
                               query.data?.systemCalculation?.items,
-                              item.id,
                             ),
                         ),
                     )}
@@ -630,12 +663,15 @@ export function ManagerPricingPanel({
                       busy ||
                       approved ||
                       pendingCustomCount > 0 ||
+                      outOfRangeCount > 0 ||
                       Boolean(approveBlockedReason)
                     }
                     title={
                       pendingCustomCount > 0
                         ? 'Phân loại các yêu cầu bổ sung trước khi duyệt báo giá'
-                        : (approveBlockedReason ?? undefined)
+                        : outOfRangeCount > 0
+                          ? 'Có giá duyệt ngoài khoảng cho phép'
+                          : (approveBlockedReason ?? undefined)
                     }
                     onClick={() => void approve()}
                   >
@@ -700,37 +736,74 @@ function Row({
 function PriceDifference({
   system,
   proposed,
+  range,
 }: {
   system: number
   proposed: number
+  /** Prices the Manager may approve; null when the policy limits are unknown. */
+  range: { min: number; max: number } | null
 }) {
   const difference = proposed - system
   const percent = system === 0 ? null : (difference / system) * 100
   const sign = difference > 0 ? '+' : ''
+  const outside =
+    range !== null &&
+    difference !== 0 &&
+    (proposed < range.min || proposed > range.max)
   return (
-    <small className={difference === 0 ? '' : 'finance-price-difference'}>
-      Chênh lệch: {sign}
-      {formatVnd(difference)}
-      {percent == null
-        ? ''
-        : ` (${percent > 0 ? '+' : ''}${percent.toLocaleString('vi-VN', {
-            maximumFractionDigits: 4,
-          })}%)`}
-    </small>
+    <>
+      <small className={difference === 0 ? '' : 'finance-price-difference'}>
+        Chênh lệch: {sign}
+        {formatVnd(difference)}
+        {percent == null
+          ? ''
+          : ` (${percent > 0 ? '+' : ''}${percent.toLocaleString('vi-VN', {
+              maximumFractionDigits: 4,
+            })}%)`}
+      </small>
+      {range && (
+        <small
+          className={outside ? 'finance-range is-out' : 'finance-range'}
+          role={outside ? 'alert' : undefined}
+        >
+          {outside ? 'Ngoài khoảng cho phép: ' : 'Được duyệt: '}
+          {formatVnd(range.min)} – {formatVnd(range.max)}
+        </small>
+      )}
+    </>
   )
+}
+/** Same bounds the server enforces: the policy's maximum discount and markup on this item's system price. */
+function priceLimits(
+  system: number,
+  maxDiscountPercent: number | null | undefined,
+  maxMarkupPercent: number | null | undefined,
+) {
+  if (system <= 0 || maxDiscountPercent == null || maxMarkupPercent == null)
+    return null
+  return {
+    min: Math.ceil((system * (100 - maxDiscountPercent)) / 100),
+    max: Math.floor((system * (100 + maxMarkupPercent)) / 100),
+  }
 }
 function amount(value: string | undefined) {
   const parsed = Number(value ?? 0)
   return Number.isSafeInteger(parsed) ? parsed : 0
 }
-function checklistSystemPrice(
+/**
+ * What the pricing policy in force charges for this checklist now. The price stored on the item is only what it was when the
+ * order was created, so the live calculation wins whenever it covers the item.
+ */
+function liveSystemPrice(
+  item: PricingChecklistItem,
   lines:
     Array<{ orderChecklistItemId?: string | null; amount: number }> | undefined,
-  itemId: string,
 ) {
-  return (lines ?? [])
-    .filter((line) => line.orderChecklistItemId === itemId)
-    .reduce((sum, line) => sum + line.amount, 0)
+  const mine = (lines ?? []).filter(
+    (line) => line.orderChecklistItemId === item.id,
+  )
+  if (mine.length === 0) return item.systemCalculatedPrice ?? 0
+  return mine.reduce((sum, line) => sum + line.amount, 0)
 }
 function approvedPrices(
   items: PricingChecklistItem[],
@@ -746,8 +819,7 @@ function approvedPrices(
         draft.prices[item.id] == null
           ? (item.managerApprovedAmount ??
             item.managerQuotedPrice ??
-            item.systemCalculatedPrice ??
-            checklistSystemPrice(lines, item.id))
+            liveSystemPrice(item, lines))
           : amount(draft.prices[item.id]),
       ]),
   )
@@ -771,13 +843,15 @@ function errorMessage(error: unknown) {
     const messages: Record<string, string> = {
       ORDER_CHECKLIST_REVIEW_INVALID:
         'Danh sách yêu cầu chưa được xem xét đầy đủ. Hãy phân loại tất cả nội dung trước khi duyệt báo giá.',
+      STALE_PRICING_POLICY:
+        'Chính sách giá vừa được cập nhật. Giá trên màn hình đã được tải lại, vui lòng kiểm tra rồi duyệt lại.',
       STALE_PRICING_REVISION:
         'Báo giá đã được cập nhật ở nơi khác. Vui lòng tải lại dữ liệu.',
       PRICING_ADJUSTMENT_REASON_REQUIRED: `Lý do điều chỉnh giá cần ít nhất ${MIN_REASON_LENGTH} ký tự.`,
       PRICING_SELF_APPROVAL_NOT_ALLOWED:
         'Người đề xuất không thể tự phê duyệt điều chỉnh giá.',
       PRICING_OVERRIDE_EXCEEDS_LIMIT:
-        'Mức điều chỉnh vượt quá giới hạn cho phép.',
+        error.message?.trim() || 'Mức điều chỉnh vượt quá giới hạn cho phép.',
       PRICE_BELOW_ALLOWED_MINIMUM:
         'Giá sau điều chỉnh thấp hơn mức giá sàn cho phép.',
       ZERO_PRICE_NOT_ALLOWED: 'Giá báo không được bằng 0.',
@@ -786,10 +860,17 @@ function errorMessage(error: unknown) {
       CONCURRENT_UPDATE:
         'Dữ liệu vừa được cập nhật. Vui lòng tải lại và thử lại.',
     }
-    return error.code
-      ? (messages[error.code] ??
-          'Không thể xử lý yêu cầu định giá. Vui lòng thử lại.')
-      : 'Không thể xử lý yêu cầu định giá. Vui lòng thử lại.'
+    const known = error.code ? messages[error.code] : undefined
+    if (known) return known
+    // Show what the server said (which criterion is missing, which amount is invalid) instead of a generic sentence.
+    const detail = error.message?.trim()
+    if (error.code === 'ORDER_REVIEW_INCOMPLETE')
+      return `Đơn chưa đủ điều kiện duyệt${detail ? `: ${detail}` : '.'}`
+    if (error.code === 'QUOTE_PRICING_INVALID')
+      return `Dữ liệu giá không hợp lệ${detail ? `: ${detail}` : '.'}`
+    return `Không thể xử lý yêu cầu định giá${
+      detail ? `: ${detail}` : ''
+    }${error.code ? ` (${error.code})` : ''}. Vui lòng thử lại.`
   }
   return error instanceof Error
     ? error.message
@@ -848,7 +929,9 @@ function QuoteBreakdown({
           <header>
             <strong>Theo đơn hàng</strong>
             <b>
-              {formatVnd(orderLevel.reduce((sum, line) => sum + line.amount, 0))}
+              {formatVnd(
+                orderLevel.reduce((sum, line) => sum + line.amount, 0),
+              )}
             </b>
           </header>
           <ul>

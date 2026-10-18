@@ -37,7 +37,8 @@ export function PricingEstimateCard({
   else if (loading && !estimate) body = <p className="co-hint">{t.loading}</p>
   else if (!estimate) body = <p className="co-hint">{t.unavailable}</p>
   else {
-    const hasAdditionalServices = additionalChecklists.length > 0 || Boolean(estimate.quotePending)
+    const hasAdditionalServices =
+      additionalChecklists.length > 0 || Boolean(estimate.quotePending)
     body = (
       <div className="co-money">
         <div className="co-money-row">
@@ -58,13 +59,19 @@ export function PricingEstimateCard({
             <strong>{t.additionalPending(additionalChecklists.length)}</strong>
           </div>
         )}
+        {(estimate.occurrences ?? 1) > 1 && (
+          <p className="co-hint">{t.occurrences(estimate.occurrences ?? 1)}</p>
+        )}
         <div className="co-money-row co-money-total">
           <span>{t.total}</span>
           <span>{formatMoney(estimate.totalPrice, locale)}</span>
         </div>
         <p className="co-estimate-notice">{t.estimateNotice}</p>
         {additionalChecklists.length > 0 && (
-          <section className="co-additional-services" aria-labelledby="additional-services-title">
+          <section
+            className="co-additional-services"
+            aria-labelledby="additional-services-title"
+          >
             <h3 id="additional-services-title">{t.additionalServices}</h3>
             <ul>
               {additionalChecklists.map((item) => {
@@ -73,7 +80,9 @@ export function PricingEstimateCard({
                   <li key={item.key}>
                     <strong>{item.content}</strong>
                     <span>{t.mediaCounts(media.images, media.videos)}</span>
-                    <span className="co-additional-status">{t.awaitingManagerQuote}</span>
+                    <span className="co-additional-status">
+                      {t.awaitingManagerQuote}
+                    </span>
                   </li>
                 )
               })}

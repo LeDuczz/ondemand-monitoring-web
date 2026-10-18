@@ -18,5 +18,6 @@ export function selectionEstimate(
     })),
     totalPrice: quote.total,
     quotePending: quote.quotePending,
+    occurrences: quote.occurrences,
   }
 }

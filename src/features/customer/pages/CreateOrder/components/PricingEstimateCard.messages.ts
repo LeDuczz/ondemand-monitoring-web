@@ -4,6 +4,7 @@ export const pricingEstimateMessages = defineMessages({
   vi: {
     title: 'Chi phí dự kiến',
     servicePrice: 'Nội dung giám sát',
+    occurrences: (n: number) => `Đã gồm ${n} lần thực hiện theo lịch định kỳ.`,
     aiAnalysis: 'AI phân tích hình ảnh',
     total: 'Tổng dự kiến',
     additionalServiceRow: 'Dịch vụ bổ sung',
@@ -24,6 +25,7 @@ export const pricingEstimateMessages = defineMessages({
   en: {
     title: 'Estimated cost',
     servicePrice: 'Monitoring content',
+    occurrences: (n: number) => `Includes ${n} scheduled visits.`,
     aiAnalysis: 'AI image analysis',
     total: 'Estimated total',
     additionalServiceRow: 'Additional services',

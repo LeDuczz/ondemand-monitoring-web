@@ -196,14 +196,16 @@ export function ChecklistEditor({
               row.requestedImageCount,
               1,
               500,
-              (value) => checklist.change(row.key, { requestedImageCount: value }),
+              (value) =>
+                checklist.change(row.key, { requestedImageCount: value }),
             )}
             {numberInput(
               t.minimumVideosLabel,
               row.requestedVideoCount,
               1,
               500,
-              (value) => checklist.change(row.key, { requestedVideoCount: value }),
+              (value) =>
+                checklist.change(row.key, { requestedVideoCount: value }),
             )}
           </>
         ) : (
@@ -259,7 +261,8 @@ export function ChecklistEditor({
                   Dịch vụ theo yêu cầu
                 </span>
                 <small className="checklist-hint">
-                  Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager duyệt yêu cầu.
+                  Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager
+                  duyệt yêu cầu.
                 </small>
               </>
             )}
@@ -277,7 +280,16 @@ export function ChecklistEditor({
           {(() => {
             const priced = row.selected ? priceOf(row) : undefined
             return priced && !priced.quotePending ? (
-              <span className="checklist-row-price">
+              <span
+                className="checklist-row-price"
+                title={
+                  (checklist.quote.preview?.occurrences ?? 1) > 1
+                    ? t.rowPriceVisits(
+                        checklist.quote.preview?.occurrences ?? 1,
+                      )
+                    : undefined
+                }
+              >
                 {formatVnd(priced.subtotal)}
               </span>
             ) : null

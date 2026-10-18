@@ -235,6 +235,10 @@
   color: var(--or-tx2, #667085);
   overflow-wrap: anywhere;
 }
+.finance-item-price .finance-range.is-out {
+  color: #b42318;
+  font-weight: 600;
+}
 .finance-item-price label {
   display: grid;
   gap: 3px;

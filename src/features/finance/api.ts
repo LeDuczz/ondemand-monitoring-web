@@ -36,6 +36,7 @@ export const financeApi = {
       adjustmentType?:
         'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
       expectedPricingRevision?: number | null
+      expectedPolicyVersion?: number | null
     },
   ) =>
     apiRequest<Quote>(
@@ -51,9 +52,12 @@ export const financeApi = {
       { method: 'POST' },
     ),
   getQuote: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<CustomerQuote>(`/api/orders/${encodeURIComponent(orderId)}/quote`, {
-      signal,
-    }),
+    apiRequest<CustomerQuote>(
+      `/api/orders/${encodeURIComponent(orderId)}/quote`,
+      {
+        signal,
+      },
+    ),
   acceptQuote: (orderId: string, quoteId: string) =>
     apiRequest<Invoice>(
       `/api/orders/${encodeURIComponent(orderId)}/quotes/${encodeURIComponent(quoteId)}/accept`,

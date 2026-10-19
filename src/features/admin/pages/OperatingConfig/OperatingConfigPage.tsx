@@ -28,10 +28,15 @@ export function OperatingConfigPage() {
     [],
   )
 
+  const { data: pricingData } = useApiQuery(
+    (signal) => adminApi.listPricingPolicies(signal),
+    [],
+  )
+
   const counts: Record<Tab, number> = {
     policy: (policyData?.items.length ?? 0) + (weightsData?.items.length ?? 0),
     nfz: nfzData?.items.length ?? 0,
-    pricing: 0,
+    pricing: pricingData?.length ?? 0,
   }
   const tabs: Array<{ key: Tab; label: string }> = [
     { key: 'policy', label: t.policyTab },

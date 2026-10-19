@@ -62,6 +62,10 @@ export function useCreateOrderWizard() {
     lengthKm: Number(form.estimatedLengthM || 0) / 1000,
     altitudeM: Number.isFinite(form.altitudeM) ? form.altitudeM : 0,
     aiAnalysisRequested: f.aiAnalysisRequested,
+    occurrences:
+      form.recurrenceType !== 'NONE' && form.recurrenceOccurrences > 1
+        ? form.recurrenceOccurrences
+        : 1,
   })
   const meta = useCreateOrderMeta(
     form.serviceId,

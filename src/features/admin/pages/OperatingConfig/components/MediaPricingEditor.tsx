@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { defineMessages, useI18n } from '../../../../../shared/i18n'
+import {
+  CustomerAddedPricingForm,
+  isCustomerAddedRule,
+} from './CustomerAddedPricingForm'
 import { PriceBreakdownView } from '../../../../../shared/components/odm/PriceBreakdownView'
 import {
   checklistPricingApi,
@@ -23,9 +27,9 @@ import type { MediaPricingComponent, PricingRule } from '../../../types/pricing'
 
 const messages = defineMessages({
   vi: {
-    title: 'Giá ảnh và video theo hồ sơ giá',
+    title: 'Bảng giá media dùng chung',
     intro:
-      'Mỗi hồ sơ giá (pricing profile) gồm: giá phần media đã bao gồm trong checklist và bảng giá bậc thang cho phần media bổ sung. Phần bổ sung = max(0, số yêu cầu − số đã bao gồm). Hai khoản này tách biệt và mỗi khoản chỉ tính một lần.',
+      'Giá ảnh và video vượt định mức dùng chung cho mọi checklist, kể cả yêu cầu bổ sung. Số lượng vượt = max(0, số yêu cầu − số đã bao gồm), tính theo các bậc bên dưới; phần đã bao gồm và phần vượt là hai khoản riêng, mỗi khoản chỉ tính một lần.',
     includedSection: 'Media đã bao gồm (giá trọn gói của phần định mức)',
     extraSection: 'Media bổ sung (theo bậc, tính trên số lượng vượt định mức)',
     profile: 'Hồ sơ giá',
@@ -54,11 +58,13 @@ const messages = defineMessages({
     INCLUDED_VIDEO: 'Video đã bao gồm',
     EXTRA_IMAGE: 'Ảnh bổ sung',
     EXTRA_VIDEO: 'Video bổ sung',
+    INCLUDED_AREA: 'Diện tích đã bao gồm (ha)',
+    EXTRA_AREA: 'Phụ thu mỗi ha vượt định mức',
     CEILING: 'Làm tròn lên (tính trọn khối đã bắt đầu)',
     FLOOR: 'Làm tròn xuống (chỉ khối đầy đủ)',
     HALF_UP: 'Làm tròn gần nhất',
     customHint:
-      'Hồ sơ GENERIC_CUSTOMER_ADDED áp dụng cho checklist khách hàng tự thêm ngoài danh mục. Nếu thiếu giá CHECKLIST_BASE, đơn sẽ bị từ chối thay vì tính 0 đồng.',
+      'Nếu thiếu giá nền của yêu cầu bổ sung, đơn sẽ bị từ chối thay vì tính 0 đồng.',
     problems: 'Cần sửa trước khi lưu',
     PROFILE: 'Hồ sơ giá chỉ gồm chữ, số, gạch dưới.',
     COMPONENT: 'Thiếu thành phần.',
@@ -84,9 +90,9 @@ const messages = defineMessages({
     previewError: 'Không thể xem thử giá.',
   },
   en: {
-    title: 'Image and video prices per pricing profile',
+    title: 'Shared media price list',
     intro:
-      'A pricing profile holds the price of the media allowance included in a checklist and a tiered price list for extra media. Extra = max(0, requested − included). The two are separate charges and each is billed exactly once.',
+      'The price of images and videos above the allowance is shared by every checklist, customer-added requirements included. The extra quantity = max(0, requested − included), priced by the tiers below; the included part and the extra part are separate charges, each billed once.',
     includedSection: 'Included media (flat price of the allowance)',
     extraSection: 'Extra media (tiers over the quantity beyond the allowance)',
     profile: 'Pricing profile',
@@ -115,11 +121,13 @@ const messages = defineMessages({
     INCLUDED_VIDEO: 'Included videos',
     EXTRA_IMAGE: 'Extra images',
     EXTRA_VIDEO: 'Extra videos',
+    INCLUDED_AREA: 'Included area (ha)',
+    EXTRA_AREA: 'Surcharge per extra hectare',
     CEILING: 'Round up (a started block is billed)',
     FLOOR: 'Round down (complete blocks only)',
     HALF_UP: 'Round to nearest',
     customHint:
-      'The GENERIC_CUSTOMER_ADDED profile prices checklists a customer adds outside the catalog. Without a CHECKLIST_BASE price, such orders are rejected rather than priced at zero.',
+      'Without a base price for customer-added requirements, such orders are rejected rather than priced at zero.',
     problems: 'Fix before saving',
     PROFILE: 'Profile may contain letters, digits and underscore only.',
     COMPONENT: 'Component is missing.',
@@ -150,10 +158,12 @@ export function MediaPricingEditor({
   rules,
   draftId,
   onChange,
+  showCustomerForm = true,
 }: {
   rules: PricingRule[]
   draftId: string
   onChange: (rules: PricingRule[]) => void
+  showCustomerForm?: boolean
 }) {
   const { t } = useI18n(messages)
   const checklists = useApiQuery(
@@ -165,14 +175,18 @@ export function MediaPricingEditor({
   const [component, setComponent] =
     useState<MediaPricingComponent>('INCLUDED_IMAGE')
   const problems = validateMediaRules(rules)
-  const selectedChecklist = checklists.data?.items.find((item) => item.id === checklistId)
+  const selectedChecklist = checklists.data?.items.find(
+    (item) => item.id === checklistId,
+  )
   useEffect(() => {
     if (selectedChecklist)
       setProfile((selectedChecklist.pricingProfile ?? 'DEFAULT').toUpperCase())
   }, [selectedChecklist])
   const indexed = rules
     .map((rule, index) => ({ rule, index }))
-    .filter((entry) => isMediaRule(entry.rule))
+    .filter(
+      (entry) => isMediaRule(entry.rule) && !isCustomerAddedRule(entry.rule),
+    )
   const problemsFor = (index: number): MediaRuleIssue[] =>
     problems.filter((p) => p.index === index).map((p) => p.issue)
   const patch = (index: number, changes: Partial<PricingRule>) =>
@@ -192,7 +206,8 @@ export function MediaPricingEditor({
         data-testid="media-rule"
       >
         <b>
-          {rule.checklistDefinitionName ?? rule.pricingProfile} · {t[rule.mediaComponent ?? 'INCLUDED_IMAGE']}
+          {rule.checklistDefinitionName ?? rule.pricingProfile} ·{' '}
+          {t[rule.mediaComponent ?? 'INCLUDED_IMAGE']}
         </b>
         {tier && (
           <>
@@ -306,24 +321,59 @@ export function MediaPricingEditor({
     <div className="pricing-rules" aria-label={t.title}>
       <h3>{t.title}</h3>
       <p>{t.intro}</p>
+      {showCustomerForm && (
+        <CustomerAddedPricingForm rules={rules} onChange={onChange} />
+      )}
       <p>{t.customHint}</p>
       <label>
         <span>{t.checklistTarget}</span>
-        <select value={checklistId} onChange={(event) => setChecklistId(event.target.value)}>
+        <select
+          value={checklistId}
+          onChange={(event) => setChecklistId(event.target.value)}
+        >
           <option value="">{t.profileFallback}</option>
           {(checklists.data?.items ?? []).map((checklist) => (
-            <option key={checklist.id} value={checklist.id}>{checklist.content}</option>
+            <option key={checklist.id} value={checklist.id}>
+              {checklist.content}
+            </option>
           ))}
         </select>
       </label>
       {selectedChecklist && (
-        <section className="pricing-checklist-summary" aria-label={t.checklistSection}>
+        <section
+          className="pricing-checklist-summary"
+          aria-label={t.checklistSection}
+        >
           <h4>{t.checklistSection}</h4>
           <strong>{selectedChecklist.content}</strong>
-          <p>{t.basePrice}: {(selectedChecklist.basePrice ?? 0).toLocaleString('vi-VN')} VND</p>
-          <p>{t.includedScope}: {selectedChecklist.includedImageCount ?? 0} ảnh · {selectedChecklist.includedVideoCount ?? 0} video</p>
-          <p>Extra Image: {rules.some((rule) => rule.checklistDefinitionId === checklistId && rule.mediaComponent === 'EXTRA_IMAGE') ? t.configured : t.inherited}</p>
-          <p>Extra Video: {rules.some((rule) => rule.checklistDefinitionId === checklistId && rule.mediaComponent === 'EXTRA_VIDEO') ? t.configured : t.inherited}</p>
+          <p>
+            {t.basePrice}:{' '}
+            {(selectedChecklist.basePrice ?? 0).toLocaleString('vi-VN')} VND
+          </p>
+          <p>
+            {t.includedScope}: {selectedChecklist.includedImageCount ?? 0} ảnh ·{' '}
+            {selectedChecklist.includedVideoCount ?? 0} video
+          </p>
+          <p>
+            Extra Image:{' '}
+            {rules.some(
+              (rule) =>
+                rule.checklistDefinitionId === checklistId &&
+                rule.mediaComponent === 'EXTRA_IMAGE',
+            )
+              ? t.configured
+              : t.inherited}
+          </p>
+          <p>
+            Extra Video:{' '}
+            {rules.some(
+              (rule) =>
+                rule.checklistDefinitionId === checklistId &&
+                rule.mediaComponent === 'EXTRA_VIDEO',
+            )
+              ? t.configured
+              : t.inherited}
+          </p>
         </section>
       )}
       {indexed.length === 0 && <p>{t.empty}</p>}
@@ -366,8 +416,12 @@ export function MediaPricingEditor({
                 profile,
                 component,
                 rules,
-                component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO' ? checklistId || null : null,
-                component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO' ? selectedChecklist?.content ?? null : null,
+                component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO'
+                  ? checklistId || null
+                  : null,
+                component === 'EXTRA_IMAGE' || component === 'EXTRA_VIDEO'
+                  ? (selectedChecklist?.content ?? null)
+                  : null,
               ),
             ])
           }}
@@ -411,7 +465,13 @@ function DraftPreview({ draftId }: { draftId: string }) {
           serviceId: selected,
           policyId: draftId,
           items: checklistId
-            ? [{ checklistId, requestedImageCount: requestedImages, requestedVideoCount: requestedVideos }]
+            ? [
+                {
+                  checklistId,
+                  requestedImageCount: requestedImages,
+                  requestedVideoCount: requestedVideos,
+                },
+              ]
             : undefined,
           areaHa,
           lengthKm,
@@ -439,18 +499,65 @@ function DraftPreview({ draftId }: { draftId: string }) {
       </label>{' '}
       <label>
         <span>{t.previewChecklist}</span>
-        <select value={checklistId} onChange={(e) => setChecklistId(e.target.value)}>
+        <select
+          value={checklistId}
+          onChange={(e) => setChecklistId(e.target.value)}
+        >
           <option value="">—</option>
           {(checklists.data?.items ?? []).map((checklist) => (
-            <option key={checklist.id} value={checklist.id}>{checklist.content}</option>
+            <option key={checklist.id} value={checklist.id}>
+              {checklist.content}
+            </option>
           ))}
         </select>
       </label>{' '}
-      <label><span>{t.requestedImages}</span><input type="number" min={0} max={500} value={requestedImages} onChange={(e) => setRequestedImages(Number(e.target.value))} /></label>{' '}
-      <label><span>{t.requestedVideos}</span><input type="number" min={0} max={500} value={requestedVideos} onChange={(e) => setRequestedVideos(Number(e.target.value))} /></label>{' '}
-      <label><span>{t.area}</span><input type="number" min={0} value={areaHa} onChange={(e) => setAreaHa(Number(e.target.value))} /></label>{' '}
-      <label><span>{t.length}</span><input type="number" min={0} value={lengthKm} onChange={(e) => setLengthKm(Number(e.target.value))} /></label>{' '}
-      <label><span>{t.altitude}</span><input type="number" min={0} value={altitudeM} onChange={(e) => setAltitudeM(Number(e.target.value))} /></label>{' '}
+      <label>
+        <span>{t.requestedImages}</span>
+        <input
+          type="number"
+          min={0}
+          max={500}
+          value={requestedImages}
+          onChange={(e) => setRequestedImages(Number(e.target.value))}
+        />
+      </label>{' '}
+      <label>
+        <span>{t.requestedVideos}</span>
+        <input
+          type="number"
+          min={0}
+          max={500}
+          value={requestedVideos}
+          onChange={(e) => setRequestedVideos(Number(e.target.value))}
+        />
+      </label>{' '}
+      <label>
+        <span>{t.area}</span>
+        <input
+          type="number"
+          min={0}
+          value={areaHa}
+          onChange={(e) => setAreaHa(Number(e.target.value))}
+        />
+      </label>{' '}
+      <label>
+        <span>{t.length}</span>
+        <input
+          type="number"
+          min={0}
+          value={lengthKm}
+          onChange={(e) => setLengthKm(Number(e.target.value))}
+        />
+      </label>{' '}
+      <label>
+        <span>{t.altitude}</span>
+        <input
+          type="number"
+          min={0}
+          value={altitudeM}
+          onChange={(e) => setAltitudeM(Number(e.target.value))}
+        />
+      </label>{' '}
       <button type="button" className="odm-btn" onClick={() => void run()}>
         {t.previewButton}
       </button>

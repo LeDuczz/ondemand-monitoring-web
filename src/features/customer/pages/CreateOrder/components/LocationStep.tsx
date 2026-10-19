@@ -37,7 +37,7 @@ type ApiResponse<T> = {
   data?: T
 }
 
-function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, features }: {
+export function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, features }: {
   latitude: string
   longitude: string
   radiusM: number
@@ -137,8 +137,31 @@ function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, 
       setTilesFailed(false)
     })
     map.current = instance
-    window.setTimeout(() => instance.invalidateSize(), 0)
+    const refreshMapSize = () => {
+      if (!container.current || !map.current) return
+      instance.invalidateSize({ animate: false, pan: false })
+      instance.eachLayer((layer) => {
+        if (layer instanceof L.TileLayer) layer.redraw()
+      })
+    }
+    const refreshTimers = [0, 100, 300, 800].map((delay) =>
+      window.setTimeout(refreshMapSize, delay),
+    )
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => {
+            window.requestAnimationFrame(refreshMapSize)
+          })
+    resizeObserver?.observe(container.current)
+    if (container.current.parentElement) {
+      resizeObserver?.observe(container.current.parentElement)
+    }
+    window.addEventListener('resize', refreshMapSize)
     return () => {
+      refreshTimers.forEach((timer) => window.clearTimeout(timer))
+      window.removeEventListener('resize', refreshMapSize)
+      resizeObserver?.disconnect()
       instance.remove()
       map.current = null
       circle.current = null

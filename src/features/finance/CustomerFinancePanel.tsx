@@ -37,7 +37,10 @@ export function CustomerFinancePanel({
   onStateChange?: (state: CustomerFinanceState) => void
 }) {
   const legalReady =
-    legalStatus == null || legalStatus === 'NOT_REQUIRED' || legalStatus === 'APPROVED'
+    legalStatus == null ||
+    legalStatus === 'NOT_REQUIRED' ||
+    legalStatus === 'APPROVED' ||
+    legalStatus === 'PENDING_PERMIT'
   const { t } = useI18n(customerFinancePanelMessages)
   const [quote, setQuote] = useState<CustomerQuote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
@@ -143,6 +146,13 @@ export function CustomerFinancePanel({
                 {legalStatus === 'REJECTED'
                   ? 'Đơn hàng không thể thực hiện do điều kiện khu vực bay.'
                   : 'Chúng tôi đang xác minh các điều kiện cần thiết trước khi đơn hàng có thể tiếp tục.'}
+              </span>
+            </div>
+          ) : legalStatus === 'PENDING_PERMIT' ? (
+            <div className="customer-deposit-notice">
+              <b>Đang xác minh giấy phép bay</b>
+              <span>
+                Bạn vẫn có thể tiếp tục. Chúng tôi sẽ cập nhật khi giấy phép được xác nhận.
               </span>
             </div>
           ) : null}

@@ -1589,7 +1589,8 @@
 
 /* ---------- MNG-03 Order review — redesigned layout (odm-or-*) ---------- */
 
-.odm-or {
+.odm-or,
+.odm-all-orders {
   --or-bg: #f6f8fb;
   --or-card: #ffffff;
   --or-border: #e5eaf0;
@@ -1613,7 +1614,8 @@
   color: var(--or-tx);
 }
 
-:root[data-theme='dark'] .odm-or {
+:root[data-theme='dark'] .odm-or,
+:root[data-theme='dark'] .odm-all-orders {
   --or-bg: var(--bg);
   --or-card: var(--sf);
   --or-border: var(--bd);
@@ -3742,6 +3744,10 @@ a.odm-or-btn {
 }
 
 /* ---------- Mission list (odm-or-*) ---------- */
+
+.odm-all-orders .odm-or-filters {
+  padding: 14px 20px 6px;
+}
 
 .odm-or-filters {
   display: flex;
@@ -6624,3 +6630,247 @@ fieldset.odm-or-readonly {
 .odm-md-collapse[open] > summary {
   border-bottom: 1px solid var(--or-border);
 }
+
+.odm-or-area-contact { margin: 0; font-size: 13px; font-weight: 600; }
+.odm-or-area-contact a { color: var(--or-primary); text-decoration: none; }
+
+/* ---- Area check result panel: icon-led cards (matches the review mockup) ---- */
+.odm-or-area-title { gap: 12px; font-size: 17px; }
+.odm-or-area-title-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--or-primary-soft);
+  color: var(--or-primary);
+  flex: none;
+}
+.odm-or-area-refresh {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--or-border);
+  border-radius: 50%;
+  background: var(--or-card);
+  color: var(--or-tx);
+  cursor: pointer;
+  flex: none;
+}
+.odm-or-area-refresh:hover:not(:disabled) { border-color: var(--or-primary); color: var(--or-primary); }
+.odm-or-area-refresh:disabled { cursor: progress; opacity: 0.7; }
+.odm-or-area-refresh.is-loading svg { animation: odm-or-area-spin 0.9s linear infinite; }
+@keyframes odm-or-area-spin { to { transform: rotate(360deg); } }
+
+.odm-or-area-results { gap: 12px; }
+
+.odm-or-area-decision {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 12px;
+}
+.odm-or-area-decision-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #bbf7d0;
+  color: #166534;
+  flex: none;
+}
+.odm-or-area-decision.is-needs_review .odm-or-area-decision-icon { background: #fde68a; color: #92400e; }
+.odm-or-area-decision.is-high_risk .odm-or-area-decision-icon { background: #fecaca; color: #991b1b; }
+.odm-or-area-decision strong { font-size: 15px; }
+.odm-or-area-decision p { margin-top: 4px; font-size: 14px; }
+
+.odm-or-area-details { border-radius: 12px; }
+.odm-or-area-details summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  font-size: 14px;
+  list-style: none;
+  color: var(--or-tx);
+}
+.odm-or-area-details summary::-webkit-details-marker { display: none; }
+.odm-or-area-details summary > span:not(.odm-or-area-chevron) { flex: 1; min-width: 0; }
+.odm-or-area-chevron { display: inline-flex; color: var(--or-tx2); transition: transform 0.15s; }
+.odm-or-area-details[open] .odm-or-area-chevron { transform: rotate(90deg); }
+
+.odm-or-area-clear {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 12px;
+  background: #e8f7ee;
+  color: #166534;
+}
+.odm-or-area-clear-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+  flex: none;
+}
+.odm-or-area-clear strong { display: block; font-size: 15px; }
+.odm-or-area-clear small { display: block; margin-top: 4px; font-size: 14px; line-height: 1.5; color: #4b6b57; }
+
+.odm-or-area-source {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--or-border);
+  border-radius: 12px;
+  color: var(--or-tx);
+  font-size: 14px;
+  font-weight: 600;
+}
+.odm-or-area-source:hover { text-decoration: none; border-color: var(--or-primary); }
+.odm-or-area-source > span { flex: 1; min-width: 0; }
+.odm-or-area-source svg:last-child { color: var(--or-tx2); }
+
+.odm-or-area-manager-review {
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--or-border);
+  border-radius: 12px;
+}
+.odm-or-area-review-label { font-size: 14px; color: var(--or-tx2); }
+.odm-or-area-verdict { display: flex; align-items: center; gap: 10px; font-size: 17px; }
+.odm-or-area-verdict.is-rejected { color: #dc2626; }
+.odm-or-area-reason { display: grid; gap: 2px; font-size: 15px; }
+.odm-or-area-reason span { color: var(--or-tx2); font-size: 14px; }
+.odm-or-area-manager-review > small { font-size: 14px; }
+
+.odm-or-area-edit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--or-border);
+  border-radius: 10px;
+  background: var(--or-card);
+  color: var(--or-tx);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.odm-or-area-edit > span { flex: 1; }
+.odm-or-area-edit:hover { border-color: var(--or-primary); }
+.odm-or-area-edit svg:last-child { color: var(--or-tx2); }
+
+.odm-or-area-contact { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.odm-or-area-contact svg { color: var(--or-tx2); flex: none; }
+
+.odm-or-area-secondary-actions { flex-wrap: nowrap; }
+.odm-or-area-secondary-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--or-tx);
+}
+.odm-or-area-secondary-actions .is-danger {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}
+.odm-or-area-secondary-actions .is-danger:hover { background: #dc2626; }
+@media (max-width: 520px) { .odm-or-area-secondary-actions { flex-wrap: wrap; } }
+
+/* ---- Area check panel: clearer hierarchy (readable at narrow widths) ---- */
+.odm-or-area-results { gap: 14px; }
+
+.odm-or-area-decision strong,
+.odm-or-area-clear strong { font-size: 16px; line-height: 1.35; }
+.odm-or-area-decision p,
+.odm-or-area-clear small { font-size: 14.5px; line-height: 1.55; }
+
+.odm-or-area-details summary,
+.odm-or-area-source,
+.odm-or-area-edit { min-height: 52px; font-size: 15px; font-weight: 600; }
+
+.odm-or-area-manager-review {
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--or-card);
+}
+.odm-or-area-manager-review.is-rejected {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+.odm-or-area-manager-review.is-pending_permit {
+  border-color: #fde68a;
+  background: #fffdf3;
+}
+.odm-or-area-manager-review.is-approved,
+.odm-or-area-manager-review.is-not_required {
+  border-color: #bbf7d0;
+  background: #f6fdf8;
+}
+.odm-or-area-review-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--or-tx2);
+}
+.odm-or-area-verdict { font-size: 19px; line-height: 1.3; }
+.odm-or-area-reason {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--or-border);
+  color: var(--or-tx);
+  line-height: 1.5;
+}
+.odm-or-area-reason span { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.odm-or-area-manager-review > small { font-size: 14px; color: var(--or-tx2); }
+
+.odm-or-area-contact {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--or-border);
+  border-radius: 10px;
+  background: var(--or-card);
+}
+.odm-or-area-contact > svg { margin-top: 2px; color: var(--or-primary); }
+.odm-or-area-contact > div { display: grid; gap: 2px; min-width: 0; }
+.odm-or-area-contact span { font-size: 13px; color: var(--or-tx2); }
+.odm-or-area-contact strong { font-size: 15px; font-weight: 700; }
+.odm-or-area-contact a { font-size: 16px; font-weight: 700; color: var(--or-primary); }
+.odm-or-area-contact em { font-size: 14px; color: var(--or-tx2); }
+
+/* Stack decisions so labels never wrap and the destructive action stands apart. */
+.odm-or-area-secondary-actions { flex-direction: column; flex-wrap: nowrap; gap: 10px; }
+.odm-or-area-secondary-actions button {
+  flex: none;
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.odm-or-area-secondary-actions button:not(.is-danger) { border-color: var(--or-primary); color: var(--or-primary); }
+.odm-or-area-secondary-actions button:not(.is-danger):hover { background: var(--or-primary-soft); }

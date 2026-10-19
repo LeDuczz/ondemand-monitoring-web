@@ -41,8 +41,31 @@ export type OrderIconName =
   | 'shield'
   | 'cloud'
   | 'lock'
+  | 'edit'
+  | 'swap'
+  | 'plane'
+  | 'chart'
 
 const paths: Record<OrderIconName, ReactNode> = {
+  edit: (
+    <>
+      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17z" />
+      <path d="m13.5 8.5 3 3" />
+    </>
+  ),
+  swap: (
+    <>
+      <path d="M4 8h14l-3-3M20 16H6l3 3" />
+    </>
+  ),
+  plane: (
+    <path d="M10.5 13.5 3 11l1.5-1.5 8 .5 4-5a1.8 1.8 0 0 1 2.7 2.4l-4.2 4.6.5 8L14 21l-2.5-7.5z" />
+  ),
+  chart: (
+    <>
+      <path d="M5 20V11M12 20V5M19 20v-7" />
+    </>
+  ),
   pin: (
     <>
       <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" />

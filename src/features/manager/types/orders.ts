@@ -130,6 +130,7 @@ export type OrderDetail = {
   flightAreaReviewedById?: string | null
   flightAreaReviewedByName?: string | null
   flightAreaReviewedAt?: string | null
+  updatedAt?: string | null
 }
 
 export type LegalReviewStatus =
@@ -233,6 +234,7 @@ export type ApprovalDecision = 'REJECTED' | 'NEED_INFO'
 export type ApprovalRequest = {
   decision: ApprovalDecision
   reason: string
+  requestedUpdateScope?: 'LOCATION' | 'ADDITIONAL_INFORMATION'
 }
 
 export type OrderDeliverableResponse = {

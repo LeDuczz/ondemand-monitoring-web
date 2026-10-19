@@ -172,7 +172,8 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     depositPaid: planning ? planning.depositPaid : true,
     reviewStep,
   })
-  const readOnly = showExecutionPlan
+  // Only a PENDING order can still be reviewed; rejected/cancelled/need-info orders are view-only.
+  const readOnly = showExecutionPlan || order.status !== 'PENDING'
   const reviewing = !showExecutionPlan || viewStage !== null
   const openStage = (stage: OrderStage) => {
     const step = orderStageToReviewStep(stage)
@@ -315,9 +316,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
             hint={
               areaReviewStatus == null
                 ? 'Manager cần đánh giá khu vực trước khi tiếp tục'
-                : areaReviewStatus === 'PENDING_PERMIT'
-                  ? 'Đang xác minh giấy phép ngoài hệ thống; chưa thể duyệt hoặc thanh toán'
-                  : areaReviewStatus === 'REJECTED'
+                : areaReviewStatus === 'REJECTED'
                     ? 'Hãy yêu cầu khách đổi khu vực hoặc từ chối đơn'
                     : null
             }

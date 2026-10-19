@@ -117,6 +117,7 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     flightAreaReviewedById: order.flightAreaReviewedById ?? null,
     flightAreaReviewedByName: order.flightAreaReviewedByName ?? null,
     flightAreaReviewedAt: order.flightAreaReviewedAt ?? null,
+    updatedAt: order.updatedAt ?? null,
   }
 }
 

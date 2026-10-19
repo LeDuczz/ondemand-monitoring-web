@@ -130,6 +130,7 @@ export type OrderCreateResponse = {
   orderStatus?: string
   legalReviewStatus?: 'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
   rejectReason?: string
+  requestedUpdateScope?: 'LOCATION' | 'ADDITIONAL_INFORMATION'
   reviewById?: string
   reviewByName?: string
   reviewAt?: string

@@ -64,4 +64,42 @@ describe('ReviewNotice', () => {
     expect(onInformationSubmitted).toHaveBeenCalledOnce()
     expect(screen.getByText('Đã gửi thông tin bổ sung.')).toBeInTheDocument()
   })
+
+  it('shows only the requested location correction fields', async () => {
+    render(
+      <ReviewNotice
+        order={{
+          ...order,
+          requestedUpdateScope: 'LOCATION',
+          address: 'Vị trí cũ',
+          latitude: 10.64,
+          longitude: 106.69,
+          radiusM: 300,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Cập nhật khu vực giám sát')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Vị trí cũ')).toBeInTheDocument()
+    expect(screen.queryByText('Người liên hệ hiện trường')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Vĩ độ'), {
+      target: { value: '10.65' },
+    })
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cập nhật khu vực và gửi lại' }),
+    )
+
+    await waitFor(() =>
+      expect(apiRequest).toHaveBeenCalledWith('/api/orders/order-1', {
+        method: 'PATCH',
+        body: expect.objectContaining({
+          address: 'Vị trí cũ',
+          latitude: 10.65,
+          longitude: 106.69,
+          radiusM: 300,
+        }),
+      }),
+    )
+  })
 })

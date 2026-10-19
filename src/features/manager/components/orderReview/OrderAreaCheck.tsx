@@ -11,8 +11,10 @@ import type {
   LegalReviewStatus,
   OrderDetail,
 } from '../../types/orders'
+import { OrderIcon } from './OrderIcon'
 import { OrderLocationCard } from './OrderLocationCard'
 import { resolveOrderGpsCenter } from './orderGps'
+import { usePlanningConfirmation } from '../planning/usePlanningConfirmation'
 
 const assessmentCache = new Map<string, FlightAreaAssessment>()
 
@@ -27,6 +29,18 @@ export function OrderAreaCheck({
 }) {
   const [review, setReview] = useState(() => areaReviewFromOrder(order))
   const [reviewOpen, setReviewOpen] = useState(false)
+  useEffect(() => {
+    setReview(areaReviewFromOrder(order))
+  }, [
+    order.id,
+    order.legalReviewStatus,
+    order.requestedScopeFeasible,
+    order.flightAreaReviewReason,
+    order.flightAreaReviewNote,
+    order.flightAreaReviewedByName,
+    order.flightAreaReviewedAt,
+    order.updatedAt,
+  ])
   const resolved = resolveOrderGpsCenter(order.center)
   const latitude = resolved?.center.lat
   const longitude = resolved?.center.lon
@@ -73,15 +87,24 @@ export function OrderAreaCheck({
         <OrderLocationCard order={order} t={t} showAreaAddress />
         <section className="odm-or-card">
           <header className="odm-or-card-head">
-            <span className="odm-or-card-title">Kết quả kiểm tra khu vực</span>
-            <button
-              type="button"
-              className="odm-or-btn-outline"
-              onClick={assessment.reload}
-              disabled={assessment.loading}
-            >
-              {assessment.loading ? 'Đang kiểm tra…' : 'Kiểm tra lại'}
-            </button>
+            <span className="odm-or-card-title odm-or-area-title">
+              <span className="odm-or-area-title-icon" aria-hidden="true">
+                <OrderIcon name="chart" size={20} />
+              </span>
+              Kết quả kiểm tra khu vực
+            </span>
+            {order.status === 'PENDING' ? (
+              <button
+                type="button"
+                className={`odm-or-area-refresh${assessment.loading ? ' is-loading' : ''}`}
+                onClick={assessment.reload}
+                disabled={assessment.loading}
+                aria-label={assessment.loading ? 'Đang kiểm tra…' : 'Kiểm tra lại'}
+                title={assessment.loading ? 'Đang kiểm tra…' : 'Kiểm tra lại'}
+              >
+                <OrderIcon name="refresh" size={18} />
+              </button>
+            ) : null}
           </header>
           <div className="odm-or-card-body odm-or-area-results">
             {!resolved || radiusM <= 0 ? (
@@ -98,7 +121,13 @@ export function OrderAreaCheck({
               <>
                 <AreaDecisionSummary data={data} />
                 <details className="odm-or-area-details">
-                  <summary>Xem dữ liệu kiểm tra chi tiết</summary>
+                  <summary>
+                    <OrderIcon name="doc" size={18} />
+                    <span>Xem dữ liệu kiểm tra chi tiết</span>
+                    <span className="odm-or-area-chevron" aria-hidden="true">
+                      <OrderIcon name="chevron-right" size={18} />
+                    </span>
+                  </summary>
                   <dl className="odm-or-area-facts">
                     <Fact
                       label="Đối chiếu bản đồ Bộ Quốc phòng"
@@ -167,14 +196,25 @@ export function OrderAreaCheck({
                       ))}
                     </ul>
                   </div>
-                ) : !hasMinistryViolations ? (
-                  <p className="odm-or-area-clear">
-                    Không ghi nhận cảnh báo vùng cần chú ý.
+                ) : !hasMinistryViolations &&
+                  data.assessment.level === 'FAVORABLE' ? (
+                  <div className="odm-or-area-clear">
+                    <span className="odm-or-area-clear-icon" aria-hidden="true">
+                      <OrderIcon name="check" size={14} />
+                    </span>
+                    <div>
+                      <strong>Kiểm tra sơ bộ chưa ghi nhận cảnh báo.</strong>
+                      <small>
+                        Manager vẫn cần xác nhận điều kiện thực tế trước khi duyệt.
+                      </small>
+                    </div>
+                  </div>
+                ) : null}
+                {findings && findings.length > 0 || hasMinistryViolations ? (
+                  <p className="odm-or-area-disclaimer">
+                    {data.assessment.disclaimer}
                   </p>
                 ) : null}
-                <p className="odm-or-area-disclaimer">
-                  {data.assessment.disclaimer}
-                </p>
                 <a
                   className="odm-or-area-source"
                   href={
@@ -184,7 +224,9 @@ export function OrderAreaCheck({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Mở bản đồ cấm bay của Bộ Quốc phòng
+                  <OrderIcon name="plane" size={18} />
+                  <span>Mở bản đồ cấm bay của Bộ Quốc phòng</span>
+                  <OrderIcon name="chevron-right" size={18} />
                 </a>
                 <ManagerAreaReview
                   order={order}
@@ -224,6 +266,20 @@ type SavedAreaReview = {
 
 function areaReviewFromOrder(order: OrderDetail): SavedAreaReview | null {
   if (!order.legalReviewStatus || order.legalReviewStatus === 'NOT_REVIEWED') return null
+  const reviewedAt = order.flightAreaReviewedAt
+    ? new Date(order.flightAreaReviewedAt).getTime()
+    : Number.NaN
+  const updatedAt = order.updatedAt ? new Date(order.updatedAt).getTime() : Number.NaN
+  // A customer location correction updates the order after the verdict was
+  // recorded. That verdict belongs to the old coordinates and is only history.
+  if (
+    order.status === 'PENDING' &&
+    Number.isFinite(reviewedAt) &&
+    Number.isFinite(updatedAt) &&
+    updatedAt - reviewedAt > 1_000
+  ) {
+    return null
+  }
   return {
     status: order.legalReviewStatus,
     requestedScopeFeasible: order.requestedScopeFeasible ?? null,
@@ -243,18 +299,21 @@ function ManagerAreaReview({
   review: SavedAreaReview | null
   onEdit: () => void
 }) {
-  const [resolutionStatus, setResolutionStatus] = useState<'APPROVED' | 'REJECTED' | null>(null)
+  const confirmation = usePlanningConfirmation()
+  // Once the order is rejected/cancelled/sent back, the review is history: no more actions.
+  const decided = order.status !== 'PENDING'
   return (
     <>
-    <div className="odm-or-area-manager-review">
+    <div className={`odm-or-area-manager-review${review ? ` is-${review.status.toLowerCase()}` : ''}`}>
       {review ? (
         <>
-          <span>Đánh giá của Manager</span>
-          <strong className={`is-${review.status.toLowerCase()}`}>
+          <span className="odm-or-area-review-label">Đánh giá của Manager</span>
+          <strong className={`odm-or-area-verdict is-${review.status.toLowerCase()}`}>
+            <OrderIcon name={review.status === 'REJECTED' ? 'x' : review.status === 'PENDING_PERMIT' ? 'alert' : 'shield'} size={20} />
             {areaReviewLabel(review.status)}
           </strong>
-          {review.reason ? <p><b>Lý do:</b> {review.reason}</p> : null}
-          {review.note ? <p><b>Ghi chú:</b> {review.note}</p> : null}
+          {review.reason ? <p className="odm-or-area-reason"><span>Lý do</span>{review.reason}</p> : null}
+          {review.note ? <p className="odm-or-area-reason"><span>Ghi chú</span>{review.note}</p> : null}
           <small>
             {review.reviewer ?? 'Manager'}
             {review.reviewedAt
@@ -264,25 +323,35 @@ function ManagerAreaReview({
                 }).format(new Date(review.reviewedAt))}`
               : ''}
           </small>
-          <button type="button" className="odm-or-btn-outline" onClick={onEdit}>
-            Chỉnh sửa đánh giá
-          </button>
-          {review.status === 'PENDING_PERMIT' ? (
-            <div className="odm-or-area-secondary-actions">
-              <button type="button" onClick={() => setResolutionStatus('APPROVED')}>
-                Đã có giấy phép
-              </button>
-              <button type="button" className="is-danger" onClick={() => setResolutionStatus('REJECTED')}>
-                Không được cấp phép
-              </button>
+          {decided ? null : (
+            <button type="button" className="odm-or-area-edit" onClick={onEdit}>
+              <OrderIcon name="edit" size={18} />
+              <span>Chỉnh sửa đánh giá</span>
+              <OrderIcon name="chevron-right" size={18} />
+            </button>
+          )}
+          {review.status === 'REJECTED' ? (
+            <div className="odm-or-area-contact">
+              <OrderIcon name="phone" size={20} />
+              <div>
+                <span>Liên hệ khách hàng</span>
+                <strong>{order.customer.fullName}</strong>
+                {order.customer.phone ? (
+                  <a href={`tel:${order.customer.phone.replace(/\s+/g, '')}`}>{order.customer.phone}</a>
+                ) : (
+                  <em>Chưa có số điện thoại</em>
+                )}
+              </div>
             </div>
           ) : null}
-          {review.status === 'REJECTED' ? (
+          {review.status === 'REJECTED' && !decided ? (
             <div className="odm-or-area-secondary-actions">
-              <button type="button" onClick={() => void resolveUnsuitable(order, review, 'NEED_INFO')}>
+              <button type="button" onClick={() => void resolveUnsuitable(order, review, 'NEED_INFO', confirmation.confirm)}>
+                <OrderIcon name="swap" size={16} />
                 Yêu cầu khách đổi khu vực
               </button>
-              <button type="button" className="is-danger" onClick={() => void resolveUnsuitable(order, review, 'REJECTED')}>
+              <button type="button" className="is-danger" onClick={() => void resolveUnsuitable(order, review, 'REJECTED', confirmation.confirm)}>
+                <OrderIcon name="x" size={16} />
                 Từ chối đơn hàng
               </button>
             </div>
@@ -291,32 +360,30 @@ function ManagerAreaReview({
       ) : (
         <>
           <p>Chưa có đánh giá của Manager.</p>
-          <button type="button" className="odm-btn odm-btn-p" onClick={onEdit}>
-            Đánh giá khu vực
-          </button>
+          {decided ? null : (
+            <button type="button" className="odm-btn odm-btn-p" onClick={onEdit}>
+              Đánh giá khu vực
+            </button>
+          )}
           <a href="#portal/manager/support">Cần trợ giúp? Liên hệ hỗ trợ</a>
         </>
       )}
     </div>
-    {resolutionStatus ? (
-      <PermitResolutionDialog
-        order={order}
-        status={resolutionStatus}
-        onClose={() => setResolutionStatus(null)}
-      />
-    ) : null}
+    {confirmation.dialog}
     </>
   )
 }
 
+type AreaReviewChoice = LegalReviewStatus | 'CHANGE_LOCATION'
+
 const REVIEW_OPTIONS: Array<{
-  status: LegalReviewStatus
+  status: AreaReviewChoice
   label: string
   hint: string
 }> = [
-  { status: 'NOT_REQUIRED', label: 'Đạt sơ bộ', hint: 'Không cần xác minh giấy phép thêm.' },
-  { status: 'PENDING_PERMIT', label: 'Cần xác minh giấy phép', hint: 'Tạm dừng thanh toán trong khi Manager xử lý bên ngoài hệ thống.' },
-  { status: 'REJECTED', label: 'Không phù hợp', hint: 'Khu vực hiện tại không thể thực hiện theo yêu cầu.' },
+  { status: 'NOT_REQUIRED', label: 'Khu vực phù hợp sơ bộ', hint: 'Có thể tiếp tục duyệt đơn và phân nguồn lực. Hồ sơ xin phép bay được thực hiện ở bước sau.' },
+  { status: 'CHANGE_LOCATION', label: 'Yêu cầu khách đổi khu vực', hint: 'Trả đơn về cho khách chọn lại vị trí giám sát.' },
+  { status: 'REJECTED', label: 'Khu vực không khả thi', hint: 'Khu vực hiện tại không thể triển khai theo yêu cầu.' },
 ]
 
 const UNSUITABLE_REASONS = [
@@ -333,12 +400,12 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
   onClose: () => void
   onSaved: (review: SavedAreaReview) => void
 }) {
-  const [status, setStatus] = useState<LegalReviewStatus | null>(initial?.status ?? null)
+  const [status, setStatus] = useState<AreaReviewChoice | null>(initial?.status ?? null)
   const [reason, setReason] = useState(initial?.reason ?? '')
   const [note, setNote] = useState(initial?.note ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const reasonRequired = status === 'REJECTED'
+  const reasonRequired = status === 'REJECTED' || status === 'CHANGE_LOCATION'
 
   async function save() {
     if (!status) return setError('Chọn một kết quả đánh giá.')
@@ -346,13 +413,23 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
     setSaving(true)
     setError('')
     try {
+      const savedStatus: LegalReviewStatus = status === 'CHANGE_LOCATION' ? 'REJECTED' : status
       const result = await ordersApi.saveFlightAreaReview(order.id, {
-        status,
+        status: savedStatus,
         reason: reason.trim() || null,
         note: note.trim() || null,
       })
+      if (status === 'CHANGE_LOCATION') {
+        await ordersApi.submitApproval(order.id, {
+          decision: 'NEED_INFO',
+          reason: [reason.trim(), note.trim()].filter(Boolean).join(' — '),
+          requestedUpdateScope: 'LOCATION',
+        })
+        window.location.hash = managerHref({ screen: 'orderQueue' })
+        return
+      }
       onSaved({
-        status: result.legalReviewStatus ?? status,
+        status: result.legalReviewStatus ?? savedStatus,
         requestedScopeFeasible: result.requestedScopeFeasible ?? null,
         reason: result.flightAreaReviewReason ?? (reason.trim() || null),
         note: result.flightAreaReviewNote ?? (note.trim() || null),
@@ -390,11 +467,6 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
             </label>
           ))}
         </div>
-        {status === 'PENDING_PERMIT' ? (
-          <p className="odm-or-area-permission-note">
-            Cần xác minh giấy phép trước khi đơn hàng được duyệt thực hiện. Khách hàng chưa thể thanh toán cho đến khi Manager cập nhật kết quả xác minh.
-          </p>
-        ) : null}
         {reasonRequired ? (
           <label className="odm-or-area-field">Lý do
             <select value={reason} onChange={(event) => setReason(event.target.value)}>
@@ -405,7 +477,7 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
         ) : null}
         <label className="odm-or-area-field">Ghi chú của Manager
           <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)}
-            placeholder="Ghi lại nội dung đã đối chiếu hoặc thông tin cần xác minh…" />
+            placeholder="Ghi lại nội dung đã đối chiếu hoặc lưu ý cho bước tiếp theo…" />
         </label>
         {error ? <p className="odm-or-area-error" role="alert">{error}</p> : null}
         <footer>
@@ -422,96 +494,35 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
 function areaReviewLabel(status: LegalReviewStatus) {
   const labels: Record<LegalReviewStatus, string> = {
     NOT_REVIEWED: 'Chưa đánh giá',
-    NOT_REQUIRED: 'Đạt sơ bộ',
-    PENDING_PERMIT: 'Đang xác minh giấy phép',
-    APPROVED: 'Đã có giấy phép',
-    REJECTED: 'Không được cấp phép',
+    NOT_REQUIRED: 'Khu vực phù hợp sơ bộ',
+    PENDING_PERMIT: 'Chờ xử lý giấy phép',
+    APPROVED: 'Khu vực đã được xác nhận',
+    REJECTED: 'Khu vực không khả thi',
   }
   return labels[status]
-}
-
-function PermitResolutionDialog({ order, status, onClose }: {
-  order: OrderDetail
-  status: 'APPROVED' | 'REJECTED'
-  onClose: () => void
-}) {
-  const [note, setNote] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const approved = status === 'APPROVED'
-
-  async function confirm() {
-    setSaving(true)
-    setError('')
-    try {
-      await ordersApi.resolveLegalReview(order.id, status, note.trim() || undefined)
-      window.location.reload()
-    } catch {
-      setError('Không thể cập nhật kết quả xác minh. Vui lòng thử lại.')
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="odm-or-area-modal-backdrop" role="presentation" onMouseDown={(event) => {
-      if (!saving && event.target === event.currentTarget) onClose()
-    }}>
-      <section className="odm-or-area-modal" role="dialog" aria-modal="true" aria-labelledby="permit-resolution-title">
-        <header>
-          <div>
-            <h3 id="permit-resolution-title">
-              {approved ? 'Xác nhận đã có giấy phép' : 'Xác nhận không được cấp phép'}
-            </h3>
-            <p>
-              {approved
-                ? 'Đơn hàng sẽ đủ điều kiện để tiếp tục duyệt và thanh toán.'
-                : 'Đơn hàng sẽ bị chặn duyệt và thanh toán.'}
-            </p>
-          </div>
-          <button type="button" aria-label="Đóng" disabled={saving} onClick={onClose}>×</button>
-        </header>
-        <div className="odm-or-area-modal-context">
-          <b>{order.title || 'Yêu cầu giám sát'}</b>
-          <span>{order.code}</span>
-        </div>
-        <label className="odm-or-area-field">
-          Ghi chú <small>(không bắt buộc)</small>
-          <textarea
-            rows={4}
-            value={note}
-            maxLength={1000}
-            autoFocus
-            placeholder={approved ? 'Nhập thông tin giấy phép hoặc nội dung đã xác minh…' : 'Nhập lý do hoặc kết quả xác minh…'}
-            onChange={(event) => setNote(event.target.value)}
-          />
-        </label>
-        <div className="odm-or-area-char-count">{note.length}/1000</div>
-        {error ? <p className="odm-or-area-error" role="alert">{error}</p> : null}
-        <footer>
-          <button type="button" className="odm-btn" disabled={saving} onClick={onClose}>Hủy</button>
-          <button
-            type="button"
-            className={`odm-btn ${approved ? 'odm-btn-p' : 'is-danger'}`}
-            disabled={saving}
-            onClick={() => void confirm()}
-          >
-            {saving ? 'Đang cập nhật…' : 'Xác nhận'}
-          </button>
-        </footer>
-      </section>
-    </div>
-  )
 }
 
 async function resolveUnsuitable(
   order: OrderDetail,
   review: SavedAreaReview,
   decision: 'NEED_INFO' | 'REJECTED',
+  confirm: (question: { title: string; body: string; action?: string }) => Promise<boolean>,
 ) {
-  const action = decision === 'NEED_INFO' ? 'yêu cầu khách đổi khu vực' : 'từ chối đơn hàng'
-  if (!window.confirm(`Xác nhận ${action}?`)) return
+  const needInfo = decision === 'NEED_INFO'
+  const accepted = await confirm({
+    title: needInfo ? 'Yêu cầu khách đổi khu vực?' : 'Từ chối đơn hàng?',
+    body: needInfo
+      ? 'Đơn sẽ được chuyển về cho khách để chọn lại khu vực giám sát. Bạn nên gọi báo trước cho khách.'
+      : 'Đơn sẽ bị từ chối và đóng lại. Bạn nên gọi báo cho khách trước khi từ chối.',
+    action: needInfo ? 'Yêu cầu đổi khu vực' : 'Từ chối đơn',
+  })
+  if (!accepted) return
   const reason = [review.reason, review.note].filter(Boolean).join(' — ')
-  await ordersApi.submitApproval(order.id, { decision, reason })
+  await ordersApi.submitApproval(order.id, {
+    decision,
+    reason,
+    ...(needInfo ? { requestedUpdateScope: 'LOCATION' as const } : {}),
+  })
   window.location.hash = managerHref({ screen: 'orderQueue' })
 }
 
@@ -620,8 +631,13 @@ function AreaDecisionSummary({ data }: { data: FlightAreaAssessment }) {
 
   return (
     <div className={`odm-or-area-decision is-${level.toLowerCase()}`}>
-      <strong>{title}</strong>
-      <p>{guidance}</p>
+      <span className="odm-or-area-decision-icon" aria-hidden="true">
+        <OrderIcon name={level === 'HIGH_RISK' ? 'x' : level === 'NEEDS_REVIEW' ? 'alert' : 'check'} size={20} />
+      </span>
+      <div>
+        <strong>{title}</strong>
+        <p>{guidance}</p>
+      </div>
     </div>
   )
 }

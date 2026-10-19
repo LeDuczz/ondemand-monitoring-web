@@ -171,6 +171,7 @@ export function toOrderDetail(order: OrderCreateResponse): OrderDetailView {
     latitude: orNull(order.latitude),
     longitude: orNull(order.longitude),
     rejectReason: orNull(order.rejectReason),
+    requestedUpdateScope: orNull(order.requestedUpdateScope),
     reviewByName: orNull(order.reviewByName),
     reviewAt: orNull(order.reviewAt),
     updatedAt: orNull(order.updatedAt),

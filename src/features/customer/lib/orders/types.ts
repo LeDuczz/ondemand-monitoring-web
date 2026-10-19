@@ -86,6 +86,7 @@ export type OrderDetailView = OrderRow & {
   latitude: number | null
   longitude: number | null
   rejectReason: string | null
+  requestedUpdateScope: 'LOCATION' | 'ADDITIONAL_INFORMATION' | null
   reviewByName: string | null
   reviewAt: string | null
   updatedAt: string | null

@@ -88,7 +88,8 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           <OrderInfoCard
             order={order}
             canEdit={
-              ['PENDING', 'NEEDS_INFO'].includes(order.status) ||
+              (['PENDING', 'NEEDS_INFO'].includes(order.status) &&
+                !(order.status === 'NEEDS_INFO' && order.requestedUpdateScope)) ||
               (order.status === 'APPROVED' && finance.quote?.status !== 'ACCEPTED_BY_CUSTOMER' && !finance.invoice)
             }
             onUpdated={detail.reload}

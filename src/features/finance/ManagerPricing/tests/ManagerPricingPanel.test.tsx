@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError } from '../../shared/api/httpClient'
-import { financeApi } from './api'
-import { ManagerPricingPanel } from './ManagerPricingPanel'
+import { ApiError } from '../../../../shared/api/httpClient'
+import { financeApi } from '../../api'
+import { ManagerPricingPanel } from '../ManagerPricingPanel'
 
 afterEach(() => vi.restoreAllMocks())
 

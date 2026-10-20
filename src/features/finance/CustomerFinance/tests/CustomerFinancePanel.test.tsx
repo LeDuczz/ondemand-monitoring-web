@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError } from '../../shared/api/httpClient'
-import { financeApi } from './api'
-import { CustomerFinancePanel } from './CustomerFinancePanel'
-import type { CustomerQuote, Invoice, Payment } from './types'
+import { ApiError } from '../../../../shared/api/httpClient'
+import { financeApi } from '../../api'
+import { CustomerFinancePanel } from '../CustomerFinancePanel'
+import type { CustomerQuote, Invoice, Payment } from '../../types'
 
 const quote: CustomerQuote = {
   id: 'quote-1',

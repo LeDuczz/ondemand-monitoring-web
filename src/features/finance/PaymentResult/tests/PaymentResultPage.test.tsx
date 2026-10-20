@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { financeApi } from './api'
-import { PaymentResultPage } from './PaymentResultPage'
-import type { Payment } from './types'
+import { financeApi } from '../../api'
+import { PaymentResultPage } from '../PaymentResultPage'
+import type { Payment } from '../../types'
 
 const pending: Payment = {
   id: 'payment-1',

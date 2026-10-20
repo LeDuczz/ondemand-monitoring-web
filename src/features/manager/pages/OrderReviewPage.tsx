@@ -39,7 +39,7 @@ import {
   orderReviewPageMessages,
   type OrderReviewMessages,
 } from './OrderReviewPage.messages'
-import { ManagerPricingPanel } from '../../finance/ManagerPricingPanel'
+import { ManagerPricingPanel } from '../../finance/ManagerPricing'
 import '../manager.css'
 import type { LegalReviewStatus } from '../types/orders'
 

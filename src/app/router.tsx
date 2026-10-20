@@ -25,7 +25,7 @@ import { OperatorDashboardPage } from '../features/mission/pages/OperatorDashboa
 import { HelpCenterHomePage } from '../features/support/pages/HelpCenterHome'
 import { CustomerTicketsListPage } from '../features/support/pages/CustomerTicketsList'
 import { CustomerTicketDetailPage } from '../features/support/pages/CustomerTicketDetail'
-import { PaymentResultPage } from '../features/finance/PaymentResultPage'
+import { PaymentResultPage } from '../features/finance/PaymentResult'
 
 function redirectHash(to: string) {
   if (window.location.hash !== to) {

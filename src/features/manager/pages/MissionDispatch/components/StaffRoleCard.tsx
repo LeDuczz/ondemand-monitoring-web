@@ -1,5 +1,6 @@
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { StaffCombobox } from './StaffCombobox'
+import { missionRoles } from '../liveDispatchHelpers'
 import type { MissionStaffRole } from '../../../../mission/types/mission'
 import type { AvailableOperator } from '../../../../staff/api/operatorApi'
 import type { Dispatch, SetStateAction } from 'react'
@@ -41,6 +42,30 @@ export function StaffRoleCard({
         )}
       </span>
       <span className="odm-dp-role-desc">{t.roleDescriptions[role]}</span>
+      {selected.length > 0 &&
+        missionRoles.some(
+          (other) => (staffByRole[other] ?? []).length === 0,
+        ) && (
+          <button
+            type="button"
+            className="odm-or-link-btn odm-or-bulk-assign"
+            onClick={() => {
+              setStaffByRole(
+                Object.fromEntries(
+                  missionRoles.map((other) => [
+                    other,
+                    (staffByRole[other] ?? []).length > 0
+                      ? staffByRole[other]
+                      : [selected[0]],
+                  ]),
+                ) as typeof staffByRole,
+              )
+              setError(null)
+            }}
+          >
+            {t.useForEmptyRoles}
+          </button>
+        )}
       <StaffCombobox
         role={role}
         staff={operators.data ?? []}

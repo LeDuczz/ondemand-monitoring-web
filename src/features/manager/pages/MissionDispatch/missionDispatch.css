@@ -603,3 +603,42 @@
     width: auto;
   }
 }
+
+/* Staff step: mission context, one-person shortcut and "next" blocked hint */
+.odm-assign-mission {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--ui-space-3);
+  margin: 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-size: 13.5px;
+}
+.odm-or-bulk-assign {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2) var(--ui-space-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-primary-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+.odm-or-bulk-assign:hover {
+  text-decoration: underline;
+}
+.odm-btn.is-blocked {
+  opacity: 0.6;
+}
+.odm-or-actionbar-missing {
+  display: block;
+  margin-top: 2px;
+  color: var(--ui-warning-text);
+  font-weight: 600;
+}

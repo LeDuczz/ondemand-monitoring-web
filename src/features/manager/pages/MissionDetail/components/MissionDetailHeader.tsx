@@ -8,6 +8,8 @@ import {
   getMissionStatusLabel,
   missionStatusTone,
 } from '../../../../../shared/lib/statusTone'
+import { formatOrderCode } from '../../../components/common/format'
+import { formatDateTime } from '../../../components/common/missionDetailHelpers'
 import { managerHref } from '../../../routes'
 import type { MissionResponse } from '../../../types/missions'
 import { useI18n } from '../../../../../shared/i18n'
@@ -22,13 +24,29 @@ export function MissionDetailHeader({
   mission: MissionResponse
   canSetup: boolean
 }) {
-  const { t, lang } = useI18n(missionDetailHeaderMessages)
+  const { t, lang, locale } = useI18n(missionDetailHeaderMessages)
   const stopLabel = missionStopLabel(mission)
+  const headline =
+    mission.orderTitle && mission.orderTitle.trim().length > 2
+      ? mission.orderTitle.trim()
+      : null
   return (
     <PageHeader
       back={<MissionBackLink />}
       title={<span className="odm-mono">{mission.missionCode}</span>}
-      subtitle={mission.orderTitle}
+      subtitle={
+        <>
+          <span className={headline ? undefined : 'odm-md-muted'}>
+            {headline ?? t.noDescription}
+          </span>
+          <span className="odm-md-meta">
+            {mission.orderCode ? (
+              <span>{formatOrderCode(mission.orderCode)}</span>
+            ) : null}
+            <span>{formatDateTime(mission.scheduledStartAt, locale)}</span>
+          </span>
+        </>
+      }
       actions={
         <div className="odm-md-actions">
           {stopLabel ? (

@@ -26,6 +26,7 @@ import type { AvailableDrone } from '../../../../staff/api/droneApi'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { dispatchWizardViewMessages } from './DispatchWizardView.messages'
+import { staffRoleCardMessages } from './StaffRoleCard.messages'
 
 export function DispatchWizardView({
   orderContext,
@@ -70,7 +71,7 @@ export function DispatchWizardView({
   hasAllRoles: boolean
   assign: () => Promise<void>
 }) {
-  const { t, locale } = useI18n(dispatchWizardViewMessages)
+  const { t, locale, lang } = useI18n(dispatchWizardViewMessages)
   const assignable = orderContext
     ? ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
         current.status,
@@ -116,6 +117,9 @@ export function DispatchWizardView({
   const missingRoles = roleSummary.filter(
     (item) => item.names.length === 0,
   ).length
+  const missingRoleNames = roleSummary
+    .filter((item) => item.names.length === 0)
+    .map((item) => staffRoleCardMessages[lang].roles[item.role])
   const stepHint: Record<DispatchStep, string> = {
     order: t.orderFooterHint,
     mission: t.missionFooterHint,
@@ -175,6 +179,8 @@ export function DispatchWizardView({
 
               {activeStep === 'staff' && (
                 <StaffStep
+                  current={current}
+                  scheduleText={scheduleText}
                   missingRoles={missingRoles}
                   staffByRole={staffByRole}
                   operators={operators}
@@ -218,6 +224,11 @@ export function DispatchWizardView({
               />
               <DispatchActionBar
                 stepHint={stepHint}
+                missingRoleNames={missingRoleNames}
+                nextBlocked={
+                  (activeStep === 'staff' && missingRoles > 0) ||
+                  (activeStep === 'device' && selectedDrones.length === 0)
+                }
                 activeStep={activeStep}
                 activeStepIndex={activeStepIndex}
                 goPrevious={goPrevious}

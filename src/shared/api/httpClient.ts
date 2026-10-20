@@ -162,6 +162,7 @@ export async function apiRequest<T>(
       throw error
     }
     throw new ApiError(errorText[getLanguage()].unreachable, {
+      code: 'NETWORK_ERROR',
       method,
       path,
     })

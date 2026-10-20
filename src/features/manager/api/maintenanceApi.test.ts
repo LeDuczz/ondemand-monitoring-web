@@ -66,34 +66,83 @@ describe('maintenanceApi.createTicket', () => {
   })
 })
 
-describe('maintenanceApi.patchTicketStatus', () => {
-  it('PATCHes assign-staff with the new status', async () => {
+describe('maintenanceApi.listTickets backend filter contract', () => {
+  it('uses backend filter names and applies unsupported severity filtering locally', async () => {
+    stub = stubApi([
+      {
+        path: '/api/maintenance-tickets',
+        respond: [
+          rawTicket({ id: 'high-ticket', ticketCode: 'TKT-HIGH', deviceId: 'device-1', severity: 'HIGH' }),
+          rawTicket({ id: 'low-ticket', ticketCode: 'TKT-LOW', deviceId: 'device-1', severity: 'LOW' }),
+        ],
+      },
+    ])
+
+    const result = await maintenanceApi.listTickets({
+      droneId: 'device-1',
+      priority: 'HIGH',
+    })
+    const query = stub.calls[0].query
+
+    expect(query.get('deviceId')).toBe('device-1')
+    expect(query.has('droneId')).toBe(false)
+    expect(query.has('priority')).toBe(false)
+    expect(result.items.map((ticket) => ticket.id)).toEqual(['high-ticket'])
+  })
+})
+
+describe('maintenanceApi maintenance workflow contract', () => {
+  it('assigns through the backend route and sends staffId', async () => {
     stub = stubApi([
       {
         method: 'PATCH',
         path: '/api/maintenance-tickets/:id/assign-staff',
-        respond: ({ body }) => rawTicket({ status: (body as { status: string }).status }),
+        respond: rawTicket({
+          id: 'ticket-1',
+          ticketCode: 'TKT-1',
+          deviceCode: 'DRN-1',
+          assignedStaffId: 'staff-1',
+          assignedStaffName: 'Operator One',
+          status: 'IN_PROGRESS',
+        }),
       },
     ])
-    const result = await maintenanceApi.patchTicketStatus('mt-1', 'IN_PROGRESS')
-    expect(result.status).toBe('IN_PROGRESS')
+
+    const result = await maintenanceApi.assignTechnician('ticket-1', 'staff-1')
+
     expect(stub.calls[0]).toMatchObject({
       method: 'PATCH',
-      path: '/api/maintenance-tickets/mt-1/assign-staff',
-      body: { status: 'IN_PROGRESS' },
+      path: '/api/maintenance-tickets/ticket-1/assign-staff',
+      body: { staffId: 'staff-1' },
     })
+    expect(result.status).toBe('IN_PROGRESS')
+    expect(result.assignedTo).toBe('Operator One')
   })
 
-  it('routes RESOLVED through the resolve endpoint', async () => {
+  it('resolves through the backend route with newDeviceStatus and maps its response', async () => {
     stub = stubApi([
       {
         method: 'PATCH',
         path: '/api/maintenance-tickets/:id/resolve',
-        respond: rawTicket({ status: 'RESOLVED' }),
+        respond: rawTicket({
+          id: 'ticket-1',
+          ticketCode: 'TKT-1',
+          deviceCode: 'DRN-1',
+          status: 'RESOLVED',
+          resolutionNotes: 'Repaired',
+          resolvedAt: '2026-10-16T01:00:00Z',
+        }),
       },
     ])
-    const result = await maintenanceApi.patchTicketStatus('mt-1', 'RESOLVED')
+
+    const result = await maintenanceApi.resolveTicket('ticket-1', 'Repaired', 'AVAILABLE')
+
+    expect(stub.calls[0]).toMatchObject({
+      method: 'PATCH',
+      path: '/api/maintenance-tickets/ticket-1/resolve',
+      body: { resolutionNotes: 'Repaired', newDeviceStatus: 'AVAILABLE' },
+    })
     expect(result.status).toBe('RESOLVED')
-    expect(stub.calls[0].path).toBe('/api/maintenance-tickets/mt-1/resolve')
+    expect(result.resolutionNotes).toBe('Repaired')
   })
 })

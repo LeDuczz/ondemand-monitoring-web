@@ -38,6 +38,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     invoice: null,
     loading: true,
   })
+  const [tab, setTab] = useState<'overview' | 'results'>('overview')
   const [missions, setMissions] = useState<CustomerMissionSummary[]>([])
   const updateFinance = useCallback((state: CustomerFinanceState) => {
     setFinance(state)
@@ -54,19 +55,41 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     )
   }
 
+  const hasResults = ['IN_PROGRESS', 'COMPLETED'].includes(order.status)
+  const activeTab = hasResults ? tab : 'overview'
+
   return (
     <div className="od-page">
       <OrderHeader order={order} />
       <ReviewNotice order={order} onInformationSubmitted={detail.reload} />
       <OrderActions order={order} />
       <OrderOverviewVisualCard order={order} />
+      {hasResults ? (
+        <div className="od-tabs" role="tablist">
+          {(['overview', 'results'] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === key}
+              className={`od-tab${activeTab === key ? ' is-active' : ''}`}
+              onClick={() => setTab(key)}
+            >
+              {key === 'overview' ? t.tabOverview : t.tabResults}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {activeTab === 'results' ? <CustomerDeliveryPanel orderId={order.id} /> : null}
+      <div hidden={activeTab !== 'overview'}>
       <CustomerOrderMissionsSection key={order.id} orderId={order.id} onMissionsChange={setMissions} />
       <div className="od-grid">
         <div className="od-stack">
           <OrderInfoCard
             order={order}
             canEdit={
-              ['PENDING', 'NEEDS_INFO'].includes(order.status) ||
+              (['PENDING', 'NEEDS_INFO'].includes(order.status) &&
+                !(order.status === 'NEEDS_INFO' && order.requestedUpdateScope)) ||
               (order.status === 'APPROVED' && finance.quote?.status !== 'ACCEPTED_BY_CUSTOMER' && !finance.invoice)
             }
             onUpdated={detail.reload}
@@ -78,10 +101,11 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
           />
         </div>
         <div className="od-stack">
-          <CustomerFinancePanel orderId={order.id} onStateChange={updateFinance} />
-          {['IN_PROGRESS', 'COMPLETED'].includes(order.status) ? (
-            <CustomerDeliveryPanel orderId={order.id} />
-          ) : null}
+          <CustomerFinancePanel
+            orderId={order.id}
+            legalStatus={order.legalReviewStatus}
+            onStateChange={updateFinance}
+          />
           <OrderTimeline status={order.status} events={order.timeline} finance={finance} missions={missions} />
           <ContextAwareHelpWidget
             type="ORDER"
@@ -91,6 +115,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
             orderId={order.id}
           />
         </div>
+      </div>
       </div>
     </div>
   )

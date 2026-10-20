@@ -8,8 +8,11 @@ import { useI18n } from '../../../../../shared/i18n'
 import { staffStepMessages } from './StaffStep.messages'
 import { StaffRoleCard } from './StaffRoleCard'
 import { SelectedStaffChips } from './SelectedStaffChips'
+import type { Mission } from '../../../../mission/types/mission'
 
 export function StaffStep({
+  current,
+  scheduleText,
   missingRoles,
   staffByRole,
   operators,
@@ -19,6 +22,8 @@ export function StaffStep({
   setError,
   selectedStaffIds,
 }: {
+  current: Mission | undefined
+  scheduleText: string
   missingRoles: number
   staffByRole: Partial<Record<MissionStaffRole, string[]>>
   operators: { data: AvailableOperator[] | undefined; reload: () => void }
@@ -41,6 +46,12 @@ export function StaffStep({
       }
     >
       <div className="odm-dp-stack">
+        {current && (
+          <p className="odm-assign-mission">
+            <strong>{current.missionCode}</strong>
+            <span>{scheduleText}</span>
+          </p>
+        )}
         <p className="odm-dp-help">
           {t.roleHelp} {t.staffAvailabilityHint}
         </p>

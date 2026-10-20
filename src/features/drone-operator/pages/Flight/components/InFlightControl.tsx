@@ -28,6 +28,7 @@ interface Props {
   onAutoStartPlanConsumed: () => void
   onPreflightReady?: () => Promise<void>
   onReviewMedia?: () => void
+  onStartFlight?: () => Promise<void>
 }
 
 export default function InFlightControl({
@@ -42,6 +43,7 @@ export default function InFlightControl({
   onAutoStartPlanConsumed,
   onPreflightReady,
   onReviewMedia,
+  onStartFlight,
 }: Props) {
   const { t } = useI18n(inFlightControlMessages)
   const preflightStorageKey = `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`
@@ -90,6 +92,7 @@ export default function InFlightControl({
     onRTB,
     onEmergency,
     onAutoStartPlanConsumed,
+    onStartFlight,
     setLastCommand,
     setIsOnline,
   })
@@ -109,6 +112,8 @@ export default function InFlightControl({
   })
   const {
     handleReviewMedia,
+    handleStartFlight,
+    startFlightBusy,
     handleFinishFlight,
     finishFlightBusy,
     handleWeatherPreset,
@@ -116,6 +121,7 @@ export default function InFlightControl({
     mission,
     drone,
     onReviewMedia,
+    onStartFlight,
     setLastCommand,
     setIsOnline,
   })
@@ -151,10 +157,13 @@ export default function InFlightControl({
         normalFlightAllowed={normalFlightAllowed}
         referenceBusy={referenceBusy}
         finishingFlight={finishFlightBusy}
+        startingFlight={startFlightBusy}
+        canStartFlight={onStartFlight != null && controlStatus?.inAir !== true}
         telemetryBattery={telemetryBattery}
         cameraTelemetry={cameraTelemetry}
         onCommand={handleCommand}
         onReview={handleReviewMedia}
+        onStartFlight={onStartFlight ? handleStartFlight : undefined}
         onFinishFlight={handleFinishFlight}
         onReferenceCapture={handleReferenceCapture}
         onPreflightReady={handlePreflightReady}

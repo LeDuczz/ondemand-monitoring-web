@@ -21,6 +21,9 @@ export function CockpitHeader({
   onLayoutChange,
   busy,
   onReview,
+  onStartFlight,
+  canStartFlight,
+  startingFlight,
 }: {
   missionLabel: string
   roleLabel: string
@@ -34,6 +37,9 @@ export function CockpitHeader({
   onLayoutChange: (layout: CockpitLayout) => void
   busy: boolean
   onReview: () => void
+  onStartFlight?: () => void
+  canStartFlight: boolean
+  startingFlight: boolean
 }) {
   const { t } = useI18n(cockpitHeaderMessages)
 
@@ -92,6 +98,21 @@ export function CockpitHeader({
       </div>
 
       <div className="fc-header__actions">
+        {onStartFlight && canStartFlight ? (
+          <button
+            type="button"
+            className="fc-start-flight fc-start-flight--header"
+            aria-label={t.startFlight}
+            disabled={busy || startingFlight}
+            onClick={onStartFlight}
+          >
+            <Ico name="takeoff" size={19} />
+            <span>
+              <strong>{startingFlight ? t.startingFlight : t.startFlight}</strong>
+              <small>{t.setInFlight}</small>
+            </span>
+          </button>
+        ) : null}
         <div className="fc-seg" role="group" aria-label={t.layout}>
           {(
             [

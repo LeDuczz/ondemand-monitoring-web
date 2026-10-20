@@ -167,6 +167,9 @@ describe('MissionCreatePage', () => {
       .spyOn(missionsApi, 'createMission')
       .mockResolvedValue(createdMission)
     render(<MissionCreatePage orderId={brief.id} />)
+    // Wait for the authoritative plan revision before asserting the outgoing
+    // optimistic-lock token; the order form may be ready while this loads.
+    await screen.findByText('Phiên bản 4')
     const start = await screen.findByLabelText('Giờ cất cánh')
     fireEvent.change(start, { target: { value: '2026-09-24T09:00' } })
     fireEvent.change(screen.getByLabelText('Giờ kết thúc dự kiến'), {
@@ -228,13 +231,9 @@ describe('MissionCreatePage', () => {
       ).toBeInTheDocument(),
     )
     expect(screen.getByText('Khoảng thời gian khách yêu cầu')).toBeTruthy()
-    expect(screen.getByText('24/09 · Sáng')).toBeTruthy()
-    expect(
-      screen.getByText('Dự báo thời tiết theo khoảng khách yêu cầu'),
-    ).toBeTruthy()
-    await waitFor(() =>
-      expect(screen.getByText('24/09/2026')).toBeInTheDocument(),
-    )
+    expect(screen.getByText('24/09/2026 → 26/09/2026 · Sáng · 07:00–11:00')).toBeTruthy()
+    expect(screen.getByText('Dự báo thời tiết theo khoảng khách yêu cầu')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('24/09/2026')).toBeInTheDocument())
     expect(screen.getByText('25/09/2026')).toBeInTheDocument()
     expect(screen.getByText('26/09/2026')).toBeInTheDocument()
     const startInput = screen.getByLabelText('Giờ cất cánh') as HTMLInputElement
@@ -277,6 +276,9 @@ describe('MissionCreatePage', () => {
       expect(
         screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
       target: { value: '2026-09-24T08:00' },
@@ -411,6 +413,9 @@ describe('MissionCreatePage', () => {
       expect(
         screen.getByRole('heading', { name: 'Tạo nhiệm vụ' }),
       ).toBeInTheDocument(),
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeEnabled(),
     )
     fireEvent.change(screen.getByLabelText('Giờ cất cánh'), {
       target: { value: '2026-09-24T08:00' },

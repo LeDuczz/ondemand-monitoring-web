@@ -5,7 +5,7 @@ export const nextFlightCardMessages = defineMessages({
     unassignedDevice: 'Không phân công',
     statusLabel: {
       ACCEPTED: 'Đã nhận',
-      SCHEDULED: 'Đã lên lịch',
+      SCHEDULED: 'Đã bắt đầu Mission',
       CONNECTED: 'Đã kết nối',
       PREFLIGHT_CHECKING: 'Đang precheck',
       FAILED_PREFLIGHT: 'Precheck lỗi',
@@ -20,9 +20,12 @@ export const nextFlightCardMessages = defineMessages({
     timeLeft: (hours: number, minutes: number) =>
       `còn ${hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`}`,
     today2: 'Hôm nay',
+    startMission: 'Bắt đầu Mission',
+    details: 'Chi tiết',
     connect: 'Kết nối thiết bị',
     precheck: 'Precheck',
     handover: 'Bàn giao',
+    handedOver: 'Đã bàn giao',
     openCockpit: 'Mở buồng lái',
     inspect: 'Postcheck',
     reviewMedia: 'Nghiệm thu',
@@ -34,7 +37,7 @@ export const nextFlightCardMessages = defineMessages({
     unassignedDevice: 'Unassigned',
     statusLabel: {
       ACCEPTED: 'Accepted',
-      SCHEDULED: 'Scheduled',
+      SCHEDULED: 'Mission started',
       CONNECTED: 'Connected',
       PREFLIGHT_CHECKING: 'Precheck',
       FAILED_PREFLIGHT: 'Precheck failed',
@@ -49,9 +52,12 @@ export const nextFlightCardMessages = defineMessages({
     timeLeft: (hours: number, minutes: number) =>
       `${hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`} left`,
     today2: 'Today',
+    startMission: 'Start Mission',
+    details: 'Details',
     connect: 'Connect device',
     precheck: 'Precheck',
     handover: 'Handover',
+    handedOver: 'Handed over',
     openCockpit: 'Open cockpit',
     inspect: 'Postcheck',
     reviewMedia: 'Review media',

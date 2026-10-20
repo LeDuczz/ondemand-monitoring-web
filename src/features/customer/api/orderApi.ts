@@ -93,7 +93,6 @@ export type OrderCreateResponse = {
   description?: string
   usagePurpose?: string
   flightPurpose?: string
-  priority?: string
   altitudeM?: number
   estimatedLengthM?: number
   siteContactName?: string
@@ -129,7 +128,9 @@ export type OrderCreateResponse = {
   executionPlanRevision?: number
   executionPlanStatus?: string
   orderStatus?: string
+  legalReviewStatus?: 'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
   rejectReason?: string
+  requestedUpdateScope?: 'LOCATION' | 'ADDITIONAL_INFORMATION'
   reviewById?: string
   reviewByName?: string
   reviewAt?: string

@@ -1,6 +1,7 @@
 import type {
   CreateOrderPayload,
   GeoJsonPolygon,
+  ServiceDeliverableOption,
   ServicePricingEstimate,
 } from '../../api/customerApi'
 import type { ChecklistInput } from '../checklist/types'
@@ -33,7 +34,11 @@ export function withAdditionalRequirementChecklist(
     ? checklistItems
     : [
         ...checklistItems,
-        { contentOverride: AI_IMAGE_ANALYSIS_REQUIREMENT },
+        {
+          contentOverride: AI_IMAGE_ANALYSIS_REQUIREMENT,
+          minimumEvidenceCount: 1,
+          requiredEvidenceType: 'IMAGE',
+        },
       ]
 }
 
@@ -99,19 +104,71 @@ export function buildOrderPayload(input: {
   score: AiScore
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
+  /** Media counted from the selected checklists; replaces the manual media type and quantity. */
+  mediaTotals?: { images: number; videos: number }
+  /** The service's deliverable types; used to give each requested media type its own deliverable. */
+  deliverableOptions?: ServiceDeliverableOption[]
 }): CreateOrderPayload {
   const { form, aiAnalysisRequested } = input
+  const totals = input.mediaTotals
+  const mediaType: 'IMAGE' | 'VIDEO' = totals
+    ? totals.videos > 0 && totals.images === 0
+      ? 'VIDEO'
+      : 'IMAGE'
+    : form.mediaType
+  const quantity = totals
+    ? mediaType === 'VIDEO'
+      ? totals.videos
+      : totals.images
+    : form.quantity
   const latitude = toNumber(form.latitude, DEFAULT_LATITUDE)
   const longitude = toNumber(form.longitude, DEFAULT_LONGITUDE)
-  const permitStatus = form.permitStatus
   const lengthM = toNumber(form.estimatedLengthM, 0)
+  const detail = {
+          radiusM: form.radiusM,
+          estimatedAreaHa: Number(calcArea(form.radiusM)),
+          areaFiles: form.areaFiles.map((file) => ({
+            id: file.id,
+            fileName: file.fileName,
+            contentType: file.contentType,
+            sizeBytes: file.sizeBytes,
+            dataUrl: file.dataUrl,
+          })),
+          customerAttachments: form.attachments.map((attachment) => ({
+            id: attachment.id,
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+            sizeBytes: attachment.sizeBytes,
+            dataUrl: attachment.dataUrl,
+          })),
+          usagePurpose: form.usagePurpose || undefined,
+          consultationId: input.consultationId,
+          readinessScore: input.score.score,
+          aiAnalysisRequested,
+          additionalRequirements: aiAnalysisRequested
+            ? [
+                {
+                  type: 'AI_IMAGE_ANALYSIS',
+                  description: AI_IMAGE_ANALYSIS_REQUIREMENT,
+                  additionalPrice: aiAddonPrice(input.pricingEstimate),
+                },
+              ]
+            : [],
+  }
+  const deliverableEntries = buildDeliverables({
+    fallbackTypeId: form.deliverableTypeId,
+    options: input.deliverableOptions ?? [],
+    totals,
+    mediaType,
+    quantity,
+    detail,
+  })
   return {
     title: truncateText(form.title, ORDER_TITLE_MAX_LENGTH),
     description: form.description.trim() || undefined,
     serviceId: form.serviceId,
     usagePurpose: form.usagePurpose || undefined,
     flightPurpose: form.flightPurpose,
-    priority: form.priority,
     address: form.address.trim(),
     longitude,
     latitude,
@@ -119,22 +176,7 @@ export function buildOrderPayload(input: {
     estimatedLengthM: lengthM > 0 ? lengthM : undefined,
     siteContactName: form.siteContactName.trim() || undefined,
     siteContactPhone: form.siteContactPhone.trim() || undefined,
-    accessNotes: form.accessNotes.trim() || undefined,
-    permitStatus,
-    permitNumber:
-      permitStatus === 'HAVE_PERMIT' ? form.permitNumber.trim() || undefined : undefined,
-    permitExpiresOn:
-      permitStatus === 'HAVE_PERMIT' ? form.permitExpiresOn || undefined : undefined,
-    permitDocuments:
-      permitStatus === 'HAVE_PERMIT'
-        ? form.permitDocuments.map((file) => ({
-            id: file.id,
-            fileName: file.fileName,
-            contentType: file.contentType,
-            sizeBytes: file.sizeBytes,
-            dataUrl: file.dataUrl,
-          }))
-        : undefined,
+    accessNotes: buildAccessNotes(form),
     monitoringRelationship: form.monitoringRelationship || undefined,
     monitoringAuthorizationConfirmed:
       form.monitoringAuthorizationConfirmed,
@@ -164,45 +206,71 @@ export function buildOrderPayload(input: {
     deliveryMethods: form.deliveryMethods,
     dataRetentionDays: form.dataRetentionDays,
     termsAccepted: form.termsAccepted,
-    deliverables: [
+    deliverables: deliverableEntries,
+  }
+}
+
+const PHOTO_TYPE = /ảnh|photo|image/i
+const VIDEO_TYPE = /video/i
+
+/**
+ * One deliverable per requested media type (photos and videos each get their own type and quantity), so an order that asks
+ * for both is not described as photos only. The heavy site detail (area files, attachments, ...) travels once, on the first.
+ */
+function buildDeliverables(input: {
+  fallbackTypeId: string
+  options: ServiceDeliverableOption[]
+  totals?: { images: number; videos: number }
+  mediaType: 'IMAGE' | 'VIDEO'
+  quantity: number
+  detail: Record<string, unknown>
+}) {
+  const { totals, options, fallbackTypeId } = input
+  const find = (pattern: RegExp) =>
+    options.find((o) => pattern.test(o.deliverableTypeName ?? ''))
+      ?.deliverableTypeId
+  if (!totals || (totals.images === 0 && totals.videos === 0))
+    return [
       {
-        deliverableTypeId: form.deliverableTypeId,
+        deliverableTypeId: fallbackTypeId,
         requirement: {
-          mediaType: form.mediaType,
-          quantity: form.quantity,
-          resolution: form.resolution,
-          radiusM: form.radiusM,
-          estimatedAreaHa: Number(calcArea(form.radiusM)),
-          areaFiles: form.areaFiles.map((file) => ({
-            id: file.id,
-            fileName: file.fileName,
-            contentType: file.contentType,
-            sizeBytes: file.sizeBytes,
-            dataUrl: file.dataUrl,
-          })),
-          customerAttachments: form.attachments.map((attachment) => ({
-            id: attachment.id,
-            fileName: attachment.fileName,
-            contentType: attachment.contentType,
-            sizeBytes: attachment.sizeBytes,
-            dataUrl: attachment.dataUrl,
-          })),
-          usagePurpose: form.usagePurpose || undefined,
-          priority: form.priority,
-          consultationId: input.consultationId,
-          readinessScore: input.score.score,
-          aiAnalysisRequested,
-          additionalRequirements: aiAnalysisRequested
-            ? [
-                {
-                  type: 'AI_IMAGE_ANALYSIS',
-                  description: AI_IMAGE_ANALYSIS_REQUIREMENT,
-                  additionalPrice: aiAddonPrice(input.pricingEstimate),
-                },
-              ]
-            : [],
+          mediaType: input.mediaType,
+          quantity: input.quantity,
+          ...input.detail,
         },
       },
-    ],
+    ]
+  const entries: { type: string; requirement: Record<string, unknown> }[] = []
+  const add = (type: string, requirement: Record<string, unknown>) => {
+    const same = entries.find((e) => e.type === type)
+    if (same) Object.assign(same.requirement, requirement)
+    else entries.push({ type, requirement })
   }
+  if (totals.images > 0)
+    add(find(PHOTO_TYPE) ?? fallbackTypeId, {
+      mediaType: 'IMAGE',
+      quantity: totals.images,
+      imageQuantity: totals.images,
+      videoQuantity: 0,
+    })
+  if (totals.videos > 0)
+    add(find(VIDEO_TYPE) ?? fallbackTypeId, {
+      mediaType: 'VIDEO',
+      quantity: totals.videos,
+      videoQuantity: totals.videos,
+      ...(entries.some((e) => e.type === (find(VIDEO_TYPE) ?? fallbackTypeId))
+        ? {}
+        : { imageQuantity: 0 }),
+    })
+  return entries.map((entry, index) => ({
+    deliverableTypeId: entry.type,
+    requirement: {
+      ...entry.requirement,
+      ...(index === 0 ? input.detail : {}),
+    },
+  }))
+}
+
+function buildAccessNotes(form: FormState): string | undefined {
+  return form.accessNotes.trim() || undefined
 }

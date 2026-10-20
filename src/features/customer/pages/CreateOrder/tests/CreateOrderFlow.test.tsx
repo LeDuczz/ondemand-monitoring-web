@@ -67,11 +67,19 @@ async function fillLocation() {
   fireEvent.change(await screen.findByLabelText(/Địa chỉ\/khu vực/), {
     target: { value: 'KCN Long Hậu' },
   })
+  fireEvent.change(screen.getByLabelText(/Người liên hệ/), { target: { value: 'An' } })
+  fireEvent.change(screen.getByLabelText(/Số điện thoại/), { target: { value: '0901234567' } })
+  fireEvent.change(screen.getByLabelText(/Điều kiện ra vào/), { target: { value: 'Cổng chính' } })
   fireEvent.click(screen.getByLabelText('Chủ sở hữu / Chủ đầu tư'))
   fireEvent.click(
     screen.getByLabelText(/Tôi xác nhận mình có quyền yêu cầu giám sát/),
   )
   next('Thời gian')
+  // The customer picks the time window; nothing is chosen for them.
+  const time = (await screen.findByLabelText(/Khung giờ/)) as HTMLSelectElement
+  await waitFor(() => expect(time.options.length).toBeGreaterThan(1))
+  expect(time.value).toBe('')
+  fireEvent.change(time, { target: { value: time.options[1].value } })
 }
 
 describe('CreateOrderPage wizard', () => {
@@ -114,9 +122,7 @@ describe('CreateOrderPage wizard', () => {
       await fillLocation()
       next('Kết quả bàn giao & xác nhận')
       await waitFor(() =>
-        expect(
-          (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-        ).toBe('dt-photo'),
+        expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
       )
       fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
       fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -128,13 +134,24 @@ describe('CreateOrderPage wizard', () => {
         selection === 'empty'
           ? []
           : [
-              { sourceChecklistId: 'catalog-0', expectedChecklistVersion: 10 },
+              {
+                sourceChecklistId: 'catalog-0',
+                expectedChecklistVersion: 10,
+                minimumEvidenceCount: 1,
+                requiredEvidenceType: 'IMAGE',
+              },
               {
                 sourceChecklistId: 'catalog-1',
                 expectedChecklistVersion: 11,
+                minimumEvidenceCount: 1,
+                requiredEvidenceType: 'IMAGE',
                 contentOverride: 'Edited requirement',
               },
-              { contentOverride: 'Custom requirement' },
+              {
+                contentOverride: 'Custom requirement',
+                minimumEvidenceCount: 1,
+                requiredEvidenceType: 'IMAGE',
+              },
             ],
       )
     },
@@ -231,9 +248,7 @@ describe('CreateOrderPage wizard', () => {
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-      ).toBe('dt-photo'),
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
     )
   })
 
@@ -244,9 +259,7 @@ describe('CreateOrderPage wizard', () => {
 
     next('Kết quả bàn giao & xác nhận')
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-      ).toBe('dt-photo'),
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
     )
     fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
 
@@ -264,6 +277,51 @@ describe('CreateOrderPage wizard', () => {
     ).toBeNull()
   })
 
+  /** Fills the whole wizard up to the confirm dialog. */
+  async function openConfirmDialog() {
+    await renderWizard()
+    await fillService()
+    await fillLocation()
+    next('Kết quả bàn giao & xác nhận')
+    await waitFor(() =>
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
+    )
+    fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    await screen.findByRole('dialog')
+  }
+
+  it('shows stale recovery after creation fails, without auto retry', async () => {
+    const create = vi.spyOn(customerApi, 'createOrder').mockRejectedValue(
+      new ApiError('internal detail', {
+        status: 409,
+        code: 'ORDER_CHECKLIST_TEMPLATE_CHANGED',
+        method: 'POST',
+        path: '/api/orders',
+      }),
+    )
+    await openConfirmDialog()
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByText('internal detail')).not.toBeInTheDocument()
+    expect(create).toHaveBeenCalledTimes(1)
+  }, 15_000)
+
+  it('shows the API error inside the dialog and stays on the form', async () => {
+    vi.spyOn(customerApi, 'createOrder').mockRejectedValue(
+      new Error('Vùng bị từ chối'),
+    )
+    await openConfirmDialog()
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận gửi' }))
+    expect(
+      await screen.findByText('Không thể gửi yêu cầu. Vui lòng thử lại.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Vùng bị từ chối')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  }, 15_000)
+
   it('routes a backend preferredDateFrom error back to the schedule field', async () => {
     vi.spyOn(customerApi, 'createOrder').mockRejectedValueOnce(
       new ApiError(
@@ -276,9 +334,7 @@ describe('CreateOrderPage wizard', () => {
     await fillLocation()
     next('Kết quả bàn giao & xác nhận')
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-      ).toBe('dt-photo'),
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
     )
     fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
@@ -296,15 +352,26 @@ describe('CreateOrderPage wizard', () => {
     )
   })
 
+  it('asks the customer to choose a time window instead of picking one for them', async () => {
+    await renderWizard()
+    await fillService()
+    await fillLocation()
+    const time = screen.getByLabelText(/Khung giờ/) as HTMLSelectElement
+    fireEvent.change(time, { target: { value: '' } })
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Tiếp tục: Kết quả bàn giao & xác nhận' }),
+    )
+    expect(await screen.findByText('Chọn khung giờ.')).toBeInTheDocument()
+    expect(screen.queryByText('Kết quả bàn giao')).toBeNull()
+  })
+
   it('blocks submit until the terms and security commitment are accepted', async () => {
     await renderWizard()
     await fillService()
     await fillLocation()
     next('Kết quả bàn giao & xác nhận')
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-      ).toBe('dt-photo'),
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
     )
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))
     expect(
@@ -323,9 +390,7 @@ describe('CreateOrderPage wizard', () => {
     await fillLocation()
     next('Kết quả bàn giao & xác nhận')
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-      ).toBe('dt-photo'),
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
     )
     fireEvent.click(screen.getByLabelText('Báo cáo PDF'))
     fireEvent.click(screen.getByLabelText('Email'))
@@ -351,9 +416,7 @@ describe('CreateOrderPage wizard', () => {
     await fillLocation()
     next('Kết quả bàn giao & xác nhận')
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText(/Loại kết quả/) as HTMLSelectElement).value,
-      ).toBe('dt-photo'),
+      expect(screen.queryByText(/Đang tải kết quả bàn giao/)).toBeNull(),
     )
     fireEvent.click(screen.getByLabelText(/Tôi xác nhận mục đích giám sát/))
     fireEvent.click(await screen.findByRole('button', { name: 'Gửi yêu cầu' }))

@@ -22,7 +22,17 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-.odm-or-checklist-source {
+.odm-or-checklist-source,
+.odm-or-checklist-evidence {
+  display: inline-block;
+  margin-right: 8px;
   color: var(--ui-text-3);
   font-size: 12px;
+}
+.odm-or-checklist-evidence {
+  padding: 2px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  color: var(--ui-text);
+  font-weight: 600;
 }

@@ -6,7 +6,7 @@ import { getOrderStatusLabel } from '../../../../shared/lib/statusTone'
 import { ordersApi } from '../../api/ordersApi'
 import { readinessApi } from '../../api/readinessApi'
 import { managerHref } from '../../routes'
-import type { FlightAreaReviewStatus } from '../../types/orders'
+import type { LegalReviewStatus } from '../../types/orders'
 import { OrderMissionPlanningSection } from './components/OrderMissionPlanningSection'
 import type { PlanningWorkflowInfo } from './planningWorkspaceData'
 import { OrderResourceAssignmentWizard } from '../../components/common/OrderResourceAssignmentWizard'
@@ -50,7 +50,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   const [assignStep, setAssignStep] = useState<6 | 7 | 8>(6)
   const [reviewStep, setReviewStep] = useState<ReviewStep>(1)
   const [areaReviewStatus, setAreaReviewStatus] =
-    useState<FlightAreaReviewStatus | null>(null)
+    useState<LegalReviewStatus | null>(null)
   // A completed Order stage reopened read-only; null = the live (current) screen.
   const [viewStage, setViewStage] = useState<OrderStage | null>(null)
   const [planning, setPlanning] = useState<PlanningWorkflowInfo | null>(null)
@@ -60,7 +60,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   )
 
   useEffect(() => {
-    setAreaReviewStatus(orderQuery.data?.flightAreaReviewStatus ?? null)
+    setAreaReviewStatus(orderQuery.data?.legalReviewStatus ?? null)
   }, [orderQuery.data])
 
   if (navigateHome) {
@@ -73,6 +73,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       <div className="odm-or odm-or-review-page">
         <ReviewHeader orderId={orderId} order={orderQuery.data} />
         <WorkflowStepper
+          compactOrder
           order={{
             progress: { current: 'complete', waiting: false, terminal: null },
           }}
@@ -122,7 +123,8 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     depositPaid: planning ? planning.depositPaid : true,
     reviewStep,
   })
-  const readOnly = showExecutionPlan
+  // Only a PENDING order can still be reviewed; rejected/cancelled/need-info orders are view-only.
+  const readOnly = showExecutionPlan || order.status !== 'PENDING'
   const reviewing = !showExecutionPlan || viewStage !== null
   const openStage = (stage: OrderStage) => {
     const step = orderStageToReviewStep(stage)
@@ -244,7 +246,6 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
                   handleApproved={handleApproved}
                   readinessQuery={readinessQuery}
                   approveBlockedReason={approveBlockedReason}
-                  setNavigateHome={setNavigateHome}
                   goToStep={goToStep}
                   readOnly={readOnly}
                 />

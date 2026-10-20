@@ -35,6 +35,9 @@ type Props = {
   referenceBusy?: boolean
   onCommand: (command: CockpitCommand) => void
   onReview: () => void
+  onStartFlight?: () => void
+  canStartFlight?: boolean
+  startingFlight?: boolean
   onFinishFlight?: () => void
   finishingFlight?: boolean
   onReferenceCapture?: () => void
@@ -58,6 +61,9 @@ export function FlightCockpit(props: Props) {
     canTerminate = false,
     onCommand,
     onReview,
+    onStartFlight,
+    canStartFlight = false,
+    startingFlight = false,
     onFinishFlight,
     finishingFlight,
   } = props
@@ -93,6 +99,9 @@ export function FlightCockpit(props: Props) {
         onLayoutChange={setLayout}
         busy={busy}
         onReview={onReview}
+        onStartFlight={onStartFlight}
+        canStartFlight={canStartFlight}
+        startingFlight={startingFlight}
       />
 
       <main className={`fc-body is-layout-${layout}`}>

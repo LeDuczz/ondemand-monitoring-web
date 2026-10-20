@@ -6,6 +6,7 @@ import type {
   PricingChecklistItem,
   PricingReview,
   Quote,
+  CustomerQuote,
 } from './types'
 
 export const financeApi = {
@@ -31,6 +32,11 @@ export const financeApi = {
       adjustmentAmount: number
       managerNote: string | null
       additionalUnitPrices: Record<string, number>
+      adjustmentReason?: string | null
+      adjustmentType?:
+        'DISCOUNT' | 'PROMOTION' | 'COMPENSATION' | 'GOODWILL' | 'CORRECTION'
+      expectedPricingRevision?: number | null
+      expectedPolicyVersion?: number | null
     },
   ) =>
     apiRequest<Quote>(
@@ -46,9 +52,12 @@ export const financeApi = {
       { method: 'POST' },
     ),
   getQuote: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<Quote>(`/api/orders/${encodeURIComponent(orderId)}/quote`, {
-      signal,
-    }),
+    apiRequest<CustomerQuote>(
+      `/api/orders/${encodeURIComponent(orderId)}/quote`,
+      {
+        signal,
+      },
+    ),
   acceptQuote: (orderId: string, quoteId: string) =>
     apiRequest<Invoice>(
       `/api/orders/${encodeURIComponent(orderId)}/quotes/${encodeURIComponent(quoteId)}/accept`,
@@ -58,6 +67,12 @@ export const financeApi = {
     apiRequest<Invoice>(`/api/orders/${encodeURIComponent(orderId)}/invoice`, {
       signal,
     }),
+  /** Re-checks the order's pending VNPAY payments with VNPAY itself and returns the current invoice. */
+  refreshOrderPayments: (orderId: string) =>
+    apiRequest<Invoice>(
+      `/api/manager/orders/${encodeURIComponent(orderId)}/payments/refresh`,
+      { method: 'POST' },
+    ),
   getManagerInvoice: (orderId: string, signal?: AbortSignal) =>
     apiRequest<Invoice>(
       `/api/manager/orders/${encodeURIComponent(orderId)}/invoice`,

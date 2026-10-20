@@ -17,13 +17,16 @@ export function formatDateTime(
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale, {
+  const day = date.toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+  })
+  const time = date.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   })
+  return locale === 'vi-VN' ? `${day} ${time}` : `${day}, ${time}`
 }
 
 export type HelperLang = 'vi' | 'en'

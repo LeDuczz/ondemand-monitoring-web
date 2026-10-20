@@ -36,6 +36,7 @@ export function useFlightCommand({
   onRTB,
   onEmergency,
   onAutoStartPlanConsumed,
+  onStartFlight,
   setLastCommand,
   setIsOnline,
 }: {
@@ -51,6 +52,7 @@ export function useFlightCommand({
   onRTB: () => void
   onEmergency: () => void
   onAutoStartPlanConsumed: () => void
+  onStartFlight?: () => Promise<void>
   setLastCommand: (message: string) => void
   setIsOnline: (online: boolean) => void
 }) {
@@ -240,6 +242,17 @@ export function useFlightCommand({
         )
         setIsOnline(true)
 
+        // Keep the business mission lifecycle in sync with the real flight.
+        // Both a direct takeoff and "Fly to point" begin an actual flight, so
+        // neither command may leave Inspector screens stuck at READY_TO_FLY.
+        if (
+          (command === 'takeoff' || command === 'gps_target_start') &&
+          onStartFlight
+        ) {
+          const latestMission = await missionApi.getMissionById(missionKey)
+          if (latestMission.status === 'READY_TO_FLY') await onStartFlight()
+        }
+
         if (command === 'return_to_base') onRTB()
         if (command === 'emergency_stop') onEmergency()
       } catch (cause) {
@@ -268,6 +281,7 @@ export function useFlightCommand({
       mission.routePoints,
       onEmergency,
       onRTB,
+      onStartFlight,
       normalFlightAllowed,
       terminationAllowed,
       operationalMessage,

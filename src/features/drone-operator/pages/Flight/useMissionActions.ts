@@ -16,17 +16,21 @@ export function useMissionActions({
   mission,
   drone,
   onReviewMedia,
+  onStartFlight,
   setLastCommand,
   setIsOnline,
 }: {
   mission: Mission
   drone: Drone
   onReviewMedia?: () => void
+  /** Moves the business Mission to IN_FLIGHT once the cockpit starts the real flight. */
+  onStartFlight?: () => Promise<void>
   setLastCommand: (message: string) => void
   setIsOnline: (online: boolean) => void
 }) {
   const { t } = useI18n(missionActionsMessages)
   const [finishFlightBusy, setFinishFlightBusy] = useState(false)
+  const [startFlightBusy, setStartFlightBusy] = useState(false)
   const handleReviewMedia = useCallback(() => {
     const missionId = mission.backendId ?? mission.id
     markActiveMissionFlowStep(missionId, 5)
@@ -36,6 +40,21 @@ export function useMissionActions({
     }
     navigateOperator(operatorHref({ screen: 'upload', missionId }))
   }, [mission.backendId, mission.id, onReviewMedia])
+  const handleStartFlight = useCallback(async () => {
+    if (!onStartFlight || startFlightBusy) return
+    setStartFlightBusy(true)
+    setLastCommand(t.startingFlight)
+    try {
+      await onStartFlight()
+      setLastCommand(t.flightStarted)
+    } catch (error) {
+      setLastCommand(
+        error instanceof Error ? error.message : t.controllerOffline,
+      )
+    } finally {
+      setStartFlightBusy(false)
+    }
+  }, [onStartFlight, startFlightBusy, setLastCommand, t])
   const handleFinishFlight = useCallback(async () => {
     if (finishFlightBusy) return
     const missionId = mission.backendId ?? mission.id
@@ -117,6 +136,8 @@ export function useMissionActions({
 
   return {
     handleReviewMedia,
+    handleStartFlight,
+    startFlightBusy,
     handleFinishFlight,
     finishFlightBusy,
     handleWeatherPreset,

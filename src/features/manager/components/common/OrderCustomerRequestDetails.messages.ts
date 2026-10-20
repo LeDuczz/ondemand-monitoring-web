@@ -3,7 +3,7 @@ import { defineMessages } from '../../../../shared/i18n'
 export const orderCustomerRequestDetailsMessages = defineMessages({
   vi: {
     flightPurpose: 'Mục đích bay',
-    flightAltitude: 'Độ cao bay',
+    flightAltitude: 'Độ cao giám sát mong muốn',
     estimatedLength: 'Độ dài tuyến',
     resultDeadline: 'Hạn nhận kết quả',
     resultFormats: 'Định dạng kết quả',
@@ -41,7 +41,7 @@ export const orderCustomerRequestDetailsMessages = defineMessages({
   },
   en: {
     flightPurpose: 'Flight purpose',
-    flightAltitude: 'Flight altitude',
+    flightAltitude: 'Desired monitoring altitude',
     estimatedLength: 'Estimated route length',
     resultDeadline: 'Result deadline',
     resultFormats: 'Result formats',

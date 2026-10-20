@@ -81,7 +81,12 @@ export function ReadinessManualColumn({
                     className="odm-or-readiness-note"
                     value={note}
                     disabled={!editable}
-                    placeholder={needsNote ? t.failureReasonRequired : t.note}
+                    placeholder={
+                      needsNote
+                        ? (labels.failNotePlaceholders[c.code] ??
+                          t.failureReasonRequired)
+                        : t.note
+                    }
                     aria-label={t.ghiChu2(c.title)}
                     onChange={(event) =>
                       setDrafts((state) => ({

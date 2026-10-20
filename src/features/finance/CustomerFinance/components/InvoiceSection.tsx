@@ -5,10 +5,13 @@ import { invoiceSectionMessages } from './InvoiceSection.messages'
 
 export function InvoiceSection({
   invoice,
+  legalReady,
   busy,
   onPay,
 }: {
   invoice: Invoice
+  /** False while the flight area is still being verified or was rejected: no new deposit can be started. */
+  legalReady: boolean
   busy: boolean
   onPay: (kind: 'deposit' | 'final') => void
 }) {
@@ -43,7 +46,7 @@ export function InvoiceSection({
         </div>
       ) : null}
       <div className="finance-actions customer-payment-actions">
-        {invoice.paidAmount < invoice.depositAmount ? (
+        {invoice.paidAmount < invoice.depositAmount && legalReady ? (
           <button
             className="odm-btn odm-btn-p"
             type="button"

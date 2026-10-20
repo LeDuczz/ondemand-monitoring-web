@@ -15,6 +15,10 @@ export const orderPlanningWorkspaceMessages = defineMessages({
     huyMission2: 'Hủy Mission',
     thePlanWasFinalizedSuccessfully: 'Kế hoạch đã được chốt thành công.',
     thePlanHasBeenUpdated: 'Đã cập nhật kế hoạch.',
+    noQuoteAccepted:
+      'Khách hàng chưa chấp nhận báo giá nên chưa có khoản đặt cọc để kiểm tra.',
+    paymentReconciled:
+      'Đã đối soát với VNPAY. Trạng thái đặt cọc đã được cập nhật.',
     saveChecklistFirst:
       'Bạn vừa thay đổi checklist. Hãy bấm “Lưu phân công” trước khi tiếp tục.',
     checklistNotCovered:
@@ -35,6 +39,10 @@ export const orderPlanningWorkspaceMessages = defineMessages({
     huyMission2: 'Cancel Mission',
     thePlanWasFinalizedSuccessfully: 'The plan was finalized successfully.',
     thePlanHasBeenUpdated: 'The plan has been updated.',
+    noQuoteAccepted:
+      'The customer has not accepted the quote yet, so there is no deposit to check.',
+    paymentReconciled:
+      'Reconciled with VNPAY. The deposit status has been updated.',
     saveChecklistFirst:
       'You just changed the checklist. Click “Save assignment” before continuing.',
     checklistNotCovered:

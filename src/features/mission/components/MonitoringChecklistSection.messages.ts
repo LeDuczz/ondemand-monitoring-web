@@ -28,6 +28,15 @@ export const monitoringChecklistMessages = defineMessages({
     errMissionStatus: 'Trạng thái mission đã thay đổi. Vui lòng tải lại.',
     errNotReady:
       'Checklist chưa sẵn sàng gửi kết quả. Vui lòng kiểm tra các mục còn lại.',
+    errNotReadyType:
+      'Một hoặc nhiều mục cần loại media khác. Chọn và gắn đúng loại ảnh/video theo yêu cầu từng mục, sau đó thử lại.',
+    errNotReadyEvidence:
+      'Chưa đủ bằng chứng hợp lệ. Kiểm tra số lượng hiện tại và yêu cầu từng mục, sau đó bổ sung phần còn thiếu.',
+    progressTitle: 'Tiến độ hoàn tất checklist',
+    doneCount: (done: number, total: number) => `${done} / ${total} mục hoàn tất`,
+    attachedEvidenceCount: (n: number) => `${n} bằng chứng đã gắn`,
+    shortfall: (n: number) => `còn thiếu ${n}`,
+    needRightType: 'cần đúng loại media',
     err409:
       'Dữ liệu đã thay đổi hoặc thao tác chưa đủ điều kiện. Vui lòng tải lại.',
     errGeneric: 'Không thể tải hoặc lưu checklist. Vui lòng thử lại.',
@@ -122,6 +131,15 @@ export const monitoringChecklistMessages = defineMessages({
     errMissionStatus: 'The mission status has changed. Please reload.',
     errNotReady:
       'The checklist is not ready to submit the result. Please check the remaining items.',
+    errNotReadyType:
+      'One or more items need a different media type. Pick and attach the right photo/video type for each item, then try again.',
+    errNotReadyEvidence:
+      'Not enough valid evidence. Check the current count and each item requirement, then add what is missing.',
+    progressTitle: 'Checklist completion progress',
+    doneCount: (done: number, total: number) => `${done} / ${total} items done`,
+    attachedEvidenceCount: (n: number) => `${n} evidence attached`,
+    shortfall: (n: number) => `${n} missing`,
+    needRightType: 'needs the right media type',
     err409: 'The data has changed or the action is not allowed. Please reload.',
     errGeneric: 'Could not load or save the checklist. Please try again.',
     acceptanceTitle: 'Acceptance checklist',

@@ -2,6 +2,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const staffRoleCardMessages = defineMessages({
   vi: {
+    useForEmptyRoles: 'Dùng người này cho các vai trò còn trống',
     roles: {
       PILOT: 'Phi công',
       OPERATOR: 'Vận hành',
@@ -16,6 +17,7 @@ export const staffRoleCardMessages = defineMessages({
     },
   },
   en: {
+    useForEmptyRoles: 'Use this person for the empty roles',
     roles: {
       PILOT: 'Pilot',
       OPERATOR: 'Operator',

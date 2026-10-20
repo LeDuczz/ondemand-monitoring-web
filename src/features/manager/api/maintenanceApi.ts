@@ -66,15 +66,16 @@ export const maintenanceApi = {
   }): Promise<{ items: MaintenanceTicket[]; total: number }> => {
     const query: Record<string, string> = {}
     if (options?.status) query['status'] = options.status
-    if (options?.droneId) query['droneId'] = options.droneId
-    if (options?.priority) query['priority'] = options.priority
+    if (options?.droneId) query['deviceId'] = options.droneId
 
     const res = await apiRequest<
       BackendMaintenanceTicket[] | { items: BackendMaintenanceTicket[] }
     >('/api/maintenance-tickets', { query, signal: options?.signal })
 
     const rawList = Array.isArray(res) ? res : res?.items || []
-    const items = rawList.map(mapToTicket)
+    const items = rawList
+      .map(mapToTicket)
+      .filter((ticket) => !options?.priority || ticket.priority === options.priority)
     return { items, total: items.length }
   },
 
@@ -115,42 +116,12 @@ export const maintenanceApi = {
   resolveTicket: async (
     ticketId: string,
     resolutionNotes: string,
-    newDroneStatus: string = 'AVAILABLE',
+    newDeviceStatus: string = 'AVAILABLE',
   ): Promise<MaintenanceTicket> => {
-    const raw = await apiRequest<BackendMaintenanceTicket>(
-      `/api/maintenance-tickets/${ticketId}/resolve`,
-      {
-        method: 'PATCH',
-        body: { resolutionNotes, newDroneStatus },
-      },
-    )
-    return mapToTicket(raw)
-  },
-
-  /** Legacy status patch support */
-  patchTicketStatus: async (
-    ticketId: string,
-    status: TicketStatus,
-  ): Promise<MaintenanceTicket> => {
-    if (status === 'RESOLVED') {
-      return maintenanceApi.resolveTicket(
-        ticketId,
-        'Đã hoàn tất xử lý bảo trì',
-        'AVAILABLE',
-      )
-    }
-    const raw = await apiRequest<BackendMaintenanceTicket>(
-      `/api/maintenance-tickets/${ticketId}/assign-staff`,
-      {
-        method: 'PATCH',
-        body: { status },
-      },
-    ).catch(() =>
-      apiRequest<BackendMaintenanceTicket>(
-        `/api/maintenance-tickets/${ticketId}`,
-        { method: 'GET' },
-      ),
-    )
+    const raw = await apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}/resolve`, {
+      method: 'PATCH',
+      body: { resolutionNotes, newDeviceStatus },
+    })
     return mapToTicket(raw)
   },
 }

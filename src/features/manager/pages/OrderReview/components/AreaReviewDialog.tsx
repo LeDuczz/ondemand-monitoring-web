@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
 import { ordersApi } from '../../../api/ordersApi'
-import type { FlightAreaReviewStatus, OrderDetail } from '../../../types/orders'
-import { AREA_REVIEW_STATUSES, type SavedAreaReview } from './areaReview'
+import { managerHref } from '../../../routes'
+import type { LegalReviewStatus, OrderDetail } from '../../../types/orders'
+import {
+  AREA_REVIEW_STATUSES,
+  type AreaReviewChoice,
+  type SavedAreaReview,
+} from './areaReview'
 import { areaReviewDialogMessages } from './AreaReviewDialog.messages'
 
 export function AreaReviewDialog({
@@ -20,15 +25,15 @@ export function AreaReviewDialog({
   onSaved: (review: SavedAreaReview) => void
 }) {
   const { t } = useI18n(areaReviewDialogMessages)
-  const [status, setStatus] = useState<FlightAreaReviewStatus | null>(
-    initial?.status === 'UNDETERMINED' ? null : (initial?.status ?? null),
+  const [status, setStatus] = useState<AreaReviewChoice | null>(
+    initial?.status ?? null,
   )
   const [reason, setReason] = useState(initial?.reason ?? '')
   const [note, setNote] = useState(initial?.note ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const dialogRef = useRef<HTMLDivElement>(null)
-  const reasonRequired = status === 'UNSUITABLE'
+  const reasonRequired = status === 'REJECTED' || status === 'CHANGE_LOCATION'
 
   useEffect(() => {
     dialogRef.current?.focus()
@@ -45,13 +50,25 @@ export function AreaReviewDialog({
     setSaving(true)
     setError('')
     try {
+      const savedStatus: LegalReviewStatus =
+        status === 'CHANGE_LOCATION' ? 'REJECTED' : status
       const result = await ordersApi.saveFlightAreaReview(order.id, {
-        status,
+        status: savedStatus,
         reason: reason.trim() || null,
         note: note.trim() || null,
       })
+      if (status === 'CHANGE_LOCATION') {
+        // The area is not usable as chosen: send the order back to the customer to pick a new location.
+        await ordersApi.submitApproval(order.id, {
+          decision: 'NEED_INFO',
+          reason: [reason.trim(), note.trim()].filter(Boolean).join(' — '),
+          requestedUpdateScope: 'LOCATION',
+        })
+        window.location.hash = managerHref({ screen: 'orderQueue' })
+        return
+      }
       onSaved({
-        status: result.flightAreaReviewStatus ?? status,
+        status: result.legalReviewStatus ?? savedStatus,
         requestedScopeFeasible: result.requestedScopeFeasible ?? null,
         reason: result.flightAreaReviewReason ?? (reason.trim() || null),
         note: result.flightAreaReviewNote ?? (note.trim() || null),
@@ -118,9 +135,6 @@ export function AreaReviewDialog({
               </label>
             ))}
           </div>
-          {status === 'RESTRICTED' ? (
-            <p className="odm-or-area-permission-note">{t.restrictedNote}</p>
-          ) : null}
           {reasonRequired ? (
             <label className="odm-or-area-field">
               {t.reasonLabel}

@@ -29,6 +29,9 @@ export type ValidationMessages = {
   altitudeM: string
   estimatedLengthM: string
   siteContactPhone: string
+  siteContactName: string
+  siteContactPhoneRequired: string
+  accessNotes: string
   permitStatus: (zoneName: string) => string
   permitNumber: string
   permitDocuments: string
@@ -94,7 +97,10 @@ export function validateStep(
       errors.estimatedLengthM = msg.estimatedLengthM
     }
     const phone = form.siteContactPhone.trim()
-    if (phone && !PHONE_PATTERN.test(phone)) errors.siteContactPhone = msg.siteContactPhone
+    if (!form.siteContactName.trim()) errors.siteContactName = msg.siteContactName
+    if (!phone) errors.siteContactPhone = msg.siteContactPhoneRequired
+    else if (!PHONE_PATTERN.test(phone)) errors.siteContactPhone = msg.siteContactPhone
+    if (!form.accessNotes.trim()) errors.accessNotes = msg.accessNotes
     if (!form.monitoringRelationship) {
       errors.monitoringRelationship = msg.monitoringRelationship
     }

@@ -8,6 +8,8 @@ import { dispatchActionBarMessages } from './DispatchActionBar.messages'
 /** Sidebar card with the step hint and the back / next / assign buttons. */
 export function DispatchActionBar({
   stepHint,
+  missingRoleNames,
+  nextBlocked,
   activeStep,
   activeStepIndex,
   goPrevious,
@@ -19,6 +21,10 @@ export function DispatchActionBar({
   assign,
 }: {
   stepHint: Record<DispatchStep, string>
+  /** Staff roles still empty, listed next to the hint on the staff step. */
+  missingRoleNames: string[]
+  /** The step is not complete yet: the Next button stays clickable (it explains why) but looks inactive. */
+  nextBlocked: boolean
   activeStep: DispatchStep
   activeStepIndex: number
   goPrevious: () => void
@@ -33,7 +39,14 @@ export function DispatchActionBar({
   return (
     <Card>
       <div className="odm-dp-actions">
-        <p className="odm-dp-actions-hint">{stepHint[activeStep]}</p>
+        <p className="odm-dp-actions-hint">
+          {stepHint[activeStep]}
+          {activeStep === 'staff' && missingRoleNames.length > 0 && (
+            <strong className="odm-or-actionbar-missing">
+              {t.missingPrefix} {missingRoleNames.join(', ')}
+            </strong>
+          )}
+        </p>
         <div className="odm-dp-actions-row">
           <button
             type="button"
@@ -46,7 +59,7 @@ export function DispatchActionBar({
           {activeStep !== 'confirm' ? (
             <button
               type="button"
-              className="odm-btn odm-btn-p"
+              className={`odm-btn odm-btn-p${nextBlocked ? ' is-blocked' : ''}`}
               onClick={goNext}
             >
               {t.next}

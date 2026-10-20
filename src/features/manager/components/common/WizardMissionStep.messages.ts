@@ -4,7 +4,7 @@ export const wizardMissionStepMessages = defineMessages({
   vi: {
     assignResources: 'Phân công nguồn lực',
     allMissionsAreFullyAssigned: '✓ Tất cả Mission đã được phân công đầy đủ.',
-    finishAssignment: 'Chốt kế hoạch',
+    finishAssignment: 'Hoàn tất phân công',
     chonDungNhiemVuTruoc:
       'Chọn đúng nhiệm vụ trước khi phân công nhân sự và thiết bị.',
     next: 'Tiếp theo',
@@ -12,7 +12,7 @@ export const wizardMissionStepMessages = defineMessages({
   en: {
     assignResources: 'Assign resources',
     allMissionsAreFullyAssigned: '✓ All Missions are fully assigned.',
-    finishAssignment: 'Finalize plan',
+    finishAssignment: 'Finish assignment',
     chonDungNhiemVuTruoc:
       'Pick the right mission before assigning staff and devices.',
     next: 'Next',

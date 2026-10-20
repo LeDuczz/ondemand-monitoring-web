@@ -17,12 +17,20 @@ import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
 import { requestSummaryCardMessages } from './RequestSummaryCard.messages'
 
 type Props = {
+  /** Images and videos requested in the checklists. */
+  mediaTotals?: { images: number; videos: number }
   form: FormState
   service?: ServiceOption
   time?: PreferredTimeOption
   deliverable?: ServiceDeliverableOption
   consultation: CustomerConsultation | null
   aiAnalysisRequested: boolean
+  checklistCounts?: {
+    total: number
+    packageSelected: number
+    packageTotal: number
+    additional: number
+  }
   onEdit?: (step: Step) => void
 }
 
@@ -67,12 +75,13 @@ export function RequestSummaryCard(p: Props) {
       ? `${dateFrom} → ${dateTo}`
       : dateFrom
   const timeWindow = p.time ? localizeTimeslot(p.time, lang) : ''
-  const quantity =
-    Number.isFinite(form.quantity) && form.quantity > 0 ? form.quantity : 0
   const result = [
-    t[form.mediaType],
-    form.resolution,
-    quantity ? t.quantityUnit(form.mediaType, quantity) : '',
+    p.mediaTotals?.images
+      ? t.quantityUnit('IMAGE', p.mediaTotals.images)
+      : '',
+    p.mediaTotals?.videos
+      ? t.quantityUnit('VIDEO', p.mediaTotals.videos)
+      : '',
   ]
     .filter(Boolean)
     .join(' · ')
@@ -86,15 +95,28 @@ export function RequestSummaryCard(p: Props) {
         p.service
           ? localizeServiceName(p.service.id, lang, p.service.name)
           : t.noValue,
-        [
-          form.usagePurpose ? info.purposes[form.usagePurpose] : '',
-          form.priority !== 'NORMAL' ? info.priorities[form.priority] : '',
-        ]
-          .filter(Boolean)
-          .join(' · '),
+        form.usagePurpose ? info.purposes[form.usagePurpose] : '',
       ].filter(Boolean),
       step: 1,
     },
+    ...(p.checklistCounts
+      ? [
+          {
+            key: 'checklists',
+            icon: 'check' as const,
+            label: t.monitoringContent,
+            lines: [
+              t.totalContent(p.checklistCounts.total),
+              t.packageContent(
+                p.checklistCounts.packageSelected,
+                p.checklistCounts.packageTotal,
+              ),
+              t.additionalContent(p.checklistCounts.additional),
+            ],
+            step: 2 as Step,
+          },
+        ]
+      : []),
     {
       key: 'location',
       icon: 'map-pin',

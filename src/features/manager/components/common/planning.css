@@ -923,3 +923,58 @@
 .odm-workspace-rank.is-finished { color: var(--or-green); }
 .odm-workspace-rank.is-active { color: var(--or-primary-fg); }
 .odm-workspace-rank.is-blocked { color: var(--or-red); }
+
+/* Payment gate: header row with the reconcile button, and the deposit progress bar */
+.odm-planning-payment-gate .odm-gate-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.odm-planning-payment-gate .odm-gate-head strong {
+  font-size: 15px;
+}
+.odm-gate-deposit {
+  display: grid;
+  gap: 6px;
+}
+.odm-gate-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ui-warning-soft);
+  overflow: hidden;
+}
+.odm-gate-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ui-warning);
+}
+
+/* Checklist assignment: bulk select and source tags */
+.odm-planning-bulk {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.odm-planning-bulk .odm-btn {
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+.odm-planning-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ui-surface-2);
+  color: var(--ui-text-2);
+  font-size: 11.5px;
+}
+.odm-planning-tag.is-customer {
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
+}
+.odm-planning-next-hint {
+  margin-left: auto;
+  color: var(--ui-warning-text);
+  font-size: 13px;
+}

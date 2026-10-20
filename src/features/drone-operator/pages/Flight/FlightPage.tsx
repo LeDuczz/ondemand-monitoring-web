@@ -118,6 +118,12 @@ export function FlightPage({
       onAutoStartPlanConsumed={() =>
         window.sessionStorage.removeItem('odm.operator.autoStartSimulation')
       }
+      onStartFlight={async () => {
+        // The cockpit began a real flight: move the business Mission to IN_FLIGHT so
+        // the Inspector/Manager screens do not stay at READY_TO_FLY.
+        const started = await missionApi.startMission(mission.id)
+        setMission(started as BackendMission)
+      }}
       onReviewMedia={() => {
         setActiveMissionId(mission.id)
         markActiveMissionFlowStep(mission.id, 5)

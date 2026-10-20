@@ -1,9 +1,7 @@
 import { ManagerPricingPanel } from '../../../../finance/ManagerPricing'
-import { OrderApprovalActions } from './OrderApprovalActions'
 import { ReadOnlyScope } from './ReadOnlyScope'
 import { ReviewStageActions } from './ReviewStageActions'
 import type { ReviewStep } from '../reviewSteps'
-import type { Dispatch, SetStateAction } from 'react'
 import type { OrderDetail } from '../../../types/orders'
 import type { OrderReadiness } from '../../../types/readiness'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
@@ -15,7 +13,6 @@ export function ReviewDecisionStage({
   handleApproved,
   readinessQuery,
   approveBlockedReason,
-  setNavigateHome,
   goToStep,
   readOnly = false,
 }: {
@@ -23,7 +20,6 @@ export function ReviewDecisionStage({
   handleApproved: () => void
   readinessQuery: UseApiQueryState<OrderReadiness>
   approveBlockedReason: string | null
-  setNavigateHome: Dispatch<SetStateAction<boolean>>
   goToStep: (step: ReviewStep) => void
   /** A completed stage reopened for viewing: content is not editable. */
   readOnly?: boolean
@@ -39,15 +35,6 @@ export function ReviewDecisionStage({
             onApproved={handleApproved}
             onChecklistReviewChanged={readinessQuery.reload}
             approveBlockedReason={approveBlockedReason}
-            decisionActions={
-              <OrderApprovalActions
-                orderId={order.id}
-                orderCode={order.code}
-                onApproved={handleApproved}
-                onDecisionDone={() => setNavigateHome(true)}
-                showApprove={false}
-              />
-            }
           />
         </section>
       </ReadOnlyScope>

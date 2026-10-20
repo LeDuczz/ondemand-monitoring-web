@@ -133,8 +133,8 @@
 .finance-requirement {
   display: grid;
   grid-template-columns:
-    56px minmax(240px, 1fr) minmax(210px, 280px) 130px
-    120px 40px;
+    56px minmax(220px, 1fr) minmax(180px, 240px) minmax(170px, 210px)
+    130px 40px;
   gap: 10px;
   align-items: center;
 }
@@ -232,6 +232,10 @@
   height: 40px;
   padding: 4px var(--ui-space-2);
 }
+.finance-item-price .finance-price input {
+  height: 36px;
+  padding: 4px 7px;
+}
 .finance-note input {
   height: 38px;
   padding: 6px 10px;
@@ -294,6 +298,26 @@
   margin: 2px 0 4px;
 }
 
+/* Per-item system price, approved price and allowed range */
+.finance-item-price {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.finance-item-price small {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.finance-item-price label {
+  gap: 3px;
+  font-size: 11px;
+}
+.finance-item-price .finance-range.is-out {
+  color: var(--ui-danger-text);
+  font-weight: 600;
+}
+
 /* Quote summary */
 .finance-quote {
   position: sticky;
@@ -328,6 +352,71 @@
   font-size: 24px;
   font-weight: 700;
   line-height: 1.1;
+}
+.finance-kv dd.is-up {
+  color: var(--ui-warning-text);
+}
+.finance-kv dd.is-down {
+  color: var(--ui-success-text);
+}
+.finance-policy-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* System price lines grouped per checklist, then order-level lines */
+.finance-breakdown {
+  display: grid;
+  gap: 10px;
+  margin-bottom: var(--ui-space-3);
+}
+.finance-breakdown-group {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  overflow: hidden;
+}
+.finance-breakdown-group > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--ui-surface-2);
+  font-size: 13px;
+}
+.finance-breakdown-group > header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.finance-breakdown-group > header b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.finance-breakdown-group ul {
+  margin: 0;
+  padding: 4px 12px 8px;
+  list-style: none;
+}
+.finance-breakdown-group li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.finance-breakdown-group li span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .finance-block-hint {
   margin: var(--ui-space-3) 0 var(--ui-space-2);
@@ -381,6 +470,17 @@
   line-height: 1.4;
   resize: vertical;
 }
+.finance-quote-note + .finance-quote-note {
+  margin-top: var(--ui-space-3);
+}
+.finance-quote-note em {
+  color: var(--ui-text-3);
+  font-style: normal;
+  font-weight: 400;
+}
+.finance-quote-note textarea[aria-invalid='true'] {
+  border-color: var(--ui-danger);
+}
 .finance-quote-note small {
   position: absolute;
   right: var(--ui-space-2);
@@ -393,14 +493,16 @@
 }
 .finance-quote .finance-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--ui-space-2);
   padding: var(--ui-space-3) 0 0;
 }
 .finance-quote .finance-actions .odm-btn {
   justify-content: center;
-  height: 36px;
-  font-size: 12px;
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 /* Decision actions (request info / reject) slotted under the summary */
@@ -453,8 +555,8 @@
   }
   .finance-requirement {
     grid-template-columns:
-      40px minmax(0, 1fr) minmax(150px, 190px) minmax(80px, 110px)
-      96px 34px;
+      40px minmax(0, 1fr) minmax(140px, 180px) minmax(130px, 170px)
+      110px 34px;
     gap: var(--ui-space-2);
   }
 }
@@ -472,7 +574,7 @@
   .finance-requirement {
     grid-template-columns: 30px minmax(0, 1fr) minmax(105px, 130px) 34px;
   }
-  .finance-price,
+  .finance-item-price,
   .finance-zero {
     grid-column: 3;
   }
@@ -790,4 +892,50 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+/* Customer quote: lines grouped per checklist */
+.customer-quote-groups {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.customer-quote-group {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  overflow: hidden;
+}
+.customer-quote-group > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--ui-surface-2);
+  font-size: 13px;
+}
+.customer-quote-group > header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.customer-quote-group ul {
+  margin: 0;
+  padding: 4px 12px 8px;
+  list-style: none;
+}
+.customer-quote-group li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.customer-quote-group header b,
+.customer-quote-group li span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

@@ -16,15 +16,22 @@ const STATUS_TONE = {
   FAILED: 'red',
 } as const
 
+/** Operator-facing label of a backend (or mapped) mission status. */
+export function missionStatusLabel(
+  status: string | null | undefined,
+  t: typeof missionStatusBadgeMessages.vi,
+) {
+  if (!status) return t.unspecified
+  return t.statusLabel[status] ?? t.unsupported
+}
+
 export function MissionStatusBadge({ mission }: { mission: OperatorMission }) {
   const { t } = useI18n(missionStatusBadgeMessages)
 
   return (
     <StatusBadge tone={STATUS_TONE[mission.status]}>
       {missionStopLabel(mission) ??
-        t.statusLabel[mission.status] ??
-        mission.backendStatus ??
-        mission.status}
+        missionStatusLabel(mission.backendStatus ?? mission.status, t)}
     </StatusBadge>
   )
 }

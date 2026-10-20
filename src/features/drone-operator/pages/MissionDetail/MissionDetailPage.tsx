@@ -55,6 +55,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
     actionError,
     refreshWorkspace,
     handleAccept,
+    handleStartWorkflow,
     handleReject,
     handleCompleteMission,
     handleSubmitResult,
@@ -69,6 +70,15 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
   useEffect(() => {
     setActiveMissionId(missionId)
   }, [missionId])
+
+  // Other roles change the Mission while this screen is open (acceptance, start, flight): keep it fresh.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      query.reload()
+      monitoring.reload()
+    }, 5_000)
+    return () => window.clearInterval(timer)
+  }, [missionId, monitoring.reload, query.reload])
 
   if (query.loading && !query.data) return <LoadingState />
   if (query.error || !query.data || query.data.id !== missionId) {
@@ -109,6 +119,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             status={mission.backendStatus ?? mission.status}
             monitoring={monitoring}
             busy={submitting || resultSubmitting || query.loading}
+            showComplete={false}
             onComplete={() => void handleCompleteMission(mission)}
             onSubmit={() => void handleSubmitResult(mission)}
           />
@@ -121,6 +132,9 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             error={monitoring.error}
             canExecute={
               monitoring.data?.permissions.canExecuteMonitoringChecklist
+            }
+            canAssess={
+              monitoring.data?.permissions.canInspectDevice === true
             }
             canAttach={monitoring.data?.permissions.canAttachChecklistEvidence}
             canDetach={monitoring.data?.permissions.canDetachChecklistEvidence}
@@ -135,6 +149,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
         refreshWorkspace={refreshWorkspace}
         mediaRevision={mediaRevision}
         onAccept={() => void handleAccept(mission)}
+        onStartWorkflow={() => void handleStartWorkflow(mission)}
         onOpenReject={() => setShowReject(true)}
       />
 

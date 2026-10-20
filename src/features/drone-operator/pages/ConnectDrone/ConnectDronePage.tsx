@@ -5,6 +5,7 @@ import { missionApi } from '../../../mission/api/missionApi'
 import { flightControlApi } from '../../api/flightControlApi'
 import { useActiveMission } from '../../api/useActiveMission'
 import { formatDeviceLabel } from '../../lib/deviceLabel'
+import { operatorHref } from '../../routes'
 import { ConnectStatusPanel } from './components/ConnectStatusPanel'
 import { ConnectForm } from './components/ConnectForm'
 import { DroneChip } from './components/DroneChip'
@@ -33,6 +34,10 @@ export function ConnectDronePage({ missionId }: { missionId?: string }) {
       if (data?.status === 'SCHEDULED')
         await missionApi.connectGcs(mission.missionId)
       setState('connected')
+      window.location.hash = operatorHref({
+        screen: 'preflight',
+        missionId: mission.missionId,
+      })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.connectFailed)
       setState('failed')

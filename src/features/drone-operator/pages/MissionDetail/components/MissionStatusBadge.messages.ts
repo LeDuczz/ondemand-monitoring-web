@@ -2,7 +2,21 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const missionStatusBadgeMessages = defineMessages({
   vi: {
+    unspecified: 'Chưa xác định',
+    unsupported: 'Trạng thái chưa hỗ trợ',
     statusLabel: {
+      WAITING_CREW_CONFIRMATION: 'Chờ các thành viên xác nhận',
+      WAITING_OPERATOR_ACCEPTANCE: 'Chờ người vận hành xác nhận',
+      SCHEDULED: 'Đã bắt đầu Mission',
+      CONNECTED: 'Đã kết nối thiết bị',
+      PREFLIGHT_CHECKING: 'Đang kiểm tra trước bay',
+      FAILED_PREFLIGHT: 'Kiểm tra trước bay không đạt',
+      READY_TO_FLY: 'Sẵn sàng bay',
+      IN_PROGRESS: 'Đang thực hiện',
+      RETURNING: 'Đang trở về',
+      POSTFLIGHT_CHECKING: 'Đang kiểm tra sau bay',
+      PENDING_APPROVAL: 'Chờ Manager xử lý',
+      CANCELLED: 'Đã hủy',
       PENDING_REVIEW: 'Chờ nghiệm thu',
       UNKNOWN: 'Trạng thái chưa hỗ trợ',
       PENDING: 'Chờ phản hồi',
@@ -14,7 +28,21 @@ export const missionStatusBadgeMessages = defineMessages({
     } as Record<string, string>,
   },
   en: {
+    unspecified: 'Unspecified',
+    unsupported: 'Unsupported status',
     statusLabel: {
+      WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
+      WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator confirmation',
+      SCHEDULED: 'Mission started',
+      CONNECTED: 'Device connected',
+      PREFLIGHT_CHECKING: 'Preflight check in progress',
+      FAILED_PREFLIGHT: 'Preflight check failed',
+      READY_TO_FLY: 'Ready to fly',
+      IN_PROGRESS: 'In progress',
+      RETURNING: 'Returning',
+      POSTFLIGHT_CHECKING: 'Postflight check in progress',
+      PENDING_APPROVAL: 'Waiting for Manager',
+      CANCELLED: 'Cancelled',
       PENDING_REVIEW: 'Pending review',
       UNKNOWN: 'Unsupported status',
       PENDING: 'Awaiting reply',

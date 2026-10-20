@@ -17,6 +17,11 @@ export const overviewTabMessages = defineMessages({
     khongTheTaiChecklistCua:
       'Không thể tải checklist của Mission này. Vui lòng thử lại.',
     mediaLibrary: 'Thư viện media',
+    checklistAcceptance: 'Checklist nghiệm thu',
+    checklistAccepted: 'Đã nghiệm thu',
+    checklistLoading: 'Đang tải checklist',
+    checklistCompliant: (ok: number, total: number) =>
+      `${ok}/${total} đạt yêu cầu`,
   },
   en: {
     map: {
@@ -34,5 +39,10 @@ export const overviewTabMessages = defineMessages({
     khongTheTaiChecklistCua:
       "Could not load this Mission's checklist. Please try again.",
     mediaLibrary: 'Media library',
+    checklistAcceptance: 'Acceptance checklist',
+    checklistAccepted: 'Accepted',
+    checklistLoading: 'Loading checklist',
+    checklistCompliant: (ok: number, total: number) =>
+      `${ok}/${total} compliant`,
   },
 })

@@ -8,21 +8,19 @@ export const areaReviewDialogMessages = defineMessages({
     defaultContext: 'Yêu cầu giám sát',
     zonesToCheck: (n: number) => `${n} vùng cần đối chiếu`,
     options: {
-      PRELIMINARY_PASS: {
-        label: 'Đạt sơ bộ',
-        hint: 'Không phát hiện vấn đề cần chặn.',
+      NOT_REQUIRED: {
+        label: 'Khu vực phù hợp sơ bộ',
+        hint: 'Có thể tiếp tục duyệt đơn và phân nguồn lực. Hồ sơ xin phép bay được thực hiện ở bước sau.',
       },
-      RESTRICTED: {
-        label: 'Cần xử lý/giấy phép',
-        hint: 'Có điều kiện nhưng có thể tiếp tục chuẩn bị Mission.',
+      CHANGE_LOCATION: {
+        label: 'Yêu cầu khách đổi khu vực',
+        hint: 'Trả đơn về cho khách chọn lại vị trí giám sát.',
       },
-      UNSUITABLE: {
-        label: 'Không phù hợp',
-        hint: 'Khu vực hiện tại không thể thực hiện theo yêu cầu.',
+      REJECTED: {
+        label: 'Khu vực không khả thi',
+        hint: 'Khu vực hiện tại không thể triển khai theo yêu cầu.',
       },
     } as Record<string, { label: string; hint: string }>,
-    restrictedNote:
-      'Đơn có thể tiếp tục. Điều kiện giấy phép sẽ được xử lý sau khi Mission và kế hoạch bay được xác định.',
     reasonLabel: 'Lý do',
     reasonPlaceholderOption: 'Chọn lý do',
     unsuitableReasons: [
@@ -33,7 +31,7 @@ export const areaReviewDialogMessages = defineMessages({
     ],
     noteLabel: 'Ghi chú của Manager',
     notePlaceholder:
-      'Ghi lại nội dung đã đối chiếu hoặc thông tin cần xác minh…',
+      'Ghi lại nội dung đã đối chiếu hoặc lưu ý cho bước tiếp theo…',
     pickStatus: 'Chọn một kết quả đánh giá.',
     pickReason: 'Chọn lý do khu vực không phù hợp.',
     saveFailed: 'Không thể lưu đánh giá. Vui lòng thử lại.',
@@ -48,21 +46,19 @@ export const areaReviewDialogMessages = defineMessages({
     defaultContext: 'Monitoring request',
     zonesToCheck: (n: number) => `${n} zones to cross-check`,
     options: {
-      PRELIMINARY_PASS: {
-        label: 'Preliminary pass',
-        hint: 'No blocking issue found.',
+      NOT_REQUIRED: {
+        label: 'Area preliminarily suitable',
+        hint: 'The order can continue to approval and resource assignment. The flight permit file is handled at a later step.',
       },
-      RESTRICTED: {
-        label: 'Needs handling/permit',
-        hint: 'Conditional, but Mission preparation can continue.',
+      CHANGE_LOCATION: {
+        label: 'Ask the customer to change the area',
+        hint: 'Send the order back so the customer picks the monitoring location again.',
       },
-      UNSUITABLE: {
-        label: 'Unsuitable',
+      REJECTED: {
+        label: 'Area not feasible',
         hint: 'The current area cannot be served as requested.',
       },
-    },
-    restrictedNote:
-      'The order can continue. Permit conditions are handled once the Mission and flight plan are defined.',
+    } as Record<string, { label: string; hint: string }>,
     reasonLabel: 'Reason',
     reasonPlaceholderOption: 'Select a reason',
     unsuitableReasons: [
@@ -73,7 +69,7 @@ export const areaReviewDialogMessages = defineMessages({
     ],
     noteLabel: 'Manager note',
     notePlaceholder:
-      'Record what was cross-checked or what needs verification…',
+      'Record what was cross-checked or notes for the next step…',
     pickStatus: 'Select a review result.',
     pickReason: 'Select why the area is unsuitable.',
     saveFailed: 'Could not save the review. Please try again.',

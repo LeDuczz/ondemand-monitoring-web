@@ -107,7 +107,11 @@ export function MissionListPage({ searchQuery }: { searchQuery: string }) {
       >
         <div>
           <MissionTabs tab={tab} counts={counts} onChange={setTab} />
-          <MissionListTable missions={tabItems} now={now} />
+          <MissionListTable
+            missions={tabItems}
+            now={now}
+            showSubmission={tab === 'history'}
+          />
         </div>
         <UpcomingRail missions={allMissions} now={now} />
       </div>

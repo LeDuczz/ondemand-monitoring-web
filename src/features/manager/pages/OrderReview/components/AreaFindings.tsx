@@ -5,11 +5,14 @@ import { areaFindingsMessages } from './AreaFindings.messages'
 export function AreaFindings({
   findings,
   hasMinistryViolations,
+  favorable,
 }: {
   findings:
     | { code: string; severity: FlightAreaFindingSeverity; message: string }[]
     | undefined
   hasMinistryViolations: boolean
+  /** The assessment level is FAVORABLE; otherwise "no warning" would be misleading. */
+  favorable: boolean
 }) {
   const { t } = useI18n(areaFindingsMessages)
 
@@ -27,7 +30,10 @@ export function AreaFindings({
         ))}
       </ul>
     </div>
-  ) : !hasMinistryViolations ? (
-    <p className="odm-or-area-clear">{t.noAreaWarningsNoted}</p>
+  ) : !hasMinistryViolations && favorable ? (
+    <div className="odm-or-area-clear">
+      <strong>{t.noAreaWarningsNoted}</strong>
+      <small>{t.stillConfirmOnSite}</small>
+    </div>
   ) : null
 }

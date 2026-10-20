@@ -22,7 +22,11 @@ export const missionResultActionsMessages = defineMessages({
       'Checklist chưa hoàn tất hoặc chưa đủ bằng chứng hợp lệ.',
     genericError:
       'Không thể thực hiện thao tác. Dữ liệu mới đang được cập nhật; vui lòng kiểm tra và thử lại.',
-    completeFirst: 'Cần nghiệm thu Mission trước khi gửi kết quả.',
+    wrongMediaType:
+      'Một hoặc nhiều mục có media sai loại. Thay bằng đúng loại ảnh/video theo yêu cầu của từng mục.',
+    insufficientEvidence:
+      'Chưa đủ bằng chứng hợp lệ theo số lượng yêu cầu. Kiểm tra tiến độ từng mục và bổ sung phần còn thiếu.',
+    completeFirst: 'Cần xác nhận hoàn thành Mission trước khi gửi kết quả.',
     sectionAriaLabel: 'Nghiệm thu và gửi kết quả',
     completed: 'Mission đã được nghiệm thu.',
     pendingReview: 'Mission đang chờ nghiệm thu.',
@@ -30,7 +34,7 @@ export const missionResultActionsMessages = defineMessages({
     submittedNote: 'Kết quả đã được gửi Manager và đang chờ duyệt.',
     approvedBadge: 'Đã duyệt',
     pendingBadge: 'Chờ duyệt',
-    completeMission: 'Nghiệm thu Mission',
+    completeMission: 'Xác nhận hoàn thành Mission',
     submitResult: 'Gửi kết quả cho Manager',
     processing: 'Đang xử lý…',
   },
@@ -55,7 +59,12 @@ export const missionResultActionsMessages = defineMessages({
       'The checklist is incomplete or lacks valid evidence.',
     genericError:
       'Could not perform the action. Fresh data is being loaded; please check and try again.',
-    completeFirst: 'The Mission must be accepted before submitting the result.',
+    wrongMediaType:
+      'One or more items have the wrong media type. Replace it with the right photo/video type for each item.',
+    insufficientEvidence:
+      'Not enough valid evidence for the required quantity. Check each item progress and add what is missing.',
+    completeFirst:
+      'Confirm the Mission is completed before submitting the result.',
     sectionAriaLabel: 'Accept and submit result',
     completed: 'The Mission has been accepted.',
     pendingReview: 'The Mission is awaiting acceptance.',
@@ -64,7 +73,7 @@ export const missionResultActionsMessages = defineMessages({
       'The result has been sent to the Manager and is awaiting approval.',
     approvedBadge: 'Approved',
     pendingBadge: 'Pending approval',
-    completeMission: 'Accept Mission',
+    completeMission: 'Confirm Mission completed',
     submitResult: 'Submit result to Manager',
     processing: 'Processing…',
   },

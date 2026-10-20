@@ -19,13 +19,11 @@ import {
   type MissionDetailTab,
 } from './components/MissionDetailTabs'
 import { OverviewTab } from './components/OverviewTab'
-import { PlanTab } from './components/PlanTab'
 import { OrderTab } from './components/OrderTab'
 import { ChecksTab } from './components/ChecksTab'
 import { MissionInfoCard } from './components/MissionInfoCard'
 import { MissionCrewCard } from './components/MissionCrewCard'
-import { MissionWeatherCard } from './components/MissionWeatherCard'
-import { ManagerDeliveryPanel } from '../../../delivery/ManagerDeliveryPanel'
+import { MissionNextStep } from './components/MissionNextStep'
 import './missionDetail.css'
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
@@ -144,9 +142,7 @@ function MissionDetail({ missionId }: { missionId: string }) {
     detail.result?.completedAt ??
     null
 
-  const showPlanTab = mission.status !== 'COMPLETED'
-  const activeTab: MissionDetailTab =
-    showPlanTab || tab !== 'plan' ? tab : 'overview'
+  const activeTab: MissionDetailTab = tab
   const waypoints = [...(plan?.waypoints ?? [])].sort(
     (a, b) => a.sequence - b.sequence,
   )
@@ -154,6 +150,12 @@ function MissionDetail({ missionId }: { missionId: string }) {
   return (
     <div className="odm-or odm-or-review-page">
       <MissionDetailHeader mission={mission} canSetup={canSetup} />
+
+      <MissionNextStep
+        status={mission.status}
+        accepted={accepted}
+        crew={staff.length}
+      />
 
       <MissionKpis
         staff={staff}
@@ -168,7 +170,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
       <div className="odm-or-layout">
         <div className="odm-or-main">
           <MissionDetailTabs
-            showPlanTab={showPlanTab}
             activeTab={activeTab}
             setTab={setTab}
           />
@@ -185,15 +186,7 @@ function MissionDetail({ missionId }: { missionId: string }) {
               refreshDetail={refreshDetail}
               mediaLibrary={mediaLibrary}
               missionId={missionId}
-            />
-          ) : null}
-
-          {activeTab === 'plan' ? (
-            <PlanTab
-              plan={plan}
-              postcheck={postcheck}
-              preflight={preflight}
-              waypoints={waypoints}
+              revision={revision}
             />
           ) : null}
 
@@ -207,7 +200,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
         <aside className="odm-or-side">
           <MissionInfoCard
             mission={mission}
-            deviceLabel={deviceLabel}
             startedAt={startedAt}
             completedAt={completedAt}
           />
@@ -219,14 +211,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
             deviceLabel={deviceLabel}
           />
 
-          <MissionWeatherCard weather={detail.weather} />
-
-          {mission.status === 'COMPLETED' ? (
-            <ManagerDeliveryPanel
-              orderId={mission.orderId}
-              refreshKey={revision}
-            />
-          ) : null}
         </aside>
       </div>
     </div>

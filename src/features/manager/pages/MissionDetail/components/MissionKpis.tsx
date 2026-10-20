@@ -40,11 +40,14 @@ export function MissionKpis({
   return (
     <div className="mng-stats">
       <StatCard
-        label={actual ? t.kpi.actualDuration : t.kpi.plannedDuration}
-        value={formatDuration(
-          detail.result?.durationSeconds ?? plan?.plannedDurationSec,
-          lang,
-        )}
+        label={actual ? t.kpi.actualDuration : t.kpi.duration}
+        value={
+          actual
+            ? formatDuration(detail.result?.durationSeconds, lang)
+            : plan?.plannedDurationSec != null
+              ? t.plannedSuffix(formatDuration(plan.plannedDurationSec, lang))
+              : t.notRecorded
+        }
       />
       <StatCard label={t.kpi.media} value={mediaCount} />
       <StatCard

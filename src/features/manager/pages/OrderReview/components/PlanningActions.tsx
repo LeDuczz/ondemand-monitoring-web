@@ -54,14 +54,21 @@ export function PlanningActions({
               >
                 {creating ? t.creatingMission : t.addMission}
               </button>
-              <button
-                type="button"
-                className="odm-btn odm-btn-p"
-                disabled={busy || saving || creating}
-                onClick={() => void onContinue()}
-              >
-                {t.continueToResources}
-              </button>
+              {data.missions.length > 0 && !data.plan.coverage.coverageReady && (
+                <span className="odm-planning-next-hint" role="note">
+                  {t.uncoveredHint(data.plan.coverage.uncovered)}
+                </span>
+              )}
+              {data.missions.length > 0 && (
+                <button
+                  type="button"
+                  className="odm-btn odm-btn-p"
+                  disabled={busy || saving || creating}
+                  onClick={() => void onContinue()}
+                >
+                  {t.continueToResources}
+                </button>
+              )}
             </>
           )}
           {writable && data.plan.planStatus === 'FINALIZED' && !amending && (

@@ -12,7 +12,6 @@ import {
   visibleItems,
   type DetailItem,
 } from './requestDetailHelpers'
-import { RequestChips } from './RequestDetailsHeader'
 import { requestDetailsHeaderMessages } from './RequestDetailsHeader.messages'
 import { Card } from '../../../../shared/components/ui'
 import { FactSection } from './FactSection'
@@ -45,7 +44,7 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
 
   const deliverableFacts: DetailItem[] =
     order.deliverables?.map((deliverable, index) => ({
-      label: deliverable.deliverableTypeName || t.mediaN(index + 1),
+      label: <strong>{deliverable.deliverableTypeName || t.mediaN(index + 1)}</strong>,
       value:
         deliverableSummary(
           f,
@@ -154,9 +153,7 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
     { label: t.termsVersion, value: order.termsVersion },
   ]
 
-  const priorityLabel = text(f, order.priority)
-  const urgent = order.priority === 'URGENT' || order.priority === 'HIGH'
-  const hasSummary = Boolean(order.title || order.description || priorityLabel)
+  const hasSummary = Boolean(order.title || order.description)
   const hasDetails =
     hasSummary ||
     visibleItems([
@@ -172,10 +169,7 @@ export function OrderCustomerRequestDetails({ order }: { order: OrderDetail }) {
   if (!hasDetails) return null
 
   return (
-    <Card
-      title={header.customerRequestDetails}
-      actions={<RequestChips priorityLabel={priorityLabel} urgent={urgent} />}
-    >
+    <Card title={header.customerRequestDetails}>
       <div className="odm-or-req-body">
         {hasSummary ? (
           <div className="odm-or-req-hero">

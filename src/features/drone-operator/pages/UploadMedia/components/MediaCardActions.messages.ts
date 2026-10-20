@@ -4,7 +4,7 @@ export const mediaCardActionsMessages = defineMessages({
   vi: {
     manualUpload: 'Upload thủ công từ bản gốc',
     processing: 'Đang xử lý…',
-    approveUpload: 'Duyệt & upload',
+    approveUpload: 'Upload ảnh',
     viewShort: 'Xem',
     enlargePreview: 'Xem ảnh lớn',
     moreActions: 'Thêm thao tác',
@@ -14,7 +14,7 @@ export const mediaCardActionsMessages = defineMessages({
   en: {
     manualUpload: 'Upload manually from the original',
     processing: 'Processing…',
-    approveUpload: 'Approve & upload',
+    approveUpload: 'Upload media',
     viewShort: 'View',
     enlargePreview: 'Enlarge image',
     moreActions: 'More actions',

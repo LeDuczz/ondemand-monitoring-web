@@ -7,24 +7,20 @@ import { missionInfoCardMessages } from './MissionInfoCard.messages'
 
 export function MissionInfoCard({
   mission,
-  deviceLabel,
   startedAt,
   completedAt,
 }: {
   mission: MissionResponse
-  deviceLabel: string
   startedAt: string | null
   completedAt: string | null
 }) {
   const { t, locale } = useI18n(missionInfoCardMessages)
   const rows: Array<{ label: string; value: string }> = [
-    { label: t.fields.customer, value: mission.customerName || '—' },
     {
       label: t.fields.order,
       value: mission.orderCode ? formatOrderCode(mission.orderCode) : '—',
     },
     { label: t.fields.service, value: mission.serviceName ?? '—' },
-    { label: t.kpi.drone, value: deviceLabel },
     {
       label: t.fields.scheduledStart,
       value: formatDateTime(mission.scheduledStartAt, locale),
@@ -33,10 +29,13 @@ export function MissionInfoCard({
       label: t.fields.scheduledEnd,
       value: formatDateTime(mission.scheduledEndAt ?? null, locale),
     },
-    { label: t.fields.started, value: formatDateTime(startedAt, locale) },
+    {
+      label: t.fields.started,
+      value: startedAt ? formatDateTime(startedAt, locale) : t.notRecorded,
+    },
     {
       label: t.fields.completed,
-      value: formatDateTime(completedAt, locale),
+      value: completedAt ? formatDateTime(completedAt, locale) : t.notRecorded,
     },
     { label: t.fields.address, value: mission.address ?? '—' },
     {
@@ -51,6 +50,10 @@ export function MissionInfoCard({
       value: mission.mediaSummary ?? mission.mediaType ?? '—',
     },
   ]
+  const note =
+    mission.description && mission.description.trim().length > 2
+      ? mission.description.trim()
+      : null
   const failure = mission.failureReason ?? mission.rejectionReason
   if (failure) rows.push({ label: t.fields.failure, value: failure })
 
@@ -64,9 +67,7 @@ export function MissionInfoCard({
           </div>
         ))}
       </dl>
-      {mission.description ? (
-        <p className="odm-md-note">{mission.description}</p>
-      ) : null}
+      {note ? <p className="odm-md-note">{note}</p> : null}
     </Card>
   )
 }

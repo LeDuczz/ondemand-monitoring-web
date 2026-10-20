@@ -2,7 +2,7 @@ import { OrderAreaCheck } from './OrderAreaCheck'
 import { ReadOnlyScope } from './ReadOnlyScope'
 import { ReviewStageActions } from './ReviewStageActions'
 import type { ReviewStep } from '../reviewSteps'
-import type { FlightAreaReviewStatus, OrderDetail } from '../../../types/orders'
+import type { LegalReviewStatus, OrderDetail } from '../../../types/orders'
 import { useI18n } from '../../../../../shared/i18n'
 import { reviewAreaStageMessages } from './ReviewAreaStage.messages'
 
@@ -18,20 +18,18 @@ export function ReviewAreaStage({
   /** A completed stage reopened for viewing: content is not editable. */
   readOnly?: boolean
   /** The manager's current area judgement; continuing needs a usable one. */
-  areaReviewStatus: FlightAreaReviewStatus | null
-  onReviewSaved: (status: FlightAreaReviewStatus) => void
+  areaReviewStatus: LegalReviewStatus | null
+  onReviewSaved: (status: LegalReviewStatus) => void
 }) {
   const { t } = useI18n(reviewAreaStageMessages)
   const canContinue =
-    areaReviewStatus === 'PRELIMINARY_PASS' || areaReviewStatus === 'RESTRICTED'
+    areaReviewStatus === 'NOT_REQUIRED' || areaReviewStatus === 'APPROVED'
   const hint =
     areaReviewStatus == null
       ? t.reviewRequired
-      : areaReviewStatus === 'UNDETERMINED'
-        ? t.awaitingVerification
-        : areaReviewStatus === 'UNSUITABLE'
-          ? t.unsuitableHint
-          : null
+      : areaReviewStatus === 'REJECTED'
+        ? t.unsuitableHint
+        : null
 
   return (
     <div className="odm-or-review-stage" aria-label={t.monitoringAreaCheck}>

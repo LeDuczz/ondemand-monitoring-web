@@ -42,7 +42,7 @@ export function MissionResultReviewActions({
     setError(null)
     try {
       if (reject) await missionsApi.rejectMissionResult(resultId, note)
-      else await missionsApi.approveMissionResult(resultId)
+      else await missionsApi.approveMissionResult(resultId, note)
       setNote('')
       onReviewed()
     } catch (cause) {

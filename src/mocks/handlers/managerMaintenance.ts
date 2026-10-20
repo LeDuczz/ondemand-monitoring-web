@@ -1,10 +1,9 @@
-// Mock handlers for MNG-10. Endpoints:
+// Mock only the maintenance endpoint missing from the backend contract:
 //   POST   /api/maintenance-tickets                              [ĐỀ XUẤT]
-//   PATCH  /api/maintenance-tickets/:id/status                  [ĐỀ XUẤT]
-//   PATCH  /api/maintenance-tickets/:id/assign                  [BE]
+// List / assign-staff / resolve are served by the real backend (no mock route).
 import type { TicketSeverity, TicketStatus } from '../../shared/types/domain'
 import { createCollection } from '../db'
-import { created, fail, ok, registerMockRoutes } from '../mockServer'
+import { created, fail, registerMockRoutes } from '../mockServer'
 import ticketsSeed from '../data/maintenance-tickets.json'
 
 type StoredTicket = {
@@ -29,14 +28,6 @@ type StoredTicket = {
 }
 
 const tickets = createCollection(ticketsSeed.tickets) as StoredTicket[]
-
-// Valid status transitions [ĐỀ XUẤT per MNG-10 design context]
-const VALID_TICKET_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  OPEN: ['IN_PROGRESS', 'RESOLVED'],
-  IN_PROGRESS: ['RESOLVED', 'OPEN'],
-  RESOLVED: ['CLOSED', 'IN_PROGRESS'],
-  CLOSED: [],
-}
 
 registerMockRoutes([
   // ── MNG-10: create maintenance ticket [ĐỀ XUẤT] ──────────────────────
@@ -89,69 +80,6 @@ registerMockRoutes([
       return created(ticket, 'Đã tạo ticket bảo trì')
     },
   },
-
-  // ── MNG-10: patch ticket status [ĐỀ XUẤT] ────────────────────────────
-  {
-    method: 'PATCH',
-    path: '/api/maintenance-tickets/:id/status',
-    handler: ({ params, body }) => {
-      const ticket = tickets.find(
-        (t) => t.id === params.id || t.code === params.id,
-      )
-      if (!ticket) return fail(404, 'NOT_FOUND', 'Không tìm thấy ticket')
-
-      const req = (body ?? {}) as { status?: TicketStatus }
-      const validNext = VALID_TICKET_TRANSITIONS[ticket.status] ?? []
-
-      if (!req.status || !validNext.includes(req.status)) {
-        return fail(
-          422,
-          'INVALID_TRANSITION',
-          `Không thể chuyển từ ${ticket.status} sang ${req.status ?? '(trống)'}`,
-        )
-      }
-
-      ticket.status = req.status
-      if (req.status === 'RESOLVED' && !ticket.resolvedAt) {
-        ticket.resolvedAt = new Date().toISOString()
-      }
-      if (req.status === 'CLOSED' && !ticket.closedAt) {
-        ticket.closedAt = new Date().toISOString()
-      }
-
-      return ok(ticket, 'Đã cập nhật trạng thái ticket')
-    },
-  },
-  // ── BE: assign technician (also carries legacy `{ status }` patches) ──
-  {
-    method: 'PATCH',
-    path: '/api/maintenance-tickets/:id/assign',
-    handler: ({ params, body }) => {
-      const ticket = tickets.find(
-        (t) => t.id === params.id || t.code === params.id,
-      )
-      if (!ticket) return fail(404, 'NOT_FOUND', 'Không tìm thấy ticket')
-
-      const req = (body ?? {}) as { technicianId?: string; status?: TicketStatus }
-      if (req.status) {
-        const validNext = VALID_TICKET_TRANSITIONS[ticket.status] ?? []
-        if (!validNext.includes(req.status)) {
-          return fail(
-            422,
-            'INVALID_TRANSITION',
-            `Không thể chuyển từ ${ticket.status} sang ${req.status}`,
-          )
-        }
-        ticket.status = req.status
-      }
-      if (req.technicianId) {
-        ticket.assignedTo = req.technicianId
-        if (ticket.status === 'OPEN') ticket.status = 'IN_PROGRESS'
-      }
-      return ok(ticket, 'Đã cập nhật ticket')
-    },
-  },
-
 ])
 
 /** Test-only escape hatch */

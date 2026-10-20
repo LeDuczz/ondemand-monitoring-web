@@ -14,6 +14,9 @@ export const cockpitHeaderMessages = defineMessages({
     layoutCamera: 'Camera lớn',
     layoutMap: 'Bản đồ',
     review: 'Xem lại',
+    startFlight: 'Bắt đầu chuyến bay',
+    startingFlight: 'Đang bắt đầu...',
+    setInFlight: 'Đổi sang Đang bay',
     fullscreen: 'Toàn màn hình',
   },
   en: {
@@ -29,6 +32,9 @@ export const cockpitHeaderMessages = defineMessages({
     layoutCamera: 'Large camera',
     layoutMap: 'Map',
     review: 'Review',
+    startFlight: 'Start flight',
+    startingFlight: 'Starting...',
+    setInFlight: 'Set In flight',
     fullscreen: 'Fullscreen',
   },
 })

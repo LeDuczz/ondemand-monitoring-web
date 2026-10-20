@@ -7,6 +7,7 @@ import type {
   AiVerdict,
   FindingSeverity,
   OrderStatus,
+  RequiredEvidenceType,
 } from '../../../shared/types/domain'
 
 export type OrderCustomerSummary = {
@@ -101,7 +102,6 @@ export type OrderDetail = {
   description?: string | null
   usagePurpose?: string | null
   flightPurpose?: string | null
-  priority?: string | null
   altitudeM?: number | null
   estimatedLengthM?: number | null
   siteContactName?: string | null
@@ -123,21 +123,25 @@ export type OrderDetail = {
   termsAcceptedAt?: string | null
   termsVersion?: string | null
   deliverables?: OrderDeliverableResponse[] | null
-  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  legalReviewStatus?: LegalReviewStatus | null
   flightAreaReviewReason?: string | null
   flightAreaReviewNote?: string | null
   requestedScopeFeasible?: boolean | null
   flightAreaReviewedById?: string | null
   flightAreaReviewedByName?: string | null
   flightAreaReviewedAt?: string | null
-  requiresFlightPermissionReview?: boolean | null
+  updatedAt?: string | null
 }
 
-export type FlightAreaReviewStatus =
-  'PRELIMINARY_PASS' | 'RESTRICTED' | 'UNDETERMINED' | 'UNSUITABLE'
+export type LegalReviewStatus =
+  | 'NOT_REVIEWED'
+  | 'NOT_REQUIRED'
+  | 'PENDING_PERMIT'
+  | 'APPROVED'
+  | 'REJECTED'
 
 export type FlightAreaReviewRequest = {
-  status: FlightAreaReviewStatus
+  status: LegalReviewStatus
   requestedScopeFeasible?: boolean | null
   reason?: string | null
   note?: string | null
@@ -230,6 +234,7 @@ export type ApprovalDecision = 'REJECTED' | 'NEED_INFO'
 export type ApprovalRequest = {
   decision: ApprovalDecision
   reason: string
+  requestedUpdateScope?: 'LOCATION' | 'ADDITIONAL_INFORMATION'
 }
 
 export type OrderDeliverableResponse = {
@@ -264,7 +269,6 @@ export type OrderCreateResponse = {
   description: string
   usagePurpose?: string | null
   flightPurpose?: string | null
-  priority?: string | null
   altitudeM?: number | null
   estimatedLengthM?: number | null
   siteContactName?: string | null
@@ -299,14 +303,13 @@ export type OrderCreateResponse = {
   reviewById: string | null
   reviewByName: string | null
   reviewAt: string | null
-  flightAreaReviewStatus?: FlightAreaReviewStatus | null
+  legalReviewStatus?: LegalReviewStatus | null
   flightAreaReviewReason?: string | null
   flightAreaReviewNote?: string | null
   requestedScopeFeasible?: boolean | null
   flightAreaReviewedById?: string | null
   flightAreaReviewedByName?: string | null
   flightAreaReviewedAt?: string | null
-  requiresFlightPermissionReview?: boolean | null
   deliverables: OrderDeliverableResponse[]
   createdAt: string
   updatedAt: string
@@ -318,5 +321,15 @@ export type OrderChecklistSnapshot = {
   sourceChecklistId: string | null
   sourceType: 'SERVICE_TEMPLATE' | 'CUSTOMER_CUSTOM'
   content: string
+  description?: string | null
+  executionSteps?: string[] | null
+  inputRequirements?: string[] | null
+  expectedOutputs?: string[] | null
   displayOrder: number
+  /** Optional for historical pre-policy snapshots. */
+  minimumEvidenceCount?: number
+  requiredEvidenceType?: RequiredEvidenceType
+  /** Evidence policy V3: independent minimums when the type is IMAGE_AND_VIDEO. */
+  minimumImageCount?: number
+  minimumVideoCount?: number
 }

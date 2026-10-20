@@ -2,8 +2,8 @@ import { defineMessages } from '../../../../../shared/i18n'
 
 export const missionInfoCardMessages = defineMessages({
   vi: {
-    title: 'Thông tin mission',
-    missionCode: 'Mã mission',
+    title: 'Thông tin nhiệm vụ',
+    missionCode: 'Mã nhiệm vụ',
     systemStatus: 'Trạng thái hệ thống',
     flightDate: 'Ngày bay',
     startTime: 'Giờ bắt đầu',

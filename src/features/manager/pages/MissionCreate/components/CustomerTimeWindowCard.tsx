@@ -1,7 +1,8 @@
 import { Card } from '../../../../../shared/components/ui'
-import { preferredLabel } from '../../../lib/viLabels'
+import { preferredRangeLabel } from '../../../lib/viLabels'
 import type { OrderMissionBrief } from '../../../types/orders'
 import { useI18n } from '../../../../../shared/i18n'
+import { timePart } from '../createMissionHelpers'
 import { customerTimeWindowCardMessages } from './CustomerTimeWindowCard.messages'
 
 export function CustomerTimeWindowCard({
@@ -13,7 +14,14 @@ export function CustomerTimeWindowCard({
   return (
     <Card title={t.customerTimeWindow}>
       <div className="odm-plan-bigvalue">
-        {preferredLabel(brief.preferredDate, brief.preferredTimeName)}
+        {preferredRangeLabel(
+          brief.preferredDateFrom || brief.preferredDate,
+          brief.preferredDateTo,
+          brief.preferredTimeName,
+        )}
+        {timePart(brief.preferredDateFrom)
+          ? ` · ${timePart(brief.preferredDateFrom)}${timePart(brief.preferredDateTo) ? `–${timePart(brief.preferredDateTo)}` : ''}`
+          : ''}
       </div>
       <p className="odm-plan-field-help">{t.customerTimeWindowHint}</p>
     </Card>

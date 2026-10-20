@@ -3,17 +3,14 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const missionInfoCardMessages = defineMessages({
   vi: {
     infoCard: 'Thông tin nhiệm vụ',
-    kpi: {
-      drone: 'Thiết bị',
-    },
+    notRecorded: 'Chưa ghi nhận',
     fields: {
-      customer: 'Khách hàng',
       order: 'Đơn hàng',
       service: 'Dịch vụ',
-      scheduledStart: 'Lịch bay bắt đầu',
-      scheduledEnd: 'Lịch bay kết thúc',
+      scheduledStart: 'Bắt đầu dự kiến',
+      scheduledEnd: 'Kết thúc dự kiến',
       started: 'Bắt đầu thực tế',
-      completed: 'Hoàn thành thực tế',
+      completed: 'Kết thúc thực tế',
       address: 'Địa chỉ',
       coordinates: 'Tọa độ',
       mediaType: 'Loại media',
@@ -22,17 +19,14 @@ export const missionInfoCardMessages = defineMessages({
   },
   en: {
     infoCard: 'Mission information',
-    kpi: {
-      drone: 'Device',
-    },
+    notRecorded: 'Not recorded',
     fields: {
-      customer: 'Customer',
       order: 'Order',
       service: 'Service',
-      scheduledStart: 'Flight schedule start',
-      scheduledEnd: 'Flight schedule end',
+      scheduledStart: 'Planned start',
+      scheduledEnd: 'Planned end',
       started: 'Actual start',
-      completed: 'Actual completion',
+      completed: 'Actual end',
       address: 'Address',
       coordinates: 'Coordinates',
       mediaType: 'Media type',

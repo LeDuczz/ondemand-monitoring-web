@@ -2,15 +2,19 @@ import { useState } from 'react'
 
 import { useI18n } from '../../../../shared/i18n'
 import type { ChecklistReviewStatus, PricingChecklistItem } from '../../types'
+import { liveSystemPrice, type SystemLine } from '../pricingInput'
 import type { ChecklistFilter } from '../useManagerPricing'
 import { checklistReviewMessages } from './ChecklistReview.messages'
 import { ChecklistRow } from './ChecklistRow'
+import type { PriceRange } from './ItemPrice'
 
 export function ChecklistReview({
   items,
   filter,
   onFilterChange,
   prices,
+  systemLines,
+  priceRange,
   disabled,
   onPriceChange,
   onReview,
@@ -19,6 +23,10 @@ export function ChecklistReview({
   filter: ChecklistFilter
   onFilterChange: (filter: ChecklistFilter) => void
   prices: Record<string, string>
+  /** Live system-price lines of the pricing policy in force. */
+  systemLines: SystemLine[] | undefined
+  /** Prices the Manager may approve for an item with this system price. */
+  priceRange: (systemPrice: number) => PriceRange | null
   disabled: boolean
   onPriceChange: (itemId: string, value: string) => void
   onReview: (
@@ -32,7 +40,9 @@ export function ChecklistReview({
 
   const checklistCount = items.length
   const pendingReviewCount = items.filter(
-    (item) => !item.reviewStatus || item.reviewStatus === 'PENDING',
+    (item) =>
+      item.sourceType !== 'SERVICE_TEMPLATE' &&
+      (!item.reviewStatus || item.reviewStatus === 'PENDING'),
   ).length
   const reviewedCount = checklistCount - pendingReviewCount
   const reviewComplete = pendingReviewCount === 0
@@ -48,7 +58,8 @@ export function ChecklistReview({
   ] as const
   const visibleItems = items.filter((item) =>
     filter === 'pending'
-      ? item.reviewStatus === 'PENDING'
+      ? item.sourceType !== 'SERVICE_TEMPLATE' &&
+        item.reviewStatus === 'PENDING'
       : filter === 'reviewed'
         ? item.reviewStatus !== 'PENDING'
         : filter === 'additional'
@@ -98,21 +109,33 @@ export function ChecklistReview({
           <span>{t.colStatus}</span>
           <span>{t.colNote}</span>
         </div>
-        {visibleItems.map((item) => (
-          <ChecklistRow
-            key={item.id}
-            item={item}
-            index={items.indexOf(item)}
-            price={prices[item.id] ?? '0'}
-            disabled={disabled}
-            noteOpen={openNote === item.id}
-            onToggleNote={() =>
-              setOpenNote(openNote === item.id ? null : item.id)
-            }
-            onPriceChange={(value) => onPriceChange(item.id, value)}
-            onReview={(status, note) => onReview(item, status, note)}
-          />
-        ))}
+        {visibleItems.map((item) => {
+          const systemPrice = liveSystemPrice(item, systemLines)
+          return (
+            <ChecklistRow
+              key={item.id}
+              item={item}
+              index={items.indexOf(item)}
+              price={
+                prices[item.id] ??
+                String(
+                  item.managerApprovedAmount ??
+                    item.managerQuotedPrice ??
+                    systemPrice,
+                )
+              }
+              systemPrice={systemPrice}
+              range={priceRange(systemPrice)}
+              disabled={disabled}
+              noteOpen={openNote === item.id}
+              onToggleNote={() =>
+                setOpenNote(openNote === item.id ? null : item.id)
+              }
+              onPriceChange={(value) => onPriceChange(item.id, value)}
+              onReview={(status, note) => onReview(item, status, note)}
+            />
+          )
+        })}
       </div>
     </>
   )

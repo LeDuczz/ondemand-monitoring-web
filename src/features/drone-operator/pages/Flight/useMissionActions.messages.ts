@@ -9,6 +9,8 @@ export const missionActionsMessages = defineMessages({
     weatherUpdated: (label: string, status: string) =>
       `Thời tiết ${label}: ${status}`,
     weatherOffline: 'Bộ điều khiển thời tiết ngoại tuyến',
+    startingFlight: 'Đang bắt đầu chuyến bay...',
+    flightStarted: 'Mission đã chuyển sang Đang bay',
     finishingFlight: 'Đang cập nhật hoàn thành bay...',
     flightFinished: 'Đã cập nhật bay xong - chờ maintainer postcheck',
     mustLand:
@@ -22,6 +24,8 @@ export const missionActionsMessages = defineMessages({
     weatherUpdated: (label: string, status: string) =>
       `Weather ${label}: ${status}`,
     weatherOffline: 'Weather controller offline',
+    startingFlight: 'Starting flight...',
+    flightStarted: 'Mission is in flight',
     finishingFlight: 'Updating flight completion...',
     flightFinished: 'Flight finished - waiting for maintainer postcheck',
     mustLand:

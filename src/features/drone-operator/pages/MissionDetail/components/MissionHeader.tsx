@@ -48,9 +48,13 @@ function missionProgressBadge(
 export function MissionHeader({
   mission,
   access,
+  submitting,
+  onStartWorkflow,
 }: {
   mission: OperatorMission
   access?: MissionPermissions
+  submitting?: boolean
+  onStartWorkflow?: () => void
 }) {
   const { t } = useI18n(missionHeaderMessages)
   const hasAccepted = mission.myResponseStatus === 'ACCEPTED'
@@ -62,7 +66,7 @@ export function MissionHeader({
   const canConnectGcs =
     !stopping &&
     access?.canOperatePayload === true &&
-    (backendStatus === 'SCHEDULED' || mission.status === 'ACCEPTED') &&
+    backendStatus === 'SCHEDULED' &&
     !GCS_CONNECTED_STATUSES.has(backendStatus)
   const canRunPreflight =
     !stopping &&
@@ -71,8 +75,9 @@ export function MissionHeader({
       backendStatus,
     )
   const canHandleInspectionMedia =
-    access?.canUploadMedia === true &&
-    (access?.canInspectDevice === true ||
+    access?.canInspectDevice === true ||
+    access?.canCompleteMission === true ||
+    (access?.canUploadMedia === true &&
       INSPECTION_MEDIA_STATUSES.has(mission.backendStatus ?? ''))
   const showProgressBadge =
     progressBadge &&
@@ -154,8 +159,21 @@ export function MissionHeader({
               {t.stopFlight}
             </a>
           ) : null
-        ) : mission.status === 'PENDING' && hasAccepted ? (
-          <StatusBadge tone="green">{t.youAccepted}</StatusBadge>
+        ) : hasAccepted &&
+          (backendStatus === 'WAITING_CREW_CONFIRMATION' ||
+            backendStatus === 'WAITING_OPERATOR_ACCEPTANCE') ? (
+          access?.canStartMission ? (
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              disabled={submitting}
+              onClick={onStartWorkflow}
+            >
+              {submitting ? t.startingMission : t.startMission}
+            </button>
+          ) : (
+            <StatusBadge tone="green">{t.accepted}</StatusBadge>
+          )
         ) : mission.status === 'PENDING' ? null : mission.backendStatus ===
             'READY_TO_FLY' && access?.canControlFlight ? (
           <a

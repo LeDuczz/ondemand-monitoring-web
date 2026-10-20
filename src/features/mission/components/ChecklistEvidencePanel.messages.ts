@@ -5,11 +5,14 @@ export const checklistEvidenceMessages = defineMessages({
     reasons: {
       EVIDENCE_SOURCE_NOT_ELIGIBLE:
         'Nguồn media không hợp lệ. Bằng chứng hỗ trợ camera drone và ảnh vệ tinh của hệ thống.',
-      EVIDENCE_TYPE_NOT_ELIGIBLE: 'Loại media không được hỗ trợ.',
+      EVIDENCE_TYPE_NOT_ELIGIBLE:
+        'Loại media không phù hợp yêu cầu. Hãy chọn ảnh/video đúng loại.',
       MEDIA_REJECTED: 'Media đã bị từ chối.',
       MEDIA_NOT_VALIDATED: 'Media chưa xác thực thành công.',
       MEDIA_APPROVAL_REQUIRED: 'Cần duyệt media trước khi duyệt kết quả.',
       INSUFFICIENT_EVIDENCE: 'Chưa đủ bằng chứng hợp lệ.',
+      EXECUTION_NOT_COMPLETED:
+        'Mục checklist phải được đánh dấu hoàn tất trước khi nghiệm thu mission.',
       EXECUTION_NOT_TERMINAL: 'Mục checklist chưa kết thúc.',
       UNABLE_REASON_REQUIRED: 'Cần lý do không thể xác minh.',
       CHECKLIST_INTEGRITY_INVALID: 'Checklist không khớp snapshot đơn hàng.',
@@ -31,6 +34,26 @@ export const checklistEvidenceMessages = defineMessages({
     } as Record<string, string>,
     updateFailed:
       'Không thể cập nhật bằng chứng. Vui lòng làm mới checklist và thử lại.',
+    notEligible:
+      'Media không phù hợp. Chọn đúng loại ảnh/video và nguồn bằng chứng được hỗ trợ.',
+    evidenceTypes: {
+      IMAGE: 'Chỉ ảnh',
+      VIDEO: 'Chỉ video',
+      IMAGE_AND_VIDEO: 'Ảnh và video',
+      IMAGE_OR_VIDEO: 'Ảnh hoặc video (cũ)',
+    } as Record<string, string>,
+    unableWithReason: (reason: string) =>
+      `Quy trình ngoại lệ: Miễn nộp bằng chứng do không thể xác minh (Lý do: "${reason}").`,
+    unableNoReason:
+      'Quy trình ngoại lệ: Không thể xác minh được miễn đính kèm bằng chứng (bắt buộc phải có lý do giải trình).',
+    missing: (n: number) => `Còn thiếu ${n} bằng chứng hợp lệ`,
+    enoughValid: '✓ Đã đủ bằng chứng hợp lệ',
+    typeMismatch: (label: string) =>
+      `Loại media không phù hợp yêu cầu (${label}).`,
+    noUploadedBefore:
+      'Mission này chưa có media nào được upload lên hệ thống. Ảnh/video đang nằm trên thiết bị chỉ hiện ở màn hình nghiệm thu: hãy',
+    noUploadedLink: 'mở media nghiệm thu',
+    noUploadedAfter: 'để upload (hoặc gắn trực tiếp từ đó), rồi quay lại.',
     evidence: 'Bằng chứng',
     video: 'Video',
     image: 'Ảnh',
@@ -56,7 +79,6 @@ export const checklistEvidenceMessages = defineMessages({
     loadMediaFailed: 'Không thể tải media của Mission.',
     retry: 'Thử lại',
     noMatch: 'Không tìm thấy media phù hợp.',
-    noEligible: 'Mission này chưa có media phù hợp để làm bằng chứng.',
     attachedThisPage:
       'Media phù hợp ở trang này đã được gắn vào checklist này.',
     attachedAll: 'Tất cả media phù hợp đã được gắn vào checklist này.',
@@ -73,12 +95,15 @@ export const checklistEvidenceMessages = defineMessages({
     reasons: {
       EVIDENCE_SOURCE_NOT_ELIGIBLE:
         'Media source not eligible. Evidence supports drone camera and system satellite images.',
-      EVIDENCE_TYPE_NOT_ELIGIBLE: 'Media type is not supported.',
+      EVIDENCE_TYPE_NOT_ELIGIBLE:
+        'Media type does not match the requirement. Choose the right photo/video type.',
       MEDIA_REJECTED: 'The media was rejected.',
       MEDIA_NOT_VALIDATED: 'The media has not been validated successfully.',
       MEDIA_APPROVAL_REQUIRED:
         'The media must be approved before the result is approved.',
       INSUFFICIENT_EVIDENCE: 'Not enough valid evidence.',
+      EXECUTION_NOT_COMPLETED:
+        'The checklist item must be marked completed before mission acceptance.',
       EXECUTION_NOT_TERMINAL: 'The checklist item is not finished.',
       UNABLE_REASON_REQUIRED: 'A reason it cannot be verified is required.',
       CHECKLIST_INTEGRITY_INVALID:
@@ -101,6 +126,26 @@ export const checklistEvidenceMessages = defineMessages({
     } as Record<string, string>,
     updateFailed:
       'Could not update the evidence. Please refresh the checklist and try again.',
+    notEligible:
+      'This media is not suitable. Pick the right photo/video type and a supported evidence source.',
+    evidenceTypes: {
+      IMAGE: 'Photo only',
+      VIDEO: 'Video only',
+      IMAGE_AND_VIDEO: 'Photo and video',
+      IMAGE_OR_VIDEO: 'Photo or video (legacy)',
+    } as Record<string, string>,
+    unableWithReason: (reason: string) =>
+      `Exception flow: evidence is waived because it cannot be verified (Reason: "${reason}").`,
+    unableNoReason:
+      'Exception flow: items that cannot be verified are exempt from attaching evidence (a justification is required).',
+    missing: (n: number) => `${n} more valid evidence item(s) needed`,
+    enoughValid: '✓ Enough valid evidence',
+    typeMismatch: (label: string) =>
+      `Media type does not match the requirement (${label}).`,
+    noUploadedBefore:
+      'This Mission has no media uploaded to the system yet. Photos/videos that only exist on the device appear in the acceptance screen: please',
+    noUploadedLink: 'open the acceptance media',
+    noUploadedAfter: 'to upload (or attach directly from there), then come back.',
     evidence: 'Evidence',
     video: 'Video',
     image: 'Image',
@@ -126,7 +171,6 @@ export const checklistEvidenceMessages = defineMessages({
     loadMediaFailed: 'Could not load the Mission media.',
     retry: 'Retry',
     noMatch: 'No matching media found.',
-    noEligible: 'This Mission has no suitable media to use as evidence.',
     attachedThisPage:
       'Suitable media on this page is already attached to this checklist item.',
     attachedAll:

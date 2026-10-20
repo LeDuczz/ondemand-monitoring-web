@@ -9,8 +9,8 @@ export function QuoteActions({
   busy,
   approved,
   pendingCustomCount,
+  outOfRangeCount,
   approveBlockedReason,
-  onSaveDraft,
   onApprove,
 }: {
   error: string | null
@@ -19,8 +19,8 @@ export function QuoteActions({
   busy: boolean
   approved: boolean
   pendingCustomCount: number
+  outOfRangeCount: number
   approveBlockedReason?: string | null
-  onSaveDraft: () => void
   onApprove: () => void
 }) {
   const { t } = useI18n(quoteActionsMessages)
@@ -32,14 +32,6 @@ export function QuoteActions({
       {!accepted ? (
         <div className="finance-actions">
           <button
-            className="odm-btn"
-            type="button"
-            disabled={busy}
-            onClick={onSaveDraft}
-          >
-            {t.saveDraft}
-          </button>
-          <button
             id="manager-approve-quote"
             className="odm-btn odm-btn-p"
             type="button"
@@ -47,12 +39,15 @@ export function QuoteActions({
               busy ||
               approved ||
               pendingCustomCount > 0 ||
+              outOfRangeCount > 0 ||
               Boolean(approveBlockedReason)
             }
             title={
               pendingCustomCount > 0
                 ? t.classifyFirst
-                : (approveBlockedReason ?? undefined)
+                : outOfRangeCount > 0
+                  ? t.outOfRange
+                  : (approveBlockedReason ?? undefined)
             }
             onClick={onApprove}
           >

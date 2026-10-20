@@ -42,6 +42,7 @@ export function MissionDashboard({
   refreshWorkspace,
   mediaRevision,
   onAccept,
+  onStartWorkflow,
   onOpenReject,
 }: {
   mission: OperatorMission
@@ -54,6 +55,7 @@ export function MissionDashboard({
   refreshWorkspace: () => void
   mediaRevision: number
   onAccept: () => void
+  onStartWorkflow: () => void
   onOpenReject: () => void
 }) {
   const { t } = useI18n(missionDashboardMessages)
@@ -71,11 +73,16 @@ export function MissionDashboard({
   const [postflightStatus, setPostflightStatus] =
     useState<PostflightCheckStatus | null>(null)
   const [tab, setTab] = useState<'overview' | 'checks' | 'media'>('overview')
+  // The inspector and the pilot see the mission media from the moment it exists, not only after completion.
+  const canViewMissionMedia =
+    access?.canInspectDevice === true ||
+    access?.canUploadMedia === true ||
+    mission.status === 'COMPLETED' ||
+    mission.backendStatus === 'PENDING_REVIEW'
   const tabs: Array<{ id: 'overview' | 'checks' | 'media'; label: string }> = [
     { id: 'overview', label: t.tabOverview },
     { id: 'checks', label: t.tabChecks },
-    ...(mission.status === 'COMPLETED' ||
-    mission.backendStatus === 'PENDING_REVIEW'
+    ...(canViewMissionMedia
       ? [{ id: 'media' as const, label: t.tabMedia }]
       : []),
   ]
@@ -125,6 +132,34 @@ export function MissionDashboard({
             .join(' · ')}
         </p>
         <DecisionSummary mission={mission} />
+        <div
+          className="mds-action-bar"
+          role="region"
+          aria-label={t.actionBarLabel}
+        >
+          <div className="mds-action-bar-text">
+            {t.actionBarQuestion}
+            {!access?.canRespond && <small>{t.noRespondPermission}</small>}
+          </div>
+          <div className="mds-action-bar-buttons">
+            <button
+              type="button"
+              className="odm-btn odm-btn-rd"
+              onClick={onOpenReject}
+              disabled={submitting || !access?.canRespond}
+            >
+              {t.reject}
+            </button>
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              onClick={onAccept}
+              disabled={submitting || !access?.canRespond}
+            >
+              {submitting ? t.processing : t.acceptMission}
+            </button>
+          </div>
+        </div>
         {actionError ? (
           <div
             role="alert"
@@ -158,34 +193,6 @@ export function MissionDashboard({
           </summary>
           <div className="mds-pending-checklist-body">{monitoringSection}</div>
         </details>
-        <div
-          className="mds-action-bar"
-          role="region"
-          aria-label={t.actionBarLabel}
-        >
-          <div className="mds-action-bar-text">
-            {t.actionBarQuestion}
-            {!access?.canRespond && <small>{t.noRespondPermission}</small>}
-          </div>
-          <div className="mds-action-bar-buttons">
-            <button
-              type="button"
-              className="odm-btn odm-btn-rd"
-              onClick={onOpenReject}
-              disabled={submitting || !access?.canRespond}
-            >
-              {t.reject}
-            </button>
-            <button
-              type="button"
-              className="odm-btn odm-btn-p"
-              onClick={onAccept}
-              disabled={submitting || !access?.canRespond}
-            >
-              {submitting ? t.processing : t.acceptMission}
-            </button>
-          </div>
-        </div>
       </div>
     )
   }
@@ -193,7 +200,12 @@ export function MissionDashboard({
   return (
     <div>
       {/* ── Header ── */}
-      <MissionHeader mission={mission} access={access} />
+      <MissionHeader
+        mission={mission}
+        access={access}
+        submitting={submitting}
+        onStartWorkflow={onStartWorkflow}
+      />
 
       {resultActions}
 
@@ -255,9 +267,7 @@ export function MissionDashboard({
         </div>
       ) : null}
 
-      {tab === 'media' &&
-      (mission.status === 'COMPLETED' ||
-        mission.backendStatus === 'PENDING_REVIEW') ? (
+      {tab === 'media' && canViewMissionMedia ? (
         <MissionUploadedMedia
           missionId={mission.id}
           reviewStatus={resultApprovalStatus}

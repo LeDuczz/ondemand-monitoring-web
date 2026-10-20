@@ -1,5 +1,6 @@
 import { useI18n } from '../../../../../shared/i18n'
 import { ordersApi } from '../../../api/ordersApi'
+import { usePlanningConfirmation } from '../../../components/common/usePlanningConfirmation'
 import { managerHref } from '../../../routes'
 import type { OrderDetail } from '../../../types/orders'
 import type { SavedAreaReview } from './areaReview'
@@ -16,78 +17,115 @@ export function AreaManagerReview({
   onEdit: () => void
 }) {
   const { t, locale } = useI18n(areaManagerReviewMessages)
+  const confirmation = usePlanningConfirmation()
+  // Once the order is rejected/cancelled/sent back, the review is history: no more actions.
+  const decided = order.status !== 'PENDING'
 
   async function resolveUnsuitable(
     saved: SavedAreaReview,
     decision: 'NEED_INFO' | 'REJECTED',
   ) {
-    const question =
-      decision === 'NEED_INFO'
-        ? t.confirmAskCustomerChange
-        : t.confirmRejectOrder
-    if (!window.confirm(question)) return
+    const needInfo = decision === 'NEED_INFO'
+    const accepted = await confirmation.confirm({
+      title: needInfo ? t.confirmAskCustomerChangeTitle : t.confirmRejectTitle,
+      body: needInfo ? t.confirmAskCustomerChangeBody : t.confirmRejectBody,
+      action: needInfo ? t.askCustomerChangeAction : t.rejectOrderAction,
+    })
+    if (!accepted) return
     const reason = [saved.reason, saved.note].filter(Boolean).join(' — ')
-    await ordersApi.submitApproval(order.id, { decision, reason })
+    await ordersApi.submitApproval(order.id, {
+      decision,
+      reason,
+      ...(needInfo ? { requestedUpdateScope: 'LOCATION' as const } : {}),
+    })
     window.location.hash = managerHref({ screen: 'orderQueue' })
   }
 
   return (
-    <div className="odm-or-area-manager-review">
-      {review ? (
-        <>
-          <span>{t.heading}</span>
-          <strong className={`is-${review.status.toLowerCase()}`}>
-            {t.statusLabels[review.status] ?? review.status}
-          </strong>
-          {review.reason ? (
-            <p>
-              <b>{t.reasonLabel}</b> {review.reason}
-            </p>
-          ) : null}
-          {review.note ? (
-            <p>
-              <b>{t.noteLabel}</b> {review.note}
-            </p>
-          ) : null}
-          <small>
-            {review.reviewer ?? t.defaultReviewer}
-            {review.reviewedAt
-              ? ` · ${new Intl.DateTimeFormat(locale, {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                }).format(new Date(review.reviewedAt))}`
-              : ''}
-          </small>
-          <button type="button" className="odm-or-btn-outline" onClick={onEdit}>
-            {t.editReview}
-          </button>
-          {review.status === 'UNSUITABLE' ? (
-            <div className="odm-or-area-secondary-actions">
+    <>
+      <div className="odm-or-area-manager-review">
+        {review ? (
+          <>
+            <span>{t.heading}</span>
+            <strong className={`is-${review.status.toLowerCase()}`}>
+              {t.statusLabels[review.status] ?? review.status}
+            </strong>
+            {review.reason ? (
+              <p>
+                <b>{t.reasonLabel}</b> {review.reason}
+              </p>
+            ) : null}
+            {review.note ? (
+              <p>
+                <b>{t.noteLabel}</b> {review.note}
+              </p>
+            ) : null}
+            <small>
+              {review.reviewer ?? t.defaultReviewer}
+              {review.reviewedAt
+                ? ` · ${new Intl.DateTimeFormat(locale, {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  }).format(new Date(review.reviewedAt))}`
+                : ''}
+            </small>
+            {decided ? null : (
               <button
                 type="button"
-                onClick={() => void resolveUnsuitable(review, 'NEED_INFO')}
+                className="odm-or-btn-outline"
+                onClick={onEdit}
               >
-                {t.askCustomerChange}
+                {t.editReview}
               </button>
+            )}
+            {review.status === 'REJECTED' ? (
+              <p className="odm-or-area-contact">
+                <b>{t.contactCustomer}</b> {order.customer.fullName}
+                {' · '}
+                {order.customer.phone ? (
+                  <a href={`tel:${order.customer.phone.replace(/\s+/g, '')}`}>
+                    {order.customer.phone}
+                  </a>
+                ) : (
+                  <em>{t.noPhone}</em>
+                )}
+              </p>
+            ) : null}
+            {review.status === 'REJECTED' && !decided ? (
+              <div className="odm-or-area-secondary-actions">
+                <button
+                  type="button"
+                  onClick={() => void resolveUnsuitable(review, 'NEED_INFO')}
+                >
+                  {t.askCustomerChange}
+                </button>
+                <button
+                  type="button"
+                  className="is-danger"
+                  onClick={() => void resolveUnsuitable(review, 'REJECTED')}
+                >
+                  {t.rejectOrder}
+                </button>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <p>{t.noReview}</p>
+            {decided ? null : (
               <button
                 type="button"
-                className="is-danger"
-                onClick={() => void resolveUnsuitable(review, 'REJECTED')}
+                className="odm-btn odm-btn-p"
+                onClick={onEdit}
               >
-                {t.rejectOrder}
+                {t.reviewArea}
               </button>
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <p>{t.noReview}</p>
-          <button type="button" className="odm-btn odm-btn-p" onClick={onEdit}>
-            {t.reviewArea}
-          </button>
-          <a href="#portal/manager/support">{t.needHelp}</a>
-        </>
-      )}
-    </div>
+            )}
+            <a href="#portal/manager/support">{t.needHelp}</a>
+          </>
+        )}
+      </div>
+      {confirmation.dialog}
+    </>
   )
 }

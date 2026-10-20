@@ -7,8 +7,10 @@ export const missionKpisMessages = defineMessages({
       media: 'Media',
       checklist: 'Checklist hoàn tất',
       actualDuration: 'Thời lượng thực tế',
-      plannedDuration: 'Thời lượng dự kiến',
+      duration: 'Thời lượng',
     },
+    plannedSuffix: (value: string) => `${value} dự kiến`,
+    notRecorded: 'Chưa ghi nhận',
     crewAccepted: 'đã nhận nhiệm vụ',
   },
   en: {
@@ -17,8 +19,10 @@ export const missionKpisMessages = defineMessages({
       media: 'Media',
       checklist: 'Checklist done',
       actualDuration: 'Actual duration',
-      plannedDuration: 'Planned duration',
+      duration: 'Duration',
     },
+    plannedSuffix: (value: string) => `${value} planned`,
+    notRecorded: 'Not recorded',
     crewAccepted: 'accepted',
   },
 })

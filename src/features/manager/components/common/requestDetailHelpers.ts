@@ -5,7 +5,7 @@ import type { OrderDetail } from '../../types/orders'
 import { requestDetailHelpersMessages } from './requestDetailHelpers.messages'
 
 export type DetailItem = {
-  label: string
+  label: ReactNode
   value: ReactNode
 }
 

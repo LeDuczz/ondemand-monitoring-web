@@ -81,7 +81,7 @@ describe('ManagerApp', () => {
         '3',
       )
       expect(
-        screen.getByRole('link', { name: /Đơn hàng & Nhiệm vụ/ }),
+        screen.getByRole('link', { name: /Đơn hàng/ }),
       ).toHaveTextContent('6')
     })
   })

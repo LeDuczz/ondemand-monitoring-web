@@ -15,7 +15,7 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
   onSaved: () => void
 }) {
   const [draft, setDraft] = useState<Record<string, string | boolean>>({
-    title: order.title, address: order.address ?? '', priority: order.priority ?? 'NORMAL',
+    title: order.title, address: order.address ?? '',
     preferredDateFrom: order.dateFrom ?? '', preferredDateTo: order.dateTo ?? '', resultDeadline: order.resultDeadline ?? '',
     flightPurpose: order.flightPurpose ?? 'SURVEY_MONITORING', usagePurpose: order.usagePurpose ?? '',
     altitudeM: order.altitudeM?.toString() ?? '', estimatedLengthM: order.estimatedLengthM?.toString() ?? '',
@@ -36,7 +36,7 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
   async function save() {
     setBusy(true); setError('')
     const keys: Record<EditableOrderSection, string[]> = {
-      general: ['title','address','priority','preferredDateFrom','preferredDateTo','resultDeadline'],
+      general: ['title','address','preferredDateFrom','preferredDateTo','resultDeadline'],
       scope: ['flightPurpose','usagePurpose','altitudeM','estimatedLengthM','recurrenceType','recurrenceOccurrences'],
       site: ['siteContactName','siteContactPhone','accessNotes','monitoringRelationship','weatherFallback'],
       permit: ['monitoringAuthorizationConfirmed','permitStatus','permitNumber','permitExpiresOn'],
@@ -66,7 +66,6 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
     {section === 'general' && <>
       <Field label="Tiêu đề"><input value={text('title')} onChange={(e) => set('title', e.target.value)} /></Field>
       <Field label="Địa điểm"><input value={text('address')} onChange={(e) => set('address', e.target.value)} /></Field>
-      <Field label="Mức ưu tiên"><select value={text('priority')} onChange={(e) => set('priority', e.target.value)}><option value="NORMAL">Bình thường</option><option value="HIGH">Cao</option><option value="URGENT">Khẩn cấp</option></select></Field>
       <Field label="Từ ngày"><input type="date" value={text('preferredDateFrom')} onChange={(e) => set('preferredDateFrom', e.target.value)} /></Field>
       <Field label="Đến ngày"><input type="date" value={text('preferredDateTo')} onChange={(e) => set('preferredDateTo', e.target.value)} /></Field>
       <Field label="Hạn nhận kết quả"><input type="date" value={text('resultDeadline')} onChange={(e) => set('resultDeadline', e.target.value)} /></Field>
@@ -74,7 +73,7 @@ export function OrderSectionEditor({ section, order, onCancel, onSaved }: {
     {section === 'scope' && <>
       <Field label="Mục đích bay"><select value={text('flightPurpose')} onChange={(e) => set('flightPurpose', e.target.value)}><option value="SURVEY_MONITORING">Đo đạc, khảo sát, giám sát</option><option value="AGRICULTURE">Nông nghiệp</option><option value="CONSTRUCTION_MONITORING">Giám sát công trình</option><option value="INDUSTRIAL_INSPECTION">Kiểm tra nhà xưởng</option></select></Field>
       <Field label="Mục đích sử dụng"><select value={text('usagePurpose')} onChange={(e) => set('usagePurpose', e.target.value)}><option value="">—</option><option value="INTERNAL">Nội bộ</option><option value="LEGAL">Pháp lý</option><option value="PARTNER_REPORT">Báo cáo đối tác</option><option value="OTHER">Khác</option></select></Field>
-      <Field label="Độ cao bay (m)"><input type="number" min="10" max="120" value={text('altitudeM')} onChange={(e) => set('altitudeM', e.target.value)} /></Field>
+      <Field label="Độ cao giám sát mong muốn (m)"><input type="number" min="10" max="120" value={text('altitudeM')} onChange={(e) => set('altitudeM', e.target.value)} /></Field>
       <Field label="Chiều dài ước tính (m)"><input type="number" min="1" value={text('estimatedLengthM')} onChange={(e) => set('estimatedLengthM', e.target.value)} /></Field>
       <Field label="Lịch lặp"><select value={text('recurrenceType')} onChange={(e) => set('recurrenceType', e.target.value)}><option value="NONE">Không có</option><option value="WEEKLY">Hằng tuần</option><option value="MONTHLY">Hằng tháng</option></select></Field>
       {text('recurrenceType') !== 'NONE' && <Field label="Số lần"><input type="number" min="2" max="52" value={text('recurrenceOccurrences')} onChange={(e) => set('recurrenceOccurrences', e.target.value)} /></Field>}

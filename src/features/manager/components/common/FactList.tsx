@@ -5,8 +5,10 @@ export function FactList({ items }: { items: DetailItem[] }) {
   if (visible.length === 0) return null
   return (
     <dl className="odm-or-kv">
-      {visible.map((item) => (
-        <div key={item.label}>
+      {visible.map((item, idx) => (
+        <div
+          key={typeof item.label === 'string' ? item.label : `detail-${idx}`}
+        >
           <dt>{item.label}</dt>
           <dd>{item.value}</dd>
         </div>

@@ -4,7 +4,7 @@ import { useMissionDateFormatter } from '../missionDate'
 import { dash, formatCoord } from '../missionFormat'
 import { InfoRow } from './InfoRow'
 import { missionInfoCardMessages } from './MissionInfoCard.messages'
-import { MissionStatusBadge } from './MissionStatusBadge'
+import { MissionStatusBadge, missionStatusLabel } from './MissionStatusBadge'
 import { missionStatusBadgeMessages } from './MissionStatusBadge.messages'
 
 export type InfoCardLabels = typeof missionInfoCardMessages.vi
@@ -54,7 +54,10 @@ export function MissionInfoCard({ mission }: { mission: OperatorMission }) {
         <InfoRow
           icon="•"
           label={t.systemStatus}
-          value={mission.backendStatus ?? statusT.statusLabel[mission.status]}
+          value={missionStatusLabel(
+            mission.backendStatus ?? mission.status,
+            statusT,
+          )}
         />
         <InfoRow
           icon="📅"

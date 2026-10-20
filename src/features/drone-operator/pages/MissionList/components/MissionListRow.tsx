@@ -45,13 +45,21 @@ export function MissionListRow({
   mission,
   today,
   now,
+  showSubmission,
 }: {
   mission: OperatorMission
   today: string
   now: Date
+  /** The "sent to manager" column only matters once a Mission is finished. */
+  showSubmission: boolean
 }) {
   const { t, lang, locale } = useI18n(missionListRowMessages)
-  const action = actionFor(mission, t)
+  const baseAction = actionFor(mission, t)
+  // A mission still waiting for the staff member's reply is "view and respond", not a plain details link.
+  const action =
+    mission.status === 'PENDING' && baseAction.label === t.action.details
+      ? { ...baseAction, label: t.action.viewAndRespond, cls: 'odm-btn-p' }
+      : baseAction
   const deviceLabel = formatDeviceLabel(mission)
 
   return (
@@ -76,6 +84,9 @@ export function MissionListRow({
       <td className="odm-opr-mission-job">
         <div className="odm-opr-mission-title">{mission.title}</div>
         <div className="odm-opr-mission-location">{mission.location}</div>
+        {mission.serviceLabel ? (
+          <span className="odm-opr-chip">{mission.serviceLabel}</span>
+        ) : null}
       </td>
       <td>
         <div className="odm-tn">
@@ -86,9 +97,6 @@ export function MissionListRow({
             ? `${mission.startTime}–${mission.endTime}`
             : '—'}
         </div>
-      </td>
-      <td>
-        <span className="odm-opr-chip">{mission.serviceLabel}</span>
       </td>
       <td className="odm-opr-mission-device">
         {deviceLabel ? (
@@ -107,6 +115,7 @@ export function MissionListRow({
                 mission.status))}
         </StatusBadge>
       </td>
+      {showSubmission && (
       <td>
         {mission.status === 'COMPLETED' || mission.status === 'FAILED' ? (
           <StatusBadge
@@ -126,6 +135,7 @@ export function MissionListRow({
           <span style={{ color: 'var(--tx3)' }}>—</span>
         )}
       </td>
+      )}
       <td>
         <span className="odm-tn" style={{ fontWeight: 500 }}>
           {formatDeadline(mission, now, lang)}

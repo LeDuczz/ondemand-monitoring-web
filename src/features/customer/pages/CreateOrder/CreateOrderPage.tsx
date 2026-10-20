@@ -18,6 +18,7 @@ import { createOrderPageMessages } from './CreateOrderPage.messages'
 import './CreateOrder.css'
 import { useCreateOrderWizard } from './hooks/useCreateOrderWizard'
 import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
+import { selectionEstimate } from '../../lib/checklist/selectionEstimate'
 
 /** Customer wizard: service, monitoring content, location, schedule, then deliverables and submit. */
 export function CreateOrderPage() {
@@ -34,6 +35,15 @@ export function CreateOrderPage() {
     checklist,
   } = useCreateOrderWizard()
   const { form, step } = f
+  const estimate = selectionEstimate(
+    meta.pricingEstimate,
+    checklist.quote.preview,
+  )
+  const additionalChecklists = checklist.rows.filter(
+    (row) => row.selected && row.packageItem === false,
+  )
+  const packageChecklists = checklist.rows.filter((row) => row.packageItem === true)
+  const packageSelectedCount = packageChecklists.filter((row) => row.selected).length
 
   if (submit.createdId) {
     return (
@@ -80,7 +90,7 @@ export function CreateOrderPage() {
           </a>
         }
       />
-      <StepTabs step={step} labels={t.stepLabels} onSelect={wizard.goTo} />
+      <StepTabs step={step} reached={wizard.reached} labels={t.stepLabels} onSelect={wizard.goTo} />
 
       {meta.loading && !meta.services.length && <LoadingState />}
       {Boolean(meta.error) && (
@@ -102,8 +112,9 @@ export function CreateOrderPage() {
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
           setAiAnalysisRequested={f.setAiAnalysisRequested}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
+          additionalChecklists={additionalChecklists}
           footer={footer}
         />
       )}
@@ -111,13 +122,17 @@ export function CreateOrderPage() {
         <ContentStep
           selected={meta.services.find((s) => s.id === form.serviceId)}
           selectedCount={checklist.selectedCount}
+          packageSelectedCount={packageSelectedCount}
+          packageCount={packageChecklists.length}
+          additionalChecklists={additionalChecklists}
           valid={checklist.valid}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           aiAnalysisRequested={f.aiAnalysisRequested}
           checklist={
             <ChecklistEditor
               variant="compact"
+              quote
               checklist={checklist}
               disabled={submit.submitting}
               onReload={() => f.setSubmitError(null)}
@@ -137,9 +152,10 @@ export function CreateOrderPage() {
           preferredTimes={meta.preferredTimes}
           service={service}
           time={time}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           aiAnalysisRequested={f.aiAnalysisRequested}
+          additionalChecklists={additionalChecklists}
           footer={footer}
         />
       )}
@@ -155,10 +171,14 @@ export function CreateOrderPage() {
           deliverablesLoading={meta.deliverablesLoading}
           deliverablesError={meta.deliverablesError}
           reloadDeliverables={meta.reloadDeliverables}
+          mediaTotals={checklist.mediaTotals}
           consultation={chat.consultation}
           aiAnalysisRequested={f.aiAnalysisRequested}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
+          additionalChecklists={additionalChecklists}
+          packageSelectedCount={packageSelectedCount}
+          packageCount={packageChecklists.length}
           onEdit={wizard.goTo}
           footer={footer}
         />
@@ -176,7 +196,11 @@ export function CreateOrderPage() {
         <ConfirmSubmitModal
           form={form}
           service={service}
-          pricingEstimate={meta.pricingEstimate}
+          pricingEstimate={estimate}
+          checklistCount={checklist.selectedCount}
+          mediaTotals={checklist.mediaTotals}
+          time={time}
+          aiAnalysisRequested={f.aiAnalysisRequested}
           submitting={submit.submitting}
           error={f.submitError}
           onConfirm={() => void submit.submit()}

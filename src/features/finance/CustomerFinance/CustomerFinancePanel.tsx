@@ -4,27 +4,35 @@ import { ApiError } from '../../../shared/api/httpClient'
 import { useI18n } from '../../../shared/i18n'
 import { FinanceAlert } from '../components/common/FinanceAlert'
 import { financeApi } from '../api'
-import type { Invoice, Quote } from '../types'
+import type { CustomerQuote, Invoice, LegalReviewStatus } from '../types'
 import { InvoiceSection } from './components/InvoiceSection'
 import { QuoteSection } from './components/QuoteSection'
 import { customerFinancePanelMessages } from './CustomerFinancePanel.messages'
 import '../finance.css'
 
 export type CustomerFinanceState = {
-  quote: Quote | null
+  quote: CustomerQuote | null
   invoice: Invoice | null
   loading: boolean
 }
 
 export function CustomerFinancePanel({
   orderId,
+  legalStatus,
   onStateChange,
 }: {
   orderId: string
+  /** Legal review of the flight area; the quote can only be accepted and paid once it allows the order to go on. */
+  legalStatus?: LegalReviewStatus | null
   onStateChange?: (state: CustomerFinanceState) => void
 }) {
   const { t } = useI18n(customerFinancePanelMessages)
-  const [quote, setQuote] = useState<Quote | null>(null)
+  const legalReady =
+    legalStatus == null ||
+    legalStatus === 'NOT_REQUIRED' ||
+    legalStatus === 'APPROVED' ||
+    legalStatus === 'PENDING_PERMIT'
+  const [quote, setQuote] = useState<CustomerQuote | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -109,6 +117,8 @@ export function CustomerFinancePanel({
         <QuoteSection
           quote={quote}
           invoice={invoice}
+          legalStatus={legalStatus}
+          legalReady={legalReady}
           busy={busy}
           onAccept={() => void accept()}
         />
@@ -116,6 +126,7 @@ export function CustomerFinancePanel({
       {invoice ? (
         <InvoiceSection
           invoice={invoice}
+          legalReady={legalReady}
           busy={busy}
           onPay={(kind) => void pay(kind)}
         />
@@ -131,11 +142,19 @@ function isNotFound(error: unknown) {
   return error instanceof ApiError && error.status === 404
 }
 function messageOf(
-  t: { providerError: string; loadError: string },
+  t: {
+    providerError: string
+    loadError: string
+    networkError: string
+    errors: Record<string, string>
+  },
   error: unknown,
 ) {
-  if (error instanceof ApiError && error.code === 'PAYMENT_PROVIDER_ERROR') {
-    return t.providerError
+  if (error instanceof ApiError) {
+    if (error.code === 'NETWORK_ERROR') return t.networkError
+    if (error.code === 'PAYMENT_PROVIDER_ERROR') return t.providerError
+    if (error.code && t.errors[error.code]) return t.errors[error.code]
+    return t.loadError
   }
   return error instanceof Error ? error.message : t.loadError
 }

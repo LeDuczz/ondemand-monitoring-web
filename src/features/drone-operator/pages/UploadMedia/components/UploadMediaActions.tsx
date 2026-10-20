@@ -17,14 +17,16 @@ export function UploadMediaActions({
   onUploadAll: () => Promise<void>
 }) {
   const { t } = useI18n(uploadMediaActionsMessages)
-  const backRoute = missionId
-    ? operatorHref({ screen: 'missionDetail', missionId })
-    : operatorHref({ screen: 'flight', missionId: missionId ?? undefined })
+  // Upload media is part of the active flight flow, so the back action returns to the cockpit.
+  const backRoute = operatorHref({
+    screen: 'flight',
+    missionId: missionId ?? undefined,
+  })
   return (
     <div className="upload-media-bar-actions">
       <a className="odm-btn upload-media-btn-ghost" href={backRoute}>
         <span aria-hidden="true">←</span>
-        {missionId ? t.backToResult : t.backToCockpit}
+        {t.backToCockpit}
       </a>
       <button
         type="button"

@@ -6,6 +6,7 @@ import { MissionUploadedMedia } from '../../../media/components/MissionUploadedM
 import { MonitoringChecklistSection } from '../../../mission/components/MonitoringChecklistSection'
 import { FlightStepHeader } from '../../components/common/FlightStepper'
 import { MissionResultActions } from '../../components/common/MissionResultActions'
+import { operatorMissionMediaApi } from '../../../media/api/operatorMissionMediaApi'
 import { MediaFileTable } from './components/MediaFileTable'
 import { MediaPanel } from './components/MediaPanel'
 import { PreviewLightbox } from './components/PreviewLightbox'
@@ -88,6 +89,13 @@ function UploadMediaContent({
             canManageMedia={canManageMedia}
             permissionsError={permissions.error}
             permissionsLoading={permissions.loading}
+            inspector={w.inspector}
+            showManagerContact={w.showManagerContact}
+            manager={{
+              name: w.activeMission.data?.managerName ?? undefined,
+              email: w.activeMission.data?.managerEmail ?? undefined,
+              phone: w.activeMission.data?.managerPhone ?? undefined,
+            }}
           />
           <div className="upload-media-workspace">
             <div className="upload-media-files">
@@ -127,10 +135,17 @@ function UploadMediaContent({
                   }}
                 />
               ) : null}
-              {canManageMedia && missionId ? (
+              {missionId ? (
                 <div className="upload-media-uploaded">
                   <MissionUploadedMedia
                     missionId={missionId}
+                    missionStatus={w.missionStatus}
+                    approveMedia={
+                      permissions.data?.canInspectDevice === true
+                        ? (mediaId) =>
+                            operatorMissionMediaApi.approve(missionId, mediaId)
+                        : undefined
+                    }
                     onChanged={w.refreshWorkspace}
                     refreshKey={w.checklistRevision}
                   />
@@ -142,13 +157,16 @@ function UploadMediaContent({
                 key={missionId}
                 missionId={missionId}
                 data={monitoring.data?.checklist}
-                loading={monitoring.loading}
+                loading={monitoring.loading && !monitoring.data}
                 error={monitoring.error}
                 resultKnown={w.actions.known}
                 resultStatus={monitoring.data?.result?.approvalStatus}
                 resultNote={monitoring.data?.result?.reviewNote}
                 canExecute={
                   monitoring.data?.permissions.canExecuteMonitoringChecklist
+                }
+                canAssess={
+                  monitoring.data?.permissions.canInspectDevice === true
                 }
                 canAttach={
                   monitoring.data?.permissions.canAttachChecklistEvidence

@@ -12,6 +12,7 @@ import { areaResultsCardMessages } from './AreaResultsCard.messages'
 
 export function AreaResultsCard({
   assessment,
+  canRecheck,
   resolved,
   radiusM,
   data,
@@ -26,6 +27,8 @@ export function AreaResultsCard({
     loading: boolean
     reload: () => void
   }
+  /** Only a PENDING order can still be re-checked. */
+  canRecheck: boolean
   resolved: ResolvedOrderGps | null
   radiusM: number
   data: FlightAreaAssessment | null | undefined
@@ -45,14 +48,16 @@ export function AreaResultsCard({
         <span className="odm-or-card-title">
           {t.conclusionAboutTheFlightArea}
         </span>
-        <button
-          type="button"
-          className="odm-or-btn-outline"
-          onClick={assessment.reload}
-          disabled={assessment.loading}
-        >
-          {assessment.loading ? t.checking : t.checkAgain}
-        </button>
+        {canRecheck ? (
+          <button
+            type="button"
+            className="odm-or-btn-outline"
+            onClick={assessment.reload}
+            disabled={assessment.loading}
+          >
+            {assessment.loading ? t.checking : t.checkAgain}
+          </button>
+        ) : null}
       </header>
       <div className="odm-or-card-body odm-or-area-results">
         {!resolved || radiusM <= 0 ? (
@@ -74,10 +79,13 @@ export function AreaResultsCard({
             <AreaFindings
               findings={findings}
               hasMinistryViolations={hasMinistryViolations}
+              favorable={data.assessment.level === 'FAVORABLE'}
             />
-            <p className="odm-or-area-disclaimer">
-              {data.assessment.disclaimer}
-            </p>
+            {(findings && findings.length > 0) || hasMinistryViolations ? (
+              <p className="odm-or-area-disclaimer">
+                {data.assessment.disclaimer}
+              </p>
+            ) : null}
             <a
               className="odm-or-area-source"
               href={

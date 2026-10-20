@@ -11,6 +11,7 @@ import type { OrderCreateResponse } from '../../types/orders'
 import { managerHref } from '../../routes'
 import { orderQueuePageMessages } from './OrderQueuePage.messages'
 import '../../manager.css'
+import { AllOrdersSection } from './components/AllOrdersSection'
 import { PaidOrdersTable } from './components/PaidOrdersTable'
 import { QueueEmptyState } from './components/QueueEmptyState'
 import { QueueSkeleton } from './components/QueueSkeleton'
@@ -140,6 +141,8 @@ export function OrderQueuePage() {
           />
         </>
       ) : null}
+
+      <AllOrdersSection />
     </div>
   )
 }

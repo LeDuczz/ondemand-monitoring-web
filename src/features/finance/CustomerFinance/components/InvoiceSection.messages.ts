@@ -21,7 +21,7 @@ export const invoiceSectionMessages = defineMessages({
     awaitingDepositBody:
       'Kế hoạch thực hiện và Mission sẽ được mở sau khi khoản đặt cọc được xác nhận.',
     depositReceived: 'Đã nhận tiền đặt cọc',
-    depositReceivedBody: 'Mission đã được mở khóa cho quy trình vận hành.',
+    depositReceivedBody: 'Nhiệm vụ đã được mở khóa cho quy trình vận hành.',
     payDeposit: 'Thanh toán đặt cọc',
     payRemaining: 'Thanh toán phần còn lại',
   },

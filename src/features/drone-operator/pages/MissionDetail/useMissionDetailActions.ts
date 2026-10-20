@@ -65,9 +65,23 @@ export function useMissionDetailActions({
     setActionError(null)
     try {
       await operatorApi.acceptMission(mission.id)
-      reloadMission()
+      // Permissions (for example "operate payload" -> Connect GCS) come from the monitoring call, so reload it too.
+      refreshWorkspace(false)
     } catch (error) {
       setActionError(actionErrorMessage(error, t.acceptFailed))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleStartWorkflow(mission: OperatorMission) {
+    setSubmitting(true)
+    setActionError(null)
+    try {
+      await missionApi.startMissionWorkflow(mission.id)
+      refreshWorkspace(false)
+    } catch (error) {
+      setActionError(actionErrorMessage(error, t.startFailed))
     } finally {
       setSubmitting(false)
     }
@@ -83,7 +97,7 @@ export function useMissionDetailActions({
     try {
       await operatorApi.rejectMission(mission.id, { reason, notes })
       setShowReject(false)
-      reloadMission()
+      refreshWorkspace(false)
     } catch (error) {
       setActionError(actionErrorMessage(error, t.rejectFailed))
     } finally {
@@ -110,6 +124,10 @@ export function useMissionDetailActions({
     setResultSubmitting(true)
     setActionError(null)
     try {
+      // Completing and submitting are one action for the staff member: finish the Mission first if it still waits for review.
+      if ((mission.backendStatus ?? mission.status) === 'PENDING_REVIEW') {
+        await missionApi.completeMission(mission.id)
+      }
       await missionApi.submitMissionResult(
         mission.id,
         buildMissionResultPayload(mission),
@@ -144,6 +162,7 @@ export function useMissionDetailActions({
     actionError,
     refreshWorkspace,
     handleAccept,
+    handleStartWorkflow,
     handleReject,
     handleCompleteMission,
     handleSubmitResult,

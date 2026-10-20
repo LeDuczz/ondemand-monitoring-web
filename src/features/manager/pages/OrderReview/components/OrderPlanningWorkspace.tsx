@@ -73,6 +73,7 @@ export function OrderPlanningWorkspace({
   const saving = Object.values(drafts).some((draft) => draft.busy)
   const dirty = Object.values(drafts).some((draft) => draft.dirty)
   const [message, setMessage] = useState('')
+  const [checkingPayment, setCheckingPayment] = useState(false)
   const [coverageWarning, setCoverageWarning] = useState('')
   const [reason, setReason] = useState('')
   const [amending, setAmending] = useState(false)
@@ -216,6 +217,26 @@ export function OrderPlanningWorkspace({
     }
   }
 
+  /** Asks VNPAY about pending deposits (the notification may not reach this server), then reloads the plan. */
+  async function checkPayment() {
+    setMessage('')
+    if (!data?.invoice) {
+      setMessage(t.noQuoteAccepted)
+      query.reload()
+      return
+    }
+    setCheckingPayment(true)
+    try {
+      await financeApi.refreshOrderPayments(orderId)
+      setMessage(t.paymentReconciled)
+    } catch (cause) {
+      setMessage(planningError(cause))
+    } finally {
+      setCheckingPayment(false)
+      query.reload()
+    }
+  }
+
   async function continueToResourceAssignment() {
     if (!data || !selected || !onAssignResources || !writable || busy || saving)
       return
@@ -264,6 +285,8 @@ export function OrderPlanningWorkspace({
       coverageWarning={coverageWarning}
       allAssigned={allAssigned}
       depositPaid={depositPaid}
+      checkingPayment={checkingPayment}
+      onCheckPayment={() => void checkPayment()}
       writable={writable}
       setCreating={setCreating}
       dirty={dirty}

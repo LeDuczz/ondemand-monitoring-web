@@ -40,9 +40,12 @@ export const createOrderPageMessages = defineMessages({
       resultFormats: 'Chọn ít nhất một định dạng kết quả.',
       deliveryMethods: 'Chọn ít nhất một phương thức nhận kết quả.',
       termsAccepted: 'Bạn cần đồng ý điều khoản và cam kết bảo mật để gửi yêu cầu.',
-      altitudeM: 'Độ cao bay phải từ 10 đến 120 m.',
+      altitudeM: 'Độ cao giám sát mong muốn phải từ 10 đến 120 m.',
       estimatedLengthM: 'Chiều dài ước tính phải lớn hơn 0 và không quá 100.000 m.',
       siteContactPhone: 'Số điện thoại liên hệ không hợp lệ.',
+      siteContactName: 'Nhập tên người liên hệ tại hiện trường.',
+      siteContactPhoneRequired: 'Nhập số điện thoại liên hệ tại hiện trường.',
+      accessNotes: 'Nhập điều kiện ra vào khu vực.',
       permitStatus: (zoneName: string) =>
         `Khu vực nằm trong vùng cần xin phép bay (${zoneName}). Hãy cho biết bạn đã có giấy phép hay cần hỗ trợ.`,
       permitNumber: 'Nhập số giấy phép bay.',
@@ -105,6 +108,9 @@ export const createOrderPageMessages = defineMessages({
       altitudeM: 'Flight altitude must be between 10 and 120 m.',
       estimatedLengthM: 'Estimated length must be above 0 and at most 100,000 m.',
       siteContactPhone: 'Invalid contact phone number.',
+      siteContactName: 'Enter the on-site contact name.',
+      siteContactPhoneRequired: 'Enter the on-site contact phone number.',
+      accessNotes: 'Enter the access conditions.',
       permitStatus: (zoneName: string) =>
         `The area is inside airspace that needs a flight permit (${zoneName}). Tell us whether you hold a permit or need support.`,
       permitNumber: 'Enter the flight permit number.',

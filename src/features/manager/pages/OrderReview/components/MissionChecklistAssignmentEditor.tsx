@@ -79,8 +79,9 @@ export function MissionChecklistAssignmentEditor({
     >
       <summary>
         {t.checklist}{' '}
-        {query.data?.assignments.filter((a) => a.active).length ?? '…'}
-        {t.items}
+        {editable
+          ? t.selectedCount(selected.length, items.length)
+          : t.itemCount(query.data?.assignments.filter((a) => a.active).length ?? '…')}
       </summary>
       {query.loading && <p role="status">{t.loadingAssignment}</p>}
       {query.error ? (
@@ -114,6 +115,32 @@ export function MissionChecklistAssignmentEditor({
       )}
       {editable && (
         <>
+          {items.length > 1 && (
+            <div className="odm-planning-bulk">
+              <button
+                type="button"
+                className="odm-btn"
+                disabled={busy || query.loading || selected.length === items.length}
+                onClick={() => {
+                  setDirty(true)
+                  setSelected(items.map((item) => item.id))
+                }}
+              >
+                {t.selectAll}
+              </button>
+              <button
+                type="button"
+                className="odm-btn"
+                disabled={busy || query.loading || selected.length === 0}
+                onClick={() => {
+                  setDirty(true)
+                  setSelected([])
+                }}
+              >
+                {t.deselectAll}
+              </button>
+            </div>
+          )}
           <fieldset
             disabled={
               !editable || busy || query.loading || Boolean(query.error)
@@ -138,7 +165,13 @@ export function MissionChecklistAssignmentEditor({
                   />
                   <span>
                     {item.content}
-                    <small>
+                    <small
+                      className={
+                        item.sourceType === 'SERVICE_TEMPLATE'
+                          ? 'odm-planning-tag'
+                          : 'odm-planning-tag is-customer'
+                      }
+                    >
                       {item.sourceType === 'SERVICE_TEMPLATE'
                         ? t.serviceTemplate
                         : t.customerAdded}

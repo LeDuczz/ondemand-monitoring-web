@@ -38,7 +38,7 @@ describe('MissionResultReviewActions', () => {
     )
     fireEvent.click(screen.getByText('Duyệt kết quả'))
     await waitFor(() => expect(refresh).toHaveBeenCalledOnce())
-    expect(approve).toHaveBeenCalledWith('r')
+    expect(approve).toHaveBeenCalledWith('r', '')
     expect(media).not.toHaveBeenCalled()
   })
   it('rejects using the optional backend note and refreshes', async () => {
@@ -54,7 +54,7 @@ describe('MissionResultReviewActions', () => {
         onReviewed={refresh}
       />,
     )
-    fireEvent.change(screen.getByLabelText('Lý do từ chối'), {
+    fireEvent.change(screen.getByLabelText('Ghi chú / lý do'), {
       target: { value: 'Cần kiểm tra lại' },
     })
     fireEvent.click(screen.getByText('Từ chối kết quả'))

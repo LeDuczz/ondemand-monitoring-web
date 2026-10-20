@@ -37,7 +37,7 @@ type ApiResponse<T> = {
   data?: T
 }
 
-function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, features }: {
+export function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, features }: {
   latitude: string
   longitude: string
   radiusM: number
@@ -137,8 +137,31 @@ function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, 
       setTilesFailed(false)
     })
     map.current = instance
-    window.setTimeout(() => instance.invalidateSize(), 0)
+    const refreshMapSize = () => {
+      if (!container.current || !map.current) return
+      instance.invalidateSize({ animate: false, pan: false })
+      instance.eachLayer((layer) => {
+        if (layer instanceof L.TileLayer) layer.redraw()
+      })
+    }
+    const refreshTimers = [0, 100, 300, 800].map((delay) =>
+      window.setTimeout(refreshMapSize, delay),
+    )
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => {
+            window.requestAnimationFrame(refreshMapSize)
+          })
+    resizeObserver?.observe(container.current)
+    if (container.current.parentElement) {
+      resizeObserver?.observe(container.current.parentElement)
+    }
+    window.addEventListener('resize', refreshMapSize)
     return () => {
+      refreshTimers.forEach((timer) => window.clearTimeout(timer))
+      window.removeEventListener('resize', refreshMapSize)
+      resizeObserver?.disconnect()
       instance.remove()
       map.current = null
       circle.current = null
@@ -234,7 +257,7 @@ function RealLocationMap({ latitude, longitude, radiusM, label, labels, onPick, 
       />
       <div className="co-map-key" aria-label={legend.legendTitle}>
         <span><i className="co-map-key-area" />{legend.legendArea}</span>
-        <span><i className="co-map-key-zone" />Vùng sân bay Tân Sơn Nhất</span>
+        <span><i className="co-map-key-zone" />{legend.legendAirport}</span>
         <span><i className="co-map-key-point" />{legend.legendPoint}</span>
       </div>
       {invalidCoordinates ? (
@@ -359,23 +382,17 @@ export function LocationStep({ form, errors, update }: Props) {
           features={assessment.data?.osmContext.importantFeatures ?? []}
         />
         <section className="airspace-status airspace-self-check">
-          <strong>Tự kiểm tra vùng bay</strong>
-          <span>
-            ODMS không tự xác nhận quyền bay. Bạn hãy nhập vùng yêu cầu trên
-            cổng thông tin chính thức để tự kiểm tra.
-          </span>
+          <strong>{t.selfCheckTitle}</strong>
+          <span>{t.selfCheckBody}</span>
           <a
             className="odm-btn odm-btn-p airspace-check-button"
             href="https://cambay.mod.gov.vn/"
             target="_blank"
             rel="noreferrer"
           >
-            Mở cổng kiểm tra vùng bay ↗
+            {t.selfCheckOpen}
           </a>
-          <small>
-            Sau khi kiểm tra, quay lại ODMS và khai báo giấy phép hoặc chọn cần
-            hỗ trợ xin phép.
-          </small>
+          <small>{t.selfCheckAfter}</small>
         </section>
         <FlightAreaAssessmentCard state={assessment} requestedAltitudeAglM={form.altitudeM} />
         </div>

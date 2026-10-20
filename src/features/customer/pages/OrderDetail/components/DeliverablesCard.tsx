@@ -19,12 +19,10 @@ function localizeRequirementValue(
   value: string,
   messages: {
     mediaTypes: Record<string, string>
-    priorities: Record<string, string>
     usagePurposes: Record<string, string>
   },
 ) {
   if (key === 'mediaType') return messages.mediaTypes[value] ?? value
-  if (key === 'priority') return messages.priorities[value] ?? value
   if (key === 'usagePurpose') return messages.usagePurposes[value] ?? value
   return value
 }
@@ -51,7 +49,7 @@ export function DeliverablesCard({ order }: { order: OrderDetailView }) {
                     <dd>{t.formats[item.format] ?? item.format}</dd>
                   </div>
                 )}
-                {item.requirements.map(({ key, value }) => (
+                {item.requirements.filter(({ key }) => key !== 'priority').map(({ key, value }) => (
                   <div key={key}>
                     <dt>
                       <OrderIcon name={REQ_ICONS[key] ?? 'tag'} size={14} />

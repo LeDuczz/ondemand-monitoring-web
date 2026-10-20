@@ -2343,11 +2343,17 @@ a.odm-or-btn.odm-or-view-btn {
 }
 
 .odm-or-area-clear {
+  display: grid;
+  gap: 2px;
   margin: 0;
   padding: 10px 12px;
   border-radius: 8px;
   background: var(--ui-success-soft);
   color: var(--ui-success-text);
+}
+.odm-or-area-clear small {
+  color: var(--ui-text-3);
+  font-size: 12.5px;
 }
 
 .odm-or-area-disclaimer {
@@ -2683,6 +2689,9 @@ a.odm-or-btn.odm-or-view-btn {
 }
 .odm-wf-layer {
   padding: 10px 6px 8px;
+}
+.odm-wf-layer.is-collapsed {
+  padding-bottom: 0;
 }
 .odm-wf-layer + .odm-wf-layer {
   border-top: 1px solid var(--or-border);
@@ -3126,9 +3135,11 @@ fieldset.odm-or-readonly {
 }
 
 .odm-or-area-manager-review > strong { color: var(--ui-success-text); }
-.odm-or-area-manager-review > strong.is-restricted,
-.odm-or-area-manager-review > strong.is-undetermined { color: var(--ui-warning-text); }
-.odm-or-area-manager-review > strong.is-unsuitable { color: var(--ui-danger-text); }
+.odm-or-area-manager-review > strong.is-pending_permit { color: var(--ui-warning-text); }
+.odm-or-area-manager-review > strong.is-rejected { color: var(--ui-danger-text); }
+.odm-or-area-contact { margin: 0; font-size: 13px; }
+.odm-or-area-contact a { color: var(--ui-primary-text); text-decoration: none; font-weight: 600; }
+.odm-or-area-contact em { color: var(--ui-text-3); }
 .odm-or-area-manager-review p { margin: 0; line-height: 1.5; }
 
 .odm-or-area-modal-backdrop {

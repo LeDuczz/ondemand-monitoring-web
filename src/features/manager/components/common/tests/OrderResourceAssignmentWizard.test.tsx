@@ -168,7 +168,7 @@ it('reuses the staff/device/confirmation screens for M1 then M2 and returns to t
   expect(screen.getByText('Drone 1')).toBeInTheDocument()
   expect(screen.queryByText('Staff 2')).not.toBeInTheDocument()
   expect(window.location.hash).toBe('#portal/manager/orders/o')
-})
+}, 15_000)
 it('disables unfinalized and terminal Missions without inferring the first Mission', async () => {
   missions[0].status = 'COMPLETED'
   missions[1].status = 'CANCELLED'

@@ -5,6 +5,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import { fmtDateTime } from '../../../lib/orderStatus'
 import type { OrderDetailView } from '../../../lib/orders/types'
 import { reviewNoticeMessages } from './ReviewNotice.messages'
+import { LocationCorrectionForm } from './LocationCorrectionForm'
 
 /** Result of the staff review (BE `rejectReason`, `reviewByName`, `reviewAt`). */
 export function ReviewNotice({
@@ -26,6 +27,7 @@ export function ReviewNotice({
   const [error, setError] = useState<string | null>(null)
   const rejected = order.status === 'REJECTED'
   const needsInfo = order.status === 'NEEDS_INFO'
+  const needsLocation = needsInfo && order.requestedUpdateScope === 'LOCATION'
   const reviewed = rejected || needsInfo || (order.status === 'APPROVED' && order.reviewAt)
   if (!reviewed) return null
 
@@ -69,7 +71,15 @@ export function ReviewNotice({
           {t.reason}: {order.rejectReason || t.noReason}
         </p>
       )}
-      {needsInfo && !sent ? (
+      {needsLocation && !sent ? (
+        <LocationCorrectionForm
+          order={order}
+          onSaved={() => {
+            setSent(true)
+            onInformationSubmitted?.()
+          }}
+        />
+      ) : needsInfo && !sent ? (
         <div className="od-additional-info-form">
           <strong>{t.supplementTitle}</strong>
           <div className="od-additional-info-grid">

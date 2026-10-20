@@ -42,7 +42,11 @@ export function KpiCard({
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <span
           className="odm-tn"
-          style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-.02em' }}
+          style={{
+            fontSize: typeof value === 'number' ? 26 : 18,
+            fontWeight: 600,
+            letterSpacing: '-.02em',
+          }}
         >
           {value}
         </span>

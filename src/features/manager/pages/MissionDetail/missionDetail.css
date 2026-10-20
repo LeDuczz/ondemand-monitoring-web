@@ -453,3 +453,75 @@ path.odm-rm-radius {
     justify-content: flex-start;
   }
 }
+
+/* Header meta line and muted placeholder */
+.odm-md-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--ui-space-3);
+  margin-top: 2px;
+  color: var(--ui-text-3);
+  font-size: 13px;
+}
+.odm-md-muted {
+  color: var(--ui-text-3);
+  font-style: italic;
+}
+
+/* Next-step strip: what is happening and what the manager can do */
+.odm-md-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-lg);
+  font-size: 14px;
+}
+.odm-md-next strong {
+  font-size: 15px;
+}
+.odm-md-next.is-wait {
+  background: var(--ui-warning-soft);
+  border-color: var(--ui-warning);
+  color: var(--ui-warning-text);
+}
+.odm-md-next.is-go {
+  background: var(--ui-primary-soft);
+  border-color: var(--ui-primary);
+  color: var(--ui-primary-text);
+}
+.odm-md-next.is-done {
+  background: var(--ui-success-soft);
+  border-color: var(--ui-success);
+  color: var(--ui-success-text);
+}
+.odm-md-next.is-bad {
+  background: var(--ui-danger-soft);
+  border-color: var(--ui-danger);
+  color: var(--ui-danger-text);
+}
+
+/* Collapsible acceptance checklist once the result is approved */
+.odm-md-collapse {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+}
+.odm-md-collapse > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2) var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  cursor: pointer;
+}
+.odm-md-collapse-title {
+  font-weight: 650;
+}
+.odm-md-collapse-meta {
+  flex: 1 1 auto;
+  color: var(--ui-text-3);
+  font-size: 13px;
+}

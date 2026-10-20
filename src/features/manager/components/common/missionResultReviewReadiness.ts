@@ -66,6 +66,7 @@ export function missionResultReviewErrorMessage(
     if (error.status === 404 || error.code === 'RESOURCE_NOT_FOUND')
       return t.notFound
     if (error.code === 'CHECKLIST_NOT_READY') return t.checklistNotReadyCode
+    if (error.code === 'ORDER_MEDIA_QUANTITY_NOT_MET') return error.message
     if (error.code === 'MISSION_STATUS_INVALID') return t.missionStatusInvalid
     if (error.code === 'CONCURRENT_UPDATE') return t.concurrentUpdate
   }

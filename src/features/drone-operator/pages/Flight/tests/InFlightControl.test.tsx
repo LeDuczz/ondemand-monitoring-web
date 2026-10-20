@@ -80,7 +80,9 @@ describe('InFlightControl', () => {
       />,
     )
     expect(screen.getByText('Phi công drone')).toBeInTheDocument()
-    expect(screen.getByRole('application', { name: 'Live satellite flight map' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('application', { name: 'Live satellite flight map' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Đang chờ GPS từ PX4')).toBeInTheDocument()
   })
 
@@ -102,7 +104,9 @@ describe('InFlightControl', () => {
 
   it('keeps full cockpit termination accessible during safe-stop without reopening preflight', () => {
     vi.stubEnv('VITE_FLIGHT_MAP_ONLY', 'false')
-    window.localStorage.removeItem(`omss.droneOperator.preflightReady.${mission.id}.${drone.id}`)
+    window.localStorage.removeItem(
+      `omss.droneOperator.preflightReady.${mission.id}.${drone.id}`,
+    )
     render(
       <InFlightControl
         mission={mission}
@@ -140,7 +144,9 @@ describe('InFlightControl', () => {
     )
     expect(screen.getByRole('button', { name: 'Cất cánh' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Hạ cánh' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Hoàn thành bay' })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Hoàn thành bay' }),
+    ).toBeDisabled()
   })
 
   it('opens Mission detail by backend identity, not the displayed Mission code', () => {
@@ -176,5 +182,26 @@ describe('InFlightControl', () => {
     )
     expect(screen.getByRole('button', { name: 'Cất cánh' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Hoàn thành bay' })).toBeEnabled()
+  })
+
+  it('starts a ready mission from the cockpit', async () => {
+    const onStartFlight = vi.fn().mockResolvedValue(undefined)
+    render(
+      <InFlightControl
+        mission={{ ...mission, state: 'READY_TO_FLY' }}
+        drone={drone}
+        normalFlightAllowed={true}
+        onRTB={vi.fn()}
+        onEmergency={vi.fn()}
+        autoStartPlan={false}
+        onAutoStartPlanConsumed={vi.fn()}
+        onStartFlight={onStartFlight}
+      />,
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Bắt đầu chuyến bay' }),
+    )
+    await vi.waitFor(() => expect(onStartFlight).toHaveBeenCalledOnce())
   })
 })

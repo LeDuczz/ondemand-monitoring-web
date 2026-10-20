@@ -3,18 +3,18 @@ import { defineMessages } from '../../../../shared/i18n'
 export const checklistReviewMessages = defineMessages({
   vi: {
     reviewedOf: (done: number, all: number) =>
-      `${done}/${all} nội dung đã review`,
+      `${done}/${all} nội dung đã xem xét`,
     filterAria: 'Lọc nội dung',
     filterAll: 'Tất cả',
-    filterPending: 'Chưa review',
-    filterReviewed: 'Đã review',
+    filterPending: 'Chưa xem xét',
+    filterReviewed: 'Đã xem xét',
     filterAdditional: 'Có phụ phí',
     complete: 'Checklist đã hoàn tất và có thể duyệt báo giá.',
     pending: (n: number) =>
       `Còn ${n} nội dung cần chọn cách tính giá trước khi duyệt.`,
     colContent: 'Nội dung yêu cầu',
     colMethod: 'Cách tính giá',
-    colSurcharge: 'Phụ phí',
+    colSurcharge: 'Giá duyệt',
     colStatus: 'Trạng thái',
     colNote: 'Ghi chú',
   },
@@ -30,7 +30,7 @@ export const checklistReviewMessages = defineMessages({
       `${n} item(s) still need a pricing method before approval.`,
     colContent: 'Requirement',
     colMethod: 'Pricing method',
-    colSurcharge: 'Surcharge',
+    colSurcharge: 'Approved price',
     colStatus: 'Status',
     colNote: 'Note',
   },

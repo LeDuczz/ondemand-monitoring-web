@@ -13,6 +13,8 @@ export const missionResultReviewReadinessMessages = defineMessages({
         'Checklist chưa đủ bằng chứng. Cần bổ sung trước khi duyệt kết quả.',
       EXECUTION_NOT_TERMINAL:
         'Checklist chưa hoàn tất. Cần hoàn tất các mục trước khi duyệt kết quả.',
+      EXECUTION_NOT_COMPLETED:
+        'Checklist chưa hoàn tất. Cần hoàn tất các mục trước khi duyệt kết quả.',
       UNABLE_REASON_REQUIRED:
         'Cần bổ sung lý do cho mục checklist chưa thể xác minh.',
       CHECKLIST_INTEGRITY_INVALID:
@@ -20,7 +22,7 @@ export const missionResultReviewReadinessMessages = defineMessages({
       EVIDENCE_SOURCE_NOT_ELIGIBLE:
         'Bằng chứng chưa phù hợp. Cần bổ sung ảnh/video phù hợp.',
       EVIDENCE_TYPE_NOT_ELIGIBLE:
-        'Loại media chưa phù hợp. Cần bổ sung ảnh/video phù hợp.',
+        'Loại media chưa phù hợp. Cần bổ sung ảnh/video đúng loại yêu cầu.',
     } as Record<EvidenceBlockingReason, string>,
     checking: 'Đang kiểm tra điều kiện duyệt…',
     unknown: 'Chưa xác nhận được điều kiện duyệt. Vui lòng tải lại checklist.',
@@ -49,6 +51,8 @@ export const missionResultReviewReadinessMessages = defineMessages({
         'The checklist has insufficient evidence. Add more before approving the result.',
       EXECUTION_NOT_TERMINAL:
         'The checklist is not finished. Complete the items before approving the result.',
+      EXECUTION_NOT_COMPLETED:
+        'The checklist is not finished. Complete the items before approving the result.',
       UNABLE_REASON_REQUIRED:
         'Add a reason for the checklist item that could not be verified.',
       CHECKLIST_INTEGRITY_INVALID:
@@ -56,7 +60,7 @@ export const missionResultReviewReadinessMessages = defineMessages({
       EVIDENCE_SOURCE_NOT_ELIGIBLE:
         'The evidence is not suitable. Add suitable photos or videos.',
       EVIDENCE_TYPE_NOT_ELIGIBLE:
-        'The media type is not suitable. Add suitable photos or videos.',
+        'Media type does not match the requirement. Add photos/videos of the required type.',
     },
     checking: 'Checking approval conditions…',
     unknown:

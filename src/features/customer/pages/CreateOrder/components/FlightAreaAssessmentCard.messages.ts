@@ -37,8 +37,11 @@ export const flightAreaAssessmentCardMessages = defineMessages({
     osmRadius: (n: string) => `Phạm vi tra cứu OpenStreetMap: ${n} m.`,
     legendTitle: 'Chú giải',
     legendArea: 'Vùng giám sát',
+    legendAirport: 'Vùng sân bay Tân Sơn Nhất',
     legendRestricted: 'Vùng hạn chế',
     legendPoint: 'Điểm giám sát',
+    mockModeNote: 'Chế độ mô phỏng: chưa có dữ liệu thực về địa hình, vùng hạn chế hoặc khu vực xung quanh.',
+    disclaimer: 'Đây là đánh giá sơ bộ. Điều kiện bay cuối cùng được xác nhận trong quá trình lập kế hoạch và kiểm tra trước chuyến bay.',
   },
   en: {
     title: 'Flight area assessment',
@@ -76,7 +79,10 @@ export const flightAreaAssessmentCardMessages = defineMessages({
     osmRadius: (n: string) => `OpenStreetMap search radius: ${n} m.`,
     legendTitle: 'Legend',
     legendArea: 'Monitoring area',
+    legendAirport: 'Tan Son Nhat airport zone',
     legendRestricted: 'Restricted zone',
     legendPoint: 'Monitoring point',
+    mockModeNote: 'Simulation mode: live terrain, restricted-zone and nearby-area data is unavailable.',
+    disclaimer: 'This is a preliminary assessment. Final flight conditions are confirmed during planning and pre-flight checks.',
   },
 })

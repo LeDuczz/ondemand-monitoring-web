@@ -65,7 +65,7 @@ function card(
 describe('Mission result review card', () => {
   it('groups summary, readiness and actions with localized status and enabled approval', () => {
     card()
-    const review = screen.getByRole('region', { name: 'Kết quả Mission' })
+    const review = screen.getByRole('region', { name: 'Kết quả nhiệm vụ' })
     expect(within(review).getByText('Hoàn thành')).toBeInTheDocument()
     expect(within(review).getByText('Chờ duyệt')).toBeInTheDocument()
     expect(within(review).getByText('30 phút')).toBeInTheDocument()
@@ -185,7 +185,7 @@ describe('Mission result review card', () => {
     card({ onReviewed: refresh })
     fireEvent.click(screen.getByRole('button', { name: 'Duyệt kết quả' }))
     await waitFor(() => expect(refresh).toHaveBeenCalledOnce())
-    expect(approve).toHaveBeenCalledWith('result-1')
+    expect(approve).toHaveBeenCalledWith('result-1', '')
     expect(media).not.toHaveBeenCalled()
   })
   it('renders the full-width optional rejection note and keeps rejection unchanged', async () => {
@@ -194,7 +194,7 @@ describe('Mission result review card', () => {
       .mockResolvedValue(result)
     const refresh = vi.fn()
     card({ onReviewed: refresh })
-    const note = screen.getByRole('textbox', { name: 'Lý do từ chối' })
+    const note = screen.getByRole('textbox', { name: 'Ghi chú / lý do' })
     expect(note).toHaveAttribute('rows', '3')
     fireEvent.change(note, {
       target: { value: 'Cần chụp lại khu vực phía Bắc.' },
@@ -254,7 +254,7 @@ describe('Mission result review card', () => {
   it('never displays or reviews a sibling result', () => {
     card({ result: { ...result, missionId: 'm2', summary: 'Sibling summary' } })
     expect(
-      screen.getByText('Chưa có kết quả Mission được gửi.'),
+      screen.getByText('Chưa có kết quả nhiệm vụ được gửi.'),
     ).toBeInTheDocument()
     expect(screen.queryByText('Sibling summary')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Duyệt kết quả' })).toBeNull()

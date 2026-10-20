@@ -48,7 +48,7 @@ export function MediaAttachChecklist({
         {canAttach && (
           <button
             type="button"
-            className="odm-btn"
+            className="odm-btn upload-media-attach-button"
             disabled={isBusy || !targetCount}
             onClick={onAttach}
           >

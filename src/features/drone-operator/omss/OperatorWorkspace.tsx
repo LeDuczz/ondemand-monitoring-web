@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n'
 import type { Screen, Mission, Drone, FlightToken, NavId } from '../types/omss'
 import { missionApi } from '../../mission/api/missionApi'
 import { flightControlApi } from '../api/flightControlApi'
+import { startFailureJournalReplay } from '../../media/api/uploadFailureJournal'
 import type { FlightControlStatus } from '../api/flightControlApi'
 import { operatorWorkspaceMessages } from './i18n/operatorWorkspace'
 
@@ -279,6 +280,19 @@ function createAssignedDrone(mission: Mission): Drone {
 }
 
 export default function OperatorWorkspace() {
+  // Replay journalled upload failures on mount and on reconnect. Bounded backoff runs only
+  // while events remain unacknowledged, so there is no permanent polling loop. Startup is
+  // deferred so the replay driver never competes with the workspace's initial data load.
+  useEffect(() => {
+    let dispose: (() => void) | undefined
+    const timer = window.setTimeout(() => {
+      dispose = startFailureJournalReplay()
+    }, 0)
+    return () => {
+      window.clearTimeout(timer)
+      dispose?.()
+    }
+  }, [])
   const { t } = useI18n(operatorWorkspaceMessages)
   const acceptInFlight = useRef(false)
   const authenticatedUser = authSession.getUser()
@@ -303,9 +317,11 @@ export default function OperatorWorkspace() {
     if (screen !== 'mission-list' && screen !== 'operator-overview') return
     let cancelled = false
 
-    async function loadAllMissions() {
-      setMissionsLoading(true)
-      setMissionsError(null)
+    async function loadAllMissions(initialLoad = false) {
+      if (initialLoad) {
+        setMissionsLoading(true)
+        setMissionsError(null)
+      }
       try {
         const data = await missionApi.getMyMissions()
         if (cancelled) return
@@ -314,7 +330,7 @@ export default function OperatorWorkspace() {
         )
         setAllMissions(adapted)
       } catch (cause) {
-        if (!cancelled) {
+        if (!cancelled && initialLoad) {
           setAllMissions([])
           setMissionsError(
             cause instanceof Error
@@ -323,14 +339,18 @@ export default function OperatorWorkspace() {
           )
         }
       } finally {
-        if (!cancelled) setMissionsLoading(false)
+        if (!cancelled && initialLoad) setMissionsLoading(false)
       }
     }
 
-    loadAllMissions()
+    void loadAllMissions(true)
+    const refreshTimer = window.setInterval(() => {
+      void loadAllMissions(false)
+    }, 5_000)
 
     return () => {
       cancelled = true
+      window.clearInterval(refreshTimer)
     }
   }, [screen])
 
@@ -470,25 +490,62 @@ export default function OperatorWorkspace() {
   }
   async function handleStartMission() {
     if (!mission || !drone) return
-    if (!token || Date.now() >= token.expiresAt) {
-      setMissionsError(t.errors.flightTokenExpired)
-      setScreen('preflight')
-      return
+    try {
+      const missionId = mission.backendId ?? mission.id
+      const current = await missionApi.getMissionById(missionId)
+      if (current.status === 'IN_FLIGHT' || current.status === 'IN_PROGRESS') {
+        const activeMission = adaptBackendMission(
+          current as unknown as BackendMission,
+        )
+        setMission(activeMission)
+        setAllMissions((items) =>
+          items.map((item) =>
+            item.backendId === activeMission.backendId ? activeMission : item,
+          ),
+        )
+        setFlightSessionStarted(true)
+        setAutoStartPlanRequested(false)
+        setScreen('in-flight')
+        setNavId('mission-control')
+        return
+      }
+      await flightControlApi
+        .bindSession(missionId, drone.id)
+        .catch(() => undefined)
+      const validToken =
+        token && Date.now() < token.expiresAt ? token.token : undefined
+      const updated = await missionApi.startMission(
+        missionId,
+        validToken,
+      )
+      const activeMission = adaptBackendMission(
+        updated as unknown as BackendMission,
+      )
+      setMission(activeMission)
+      setAllMissions((items) =>
+        items.map((item) =>
+          item.backendId === activeMission.backendId ? activeMission : item,
+        ),
+      )
+      setFlightSessionStarted(true)
+      setAutoStartPlanRequested(true)
+      setScreen('in-flight')
+      setNavId('mission-control')
+    } catch (cause) {
+      setMissionsError(
+        cause instanceof Error ? cause.message : t.errors.missionStartFailed,
+      )
     }
+  }
+
+  async function handleOpenCockpit() {
+    if (!mission || !drone) return
     try {
       await flightControlApi
         .bindSession(mission.backendId ?? mission.id, drone.id)
         .catch(() => undefined)
-      const updated = await missionApi
-        .startMission(mission.backendId ?? mission.id, token.token)
-        .catch(() => null)
-      setMission(
-        updated
-          ? adaptBackendMission(updated as unknown as BackendMission)
-          : { ...mission, state: 'IN_FLIGHT' },
-      )
-      setFlightSessionStarted(true)
-      setAutoStartPlanRequested(true)
+      setFlightSessionStarted(false)
+      setAutoStartPlanRequested(false)
       setScreen('in-flight')
       setNavId('mission-control')
     } catch (cause) {
@@ -732,7 +789,7 @@ export default function OperatorWorkspace() {
               drone={displayDrone}
               onScreen={goScreen}
               onBack={() => setScreen('mission-list')}
-              onStartFlight={handleStartMission}
+              onStartFlight={handleOpenCockpit}
             />
           )}
           {screen === 'accept-reject' && displayMission && displayDrone && (
@@ -771,7 +828,7 @@ export default function OperatorWorkspace() {
                 mission={displayMission}
                 drone={displayDrone}
                 token={token}
-                onStart={handleStartMission}
+                onStart={handleOpenCockpit}
                 onAbort={() => setScreen('preflight')}
               />
             )}
@@ -787,6 +844,7 @@ export default function OperatorWorkspace() {
                 setMediaReturnScreen('in-flight')
                 setScreen('media-upload')
               }}
+              onStartFlight={handleStartMission}
             />
           )}
           {screen === 'return-to-base' && displayDrone && mission && (

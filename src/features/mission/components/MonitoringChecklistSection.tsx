@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { evidenceCountLabel, evidenceShortfall } from '../lib/evidenceProgress'
 import { ApiError } from '../../../shared/api/httpClient'
 import { checklistExecutionApi } from '../api/checklistExecutionApi'
 import type {
@@ -12,6 +13,7 @@ import type { MissionResultApprovalStatus } from '../types/mission'
 import './MonitoringChecklistSection.css'
 import { getLanguage, useI18n } from '../../../shared/i18n'
 import { monitoringChecklistMessages } from './MonitoringChecklistSection.messages'
+import { ChecklistGuidance } from '../../../shared/components/ChecklistGuidance'
 import { ChecklistEvidencePanel } from './ChecklistEvidencePanel'
 import { checklistEvidenceMessages } from './ChecklistEvidencePanel.messages'
 
@@ -65,7 +67,12 @@ export function monitoringErrorMessage(error: unknown) {
     if (error.code === 'CHECKLIST_EXECUTION_TRANSITION_INVALID')
       return m.errTransition
     if (error.code === 'MISSION_STATUS_INVALID') return m.errMissionStatus
-    if (error.code === 'CHECKLIST_NOT_READY') return m.errNotReady
+    if (error.code === 'CHECKLIST_NOT_READY')
+      return error.message.includes('EVIDENCE_TYPE_NOT_ELIGIBLE')
+        ? m.errNotReadyType
+        : error.message.includes('INSUFFICIENT_EVIDENCE')
+          ? m.errNotReadyEvidence
+          : m.errNotReady
     if (error.status === 409) return m.err409
   }
   return m.errGeneric
@@ -77,6 +84,7 @@ export function MonitoringChecklistSection({
   loading,
   error,
   canExecute = false,
+  canAssess = false,
   resultStatus,
   resultNote,
   resultKnown = true,
@@ -95,6 +103,7 @@ export function MonitoringChecklistSection({
   loading: boolean
   error?: unknown
   canExecute?: boolean
+  canAssess?: boolean
   resultStatus?: MissionResultApprovalStatus | null
   resultNote?: string | null
   resultKnown?: boolean
@@ -121,6 +130,9 @@ export function MonitoringChecklistSection({
     (a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id),
   )
   const done = rows.filter((row) => terminal(row.executionStatus)).length
+  const attachedEvidence = new Set(
+    rows.flatMap((row) => (row.evidence ?? []).map((item) => item.evidenceId)),
+  ).size
   if (compact) {
     const firstTodo = rows.find((row) => !terminal(row.executionStatus))
     const activeId =
@@ -138,8 +150,9 @@ export function MonitoringChecklistSection({
       >
         <header>
           <h2>{t.acceptanceTitle}</h2>
-          <span className="mc-count">
-            {done} / {rows.length}
+          <span className="mc-count" title={t.progressTitle}>
+            {t.doneCount(done, rows.length)}
+            <small>{t.attachedEvidenceCount(attachedEvidence)}</small>
           </span>
         </header>
         <div className="mc-progress" aria-hidden="true">
@@ -197,8 +210,17 @@ export function MonitoringChecklistSection({
               const missing =
                 finished &&
                 item.executionStatus === 'COMPLETED' &&
-                (item.eligibleEvidenceCount ?? 0) <
-                  (item.minimumEvidenceCount ?? 0)
+                (evidenceShortfall(item) > 0 ||
+                  Boolean(
+                    item.blockingReasons?.some((reason) =>
+                      [
+                        'EVIDENCE_TYPE_NOT_ELIGIBLE',
+                        'MEDIA_REJECTED',
+                        'MEDIA_NOT_VALIDATED',
+                        'EVIDENCE_SOURCE_NOT_ELIGIBLE',
+                      ].includes(reason),
+                    ),
+                  ))
               const tone =
                 item.executionStatus === 'UNABLE_TO_VERIFY'
                   ? 'is-unable'
@@ -230,11 +252,20 @@ export function MonitoringChecklistSection({
                     <span className="mc-text">
                       <span className="mc-title">{item.content}</span>
                       <span className="mc-sub">
-                        {item.eligibleEvidenceCount ?? 0}/
                         {item.executionStatus === 'UNABLE_TO_VERIFY'
-                          ? 0
-                          : (item.minimumEvidenceCount ?? 0)}{' '}
-                        {t.evidence}
+                          ? `${item.eligibleEvidenceCount ?? 0}/0`
+                          : evidenceCountLabel(item)}{' '}
+                        {t.evidence} ·{' '}
+                        {evidenceT.evidenceTypes[
+                          item.requiredEvidenceType ?? 'IMAGE_OR_VIDEO'
+                        ]}
+                        {item.executionStatus !== 'UNABLE_TO_VERIFY' &&
+                          evidenceShortfall(item) > 0 && (
+                            <> · {t.shortfall(evidenceShortfall(item))}</>
+                          )}
+                        {item.blockingReasons?.includes(
+                          'EVIDENCE_TYPE_NOT_ELIGIBLE',
+                        ) && ` · ${t.needRightType}`}
                       </span>
                     </span>
                     {tone === 'is-current' && (
@@ -252,11 +283,13 @@ export function MonitoringChecklistSection({
                   </button>
                   {open && (
                     <div className="mc-detail">
+                      <ChecklistGuidance guidance={item} defaultOpen />
                       <ChecklistExecutionItem
                         key={`${missionId}:${item.id}`}
                         item={item}
                         missionId={missionId}
                         editable={editable}
+                        canAssess={canAssess}
                         rejected={resultStatus === 'REJECTED'}
                         refresh={refresh}
                         compact
@@ -435,6 +468,7 @@ export function MonitoringChecklistSection({
                 item={item}
                 missionId={missionId}
                 editable={editable}
+                canAssess={canAssess}
                 rejected={resultStatus === 'REJECTED'}
                 refresh={refresh}
               />
@@ -463,6 +497,7 @@ function ChecklistExecutionItem({
   item,
   missionId,
   editable,
+  canAssess,
   rejected,
   refresh,
   compact = false,
@@ -470,6 +505,7 @@ function ChecklistExecutionItem({
   item: MissionChecklistExecution
   missionId: string
   editable: boolean
+  canAssess: boolean
   rejected: boolean
   refresh: () => void
   compact?: boolean
@@ -604,6 +640,7 @@ function ChecklistExecutionItem({
                 {t.fieldAssessment}
                 <select
                   value={assessment}
+                  disabled={!canAssess}
                   onChange={(event) =>
                     setAssessment(
                       event.target.value as ChecklistAssessmentStatus,
@@ -672,6 +709,7 @@ function ChecklistExecutionItem({
   return (
     <div className="monitoring-item">
       {!compact && <h3>{item.content}</h3>}
+      {!compact && <ChecklistGuidance guidance={item} defaultOpen />}
       {(!compact || item.assessmentStatus !== 'NOT_ASSESSED') && (
         <div className="monitoring-meta">
           {!compact && (
@@ -749,6 +787,7 @@ function ChecklistExecutionItem({
               {t.fieldAssessment}
               <select
                 value={assessment}
+                disabled={!canAssess}
                 onChange={(event) =>
                   setAssessment(event.target.value as ChecklistAssessmentStatus)
                 }

@@ -52,12 +52,12 @@ export type OrderStep = {
 
 /** `GET /api/orders/{id}` mapped for the detail page. */
 export type OrderDetailView = OrderRow & {
+  legalReviewStatus: 'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
   checklistItems?: ChecklistSnapshot[]
   checklistSnapshotAt?: string | null
   description: string | null
   usagePurpose: string | null
   flightPurpose: string | null
-  priority: string | null
   altitudeM: number | null
   estimatedLengthM: number | null
   siteContactName: string | null
@@ -86,6 +86,7 @@ export type OrderDetailView = OrderRow & {
   latitude: number | null
   longitude: number | null
   rejectReason: string | null
+  requestedUpdateScope: 'LOCATION' | 'ADDITIONAL_INFORMATION' | null
   reviewByName: string | null
   reviewAt: string | null
   updatedAt: string | null

@@ -19,8 +19,7 @@ export function isSelectableMission(status?: string | null) {
     status === 'CONNECTED' ||
     status === 'PREFLIGHT_CHECKING' ||
     status === 'READY_TO_FLY' ||
-    status === 'FAILED_PREFLIGHT' ||
-    status === 'ACCEPTED'
+    status === 'FAILED_PREFLIGHT'
   )
 }
 

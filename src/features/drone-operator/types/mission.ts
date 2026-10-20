@@ -33,6 +33,8 @@ export type OperatorMission = MissionStopMetadata & {
   acceptedAt?: string
   managerNote?: string
   managerName?: string
+  managerEmail?: string
+  managerPhone?: string
   respondBy?: string
   radiusMeters?: number
   ceilingMeters?: number
@@ -62,6 +64,7 @@ export type OperatorMissionPermissions = {
   canSubmitMissionResult?: boolean
   canExecuteMonitoringChecklist?: boolean
   canControlFlight: boolean
+  canStartMission?: boolean
   canOperatePayload: boolean
   canInspectDevice: boolean
   canMaintainDevice: boolean

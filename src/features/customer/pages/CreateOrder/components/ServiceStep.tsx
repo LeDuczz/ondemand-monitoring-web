@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { CustomerConsultation, ServiceOption, ServicePricingEstimate } from '../../../api/customerApi'
 import { findRecommendedService } from '../../../lib/createOrder/consultation'
 import type { FormErrors, FormState, UpdateField } from '../../../lib/createOrder/types'
+import type { ChecklistRow } from '../../../lib/checklist/types'
 import type { useConsultation } from '../hooks/useConsultation'
 import { AiAnalysisOption } from './AiAnalysisOption'
 import { ConsultationChat } from './ConsultationChat'
@@ -22,6 +23,7 @@ type Props = {
   setAiAnalysisRequested: (value: boolean) => void
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
+  additionalChecklists: ChecklistRow[]
   /** Wizard actions, rendered at the bottom of the sticky summary panel. */
   footer?: ReactNode
 }
@@ -62,6 +64,7 @@ export function ServiceStep(p: Props) {
           loading={p.pricingLoading}
           hasService={Boolean(selected)}
           aiAnalysisRequested={p.aiAnalysisRequested}
+          additionalChecklists={p.additionalChecklists}
         />
       </aside>
     </div>

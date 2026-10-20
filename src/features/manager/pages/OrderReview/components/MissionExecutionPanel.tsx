@@ -86,10 +86,6 @@ export function MissionExecutionPanel({
           missionStatus={mission.status}
           reader={staffMissionMediaReader}
           reviewStatus={matchingResult?.approvalStatus ?? null}
-          approveMedia={async (mediaId) => {
-            await missionsApi.approveMissionMedia(mission.id, mediaId)
-            refresh()
-          }}
         />
       </section>
     </section>

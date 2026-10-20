@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  evidenceCountLabel,
+  evidenceShortfall,
+  isPerTypeEvidence,
+} from '../lib/evidenceProgress'
+import { ApiError } from '../../../shared/api/httpClient'
 import { createPortal } from 'react-dom'
+import { operatorHref } from '../../drone-operator/routes'
 import { checklistEvidenceApi } from '../api/checklistEvidenceApi'
 import type {
   EvidenceCandidate,
@@ -8,6 +15,19 @@ import type {
 import './ChecklistEvidencePanel.css'
 import { useI18n } from '../../../shared/i18n'
 import { checklistEvidenceMessages } from './ChecklistEvidencePanel.messages'
+
+type RequiredEvidenceType = MissionChecklistExecution['requiredEvidenceType']
+
+function matchesEvidenceType(required: RequiredEvidenceType, mediaType: string) {
+  switch (required ?? 'IMAGE_OR_VIDEO') {
+    case 'IMAGE':
+      return mediaType === 'IMAGE'
+    case 'VIDEO':
+      return mediaType === 'VIDEO'
+    default:
+      return mediaType === 'IMAGE' || mediaType === 'VIDEO'
+  }
+}
 
 export function ChecklistEvidencePanel(
   props: Parameters<typeof MissionEvidencePanel>[0],
@@ -76,8 +96,12 @@ function MissionEvidencePanel({
     try {
       await operation()
       refresh()
-    } catch {
-      setError(t.updateFailed)
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError && cause.code === 'EVIDENCE_NOT_ELIGIBLE'
+          ? t.notEligible
+          : t.updateFailed,
+      )
       refresh()
     } finally {
       setBusy(false)
@@ -112,29 +136,48 @@ function MissionEvidencePanel({
   }
   const needle = query.trim().toLowerCase()
   // Backend attachment eligibility is authoritative, not final-approval readiness.
-  const eligible = (candidates ?? []).filter((media) => media.attachable)
-  const shown = eligible.filter(
-    (media) => !needle || media.fileName.toLowerCase().includes(needle),
-  )
+  const everyCandidate = candidates ?? []
+  const eligible = everyCandidate.filter((media) => media.attachable)
+  // Media that cannot be attached stay visible, greyed out with the reason, so an empty-looking list is never a mystery.
+  const shown = [...everyCandidate]
+    .filter((media) => !needle || media.fileName.toLowerCase().includes(needle))
+    .sort((a, b) => Number(b.attachable) - Number(a.attachable))
   const attached = (media: EvidenceCandidate) =>
     media.alreadyAttachedExecutionIds.includes(item.id) ||
     Boolean(item.evidence?.some((link) => link.mediaId === media.mediaId))
   const allAttached = eligible.length > 0 && eligible.every(attached)
   const hasNext = (candidates?.length ?? 0) >= 50
-  const required =
-    item.executionStatus === 'UNABLE_TO_VERIFY'
-      ? 0
-      : (item.minimumEvidenceCount ?? 0)
+  const unableToVerify = item.executionStatus === 'UNABLE_TO_VERIFY'
+  const configuredRequired = item.minimumEvidenceCount ?? 0
   const have = item.eligibleEvidenceCount ?? 0
+  const remaining = evidenceShortfall(item)
   const links = item.evidence ?? []
+  const unableExplanation = item.unableToVerifyReason
+    ? t.unableWithReason(item.unableToVerifyReason)
+    : t.unableNoReason
+  const typeLabel = t.evidenceTypes[item.requiredEvidenceType ?? 'IMAGE_OR_VIDEO']
   const compactBody = (
     <>
       <div className="ce-head">
-        <span>{t.evidence}</span>
+        <span>
+          {t.evidence} · {typeLabel}
+        </span>
         <span className="ce-count">
-          {have} / {required}
+          {isPerTypeEvidence(item)
+            ? evidenceCountLabel(item)
+            : `${have} / ${configuredRequired}`}
         </span>
       </div>
+      {unableToVerify ? (
+        <p className="ce-unable-note">{unableExplanation}</p>
+      ) : remaining > 0 ? (
+        <p className="ce-remaining">{t.missing(remaining)}</p>
+      ) : null}
+      {item.blockingReasons?.map((reason) => (
+        <p key={reason} className="ce-blocker">
+          {t.reasons[reason]}
+        </p>
+      ))}
       {links.length > 0 && (
         <ul className="ce-list">
           {links.map((link) => {
@@ -217,7 +260,9 @@ function MissionEvidencePanel({
           })}
         </ul>
       )}
-      {required > 0 && have >= required && <p className="ce-ok">{t.enough}</p>}
+      {!unableToVerify &&
+        configuredRequired > 0 &&
+        have >= configuredRequired && <p className="ce-ok">{t.enough}</p>}
       {canAttach && (
         <button
           type="button"
@@ -241,15 +286,24 @@ function MissionEvidencePanel({
       ) : (
         <>
           <strong>
-            {t.validEvidence} {item.eligibleEvidenceCount ?? 0} /{' '}
-            {item.executionStatus === 'UNABLE_TO_VERIFY'
-              ? 0
-              : (item.minimumEvidenceCount ?? 0)}
+            {t.validEvidence} {have} / {configuredRequired} · {typeLabel}
           </strong>
-          {terminalStatus(item.executionStatus) &&
-            item.blockingReasons?.map((reason) => (
-              <p key={reason}>{t.reasons[reason]}</p>
-            ))}
+          {unableToVerify && (
+            <p className="ce-unable-note">{unableExplanation}</p>
+          )}
+          {!unableToVerify && remaining > 0 && (
+            <p className="ce-remaining">{t.missing(remaining)}</p>
+          )}
+          {!unableToVerify &&
+            configuredRequired > 0 &&
+            have >= configuredRequired && (
+              <p className="ce-ok">{t.enoughValid}</p>
+            )}
+          {item.blockingReasons?.map((reason) => (
+            <p key={reason} className="ce-blocker">
+              {t.reasons[reason]}
+            </p>
+          ))}
           <div className="checklist-evidence-grid">
             {item.evidence?.map((link) => (
               <article key={link.evidenceId}>
@@ -403,7 +457,17 @@ function MissionEvidencePanel({
                 )}
                 {!mediaLoading && mediaError == null && shown.length === 0 && (
                   <p className="checklist-candidates-empty">
-                    {needle ? t.noMatch : t.noEligible}
+                    {needle ? (
+                      t.noMatch
+                    ) : (
+                      <>
+                        {t.noUploadedBefore}{' '}
+                        <a href={operatorHref({ screen: 'upload', missionId })}>
+                          {t.noUploadedLink}
+                        </a>{' '}
+                        {t.noUploadedAfter}
+                      </>
+                    )}
                   </p>
                 )}
                 {!mediaLoading &&
@@ -462,7 +526,16 @@ function MissionEvidencePanel({
                         <small className="checklist-candidate-time">
                           {new Date(media.capturedAt).toLocaleString(locale)}
                         </small>
-                        {!media.eligibleForOperationalReadiness && (
+                        {!matchesEvidenceType(
+                          item.requiredEvidenceType,
+                          media.mediaType,
+                        ) && (
+                          <small>
+                            {t.typeMismatch(typeLabel)}
+                          </small>
+                        )}
+                        {(!media.attachable ||
+                          !media.eligibleForOperationalReadiness) && (
                           <small>
                             {media.ineligibilityReason
                               ? t.reasons[media.ineligibilityReason]
@@ -473,7 +546,15 @@ function MissionEvidencePanel({
                       <button
                         type="button"
                         className="odm-btn odm-btn-p"
-                        disabled={busy || !media.attachable || attached(media)}
+                        disabled={
+                          busy ||
+                          !media.attachable ||
+                          attached(media) ||
+                          !matchesEvidenceType(
+                            item.requiredEvidenceType,
+                            media.mediaType,
+                          )
+                        }
                         onClick={() =>
                           void act(async () => {
                             if (attachCandidate) {
@@ -534,9 +615,4 @@ function MissionEvidencePanel({
       {error && <p role="alert">{error}</p>}
     </section>
   )
-}
-
-/** Reasons are only meaningful once the item is finished; before that the status already says it. */
-function terminalStatus(status: string) {
-  return status === 'COMPLETED' || status === 'UNABLE_TO_VERIFY'
 }

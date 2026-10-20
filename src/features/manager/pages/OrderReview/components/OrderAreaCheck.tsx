@@ -4,7 +4,7 @@ import {
   customerApi,
   type FlightAreaAssessment,
 } from '../../../../customer/api/customerApi'
-import type { FlightAreaReviewStatus, OrderDetail } from '../../../types/orders'
+import type { LegalReviewStatus, OrderDetail } from '../../../types/orders'
 import { OrderLocationCard } from './OrderLocationCard'
 import { resolveOrderGpsCenter } from '../../../components/common/orderGps'
 import { AreaCheckHead } from './AreaCheckHead'
@@ -22,11 +22,23 @@ export function OrderAreaCheck({
   onReviewSaved,
 }: {
   order: OrderDetail
-  onReviewSaved?: (status: FlightAreaReviewStatus) => void
+  onReviewSaved?: (status: LegalReviewStatus) => void
 }) {
   const { t } = useI18n(orderAreaCheckMessages)
   const [review, setReview] = useState(() => areaReviewFromOrder(order))
   const [reviewOpen, setReviewOpen] = useState(false)
+  useEffect(() => {
+    setReview(areaReviewFromOrder(order))
+  }, [
+    order.id,
+    order.legalReviewStatus,
+    order.requestedScopeFeasible,
+    order.flightAreaReviewReason,
+    order.flightAreaReviewNote,
+    order.flightAreaReviewedByName,
+    order.flightAreaReviewedAt,
+    order.updatedAt,
+  ])
 
   const resolved = resolveOrderGpsCenter(order.center)
   const latitude = resolved?.center.lat
@@ -59,6 +71,7 @@ export function OrderAreaCheck({
         <OrderLocationCard order={order} showAreaAddress />
         <AreaResultsCard
           assessment={assessment}
+          canRecheck={order.status === 'PENDING'}
           resolved={resolved}
           radiusM={radiusM}
           data={data}

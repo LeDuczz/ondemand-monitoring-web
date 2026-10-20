@@ -77,7 +77,7 @@ export function MaintenancePage() {
     try {
       await maintenanceTicketApi.resolveTicket(selectedTicket.id, {
         resolutionNotes: notes,
-        newDroneStatus: targetDroneStatus,
+        newDeviceStatus: targetDroneStatus,
       })
 
       setSuccessMsg(

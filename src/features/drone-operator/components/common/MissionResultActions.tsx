@@ -34,8 +34,9 @@ export function missionResultActions(
     canComplete && data.checklist.readyForMissionCompletion === true
   const submitReady =
     canSubmit &&
-    status === 'COMPLETED' &&
-    data.checklist.readyForSubmission === true
+    data.checklist.readyForSubmission === true &&
+    (status === 'COMPLETED' ||
+      (status === 'PENDING_REVIEW' && completeReady))
   const remaining =
     data?.checklist.executions.filter(
       (row) => !['COMPLETED', 'UNABLE_TO_VERIFY'].includes(row.executionStatus),
@@ -78,7 +79,12 @@ export function staffResultError(error: unknown) {
     if (error.status === 403) return m.forbidden
     if (error.code === 'MISSION_STATUS_INVALID') return m.statusInvalid
     if (error.code === 'CHECKLIST_EXECUTION_LOCKED') return m.executionLocked
-    if (error.code === 'CHECKLIST_NOT_READY') return m.checklistNotComplete
+    if (error.code === 'CHECKLIST_NOT_READY')
+      return error.message.includes('EVIDENCE_TYPE_NOT_ELIGIBLE')
+        ? m.wrongMediaType
+        : error.message.includes('INSUFFICIENT_EVIDENCE')
+          ? m.insufficientEvidence
+          : m.checklistNotComplete
   }
   return m.genericError
 }
@@ -90,6 +96,7 @@ export function MissionResultActions({
   busy,
   onComplete,
   onSubmit,
+  showComplete = true,
 }: {
   missionId: string
   status?: string
@@ -97,13 +104,16 @@ export function MissionResultActions({
   busy: boolean
   onComplete: () => void
   onSubmit: () => void
+  showComplete?: boolean
 }) {
   const { t } = useI18n(missionResultActionsMessages)
   const state = missionResultActions(missionId, status, monitoring)
   if (!['PENDING_REVIEW', 'COMPLETED'].includes(status ?? '')) return null
   const reasonId = `result-readiness-${missionId}`
   const submitReason =
-    status !== 'COMPLETED' ? t.completeFirst : state.readinessReason
+    status !== 'COMPLETED' && !state.completeReady
+      ? t.completeFirst
+      : state.readinessReason
   return (
     <section className="staff-result-actions" aria-label={t.sectionAriaLabel}>
       <div className="staff-result-phase" role="status">
@@ -123,9 +133,9 @@ export function MissionResultActions({
           </>
         )}
       </div>
-      {(state.canComplete || state.canSubmit) && (
+      {((showComplete && state.canComplete) || state.canSubmit) && (
         <div className="staff-result-buttons">
-          {state.canComplete && (
+          {showComplete && state.canComplete && (
             <button
               type="button"
               className="odm-btn odm-btn-p"
@@ -150,9 +160,9 @@ export function MissionResultActions({
         </div>
       )}
       {((state.canSubmit && !state.submitReady) ||
-        (state.canComplete && !state.completeReady)) && (
+        (showComplete && state.canComplete && !state.completeReady)) && (
         <p id={reasonId} className="staff-result-reason">
-          {state.canComplete && !state.completeReady
+          {showComplete && state.canComplete && !state.completeReady
             ? state.readinessReason
             : submitReason}
         </p>

@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 
 import {
   validateStep,
@@ -82,6 +82,12 @@ function firstInvalidStep(errors: FormErrors): Step {
 
 /** Step navigation: validate the current step before moving forward. */
 export function useWizard(o: Options) {
+  // The furthest step the customer has reached: tabs up to it stay clickable after going back.
+  const [reached, setReached] = useState<Step>(o.step)
+  useEffect(() => {
+    setReached((current) => (o.step > current ? o.step : current))
+  }, [o.step])
+
   function showErrors(errors: FormErrors) {
     o.setErrors(errors)
     const invalidStep = firstInvalidStep(errors)
@@ -105,6 +111,17 @@ export function useWizard(o: Options) {
         o.setStep((c) => Math.min(5, c + 1) as Step)
     },
     back: () => o.setStep((c) => Math.max(1, c - 1) as Step),
-    goTo: (target: Step) => target < o.step && o.setStep(target),
+    reached,
+    /** Back is always allowed; forward only to a reached step, and only if every step in between is still valid. */
+    goTo: (target: Step) => {
+      if (target === o.step) return
+      if (target < o.step) return o.setStep(target)
+      if (target > reached) return
+      for (let current = o.step; current < target; current++) {
+        if (!validate(current as Step)) return
+        if (!(o.canAdvance?.(current as Step) ?? true)) return
+      }
+      o.setStep(target)
+    },
   }
 }

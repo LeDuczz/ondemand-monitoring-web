@@ -4,7 +4,6 @@ import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { missionsApi } from '../../api/missionsApi'
 import { deliveryApi } from '../../../delivery/api'
 import type { DeliveryStatus as WorkflowDeliveryStatus } from '../../../delivery/types'
-import { ordersApi } from '../../api/ordersApi'
 import '../../manager.css'
 import { useI18n } from '../../../../shared/i18n'
 import { missionsPageMessages } from './MissionsPage.messages'
@@ -13,7 +12,6 @@ import { DetailPanel } from './components/DetailPanel'
 import { MissionsStats } from './components/MissionsStats'
 import { PageHeader } from '../../../../shared/components/ui'
 import { StatusFilterChips } from './components/StatusFilterChips'
-import { ApprovedOrdersSection } from './components/ApprovedOrdersSection'
 import { MissionsLoadError } from './components/MissionsLoadError'
 import { MissionsEmptyState } from './components/MissionsEmptyState'
 import { MissionsTable } from './components/MissionsTable'
@@ -41,17 +39,8 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
       }),
     [statusFilter],
   )
-  const approvedOrdersQuery = useApiQuery(
-    (signal) => ordersApi.getApproved(signal),
-    [],
-  )
 
   const missions = useMemo(() => query.data?.items ?? [], [query.data?.items])
-  const approvedOrders = useMemo(
-    () => approvedOrdersQuery.data ?? [],
-    [approvedOrdersQuery.data],
-  )
-  const setupOrders = approvedOrders
   const visibleMissions = useMemo(() => {
     const needle = search.trim().toLowerCase()
     if (!needle) return missions
@@ -61,8 +50,6 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
         .some((code) => String(code).toLowerCase().includes(needle)),
     )
   }, [missions, search])
-  const showApprovedOrders =
-    statusFilter === 'ALL' || statusFilter === 'CREATED'
   const selected =
     missions.find((mission) => mission.id === selectedMission) ?? null
   const [orderDeliveryStatuses, setOrderDeliveryStatuses] = useState<
@@ -158,11 +145,6 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
       />
 
       {ready && missions.length > 0 && <MissionsStats missions={missions} />}
-
-      <ApprovedOrdersSection
-        showApprovedOrders={showApprovedOrders}
-        setupOrders={setupOrders}
-      />
 
       <StatusFilterChips
         statusFilter={statusFilter}

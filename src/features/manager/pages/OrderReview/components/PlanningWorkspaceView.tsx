@@ -26,6 +26,8 @@ export function PlanningWorkspaceView({
   coverageWarning,
   allAssigned,
   depositPaid,
+  checkingPayment,
+  onCheckPayment,
   writable,
   setCreating,
   dirty,
@@ -62,6 +64,8 @@ export function PlanningWorkspaceView({
   coverageWarning: string
   allAssigned: boolean
   depositPaid: boolean
+  checkingPayment: boolean
+  onCheckPayment: () => void
   writable: boolean
   setCreating: Dispatch<
     SetStateAction<{ replacesMissionId?: string | undefined } | null>
@@ -130,22 +134,51 @@ export function PlanningWorkspaceView({
           />
           {!depositPaid && data.order.status === 'APPROVED' ? (
             <div className="odm-planning-payment-gate" role="status">
-              <strong>{t.depositWaitingTitle}</strong>
+              <div className="odm-gate-head">
+                <strong>{t.depositWaitingTitle}</strong>
+                <button
+                  type="button"
+                  className="odm-btn"
+                  disabled={checkingPayment}
+                  onClick={onCheckPayment}
+                >
+                  {checkingPayment ? t.checkingPayment : t.checkPayment}
+                </button>
+              </div>
               <p>{t.depositWaitingBody}</p>
               {data.invoice ? (
-                <span>
-                  {t.depositProgress(
-                    data.invoice.paidAmount,
-                    data.invoice.depositAmount,
-                    locale,
-                  )}
-                </span>
+                <div className="odm-gate-deposit">
+                  <div
+                    className="odm-gate-bar"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={data.invoice.depositAmount}
+                    aria-valuenow={data.invoice.paidAmount}
+                  >
+                    <span
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          data.invoice.depositAmount > 0
+                            ? (data.invoice.paidAmount /
+                                data.invoice.depositAmount) *
+                                100
+                            : 0,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span>
+                    {t.depositProgress(
+                      data.invoice.paidAmount,
+                      data.invoice.depositAmount,
+                      locale,
+                    )}
+                  </span>
+                </div>
               ) : (
                 <span>{t.noInvoice}</span>
               )}
-              <button type="button" className="odm-btn" onClick={query.reload}>
-                {t.checkPayment}
-              </button>
             </div>
           ) : null}
           {coverageWarning && (

@@ -104,43 +104,39 @@ export function MissionSelector({
                 locale,
               )}
             </small>
-            <span className="odm-workspace-plan-state">
-              {historical
-                ? t.historyViewOnly
-                : scope?.finalizedPlanRevision != null
-                  ? t.finalized
-                  : t.planning}
-            </span>
             <span className="odm-workspace-readiness">
               <span
                 className={count > 0 || noChecklist ? 'is-ready' : 'is-missing'}
+                title={
+                  count > 0 || noChecklist
+                    ? t.checklistAssigned
+                    : t.checklistAssignmentNeeded
+                }
               >
                 {count > 0 || noChecklist ? '✓' : '!'} {t.chipChecklist}{' '}
                 {noChecklist ? '—' : count}
               </span>
-              <span className={device ? 'is-ready' : 'is-missing'}>
+              <span
+                className={device ? 'is-ready' : 'is-missing'}
+                title={device ? t.deviceAssigned : t.deviceMissing}
+              >
                 {device ? '✓' : '!'} {t.chipDevice}
               </span>
-              <span className={!missing.length ? 'is-ready' : 'is-missing'}>
+              <span
+                className={!missing.length ? 'is-ready' : 'is-missing'}
+                title={
+                  missing.length
+                    ? `${t.missing} ${missing.map((role) => staffRoleLabel(role, lang)).join(', ')}`
+                    : t.staffComplete
+                }
+              >
                 {!missing.length ? '✓' : '!'} {t.chipStaff} {4 - missing.length}
                 /4
               </span>
             </span>
-            {!historical && (
-              <small>
-                {plan.planStatus === 'DRAFT'
-                  ? count > 0 || noChecklist
-                    ? t.checklistAssigned
-                    : t.checklistAssignmentNeeded
-                  : device && !missing.length
-                    ? t.resourcesFullyAssigned
-                    : t.moreResourcesNeeded}
-              </small>
-            )}
-            {missing.length > 0 && !historical && (
-              <small>
-                {t.missing}{' '}
-                {missing.map((role) => staffRoleLabel(role, lang)).join(', ')}
+            {historical && (
+              <small className="odm-workspace-plan-state">
+                {t.historyViewOnly}
               </small>
             )}
             {mission.replacesMissionId && (

@@ -5,6 +5,7 @@ import { missionApi } from '../../../mission/api/missionApi'
 import { useActiveMission } from '../../api/useActiveMission'
 import {
   backendPreflightTokenStorageKey,
+  handoverAcknowledgedStorageKey,
   preflightReadyStorageKey,
 } from '../../lib/flightWorkflowStorage'
 import { formatDeviceLabel } from '../../lib/deviceLabel'
@@ -15,7 +16,7 @@ import { AckToggle } from './components/AckToggle'
 import { CommitmentsCard } from './components/CommitmentsCard'
 import { DroneStrip } from './components/DroneStrip'
 import { HandoverActions } from './components/HandoverActions'
-import { ConfirmedBanner, RevokedBanner } from './components/HandoverBanners'
+import { RevokedBanner } from './components/HandoverBanners'
 import { handoverPageMessages } from './HandoverPage.messages'
 
 /** OPR-05W — Bàn giao quyền điều khiển: 4 cam kết + tick tổng + xác nhận. */
@@ -34,7 +35,6 @@ export function HandoverPage({ missionId }: { missionId?: string }) {
   ])
   const [ack, setAck] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const allChecked = checked.every(Boolean)
@@ -49,7 +49,7 @@ export function HandoverPage({ missionId }: { missionId?: string }) {
       if (!mission.missionId || !deviceId)
         throw new Error(t.noDroneAssignedError)
       window.sessionStorage.setItem(
-        `fieldwise.operator.handoverAcknowledged.${mission.missionId}`,
+        handoverAcknowledgedStorageKey(mission.missionId),
         'true',
       )
       window.localStorage.setItem(
@@ -91,7 +91,7 @@ export function HandoverPage({ missionId }: { missionId?: string }) {
         })
         return
       }
-      setConfirmed(true)
+      window.location.hash = operatorHref({ screen: 'missions' })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t.confirmFailed)
     } finally {
@@ -120,8 +120,6 @@ export function HandoverPage({ missionId }: { missionId?: string }) {
 
           {revoked ? (
             <RevokedBanner onReconfirm={() => setRevoked(false)} />
-          ) : confirmed ? (
-            <ConfirmedBanner />
           ) : (
             <>
               <CommitmentsCard

@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react'
-
 import { Card, StatusBadge, type UiTone } from '../../../shared/components/ui'
 import { useI18n } from '../../../shared/i18n'
+import { pricingLabel } from '../../../shared/lib/pricingPresentation'
 import type { Quote } from '../types'
 import { ChecklistReview } from './components/ChecklistReview'
 import { PriceBreakdown } from './components/PriceBreakdown'
+import { QuoteBreakdown } from './components/QuoteBreakdown'
 import { QuoteActions } from './components/QuoteActions'
 import { managerPricingPanelMessages } from './ManagerPricingPanel.messages'
 import { useManagerPricing } from './useManagerPricing'
@@ -20,13 +20,11 @@ const quoteTone: Partial<Record<Quote['status'], UiTone>> = {
 
 export function ManagerPricingPanel({
   orderId,
-  decisionActions,
   onApproved,
   onChecklistReviewChanged,
   approveBlockedReason,
 }: {
   orderId: string
-  decisionActions?: ReactNode
   onApproved?: () => void
   onChecklistReviewChanged?: () => void
   /** Why approving is not allowed yet (approval criteria not met); null/undefined = allowed. */
@@ -45,8 +43,6 @@ export function ManagerPricingPanel({
   const approved = pricing.approvalSucceeded || quote?.status === 'APPROVED'
   const accepted = quote?.status === 'ACCEPTED_BY_CUSTOMER'
 
-  // The summary card keeps one stable tree in every state so the decision
-  // dialogs inside `decisionActions` survive the pricing data loading.
   return (
     <div className="finance-workspace">
       {data ? (
@@ -56,7 +52,7 @@ export function ManagerPricingPanel({
           actions={
             quote ? (
               <StatusBadge tone={quoteTone[quote.status] ?? 'neutral'}>
-                v{quote.version} · {quote.status}
+                v{quote.version} · {pricingLabel(quote.status)}
               </StatusBadge>
             ) : undefined
           }
@@ -67,13 +63,10 @@ export function ManagerPricingPanel({
             filter={pricing.filter}
             onFilterChange={pricing.setFilter}
             prices={draft.prices}
+            systemLines={data.systemCalculation?.items}
+            priceRange={pricing.priceRange}
             disabled={accepted}
-            onPriceChange={(itemId, value) =>
-              pricing.setDraft((state) => ({
-                ...state,
-                prices: { ...state.prices, [itemId]: value },
-              }))
-            }
+            onPriceChange={pricing.setPrice}
             onReview={(item, status, note) =>
               void pricing.updateReview(item, status, note)
             }
@@ -90,13 +83,28 @@ export function ManagerPricingPanel({
         <Card
           className="finance-quote"
           title={data ? t.summaryTitle : undefined}
+          actions={
+            data ? (
+              <span className="finance-policy-pill">
+                {t.policyVersion(
+                  data.systemCalculation?.policyVersion ??
+                    quote?.pricingPolicyVersion,
+                )}
+              </span>
+            ) : undefined
+          }
         >
           <div className="finance-quote-content">
             {data ? (
               <>
+                <QuoteBreakdown
+                  items={data.systemCalculation?.items ?? []}
+                  checklistItems={data.checklistItems}
+                />
                 <PriceBreakdown
                   draft={draft}
-                  additional={pricing.additional}
+                  systemPrice={pricing.systemPrice}
+                  adjustment={pricing.checklistAdjustment}
                   total={pricing.total}
                   pendingReviewCount={pricing.pendingReviewCount}
                   disabled={accepted}
@@ -111,8 +119,8 @@ export function ManagerPricingPanel({
                   busy={pricing.busy}
                   approved={approved}
                   pendingCustomCount={pricing.pendingCustomCount}
+                  outOfRangeCount={pricing.outOfRangeCount}
                   approveBlockedReason={approveBlockedReason}
-                  onSaveDraft={() => void pricing.saveDraft()}
                   onApprove={() => void pricing.approve()}
                 />
               </>
@@ -120,7 +128,6 @@ export function ManagerPricingPanel({
               t.loadingQuote
             ) : null}
           </div>
-          {decisionActions}
         </Card>
       </div>
     </div>

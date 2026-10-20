@@ -7,6 +7,8 @@ export const missionDetailPageMessages = defineMessages({
     backToList: 'Về danh sách',
     acceptFailed: 'Không thể chấp nhận mission. Vui lòng thử lại.',
     rejectFailed: 'Không thể từ chối mission. Vui lòng thử lại.',
+    startFailed:
+      'Không thể bắt đầu Mission. Hãy kiểm tra đủ 4 role đã chấp nhận.',
   },
   en: {
     errorTitle: 'Could not load the mission',
@@ -14,5 +16,7 @@ export const missionDetailPageMessages = defineMessages({
     backToList: 'Back to list',
     acceptFailed: 'Could not accept the mission. Please try again.',
     rejectFailed: 'Could not reject the mission. Please try again.',
+    startFailed:
+      'Could not start the Mission. Check that all 4 roles have accepted.',
   },
 })

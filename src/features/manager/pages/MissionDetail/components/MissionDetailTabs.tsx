@@ -3,14 +3,12 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useI18n } from '../../../../../shared/i18n'
 import { missionDetailTabsMessages } from './MissionDetailTabs.messages'
 
-export type MissionDetailTab = 'overview' | 'order' | 'plan' | 'checks'
+export type MissionDetailTab = 'overview' | 'order' | 'checks'
 
 export function MissionDetailTabs({
-  showPlanTab,
   activeTab,
   setTab,
 }: {
-  showPlanTab: boolean
   activeTab: MissionDetailTab
   setTab: Dispatch<SetStateAction<MissionDetailTab>>
 }) {
@@ -18,7 +16,6 @@ export function MissionDetailTabs({
   const tabs: Array<{ id: MissionDetailTab; label: string }> = [
     { id: 'overview', label: t.tabs.overview },
     { id: 'order', label: t.tabs.order },
-    ...(showPlanTab ? [{ id: 'plan' as const, label: t.tabs.plan }] : []),
     { id: 'checks', label: t.tabs.checks },
   ]
   return (

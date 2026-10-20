@@ -123,7 +123,11 @@ export function MissionResultReviewCard({
               </div>
               <div>
                 <dt>{t.duration}</dt>
-                <dd>{formatDuration(matchingResult.durationSeconds, lang)}</dd>
+                <dd>
+                  {matchingResult.durationSeconds == null
+                    ? t.notRecorded
+                    : formatDuration(matchingResult.durationSeconds, lang)}
+                </dd>
               </div>
               <div>
                 <dt>{t.media}</dt>

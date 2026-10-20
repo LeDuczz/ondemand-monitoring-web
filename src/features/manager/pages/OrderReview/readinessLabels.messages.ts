@@ -23,7 +23,16 @@ export const readinessLabelsMessages = defineMessages({
     } as Record<ReadinessRecommendation, string>,
     contextualAnswerLabels: {
       RISK_LEVEL: { PASS: 'Thấp', WARN: 'Trung bình', FAIL: 'Cao' },
+      SITE_ACCESS: {
+        PASS: 'Đã liên hệ, đồng ý',
+        WARN: 'Đã liên hệ, đồng ý',
+        FAIL: 'Chưa liên hệ được / không đồng ý',
+      },
     } as Record<string, Record<Answer, string>>,
+    failNotePlaceholders: {
+      SITE_ACCESS:
+        'Lý do (bắt buộc): vd. đã gọi nhiều lần không liên lạc được, hoặc chủ đất từ chối',
+    } as Record<string, string>,
   },
   en: {
     resultLabel: {
@@ -41,6 +50,15 @@ export const readinessLabelsMessages = defineMessages({
     },
     contextualAnswerLabels: {
       RISK_LEVEL: { PASS: 'Low', WARN: 'Medium', FAIL: 'High' },
-    },
+      SITE_ACCESS: {
+        PASS: 'Contacted, agreed',
+        WARN: 'Contacted, agreed',
+        FAIL: 'Could not reach / not agreed',
+      },
+    } as Record<string, Record<Answer, string>>,
+    failNotePlaceholders: {
+      SITE_ACCESS:
+        'Reason (required): e.g. called several times without reaching anyone, or the landowner refused',
+    } as Record<string, string>,
   },
 })

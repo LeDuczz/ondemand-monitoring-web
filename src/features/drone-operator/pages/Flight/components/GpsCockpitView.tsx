@@ -22,10 +22,13 @@ export function GpsCockpitView({
   normalFlightAllowed,
   referenceBusy,
   finishingFlight,
+  startingFlight,
+  canStartFlight,
   telemetryBattery,
   cameraTelemetry,
   onCommand,
   onReview,
+  onStartFlight,
   onFinishFlight,
   onReferenceCapture,
   onPreflightReady,
@@ -42,10 +45,13 @@ export function GpsCockpitView({
   normalFlightAllowed: boolean
   referenceBusy: boolean
   finishingFlight: boolean
+  startingFlight: boolean
+  canStartFlight: boolean
   telemetryBattery: number | null
   cameraTelemetry: DroneCameraTelemetry | null
   onCommand: (command: FlightCommand) => void
   onReview: () => void
+  onStartFlight?: () => void | Promise<void>
   onFinishFlight: () => void
   onReferenceCapture: () => void | Promise<void>
   onPreflightReady: () => void | Promise<void>
@@ -111,6 +117,9 @@ export function GpsCockpitView({
       referenceBusy={referenceBusy}
       onCommand={onCommand}
       onReview={onReview}
+      onStartFlight={onStartFlight ? () => void onStartFlight() : undefined}
+      canStartFlight={canStartFlight}
+      startingFlight={startingFlight}
       onFinishFlight={onFinishFlight}
       finishingFlight={finishingFlight}
       onReferenceCapture={() => void onReferenceCapture()}

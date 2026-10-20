@@ -110,10 +110,60 @@ describe('Order checklist state and editor', () => {
     const { result } = renderHook(() => useOrderChecklist('A'))
     expect(result.current.status).toBe('loading')
     await waitFor(() => expect(result.current.valid).toBe(true))
-    expect(result.current.serialize()).toEqual([
-      { sourceChecklistId: 'catalog-1', expectedChecklistVersion: 3 },
-      { sourceChecklistId: 'catalog-2', expectedChecklistVersion: 7 },
+    expect(
+      result.current.rows.map((row) => [
+        row.minimumEvidenceCount,
+        row.requiredEvidenceType,
+      ]),
+    ).toEqual([
+      [1, 'IMAGE'],
+      [1, 'IMAGE'],
     ])
+    expect(result.current.serialize()).toEqual([
+      {
+        sourceChecklistId: 'catalog-1',
+        expectedChecklistVersion: 3,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE',
+      },
+      {
+        sourceChecklistId: 'catalog-2',
+        expectedChecklistVersion: 7,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE',
+      },
+    ])
+  })
+
+  it('serializes per-item evidence type/count, validates the 1–50 range, and keeps [] for none', async () => {
+    vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
+    const { result } = renderHook(() => useOrderChecklist('A'))
+    await waitFor(() => expect(result.current.valid).toBe(true))
+    act(() =>
+      result.current.change('link-1', {
+        minimumEvidenceCount: 3,
+        requiredEvidenceType: 'VIDEO',
+      }),
+    )
+    expect(result.current.serialize()[0]).toMatchObject({
+      minimumEvidenceCount: 3,
+      requiredEvidenceType: 'VIDEO',
+    })
+    act(() =>
+      result.current.change('link-2', { requiredEvidenceType: 'IMAGE' }),
+    )
+    expect(result.current.serialize()[1]).toMatchObject({
+      minimumEvidenceCount: 1,
+      requiredEvidenceType: 'IMAGE',
+    })
+    act(() => result.current.change('link-1', { minimumEvidenceCount: 51 }))
+    expect(result.current.valid).toBe(false)
+    expect(result.current.validation).toContain('1 đến 50')
+    expect(() => result.current.serialize()).toThrow()
+    act(() => result.current.change('link-1', { minimumEvidenceCount: 50 }))
+    expect(result.current.valid).toBe(true)
+    act(() => result.current.change('link-1', { minimumEvidenceCount: 0 }))
+    expect(result.current.valid).toBe(false)
   })
 
   it('EDIT keeps source/version, REMOVE excludes item, CUSTOM normalizes content; remove all stays []', async () => {
@@ -131,9 +181,15 @@ describe('Order checklist state and editor', () => {
       {
         sourceChecklistId: 'catalog-1',
         expectedChecklistVersion: 3,
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE',
         contentOverride: 'Edited first',
       },
-      { contentOverride: 'My requirement' },
+      {
+        contentOverride: 'My requirement',
+        minimumEvidenceCount: 1,
+        requiredEvidenceType: 'IMAGE',
+      },
     ])
     act(() => {
       result.current.remove(custom)
@@ -274,6 +330,33 @@ describe('Order checklist state and editor', () => {
       screen.queryByLabelText('Nội dung giám sát 3'),
     ).not.toBeInTheDocument()
   })
+
+  it('does not display unselected catalog items outside the service package', async () => {
+    vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
+    const loadCatalog = vi
+      .spyOn(customerApi, 'getChecklistCatalog')
+      .mockResolvedValue([
+        {
+          id: 'outside-package',
+          content: 'Outside package',
+          version: 4,
+          includedImageCount: 0,
+          includedVideoCount: 0,
+        },
+      ])
+
+    function Editor() {
+      return <ChecklistEditor checklist={useOrderChecklist('A')} />
+    }
+
+    render(<Editor />)
+    await screen.findByText('First')
+    await waitFor(() => expect(loadCatalog).toHaveBeenCalled())
+
+    expect(screen.getByText('Second')).toBeInTheDocument()
+    expect(screen.queryByText('Outside package')).not.toBeInTheDocument()
+    expect(screen.queryByText('Danh mục bổ sung')).not.toBeInTheDocument()
+  })
 })
 
 it.each(['vi', 'en'] as const)(
@@ -372,6 +455,45 @@ it('maps structured 400/401/403/404/server/network errors without exposing backe
   expect(checklistError(new Error('stack trace'))).not.toContain('stack trace')
 })
 
+it('serializes checklist evidence requirements into the actual create request body', async () => {
+  const bodies: Record<string, unknown>[] = []
+  setHttpTransport(async (_url, init) => {
+    bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>)
+    return new Response(
+      JSON.stringify({ success: true, data: { id: 'created' } }),
+      { status: 200 },
+    )
+  })
+  await customerApi.createOrder({
+    checklistItems: [
+      {
+        sourceChecklistId: 'template-1',
+        expectedChecklistVersion: 2,
+        minimumEvidenceCount: 4,
+        requiredEvidenceType: 'VIDEO',
+      },
+      {
+        contentOverride: 'Custom item',
+        minimumEvidenceCount: 2,
+        requiredEvidenceType: 'IMAGE',
+      },
+    ],
+  } as CreateOrderPayload)
+  expect(bodies[0].checklistItems).toEqual([
+    {
+      sourceChecklistId: 'template-1',
+      expectedChecklistVersion: 2,
+      minimumEvidenceCount: 4,
+      requiredEvidenceType: 'VIDEO',
+    },
+    {
+      contentOverride: 'Custom item',
+      minimumEvidenceCount: 2,
+      requiredEvidenceType: 'IMAGE',
+    },
+  ])
+})
+
 it('uses the existing API transport and preserves omitted/null/[] request semantics', async () => {
   const bodies: Record<string, unknown>[] = []
   const transport = vi.fn(async (url: string, init?: RequestInit) => {
@@ -422,6 +544,8 @@ it('order detail renders stored snapshot in order, read only, without loading cu
         content: 'Stored original',
         displayOrder: 1,
         sourceType: 'SERVICE_TEMPLATE',
+        minimumEvidenceCount: 2,
+        requiredEvidenceType: 'IMAGE',
       },
     ],
   })
@@ -433,8 +557,9 @@ it('order detail renders stored snapshot in order, read only, without loading cu
   expect(
     within(region)
       .getAllByRole('listitem')
-      .map((item) => item.textContent),
+      .map((item) => item.querySelector('span')?.textContent),
   ).toEqual(['Stored original', 'Stored custom'])
+  expect(within(region).getByText(/2 · Ảnh/)).toBeInTheDocument()
   expect(within(region).queryByRole('textbox')).not.toBeInTheDocument()
   expect(within(region).queryByRole('button')).not.toBeInTheDocument()
   expect(load).not.toHaveBeenCalled()

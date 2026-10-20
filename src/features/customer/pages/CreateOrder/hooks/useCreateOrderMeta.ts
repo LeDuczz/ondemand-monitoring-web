@@ -58,7 +58,10 @@ export function useCreateOrderMeta(
       serviceId: base.data!.services.some((service) => service.id === current.serviceId)
         ? current.serviceId
         : base.data?.services[0]?.id || '',
-      preferredTimeId: current.preferredTimeId || base.data?.times[0]?.id || '',
+      // The customer picks the time window themselves (step 4 asks for it). Only a saved id that no longer exists is cleared.
+      preferredTimeId: base.data!.times.some((time) => time.id === current.preferredTimeId)
+        ? current.preferredTimeId
+        : '',
     }))
   }, [base.data, setForm])
 

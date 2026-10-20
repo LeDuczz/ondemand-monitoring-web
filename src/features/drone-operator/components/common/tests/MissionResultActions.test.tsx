@@ -61,7 +61,7 @@ describe('Exact Mission result actions', () => {
         />,
       )
       expect(
-        Boolean(screen.queryByRole('button', { name: 'Nghiệm thu Mission' })),
+        Boolean(screen.queryByRole('button', { name: 'Xác nhận hoàn thành Mission' })),
       ).toBe(Boolean(complete))
       expect(
         Boolean(
@@ -72,16 +72,17 @@ describe('Exact Mission result actions', () => {
         const button = screen.getByRole('button', {
           name: 'Gửi kết quả cho Manager',
         })
-        expect(button).toBeDisabled()
+        if (complete) expect(button).toBeEnabled()
+        else expect(button).toBeDisabled()
         fireEvent.click(button)
-        expect(onSubmit).not.toHaveBeenCalled()
+        expect(onSubmit).toHaveBeenCalledTimes(complete ? 1 : 0)
       }
       if (complete) {
         fireEvent.click(
-          screen.getByRole('button', { name: 'Nghiệm thu Mission' }),
+          screen.getByRole('button', { name: 'Xác nhận hoàn thành Mission' }),
         )
         expect(onComplete).toHaveBeenCalledOnce()
-        expect(onSubmit).not.toHaveBeenCalled()
+        expect(onSubmit).toHaveBeenCalledTimes(submit ? 1 : 0)
       }
     },
   )
@@ -132,7 +133,7 @@ describe('Exact Mission result actions', () => {
       />,
     )
     expect(
-      screen.getByRole('button', { name: 'Nghiệm thu Mission' }),
+      screen.getByRole('button', { name: 'Xác nhận hoàn thành Mission' }),
     ).toBeDisabled()
     monitoring.data!.result = {
       id: 'r1',
@@ -151,13 +152,42 @@ describe('Exact Mission result actions', () => {
       />,
     )
     expect(
-      screen.queryByRole('button', { name: 'Nghiệm thu Mission' }),
+      screen.queryByRole('button', { name: 'Xác nhận hoàn thành Mission' }),
     ).toBeNull()
     expect(
       screen.queryByRole('button', { name: 'Gửi kết quả cho Manager' }),
     ).toBeNull()
     expect(screen.getByText('Chờ duyệt')).toBeInTheDocument()
   })
+  it('explains wrong evidence type and insufficient evidence from backend blockers', () => {
+    expect(
+      staffResultError(
+        new ApiError(
+          'Checklist item requires at least 3 VIDEO evidence asset(s); current eligible count is 1. Blockers: EVIDENCE_TYPE_NOT_ELIGIBLE, INSUFFICIENT_EVIDENCE',
+          {
+            code: 'CHECKLIST_NOT_READY',
+            status: 409,
+            method: 'POST',
+            path: '/result',
+          },
+        ),
+      ),
+    ).toContain('media sai loại')
+    expect(
+      staffResultError(
+        new ApiError(
+          'Blockers: INSUFFICIENT_EVIDENCE; requires 4, current eligible count is 2',
+          {
+            code: 'CHECKLIST_NOT_READY',
+            status: 409,
+            method: 'POST',
+            path: '/result',
+          },
+        ),
+      ),
+    ).toContain('bổ sung phần còn thiếu')
+  })
+
   it('never renders raw exception text or codes', () => {
     expect(staffResultError(new Error('SECRET_BACKEND_ENUM'))).not.toContain(
       'SECRET',

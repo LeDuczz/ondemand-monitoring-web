@@ -33,6 +33,7 @@ export function UploadMonitoringChecklist({
       resultStatus={query.data?.result?.approvalStatus}
       resultNote={query.data?.result?.reviewNote}
       canExecute={query.data?.permissions.canExecuteMonitoringChecklist}
+      canAssess={query.data?.permissions.canInspectDevice === true}
       canAttach={query.data?.permissions.canAttachChecklistEvidence}
       canDetach={query.data?.permissions.canDetachChecklistEvidence}
       refresh={query.reload}

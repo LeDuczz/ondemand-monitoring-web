@@ -18,6 +18,7 @@ export type OrderStage = (typeof ORDER_STAGES)[number]
 export const MISSION_STAGES = [
   'resources',
   'prepare',
+  'permit',
   'execute',
   'done',
 ] as const
@@ -96,14 +97,17 @@ export type MissionProgress = {
   terminal: 'failed' | 'cancelled' | null
 }
 
-export function missionProgress(status: MissionStatus): MissionProgress {
+export function missionProgress(
+  status: MissionStatus,
+  flightPermitStatus?: 'NOT_REQUESTED' | 'PENDING' | 'APPROVED' | 'REJECTED' | null,
+): MissionProgress {
   if (status === 'COMPLETED')
     return { current: 'done', finished: true, terminal: null }
   if (status === 'FAILED')
     return { current: 'execute', finished: false, terminal: 'failed' }
   if (status === 'CANCELLED')
     return { current: 'resources', finished: false, terminal: 'cancelled' }
-  const stage: MissionStage = (
+  let stage: MissionStage = (
     {
       CREATED: 'resources',
       WAITING_DEPOSIT: 'resources',
@@ -115,7 +119,7 @@ export function missionProgress(status: MissionStatus): MissionProgress {
       PREFLIGHT_CHECKING: 'prepare',
       READY_TO_FLY: 'prepare',
       FAILED_PREFLIGHT: 'prepare',
-      PENDING_APPROVAL: 'prepare',
+      PENDING_APPROVAL: 'permit',
       IN_FLIGHT: 'execute',
       IN_PROGRESS: 'execute',
       RETURNING: 'execute',
@@ -123,6 +127,12 @@ export function missionProgress(status: MissionStatus): MissionProgress {
       PENDING_REVIEW: 'done',
     } as Record<MissionStatus, MissionStage>
   )[status]
+  if (stage === 'prepare' && flightPermitStatus === 'PENDING') stage = 'permit'
+  if (
+    (stage === 'prepare' || stage === 'permit') &&
+    flightPermitStatus === 'APPROVED'
+  )
+    stage = 'execute'
   return { current: stage, finished: false, terminal: null }
 }
 

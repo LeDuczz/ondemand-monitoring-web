@@ -336,6 +336,50 @@ describe('Order-centric workspace', () => {
     expect(await screen.findByRole('link', { name: 'M1' })).toBeInTheDocument()
     expect(window.location.hash).toBe('#portal/manager/orders/o')
   })
+  it('hides the resource assignment action after every Mission is fully assigned', async () => {
+    finalized = true
+    missions = missions.map((mission) => ({
+      ...mission,
+      status: 'WAITING_CREW_CONFIRMATION',
+      deviceId: 'd1',
+      deviceName: 'Drone 1',
+      staffAssignments: [
+        {
+          id: `${mission.id}-pilot`,
+          staffId: 's1',
+          staffName: 'Crew 1',
+          assignedRole: 'PILOT',
+        },
+        {
+          id: `${mission.id}-operator`,
+          staffId: 's1',
+          staffName: 'Crew 1',
+          assignedRole: 'OPERATOR',
+        },
+        {
+          id: `${mission.id}-maintainer`,
+          staffId: 's1',
+          staffName: 'Crew 1',
+          assignedRole: 'MAINTAINER',
+        },
+        {
+          id: `${mission.id}-inspector`,
+          staffId: 's1',
+          staffName: 'Crew 1',
+          assignedRole: 'INSPECTOR',
+        },
+      ],
+    })) as MissionResponse[]
+
+    render(<OrderMissionPlanningSection orderId="o" />)
+
+    expect(
+      await screen.findByText('✓ Tất cả Mission đã được phân công đầy đủ.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Phân công nguồn lực cho/ }),
+    ).not.toBeInTheDocument()
+  })
   it('creates two Missions inline without leaving the Order route', async () => {
     missions = []
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue({

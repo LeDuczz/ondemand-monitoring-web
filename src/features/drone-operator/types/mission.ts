@@ -119,19 +119,7 @@ export type ControlHandover = {
   confirmedAt: string
 }
 
-export type PreflightItemKey =
-  | 'gazebo'
-  | 'px4'
-  | 'mavsdk'
-  | 'px4Control'
-  | 'localPosition'
-  | 'mavsdkHealth'
-  | 'battery'
-  | 'lidar'
-  | 'camera'
-  | 'backend'
-  | 'media'
-  | 'modules'
+export type PreflightItemKey = string
 
 export type PreflightItemResult = 'ok' | 'fail'
 

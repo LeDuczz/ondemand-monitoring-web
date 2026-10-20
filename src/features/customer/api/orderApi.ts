@@ -129,6 +129,7 @@ export type OrderCreateResponse = {
   executionPlanStatus?: string
   orderStatus?: string
   legalReviewStatus?: 'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
+  depositSatisfied?: boolean | null
   rejectReason?: string
   requestedUpdateScope?: 'LOCATION' | 'ADDITIONAL_INFORMATION'
   reviewById?: string

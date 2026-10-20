@@ -38,6 +38,7 @@ type DeliveryStatus =
   | 'LOADING'
 
 type PageMessages = (typeof missionsListPageMessages)['vi']
+const MISSION_STATUS_POLL_MS = 5_000
 
 function formatScheduled(
   start: string | null,
@@ -67,6 +68,13 @@ function formatStaffSummary(assignments?: MissionStaffAssignmentResponse[]) {
     (item) => item.responseStatus === 'ACCEPTED',
   ).length
   return `${accepted}/${active.length} đã nhận`
+}
+
+function allCrewAccepted(assignments?: MissionStaffAssignmentResponse[]) {
+  return (
+    Boolean(assignments?.length) &&
+    assignments!.every((item) => item.responseStatus === 'ACCEPTED')
+  )
 }
 
 function deliveryTone(
@@ -328,7 +336,24 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
       }),
     [statusFilter],
   )
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') query.reload()
+    }
+    const interval = window.setInterval(
+      refreshWhenVisible,
+      MISSION_STATUS_POLL_MS,
+    )
+    window.addEventListener('focus', refreshWhenVisible)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshWhenVisible)
+    }
+  }, [query.reload])
   const missions = useMemo(() => query.data?.items ?? [], [query.data?.items])
+  const initialLoading = query.loading && !query.data
+  const initialError = Boolean(query.error) && !query.data
   const selected =
     missions.find((mission) => mission.id === selectedMission) ?? null
   const [orderDeliveryStatuses, setOrderDeliveryStatuses] = useState<
@@ -432,8 +457,8 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
       <div className="odm-or-pagehead">
         <h1 className="odm-or-title">{t.title}</h1>
         <p className="odm-or-subtitle">
-          {!query.loading && !query.error
-            ? t.missionCount(missions.length)
+          {!initialLoading && !initialError
+            ? `${t.missionCount(missions.length)} · ${t.autoRefresh}`
             : ' '}
         </p>
       </div>
@@ -456,13 +481,13 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
         className={`odm-or-list-layout${selectedMission ? ' has-panel' : ''}`}
       >
         <div className="odm-or-col">
-          {query.loading && (
+          {initialLoading && (
             <div aria-busy="true">
               <span className="odm-sk" style={{ width: '100%', height: 260 }} />
             </div>
           )}
 
-          {!query.loading && !!query.error && (
+          {initialError && (
             <section className="odm-or-card">
               <div className="odm-or-card-body">
                 <StateView
@@ -475,7 +500,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
             </section>
           )}
 
-          {!query.loading && !query.error && missions.length === 0 && (
+          {!initialLoading && !initialError && missions.length === 0 && (
             <section className="odm-or-card">
               <StateView
                 state="empty"
@@ -485,7 +510,7 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
             </section>
           )}
 
-          {!query.loading && !query.error && missions.length > 0 && (
+          {!initialLoading && !initialError && missions.length > 0 && (
             <section className="odm-or-card odm-or-table-card">
               <div className="odm-or-table-scroll">
                 <table className="odm-or-table">
@@ -556,11 +581,16 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                               tone={missionStatusTone[m.status]}
                             />
                           )}
-                          {assignmentReadiness(m).label && (
+                          {m.status === 'SCHEDULED' &&
+                          allCrewAccepted(m.staffAssignments) ? (
+                            <small className="odm-mission-meta">
+                              {t.crewReady}
+                            </small>
+                          ) : assignmentReadiness(m).label ? (
                             <small className="odm-mission-meta">
                               {assignmentReadiness(m).label}
                             </small>
-                          )}
+                          ) : null}
                         </td>
                         <td>
                           <StatusBadge
@@ -573,14 +603,15 @@ export function MissionsListPage({ missionId }: MissionsListPageProps) {
                               t,
                             )}
                           </StatusBadge>
-                          {orderDeliveryStatuses[m.orderId] && (
-                            <small className="odm-mission-meta">
-                              {deliveryLabel(
-                                orderDeliveryStatuses[m.orderId],
-                                t,
-                              )}
-                            </small>
-                          )}
+                          {m.status === 'COMPLETED' &&
+                            orderDeliveryStatuses[m.orderId] && (
+                              <small className="odm-mission-meta">
+                                {deliveryLabel(
+                                  orderDeliveryStatuses[m.orderId],
+                                  t,
+                                )}
+                              </small>
+                            )}
                         </td>
                         <td className="odm-or-table-action">
                           <a

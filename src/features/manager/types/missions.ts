@@ -16,6 +16,17 @@ export type PlanType = 'ORBIT' | 'GRID' | 'POINT'
 /** `flight_plan.generated_by` [BRIEF §A6]. */
 export type PlanGeneratedBy = 'SYSTEM' | 'MANUAL'
 
+export type FlightPermitStatus =
+  'NOT_REQUESTED' | 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export type FlightPermitUpdateRequest = {
+  status: FlightPermitStatus
+  note: string | null
+  fileName?: string | null
+  contentType?: string | null
+  dataUrl?: string | null
+}
+
 export type MissionWaypoint = {
   seq: number
   action: WaypointAction
@@ -55,6 +66,11 @@ export type Mission = MissionStopMetadata & {
   orderCode: string | null
   missionCode: string
   status: MissionStatus
+  flightPermitStatus?: FlightPermitStatus | null
+  flightPermitNote?: string | null
+  flightPermitFileName?: string | null
+  flightPermitContentType?: string | null
+  flightPermitDataUrl?: string | null
   attemptNumber: number | null
   droneId: string | null
   operatorId: string | null
@@ -324,6 +340,11 @@ export type MissionResponse = MissionStopMetadata & {
   customerName: string
   missionCode: string
   status: MissionStatus
+  flightPermitStatus?: FlightPermitStatus | null
+  flightPermitNote?: string | null
+  flightPermitFileName?: string | null
+  flightPermitContentType?: string | null
+  flightPermitDataUrl?: string | null
   operatorId: string | null
   staffAssignments?: MissionStaffAssignmentResponse[]
   droneId: string | null
@@ -517,7 +538,15 @@ export type MediaResponse = {
   deviceId?: string | null
   droneId: string
   type: string
-  status?: 'UPLOAD_PENDING' | 'UPLOADING' | 'VALIDATING' | 'RETRY_REQUIRED' | 'MANUAL_UPLOAD_REQUIRED' | 'PENDING_MANAGER_APPROVAL' | 'AVAILABLE' | 'REJECTED'
+  status?:
+    | 'UPLOAD_PENDING'
+    | 'UPLOADING'
+    | 'VALIDATING'
+    | 'RETRY_REQUIRED'
+    | 'MANUAL_UPLOAD_REQUIRED'
+    | 'PENDING_MANAGER_APPROVAL'
+    | 'AVAILABLE'
+    | 'REJECTED'
   url: string
   expiresIn: number
   contentType: string

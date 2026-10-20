@@ -27,8 +27,15 @@ import { financeApi } from '../../../finance/api'
 export type PlanningWorkflowInfo = {
   depositPaid: boolean
   selectedMissionId: string | null
-  missions: Array<{ id: string; code: string; status: MissionStatus }>
+  missions: Array<{
+    id: string
+    code: string
+    status: MissionStatus
+    flightPermitStatus?: 'NOT_REQUESTED' | 'PENDING' | 'APPROVED' | 'REJECTED' | null
+  }>
 }
+
+const PLANNING_RUNTIME_POLL_MS = 5_000
 
 export function OrderMissionPlanningSection({
   orderId,
@@ -86,6 +93,23 @@ function OrderPlanningWorkspace({
     },
     [orderId],
   )
+
+  // Mission lifecycle changes are driven from the Operator cockpit. Keep the
+  // Manager planning workspace current without requiring a manual page reload.
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') query.reload()
+    }
+    const interval = window.setInterval(
+      refreshWhenVisible,
+      PLANNING_RUNTIME_POLL_MS,
+    )
+    window.addEventListener('focus', refreshWhenVisible)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshWhenVisible)
+    }
+  }, [query.reload])
   const [assigningResources, setAssigningResources] = useState<{
     missionId: string
   } | null>(null)
@@ -160,6 +184,7 @@ function OrderPlanningWorkspace({
         id: mission.id,
         code: mission.missionCode || 'Mission',
         status: mission.status,
+        flightPermitStatus: mission.flightPermitStatus,
       })),
     })
   }, [data, depositPaid, selectedId])
@@ -341,7 +366,7 @@ function OrderPlanningWorkspace({
           </button>
         }
       />
-      {query.loading && <p role="status">Đang tải kế hoạch…</p>}
+      {query.loading && !data && <p role="status">Đang tải kế hoạch…</p>}
       {query.error ? <p role="alert">{planningError(query.error)}</p> : null}
       {message && (
         <p role="status" className="odm-planning-notice">
@@ -462,7 +487,7 @@ function OrderPlanningWorkspace({
                     >
                       Điều chỉnh kế hoạch
                     </button>
-                    {selected && (
+                    {selected && !allAssigned && (
                       <button
                         className="odm-btn odm-btn-p odm-planning-next-resource"
                         disabled={busy || saving || dirty}

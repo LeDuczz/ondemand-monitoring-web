@@ -36,8 +36,8 @@ export function OrderResourceAssignmentWizard({
   onClose: () => void
   returnLabel?: string
   embedded?: boolean
-  /** Current step of the 8-step order workflow (6, 7 or 8) for an outer stepper. */
-  onStepChange?: (step: 6 | 7 | 8) => void
+  /** Current legacy page position for an outer stepper. */
+  onStepChange?: (step: 6 | 7 | 8 | 9) => void
 }) {
   const confirmation = usePlanningConfirmation()
   const query = useApiQuery(
@@ -68,6 +68,7 @@ export function OrderResourceAssignmentWizard({
   )
   const [draft, setDraft] = useState(false)
   const [reviewing, setReviewing] = useState(false)
+  const [permitting, setPermitting] = useState(false)
   const [liveStep, setLiveStep] = useState<6 | 7>(6)
   const [busy, setBusy] = useState(false)
   const updateDraft = useCallback((dirty: boolean, saving: boolean) => {
@@ -197,12 +198,17 @@ export function OrderResourceAssignmentWizard({
     </section>
   )
   const current = data?.missions.find((m) => m.id === activeId)
-  const outerStep: 6 | 7 | 8 =
-    reviewing && !current ? 8 : current ? liveStep : 6
+  const outerStep: 6 | 7 | 8 | 9 = permitting
+    ? 9
+    : reviewing && !current
+      ? 8
+      : current
+        ? liveStep
+        : 6
   useEffect(() => {
     onStepChange?.(outerStep)
   }, [outerStep, onStepChange])
-  if (reviewing && !current && data)
+  if ((reviewing || permitting) && !current && data)
     return (
       <>
         {confirmation.dialog}
@@ -218,13 +224,23 @@ export function OrderResourceAssignmentWizard({
             setActiveId(id)
             setDraft(false)
             setReviewing(false)
+            setPermitting(false)
           }}
           onDone={() => {
-            setReviewing(false)
-            onClose()
+            if (permitting) {
+              setReviewing(false)
+              setPermitting(false)
+              onClose()
+            } else {
+              setReviewing(false)
+              setPermitting(true)
+            }
           }}
-          doneLabel={returnLabel}
+          doneLabel={
+            permitting ? 'Hoàn tất giấy phép bay' : 'Tiếp: Giấy phép bay'
+          }
           embedded={embedded}
+          mode={permitting ? 'permit' : 'preparation'}
         />
       </>
     )

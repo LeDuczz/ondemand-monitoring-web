@@ -247,10 +247,6 @@ export function OrderCustomerRequestDetails({
   order: OrderDetail
   t: OrderReviewMessages
 }) {
-  const contact =
-    [order.siteContactName, order.siteContactPhone]
-      .filter(Boolean)
-      .join(' · ') || null
   const recurrence =
     order.recurrenceType && order.recurrenceOccurrences
       ? `${text(order.recurrenceType)} · ${order.recurrenceOccurrences} lần`
@@ -305,7 +301,8 @@ export function OrderCustomerRequestDetails({
   ]
 
   const siteFacts: DetailItem[] = [
-    { label: t.siteContact, value: contact },
+    { label: t.siteContactName, value: order.siteContactName },
+    { label: t.siteContactPhone, value: order.siteContactPhone },
     { label: t.accessNotes, value: order.accessNotes },
   ]
   const weatherFallback = text(order.weatherFallback)

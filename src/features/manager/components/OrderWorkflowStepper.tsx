@@ -7,7 +7,7 @@ import { WorkflowStepper, type WorkflowMissionLayer } from './workflow/WorkflowS
 
 /**
  * Legacy page positions: 5 = planning, 6/7 = assigning resources to a Mission
- * (staff, device, confirm), 8 = overview. 9 = everything done.
+ * (staff, device, confirm), 8 = preparation overview, 9 = flight permit.
  */
 export type OrderWorkflowStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
@@ -31,7 +31,12 @@ export function OrderWorkflowStepper({
     currentStep <= 5
       ? null
       : {
-          current: currentStep >= 8 ? MISSION_STAGES[1] : MISSION_STAGES[0],
+          current:
+            currentStep >= 9
+              ? MISSION_STAGES[2]
+              : currentStep >= 8
+                ? MISSION_STAGES[1]
+                : MISSION_STAGES[0],
           finished: false,
           terminal: null,
         }

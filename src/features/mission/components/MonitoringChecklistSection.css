@@ -40,16 +40,14 @@
 .monitoring-summary {
   position: relative;
   padding: 14px 16px 18px;
-  border: 1px solid var(--yellow-dot);
+  border: 1px solid var(--bd, #e2e8f0);
   border-radius: 12px;
-  background: var(--yellow-bg);
-  color: var(--yellow-fg);
+  background: var(--sf2, #f8fafc);
   font-size: 14px;
 }
 .monitoring-summary.is-ready {
-  border-color: var(--green-dot);
-  background: var(--green-bg);
-  color: var(--green-fg);
+  border-color: #bbf7d0;
+  background: #f0fdf4;
 }
 .monitoring-summary strong {
   font-weight: 600;
@@ -61,7 +59,7 @@
   bottom: 8px;
   height: 6px;
   border-radius: 999px;
-  background: var(--sf3);
+  background: #cbd5e1;
   overflow: hidden;
 }
 .monitoring-progress::after {
@@ -69,7 +67,7 @@
   display: block;
   width: var(--p, 0%);
   height: 100%;
-  background: var(--green-dot);
+  background: #16a34a;
   transition: width 0.25s ease;
 }
 .monitoring-notes {
@@ -708,10 +706,10 @@
   display: grid;
   gap: 2px;
   padding: 10px 12px;
-  border: 1px solid var(--blue-dot);
+  border: 1px solid #bfdbfe;
   border-radius: 8px;
-  background: var(--blue-bg);
-  color: var(--blue-fg);
+  background: #eff6ff;
+  color: #1e3a8a;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -727,12 +725,12 @@
   gap: 10px;
   align-items: flex-start;
   padding: 10px 12px;
-  border: 1px solid var(--bd);
+  border: 1px solid var(--bd, #e2e8f0);
   border-radius: 8px;
-  background: var(--sf2);
+  background: var(--sf2, #f8fafc);
 }
 .mc-preview-mark {
-  color: var(--tx2);
+  color: #475569;
   line-height: 1.4;
 }
 .mc-preview-text {
@@ -741,6 +739,6 @@
   min-width: 0;
 }
 .mc-preview-text small {
-  color: var(--tx2);
+  color: #475569;
   font-size: 12.5px;
 }

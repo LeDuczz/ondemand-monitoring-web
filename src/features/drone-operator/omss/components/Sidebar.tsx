@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import type { NavId, Screen, Role } from '../../types/omss'
+import type { NavId, Screen, Role } from '../types'
 import { authApi, authSession } from '../../../auth/api/authApi'
 import { LanguageToggle } from '../../../../shared/components/LanguageToggle'
 import { useI18n } from '../../../../shared/i18n'

@@ -8,12 +8,14 @@ import { missionsApi } from './missionsApi'
 afterEach(resetHttpTransport)
 describe('MissionResult review API', () => {
   it('rejects with note only, never client-supplied actor identity', async () => {
-    const transport = vi.fn().mockResolvedValue(
-      Response.json({
-        success: true,
-        data: { id: 'r', approvalStatus: 'REJECTED' },
-      }),
-    )
+    const transport = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({
+          success: true,
+          data: { id: 'r', approvalStatus: 'REJECTED' },
+        }),
+      )
     setHttpTransport(transport)
     expect(
       (await missionsApi.rejectMissionResult('r', '  Kiểm tra lại  '))

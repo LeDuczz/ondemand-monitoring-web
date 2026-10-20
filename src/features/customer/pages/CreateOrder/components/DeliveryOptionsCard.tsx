@@ -51,6 +51,7 @@ export function DeliveryOptionsCard({
       wanted.some((format, index) => format !== form.resultFormats[index])
     )
       update('resultFormats', wanted)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaTotals.images, mediaTotals.videos, form.resultFormats])
 
   function toggle<T extends string>(list: readonly T[], value: T): T[] {

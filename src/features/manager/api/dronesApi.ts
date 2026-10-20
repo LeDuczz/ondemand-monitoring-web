@@ -59,17 +59,11 @@ export const dronesApi = {
   },
 
   /** `POST /api/drones/{droneCode}/telemetry` [BE]. Send telemetry data. */
-  sendTelemetry(
-    droneCode: string,
-    data: TelemetryRequest,
-  ): Promise<DroneTelemetryResponse> {
-    return apiRequest<DroneTelemetryResponse>(
-      `/api/drones/${droneCode}/telemetry`,
-      {
-        method: 'POST',
-        body: data,
-      },
-    )
+  sendTelemetry(droneCode: string, data: TelemetryRequest): Promise<DroneTelemetryResponse> {
+    return apiRequest<DroneTelemetryResponse>(`/api/drones/${droneCode}/telemetry`, {
+      method: 'POST',
+      body: data,
+    })
   },
 
   /** `POST /api/drones/{droneCode}/preflight-checks` [BE]. Run standalone preflight check. */
@@ -80,44 +74,23 @@ export const dronesApi = {
   },
 
   /** `GET /api/drones/{droneCode}/media` [BE]. List drone media. */
-  listDroneMedia(
-    droneCode: string,
-    signal?: AbortSignal,
-  ): Promise<MediaAssetResponse[]> {
-    return apiRequest<MediaAssetResponse[]>(`/api/drones/${droneCode}/media`, {
-      signal,
-    })
+  listDroneMedia(droneCode: string, signal?: AbortSignal): Promise<MediaAssetResponse[]> {
+    return apiRequest<MediaAssetResponse[]>(`/api/drones/${droneCode}/media`, { signal })
   },
 
   /** `GET /api/drones/{droneCode}/media/{mediaId}` [BE]. Get drone media by ID. */
-  getDroneMedia(
-    droneCode: string,
-    mediaId: string,
-    signal?: AbortSignal,
-  ): Promise<MediaAssetResponse> {
-    return apiRequest<MediaAssetResponse>(
-      `/api/drones/${droneCode}/media/${mediaId}`,
-      { signal },
-    )
+  getDroneMedia(droneCode: string, mediaId: string, signal?: AbortSignal): Promise<MediaAssetResponse> {
+    return apiRequest<MediaAssetResponse>(`/api/drones/${droneCode}/media/${mediaId}`, { signal })
   },
 
   /** `DELETE /api/drones/{droneCode}/media/{mediaId}` [BE]. Delete drone media. */
   deleteDroneMedia(droneCode: string, mediaId: string): Promise<void> {
-    return apiRequest<void>(`/api/drones/${droneCode}/media/${mediaId}`, {
-      method: 'DELETE',
-    })
+    return apiRequest<void>(`/api/drones/${droneCode}/media/${mediaId}`, { method: 'DELETE' })
   },
 
   /** `GET /api/drones/{droneCode}/media/{mediaId}/file` [BE]. Get drone media file URL. */
-  getDroneMediaFile(
-    droneCode: string,
-    mediaId: string,
-    signal?: AbortSignal,
-  ): Promise<MediaResponse> {
-    return apiRequest<MediaResponse>(
-      `/api/drones/${droneCode}/media/${mediaId}/file`,
-      { signal },
-    )
+  getDroneMediaFile(droneCode: string, mediaId: string, signal?: AbortSignal): Promise<MediaResponse> {
+    return apiRequest<MediaResponse>(`/api/drones/${droneCode}/media/${mediaId}/file`, { signal })
   },
 
   /** `POST /api/drones/{droneCode}/images` [BE]. Upload image for drone. */

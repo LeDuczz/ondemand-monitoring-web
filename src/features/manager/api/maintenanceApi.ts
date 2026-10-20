@@ -27,12 +27,7 @@ function mapToTicket(item: BackendMaintenanceTicket): MaintenanceTicket {
   return {
     id: item.id,
     code: item.ticketCode ?? item.id,
-    title:
-      item.title ??
-      item.description ??
-      item.issueType ??
-      item.ticketCode ??
-      item.id,
+    title: item.title ?? item.description ?? item.issueType ?? item.ticketCode ?? item.id,
     status: (item.status || 'OPEN') as TicketStatus,
     priority: (item.severity || 'MEDIUM') as TicketSeverity,
     droneId: item.deviceId ?? '',
@@ -68,9 +63,10 @@ export const maintenanceApi = {
     if (options?.status) query['status'] = options.status
     if (options?.droneId) query['deviceId'] = options.droneId
 
-    const res = await apiRequest<
-      BackendMaintenanceTicket[] | { items: BackendMaintenanceTicket[] }
-    >('/api/maintenance-tickets', { query, signal: options?.signal })
+    const res = await apiRequest<BackendMaintenanceTicket[] | { items: BackendMaintenanceTicket[] }>(
+      '/api/maintenance-tickets',
+      { query, signal: options?.signal },
+    )
 
     const rawList = Array.isArray(res) ? res : res?.items || []
     const items = rawList
@@ -87,28 +83,19 @@ export const maintenanceApi = {
     description?: string
     priority?: TicketSeverity
   }): Promise<MaintenanceTicket> => {
-    const raw = await apiRequest<BackendMaintenanceTicket>(
-      '/api/maintenance-tickets',
-      {
-        method: 'POST',
-        body: data,
-      },
-    )
+    const raw = await apiRequest<BackendMaintenanceTicket>('/api/maintenance-tickets', {
+      method: 'POST',
+      body: data,
+    })
     return mapToTicket(raw)
   },
 
   /** `PATCH /api/maintenance-tickets/{id}/assign-staff` */
-  assignTechnician: async (
-    ticketId: string,
-    technicianId: string,
-  ): Promise<MaintenanceTicket> => {
-    const raw = await apiRequest<BackendMaintenanceTicket>(
-      `/api/maintenance-tickets/${ticketId}/assign-staff`,
-      {
-        method: 'PATCH',
-        body: { staffId: technicianId },
-      },
-    )
+  assignTechnician: async (ticketId: string, technicianId: string): Promise<MaintenanceTicket> => {
+    const raw = await apiRequest<BackendMaintenanceTicket>(`/api/maintenance-tickets/${ticketId}/assign-staff`, {
+      method: 'PATCH',
+      body: { staffId: technicianId },
+    })
     return mapToTicket(raw)
   },
 

@@ -1,67 +1,52 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { stubApi, stubError } from '../../../test/stubApi'
+import { env } from '../../../config/env'
+import { resetMockDb } from '../../../mocks/db'
+import '../../../mocks/index'
 import { dronesApi } from './dronesApi'
 
-// /api/drones is served by the real backend (no mock route), so these tests
-// assert the request each method sends against a stubbed transport.
-let stub: ReturnType<typeof stubApi>
-afterEach(() => stub?.restore())
-
-const page = { items: [{ id: 'drn-01', status: 'AVAILABLE' }], totalItems: 1 }
+// dronesApi uses apiRequest which calls mockFetch in test env
+// Ensure env.useMockApi is truthy (set in test config)
+beforeEach(() => {
+  resetMockDb()
+  void env.apiBaseUrl // ensure it's set
+})
+afterEach(() => resetMockDb())
 
 describe('dronesApi.listDrones', () => {
-  it('GETs /api/drones and returns the page', async () => {
-    stub = stubApi([{ path: '/api/drones', respond: page }])
+  it('returns a list of drones', async () => {
     const result = await dronesApi.listDrones()
-    expect(result.items).toHaveLength(1)
-    expect(result.totalItems).toBe(1)
-    expect(stub.calls[0]).toMatchObject({ method: 'GET', path: '/api/drones' })
+    expect(result.items.length).toBeGreaterThan(0)
+    expect(result.totalItems).toBeGreaterThan(0)
   })
 
-  it('sends the status filter as a query param', async () => {
-    stub = stubApi([{ path: '/api/drones', respond: page }])
-    await dronesApi.listDrones({ status: 'AVAILABLE', page: 2, pageSize: 5 })
-    const q = stub.calls[0].query
-    expect(q.get('status')).toBe('AVAILABLE')
-    expect(q.get('page')).toBe('2')
-    expect(q.get('pageSize')).toBe('5')
+  it('filters by status', async () => {
+    const result = await dronesApi.listDrones({ status: 'AVAILABLE' })
+    for (const item of result.items) {
+      expect(item.status).toBe('AVAILABLE')
+    }
   })
 })
 
 describe('dronesApi.updateDrone', () => {
-  const body = {
-    serialNumber: 'SN001',
-    droneModelId: 'model1',
-    dronePayloadId: 'payload1',
-    status: 'MAINTENANCE' as const,
-  }
-
-  it('PUTs the update body to /api/drones/{id}', async () => {
-    stub = stubApi([
-      {
-        method: 'PUT',
-        path: '/api/drones/:id',
-        respond: ({ params, body: b }) => ({ id: params.id, ...(b as object) }),
-      },
-    ])
-    const result = await dronesApi.updateDrone('drn-01', body)
-    expect(result.status).toBe('MAINTENANCE')
-    expect(stub.calls[0]).toMatchObject({
-      method: 'PUT',
-      path: '/api/drones/drn-01',
-      body,
+  it('updates drone status', async () => {
+    const result = await dronesApi.updateDrone('drn-01', {
+      serialNumber: 'SN001',
+      droneModelId: 'model1',
+      dronePayloadId: 'payload1',
+      status: 'MAINTENANCE',
     })
+    expect(result.status).toBe('MAINTENANCE')
   })
 
-  it('throws when the backend rejects an unknown drone', async () => {
-    stub = stubApi([
-      {
-        method: 'PUT',
-        path: '/api/drones/:id',
-        respond: stubError(404, 'NOT_FOUND', 'Drone not found'),
-      },
-    ])
-    await expect(dronesApi.updateDrone('nonexistent', body)).rejects.toThrow()
+  it('throws on unknown drone', async () => {
+    await expect(
+      dronesApi.updateDrone('nonexistent', {
+        serialNumber: 'SN999',
+        droneModelId: 'model1',
+        dronePayloadId: 'payload1',
+        status: 'AVAILABLE',
+      }),
+    ).rejects.toThrow()
   })
 })

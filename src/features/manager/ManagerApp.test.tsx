@@ -83,10 +83,25 @@ describe('ManagerApp', () => {
       expect(
         screen.getByRole('link', { name: /Đơn hàng/ }),
       ).toHaveTextContent('6')
+      expect(
+        screen.getByRole('link', { name: /Media và giao kết quả/ }),
+      ).toHaveTextContent('6')
     })
   })
 
-  it('renders the real OrderQueuePage (MNG-02) for #portal/manager/orders', async () => {
+  it('renders the real MediaPage (MNG-11) for #portal/manager/media', async () => {
+    vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
+    window.location.hash = '#portal/manager/media'
+    render(<ManagerApp />)
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByText('Media và giao kết quả').length,
+      ).toBeGreaterThan(0),
+    )
+  })
+
+  it('renders the real QueuePage (MNG-02) for #portal/manager/orders', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     vi.spyOn(ordersApi, 'getQueue').mockResolvedValue([])
     window.location.hash = '#portal/manager/orders'
@@ -97,7 +112,7 @@ describe('ManagerApp', () => {
     )
   })
 
-  it('renders the real MissionCreatePage (MNG-04) for #portal/manager/orders/:id/mission', async () => {
+  it('renders the real CreateMissionPage (MNG-04) for #portal/manager/orders/:id/mission', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     const brief: OrderMissionBrief = {
       id: 'ord-2609-0153',
@@ -123,7 +138,7 @@ describe('ManagerApp', () => {
     )
   })
 
-  it('renders the real MissionDispatchPage (MNG-05) for #portal/manager/missions/:id/dispatch', async () => {
+  it('renders the real DispatchPage (MNG-05) for #portal/manager/missions/:id/dispatch', async () => {
     vi.spyOn(managerApi, 'getDashboard').mockResolvedValue(sampleData)
     const { missionsApi } = await import('./api/missionsApi')
     vi.spyOn(missionsApi, 'getMission').mockResolvedValue({

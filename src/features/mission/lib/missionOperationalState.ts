@@ -1,22 +1,3 @@
-import { defineMessages, getLanguage } from '../../../shared/i18n'
-
-const stopMessages = defineMessages({
-  vi: {
-    cancelled: 'Đã hủy',
-    failed: 'Dừng an toàn cần xử lý lại',
-    readyToCancel: 'Sẵn sàng hủy',
-    confirmed: 'Đã xác nhận an toàn',
-    stopping: 'Đang dừng an toàn',
-  },
-  en: {
-    cancelled: 'Cancelled',
-    failed: 'Safe stop needs retry',
-    readyToCancel: 'Ready to cancel',
-    confirmed: 'Safety confirmed',
-    stopping: 'Safe stop in progress',
-  },
-})
-
 /** Safe-stop overlays presentation, without changing the persisted Mission lifecycle. */
 export type MissionStopMetadata = {
   safeStopStatus?: string | null
@@ -46,18 +27,16 @@ export function missionStopLabel(
     | undefined,
 ): string | null {
   if (!mission) return null
-  const t = stopMessages[getLanguage()]
-  if ((mission.backendStatus ?? mission.status) === 'CANCELLED')
-    return t.cancelled
+  if ((mission.backendStatus ?? mission.status) === 'CANCELLED') return 'Đã hủy'
   if (!missionHasSafeStop(mission)) return null
-  if (mission.safeStopStatus === 'FAILED') return t.failed
+  if (mission.safeStopStatus === 'FAILED') return 'Dừng an toàn cần xử lý lại'
   if (
     mission.safeStopCleanedAt ||
     mission.safeStopStatus === 'READY_FOR_CANCELLATION'
   )
-    return t.readyToCancel
-  if (mission.safeStopConfirmedAt) return t.confirmed
-  return t.stopping
+    return 'Sẵn sàng hủy'
+  if (mission.safeStopConfirmedAt) return 'Đã xác nhận an toàn'
+  return 'Đang dừng an toàn'
 }
 
 export function maySendFlightCommand(

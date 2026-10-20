@@ -21,11 +21,111 @@ async function call(
   return { status: response.status, payload: await response.json() }
 }
 
+const validRequest = {
+  scheduledStart: '2026-09-26T08:00:00+07:00',
+  scheduledEnd: '2026-09-26T09:00:00+07:00',
+  flightPlan: {
+    planType: 'ORBIT',
+    centerLat: 10.77,
+    centerLon: 106.7,
+    radiusM: 200,
+    altitudeM: 60,
+    speedMs: 8,
+    estimatedDurationSec: 600,
+    generatedBy: 'SYSTEM',
+  },
+  waypoints: [{ seq: 1, action: 'TAKEOFF', lat: 10.77, lon: 106.7, altM: 0 }],
+}
+
 beforeEach(() => {
   resetMockDb()
 })
 afterEach(() => {
   resetMockDb()
+})
+
+describe('POST /api/orders/{id}/missions', () => {
+  it('404s for an unknown order', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/orders/nope/missions',
+      validRequest,
+    )
+    expect(status).toBe(404)
+  })
+
+  it('409s ORDER_NOT_APPROVED for a PENDING order', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0157/missions',
+      validRequest,
+    )
+    expect(status).toBe(409)
+    expect(payload.code).toBe('ORDER_NOT_APPROVED')
+  })
+
+  it('400s when altitude exceeds the no-fly ceiling', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0153/missions',
+      {
+        ...validRequest,
+        flightPlan: { ...validRequest.flightPlan, altitudeM: 200 },
+      },
+    )
+    expect(status).toBe(400)
+    expect(payload.errors.altitudeM).toBeDefined()
+  })
+
+  it('422s FLIGHT_PLAN_GENERATION_FAILED when radiusM exceeds the failure limit', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0153/missions',
+      {
+        ...validRequest,
+        flightPlan: { ...validRequest.flightPlan, radiusM: 900 },
+      },
+    )
+    expect(status).toBe(422)
+    expect(payload.code).toBe('FLIGHT_PLAN_GENERATION_FAILED')
+  })
+
+  it('creates the first mission attempt after staff schedules an approved order', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approve')
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0157/missions',
+      validRequest,
+    )
+    expect(status).toBe(201)
+    expect(payload.data.missionCode).toBe('MSN-2609-0157-1')
+    expect(payload.data.flightPlan.planType).toBe('ORBIT')
+  })
+
+  it('starts a new attempt (…-2) when the order mission already has a plan', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/orders/ord-2609-0153/missions',
+      validRequest,
+    )
+    expect(status).toBe(201)
+    expect(payload.data.missionCode).toBe('MSN-2609-0153-2')
+  })
+})
+
+describe('GET /api/missions/{id}', () => {
+  it('resolves the seeded demo mission by id or missionCode', async () => {
+    const byId = await call('GET', '/api/missions/msn-2609-0153-1')
+    expect(byId.status).toBe(200)
+    expect(byId.payload.data.orderCode).toBe('ORD-2609-0153')
+    const byCode = await call('GET', '/api/missions/MSN-2609-0153-1')
+    expect(byCode.status).toBe(200)
+  })
+
+  it('404s for an unknown mission', async () => {
+    const { status } = await call('GET', '/api/missions/does-not-exist')
+    expect(status).toBe(404)
+  })
 })
 
 describe('GET /api/missions/{id}/resource-suggestions', () => {
@@ -58,6 +158,18 @@ describe('GET /api/missions/{id}/resource-suggestions', () => {
     expect(payload.data.feasible).toBe(false)
     expect(payload.data.topDrones).toHaveLength(0)
     expect(payload.data.alternatives).toHaveLength(3)
+  })
+
+  it('falls back to default suggestions for a mission with no seeded data', async () => {
+    await call('POST', '/api/orders/ord-2609-0157/approve')
+    await call('POST', '/api/orders/ord-2609-0157/missions', validRequest)
+    const { status, payload } = await call(
+      'GET',
+      '/api/missions/msn-2609-0157-1/resource-suggestions',
+    )
+    expect(status).toBe(200)
+    expect(payload.data.topDrones.length).toBeGreaterThan(0)
+    expect(payload.data.topOperators.length).toBeGreaterThan(0)
   })
 })
 
@@ -170,6 +282,35 @@ describe('POST /api/missions/{id}/assignments/{aid}/release', () => {
   })
 })
 
+// ── P6: new APIs ──────────────────────────────────────────────────────────
+
+describe('GET /api/missions', () => {
+  it('returns all missions when no filters given', async () => {
+    const { status, payload } = await call('GET', '/api/missions')
+    expect(status).toBe(200)
+    expect(Array.isArray(payload.data.items)).toBe(true)
+    expect(payload.data.items.length).toBeGreaterThan(0)
+  })
+
+  it('filters by status', async () => {
+    const { payload } = await call('GET', '/api/missions?status=IN_FLIGHT')
+    const items: any[] = payload.data.items
+    expect(items.every((m: any) => m.status === 'IN_FLIGHT')).toBe(true)
+  })
+
+  it('filters by date range', async () => {
+    const { payload } = await call(
+      'GET',
+      '/api/missions?from=2026-09-21&to=2026-09-27',
+    )
+    const items: any[] = payload.data.items
+    // MSN-2609-0142-1 (24/09) should be included
+    expect(items.some((m: any) => m.missionCode === 'MSN-2609-0142-1')).toBe(
+      true,
+    )
+  })
+})
+
 describe('PATCH /api/missions/{id}/schedule', () => {
   it('400s when body is missing', async () => {
     const { status } = await call(
@@ -246,5 +387,26 @@ describe('POST /api/missions/{id}/incidents', () => {
       '/api/missions/msn-2609-0142-1/live',
     )
     expect(livePayload.data.activeIncidents).toHaveLength(1)
+  })
+})
+
+describe('POST /api/missions/{id}/cancel', () => {
+  it('400s when reason is empty', async () => {
+    const { status } = await call(
+      'POST',
+      '/api/missions/msn-2609-0142-1/cancel',
+      { reason: '' },
+    )
+    expect(status).toBe(400)
+  })
+
+  it('cancels the mission', async () => {
+    const { status, payload } = await call(
+      'POST',
+      '/api/missions/msn-2609-0142-1/cancel',
+      { reason: 'Thời tiết xấu' },
+    )
+    expect(status).toBe(200)
+    expect(payload.data.status).toBe('CANCELLED')
   })
 })

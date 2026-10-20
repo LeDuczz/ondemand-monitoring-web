@@ -7,7 +7,6 @@ import { LanguageToggle } from '../../shared/components/LanguageToggle'
 import { useI18n } from '../../shared/i18n'
 import { adminHref, type AdminRoute, type AdminScreen } from './routes'
 import { adminLayoutMessages } from './AdminLayout.messages'
-import '../../shared/components/PortalShell/portalShell.css'
 import './admin.css'
 
 type NavItemKey = keyof typeof adminLayoutMessages.vi.navItems
@@ -72,29 +71,26 @@ export function AdminLayout({
   const activeKey = activeNavKey[route.screen]
 
   return (
-    <div className="odm odm-adm odm-shell-root">
-      <div className="odm-shell-shell">
+    <div className="odm odm-adm">
+      <div className="odm-adm-shell">
         <nav
           aria-label={t.nav}
-          className={`odm-shell-side ${menuOpen ? 'is-open' : ''}`}
+          className={`odm-adm-side ${menuOpen ? 'is-open' : ''}`}
         >
-          <a
-            className="odm-shell-brand"
-            href={adminHref({ screen: 'accounts' })}
-          >
+          <a className="odm-adm-brand" href={adminHref({ screen: 'accounts' })}>
             <img
               src="/images/logo-new.png"
               alt="OnDemand Monitor"
-              className="odm-shell-brand-mark"
+              className="odm-adm-brand-mark"
             />
-            <span className="odm-shell-brand-name">
-              <span className="odm-shell-brand-primary">OnDemand</span>
-              <span className="odm-shell-brand-accent">Monitor</span>
+            <span className="odm-adm-brand-name">
+              <span className="odm-adm-brand-primary">OnDemand</span>
+              <span className="odm-adm-brand-accent">Monitor</span>
             </span>
           </a>
 
-          <div className="odm-shell-nav-scroll">
-            <div className="odm-shell-navg">{t.menu}</div>
+          <div className="odm-adm-nav-scroll">
+            <div className="odm-adm-navg">{t.menu}</div>
             {NAV_ITEMS.map((item) => {
               const isActive = item.key === activeKey
               const badge =
@@ -105,7 +101,7 @@ export function AdminLayout({
                 <a
                   key={item.key}
                   href={adminHref(item.route)}
-                  className={`odm-shell-navi ${isActive ? 'is-active' : ''}`}
+                  className={`odm-adm-navi ${isActive ? 'is-active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setMenuOpen(false)}
                 >
@@ -116,58 +112,56 @@ export function AdminLayout({
                     aria-hidden="true"
                   />
                   <span>{t.navItems[item.key]}</span>
-                  {badge ? (
-                    <span className="odm-shell-navc">{badge}</span>
-                  ) : null}
+                  {badge ? <span className="odm-adm-navc">{badge}</span> : null}
                 </a>
               )
             })}
           </div>
 
-          <div className="odm-shell-user">
-            <span className="odm-shell-avatar" aria-hidden="true">
+          <div className="odm-adm-user">
+            <span className="odm-adm-avatar" aria-hidden="true">
               {initialsOf(user?.fullName)}
             </span>
-            <span className="odm-shell-user-text">
-              <span className="odm-shell-user-name">
+            <span className="odm-adm-user-text">
+              <span className="odm-adm-user-name">
                 {user?.fullName ?? t.admin}
               </span>
-              <span className="odm-shell-user-email">{user?.email ?? ''}</span>
+              <span className="odm-adm-user-email">{user?.email ?? ''}</span>
             </span>
           </div>
-          <LogoutButton className="odm-shell-logout" />
+          <LogoutButton className="odm-adm-logout" />
         </nav>
 
         {menuOpen ? (
           <button
             type="button"
-            className="odm-shell-scrim"
+            className="odm-adm-scrim"
             aria-label={t.closeNav}
             onClick={() => setMenuOpen(false)}
           />
         ) : null}
 
-        <div className="odm-shell-main">
-          <header className="odm-shell-topbar">
+        <div className="odm-adm-main">
+          <header className="odm-adm-topbar">
             <button
               type="button"
-              className="odm-shell-menu-toggle"
+              className="odm-adm-menu-toggle"
               aria-label={t.openNav}
               onClick={() => setMenuOpen(true)}
             >
               ☰
             </button>
-            <div className="odm-shell-breadcrumb">{breadcrumb}</div>
-            <div className="odm-shell-topbar-spacer" />
-            <div className="odm-shell-search">
+            <div className="odm-adm-breadcrumb">{breadcrumb}</div>
+            <div className="odm-adm-topbar-spacer" />
+            <div className="odm-adm-search">
               <Icon
                 name="search"
                 width={15}
                 height={15}
-                className="odm-shell-search-icon"
+                className="odm-adm-search-icon"
               />
               <input
-                className="odm-inp odm-shell-search-input"
+                className="odm-inp odm-adm-search-input"
                 type="search"
                 aria-label={t.search}
                 placeholder={t.searchPlaceholder}
@@ -184,15 +178,15 @@ export function AdminLayout({
             </button>
             <button
               type="button"
-              className="odm-btn odm-btn-gh odm-btn-ic1 odm-shell-bell"
+              className="odm-btn odm-btn-gh odm-btn-ic1 odm-adm-bell"
               aria-label={t.notifications}
             >
               <Icon name="bell" width={17} height={17} />
-              <span className="odm-shell-bell-dot" aria-hidden="true" />
+              <span className="odm-adm-bell-dot" aria-hidden="true" />
             </button>
           </header>
-          <main className="odm-shell-content">
-            <div className="odm-shell-content-inner">{children}</div>
+          <main className="odm-adm-content">
+            <div className="odm-adm-content-inner">{children}</div>
           </main>
         </div>
       </div>

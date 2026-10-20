@@ -2,7 +2,7 @@ import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { OrderDetailView } from '../../../lib/orders/types'
 import { localizeDeliverableName } from '../../../lib/i18n/catalogNames'
-import { OrderIcon, type OrderIconName } from '../../../../manager/components/common/OrderIcon'
+import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
 import { CardTitle } from './CardTitle'
 import { orderDeliverablesMessages } from './DeliverablesCard.messages'
 

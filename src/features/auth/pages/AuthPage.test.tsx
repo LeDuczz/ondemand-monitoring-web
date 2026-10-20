@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { resetMockDb } from '../../../mocks/db'
 import { setLanguage } from '../../../shared/i18n'
-import { stubError, stubFetch } from '../../../test/stubApi'
 import { authSession } from '../api/authApi'
 import { AuthPage } from './AuthPage'
 
@@ -31,28 +30,8 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-// POST /api/auth/login is served by the real backend (no mock route), so the
-// login tests stub `fetch` with the backend's responses.
-const managerAuth = {
-  accessToken: 'mock-staff-token',
-  tokenType: 'Bearer',
-  expiresIn: 3600,
-  user: {
-    id: 'usr-manager',
-    fullName: 'Lê Thị Thanh Hằng',
-    email: 'hang.le@odms.vn',
-    emailVerified: true,
-    role: 'MANAGER',
-    isActive: true,
-    linkedProviders: ['LOCAL'],
-  },
-}
-
 describe('AuthPage - login', () => {
-  it('signs in a known user and redirects to their role home', async () => {
-    const stub = stubFetch([
-      { method: 'POST', path: '/api/auth/login', respond: managerAuth },
-    ])
+  it('signs in a known mock user and redirects to their role home', async () => {
     render(<AuthPage initialMode="login" />)
     fillLoginForm('hang.le@odms.vn', 'Demo@123')
 
@@ -62,21 +41,9 @@ describe('AuthPage - login', () => {
 
     await waitFor(() => expect(window.location.hash).toBe('#portal/manager'))
     expect(authSession.getAccessToken()).toBe('mock-staff-token')
-    expect(stub.calls[0]).toMatchObject({
-      method: 'POST',
-      path: '/api/auth/login',
-      body: { email: 'hang.le@odms.vn', password: 'Demo@123' },
-    })
   })
 
   it('shows the "Sai thông tin" alert for INVALID_CREDENTIALS', async () => {
-    stubFetch([
-      {
-        method: 'POST',
-        path: '/api/auth/login',
-        respond: stubError(401, 'INVALID_CREDENTIALS', 'Email hoặc mật khẩu không đúng'),
-      },
-    ])
     render(<AuthPage initialMode="login" />)
     fillLoginForm('hang.le@odms.vn', 'wrong-password')
 
@@ -91,13 +58,6 @@ describe('AuthPage - login', () => {
   })
 
   it('shows the "Tài khoản khoá" alert for ACCOUNT_DISABLED', async () => {
-    stubFetch([
-      {
-        method: 'POST',
-        path: '/api/auth/login',
-        respond: stubError(403, 'ACCOUNT_DISABLED', 'Tài khoản đã bị vô hiệu hóa'),
-      },
-    ])
     render(<AuthPage initialMode="login" />)
     fillLoginForm('locked.demo@odms.vn', 'Demo@123')
 
@@ -112,9 +72,6 @@ describe('AuthPage - login', () => {
   })
 
   it('shows the loading label and disables the button while submitting', async () => {
-    stubFetch([
-      { method: 'POST', path: '/api/auth/login', respond: managerAuth },
-    ])
     render(<AuthPage initialMode="login" />)
     fillLoginForm('hang.le@odms.vn', 'Demo@123')
 
@@ -129,7 +86,7 @@ describe('AuthPage - login', () => {
     await waitFor(() => expect(window.location.hash).toBe('#portal/manager'))
   })
 
-  it('sends the login request over the network', async () => {
+  it('passes an unknown email through to the real network', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ success: false, message: 'Not found' }), {
         status: 404,

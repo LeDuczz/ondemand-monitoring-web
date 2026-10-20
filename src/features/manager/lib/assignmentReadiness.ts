@@ -1,20 +1,4 @@
 import type { MissionStaffRole } from '../../mission/types/mission'
-import { defineMessages, getLanguage } from '../../../shared/i18n'
-
-const readinessMessages = defineMessages({
-  vi: {
-    missingStaff: 'Thiếu nhân sự',
-    noDevice: 'Chưa gán thiết bị',
-    awaitingConfirm: 'Chờ xác nhận phân công',
-    assigned: 'Đã phân công nguồn lực',
-  },
-  en: {
-    missingStaff: 'Staff missing',
-    noDevice: 'No device assigned',
-    awaitingConfirm: 'Awaiting assignment confirmation',
-    assigned: 'Resources assigned',
-  },
-})
 
 export const requiredAssignmentRoles: MissionStaffRole[] = [
   'PILOT',
@@ -53,16 +37,15 @@ export function assignmentReadiness(mission: AssignmentSnapshot) {
     mission.status !== 'RESOURCE_ASSIGNING' && mission.status !== 'CREATED'
   const complete = !missingRoles.length && device && submitted
   const step = missingRoles.length ? 'staff' : !device ? 'device' : 'confirm'
-  const t = readinessMessages[getLanguage()]
   const label = !setupState
     ? null
     : missingRoles.length
-      ? t.missingStaff
+      ? 'Thiếu nhân sự'
       : !device
-        ? t.noDevice
+        ? 'Chưa gán thiết bị'
         : !submitted
-          ? t.awaitingConfirm
-          : t.assigned
+          ? 'Chờ xác nhận phân công'
+          : 'Đã phân công nguồn lực'
   return {
     missingRoles,
     device,

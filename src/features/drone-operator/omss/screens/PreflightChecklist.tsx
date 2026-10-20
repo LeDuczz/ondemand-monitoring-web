@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n'
 import { preflightChecklistMessages } from '../i18n/preflightChecklist'
-import type { CheckItem } from '../../types/omss'
+import type { CheckItem } from '../types'
 
 interface Props {
   checklist: CheckItem[]

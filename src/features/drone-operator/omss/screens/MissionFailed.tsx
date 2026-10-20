@@ -2,7 +2,7 @@ import { useI18n } from '../../../../shared/i18n'
 import { getDroneStatusLabel } from '../../../../shared/lib/statusTone'
 import type { DroneStatus } from '../../../../shared/types/domain'
 import { missionFailedMessages } from '../i18n/missionFailed'
-import type { Mission, Drone } from '../../types/omss'
+import type { Mission, Drone } from '../types'
 
 interface Props {
   mission: Mission

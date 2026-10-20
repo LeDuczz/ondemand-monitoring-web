@@ -5,7 +5,7 @@ import {
 } from '../../../media/api/operatorMediaApi'
 import { useI18n } from '../../../../shared/i18n'
 import { mediaUploadMessages } from '../i18n/mediaUpload'
-import type { Mission } from '../../types/omss'
+import type { Mission } from '../types'
 
 interface Props {
   mission: Mission

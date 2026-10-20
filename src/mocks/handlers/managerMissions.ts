@@ -1,18 +1,21 @@
-// Mock handlers for MNG-04 through MNG-07 — only endpoints the real backend
-// does NOT serve (routes present in the BE Swagger were removed):
+// Mock handlers for MNG-04 through MNG-07. Endpoints:
+//   POST   /api/orders/{id}/missions                      [BRIEF C4 = TK]
+//   GET    /api/missions?from=&to=&status=                [TK]
+//   GET    /api/missions/{id}                             [BE]
 //   GET    /api/missions/{id}/resource-suggestions        [BRIEF C4]
 //   PATCH  /api/missions/{id}/schedule                   [ĐỀ XUẤT]
 //   GET    /api/missions/{id}/live                        [BRIEF C4]
 //   POST   /api/missions/{id}/incidents                  [ĐỀ XUẤT]
-//   POST   /api/missions/{id}/retry                      [ĐỀ XUẤT]
-//   POST   /api/missions/{id}/assign-drone?droneId=       [legacy]
-//   POST   /api/missions/{id}/assign-operator?operatorId= [legacy]
+//   POST   /api/missions/{id}/cancel                     [ĐỀ XUẤT]
+//   POST   /api/missions/{id}/assign-drone?droneId=       [BE]
+//   POST   /api/missions/{id}/assign-operator?operatorId= [BE]
 //   POST   /api/missions/{id}/assignments/{aid}/release   [BRIEF C4 = TK]
 import type {
   Mission,
   ResourceSuggestions,
 } from '../../features/manager/types/missions'
 import type { MissionStatus } from '../../shared/types/domain'
+import { NO_FLY_CEILING_M } from '../../features/manager/lib/missionPolicy'
 import { hasScheduleConflict } from '../../features/manager/lib/schedule'
 import { createCollection } from '../db'
 import {
@@ -26,11 +29,18 @@ import resourceSuggestionsSeed from '../data/resource-suggestions.json'
 import dronesSeed from '../data/drones.json'
 import operatorsSeed from '../data/operators.json'
 import calendarSeed from '../data/missions-calendar.json'
+import { findOrder } from './ordersStore'
 import {
   findMissionById,
+  findMissionsForOrder,
   missions,
+  newMinimalMission,
   type StoredMission,
 } from './missionsStore'
+
+// PROPOSED deterministic trigger for the 422 FLIGHT_PLAN_GENERATION_FAILED
+// state [TK MNG-04] — no source gives a real generator failure condition.
+const FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M = 800
 
 type SeedDrone = {
   id: string
@@ -115,8 +125,122 @@ function toMissionDto(m: StoredMission): Mission {
   }
 }
 
+// P6: `GET /api/missions/pending-assignment` [BE] — maps a mission (from
+// either the P4/P5 store or the calendar store) to the BE `MissionResponse`
+// DTO shape. Calendar missions have no BE-only fields seeded (orderTitle,
+// customerName, etc.) — those fall back to null/derived values below rather
+// than being invented.
+function toMissionResponse(m: StoredMission | CalendarMission) {
+  const asStored = m as Partial<StoredMission> &
+    Partial<{
+      orderTitle: string | null
+      customerName: string | null
+      droneCode: string | null
+      latitude: number | null
+      longitude: number | null
+      address: string | null
+      startedAt: string | null
+      completedAt: string | null
+      description: string | null
+      failureReason: string | null
+      rejectionReason: string | null
+      mediaType: 'IMAGE' | 'VIDEO' | 'STREAMING' | null
+      plan: unknown
+      preflightRetryCount: number
+      preflightPassed: boolean
+      preflightFaultType: string | null
+      preflightFailureReason: string | null
+      preflightCheckedAt: string | null
+    }>
+  const calendarFields = m as Partial<CalendarMission>
+  const droneId = asStored.droneId ?? null
+  const drone = droneId
+    ? drones.find((item) => item.id === droneId || item.code === droneId)
+    : undefined
+  const droneCode = asStored.droneCode ?? calendarFields.droneCode ?? drone?.code ?? null
+  const droneName = calendarFields.droneName ?? drone?.name ?? null
+  return {
+    id: m.id,
+    orderId: m.orderId,
+    orderTitle:
+      asStored.orderTitle ?? calendarFields.serviceLabel ?? m.orderCode,
+    customerName: asStored.customerName ?? null,
+    missionCode: m.missionCode,
+    status: m.status,
+    operatorId: m.operatorId,
+    droneId,
+    deviceId: droneId,
+    deviceCode: droneCode,
+    droneCode,
+    droneName,
+    latitude: asStored.latitude ?? m.centerLat,
+    longitude: asStored.longitude ?? m.centerLon,
+    address: asStored.address ?? m.addressText,
+    scheduledStartAt: m.scheduledStartAt,
+    startedAt: asStored.startedAt ?? null,
+    completedAt: asStored.completedAt ?? null,
+    description: asStored.description ?? null,
+    failureReason: asStored.failureReason ?? null,
+    rejectionReason: asStored.rejectionReason ?? null,
+    mediaType: asStored.mediaType ?? null,
+    plan: asStored.plan ?? null,
+    preflightRetryCount: asStored.preflightRetryCount ?? 0,
+    preflightPassed: asStored.preflightPassed ?? false,
+    preflightFaultType: asStored.preflightFaultType ?? null,
+    preflightFailureReason: asStored.preflightFailureReason ?? null,
+    preflightCheckedAt: asStored.preflightCheckedAt ?? null,
+  }
+}
 
 registerMockRoutes([
+  // ── P6: pending resource assignment queue [BE] ──────────────────────────
+  {
+    method: 'GET',
+    path: '/api/missions/pending-assignment',
+    handler: () => {
+      const all: (StoredMission | CalendarMission)[] = [
+        ...missions,
+        ...calendarMissions,
+      ]
+      const items = all
+        .filter(
+          (m) => m.status === 'CREATED' || m.status === 'RESOURCE_ASSIGNING',
+        )
+        .map(toMissionResponse)
+      return ok({ items })
+    },
+  },
+
+  // ── MNG-06/08: list missions in a date range [TK] ──────────────────────
+  {
+    method: 'GET',
+    path: '/api/missions',
+    handler: ({ query }) => {
+      const from = query.get('from')
+      const to = query.get('to')
+      const statusFilter = query.get('status')
+
+      // Merge both stores; calendar missions include richer display fields.
+      const all: (StoredMission | CalendarMission)[] = [
+        ...missions,
+        ...calendarMissions,
+      ]
+
+      const items = all.filter((m) => {
+        if (statusFilter && m.status !== statusFilter) return false
+        if (!from && !to) return true
+        const start = m.scheduledStartAt
+        const end = m.scheduledEndAt
+        if (!start) return false
+        if (from && end && end < from) return false
+        if (to && start && start > `${to}T23:59:59`) return false
+        return true
+      })
+
+      return ok({ items })
+    },
+  },
+
   // ── MNG-06: update mission schedule [ĐỀ XUẤT] ─────────────────────────
   {
     method: 'PATCH',
@@ -312,6 +436,114 @@ registerMockRoutes([
     },
   },
 
+  // ── MNG-07: cancel a mission [ĐỀ XUẤT — field cancellation_reason BRIEF A6] ──
+  {
+    method: 'POST',
+    path: '/api/missions/:id/cancel',
+    handler: ({ params, body }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+
+      const req = (body ?? {}) as { reason?: string }
+      if (!req.reason?.trim()) {
+        return fail(400, 'VALIDATION_ERROR', 'Yêu cầu nhập lý do huỷ', {
+          reason: 'Bắt buộc',
+        })
+      }
+
+      mission.status = 'CANCELLED'
+      return ok(toMissionDto(mission), 'Mission đã bị huỷ')
+    },
+  },
+
+  // ── MNG-04/05 routes (P5, unchanged) ──────────────────────────────────
+  {
+    method: 'POST',
+    path: '/api/orders/:id/missions',
+    handler: ({ params, body }) => {
+      const order = findOrder(params.id)
+      if (!order) return fail(404, 'NOT_FOUND', 'Không tìm thấy đơn')
+      if (order.status !== 'APPROVED') {
+        return fail(
+          409,
+          'ORDER_NOT_APPROVED',
+          'Đơn chưa được duyệt, chưa thể tạo mission.',
+        )
+      }
+
+      const req = (body ?? {}) as {
+        scheduledStart?: string
+        scheduledEnd?: string
+        flightPlan?: {
+          planType: 'ORBIT' | 'GRID' | 'POINT'
+          centerLat: number
+          centerLon: number
+          radiusM: number
+          altitudeM: number
+          speedMs: number | null
+          estimatedDurationSec: number
+          generatedBy: 'SYSTEM' | 'MANUAL'
+        }
+        waypoints?: StoredMission['waypoints']
+      }
+
+      if (!req.scheduledStart || !req.scheduledEnd) {
+        return fail(
+          400,
+          'VALIDATION_ERROR',
+          'Thiếu thông tin lịch bay',
+          { scheduledStart: 'Lịch bay là bắt buộc' },
+        )
+      }
+
+      if (req.flightPlan && req.flightPlan.altitudeM > NO_FLY_CEILING_M) {
+        return fail(
+          400,
+          'VALIDATION_ERROR',
+          `Độ cao ${req.flightPlan.altitudeM} m vượt trần cấm bay ${NO_FLY_CEILING_M} m.`,
+          { altitudeM: `Không được vượt quá ${NO_FLY_CEILING_M} m` },
+        )
+      }
+
+      if (req.flightPlan && req.flightPlan.radiusM > FLIGHT_PLAN_RADIUS_FAILURE_LIMIT_M) {
+        return fail(
+          422,
+          'FLIGHT_PLAN_GENERATION_FAILED',
+          'Dịch vụ tạo đường bay báo lỗi cho khu vực này. Bạn có thể nhập waypoint thủ công.',
+        )
+      }
+
+      // If older seed data already has a bare CREATED mission without a
+      // plan, attach this request's plan/schedule to it. Otherwise the staff
+      // scheduling flow creates the first mission attempt here.
+      const existing = findMissionsForOrder(order.id).find(
+        (m) => m.status === 'CREATED' && !m.flightPlan,
+      )
+      const mission = existing ?? newMinimalMission(order.id, order.code)
+      if (!existing) missions.push(mission)
+
+      mission.scheduledStartAt = req.scheduledStart
+      mission.scheduledEndAt = req.scheduledEnd
+      if (req.flightPlan) {
+        mission.flightPlan = req.flightPlan
+        mission.waypoints = req.waypoints ?? []
+        mission.centerLat = req.flightPlan.centerLat
+        mission.centerLon = req.flightPlan.centerLon
+        mission.radiusM = req.flightPlan.radiusM
+      }
+
+      return created(toMissionDto(mission), 'Đã tạo flight plan cho mission')
+    },
+  },
+  {
+    method: 'GET',
+    path: '/api/missions/:id',
+    handler: ({ params }) => {
+      const mission = findAnyMission(params.id)
+      if (!mission) return fail(404, 'NOT_FOUND', 'Không tìm thấy mission')
+      return ok(toMissionDto(mission))
+    },
+  },
   {
     method: 'GET',
     path: '/api/missions/:id/resource-suggestions',
@@ -403,9 +635,9 @@ registerMockRoutes([
       return ok(response)
     },
   },
-  // `/assign-drone` is the legacy query-string form (the current BE contract,
-  // `/assign-device`, is served by the real backend).
-  ...['/api/missions/:id/assign-drone'].map(
+  // `/assign-device` is the current BE contract (JSON body); `/assign-drone`
+  // is the legacy query-string form kept for older callers.
+  ...['/api/missions/:id/assign-device', '/api/missions/:id/assign-drone'].map(
     (path) => ({
     method: 'POST' as const,
     path,
@@ -445,8 +677,8 @@ registerMockRoutes([
     },
     }),
   ),
-  // `/assign-operator` is legacy (`/assign-staff` is served by the real backend).
-  ...['/api/missions/:id/assign-operator'].map(
+  // `/assign-staff` is the current BE contract; `/assign-operator` is legacy.
+  ...['/api/missions/:id/assign-staff', '/api/missions/:id/assign-operator'].map(
     (path) => ({
     method: 'POST' as const,
     path,

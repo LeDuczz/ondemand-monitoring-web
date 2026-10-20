@@ -1,4 +1,4 @@
-import type { MissionState, DroneState, CheckStatus } from '../../types/omss'
+import type { MissionState, DroneState, CheckStatus } from '../types'
 import { useLanguage } from '../../../../shared/i18n'
 import {
   getDroneStatusLabel,

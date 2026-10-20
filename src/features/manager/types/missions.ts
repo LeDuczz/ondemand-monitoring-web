@@ -517,15 +517,7 @@ export type MediaResponse = {
   deviceId?: string | null
   droneId: string
   type: string
-  status?:
-    | 'UPLOAD_PENDING'
-    | 'UPLOADING'
-    | 'VALIDATING'
-    | 'RETRY_REQUIRED'
-    | 'MANUAL_UPLOAD_REQUIRED'
-    | 'PENDING_MANAGER_APPROVAL'
-    | 'AVAILABLE'
-    | 'REJECTED'
+  status?: 'UPLOAD_PENDING' | 'UPLOADING' | 'VALIDATING' | 'RETRY_REQUIRED' | 'MANUAL_UPLOAD_REQUIRED' | 'PENDING_MANAGER_APPROVAL' | 'AVAILABLE' | 'REJECTED'
   url: string
   expiresIn: number
   contentType: string

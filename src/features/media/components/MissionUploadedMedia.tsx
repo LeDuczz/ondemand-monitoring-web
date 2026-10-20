@@ -11,8 +11,6 @@ import type {
   MissionMediaReviewStatus,
 } from '../types/missionMedia'
 import './MissionUploadedMedia.css'
-import { getLanguage, useI18n } from '../../../shared/i18n'
-import { missionUploadedMediaMessages } from './MissionUploadedMedia.messages'
 
 const formatFileSize = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB'
@@ -23,15 +21,11 @@ const formatFileSize = (bytes: number) => {
 const isReference = (item: UploadedMissionMedia) =>
   item.sourceType === 'MAPILLARY_REFERENCE'
 
-const formatCapturedAt = (
-  value: string | null,
-  t: { noCaptureTime: string; unknownCaptureTime: string },
-  locale: string,
-) => {
-  if (!value) return t.noCaptureTime
+const formatCapturedAt = (value: string | null) => {
+  if (!value) return 'Chưa có thời điểm chụp'
   const capturedAt = new Date(value)
-  if (Number.isNaN(capturedAt.getTime())) return t.unknownCaptureTime
-  return new Intl.DateTimeFormat(locale, {
+  if (Number.isNaN(capturedAt.getTime())) return 'Không rõ thời điểm chụp'
+  return new Intl.DateTimeFormat('vi-VN', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(capturedAt)
@@ -85,7 +79,6 @@ function Gallery({
   onChanged?: () => void
   refreshKey?: unknown
 }) {
-  const { t, locale } = useI18n(missionUploadedMediaMessages)
   const [approving, setApproving] = useState<string | null>(null)
   const [approved, setApproved] = useState<string[]>([])
   async function approve(mediaId: string) {
@@ -96,7 +89,7 @@ function Gallery({
       await approveMedia(mediaId)
       setApproved((ids) => [...ids, mediaId])
     } catch {
-      setError(t.approveFailed)
+      setError('Không thể duyệt ảnh/video. Vui lòng thử lại.')
     } finally {
       setApproving(null)
       onChanged?.()
@@ -129,7 +122,7 @@ function Gallery({
       })
       .catch(() => {
         if (abort.signal.aborted) return
-        setError(t.loadFailed)
+        setError('Không thể tải ảnh/video của Mission này.')
       })
       .finally(() => {
         if (!abort.signal.aborted) setLoading(false)
@@ -152,10 +145,14 @@ function Gallery({
       const fresh = await reader.get(missionId, item.mediaId, abort.signal)
       if (!abort.signal.aborted) {
         if (fresh.downloadUrl) setSelected(fresh)
-        else setError(t.notReleased)
+        else
+          setError(
+            'Bản gốc chưa được bàn giao. Vui lòng xem bản xem trước đã phát hành.',
+          )
       }
     } catch {
-      if (!abort.signal.aborted) setError(t.openFailed)
+      if (!abort.signal.aborted)
+        setError('Không thể mở ảnh/video của Mission này. Vui lòng thử lại.')
     } finally {
       if (!abort.signal.aborted) setOpening(false)
     }
@@ -169,13 +166,16 @@ function Gallery({
   }
 
   return (
-    <section className="odm-card mission-media" aria-label={t.sectionLabel}>
+    <section
+      className="odm-card mission-media"
+      aria-label="Media đã upload của mission"
+    >
       <div className="odm-card-body mission-media__body">
         <header className="mission-media__header">
           <div>
-            <span className="mission-media__eyebrow">{t.eyebrow}</span>
+            <span className="mission-media__eyebrow">Kết quả nhiệm vụ</span>
             <div className="mission-media__title-row">
-              <h3>{t.title}</h3>
+              <h3>Thư viện ảnh &amp; video</h3>
               {data ? (
                 <span className="mission-media__count">{data.totalItems}</span>
               ) : null}
@@ -183,7 +183,9 @@ function Gallery({
                 <ReviewStatusBadge status={reviewStatus} />
               ) : null}
             </div>
-            <p>{t.subtitle}</p>
+            <p>
+              Ảnh/video của Mission. Mở từng tệp để xem và kiểm tra kết quả.
+            </p>
           </div>
           <button
             type="button"
@@ -195,7 +197,7 @@ function Gallery({
             }}
           >
             <Icon name="activity" width={16} height={16} aria-hidden="true" />
-            {t.refresh}
+            Làm mới
           </button>
         </header>
         {error ? (
@@ -212,19 +214,19 @@ function Gallery({
                 onChanged?.()
               }}
             >
-              {t.retry}
+              Thử lại
             </button>
           </div>
         ) : null}
         {loading ? (
           <div className="mission-media__state" role="status">
             <span className="mission-media__spinner" aria-hidden="true" />
-            {t.loading}
+            Đang tải media...
           </div>
         ) : null}
         {opening ? (
           <p className="mission-media__opening" role="status">
-            {t.preparing}
+            Đang chuẩn bị bản xem trước...
           </p>
         ) : null}
         {!loading && !error && data?.items.length === 0 ? (
@@ -232,7 +234,7 @@ function Gallery({
             <span className="mission-media__empty-icon">
               <Icon name="camera" width={28} height={28} aria-hidden="true" />
             </span>
-            <strong>{t.emptyTitle}</strong>
+            <strong>Chưa có ảnh/video</strong>
             <span>
               {[
                 'CREATED',
@@ -241,8 +243,8 @@ function Gallery({
                 'SCHEDULED',
                 'READY_TO_FLY',
               ].includes(missionStatus ?? '')
-                ? t.emptyPending
-                : t.emptyDefault}
+                ? 'Media sẽ xuất hiện sau khi Mission được thực hiện và dữ liệu được tải lên.'
+                : 'Chưa có ảnh/video được tải lên cho Mission này.'}
             </span>
           </div>
         ) : null}
@@ -255,12 +257,12 @@ function Gallery({
                     type="button"
                     className="mission-media__preview"
                     disabled={opening || !item.downloadUrl}
-                    aria-label={t.view(item.fileName)}
+                    aria-label={`Xem ${item.fileName}`}
                     onClick={() => void open(item)}
                   >
                     {!item.downloadUrl ? (
                       <span className="mission-media__video-placeholder">
-                        {t.originalNotReleased}
+                        Bản gốc chưa được bàn giao
                       </span>
                     ) : item.mediaType === 'IMAGE' ? (
                       <img src={item.downloadUrl} alt="" loading="lazy" />
@@ -275,19 +277,19 @@ function Gallery({
                     )}
                     <span className="mission-media__type">
                       {isReference(item)
-                        ? t.typeReference
+                        ? 'Ảnh tham chiếu thực tế · Mapillary'
                         : item.sourceType === 'SATELLITE_SNAPSHOT'
-                          ? t.typeSatellite
+                          ? 'Ảnh vệ tinh · Browser snapshot'
                           : item.sourceType === 'DRONE_CAMERA'
-                            ? t.typeDrone
+                            ? 'Camera drone'
                             : item.sourceType === 'MANUAL_UPLOAD'
-                              ? t.typeManual
+                              ? 'Media tải lên thủ công'
                               : item.mediaType === 'IMAGE'
-                                ? t.typeImage
-                                : t.typeVideo}
+                                ? 'Ảnh'
+                                : 'Video'}
                     </span>
                     <span className="mission-media__open-label">
-                      {item.downloadUrl ? t.openMedia : t.awaitingRelease}
+                      {item.downloadUrl ? 'Xem media' : 'Chờ bàn giao'}
                     </span>
                   </button>
                   <div className="mission-media__card-body">
@@ -304,16 +306,16 @@ function Gallery({
                         onClick={() => void approve(item.mediaId)}
                       >
                         {approved.includes(item.mediaId)
-                          ? t.approvedThisSession
+                          ? 'Đã duyệt media trong phiên này'
                           : approving === item.mediaId
-                            ? t.approving
-                            : t.approveForCustomer}
+                            ? 'Đang duyệt media…'
+                            : 'Duyệt media cho khách hàng'}
                       </button>
                     ) : null}
                     {item.status === 'AVAILABLE' ||
                     approved.includes(item.mediaId) ? (
                       <span className="mission-media__review-badge mission-media__review-badge--approved is-compact">
-                        {t.mediaApproved}
+                        Media đã duyệt
                       </span>
                     ) : null}
                     {reviewStatus ? (
@@ -334,16 +336,11 @@ function Gallery({
                     {isReference(item) ? (
                       <p className="mission-media__reference">
                         {item.sourceDistanceMeters != null
-                          ? t.referenceAway(
-                              Math.round(item.sourceDistanceMeters),
-                            )
-                          : t.referenceReal}
+                          ? `Ảnh tham chiếu cách vị trí drone ${Math.round(item.sourceDistanceMeters)} m`
+                          : 'Ảnh tham chiếu thực tế'}
                         {item.captureLatitude != null &&
                         item.captureLongitude != null
-                          ? t.droneCoords(
-                              item.captureLatitude.toFixed(5),
-                              item.captureLongitude.toFixed(5),
-                            )
+                          ? ` · Drone: ${item.captureLatitude.toFixed(5)}, ${item.captureLongitude.toFixed(5)}`
                           : ''}
                       </p>
                     ) : null}
@@ -354,27 +351,28 @@ function Gallery({
                         height={14}
                         aria-hidden="true"
                       />
-                      {formatCapturedAt(item.capturedAt, t, locale)}
+                      {formatCapturedAt(item.capturedAt)}
                     </time>
                   </div>
                 </article>
               ))}
             </div>
             {data.totalPages > 1 ? (
-              <nav className="mission-media__pager" aria-label={t.pagerLabel}>
+              <nav
+                className="mission-media__pager"
+                aria-label="Phân trang media"
+              >
                 <button
                   type="button"
                   className="odm-btn"
                   disabled={data.first}
                   onClick={() => setPage((value) => value - 1)}
                 >
-                  {t.prevPage}
+                  Trang trước
                 </button>
                 <span>
-                  {t.pageOf(
-                    data.totalPages ? data.page + 1 : 0,
-                    data.totalPages,
-                  )}
+                  Trang {data.totalPages ? data.page + 1 : 0} /{' '}
+                  {data.totalPages}
                 </span>
                 <button
                   type="button"
@@ -382,7 +380,7 @@ function Gallery({
                   disabled={data.last}
                   onClick={() => setPage((value) => value + 1)}
                 >
-                  {t.nextPage}
+                  Trang sau
                 </button>
               </nav>
             ) : null}
@@ -392,7 +390,7 @@ function Gallery({
           ref={dialog}
           onCancel={close}
           onClose={() => setSelected(null)}
-          aria-label={t.dialogLabel}
+          aria-label="Xem media"
           className="mission-media__dialog"
         >
           {selected?.downloadUrl ? (
@@ -400,7 +398,7 @@ function Gallery({
               <header className="mission-media__dialog-header">
                 <div>
                   <span>
-                    {selected.mediaType === 'IMAGE' ? t.typeImage : t.typeVideo}
+                    {selected.mediaType === 'IMAGE' ? 'Ảnh' : 'Video'}
                   </span>
                   <h3>{selected.fileName}</h3>
                 </div>
@@ -408,7 +406,7 @@ function Gallery({
                   type="button"
                   className="odm-btn"
                   onClick={close}
-                  aria-label={t.close}
+                  aria-label="Đóng"
                 >
                   <Icon name="x" width={18} height={18} aria-hidden="true" />
                 </button>
@@ -427,14 +425,14 @@ function Gallery({
                 )}
               </div>
               <footer className="mission-media__dialog-footer">
-                <span>{t.linkExpired}</span>
+                <span>Nếu liên kết hết hạn, hãy lấy liên kết mới.</span>
                 <button
                   type="button"
                   className="odm-btn"
                   disabled={opening}
                   onClick={() => void open(selected)}
                 >
-                  {t.reloadLink}
+                  Tải lại liên kết
                 </button>
               </footer>
             </>
@@ -446,11 +444,10 @@ function Gallery({
 }
 
 function reviewStatusText(status: MissionMediaReviewStatus) {
-  const t = missionUploadedMediaMessages[getLanguage()]
-  if (status === 'DRAFT') return t.reviewDraft
-  if (status === 'APPROVED') return t.reviewApproved
-  if (status === 'REJECTED') return t.reviewRejected
-  return t.reviewPending
+  if (status === 'DRAFT') return 'Kết quả nháp — chưa gửi manager'
+  if (status === 'APPROVED') return 'Đã nghiệm thu'
+  if (status === 'REJECTED') return 'Bị từ chối'
+  return 'Chờ manager nghiệm thu'
 }
 
 function ReviewStatusBadge({
@@ -460,7 +457,6 @@ function ReviewStatusBadge({
   status: MissionMediaReviewStatus
   compact?: boolean
 }) {
-  useI18n(missionUploadedMediaMessages)
   const tone =
     status === 'APPROVED'
       ? 'approved'

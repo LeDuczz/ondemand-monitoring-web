@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { setLanguage } from '../../../../shared/i18n'
 import ReturnToBase from './ReturnToBase'
-import type { Drone } from '../../types/omss'
+import type { Drone } from '../types'
 
-vi.mock('../../api/flightControlApi', () => ({
+vi.mock('../api/flightControlApi', () => ({
   flightControlApi: {
     status: vi.fn().mockResolvedValue({ online: true }),
   },

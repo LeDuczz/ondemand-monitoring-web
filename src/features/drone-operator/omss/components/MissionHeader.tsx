@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Mission, Drone } from '../../types/omss'
+import type { Mission, Drone } from '../types'
 import { MissionBadge, DroneBadge } from './StatusBadge'
 
 interface Props {

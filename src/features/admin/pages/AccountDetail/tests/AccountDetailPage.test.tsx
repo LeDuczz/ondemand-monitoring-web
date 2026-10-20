@@ -1,12 +1,25 @@
 import { act } from 'react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-import { useAdminUsersStub } from '../../Accounts/tests/helpers'
+import {
+  resetHttpTransport,
+  setHttpTransport,
+} from '../../../../../shared/api/httpClient'
+import { resetMockDb } from '../../../../../mocks/db'
+import { mockFetch } from '../../../../../mocks'
+import '../../../../../mocks/index'
 import { setLanguage } from '../../../../../shared/i18n'
 import { AccountDetailPage } from '../AccountDetailPage'
 
-useAdminUsersStub()
+beforeEach(() => {
+  resetMockDb()
+  setHttpTransport(mockFetch)
+})
+afterEach(() => {
+  resetMockDb()
+  resetHttpTransport()
+})
 
 describe('AccountDetailPage', () => {
   it('renders the vietnamese section title', async () => {

@@ -178,11 +178,3 @@ export type PricingReview = {
   managerMaxDiscountPercent?: number | null
   managerMaxMarkupPercent?: number | null
 }
-
-/** Legal review of the flight area of an order. */
-export type LegalReviewStatus =
-  | 'NOT_REVIEWED'
-  | 'NOT_REQUIRED'
-  | 'PENDING_PERMIT'
-  | 'APPROVED'
-  | 'REJECTED'

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useI18n } from '../../../../shared/i18n'
 import { readyToFlyMessages } from '../i18n/readyToFly'
-import type { Mission, Drone, FlightToken } from '../../types/omss'
+import type { Mission, Drone, FlightToken } from '../types'
 
 interface Props {
   mission: Mission

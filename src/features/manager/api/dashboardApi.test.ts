@@ -1,25 +1,34 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { stubApi } from '../../../test/stubApi'
+import {
+  resetHttpTransport,
+  setHttpTransport,
+} from '../../../shared/api/httpClient'
+import { resetMockDb } from '../../../mocks/db'
+import { mockFetch } from '../../../mocks'
 import { managerApi } from './dashboardApi'
 
-// The dashboard endpoint is served by the real backend (no mock route), so
-// this asserts the request against a stubbed transport.
-describe('managerApi.getDashboard', () => {
-  let stub: ReturnType<typeof stubApi>
-  afterEach(() => stub?.restore())
+// Exercises `managerApi.getDashboard()` through the real mock transport
+// (mockFetch + the registered `managerDashboard` handler), not a stubbed
+// response — this is the "API fn in mock mode" test AGENT-RULES.md asks for.
+describe('managerApi.getDashboard (mock mode)', () => {
+  afterEach(() => {
+    resetHttpTransport()
+    resetMockDb()
+  })
 
-  it('GETs /api/manager/dashboard and returns the payload', async () => {
-    const payload = { kpis: { pendingOrders: { count: 6 } }, actionItems: [] }
-    stub = stubApi([{ path: '/api/manager/dashboard', respond: payload }])
+  it('resolves the dashboard payload served by the mock handler', async () => {
+    setHttpTransport(mockFetch)
 
     const data = await managerApi.getDashboard()
 
-    expect(data).toEqual(payload)
-    expect(stub.calls).toHaveLength(1)
-    expect(stub.calls[0]).toMatchObject({
-      method: 'GET',
-      path: '/api/manager/dashboard',
+    expect(data.kpis.pendingOrders.count).toBe(6)
+    expect(data.kpis.dronesReady).toEqual({
+      ready: 5,
+      total: 9,
+      detail: '1 bảo trì',
     })
+    expect(data.actionItems).toHaveLength(6)
+    expect(data.flyingMission?.code).toBe('MSN-2609-0142-1')
   })
 })

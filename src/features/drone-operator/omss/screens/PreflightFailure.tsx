@@ -1,6 +1,6 @@
 import { useI18n } from '../../../../shared/i18n'
 import { preflightFailureMessages } from '../i18n/preflightFailure'
-import type { CheckItem, ChecklistScenario } from '../../types/omss'
+import type { CheckItem, ChecklistScenario } from '../types'
 
 interface Props {
   checklist: CheckItem[]

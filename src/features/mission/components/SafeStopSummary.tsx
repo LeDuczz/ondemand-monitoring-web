@@ -1,10 +1,8 @@
 import { Icon } from '../../../shared/components/Icon'
 import { StatusBadge } from '../../../shared/components/ui/StatusBadge'
 import type { SafeStop } from '../../manager/types/planning'
-import { useLanguage } from '../../../shared/i18n'
 import {
   safeStopCopy,
-  safeStopText,
   safeStopFailure,
   safeStopPhase,
 } from '../lib/safeStopPresentation'
@@ -17,7 +15,6 @@ export function SafeStopRefresh({
   disabled: boolean
   onClick: () => void
 }) {
-  useLanguage()
   return (
     <button
       type="button"
@@ -25,7 +22,7 @@ export function SafeStopRefresh({
       disabled={disabled}
       onClick={onClick}
     >
-      <Icon name="activity" width={16} height={16} /> {safeStopText().refresh}
+      <Icon name="activity" width={16} height={16} /> Làm mới trạng thái
     </button>
   )
 }
@@ -37,10 +34,8 @@ export function SafeStopSummary({
   stop: SafeStop | null | undefined
   actor: 'staff' | 'manager'
 }) {
-  const { locale } = useLanguage()
-  const t = safeStopText()
   const phase = safeStopPhase(stop)
-  const [label, description] = safeStopCopy(actor)[phase]
+  const [label, description] = safeStopCopy[actor][phase]
   const tone =
     phase === 'failed'
       ? 'danger'
@@ -50,10 +45,10 @@ export function SafeStopSummary({
           ? 'neutral'
           : 'warning'
   const steps = [
-    { label: t.stepRequested, done: Boolean(stop?.requestedAt) },
-    { label: t.stepConfirmed, done: Boolean(stop?.confirmedAt) },
-    { label: t.stepCleaned, done: Boolean(stop?.cleanedAt) },
-    ...(actor === 'manager' ? [{ label: t.stepCancel, done: false }] : []),
+    { label: 'Đã gửi yêu cầu', done: Boolean(stop?.requestedAt) },
+    { label: 'Xác nhận an toàn', done: Boolean(stop?.confirmedAt) },
+    { label: 'Giải phóng tài nguyên', done: Boolean(stop?.cleanedAt) },
+    ...(actor === 'manager' ? [{ label: 'Hủy Mission', done: false }] : []),
   ]
   const current = steps.findIndex((step) => !step.done)
   return (
@@ -64,7 +59,7 @@ export function SafeStopSummary({
         ['requested', 'inProgress'].includes(phase) &&
         stop?.canCleanupSafeStop === true &&
         !stop?.confirmedAt
-          ? t.cleanupHint
+          ? 'Có thể giải phóng tài nguyên trước khi tiếp tục hủy Mission.'
           : description}
       </p>
       {phase === 'failed' && (
@@ -74,7 +69,10 @@ export function SafeStopSummary({
       )}
       {phase !== 'unknown' &&
         (actor === 'manager' || phase !== 'notRequested') && (
-          <ol className="mission-stop__progress" aria-label={t.progressLabel}>
+          <ol
+            className="mission-stop__progress"
+            aria-label="Tiến độ dừng an toàn"
+          >
             {steps.map((step, index) => (
               <li
                 key={step.label}
@@ -82,7 +80,7 @@ export function SafeStopSummary({
                   step.done ? 'is-done' : index === current ? 'is-current' : ''
                 }
                 aria-current={index === current ? 'step' : undefined}
-                aria-label={`${step.label} — ${step.done ? t.recorded : t.notRecorded}`}
+                aria-label={`${step.label} — ${step.done ? 'Đã ghi nhận' : 'Chưa ghi nhận'}`}
               >
                 <span className="mission-stop__step-icon">
                   <Icon
@@ -98,7 +96,7 @@ export function SafeStopSummary({
         )}
       {stop?.confirmedAt && (
         <p className="mission-stop__meta">
-          {t.confirmedAt} {new Date(stop.confirmedAt).toLocaleString(locale)}
+          Xác nhận lúc {new Date(stop.confirmedAt).toLocaleString('vi-VN')}
         </p>
       )}
     </div>

@@ -6,6 +6,7 @@ export const operatorSidebarMessages = defineMessages({
     groups: {
       work: 'Công việc',
       technical: 'Kỹ thuật',
+      flight: 'Chuyến bay',
       account: 'Tài khoản',
     },
     nav: {
@@ -15,6 +16,7 @@ export const operatorSidebarMessages = defineMessages({
       support: 'Hỗ trợ khách hàng',
       maintenance: 'Bảo trì & Sự cố',
       availability: 'Lịch rảnh',
+      zoneMap: 'Zone map',
       notifications: 'Thông báo',
       profile: 'Hồ sơ và chứng chỉ',
     },
@@ -32,6 +34,7 @@ export const operatorSidebarMessages = defineMessages({
       devices: 'Thiết bị',
       support: 'Hỗ trợ khách hàng',
       maintenance: 'Bảo trì & Sự cố',
+      zoneMap: 'Zone map',
       notifications: 'Thông báo',
       profile: 'Hồ sơ và chứng chỉ',
       notFound: '',
@@ -44,6 +47,7 @@ export const operatorSidebarMessages = defineMessages({
     groups: {
       work: 'Work',
       technical: 'Technical',
+      flight: 'Flight',
       account: 'Account',
     },
     nav: {
@@ -53,6 +57,7 @@ export const operatorSidebarMessages = defineMessages({
       support: 'Customer support',
       maintenance: 'Maintenance & incidents',
       availability: 'Availability',
+      zoneMap: 'Zone map',
       notifications: 'Notifications',
       profile: 'Profile & certificates',
     },
@@ -70,6 +75,7 @@ export const operatorSidebarMessages = defineMessages({
       devices: 'Devices',
       support: 'Customer support',
       maintenance: 'Maintenance & incidents',
+      zoneMap: 'Zone map',
       notifications: 'Notifications',
       profile: 'Profile & certificates',
       notFound: '',

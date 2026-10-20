@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { setLanguage } from '../../../../shared/i18n'
 import MissionList from './MissionList'
-import type { Mission } from '../../types/omss'
+import type { Mission } from '../types'
 
 const missions = [
   {

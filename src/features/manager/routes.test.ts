@@ -87,6 +87,18 @@ describe('parseManagerRoute', () => {
     })
   })
 
+  it('parses the media route (MNG-11)', () => {
+    expect(parseManagerRoute('#portal/manager/media')).toEqual({
+      screen: 'media',
+    })
+  })
+
+  it('parses the reports route (MNG-12)', () => {
+    expect(parseManagerRoute('#portal/manager/reports')).toEqual({
+      screen: 'reports',
+    })
+  })
+
   it('falls back to notFound for hashes outside the manager prefix', () => {
     expect(parseManagerRoute('#portal/customer')).toEqual({
       screen: 'notFound',
@@ -119,6 +131,12 @@ describe('parseManagerRoute', () => {
     expect(parseManagerRoute('#portal/manager/maintenance/extra')).toEqual({
       screen: 'notFound',
     })
+    expect(parseManagerRoute('#portal/manager/media/extra')).toEqual({
+      screen: 'notFound',
+    })
+    expect(parseManagerRoute('#portal/manager/reports/extra')).toEqual({
+      screen: 'notFound',
+    })
   })
 })
 
@@ -149,6 +167,8 @@ describe('managerHref', () => {
     [{ screen: 'drones' }, '#portal/manager/drones'],
     [{ screen: 'drones', droneId: 'DRN-1' }, '#portal/manager/drones/DRN-1'],
     [{ screen: 'maintenance' }, '#portal/manager/maintenance'],
+    [{ screen: 'media' }, '#portal/manager/media'],
+    [{ screen: 'reports' }, '#portal/manager/reports'],
     [{ screen: 'notFound' }, '#portal/manager'],
   ]
 

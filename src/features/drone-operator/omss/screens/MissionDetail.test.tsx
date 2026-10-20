@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setLanguage } from '../../../../shared/i18n'
-import type { Drone, Mission } from '../../types/omss'
+import type { Drone, Mission } from '../types'
 import MissionDetail from './MissionDetail'
 
 const mission = {

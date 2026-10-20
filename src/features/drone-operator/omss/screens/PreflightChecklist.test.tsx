@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { setLanguage } from '../../../../shared/i18n'
 import PreflightChecklist from './PreflightChecklist'
-import type { CheckItem } from '../../types/omss'
+import type { CheckItem } from '../types'
 
 const checklist: CheckItem[] = [
   {

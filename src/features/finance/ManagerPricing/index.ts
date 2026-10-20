@@ -1,1 +1,0 @@
-export { ManagerPricingPanel } from './ManagerPricingPanel'

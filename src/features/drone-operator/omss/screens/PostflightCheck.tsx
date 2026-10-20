@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n'
 import { postflightCheckMessages } from '../i18n/postflightCheck'
-import type { Drone } from '../../types/omss'
-import type { FlightControlStatus } from '../../api/flightControlApi'
+import type { Drone } from '../types'
+import type { FlightControlStatus } from '../api/flightControlApi'
 
 interface Props {
   drone: Drone

@@ -1,4 +1,5 @@
 // Mock handlers for MNG-09. Endpoints:
+//   GET    /api/drones?status=&page=&pageSize=    [BE DroneController]
 //   PATCH  /api/drones/{id}/status               [ĐỀ XUẤT]
 import type { DroneStatus } from '../../shared/types/domain'
 import { createCollection } from '../db'
@@ -91,7 +92,90 @@ const VALID_TRANSITIONS: Partial<Record<DroneStatus, DroneStatus[]>> = {
   OFFLINE: ['AVAILABLE'],
 }
 
+function toDroneItem(d: SeedDrone) {
+  return {
+    id: d.id,
+    code: d.code,
+    name: d.name ?? null,
+    serialNumber: d.serialNumber ?? null,
+    droneModelName: d.droneModelName ?? null,
+    status: d.status,
+    baseStation: d.baseStation ?? null,
+    batteryPct: d.batteryPct ?? null,
+    hoursSinceMaintenance: d.hoursSinceMaintenance ?? null,
+    payload: d.payload ?? null,
+    lastSeenAt: d.lastSeenAt ?? null,
+  }
+}
+
 registerMockRoutes([
+  // ── MNG-09: list drones [BE DroneController] ───────────────────────────
+  {
+    method: 'GET',
+    path: '/api/drones',
+    handler: ({ query }) => {
+      const statusFilter = query.get('status')
+      const page = Math.max(1, parseInt(query.get('page') ?? '1', 10))
+      const pageSize = Math.max(1, parseInt(query.get('pageSize') ?? '20', 10))
+
+      const filtered = statusFilter
+        ? drones.filter((d) => d.status === statusFilter)
+        : drones
+
+      const total = filtered.length
+      const start = (page - 1) * pageSize
+      const items = filtered.slice(start, start + pageSize).map(toDroneItem)
+
+      const totalPages = Math.ceil(total / pageSize)
+      return ok({
+        items: items.map(toDroneResponse),
+        page,
+        size: pageSize,
+        totalItems: total,
+        totalPages,
+        first: page === 1,
+        last: page >= totalPages,
+      })
+    },
+  },
+
+  // ── P6: GET /api/drones/{id} [BE] — single drone, BE DroneResponse shape ──
+  {
+    method: 'GET',
+    path: '/api/drones/:id',
+    handler: ({ params }) => {
+      const drone = drones.find(
+        (d) => d.id === params.id || d.code === params.id,
+      )
+      if (!drone) return fail(404, 'NOT_FOUND', 'Không tìm thấy drone')
+      return ok(toDroneResponse(drone))
+    },
+  },
+
+  // ── PUT /api/drones/{id} [BE] — full update ────────────────────────────
+  {
+    method: 'PUT',
+    path: '/api/drones/:id',
+    handler: ({ params, body }) => {
+      const drone = drones.find(
+        (d) => d.id === params.id || d.code === params.id,
+      )
+      if (!drone) return fail(404, 'NOT_FOUND', 'Không tìm thấy drone')
+
+      const req = (body ?? {}) as {
+        serialNumber?: string
+        droneModelId?: string
+        dronePayloadId?: string
+        status?: DroneStatus
+      }
+      if (req.serialNumber) drone.serialNumber = req.serialNumber
+      if (req.status) drone.status = req.status
+      drone.updatedAt = new Date().toISOString()
+
+      return ok(toDroneResponse(drone), 'Đã cập nhật drone')
+    },
+  },
+
   // ── MNG-09: patch drone status [ĐỀ XUẤT — kept for backward compat] ──
   {
     method: 'PATCH',

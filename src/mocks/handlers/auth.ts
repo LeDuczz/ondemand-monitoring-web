@@ -136,7 +136,28 @@ const authRoutes: MockRoute[] = [
   },
 ]
 
-// `/api/v1/auth/*` is the legacy prefix not present in the real backend Swagger.
-// The current `/api/auth/*` routes (and `/api/users/me`) are served by the real
-// backend, so only the legacy prefix stays mocked.
-registerMockRoutes(authRoutes)
+// The frontend calls `/api/auth/*` (current BE contract); `/api/v1/auth/*` is
+// the legacy prefix these handlers were first written for. Serve both.
+registerMockRoutes([
+  {
+    method: 'GET',
+    path: '/api/users/me',
+    handler: ({ headers }) => {
+      const token = bearerToken(headers)
+      const user = token ? findUserByToken(token) : undefined
+      if (!user) return passThrough()
+      return ok({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        linkedProviders: ['LOCAL'],
+      })
+    },
+  },
+  ...authRoutes,
+  ...authRoutes.map((route) => ({
+    ...route,
+    path: route.path.replace('/api/v1/auth/', '/api/auth/'),
+  })),
+])

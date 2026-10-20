@@ -4,21 +4,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 
 import { resetMockDb } from '../../../../../mocks/db'
 import '../../../../../mocks/index'
-import { customerAnalyses } from '../../../../../mocks/handlers/customerOrdersStore'
 import { setLanguage } from '../../../../../shared/i18n'
 import { customerApi } from '../../../api/customerApi'
 import { AnalysisPage } from '../AnalysisPage'
 
-beforeEach(() => {
-  resetMockDb()
-  // GET /api/orders/{id}/analysis/latest is served by the real backend: stub it with the seed.
-  vi.spyOn(customerApi, 'getLatestAnalysis').mockImplementation(
-    async (id: string) =>
-      (customerAnalyses[id] ?? null) as unknown as Awaited<
-        ReturnType<typeof customerApi.getLatestAnalysis>
-      >,
-  )
-})
+beforeEach(() => resetMockDb())
 afterEach(() => {
   resetMockDb()
   vi.restoreAllMocks()

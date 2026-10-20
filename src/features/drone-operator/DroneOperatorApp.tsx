@@ -2,7 +2,7 @@ import { UserProfilePage } from '../user/pages/UserProfilePage'
 import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
 import { SystemOperatorOverview } from '../system-operator/SystemOperatorOverview'
 import { SystemOperatorDevicesScreen } from '../system-operator/pages/SystemOperatorDevicesScreen'
-import { MissionActionGuard } from './components/common/MissionActionGuard'
+import { MissionActionGuard } from './components/MissionActionGuard'
 import { useEffect, useState } from 'react'
 
 import { useApiQuery } from '../../shared/hooks/useApiQuery'
@@ -12,17 +12,18 @@ import { operatorApi } from './api/operatorApi'
 import { missionsByTab } from './lib/filterMissions'
 import { demoNow } from './lib/demoNow'
 import { OperatorLayout } from './OperatorLayout'
-import { FlightPage } from './pages/Flight'
-import { MissionDetailPage } from './pages/MissionDetail'
-import { MissionListPage } from './pages/MissionList'
-import { PlaceholderPage } from './components/common/PlaceholderPage'
-import { AvailabilityPage } from './pages/Availability'
-import { ConnectDronePage } from './pages/ConnectDrone'
-import { HandoverPage } from './pages/Handover'
-import { PostflightPage } from './pages/Postflight'
-import { PreflightPage } from './pages/Preflight'
-import { UploadMediaPage } from './pages/UploadMedia'
-import { MaintenancePage } from './pages/Maintenance'
+import SimulationZonesScreen from './omss/screens/SimulationZones'
+import { ActiveFlightScreen } from './pages/ActiveFlightScreen'
+import { MissionDetailScreen } from './pages/MissionDetailScreen'
+import { MissionListPage } from './pages/MissionListPage'
+import { PlaceholderPage } from './pages/PlaceholderPage'
+import { AvailabilityScreen } from './pages/AvailabilityScreen'
+import { ConnectDroneScreen } from './pages/ConnectDroneScreen'
+import { HandoverScreen } from './pages/HandoverScreen'
+import { PostflightScreen } from './pages/PostflightScreen'
+import { PreflightScreen } from './pages/PreflightScreen'
+import { UploadMediaScreen } from './pages/UploadMediaScreen'
+import { OperatorMaintenanceScreen } from './pages/OperatorMaintenanceScreen'
 import { operatorActiveLabel } from './OperatorSidebar'
 import {
   guardOperatorFlowRoute,
@@ -86,7 +87,7 @@ export function DroneOperatorApp() {
         missionId={route.missionId}
         action="flight"
       >
-        <FlightPage missionId={route.missionId} />
+        <ActiveFlightScreen missionId={route.missionId} />
       </MissionActionGuard>
     )
   }
@@ -98,6 +99,7 @@ export function DroneOperatorApp() {
       notificationCount={2}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
+      fillContent={route.screen === 'zoneMap'}
     >
       {renderScreen(route, searchQuery, lang)}
     </OperatorLayout>
@@ -112,8 +114,8 @@ function renderScreen(
   if (route.screen === 'missions')
     return <MissionListPage searchQuery={searchQuery} />
   if (route.screen === 'missionDetail')
-    return <MissionDetailPage missionId={route.missionId} />
-  if (route.screen === 'availability') return <AvailabilityPage />
+    return <MissionDetailScreen missionId={route.missionId} />
+  if (route.screen === 'availability') return <AvailabilityScreen />
   if (route.screen === 'connect')
     return (
       <MissionActionGuard
@@ -121,7 +123,7 @@ function renderScreen(
         missionId={route.missionId}
         action="connect"
       >
-        <ConnectDronePage missionId={route.missionId} />
+        <ConnectDroneScreen missionId={route.missionId} />
       </MissionActionGuard>
     )
   if (route.screen === 'handover')
@@ -131,7 +133,7 @@ function renderScreen(
         missionId={route.missionId}
         action="handover"
       >
-        <HandoverPage missionId={route.missionId} />
+        <HandoverScreen missionId={route.missionId} />
       </MissionActionGuard>
     )
   if (route.screen === 'preflight')
@@ -141,7 +143,7 @@ function renderScreen(
         missionId={route.missionId}
         action="preflight"
       >
-        <PreflightPage missionId={route.missionId} />
+        <PreflightScreen missionId={route.missionId} />
       </MissionActionGuard>
     )
   if (route.screen === 'upload')
@@ -151,7 +153,7 @@ function renderScreen(
         missionId={route.missionId}
         action="upload"
       >
-        <UploadMediaPage missionId={route.missionId} />
+        <UploadMediaScreen missionId={route.missionId} />
       </MissionActionGuard>
     )
   if (route.screen === 'postflight')
@@ -161,14 +163,15 @@ function renderScreen(
         missionId={route.missionId}
         action="postflight"
       >
-        <PostflightPage missionId={route.missionId} />
+        <PostflightScreen missionId={route.missionId} />
       </MissionActionGuard>
     )
   if (route.screen === 'profile') return <UserProfilePage />
   if (route.screen === 'support') return <StaffSupportDashboardPage />
   if (route.screen === 'technical') return <SystemOperatorOverview />
   if (route.screen === 'devices') return <SystemOperatorDevicesScreen />
-  if (route.screen === 'maintenance') return <MaintenancePage />
+  if (route.screen === 'maintenance') return <OperatorMaintenanceScreen />
+  if (route.screen === 'zoneMap') return <SimulationZonesScreen />
   return (
     <PlaceholderPage
       title={

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n'
 import { acceptRejectMessages } from '../i18n/acceptReject'
-import type { Mission, Drone } from '../../types/omss'
+import type { Mission, Drone } from '../types'
 
 interface Props {
   mission: Mission

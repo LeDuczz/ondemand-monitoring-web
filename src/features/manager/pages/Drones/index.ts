@@ -1,1 +1,0 @@
-export { DronesPage } from './DronesPage'

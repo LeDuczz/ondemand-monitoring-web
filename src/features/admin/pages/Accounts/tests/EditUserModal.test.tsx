@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 import { EditUserModal } from '../components/EditUserModal'
-import { useAdminUsersStub } from './helpers'
+import { useMockTransport } from './helpers'
 
-useAdminUsersStub()
+useMockTransport()
 
 describe('EditUserModal', () => {
   it('loads BE data and shows role badge, status and timeline', async () => {

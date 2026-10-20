@@ -1,4 +1,4 @@
-import type { Drone, Mission } from '../types/omss'
+import type { Drone, Mission } from '../omss/types'
 import type { OperatorMission, OperatorMissionStatus } from '../types/mission'
 import type { MissionStopMetadata } from '../../mission/lib/missionOperationalState'
 

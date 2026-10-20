@@ -14,8 +14,8 @@ import { setActiveMissionId } from '../../api/liveMission'
 import { operatorHref } from '../../routes'
 import { RejectDialog } from './components/RejectDialog'
 import { missionDetailPageMessages } from './MissionDetailPage.messages'
-import { SafeStopPanel } from '../../../manager/components/planning/SafeStopPanel'
-import '../../../manager/components/planning/planning.css'
+import { SafeStopPanel } from '../../../manager/components/common/SafeStopPanel'
+import '../../../manager/components/common/planning.css'
 import {
   MissionResultActions,
   missionResultActions,

@@ -1,7 +1,7 @@
 import { Card } from '../../../../../shared/components/ui'
 import { useI18n, useLanguage } from '../../../../../shared/i18n'
 import type { OrderStatus } from '../../../../../shared/types/domain'
-import { OrderIcon, type OrderIconName } from '../../../../manager/components/orderReview/OrderIcon'
+import { OrderIcon, type OrderIconName } from '../../../../manager/components/common/OrderIcon'
 import { fmtDateTime, getOrderStatusMeta } from '../../../lib/orderStatus'
 import { buildOrderSteps, type OrderMissionProgress } from '../../../lib/orders/orderSteps'
 import type { CustomerFinanceState } from '../../../../finance/CustomerFinance'

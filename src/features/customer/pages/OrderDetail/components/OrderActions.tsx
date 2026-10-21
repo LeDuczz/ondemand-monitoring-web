@@ -11,13 +11,6 @@ export function OrderActions({ order }: { order: OrderDetailView }) {
 
   return (
     <div className="od-actions">
-      <a
-        className="odm-btn od-btn od-btn-primary-outline"
-        href={customerHref({ screen: 'analysis', orderId: order.id })}
-      >
-        <OrderIcon name="ai" size={16} />
-        {t.analysis}
-      </a>
       {active && (
         <a className="odm-btn od-btn" href={customerHref({ screen: 'live', orderId: order.id })}>
           <OrderIcon name="locate" size={16} />

@@ -104,8 +104,6 @@ export function CustomerCreateRequestPage() {
               service={r.service}
               time={r.time}
               deliverable={r.deliverable}
-              consultation={null}
-              aiAnalysisRequested={false}
               checklistCounts={{
                 total: packageSelectedCount + additionalChecklists.length,
                 packageSelected: packageSelectedCount,

@@ -68,7 +68,6 @@ function statusDepositState(
 
 /** Requirement keys that are internal bookkeeping, not customer-facing. */
 const HIDDEN_REQUIREMENT_KEYS = new Set([
-  'consultationId',
   'readinessScore',
   'aiAnalysisRequested',
 ])

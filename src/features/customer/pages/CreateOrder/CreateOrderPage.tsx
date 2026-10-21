@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 import {
   ErrorState,
   LoadingState,
@@ -12,6 +14,7 @@ import { LocationStep } from './components/LocationStep'
 import { ReviewStep } from './components/ReviewStep'
 import { ScheduleStep } from './components/ScheduleStep'
 import { ServiceStep } from './components/ServiceStep'
+import { SiteDetailsStep } from './components/SiteDetailsStep'
 import { StepTabs } from './components/StepTabs'
 import { WizardFooter } from './components/WizardFooter'
 import { createOrderPageMessages } from './CreateOrderPage.messages'
@@ -19,14 +22,15 @@ import './CreateOrder.css'
 import { useCreateOrderWizard } from './hooks/useCreateOrderWizard'
 import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
 import { selectionEstimate } from '../../lib/checklist/selectionEstimate'
+import type { Step } from '../../lib/createOrder/types'
 
-/** Customer wizard: service, monitoring content, location, schedule, then deliverables and submit. */
+/** Customer wizard: service, content, location, site details, schedule, then confirmation. */
 export function CreateOrderPage() {
+  const pageRef = useRef<HTMLDivElement>(null)
   const { t } = useI18n(createOrderPageMessages)
   const {
     f,
     meta,
-    chat,
     wizard,
     submit,
     service,
@@ -45,6 +49,15 @@ export function CreateOrderPage() {
   const packageChecklists = checklist.rows.filter((row) => row.packageItem === true)
   const packageSelectedCount = packageChecklists.filter((row) => row.selected).length
 
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (typeof pageRef.current?.scrollIntoView === 'function') {
+        pageRef.current.scrollIntoView({ block: 'start', behavior: 'instant' })
+      }
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [step])
+
   if (submit.createdId) {
     return (
       <CreatedSuccess
@@ -57,13 +70,13 @@ export function CreateOrderPage() {
   const footer = (
     <WizardFooter
       step={step}
-      nextLabel={t.stepLabels[Math.min(5, step + 1) as 1 | 2 | 3 | 4 | 5]}
+      nextLabel={t.stepLabels[Math.min(6, step + 1) as Step]}
       submitDisabled={meta.loading || submit.submitting || !checklist.valid}
       nextDisabled={step === 2 && !checklist.valid}
       blockedReason={
-        (step === 2 || step === 5) && !checklist.valid
+        (step === 2 || step === 6) && !checklist.valid
           ? t.blockedChecklist
-          : step === 5 && meta.loading
+          : step === 6 && meta.loading
             ? t.blockedLoading
             : null
       }
@@ -74,7 +87,7 @@ export function CreateOrderPage() {
   )
 
   return (
-    <div className="co-page">
+    <div ref={pageRef} className="co-page">
       <PageHeader
         title={t.pageTitle}
         subtitle={t.pageSubtitle}
@@ -108,10 +121,6 @@ export function CreateOrderPage() {
           update={f.update}
           services={meta.services}
           servicesLoading={meta.loading}
-          chat={chat}
-          consultation={chat.consultation}
-          aiAnalysisRequested={f.aiAnalysisRequested}
-          setAiAnalysisRequested={f.setAiAnalysisRequested}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           additionalChecklists={additionalChecklists}
@@ -128,7 +137,7 @@ export function CreateOrderPage() {
           valid={checklist.valid}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
-          aiAnalysisRequested={f.aiAnalysisRequested}
+          aiAnalysisRequested={false}
           checklist={
             <ChecklistEditor
               variant="compact"
@@ -142,9 +151,17 @@ export function CreateOrderPage() {
         />
       )}
       {step === 3 && (
-        <LocationStep form={form} errors={f.errors} update={f.update} />
+        <LocationStep form={form} errors={f.errors} update={f.update} footer={footer} />
       )}
       {step === 4 && (
+        <SiteDetailsStep
+          form={form}
+          errors={f.errors}
+          update={f.update}
+          footer={footer}
+        />
+      )}
+      {step === 5 && (
         <ScheduleStep
           form={form}
           errors={f.errors}
@@ -152,14 +169,10 @@ export function CreateOrderPage() {
           preferredTimes={meta.preferredTimes}
           service={service}
           time={time}
-          pricingEstimate={estimate}
-          pricingLoading={meta.pricingLoading}
-          aiAnalysisRequested={f.aiAnalysisRequested}
-          additionalChecklists={additionalChecklists}
           footer={footer}
         />
       )}
-      {step === 5 && (
+      {step === 6 && (
         <ReviewStep
           form={form}
           errors={f.errors}
@@ -172,8 +185,6 @@ export function CreateOrderPage() {
           deliverablesError={meta.deliverablesError}
           reloadDeliverables={meta.reloadDeliverables}
           mediaTotals={checklist.mediaTotals}
-          consultation={chat.consultation}
-          aiAnalysisRequested={f.aiAnalysisRequested}
           pricingEstimate={estimate}
           pricingLoading={meta.pricingLoading}
           additionalChecklists={additionalChecklists}
@@ -190,8 +201,6 @@ export function CreateOrderPage() {
         </div>
       )}
 
-      {step === 3 && <div className="co-bottom-bar">{footer}</div>}
-
       {submit.confirmOpen && (
         <ConfirmSubmitModal
           form={form}
@@ -200,7 +209,7 @@ export function CreateOrderPage() {
           checklistCount={checklist.selectedCount}
           mediaTotals={checklist.mediaTotals}
           time={time}
-          aiAnalysisRequested={f.aiAnalysisRequested}
+          aiAnalysisRequested={false}
           submitting={submit.submitting}
           error={f.submitError}
           onConfirm={() => void submit.submit()}

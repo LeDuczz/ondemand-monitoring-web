@@ -131,6 +131,33 @@ export function MonitoringAuthorizationSection({
         {errors.monitoringRelationship ? (
           <div className="ui-field-error">{errors.monitoringRelationship}</div>
         ) : null}
+        {form.monitoringRelationship === 'OTHER' ? (
+          <label className="co-authz-other">
+            <span>
+              {t.otherRelationshipLabel} <b aria-hidden="true">*</b>
+            </span>
+            <input
+              className="co-input"
+              value={form.otherMonitoringRelationship}
+              maxLength={200}
+              placeholder={t.otherRelationshipPlaceholder}
+              aria-invalid={Boolean(errors.otherMonitoringRelationship)}
+              aria-describedby={
+                errors.otherMonitoringRelationship
+                  ? 'co-other-relationship-error'
+                  : undefined
+              }
+              onChange={(event) =>
+                update('otherMonitoringRelationship', event.target.value)
+              }
+            />
+            {errors.otherMonitoringRelationship ? (
+              <span id="co-other-relationship-error" className="ui-field-error">
+                {errors.otherMonitoringRelationship}
+              </span>
+            ) : null}
+          </label>
+        ) : null}
       </fieldset>
 
       <div className="co-authz-docs-head">
@@ -206,7 +233,9 @@ export function MonitoringAuthorizationSection({
                 </label>
               </div>
               <label>
-                <span>{t.notes} <small>{t.optional}</small></span>
+                <span>
+                  {t.notes} <small>{t.optional}</small>
+                </span>
                 <input
                   className="co-input"
                   value={document.notes}

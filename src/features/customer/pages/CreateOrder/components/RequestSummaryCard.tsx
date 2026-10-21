@@ -2,7 +2,6 @@ import { Icon, type IconName } from '../../../../../shared/components/Icon'
 import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type {
-  CustomerConsultation,
   PreferredTimeOption,
   ServiceDeliverableOption,
   ServiceOption,
@@ -14,6 +13,7 @@ import { calcArea } from '../../../lib/createOrder/payload'
 import type { FormState, Step } from '../../../lib/createOrder/types'
 import { deliveryOptionsCardMessages } from './DeliveryOptionsCard.messages'
 import { requestInfoPanelMessages } from './RequestInfoPanel.messages'
+import { monitoringAuthorizationMessages } from './MonitoringAuthorizationSection.messages'
 import { requestSummaryCardMessages } from './RequestSummaryCard.messages'
 
 type Props = {
@@ -23,8 +23,6 @@ type Props = {
   service?: ServiceOption
   time?: PreferredTimeOption
   deliverable?: ServiceDeliverableOption
-  consultation: CustomerConsultation | null
-  aiAnalysisRequested: boolean
   checklistCounts?: {
     total: number
     packageSelected: number
@@ -66,6 +64,7 @@ export function RequestSummaryCard(p: Props) {
   const { t, lang } = useI18n(requestSummaryCardMessages)
   const { t: d } = useI18n(deliveryOptionsCardMessages)
   const { t: info } = useI18n(requestInfoPanelMessages)
+  const { t: authorization } = useI18n(monitoringAuthorizationMessages)
   const { form } = p
   const dateFrom = formatDate(form.preferredDateFrom, lang)
   const dateTo = formatDate(form.preferredDateTo, lang)
@@ -76,15 +75,27 @@ export function RequestSummaryCard(p: Props) {
       : dateFrom
   const timeWindow = p.time ? localizeTimeslot(p.time, lang) : ''
   const result = [
-    p.mediaTotals?.images
-      ? t.quantityUnit('IMAGE', p.mediaTotals.images)
-      : '',
-    p.mediaTotals?.videos
-      ? t.quantityUnit('VIDEO', p.mediaTotals.videos)
-      : '',
+    p.mediaTotals?.images ? t.quantityUnit('IMAGE', p.mediaTotals.images) : '',
+    p.mediaTotals?.videos ? t.quantityUnit('VIDEO', p.mediaTotals.videos) : '',
   ]
     .filter(Boolean)
     .join(' · ')
+  const usagePurpose =
+    form.usagePurpose === 'OTHER'
+      ? form.otherUsagePurpose.trim()
+      : form.usagePurpose
+        ? info.purposes[form.usagePurpose]
+        : ''
+  const flightPurpose =
+    form.flightPurpose === 'OTHER'
+      ? form.otherFlightPurpose.trim()
+      : info.flightPurposes[form.flightPurpose]
+  const relationship =
+    form.monitoringRelationship === 'OTHER'
+      ? form.otherMonitoringRelationship.trim()
+      : form.monitoringRelationship
+        ? authorization.relationships[form.monitoringRelationship]
+        : ''
 
   const items: Item[] = [
     {
@@ -95,7 +106,7 @@ export function RequestSummaryCard(p: Props) {
         p.service
           ? localizeServiceName(p.service.id, lang, p.service.name)
           : t.noValue,
-        form.usagePurpose ? info.purposes[form.usagePurpose] : '',
+        usagePurpose,
       ].filter(Boolean),
       step: 1,
     },
@@ -126,6 +137,71 @@ export function RequestSummaryCard(p: Props) {
       step: 3,
     },
     {
+      key: 'area',
+      icon: 'radio',
+      label: t.area,
+      lines: [
+        `${t.radius} ${form.radiusM} m · ${calcArea(form.radiusM)} ha`,
+        t.altitude(form.altitudeM),
+        Number(form.estimatedLengthM) > 0
+          ? t.length(Number(form.estimatedLengthM))
+          : '',
+        form.areaFiles.length ? t.areaFiles(form.areaFiles.length) : '',
+      ].filter(Boolean),
+      step: 4,
+    },
+    {
+      key: 'flight-purpose',
+      icon: 'eye',
+      label: t.flightPurpose,
+      lines: [flightPurpose || t.noValue],
+      step: 1,
+    },
+    ...(relationship
+      ? [
+          {
+            key: 'relationship',
+            icon: 'shield' as const,
+            label: t.relationship,
+            lines: [relationship],
+            step: 4 as Step,
+          },
+        ]
+      : []),
+    ...(form.siteContactName.trim() ||
+    form.siteContactPhone.trim() ||
+    form.accessNotes.trim()
+      ? [
+          {
+            key: 'contact',
+            icon: 'users' as const,
+            label: t.contact,
+            lines: [
+              [form.siteContactName.trim(), form.siteContactPhone.trim()]
+                .filter(Boolean)
+                .join(' · '),
+              form.accessNotes.trim(),
+            ].filter(Boolean),
+            step: 4 as Step,
+          },
+        ]
+      : []),
+    ...(form.permitStatus !== 'NONE'
+      ? [
+          {
+            key: 'permit',
+            icon: 'shield' as const,
+            label: t.permit,
+            lines: [
+              form.permitStatus === 'HAVE_PERMIT'
+                ? t.permitHave(form.permitNumber.trim())
+                : t.permitSupport,
+            ],
+            step: 4 as Step,
+          },
+        ]
+      : []),
+    {
       key: 'schedule',
       icon: 'clock',
       label: t.schedule,
@@ -143,55 +219,8 @@ export function RequestSummaryCard(p: Props) {
         t.fallbackValues[form.weatherFallback],
       ].filter(Boolean),
       lead: 2,
-      step: 4,
+      step: 5,
     },
-    {
-      key: 'area',
-      icon: 'radio',
-      label: t.area,
-      lines: [
-        `${t.radius} ${form.radiusM} m · ${calcArea(form.radiusM)} ha`,
-        t.altitude(form.altitudeM),
-        Number(form.estimatedLengthM) > 0
-          ? t.length(Number(form.estimatedLengthM))
-          : '',
-        form.areaFiles.length ? t.areaFiles(form.areaFiles.length) : '',
-      ].filter(Boolean),
-      step: 3,
-    },
-    ...(form.siteContactName.trim() ||
-    form.siteContactPhone.trim() ||
-    form.accessNotes.trim()
-      ? [
-          {
-            key: 'contact',
-            icon: 'users' as const,
-            label: t.contact,
-            lines: [
-              [form.siteContactName.trim(), form.siteContactPhone.trim()]
-                .filter(Boolean)
-                .join(' · '),
-              form.accessNotes.trim(),
-            ].filter(Boolean),
-            step: 3 as Step,
-          },
-        ]
-      : []),
-    ...(form.permitStatus !== 'NONE'
-      ? [
-          {
-            key: 'permit',
-            icon: 'shield' as const,
-            label: t.permit,
-            lines: [
-              form.permitStatus === 'HAVE_PERMIT'
-                ? t.permitHave(form.permitNumber.trim())
-                : t.permitSupport,
-            ],
-            step: 3 as Step,
-          },
-        ]
-      : []),
     {
       key: 'deliverable',
       icon: 'camera',
@@ -201,6 +230,7 @@ export function RequestSummaryCard(p: Props) {
           t.noValue,
         result,
       ].filter(Boolean),
+      step: 6,
     },
     {
       key: 'delivery',
@@ -211,13 +241,7 @@ export function RequestSummaryCard(p: Props) {
         form.deliveryMethods.map((method) => d.methods[method]).join(', '),
         d.days(form.dataRetentionDays),
       ].filter(Boolean),
-    },
-    {
-      key: 'aiConsultation',
-      icon: 'sparkle',
-      label: t.aiConsultation,
-      lines: [p.consultation?.id ? t.consulted : t.notUsed],
-      step: 1,
+      step: 6,
     },
     {
       key: 'attachments',
@@ -235,9 +259,10 @@ export function RequestSummaryCard(p: Props) {
   return (
     <Card title={t.cardTitle}>
       <p className="co-hint">{t.cardSubtitle}</p>
-      <p className="co-sum-title" title={form.title || undefined}>
-        {form.title.trim() || t.noTitle}
-      </p>
+      <div className="co-sum-request-title">
+        <span>{t.requestTitle}</span>
+        <p title={form.title || undefined}>{form.title.trim() || t.noTitle}</p>
+      </div>
       <dl className="co-sum-list">
         {items.map((item) => (
           <div key={item.key} className="co-sum-item">
@@ -256,7 +281,7 @@ export function RequestSummaryCard(p: Props) {
                 </dd>
               ))}
             </div>
-            {item.step && p.onEdit && (
+            {item.step && item.step !== 6 && p.onEdit && (
               <button
                 type="button"
                 className="co-sum-edit"

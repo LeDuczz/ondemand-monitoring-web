@@ -24,6 +24,8 @@ export const monitoringAuthorizationMessages = defineMessages({
     intro:
       'Xác nhận bạn có quyền yêu cầu giám sát tại khu vực đã chọn. ODMS có thể yêu cầu tài liệu chứng minh trước khi thực hiện nhiệm vụ.',
     relationship: 'Quan hệ của bạn với khu vực',
+    otherRelationshipLabel: 'Mô tả quan hệ khác',
+    otherRelationshipPlaceholder: 'Nhập quan hệ cụ thể của bạn với khu vực',
     docsTitle: 'Tài liệu xác nhận quyền giám sát',
     docsHint: 'Không bắt buộc. Có thể thêm nhiều tài liệu.',
     addDocument: '+ Thêm tài liệu',
@@ -64,6 +66,9 @@ export const monitoringAuthorizationMessages = defineMessages({
     intro:
       'Confirm that you are entitled to request monitoring at the selected area. ODMS may ask for supporting documents before carrying out the mission.',
     relationship: 'Your relationship to the area',
+    otherRelationshipLabel: 'Describe the other relationship',
+    otherRelationshipPlaceholder:
+      'Enter your specific relationship to the area',
     docsTitle: 'Documents proving the right to monitor',
     docsHint: 'Optional. You can add several documents.',
     addDocument: '+ Add document',

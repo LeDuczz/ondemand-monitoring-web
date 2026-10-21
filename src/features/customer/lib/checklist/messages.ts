@@ -5,7 +5,7 @@ export const checklistMessages = defineMessages({
     title: 'Nội dung giám sát',
     hint: 'Danh sách mặc định của dịch vụ được hiển thị bên dưới. Bạn có thể chỉnh sửa, bỏ mục không cần thiết hoặc thêm nội dung riêng; danh sách được chốt khi gửi yêu cầu.',
     pricingNotice:
-      'Thay đổi danh sách này có thể làm thay đổi chi phí. Manager sẽ review từng nội dung và gửi báo giá cuối cùng để bạn xác nhận.',
+      'Thay đổi danh sách có thể làm thay đổi chi phí dự kiến.',
     choose: 'Chọn dịch vụ để xem nội dung giám sát.',
     loading: 'Đang tải nội dung giám sát…',
     empty:
@@ -48,7 +48,7 @@ export const checklistMessages = defineMessages({
     bothMediaRequired:
       'Loại "Ảnh và video" cần ít nhất một ảnh và một video.',
     custom: 'Bổ sung của bạn',
-    awaitingManagerQuote: 'Chờ Manager đánh giá',
+    awaitingManagerQuote: 'Chờ quản lý đánh giá',
     defaultItem: 'Mặc định của dịch vụ',
     catalogItem: 'Danh mục bổ sung',
     count: (n: number, total: number) => `${n}/${total} nội dung được chọn`,
@@ -70,13 +70,13 @@ export const checklistMessages = defineMessages({
     mandatoryHint: 'Nội dung bắt buộc của dịch vụ, không thể bỏ khỏi đơn.',
     quoteTitle: 'Chi phí nội dung giám sát',
     quoteHint:
-      'Giá do hệ thống tính từ cấu hình hiện hành; Manager vẫn xem xét và gửi báo giá cuối cùng.',
+      'Giá do hệ thống tính từ cấu hình hiện hành; quản lý vẫn xem xét và gửi báo giá cuối cùng.',
     quoteLoading: 'Đang tính giá…',
     quoteTotal: 'Tổng dự kiến',
     rowPriceVisits: (n: number) => `Giá cho ${n} lần thực hiện`,
     quoteOccurrences: (n: number) => `Giá đã nhân cho ${n} lần thực hiện theo lịch định kỳ.`,
     quoteAddOns: 'Dịch vụ bổ sung',
-    quoteAwaiting: 'Chờ Manager báo giá',
+    quoteAwaiting: 'Chờ quản lý báo giá',
     quoteNote: 'Chưa gồm các yếu tố theo từng đơn như quãng đường và diện tích.',
     quoteFailed: 'Không thể tính chi phí lúc này.',
     limit: 'Chỉ được chọn tối đa 100 nội dung.',

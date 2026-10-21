@@ -113,7 +113,6 @@ describe('buildOrderPayload', () => {
       score,
       aiAnalysisRequested: false,
       pricingEstimate: null,
-      consultationId: 'c-1',
     })
     expect(payload).toMatchObject({
       title: 'Giám sát',
@@ -125,7 +124,6 @@ describe('buildOrderPayload', () => {
     expect(payload.deliverables).toHaveLength(1)
     expect(payload.deliverables[0].deliverableTypeId).toBe('dt-1')
     expect(payload.deliverables[0].requirement).toMatchObject({
-      consultationId: 'c-1',
       readinessScore: 90,
       customerAttachments: [
         {
@@ -152,6 +150,34 @@ describe('buildOrderPayload', () => {
         form: { ...form, flightPurpose: 'AGRICULTURE' },
       }).flightPurpose,
     ).toBe('AGRICULTURE')
+  })
+
+  it('preserves the details entered for Other options', () => {
+    const payload = buildOrderPayload({
+      form: {
+        ...form,
+        flightPurpose: 'OTHER',
+        otherFlightPurpose: 'Bay kiểm kê mái pin mặt trời',
+        usagePurpose: 'OTHER',
+        otherUsagePurpose: 'Đào tạo nội bộ',
+        monitoringRelationship: 'OTHER',
+        otherMonitoringRelationship: 'Đơn vị bảo trì hệ thống',
+      },
+      score,
+      aiAnalysisRequested: false,
+      pricingEstimate: null,
+    })
+
+    expect(payload).toMatchObject({
+      flightPurpose: 'OTHER',
+      usagePurpose: 'OTHER',
+      monitoringRelationship: 'OTHER',
+    })
+    expect(payload.deliverables[0].requirement).toMatchObject({
+      otherFlightPurpose: 'Bay kiểm kê mái pin mặt trời',
+      otherUsagePurpose: 'Đào tạo nội bộ',
+      otherMonitoringRelationship: 'Đơn vị bảo trì hệ thống',
+    })
   })
 
   it('sends schedule preferences and drops the count when not repeating', () => {

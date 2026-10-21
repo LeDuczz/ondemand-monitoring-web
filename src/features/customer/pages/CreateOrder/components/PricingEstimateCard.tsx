@@ -45,14 +45,12 @@ export function PricingEstimateCard({
           <span>{t.servicePrice}</span>
           <strong>{formatMoney(estimate.servicePrice, locale)}</strong>
         </div>
-        <div className="co-money-row">
-          <span>{t.aiAnalysis}</span>
-          <strong>
-            {aiAnalysisRequested
-              ? `+${formatMoney(aiAddonPrice(estimate), locale)}`
-              : formatMoney(0, locale)}
-          </strong>
-        </div>
+        {aiAnalysisRequested && (
+          <div className="co-money-row">
+            <span>{t.aiAnalysis}</span>
+            <strong>+{formatMoney(aiAddonPrice(estimate), locale)}</strong>
+          </div>
+        )}
         {additionalChecklists.length > 0 && (
           <div className="co-money-row co-money-pending">
             <span>{t.additionalServiceRow}</span>

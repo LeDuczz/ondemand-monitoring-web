@@ -193,11 +193,9 @@ const MANUAL_DEVICE_KEYS = new Set<PreflightItemKey>([
   'camera_health',
   'obstacle_sensor_health',
   'manual_override',
-  'emergency_landing',
   'flight_visibility',
   'takeoff_area',
   'landing_area',
-  'aircraft_handover',
 ])
 
 const CONNECTION_MANUAL_FALLBACK_KEYS = new Set<PreflightItemKey>([

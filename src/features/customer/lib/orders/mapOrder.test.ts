@@ -34,7 +34,6 @@ const be: OrderCreateResponse = {
       requirement: {
         mediaType: 'IMAGE',
         quantity: 10,
-        consultationId: 'x',
         aiAnalysisRequested: true,
         additionalRequirements: [{ type: 'AI_IMAGE_ANALYSIS' }],
       },

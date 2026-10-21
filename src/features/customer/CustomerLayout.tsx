@@ -43,7 +43,6 @@ const activeNavKey: Record<CustomerScreen, CustomerNavItemKey | null> = {
   orders: 'orders',
   createOrder: 'createOrder',
   orderDetail: 'orders',
-  analysis: 'orders',
   live: null,
   liveHub: null,
   media: 'mediaLibrary',

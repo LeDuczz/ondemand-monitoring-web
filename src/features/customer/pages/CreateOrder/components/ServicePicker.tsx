@@ -82,14 +82,16 @@ export function ServicePicker({
       title={t.cardTitle}
       className="co-service-card"
       actions={
-        <input
-          type="search"
-          className="co-input co-service-search"
-          aria-label={t.searchLabel}
-          placeholder={t.searchPlaceholder}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        services.length > SERVICE_LIMIT ? (
+          <input
+            type="search"
+            className="co-input co-service-search"
+            aria-label={t.searchLabel}
+            placeholder={t.searchPlaceholder}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        ) : undefined
       }
     >
       <p className="co-service-lead">{t.cardHint}</p>
@@ -169,6 +171,9 @@ export function ServicePicker({
                   </span>
                 )}
               </span>
+              {selectedId === service.id && (
+                <span className="co-service-selected">{t.selectedBadge}</span>
+              )}
               <span className="co-service-name">
                 {localizeServiceName(service.id, lang, service.name)}
               </span>

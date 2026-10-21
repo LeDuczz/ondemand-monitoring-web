@@ -38,44 +38,13 @@ export function preflightGroups(
       ],
     },
     {
-      title: '3. An toàn bay',
-      items: [
-        item('system_self_check', 'Tự kiểm tra hệ thống', 'Kết quả tự kiểm tra an toàn của thiết bị'),
-        item('connection_failsafe', 'Bảo vệ khi mất tín hiệu', 'Cấu hình xử lý khi mất kết nối'),
-        item('return_to_home', 'Quay về an toàn', 'Cấu hình quay về phù hợp với nhiệm vụ'),
-        item('low_battery_protection', 'Bảo vệ pin yếu', 'Cấu hình bảo vệ và hạ cánh khi pin yếu'),
-        item('flight_geofence', 'Giới hạn khu vực bay', 'Giới hạn vùng và độ cao của chuyến bay'),
-        item('emergency_landing', 'Phương án hạ cánh khẩn cấp', 'Khu vực và phương án hạ cánh khẩn cấp'),
-      ],
-    },
-    {
-      title: '4. Môi trường bay',
+      title: '3. Môi trường bay',
       items: [
         item('weather_conditions', 'Điều kiện thời tiết', 'Thời tiết phù hợp với thiết bị và nhiệm vụ'),
         item('flight_visibility', 'Tầm nhìn', 'Tầm nhìn thực tế tại khu vực bay'),
         item('takeoff_area', 'Khu vực cất cánh', 'Khu vực cất cánh thông thoáng và an toàn'),
         item('landing_area', 'Khu vực hạ cánh', 'Khu vực hạ cánh thông thoáng và an toàn'),
         item('airspace_permission', 'Khu vực được phép bay', 'Giấy phép hoặc xác nhận vùng trời hợp lệ'),
-      ],
-    },
-    {
-      title: '5. Nhiệm vụ bay',
-      items: [
-        item('flight_route', 'Lộ trình bay', 'Lộ trình và vùng hoạt động đã được chốt'),
-        item('flight_limits', 'Giới hạn độ cao và tốc độ', 'Giới hạn vận hành phù hợp với nhiệm vụ'),
-        item('mission_energy', 'Khả năng hoàn thành chuyến bay', 'Năng lượng dự kiến đủ cho lộ trình và dự phòng'),
-        item('landing_destination', 'Điểm kết thúc chuyến bay', 'Điểm kết thúc hoặc quay về đã xác định'),
-      ],
-    },
-    {
-      title: '6. Dịch vụ cho thuê',
-      items: [
-        item('rental_booking', 'Đơn thuê', 'Đơn thuê còn hiệu lực cho thời gian thực hiện'),
-        item('aircraft_permission', 'Quyền sử dụng máy bay', 'Người vận hành được phân công và có quyền'),
-        item('aircraft_handover', 'Tình trạng bàn giao', 'Thiết bị đã được bàn giao cho người vận hành'),
-        item('maintenance_status', 'Tình trạng bảo trì', 'Thiết bị không bị khóa bảo trì hoặc ngừng khai thác'),
-        item('management_connection', 'Kết nối hệ thống quản lý', 'Hệ thống quản lý sẵn sàng tiếp nhận dữ liệu'),
-        item('media_storage', 'Lưu trữ hình ảnh và video', 'Kho lưu trữ sẵn sàng cho dữ liệu nhiệm vụ'),
       ],
     },
   ]

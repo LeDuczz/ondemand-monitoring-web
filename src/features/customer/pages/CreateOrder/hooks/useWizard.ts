@@ -5,7 +5,11 @@ import {
   type LocationCheck,
   type ValidationMessages,
 } from '../../../lib/createOrder/validators'
-import type { FormErrors, FormState, Step } from '../../../lib/createOrder/types'
+import type {
+  FormErrors,
+  FormState,
+  Step,
+} from '../../../lib/createOrder/types'
 
 type Options = {
   step: Step
@@ -55,9 +59,14 @@ const stepThreeErrors: Array<keyof FormErrors> = [
   'address',
   'latitude',
   'longitude',
+]
+
+const stepFourErrors: Array<keyof FormErrors> = [
   'altitudeM',
   'estimatedLengthM',
+  'siteContactName',
   'siteContactPhone',
+  'accessNotes',
   'permitStatus',
   'permitNumber',
   'permitDocuments',
@@ -70,14 +79,16 @@ const stepThreeErrors: Array<keyof FormErrors> = [
 function firstInvalidStep(errors: FormErrors): Step {
   if (errors.serviceId || errors.title) return 1
   if (stepThreeErrors.some((key) => Boolean(errors[key]))) return 3
+  if (stepFourErrors.some((key) => Boolean(errors[key]))) return 4
   if (
     errors.preferredDateFrom ||
     errors.preferredDateTo ||
     errors.preferredTimeId ||
     errors.resultDeadline ||
     errors.recurrenceOccurrences
-  ) return 4
-  return 5
+  )
+    return 5
+  return 6
 }
 
 /** Step navigation: validate the current step before moving forward. */
@@ -108,7 +119,7 @@ export function useWizard(o: Options) {
     showErrors,
     next: () => {
       if (validate(o.step) && (o.canAdvance?.(o.step) ?? true))
-        o.setStep((c) => Math.min(5, c + 1) as Step)
+        o.setStep((c) => Math.min(6, c + 1) as Step)
     },
     back: () => o.setStep((c) => Math.max(1, c - 1) as Step),
     reached,

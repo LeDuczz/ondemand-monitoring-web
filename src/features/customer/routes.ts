@@ -6,7 +6,6 @@ export type CustomerRoute =
   | { screen: 'dashboard' }
   | { screen: 'orders' }
   | { screen: 'createOrder' }
-  | { screen: 'analysis'; orderId: string }
   | { screen: 'orderDetail'; orderId: string }
   | { screen: 'missionReport'; orderId: string; missionId: string }
   | { screen: 'live'; orderId: string }
@@ -43,8 +42,6 @@ export function parseCustomerRoute(hash: string): CustomerRoute {
       if (tail.length === 1) return { screen: 'orderDetail', orderId: tail[0] }
       if (tail.length === 4 && tail[1] === 'missions' && tail[3] === 'report')
         return { screen: 'missionReport', orderId: tail[0], missionId: tail[2] }
-      if (tail.length === 2 && tail[1] === 'analysis')
-        return { screen: 'analysis', orderId: tail[0] }
       if (tail.length === 2 && tail[1] === 'live')
         return { screen: 'live', orderId: tail[0] }
       if (tail.length === 2 && tail[1] === 'media')
@@ -77,8 +74,6 @@ export function customerHref(route: CustomerRoute): string {
       return `${CUSTOMER_ROOT}/orders`
     case 'createOrder':
       return `${CUSTOMER_ROOT}/orders/new`
-    case 'analysis':
-      return `${CUSTOMER_ROOT}/orders/${route.orderId}/analysis`
     case 'orderDetail':
       return `${CUSTOMER_ROOT}/orders/${route.orderId}`
     case 'missionReport':

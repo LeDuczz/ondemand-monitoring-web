@@ -16,12 +16,19 @@ export function createDefaultForm(): FormState {
     title: '',
     usagePurpose: '',
     flightPurpose: 'SURVEY_MONITORING',
+    otherFlightPurpose: '',
+    otherUsagePurpose: '',
     description: '',
     address: '',
+    normalizedAddress: '',
     latitude: '10.6402',
     longitude: '106.6912',
+    locationStatus: 'unconfirmed',
+    locationSource: '',
+    locationConfirmedAt: '',
     radiusM: 300,
     monitoringRelationship: '',
+    otherMonitoringRelationship: '',
     monitoringAuthorizationConfirmed: false,
     monitoringAuthorizationDocuments: [],
     altitudeM: 60,
@@ -55,7 +62,14 @@ export function createDefaultForm(): FormState {
 }
 
 export function isStep(value: unknown): value is Step {
-  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5
+  return (
+    value === 1 ||
+    value === 2 ||
+    value === 3 ||
+    value === 4 ||
+    value === 5 ||
+    value === 6
+  )
 }
 
 export function readStoredDraft(): StoredCreateOrderDraft | null {
@@ -74,13 +88,29 @@ export function readStoredDraft(): StoredCreateOrderDraft | null {
           draft.form.flightPurpose === 'AGRICULTURE'
             ? 'SURVEY_MONITORING'
             : (draft.form.flightPurpose ?? 'SURVEY_MONITORING'),
+        otherFlightPurpose: draft.form.otherFlightPurpose ?? '',
+        otherUsagePurpose: draft.form.otherUsagePurpose ?? '',
         permitExpiresOn: draft.form.permitExpiresOn ?? '',
         permitDocuments: draft.form.permitDocuments ?? [],
         monitoringRelationship: draft.form.monitoringRelationship ?? '',
+        otherMonitoringRelationship:
+          draft.form.otherMonitoringRelationship ?? '',
         monitoringAuthorizationConfirmed:
           draft.form.monitoringAuthorizationConfirmed ?? false,
         monitoringAuthorizationDocuments:
           draft.form.monitoringAuthorizationDocuments ?? [],
+        normalizedAddress: draft.form.normalizedAddress ?? '',
+        locationStatus:
+          draft.form.locationStatus === 'confirmed' &&
+          Boolean(draft.form.locationConfirmedAt) &&
+          Boolean(draft.form.normalizedAddress)
+            ? 'confirmed'
+            : 'unconfirmed',
+        locationSource:
+          draft.form.locationStatus === 'confirmed'
+            ? (draft.form.locationSource ?? 'restored')
+            : '',
+        locationConfirmedAt: draft.form.locationConfirmedAt ?? '',
         resultFormats: draft.form.resultFormats.filter((value) =>
           RESULT_FORMATS.includes(value as ResultFormat),
         ) as ResultFormat[],

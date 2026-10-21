@@ -114,7 +114,6 @@ export function LocationCorrectionForm({ order, onSaved }: {
           onPick={(nextLatitude, nextLongitude) => {
             void pickLocation(nextLatitude, nextLongitude)
           }}
-          features={[]}
         />
       ) : (
         <div className="od-location-map-loading">Đang mở bản đồ…</div>

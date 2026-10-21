@@ -7,10 +7,7 @@ import {
 import type { OrderReviewMessages } from '../../pages/OrderReviewPage.messages'
 import { ordersApi } from '../../api/ordersApi'
 import { managerHref } from '../../routes'
-import type {
-  LegalReviewStatus,
-  OrderDetail,
-} from '../../types/orders'
+import type { LegalReviewStatus, OrderDetail } from '../../types/orders'
 import { OrderIcon } from './OrderIcon'
 import { OrderLocationCard } from './OrderLocationCard'
 import { resolveOrderGpsCenter } from './orderGps'
@@ -31,16 +28,7 @@ export function OrderAreaCheck({
   const [reviewOpen, setReviewOpen] = useState(false)
   useEffect(() => {
     setReview(areaReviewFromOrder(order))
-  }, [
-    order.id,
-    order.legalReviewStatus,
-    order.requestedScopeFeasible,
-    order.flightAreaReviewReason,
-    order.flightAreaReviewNote,
-    order.flightAreaReviewedByName,
-    order.flightAreaReviewedAt,
-    order.updatedAt,
-  ])
+  }, [order.id, order.legalReviewStatus, order.updatedAt])
   const resolved = resolveOrderGpsCenter(order.center)
   const latitude = resolved?.center.lat
   const longitude = resolved?.center.lon
@@ -54,12 +42,7 @@ export function OrderAreaCheck({
   })
 
   const data = assessment.data
-  const findings = data?.assessment.findings.filter(
-    (item) =>
-      !item.code.includes('UNAVAILABLE') &&
-      item.code !== 'RESTRICTED_ZONE_DATA_MISSING',
-  )
-  const ministryViolatedZones = data?.ministryFlightBan?.available
+  const ministryViolatedZones = data?.ministryFlightBan.available
     ? data.ministryFlightBan.violatedZones
     : []
   const hasMinistryViolations = ministryViolatedZones.length > 0
@@ -76,9 +59,9 @@ export function OrderAreaCheck({
         </div>
         {data ? (
           <span
-            className={`odm-or-area-risk is-${data.assessment.level.toLowerCase()}`}
+            className={`odm-or-area-risk is-${areaRiskLevel(data).toLowerCase()}`}
           >
-            {riskLabel(data.assessment.level)}
+            {riskLabel(areaRiskLevel(data))}
           </span>
         ) : null}
       </div>
@@ -120,48 +103,6 @@ export function OrderAreaCheck({
             ) : data ? (
               <>
                 <AreaDecisionSummary data={data} />
-                <details className="odm-or-area-details">
-                  <summary>
-                    <OrderIcon name="doc" size={18} />
-                    <span>Xem dữ liệu kiểm tra chi tiết</span>
-                    <span className="odm-or-area-chevron" aria-hidden="true">
-                      <OrderIcon name="chevron-right" size={18} />
-                    </span>
-                  </summary>
-                  <dl className="odm-or-area-facts">
-                    <Fact
-                      label="Đối chiếu bản đồ Bộ Quốc phòng"
-                      value={ministryLabel(data.ministryFlightBan)}
-                    />
-                    <Fact
-                      label="Dữ liệu vùng cấm nội bộ"
-                      value={restrictedLabel(data.restrictedZones)}
-                    />
-                    <Fact
-                      label="Khoảng cách tới vùng cấm gần nhất"
-                      value={distanceLabel(
-                        data.restrictedZones
-                          .nearestRestrictedZoneDistanceMeters,
-                      )}
-                    />
-                    <Fact
-                      label="Độ cao mặt đất tại vị trí"
-                      value={metersLabel(data.elevation.terrainElevationMeters)}
-                    />
-                    <Fact
-                      label="Công trình trong khu vực"
-                      value={String(data.osmContext.buildingCount ?? 0)}
-                    />
-                    <Fact
-                      label="Có sân bay gần khu vực"
-                      value={data.osmContext.aerodromeNearby ? 'Có' : 'Không'}
-                    />
-                    <Fact
-                      label="Có bãi đáp trực thăng gần khu vực"
-                      value={data.osmContext.helipadNearby ? 'Có' : 'Không'}
-                    />
-                  </dl>
-                </details>
                 {hasMinistryViolations ? (
                   <div className="odm-or-area-findings">
                     <strong>Vùng cần đối chiếu</strong>
@@ -182,38 +123,18 @@ export function OrderAreaCheck({
                     </ul>
                   </div>
                 ) : null}
-                {findings && findings.length > 0 ? (
-                  <div className="odm-or-area-findings">
-                    <strong>Cảnh báo cần xem xét</strong>
-                    <ul>
-                      {findings.map((finding) => (
-                        <li
-                          key={finding.code}
-                          className={`is-${finding.severity.toLowerCase()}`}
-                        >
-                          {finding.message}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : !hasMinistryViolations &&
-                  data.assessment.level === 'FAVORABLE' ? (
+                {!hasMinistryViolations && data.ministryFlightBan.available ? (
                   <div className="odm-or-area-clear">
                     <span className="odm-or-area-clear-icon" aria-hidden="true">
                       <OrderIcon name="check" size={14} />
                     </span>
                     <div>
-                      <strong>Kiểm tra sơ bộ chưa ghi nhận cảnh báo.</strong>
+                      <strong>Không phát hiện giao vùng đỏ.</strong>
                       <small>
-                        Manager vẫn cần xác nhận điều kiện thực tế trước khi duyệt.
+                        Kết quả được lấy từ bản đồ chính thức; Manager vẫn cần xác nhận thực tế.
                       </small>
                     </div>
                   </div>
-                ) : null}
-                {findings && findings.length > 0 || hasMinistryViolations ? (
-                  <p className="odm-or-area-disclaimer">
-                    {data.assessment.disclaimer}
-                  </p>
                 ) : null}
                 <a
                   className="odm-or-area-source"
@@ -450,13 +371,12 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
       <section className="odm-or-area-modal" role="dialog" aria-modal="true" aria-labelledby="area-review-title">
         <header>
           <div>
-            <h3 id="area-review-title">Đánh giá điều kiện khu vực bay</h3>
             <p>Kết quả bản đồ cần được Manager xác nhận trước khi tiếp tục.</p>
           </div>
           <button type="button" aria-label="Đóng" onClick={onClose}>×</button>
         </header>
         <div className="odm-or-area-modal-context">
-          <b>{order.title || 'Yêu cầu giám sát'}</b><span>{zoneCount} vùng cần đối chiếu</span>
+          <b>{formatRequestedLocation(order)}</b><span>{zoneCount} vùng cần đối chiếu</span>
         </div>
         <div className="odm-or-area-review-options">
           {REVIEW_OPTIONS.map((option) => (
@@ -489,6 +409,15 @@ function AreaReviewDialog({ order, initial, zoneCount, onClose, onSaved }: {
       </section>
     </div>
   )
+}
+
+function formatRequestedLocation(order: OrderDetail) {
+  const address = order.addressText?.trim()
+  if (address) return `Vị trí: ${address}`
+  if (order.center) {
+    return `Vị trí: ${order.center.lat.toFixed(6)}, ${order.center.lon.toFixed(6)}`
+  }
+  return 'Vị trí khách hàng chưa xác định'
 }
 
 function areaReviewLabel(status: LegalReviewStatus) {
@@ -603,31 +532,21 @@ function useCachedAreaAssessment({
   return { data, error, loading, reload }
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
-  )
-}
-
 function AreaDecisionSummary({ data }: { data: FlightAreaAssessment }) {
-  const level = data.assessment.level
-  const hasMinistryConflict =
-    Boolean(data.ministryFlightBan?.violatedZones.length) ||
-    (data.ministryFlightBan?.violatedAreaSquareMeters ?? 0) > 0
+  const level = areaRiskLevel(data)
+  const hasMinistryConflict = data.ministryFlightBan.violatedZones.length > 0 ||
+    (data.ministryFlightBan.violatedAreaSquareMeters ?? 0) > 0
   const title =
     level === 'HIGH_RISK'
       ? 'Chưa nên duyệt khu vực này'
       : level === 'NEEDS_REVIEW'
         ? 'Cần kiểm tra thêm trước khi duyệt'
-        : 'Chưa phát hiện trở ngại đáng kể'
+      : 'Chưa phát hiện vùng đỏ'
   const guidance = hasMinistryConflict
     ? 'Bản đồ của Bộ Quốc phòng ghi nhận khu vực giao vùng cấm hoặc hạn chế bay. Hãy mở bản đồ, đối chiếu mã vùng bên dưới và xác nhận điều kiện trước khi duyệt.'
-    : level === 'HIGH_RISK' || level === 'NEEDS_REVIEW'
-      ? 'Hãy xem các cảnh báo bên dưới và xác nhận điều kiện thực tế trước khi duyệt.'
-      : 'Bạn có thể tiếp tục xem các điều kiện duyệt khác. Điều kiện bay cuối cùng vẫn cần được xác nhận khi lập kế hoạch.'
+    : level === 'NEEDS_REVIEW'
+      ? ''
+      : 'Bản đồ chính thức chưa ghi nhận vùng đỏ trong phạm vi kiểm tra.'
 
   return (
     <div className={`odm-or-area-decision is-${level.toLowerCase()}`}>
@@ -636,7 +555,7 @@ function AreaDecisionSummary({ data }: { data: FlightAreaAssessment }) {
       </span>
       <div>
         <strong>{title}</strong>
-        <p>{guidance}</p>
+        {guidance ? <p>{guidance}</p> : null}
       </div>
     </div>
   )
@@ -653,43 +572,9 @@ function riskLabel(level: string) {
   return 'Thuận lợi'
 }
 
-function restrictedLabel(value: {
-  dataAvailable: boolean
-  pointInsideRestrictedZone: boolean
-  monitoringAreaIntersectsRestrictedZone: boolean
-}) {
-  if (!value.dataAvailable) return 'Chưa có dữ liệu'
-  if (value.pointInsideRestrictedZone) return 'Tâm vùng nằm trong vùng cấm'
-  if (value.monitoringAreaIntersectsRestrictedZone)
-    return 'Vùng giám sát giao vùng cấm'
-  return 'Không giao vùng cấm'
-}
-
-function distanceLabel(value: number | null | undefined) {
-  return value == null
-    ? 'Chưa xác định'
-    : `${Math.round(value).toLocaleString('vi-VN')} m`
-}
-
-function metersLabel(value: number | null | undefined) {
-  return value == null ? 'Chưa xác định' : `${Math.round(value)} m AMSL`
-}
-
-function ministryLabel(
-  value:
-    | {
-        available: boolean
-        violatedAreaSquareMeters?: number | null
-        violatedZones: string[]
-      }
-    | undefined,
-) {
-  if (!value?.available) return 'Không kết nối được'
-  if (
-    (value.violatedAreaSquareMeters ?? 0) > 0 ||
-    value.violatedZones.length > 0
-  ) {
-    return 'Có giao vùng cấm/hạn chế bay'
-  }
-  return 'Không ghi nhận giao vùng cấm'
+function areaRiskLevel(data: FlightAreaAssessment) {
+  if (!data.ministryFlightBan.available) return 'NEEDS_REVIEW'
+  if (data.ministryFlightBan.violatedZones.length > 0 ||
+      (data.ministryFlightBan.violatedAreaSquareMeters ?? 0) > 0) return 'HIGH_RISK'
+  return 'FAVORABLE'
 }

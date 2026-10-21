@@ -118,24 +118,9 @@ export type WeatherForecast = {
   warnings?: string[]
 }
 
-export type FlightAreaRiskLevel = 'FAVORABLE' | 'NEEDS_REVIEW' | 'HIGH_RISK'
-export type FlightAreaFindingSeverity = 'INFO' | 'WARNING' | 'HIGH'
-export type FlightAreaNearbyFeature = {
-  type: string
-  name?: string | null
-  distanceMeters?: number | null
-  heightMeters?: number | null
-  latitude?: number | null
-  longitude?: number | null
-  source?: string
-}
 export type FlightAreaAssessment = {
   location: { latitude: number; longitude: number; radiusMeters: number }
-  elevation: { available: boolean; terrainElevationMeters?: number | null; reference?: string; requestedAltitudeAglMeters?: number | null; estimatedFlightAltitudeAmslMeters?: number | null; provider?: string; errorCode?: string | null }
-  restrictedZones: { dataAvailable: boolean; pointInsideRestrictedZone: boolean; monitoringAreaIntersectsRestrictedZone: boolean; nearestRestrictedZoneDistanceMeters?: number | null; affectedZones: Array<{ id: string; code: string; name: string; zoneType?: string; purpose?: string | null; restricted: boolean; distanceMeters?: number | null; intersectsMonitoringArea: boolean }> }
-  osmContext: { available: boolean; errorCode?: string | null; queryRadiusMeters?: number | null; buildingCount: number; towerCount: number; mastCount: number; powerTowerCount: number; aerodromeNearby: boolean; helipadNearby: boolean; importantFeatures: FlightAreaNearbyFeature[] }
-  ministryFlightBan?: { available: boolean; totalAreaSquareMeters?: number | null; violatedAreaSquareMeters?: number | null; safeAreaSquareMeters?: number | null; violatedZones: string[]; sourceUrl: string; errorCode?: string | null }
-  assessment: { level: FlightAreaRiskLevel; findings: Array<{ code: string; severity: FlightAreaFindingSeverity; message: string }>; disclaimer: string }
+  ministryFlightBan: { available: boolean; totalAreaSquareMeters?: number | null; violatedAreaSquareMeters?: number | null; safeAreaSquareMeters?: number | null; violatedZones: string[]; sourceUrl: string; errorCode?: string | null }
 }
 export type FlightAreaAssessmentQuery = { latitude: number; longitude: number; radiusMeters: number; requestedAltitudeAgl?: number; includeOsm?: boolean }
 

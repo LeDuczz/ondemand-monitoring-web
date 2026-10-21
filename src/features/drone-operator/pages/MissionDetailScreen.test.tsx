@@ -53,12 +53,33 @@ const noActions = {
 // it rejects in this test environment and the screen settles on its
 // bilingual "mission not found" error state.
 describe('MissionDetailScreen', () => {
+  it('keeps the execution checklist in its own tab', async () => {
+    vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(noActions)
+
+    render(<MissionDetailScreen missionId="m" />)
+
+    const checklistTab = await screen.findByRole('tab', {
+      name: 'Checklist thực hiện',
+    })
+    expect(
+      screen.queryByRole('region', { name: 'Monitoring Checklist' }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(checklistTab)
+    expect(
+      await screen.findByRole('region', { name: 'Monitoring Checklist' }),
+    ).toBeInTheDocument()
+  })
+
   it('missing permission response keeps legacy detail readable without granting actions', async () => {
     vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
     // Deliberately malformed response, outside the typed API contract.
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(null as never)
     render(<MissionDetailScreen missionId="m" />)
     expect((await screen.findAllByText('MS-1'))[0]).toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole('tab', { name: 'Checklist thực hiện' }),
+    )
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(
       screen.queryByRole('button', { name: 'Hoàn thành Mission' }),
@@ -259,6 +280,9 @@ describe('MissionDetailScreen', () => {
       screen.queryByRole('button', { name: 'Gửi kết quả cho Manager' }),
     ).toBeNull()
 
+    fireEvent.click(
+      screen.getByRole('tab', { name: 'Checklist thực hiện' }),
+    )
     fireEvent.click(screen.getByRole('button', { name: /Tải lại/ }))
     await waitFor(() =>
       expect(

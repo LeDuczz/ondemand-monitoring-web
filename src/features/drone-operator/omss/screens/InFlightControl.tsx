@@ -3081,7 +3081,6 @@ function ManualCockpitPreflight({
     <div className="satellite-manual-preflight">
       <div className="satellite-manual-preflight__header">
         <div>
-          <p>{lang === 'en' ? 'Manual preflight' : 'Kiểm tra thủ công'}</p>
           <h2>{missionLabel}</h2>
           <span>{deviceLabel}</span>
         </div>
@@ -3152,6 +3151,7 @@ export default function InFlightControl({
   const [startFlightBusy, setStartFlightBusy] = useState(false)
   const [streamRevision, setStreamRevision] = useState(0)
   const [controlStatus, setControlStatus] = useState<ControlStatus | null>(null)
+  const lifecycleRecoveryBusyRef = useRef(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [lidarDetailsOpen, setLidarDetailsOpen] = useState(false)
   const cameraDefaultAppliedRef = useRef(false)
@@ -3281,6 +3281,56 @@ export default function InFlightControl({
     }
   }, [])
 
+  // Recovery for a controller session that is already airborne while the
+  // persisted Mission is still READY_TO_FLY (for example after an older UI
+  // sent the controller command first). This is scoped to the exact bound
+  // Mission/device, so unrelated telemetry cannot advance the lifecycle.
+  useEffect(() => {
+    const missionId = mission.backendId ?? mission.id
+    if (
+      !onStartFlight ||
+      mission.state !== 'READY_TO_FLY' ||
+      controlStatus?.inAir !== true ||
+      controlStatus.missionId !== missionId ||
+      controlStatus.deviceId !== drone.id ||
+      lifecycleRecoveryBusyRef.current
+    )
+      return
+
+    lifecycleRecoveryBusyRef.current = true
+    setLastCommand(
+      getLanguage() === 'en'
+        ? 'Synchronizing in-flight Mission status...'
+        : 'Đang đồng bộ trạng thái Mission đang bay...',
+    )
+    void onStartFlight()
+      .then(() =>
+        setLastCommand(
+          getLanguage() === 'en'
+            ? 'Mission status synchronized'
+            : 'Đã đồng bộ Mission sang Đang bay',
+        ),
+      )
+      .catch((error: unknown) =>
+        setLastCommand(
+          error instanceof Error ? error.message : t.status.controllerOffline,
+        ),
+      )
+      .finally(() => {
+        lifecycleRecoveryBusyRef.current = false
+      })
+  }, [
+    controlStatus?.deviceId,
+    controlStatus?.inAir,
+    controlStatus?.missionId,
+    drone.id,
+    mission.backendId,
+    mission.id,
+    mission.state,
+    onStartFlight,
+    t.status.controllerOffline,
+  ])
+
   const sendCommand = useCallback(
     async (command: FlightCommand) => {
       if (
@@ -3386,6 +3436,18 @@ export default function InFlightControl({
           )
           await flightControlApi.bindSession(missionKey, drone.id)
         }
+
+        // The business lifecycle must authorize and record takeoff before the
+        // controller is allowed to move the aircraft. Previously this happened
+        // after the controller command, so a rejected/failed lifecycle request
+        // could leave a physically flying drone at READY_TO_FLY for Manager.
+        if (
+          (command === 'takeoff' || command === 'gps_target_start') &&
+          onStartFlight
+        ) {
+          const latestMission = await missionApi.getMissionById(missionKey)
+          if (latestMission.status === 'READY_TO_FLY') await onStartFlight()
+        }
         if (command === 'photo') {
           // The cockpit camera is satellite imagery, so capture exactly that view in the browser
           // and hand it to the controller's local media library for review/upload.
@@ -3489,17 +3551,6 @@ export default function InFlightControl({
                 : t.status.commandSent(command.replaceAll('_', ' ')),
         )
         setIsOnline(true)
-
-        // Keep the business mission lifecycle in sync with the real flight.
-        // Both a direct takeoff and "Fly to point" begin an actual flight, so
-        // neither command may leave Inspector screens stuck at READY_TO_FLY.
-        if (
-          (command === 'takeoff' || command === 'gps_target_start') &&
-          onStartFlight
-        ) {
-          const latestMission = await missionApi.getMissionById(missionKey)
-          if (latestMission.status === 'READY_TO_FLY') await onStartFlight()
-        }
 
         if (command === 'return_to_base') onRTB()
         if (command === 'emergency_stop') onEmergency()

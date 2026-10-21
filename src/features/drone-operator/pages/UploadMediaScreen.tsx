@@ -23,7 +23,6 @@ import type { MediaFile } from '../types/mission'
 import { FlightStepHeader } from './FlightStepper'
 import { MediaTable } from './MediaTable'
 import { uploadMediaScreenMessages } from './UploadMediaScreen.messages'
-import { MonitoringChecklistSection } from '../../mission/components/MonitoringChecklistSection'
 import {
   MissionResultActions,
   missionResultActions,
@@ -33,10 +32,6 @@ import './UploadMediaScreen.css'
 import { useMissionMonitoring } from '../../mission/hooks/useMissionMonitoring'
 import { checklistEvidenceApi } from '../../mission/api/checklistEvidenceApi'
 import { checklistExecutionApi } from '../../mission/api/checklistExecutionApi'
-import type {
-  EvidenceCandidate,
-  MissionChecklistExecution,
-} from '../../mission/types/checklistExecution'
 
 const finishedUploadStatuses = new Set([
   'PENDING_MANAGER_APPROVAL',
@@ -346,118 +341,6 @@ function UploadMediaContent({
       }))
     } finally {
       refreshWorkspace()
-    }
-  }
-
-  async function loadEvidenceCandidates(page: number) {
-    if (!missionId) return []
-    const uploadedCandidates = await checklistEvidenceApi.candidates(
-      missionId,
-      page,
-    )
-    if (page > 0) return uploadedCandidates
-
-    const backendIds = new Set(
-      uploadedCandidates.map((candidate) => candidate.mediaId),
-    )
-    const localCandidates: EvidenceCandidate[] = itemsRef.current
-      .filter(
-        (item) => !item.backendMediaId || !backendIds.has(item.backendMediaId),
-      )
-      .map((item) => {
-        const status = effectiveStatus(item)
-        const sourceEligible =
-          item.sourceType === 'DRONE_CAMERA' ||
-          item.sourceType === 'SATELLITE_SNAPSHOT'
-        const attachable =
-          canManageMedia &&
-          item.localAvailable !== false &&
-          sourceEligible &&
-          (item.mediaType === 'IMAGE' || item.mediaType === 'VIDEO')
-        return {
-          mediaId: `local:${item.localMediaId}`,
-          fileName: item.fileName,
-          mediaType: item.mediaType,
-          contentType: item.contentType,
-          status: finishedUploadStatuses.has(status)
-            ? status === 'AVAILABLE'
-              ? 'AVAILABLE'
-              : 'PENDING_MANAGER_APPROVAL'
-            : status === 'VALIDATING'
-              ? 'VALIDATING'
-              : 'UPLOAD_PENDING',
-          sourceType: item.sourceType ?? null,
-          capturedAt: item.capturedAt,
-          validatedAt: null,
-          attachable,
-          eligibleForOperationalReadiness: false,
-          eligibleForFinalApproval: false,
-          ineligibilityReason: attachable
-            ? null
-            : 'EVIDENCE_SOURCE_NOT_ELIGIBLE',
-          previewUrl:
-            item.localAvailable === false
-              ? null
-              : operatorMediaApi.previewUrl(item.localMediaId),
-          urlExpiresAt: null,
-          alreadyAttachedExecutionIds: [],
-        }
-      })
-    return [...localCandidates, ...uploadedCandidates]
-  }
-
-  async function attachEvidenceCandidate(
-    candidate: EvidenceCandidate,
-    execution: MissionChecklistExecution,
-  ) {
-    if (!missionId) return
-    let mediaId = candidate.mediaId
-
-    if (candidate.mediaId.startsWith('local:')) {
-      const localId = candidate.mediaId.slice('local:'.length)
-      const item = itemsRef.current.find(
-        (entry) => entry.localMediaId === localId,
-      )
-      if (!item) throw new Error('Media local không còn khả dụng.')
-
-      mediaId = item.backendMediaId ?? ''
-      if (!mediaId) {
-        setBusyId(item.localMediaId)
-        mediaId = await operatorMediaApi.upload({ ...item, missionId }, false)
-        uploadedMediaIds.current[item.localMediaId] = mediaId
-        setItems((previous) => {
-          const next = previous.map((entry) =>
-            entry.localMediaId === item.localMediaId
-              ? {
-                  ...entry,
-                  backendMediaId: mediaId,
-                  status: 'VALIDATING' as const,
-                }
-              : entry,
-          )
-          itemsRef.current = next
-          return next
-        })
-      }
-    }
-
-    try {
-      const latest =
-        await checklistExecutionApi.getMissionChecklistExecutions(missionId)
-      const current = latest.executions.find((item) => item.id === execution.id)
-      if (!current)
-        throw new Error('Mục checklist không còn thuộc Mission này.')
-      await checklistEvidenceApi.attach(
-        missionId,
-        current.id,
-        mediaId,
-        current.version,
-      )
-      setChecklistRevision((value) => value + 1)
-      monitoring.reload()
-      await refresh()
-    } finally {
-      setBusyId(null)
     }
   }
 
@@ -1205,34 +1088,6 @@ function UploadMediaContent({
                 </div>
               ) : null}
             </div>
-            {missionId && (
-              <MonitoringChecklistSection
-                key={missionId}
-                missionId={missionId}
-                data={monitoring.data?.checklist}
-                loading={monitoring.loading && !monitoring.data}
-                error={monitoring.error}
-                resultKnown={actions.known}
-                resultStatus={monitoring.data?.result?.approvalStatus}
-                resultNote={monitoring.data?.result?.reviewNote}
-                canExecute={
-                  monitoring.data?.permissions.canExecuteMonitoringChecklist
-                }
-                canAssess={
-                  monitoring.data?.permissions.canInspectDevice === true
-                }
-                canAttach={
-                  monitoring.data?.permissions.canAttachChecklistEvidence
-                }
-                canDetach={
-                  monitoring.data?.permissions.canDetachChecklistEvidence
-                }
-                refresh={refreshWorkspace}
-                compact
-                loadEvidenceCandidates={loadEvidenceCandidates}
-                attachEvidenceCandidate={attachEvidenceCandidate}
-              />
-            )}
           </div>
         </div>
       </div>

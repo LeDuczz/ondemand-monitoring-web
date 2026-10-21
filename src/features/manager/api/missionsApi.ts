@@ -4,6 +4,7 @@ import type {
   CancelMissionRequest,
   CreateIncidentRequest,
   CreateMissionRequest,
+  FlightPermitUpdateRequest,
   LiveTelemetry,
   MediaAssetResponse,
   MediaResponse,
@@ -38,6 +39,11 @@ export function toMissionCalendarItem(
     orderCode: source.orderCode ?? null,
     missionCode: source.missionCode,
     status: source.status,
+    flightPermitStatus: source.flightPermitStatus ?? 'NOT_REQUESTED',
+    flightPermitNote: source.flightPermitNote ?? null,
+    flightPermitFileName: source.flightPermitFileName ?? null,
+    flightPermitContentType: source.flightPermitContentType ?? null,
+    flightPermitDataUrl: source.flightPermitDataUrl ?? null,
     safeStopStatus: source.safeStopStatus,
     safeStopRequestedAt: source.safeStopRequestedAt,
     safeStopConfirmedAt: source.safeStopConfirmedAt,
@@ -95,6 +101,16 @@ export const missionsApi = {
     signal?: AbortSignal,
   ): Promise<MissionResponse> {
     return apiRequest<MissionResponse>(`/api/missions/${id}`, { signal })
+  },
+
+  updateFlightPermit(
+    missionId: string,
+    request: FlightPermitUpdateRequest,
+  ): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(
+      `/api/missions/${missionId}/flight-permit`,
+      { method: 'PATCH', body: request },
+    )
   },
 
   /**

@@ -29,6 +29,7 @@ export function StepTabs({ step, reached = step, labels, onSelect }: Props) {
             key={item}
             type="button"
             className={`co-tab ${state}`}
+            aria-label={labels[item]}
             aria-current={item === step ? 'step' : undefined}
             disabled={item > reached}
             onClick={() => onSelect(item)}
@@ -41,7 +42,8 @@ export function StepTabs({ step, reached = step, labels, onSelect }: Props) {
               )}
             </span>
             <span className="co-tab-text">
-              <span className="co-tab-title">{labels[item]}</span>
+              <span className="co-tab-title">{t.shortTitles[item]}</span>
+              <span className="odm-visually-hidden">{labels[item]}</span>
               <span className="co-tab-sub">{t.subtitles[item]}</span>
             </span>
           </button>

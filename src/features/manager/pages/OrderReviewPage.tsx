@@ -58,7 +58,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   )
 
   const [navigateHome, setNavigateHome] = useState(false)
-  const [assignStep, setAssignStep] = useState<6 | 7 | 8>(6)
+  const [assignStep, setAssignStep] = useState<6 | 7 | 8 | 9>(6)
   const [reviewStep, setReviewStep] = useState<ReviewStep>(1)
   const [areaReviewStatus, setAreaReviewStatus] =
     useState<LegalReviewStatus | null>(null)
@@ -98,7 +98,11 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
                 ? null
                 : assigningMissionId,
               lang,
-              assignStep >= 8 ? 'review' : 'resources',
+              assignStep >= 9
+                ? 'permit'
+                : assignStep >= 8
+                  ? 'review'
+                  : 'resources',
             )}
           />
           <div className="odm-assign-context" aria-label={t.serviceEyebrow}>
@@ -387,18 +391,22 @@ function missionLayer(
   planning: PlanningWorkflowInfo | null,
   missionId: string | null,
   lang: 'vi' | 'en',
-  stage?: 'resources' | 'review',
+  stage?: 'resources' | 'review' | 'permit',
 ) {
   const total = planning?.missions.length
   const index = planning?.missions.findIndex((m) => m.id === missionId) ?? -1
   const mission = index >= 0 ? planning?.missions[index] : undefined
-  const progress = mission ? missionProgress(mission.status) : null
+  const progress = mission
+    ? missionProgress(mission.status, mission.flightPermitStatus)
+    : null
   return {
     progress:
       stage === 'resources'
         ? { current: 'resources' as const, finished: false, terminal: null }
         : stage === 'review'
           ? { current: 'prepare' as const, finished: false, terminal: null }
+          : stage === 'permit'
+            ? { current: 'permit' as const, finished: false, terminal: null }
           : progress,
     index: mission ? index + 1 : undefined,
     total: mission ? total : undefined,

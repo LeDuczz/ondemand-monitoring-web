@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { ApiError } from '../../shared/api/httpClient'
+import { env } from '../../config/env'
 import { useI18n } from '../../shared/i18n'
 import { formatVnd } from '../../shared/lib/formatVnd'
 import {
@@ -100,6 +101,20 @@ export function CustomerFinancePanel({
       window.location.assign(payment.paymentUrl)
     } catch (cause) {
       setError(messageOf(cause, t))
+      setBusy(false)
+    }
+  }
+
+  async function completeTestDeposit() {
+    if (!invoice) return
+    setBusy(true)
+    setError(null)
+    try {
+      await financeApi.completeTestDeposit(invoice.id)
+      await load()
+    } catch (cause) {
+      setError(messageOf(cause, t))
+    } finally {
       setBusy(false)
     }
   }
@@ -210,14 +225,26 @@ export function CustomerFinancePanel({
           ) : null}
           <div className="finance-actions customer-payment-actions">
             {invoice.paidAmount < invoice.depositAmount && legalReady ? (
-              <button
-                className="odm-btn odm-btn-p"
-                type="button"
-                disabled={busy}
-                onClick={() => void pay('deposit')}
-              >
-                Thanh toán đặt cọc
-              </button>
+              <>
+                <button
+                  className="odm-btn odm-btn-p"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void pay('deposit')}
+                >
+                  Thanh toán đặt cọc
+                </button>
+                {env.testPaymentsEnabled ? (
+                  <button
+                    className="odm-btn odm-btn-gh"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void completeTestDeposit()}
+                  >
+                    {t.testPayment}
+                  </button>
+                ) : null}
+              </>
             ) : null}
             {invoice.finalPaymentAllowed &&
             invoice.paidAmount >= invoice.depositAmount &&

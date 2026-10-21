@@ -17,6 +17,8 @@ export type OrderRow = {
   status: OrderStatus
   radiusM: number | null
   createdAt: string | null
+  /** Customer-facing finance state, loaded separately for approved orders. */
+  depositState?: 'ACTION_REQUIRED' | 'PAID'
 }
 
 export type DeliverableView = {
@@ -37,9 +39,19 @@ export type OrderTimelineEvent = {
 }
 
 /** Steps of the order progress stepper; the first four are the happy path. */
-export type OrderStepKey = 'submitted' | 'approved' | 'quote' | 'deposit' | 'planning' | 'inProgress' | 'completed' | 'rejected' | 'cancelled'
+export type OrderStepKey =
+  | 'submitted'
+  | 'approved'
+  | 'quote'
+  | 'deposit'
+  | 'planning'
+  | 'inProgress'
+  | 'completed'
+  | 'rejected'
+  | 'cancelled'
 
-export type OrderStepState = 'done' | 'current' | 'upcoming' | 'failed' | 'cancelled'
+export type OrderStepState =
+  'done' | 'current' | 'upcoming' | 'failed' | 'cancelled'
 
 export type OrderStep = {
   key: OrderStepKey
@@ -52,7 +64,8 @@ export type OrderStep = {
 
 /** `GET /api/orders/{id}` mapped for the detail page. */
 export type OrderDetailView = OrderRow & {
-  legalReviewStatus: 'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
+  legalReviewStatus:
+    'NOT_REVIEWED' | 'NOT_REQUIRED' | 'PENDING_PERMIT' | 'APPROVED' | 'REJECTED'
   checklistItems?: ChecklistSnapshot[]
   checklistSnapshotAt?: string | null
   description: string | null
@@ -63,9 +76,20 @@ export type OrderDetailView = OrderRow & {
   siteContactName: string | null
   siteContactPhone: string | null
   accessNotes: string | null
-  monitoringRelationship: 'OWNER' | 'AUTHORIZED_PERSON' | 'CONTRACTOR' | 'MANAGER_OR_SUPERVISOR' | 'OTHER' | null
+  monitoringRelationship:
+    | 'OWNER'
+    | 'AUTHORIZED_PERSON'
+    | 'CONTRACTOR'
+    | 'MANAGER_OR_SUPERVISOR'
+    | 'OTHER'
+    | null
   monitoringAuthorizationConfirmed: boolean
-  monitoringAuthorizationDocuments: Array<{ id: string; documentName: string; fileName: string; notes?: string }>
+  monitoringAuthorizationDocuments: Array<{
+    id: string
+    documentName: string
+    fileName: string
+    notes?: string
+  }>
   permitStatus: string | null
   permitNumber: string | null
   permitExpiresOn: string | null

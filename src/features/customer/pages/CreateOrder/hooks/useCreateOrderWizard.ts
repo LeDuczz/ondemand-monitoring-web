@@ -1,10 +1,6 @@
 import { useMemo } from 'react'
 
 import { useI18n } from '../../../../../shared/i18n'
-import {
-  buildConsultationRequestContext,
-  isReusableConsultation,
-} from '../../../lib/createOrder/consultation'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
 import {
   buildOrderPayload,
@@ -12,11 +8,9 @@ import {
 } from '../../../lib/createOrder/payload'
 import { scoreRequest } from '../../../lib/createOrder/scoring'
 import { createOrderPageMessages } from '../CreateOrderPage.messages'
-import { useConsultation } from './useConsultation'
 import { useCreateOrderForm } from './useCreateOrderForm'
 import { useCreateOrderMeta } from './useCreateOrderMeta'
 import { useDraftPersistence } from './useDraftPersistence'
-import { useRecommendedService } from './useRecommendedService'
 import { useSubmitOrder } from './useSubmitOrder'
 import { useWizard } from './useWizard'
 import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
@@ -61,42 +55,14 @@ export function useCreateOrderWizard() {
     areaHa: Number(calcArea(form.radiusM)),
     lengthKm: Number(form.estimatedLengthM || 0) / 1000,
     altitudeM: Number.isFinite(form.altitudeM) ? form.altitudeM : 0,
-    aiAnalysisRequested: f.aiAnalysisRequested,
+    aiAnalysisRequested: false,
     occurrences:
       form.recurrenceType !== 'NONE' && form.recurrenceOccurrences > 1
         ? form.recurrenceOccurrences
         : 1,
   })
-  const meta = useCreateOrderMeta(
-    form.serviceId,
-    f.aiAnalysisRequested,
-    f.setForm,
-  )
+  const meta = useCreateOrderMeta(form.serviceId, false, f.setForm)
   const service = meta.services.find((s) => s.id === form.serviceId)
-
-  const chat = useConsultation({
-    initialConsultation: stored?.consultation ?? null,
-    initialMessages: stored?.chatMessages ?? [],
-    buildContext: (latestMessage) =>
-      buildConsultationRequestContext({
-        form,
-        mapPoint: f.mapPoint,
-        services: meta.services,
-        serviceName: service?.name,
-        latestMessage,
-      }),
-    onReceive: (c) => f.applyConsultation(c, meta.services),
-    onAiAnswer: f.setAiAnalysisRequested,
-    onError: f.setSubmitError,
-    onReset: f.resetConsultationFields,
-  })
-
-  useRecommendedService(chat.consultation, meta.services, (serviceId) => {
-    f.setForm((cur) =>
-      cur.serviceId === serviceId ? cur : { ...cur, serviceId },
-    )
-    f.setErrors((cur) => ({ ...cur, serviceId: undefined }))
-  })
 
   const wizard = useWizard({
     step,
@@ -104,7 +70,7 @@ export function useCreateOrderWizard() {
     form,
     setErrors: f.setErrors,
     location: {
-      monitoringValid: true,
+      monitoringValid: form.locationStatus === 'confirmed',
       blockedZoneNames: [],
     },
     messages: t.validation,
@@ -115,9 +81,6 @@ export function useCreateOrderWizard() {
     () => scoreRequest(form, t.scoreNotes),
     [form, t.scoreNotes],
   )
-  const consultationId = isReusableConsultation(chat.consultation)
-    ? chat.consultation.id
-    : undefined
 
   const submit = useSubmitOrder({
     validate: () => wizard.validate(5) && checklist.valid,
@@ -156,13 +119,12 @@ export function useCreateOrderWizard() {
         deliverableOptions: meta.deliverables,
         form,
         score,
-        consultationId,
-        aiAnalysisRequested: f.aiAnalysisRequested,
+        aiAnalysisRequested: false,
         pricingEstimate: meta.pricingEstimate,
       }),
       checklistItems: withAdditionalRequirementChecklist(
         checklist.serialize(),
-        f.aiAnalysisRequested,
+        false,
       ),
     }),
   })
@@ -172,10 +134,6 @@ export function useCreateOrderWizard() {
       step,
       form,
       mapPoint: f.mapPoint,
-      consultation: chat.consultation,
-      chatMessages: chat.messages,
-      autoDraft: f.autoDraft,
-      aiAnalysisRequested: f.aiAnalysisRequested,
     },
     !submit.createdId,
   )
@@ -184,7 +142,6 @@ export function useCreateOrderWizard() {
     checklist,
     f,
     meta,
-    chat,
     wizard,
     submit,
     score,

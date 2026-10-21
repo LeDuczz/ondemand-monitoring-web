@@ -22,7 +22,7 @@ type Props = {
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
   aiAnalysisRequested: boolean
-  /** Wizard actions, rendered at the bottom of the sticky summary panel. */
+  /** Wizard actions, rendered in-flow at the bottom of the summary panel. */
   footer?: ReactNode
 }
 
@@ -60,9 +60,9 @@ export function ContentStep(p: Props) {
             aiAnalysisRequested={p.aiAnalysisRequested}
             additionalChecklists={p.additionalChecklists}
           />
+          {p.footer && <div className="co-summary-cta">{p.footer}</div>}
         </aside>
       </div>
-      {p.footer && <div className="co-bottom-bar">{p.footer}</div>}
     </>
   )
 }

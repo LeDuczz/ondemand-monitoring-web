@@ -53,12 +53,21 @@ export function toOrderRow(order: OrderCreateResponse): OrderRow {
     status: normalizeStatus(order.orderStatus),
     radiusM: orNull(order.radiusM),
     createdAt: orNull(order.createdAt),
+    depositState:
+      statusDepositState(normalizeStatus(order.orderStatus), order.depositSatisfied),
   }
+}
+
+function statusDepositState(
+  status: OrderStatus,
+  depositSatisfied: boolean | null | undefined,
+): OrderRow['depositState'] {
+  if (status !== 'APPROVED') return undefined
+  return depositSatisfied ? 'PAID' : 'ACTION_REQUIRED'
 }
 
 /** Requirement keys that are internal bookkeeping, not customer-facing. */
 const HIDDEN_REQUIREMENT_KEYS = new Set([
-  'consultationId',
   'readinessScore',
   'aiAnalysisRequested',
 ])

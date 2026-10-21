@@ -23,7 +23,15 @@ const NO_DRONE_SENTINEL = '__no_drone_assigned__'
 const controlBaseUrl =
   import.meta.env.VITE_FLIGHT_CONTROL_API_URL ?? 'http://localhost:8090'
 
-type RuntimeStatus = 'PENDING' | 'CHECKING' | 'PASS' | 'WARN' | 'FAIL'
+type RuntimeStatus =
+  | 'PENDING'
+  | 'CHECKING'
+  | 'PASS'
+  | 'WARN'
+  | 'FAIL'
+  | 'UNKNOWN'
+  | 'STALE'
+  | 'NOT_APPLICABLE'
 type RuntimeOverallStatus = 'CHECKING' | 'READY' | 'FAILED'
 
 type RuntimeCheck = {
@@ -32,6 +40,10 @@ type RuntimeCheck = {
   status: RuntimeStatus
   message: string
   critical: boolean
+  source?: 'TELEMETRY' | 'BACKEND' | 'EXTERNAL_API' | 'MANUAL'
+  measuredValue?: string | null
+  errorCode?: string | null
+  checkedAt?: string | null
 }
 
 type RuntimePreflightStatus = {
@@ -41,7 +53,15 @@ type RuntimePreflightStatus = {
   checks: RuntimeCheck[]
 }
 
-type PersistedPreflightItemStatus = 'PENDING' | 'CHECKING' | 'PASSED' | 'FAILED'
+type PersistedPreflightItemStatus =
+  | 'PENDING'
+  | 'CHECKING'
+  | 'PASSED'
+  | 'WARNING'
+  | 'FAILED'
+  | 'UNKNOWN'
+  | 'STALE'
+  | 'NOT_APPLICABLE'
 type PersistedPreflightStatus = 'CHECKING' | 'PASSED' | 'FAILED' | 'CANCELLED'
 
 type PersistedPreflightCheck = {
@@ -54,12 +74,17 @@ type PersistedPreflightCheck = {
     status: PersistedPreflightItemStatus
     checkLevel: 'CRITICAL' | 'WARNING' | 'INFO'
     message?: string | null
+    source?: 'TELEMETRY' | 'BACKEND' | 'EXTERNAL_API' | 'MANUAL'
+    measuredValue?: string | null
+    errorCode?: string | null
+    checkedAt?: string | null
   }>
 }
 
 type PersistedPreflightUpdate = {
   status: PersistedPreflightItemStatus
   message: string
+  measuredValue?: string
 }
 
 type StoredPreflightStatus = {
@@ -110,6 +135,9 @@ type ItemState = {
   detail?: string
   message?: string
   status?: RuntimeStatus
+  source?: RuntimeCheck['source']
+  measuredValue?: string | null
+  checkedAt?: string | null
 }
 
 const RUNTIME_KEY_MAP: Record<string, PreflightItemKey> = {
@@ -120,7 +148,7 @@ const RUNTIME_KEY_MAP: Record<string, PreflightItemKey> = {
   LOCAL_POSITION: 'localPosition',
   MAVSDK_HEALTH: 'mavsdkHealth',
   BATTERY: 'battery',
-  LIDAR: 'lidar',
+  LIDAR: 'obstacleSensor',
   CAMERA: 'camera',
   BACKEND: 'backend',
   MEDIA: 'media',
@@ -131,16 +159,14 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
   const mapped: Partial<Record<PreflightItemKey, ItemState>> = {}
 
   for (const check of checks) {
-    const key =
-      RUNTIME_KEY_MAP[check.key] ??
-      (ALL_PREFLIGHT_KEYS.includes(check.key as PreflightItemKey)
-        ? (check.key as PreflightItemKey)
-        : undefined)
+    const key = RUNTIME_KEY_MAP[check.key] ?? check.key
     if (!key) continue
 
     const current = mapped[key]
     const result =
-      check.status === 'PASS' || check.status === 'WARN'
+      check.status === 'PASS' ||
+      check.status === 'WARN' ||
+      check.status === 'NOT_APPLICABLE'
         ? 'ok'
         : check.status === 'FAIL'
           ? 'fail'
@@ -151,6 +177,9 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
         result,
         status: check.status,
         message: check.message,
+        source: check.source,
+        measuredValue: check.measuredValue,
+        checkedAt: check.checkedAt,
       }
     }
   }
@@ -158,17 +187,24 @@ function mapRuntimeToItems(checks: RuntimeCheck[]) {
   return mapped
 }
 
-const ALL_PREFLIGHT_KEYS: PreflightItemKey[] = [
-  'battery',
-  'camera',
-  'lidar',
-  'px4',
-  'mavsdk',
-  'px4Control',
-  'mavsdkHealth',
-  'backend',
-  'media',
-]
+const MANUAL_DEVICE_KEYS = new Set<PreflightItemKey>([
+  'propeller_inspection',
+  'airframe_inspection',
+  'camera_health',
+  'obstacle_sensor_health',
+  'manual_override',
+  'flight_visibility',
+  'takeoff_area',
+  'landing_area',
+])
+
+const CONNECTION_MANUAL_FALLBACK_KEYS = new Set<PreflightItemKey>([
+  'aircraft_connection',
+  'command_link',
+  'flight_controller',
+  'aircraft_readiness',
+  'monitoring_connection',
+])
 
 type PreflightMessages = (typeof preflightScreenMessages)['vi']
 
@@ -182,6 +218,9 @@ function statusText(
   if (status === 'WARN') return message || t.statusWarnNoBlock
   if (status === 'FAIL') return message || t.itemFail
   if (status === 'CHECKING') return message || t.statusChecking
+  if (status === 'UNKNOWN') return message || 'Chưa đủ dữ liệu xác minh'
+  if (status === 'STALE') return message || 'Kết quả đã hết hiệu lực'
+  if (status === 'NOT_APPLICABLE') return message || 'Không áp dụng'
   return message || t.statusWaiting
 }
 
@@ -275,12 +314,45 @@ function runtimeStatusFromPersisted(
       status:
         item.status === 'PASSED'
           ? 'PASS'
+          : item.status === 'WARNING'
+            ? 'WARN'
           : item.status === 'FAILED'
             ? 'FAIL'
             : item.status,
       message: item.message ?? '',
       critical: item.checkLevel === 'CRITICAL',
+      source: item.source,
+      measuredValue: item.measuredValue,
+      errorCode: item.errorCode,
+      checkedAt: item.checkedAt,
     })),
+  }
+}
+
+function updateOnlyPersistedItem(
+  current: RuntimePreflightStatus | null,
+  persisted: PersistedPreflightCheck,
+  checkType: string,
+) {
+  const updatedItem = runtimeStatusFromPersisted(persisted).checks.find(
+    (item) => item.key === checkType,
+  )
+  if (!updatedItem) return current
+  if (!current) {
+    return {
+      ...runtimeStatusFromPersisted(persisted),
+      checks: [updatedItem],
+    }
+  }
+  const exists = current.checks.some((item) => item.key === checkType)
+  return {
+    ...current,
+    progress: persisted.progressPercent,
+    checks: exists
+      ? current.checks.map((item) =>
+          item.key === checkType ? updatedItem : item,
+        )
+      : [...current.checks, updatedItem],
   }
 }
 
@@ -426,7 +498,8 @@ function demoFlightToken(missionId: string, deviceId: string) {
 
 export function PreflightScreen({ missionId }: { missionId?: string }) {
   const mission = useActiveMission(missionId)
-  const { t } = useI18n(preflightScreenMessages)
+  useI18n(preflightScreenMessages)
+  const t = preflightScreenMessages.vi
   const [startError, setStartError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
@@ -537,18 +610,11 @@ export function PreflightChecklistPanel({
   onReady?: () => void
   embedded?: boolean
 }) {
-  const { t, lang } = useI18n(preflightScreenMessages)
-  const PREFLIGHT_GROUPS = useMemo(() => preflightGroups(lang), [lang])
+  useI18n(preflightScreenMessages)
+  const t = preflightScreenMessages.vi
+  const PREFLIGHT_GROUPS = useMemo(() => preflightGroups('vi'), [])
   const RUNTIME_GROUPS = useMemo(
-    () =>
-      PREFLIGHT_GROUPS
-        .map((group) => ({
-          ...group,
-          items: group.items.filter((item) =>
-            Object.values(RUNTIME_KEY_MAP).includes(item.key),
-          ),
-        }))
-        .filter((group) => group.items.length > 0),
+    () => PREFLIGHT_GROUPS,
     [PREFLIGHT_GROUPS],
   )
   const ALL_ITEMS = useMemo(
@@ -587,7 +653,7 @@ export function PreflightChecklistPanel({
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const validatedStoredCheckRef = useRef(false)
   const controllerOfflineMissesRef = useRef(0)
-  const [controllerOnline, setControllerOnline] = useState(false)
+  const [, setControllerOnline] = useState(false)
   const [runtimeSessionId, setRuntimeSessionId] = useState<string | null>(() =>
     readStoredPreflightSession(storageKey),
   )
@@ -597,6 +663,15 @@ export function PreflightChecklistPanel({
   const [persistedPreflightStatus, setPersistedPreflightStatus] =
     useState<PersistedPreflightStatus | null>(null)
   const [persistedWeatherPassed, setPersistedWeatherPassed] = useState(false)
+  const [manualDeviceChecks, setManualDeviceChecks] = useState<
+    Partial<Record<PreflightItemKey, PreflightItemResult>>
+  >({})
+  const [batteryPercentInput, setBatteryPercentInput] = useState('')
+  const [batteryChecking, setBatteryChecking] = useState(false)
+  const [batterySaving, setBatterySaving] = useState(false)
+  const [batteryCheckNotice, setBatteryCheckNotice] = useState<string | null>(null)
+  const [connectionChecking, setConnectionChecking] = useState(false)
+  const [connectionCheckNotice, setConnectionCheckNotice] = useState<string | null>(null)
   const syncedPersistedItemsRef = useRef<Record<string, string>>({})
   const syncingPersistedItemsRef = useRef(false)
 
@@ -608,16 +683,35 @@ export function PreflightChecklistPanel({
     setPersistedPreflightId(null)
     setPersistedPreflightStatus(null)
     setPersistedWeatherPassed(false)
+    setManualDeviceChecks({})
+    setBatteryPercentInput('')
+    setBatteryCheckNotice(null)
+    setConnectionCheckNotice(null)
     const storedWeather = readStoredWeatherState(weatherStorageKey)
     setWeatherStatus(storedWeather)
     setWeatherForm(weatherFormFromStatus(storedWeather))
     setRuntimeSessionId(readStoredPreflightSession(storageKey))
   }, [missionId, deviceId, storageKey, weatherStorageKey])
 
-  const itemStates = useMemo(
-    () => mapRuntimeToItems(runtimeStatus?.checks ?? []),
-    [runtimeStatus],
-  )
+  const itemStates = useMemo(() => {
+    const mapped = mapRuntimeToItems(runtimeStatus?.checks ?? [])
+    for (const key of MANUAL_DEVICE_KEYS) {
+      const localResult = manualDeviceChecks[key]
+      if (localResult === undefined && mapped[key]) continue
+      const result = localResult ?? null
+      mapped[key] = {
+        result,
+        status: result === 'ok' ? 'PASS' : result === 'fail' ? 'FAIL' : 'PENDING',
+        message:
+          result === 'ok'
+            ? 'Người dùng xác nhận đạt'
+            : result === 'fail'
+              ? 'Người dùng xác nhận không đạt'
+              : 'Chờ người dùng kiểm tra',
+      }
+    }
+    return mapped
+  }, [manualDeviceChecks, runtimeStatus])
   const nOk = ALL_ITEMS.filter(
     (item) => itemStates[item.key]?.result === 'ok',
   ).length
@@ -627,7 +721,9 @@ export function PreflightChecklistPanel({
   )
   const runtimeItemsReady = nOk === nTotal && failedItems.length === 0
   const weatherReady =
-    weatherStatus?.safeToFly === true || persistedWeatherPassed
+    weatherStatus?.safeToFly === true ||
+    persistedWeatherPassed ||
+    itemStates.weather_conditions?.result === 'ok'
   const isReady =
     runtimeItemsReady &&
     weatherReady &&
@@ -688,36 +784,6 @@ export function PreflightChecklistPanel({
     }
   }
 
-  useEffect(() => {
-    if (!persistedPreflightId || !weatherStatus) return
-
-    const itemStatus: PersistedPreflightItemStatus = weatherStatus.safeToFly
-      ? 'PASSED'
-      : 'FAILED'
-    const syncKey = `WEATHER:${itemStatus}:${weatherStatus.summary}`
-    if (syncedPersistedItemsRef.current.WEATHER === syncKey) return
-
-    let alive = true
-    syncedPersistedItemsRef.current.WEATHER = syncKey
-
-    updatePersistedPreflightItem(persistedPreflightId, 'WEATHER', {
-      status: itemStatus,
-      message: weatherStatus.summary,
-    })
-      .then((persisted) => {
-        if (!alive || persisted.id !== persistedPreflightId) return
-        setPersistedPreflightStatus(persisted.status)
-        setPersistedWeatherPassed(itemStatus === 'PASSED')
-      })
-      .catch(() => {
-        if (alive) delete syncedPersistedItemsRef.current.WEATHER
-      })
-
-    return () => {
-      alive = false
-    }
-  }, [persistedPreflightId, weatherStatus])
-
   async function handleTriggerCheck() {
     setTriggering(true)
     setError(null)
@@ -746,19 +812,305 @@ export function PreflightChecklistPanel({
     })
 
     try {
-      const response = await fetch(`${controlBaseUrl}/api/preflight/check`, {
+      const response = await authenticatedFetch(
+        `${env.apiBaseUrl}/api/missions/${encodeURIComponent(missionId)}/pre-device-checks`,
+        {
         method: 'POST',
-      })
+        },
+      )
       if (!response.ok) throw new Error(`Preflight API ${response.status}`)
-      const payload = await response.json()
-      setCheckId(payload.checkId)
-      setPersistedPreflightId(payload.checkId)
-      setPersistedPreflightStatus('CHECKING')
+      const envelope = await response.json()
+      const persisted = (envelope.data ?? envelope) as PersistedPreflightCheck
+      const next = runtimeStatusFromPersisted(persisted)
+      setCheckId(null)
+      setPersistedPreflightId(persisted.id)
+      setPersistedPreflightStatus(persisted.status)
+      setRuntimeStatus(next)
+
+      // Thử ghi/đọc/xóa một tệp kiểm tra nhỏ trên kho lưu trữ thật.
+      // Dù phép thử lỗi, backend vẫn lưu trạng thái FAILED để cho phép xác nhận thủ công.
+      await authenticatedFetch(
+        `${env.apiBaseUrl}/api/pre-device-checks/${encodeURIComponent(persisted.id)}/media-probe/automatic`,
+        { method: 'POST' },
+      ).catch(() => null)
+      const refreshed = await fetchPersistedPreflight(persisted.id).catch(
+        () => null,
+      )
+      if (refreshed) {
+        setPersistedPreflightStatus(refreshed.status)
+        setRuntimeStatus(runtimeStatusFromPersisted(refreshed))
+      }
     } catch {
       setRuntimeStatus(null)
       setError(t.triggerFailed)
     } finally {
       setTriggering(false)
+    }
+  }
+
+  async function handleManualCheck(
+    key: PreflightItemKey,
+    result: PreflightItemResult,
+  ) {
+    if (key === 'battery_health') {
+      const percent = Number(batteryPercentInput)
+      if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+        setError('Hãy kiểm tra hoặc nhập mức pin từ 0 đến 100 trước khi xác nhận.')
+        return
+      }
+    }
+    setManualDeviceChecks((current) => ({ ...current, [key]: result }))
+    if (!persistedPreflightId) return
+    try {
+      const persisted = await updatePersistedPreflightItem(
+        persistedPreflightId,
+        key,
+        {
+          status: result === 'ok' ? 'PASSED' : 'FAILED',
+          message:
+            result === 'ok'
+              ? 'Người vận hành xác nhận đạt'
+              : 'Người vận hành xác nhận không đạt',
+          measuredValue:
+            key === 'battery_health' && batteryPercentInput.trim() !== ''
+              ? batteryPercentInput
+              : undefined,
+        },
+      )
+      setPersistedPreflightStatus(persisted.status)
+      setRuntimeStatus((current) =>
+        updateOnlyPersistedItem(current, persisted, key),
+      )
+    } catch {
+      setManualDeviceChecks((current) => ({ ...current, [key]: undefined }))
+      setError('Không thể lưu kết quả kiểm tra thủ công.')
+    }
+  }
+
+  async function handleGazeboBatteryCheck() {
+    setBatteryChecking(true)
+    setError(null)
+    setBatteryCheckNotice('Đang kiểm tra riêng pin máy bay…')
+    try {
+      const simulationResponse = await fetch(
+        `${controlBaseUrl}/api/control/status`,
+        { cache: 'no-store' },
+      )
+      if (simulationResponse.ok) {
+        const simulationStatus = await simulationResponse.json()
+        const simulatedPercent = Number(simulationStatus?.batteryPercent)
+        if (
+          Number.isFinite(simulatedPercent) &&
+          simulatedPercent >= 0 &&
+          simulatedPercent <= 100
+        ) {
+          const displayedPercent = Math.round(simulatedPercent * 10) / 10
+          setBatteryPercentInput(String(displayedPercent))
+          setBatteryCheckNotice(`Mức pin hiện tại: ${displayedPercent}%`)
+          return
+        }
+      }
+
+      let activeId = persistedPreflightId
+      if (!activeId && missionId !== NO_MISSION_SENTINEL) {
+        const current = await fetchCurrentPersistedPreflight(missionId).catch(
+          () => null,
+        )
+        if (current) {
+          activeId = current.id
+          setPersistedPreflightId(current.id)
+          setPersistedPreflightStatus(current.status)
+        }
+      }
+      if (!activeId) {
+        throw new Error('Preflight session unavailable')
+      }
+      const response = await authenticatedFetch(
+        `${env.apiBaseUrl}/api/pre-device-checks/${encodeURIComponent(activeId)}/items/battery_health/recheck`,
+        { method: 'POST' },
+      )
+      if (!response.ok) throw new Error(`Battery recheck ${response.status}`)
+      const payload = await response.json()
+      const persisted = (payload?.data ?? payload) as PersistedPreflightCheck
+      const batteryResult = persisted.items.find(
+        (item) => item.checkType === 'battery_health',
+      )
+      setPersistedPreflightStatus(persisted.status)
+      setRuntimeStatus(runtimeStatusFromPersisted(persisted))
+      if (batteryResult?.status === 'PASSED') {
+        setBatteryCheckNotice(
+          `Đã lấy được mức pin tự động${batteryResult.measuredValue ? `: ${batteryResult.measuredValue}` : '.'}`,
+        )
+      } else {
+        setBatteryCheckNotice(
+          batteryResult?.message ||
+            'Không lấy được dữ liệu pin tự động. Vui lòng nhập mức pin thực tế.',
+        )
+      }
+    } catch {
+      setBatteryCheckNotice(
+        'Kiểm tra tự động không thành công. Vui lòng nhập mức pin thực tế.',
+      )
+      setError('Không đọc được pin từ Gazebo. Vui lòng nhập phần trăm pin thủ công.')
+    } finally {
+      setBatteryChecking(false)
+    }
+  }
+
+  async function handleSaveManualBattery() {
+    const percent = Number(batteryPercentInput)
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+      setError('Phần trăm pin phải nằm trong khoảng từ 0 đến 100.')
+      return
+    }
+    setBatterySaving(true)
+    setError(null)
+    try {
+      let activeId = persistedPreflightId
+      if (!activeId && missionId !== NO_MISSION_SENTINEL) {
+        const current = await fetchCurrentPersistedPreflight(missionId).catch(
+          () => null,
+        )
+        if (current) {
+          activeId = current.id
+          setPersistedPreflightId(current.id)
+          setPersistedPreflightStatus(current.status)
+        }
+      }
+      if (!activeId) {
+        throw new Error('Preflight session unavailable')
+      }
+      const persisted = await updatePersistedPreflightItem(
+        activeId,
+        'battery_health',
+        {
+          status: 'PASSED',
+          message: 'Người vận hành nhập mức pin thủ công',
+          measuredValue: String(percent),
+        },
+      )
+      setPersistedPreflightStatus(persisted.status)
+      setRuntimeStatus(runtimeStatusFromPersisted(persisted))
+    } catch {
+      setError('Không thể lưu mức pin. Chỉ được nhập tay khi Gazebo không có dữ liệu hoặc kiểm tra pin thất bại.')
+    } finally {
+      setBatterySaving(false)
+    }
+  }
+
+  async function handleConnectionControllerCheck() {
+    setConnectionChecking(true)
+    setConnectionCheckNotice('Đang đọc trạng thái bộ điều khiển…')
+    setError(null)
+    try {
+      let activeId = persistedPreflightId
+      if (!activeId && missionId !== NO_MISSION_SENTINEL) {
+        const current = await fetchCurrentPersistedPreflight(missionId).catch(
+          () => null,
+        )
+        if (current) {
+          activeId = current.id
+          setPersistedPreflightId(current.id)
+          setPersistedPreflightStatus(current.status)
+        }
+      }
+      if (!activeId) {
+        throw new Error('Preflight session unavailable')
+      }
+      const response = await fetch(`${controlBaseUrl}/api/control/status`, {
+        cache: 'no-store',
+      })
+      if (!response.ok) throw new Error(`Flight controller ${response.status}`)
+      const status = await response.json()
+      const px4Connected = status?.connection?.px4Connected
+      const grpcConnected = status?.connection?.grpcConnected
+      const localPositionAgeS = Number(status?.freshness?.localPositionAgeS)
+      const healthAgeS = Number(status?.freshness?.healthAgeS)
+
+      const results: Array<{
+        key: PreflightItemKey
+        passed: boolean
+        message: string
+      }> = []
+      if (typeof px4Connected === 'boolean') {
+        results.push({
+          key: 'aircraft_connection',
+          passed: px4Connected,
+          message: px4Connected
+            ? 'Bộ điều khiển đang kết nối và gửi dữ liệu'
+            : 'Không kết nối được với bộ điều khiển bay',
+        })
+      }
+      if (typeof px4Connected === 'boolean' && typeof grpcConnected === 'boolean') {
+        results.push({
+          key: 'flight_controller',
+          passed: px4Connected && grpcConnected,
+          message:
+            px4Connected && grpcConnected
+              ? 'PX4 và MAVSDK đang hoạt động'
+              : 'PX4 hoặc MAVSDK chưa sẵn sàng',
+        })
+      }
+      if (typeof status?.positionReady === 'boolean') {
+        results.push({
+          key: 'aircraft_readiness',
+          passed:
+            status.positionReady &&
+            (!Number.isFinite(healthAgeS) || healthAgeS <= 5),
+          message: status.positionReady
+            ? 'Bộ điều khiển xác nhận trạng thái sẵn sàng'
+            : 'Bộ điều khiển chưa xác nhận sẵn sàng bay',
+        })
+      }
+      if (typeof px4Connected === 'boolean' && Number.isFinite(localPositionAgeS)) {
+        results.push({
+          key: 'monitoring_connection',
+          passed: px4Connected && localPositionAgeS <= 5,
+          message:
+            px4Connected && localPositionAgeS <= 5
+              ? 'Telemetry giám sát đang được cập nhật liên tục'
+              : 'Telemetry giám sát bị gián đoạn hoặc quá hạn',
+        })
+      }
+
+      if (results.length === 0) {
+        setConnectionCheckNotice(
+          'Bộ điều khiển không trả dữ liệu phù hợp. Vui lòng kiểm tra thủ công.',
+        )
+        return
+      }
+
+      let savedCount = 0
+      for (const result of results) {
+        try {
+          const persisted = await updatePersistedPreflightItem(
+            activeId,
+            result.key,
+            {
+              status: result.passed ? 'PASSED' : 'FAILED',
+              message: result.message,
+            },
+          )
+          setPersistedPreflightStatus(persisted.status)
+          setRuntimeStatus((current) =>
+            updateOnlyPersistedItem(current, persisted, result.key),
+          )
+          savedCount += 1
+        } catch {
+          // Không có dữ liệu hợp lệ hoặc backend không cho tự động cập nhật:
+          // giữ nguyên tiêu chí để người vận hành xác nhận thủ công.
+        }
+      }
+      const missingCount = CONNECTION_MANUAL_FALLBACK_KEYS.size - savedCount
+      setConnectionCheckNotice(
+        `Đã kiểm tra tự động ${savedCount} mục${missingCount > 0 ? ` · ${missingCount} mục còn lại kiểm tra thủ công` : ''}.`,
+      )
+    } catch {
+      setConnectionCheckNotice(
+        'Không kết nối được bộ điều khiển. Vui lòng kiểm tra thủ công từng mục.',
+      )
+    } finally {
+      setConnectionChecking(false)
     }
   }
 
@@ -811,7 +1163,8 @@ export function PreflightChecklistPanel({
           setPersistedWeatherPassed(
             persisted.items.some(
               (item) =>
-                item.checkType === 'WEATHER' && item.status === 'PASSED',
+                item.checkType === 'weather_conditions' &&
+                item.status === 'PASSED',
             ),
           )
         }
@@ -877,17 +1230,8 @@ export function PreflightChecklistPanel({
         if (controllerOfflineMissesRef.current >= 3) {
           setRuntimeSessionId(null)
           setCheckId(null)
-          setRuntimeStatus(null)
-          setPersistedPreflightId(null)
-          setPersistedPreflightStatus(null)
-          setPersistedWeatherPassed(false)
-          syncedPersistedItemsRef.current = {}
-          syncingPersistedItemsRef.current = false
           setBackendPreflightMessage(null)
-          setWeatherError(null)
           backendPreflightRegisteredRef.current = false
-          validatedStoredCheckRef.current = false
-          clearStoredPreflightState(storageKey)
         }
       }
     }
@@ -901,7 +1245,6 @@ export function PreflightChecklistPanel({
   }, [deviceId, missionId, missionLabel, storageKey])
 
   useEffect(() => {
-    if (!controllerOnline) return
     if (!missionId || missionId === NO_MISSION_SENTINEL) return
     let alive = true
     const controller = new AbortController()
@@ -917,7 +1260,9 @@ export function PreflightChecklistPanel({
       setPersistedPreflightStatus(persisted.status)
       setPersistedWeatherPassed(
         persisted.items.some(
-          (item) => item.checkType === 'WEATHER' && item.status === 'PASSED',
+          (item) =>
+            item.checkType === 'weather_conditions' &&
+            item.status === 'PASSED',
         ),
       )
       setRuntimeStatus((current) => {
@@ -936,7 +1281,7 @@ export function PreflightChecklistPanel({
       alive = false
       controller.abort()
     }
-  }, [controllerOnline, missionId, runtimeSessionId, storageKey])
+  }, [missionId, runtimeSessionId, storageKey])
 
   useEffect(() => {
     if (!checkId) return
@@ -998,7 +1343,9 @@ export function PreflightChecklistPanel({
       setPersistedPreflightStatus(persisted.status)
       setPersistedWeatherPassed(
         persisted.items.some(
-          (item) => item.checkType === 'WEATHER' && item.status === 'PASSED',
+          (item) =>
+            item.checkType === 'weather_conditions' &&
+            item.status === 'PASSED',
         ),
       )
 
@@ -1051,6 +1398,7 @@ export function PreflightChecklistPanel({
     }
     validatedStoredCheckRef.current = true
     const storedCheckId = runtimeStatus.checkId
+    if (persistedPreflightId && storedCheckId === persistedPreflightId) return
     let alive = true
 
     async function validateStoredPreflight() {
@@ -1216,6 +1564,10 @@ export function PreflightChecklistPanel({
               >
                 <div
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
                     fontWeight: 700,
                     fontSize: 12.5,
                     color: 'var(--tx2)',
@@ -1223,8 +1575,26 @@ export function PreflightChecklistPanel({
                     letterSpacing: '.04em',
                   }}
                 >
-                  {group.title}
+                  <span>{group.title}</span>
+                  {group.title.startsWith('2.') && (
+                    <button
+                      type="button"
+                      className="odm-btn"
+                      disabled={connectionChecking}
+                      onClick={() => void handleConnectionControllerCheck()}
+                      style={{ textTransform: 'none', letterSpacing: 0 }}
+                    >
+                      {connectionChecking
+                        ? 'Đang kiểm tra…'
+                        : '↻ Kiểm tra bộ điều khiển'}
+                    </button>
+                  )}
                 </div>
+                {group.title.startsWith('2.') && connectionCheckNotice && (
+                  <div role="status" style={{ fontSize: 12, color: 'var(--tx2)' }}>
+                    {connectionCheckNotice}
+                  </div>
+                )}
                 <div
                   style={{
                     display: 'grid',
@@ -1232,13 +1602,56 @@ export function PreflightChecklistPanel({
                     gap: 10,
                   }}
                 >
-                  {group.items.map((def) => (
-                    <RuntimePreflightItemRow
-                      key={def.key}
-                      def={def}
-                      state={itemStates[def.key] ?? { result: null }}
-                    />
-                  ))}
+                  {group.items.map((def) => {
+                    const state = itemStates[def.key] ?? { result: null }
+                    const mediaFallback =
+                      def.key === 'media_storage' &&
+                      (state.status === 'FAIL' ||
+                        state.status === 'UNKNOWN' ||
+                        state.status === 'STALE')
+                    const connectionFallback =
+                      CONNECTION_MANUAL_FALLBACK_KEYS.has(def.key) &&
+                      (state.status === 'FAIL' ||
+                        state.status === 'UNKNOWN' ||
+                        state.status === 'STALE')
+                    return (
+                      <RuntimePreflightItemRow
+                        key={def.key}
+                        def={def}
+                        state={state}
+                        manual={
+                          MANUAL_DEVICE_KEYS.has(def.key) ||
+                          mediaFallback ||
+                          connectionFallback ||
+                          (def.key === 'battery_health' &&
+                            (state.status === 'FAIL' ||
+                              state.status === 'UNKNOWN' ||
+                              state.status === 'STALE'))
+                        }
+                        manualDisabled={!persistedPreflightId}
+                        onManualChange={(result) =>
+                          void handleManualCheck(def.key, result)
+                        }
+                        onBatteryRecheck={
+                          def.key === 'battery_health'
+                            ? () => void handleGazeboBatteryCheck()
+                            : undefined
+                        }
+                        batteryChecking={batteryChecking}
+                        batteryCheckNotice={batteryCheckNotice}
+                        batteryFallback={
+                          def.key === 'battery_health' &&
+                          (state.status === 'FAIL' ||
+                            state.status === 'UNKNOWN' ||
+                            state.status === 'STALE')
+                        }
+                        batteryPercent={batteryPercentInput}
+                        onBatteryPercentChange={setBatteryPercentInput}
+                        onBatterySave={() => void handleSaveManualBattery()}
+                        batterySaving={batterySaving}
+                      />
+                    )
+                  })}
                 </div>
               </div>
             ))}
@@ -1280,7 +1693,8 @@ function SummaryBanner({
   backendPreflightMessage?: string | null
   backendPreflightRegistering?: boolean
 }) {
-  const { t } = useI18n(preflightScreenMessages)
+  useI18n(preflightScreenMessages)
+  const t = preflightScreenMessages.vi
   const bg = isFailed
     ? 'var(--red-bg)'
     : isReady
@@ -1415,7 +1829,8 @@ function WeatherCheckPanel({
   onFormChange: (form: WeatherObservationForm) => void
   onSuggest: () => void
 }) {
-  const { t } = useI18n(preflightScreenMessages)
+  useI18n(preflightScreenMessages)
+  const t = preflightScreenMessages.vi
   const failed = status?.status === 'FAIL'
   const warned = status?.status === 'WARN'
   const passed = status?.status === 'PASS'
@@ -1729,35 +2144,36 @@ function WeatherField({
 function RuntimePreflightItemRow({
   def,
   state,
+  manual = false,
+  manualDisabled = false,
+  onManualChange,
+  onBatteryRecheck,
+  batteryChecking = false,
+  batteryCheckNotice,
+  batteryFallback = false,
+  batteryPercent = '',
+  onBatteryPercentChange,
+  onBatterySave,
+  batterySaving = false,
 }: {
   def: PreflightItemDef
   state: ItemState
+  manual?: boolean
+  manualDisabled?: boolean
+  onManualChange?: (result: PreflightItemResult) => void
+  onBatteryRecheck?: () => void
+  batteryChecking?: boolean
+  batteryCheckNotice?: string | null
+  batteryFallback?: boolean
+  batteryPercent?: string
+  onBatteryPercentChange?: (value: string) => void
+  onBatterySave?: () => void
+  batterySaving?: boolean
 }) {
-  const { t } = useI18n(preflightScreenMessages)
+  useI18n(preflightScreenMessages)
+  const t = preflightScreenMessages.vi
   const failed = state.result === 'fail'
   const passed = state.result === 'ok'
-  const checking = state.status === 'CHECKING'
-  const tone = failed
-    ? {
-        label: t.itemFail,
-        bg: 'var(--red-solid)',
-        fg: 'var(--red-on)',
-        border: 'var(--red-solid)',
-      }
-    : passed
-      ? {
-          label: t.itemPass,
-          bg: 'var(--green-solid)',
-          fg: 'var(--green-on)',
-          border: 'var(--green-solid)',
-        }
-      : {
-          label: checking ? t.itemChecking : t.itemPending,
-          bg: 'var(--sf3)',
-          fg: 'var(--tx2)',
-          border: 'var(--bd2)',
-        }
-
   return (
     <div
       style={{
@@ -1772,7 +2188,7 @@ function RuntimePreflightItemRow({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '44px minmax(0, 1fr) 104px',
+          gridTemplateColumns: '44px minmax(0, 1fr) 210px',
           alignItems: 'center',
           gap: 12,
         }}
@@ -1812,8 +2228,13 @@ function RuntimePreflightItemRow({
             {def.label}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
-            {def.detail ? `${def.detail} · ` : ''}
-            <span className="odm-mono">{def.code}</span>
+            {def.detail}
+          </div>
+          <div style={{ marginTop: 3, fontSize: 11, color: 'var(--tx3)' }}>
+            {state.measuredValue ? state.measuredValue : ''}
+            {state.checkedAt
+              ? ` · ${new Date(state.checkedAt).toLocaleString('vi-VN')}`
+              : ''}
           </div>
           <div
             style={{
@@ -1829,26 +2250,106 @@ function RuntimePreflightItemRow({
             {statusText(t, state.status, state.message)}
           </div>
         </div>
-        <span
+        <div
           style={{
             justifySelf: 'end',
-            minWidth: 94,
-            height: 32,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 8,
-            border: `1px solid ${tone.border}`,
-            background: tone.bg,
-            color: tone.fg,
-            fontSize: 12,
-            fontWeight: 800,
-            whiteSpace: 'nowrap',
+            display: 'flex',
+            gap: 8,
           }}
         >
-          {tone.label}
-        </span>
+            <button
+              type="button"
+              className="odm-btn"
+              aria-pressed={passed}
+              disabled={!manual || manualDisabled}
+              onClick={() => onManualChange?.('ok')}
+              style={{
+                minWidth: 84,
+                background: passed ? 'var(--green-solid)' : undefined,
+                color: passed ? 'var(--green-on)' : undefined,
+                borderColor: passed ? 'var(--green-solid)' : undefined,
+              }}
+            >
+              ✓ {t.itemPass}
+            </button>
+            <button
+              type="button"
+              className="odm-btn"
+              aria-pressed={failed}
+              disabled={!manual || manualDisabled}
+              onClick={() => onManualChange?.('fail')}
+              style={{
+                minWidth: 104,
+                background: failed ? 'var(--red-solid)' : undefined,
+                color: failed ? 'var(--red-on)' : undefined,
+                borderColor: failed ? 'var(--red-solid)' : undefined,
+              }}
+            >
+              ✕ {t.itemFail}
+            </button>
+        </div>
       </div>
+      {onBatteryRecheck && (
+        <div
+          style={{
+            marginTop: 10,
+            paddingTop: 10,
+            borderTop: '1px solid var(--bd)',
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <button
+            type="button"
+            className="odm-btn"
+            disabled={batteryChecking}
+            onClick={onBatteryRecheck}
+          >
+            {batteryChecking ? 'Đang kiểm tra pin…' : '↻ Kiểm tra pin tự động'}
+          </button>
+          {batteryFallback && (
+            <>
+              <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                Không lấy được dữ liệu tự động — nhập mức pin thực tế:
+              </span>
+              <input
+                aria-label="Phần trăm pin thủ công"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={batteryPercent}
+                onChange={(event) => onBatteryPercentChange?.(event.currentTarget.value)}
+                placeholder="0–100"
+                style={{ width: 92, padding: '8px 10px' }}
+              />
+              <span style={{ fontWeight: 700 }}>%</span>
+              <button
+                type="button"
+                className="odm-btn"
+                disabled={batterySaving || batteryPercent.trim() === ''}
+                onClick={onBatterySave}
+              >
+                {batterySaving ? 'Đang lưu…' : 'Lưu mức pin'}
+              </button>
+            </>
+          )}
+          {batteryCheckNotice && (
+            <div
+              role="status"
+              style={{
+                flexBasis: '100%',
+                fontSize: 12,
+                color: passed ? 'var(--green-fg)' : 'var(--tx2)',
+              }}
+            >
+              {batteryCheckNotice}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

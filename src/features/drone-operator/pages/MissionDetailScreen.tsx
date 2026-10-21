@@ -825,6 +825,15 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
 
   return (
     <>
+      <SafeStopPanel
+        key={mission.id}
+        missionId={mission.id}
+        hideWhenIdle
+        onChanged={() => {
+          query.reload()
+          monitoring.reload()
+        }}
+      />
       <MissionDashboard
         mission={mission}
         submitting={submitting}
@@ -905,15 +914,6 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             </button>
           </div>
         )}
-      <SafeStopPanel
-        key={mission.id}
-        missionId={mission.id}
-        onChanged={() => {
-          query.reload()
-          monitoring.reload()
-        }}
-      />
-
       {showReject ? (
         <RejectDialog
           missionId={mission.id}
@@ -966,14 +966,20 @@ function MissionDashboard({
     )
   const [postflightStatus, setPostflightStatus] =
     useState<PostflightCheckStatus | null>(null)
-  const [tab, setTab] = useState<'overview' | 'checks' | 'media'>('overview')
+  const [tab, setTab] = useState<
+    'overview' | 'checklist' | 'checks' | 'media'
+  >('overview')
   const canViewMissionMedia =
     access?.canInspectDevice === true ||
     access?.canUploadMedia === true ||
     mission.status === 'COMPLETED' ||
     mission.backendStatus === 'PENDING_REVIEW'
-  const tabs: Array<{ id: 'overview' | 'checks' | 'media'; label: string }> = [
+  const tabs: Array<{
+    id: 'overview' | 'checklist' | 'checks' | 'media'
+    label: string
+  }> = [
     { id: 'overview', label: 'Tổng quan' },
+    { id: 'checklist', label: 'Checklist thực hiện' },
     { id: 'checks', label: 'Kết quả kiểm tra thiết bị' },
     ...(canViewMissionMedia
       ? [{ id: 'media' as const, label: 'Ảnh & video' }]
@@ -1143,7 +1149,6 @@ function MissionDashboard({
         <div className="mds-tab-grid">
           <div className="mds-col">
             <MissionMapCard mission={mission} />
-            {monitoringSection}
           </div>
           <div className="mds-col mds-sticky-col">
             <MissionInfoCard mission={mission} />
@@ -1152,6 +1157,13 @@ function MissionDashboard({
           </div>
         </div>
       ) : null}
+
+      <div
+        className="mds-tab-grid mds-tab-grid--single"
+        hidden={tab !== 'checklist'}
+      >
+        <div className="mds-col">{monitoringSection}</div>
+      </div>
 
       {tab === 'checks' ? (
         <div className="mds-tab-grid">

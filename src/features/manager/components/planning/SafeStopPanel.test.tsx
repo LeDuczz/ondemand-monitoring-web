@@ -40,6 +40,30 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.clearAllMocks()
 })
+it('stays hidden for Staff until a safe-stop request exists', async () => {
+  const view = render(
+    <SafeStopPanel
+      missionId="m1"
+      hideWhenIdle
+      onChanged={onChanged}
+    />,
+  )
+  await waitFor(() => expect(planningApi.getSafeStop).toHaveBeenCalled())
+  expect(
+    screen.queryByText('Dừng Mission an toàn'),
+  ).not.toBeInTheDocument()
+
+  view.unmount()
+  state = { ...state, status: 'REQUESTED', canConfirmSafeStop: true }
+  render(
+    <SafeStopPanel
+      missionId="m1"
+      hideWhenIdle
+      onChanged={onChanged}
+    />,
+  )
+  expect(await screen.findByText('Đã yêu cầu dừng')).toBeInTheDocument()
+})
 it.each([
   [null, null, null, 'Chưa có yêu cầu'],
   ['REQUESTED', null, null, 'Đã yêu cầu dừng'],

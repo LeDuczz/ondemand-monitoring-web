@@ -12,36 +12,39 @@ export type PreflightItemDef = {
 
 /** Bilingual preflight item groups. `key`/`code` stay stable across languages. */
 export function preflightGroups(
-  lang: Language,
+  _lang: Language,
 ): { title: string; items: PreflightItemDef[] }[] {
-  const t = preflightItemMessages[lang]
+  const item = (key: string, label: string, detail: string): PreflightItemDef => ({ key, label, detail, code: key })
   return [
     {
-      title: t.groups.device,
+      title: '1. Thiết bị bay',
       items: [
-        { key: 'battery', ...t.items.battery, code: 'battery_ok' },
-        { key: 'camera', ...t.items.camera, code: 'camera_ok' },
-        { key: 'lidar', ...t.items.lidar, code: 'lidar_ok' },
+        item('battery_health', 'Pin máy bay', 'Dung lượng và tình trạng pin theo dữ liệu thiết bị'),
+        item('propeller_inspection', 'Cánh quạt', 'Nứt, cong, lỏng hoặc hư hỏng'),
+        item('airframe_inspection', 'Thân máy bay', 'Khung, càng đáp và các bộ phận lắp ghép'),
+        item('camera_health', 'Hệ thống camera', 'Kết nối, hoạt động và khả năng ghi hình'),
+        item('obstacle_sensor_health', 'Cảm biến phát hiện vật cản', 'Tình trạng cảm biến và khả năng phát hiện vật cản'),
       ],
     },
     {
-      title: t.groups.connection,
+      title: '2. Kết nối và điều khiển',
       items: [
-        { key: 'px4', ...t.items.px4, code: 'px4_ok' },
-        { key: 'mavsdk', ...t.items.mavsdk, code: 'mavsdk_ok' },
-        { key: 'px4Control', ...t.items.px4Control, code: 'px4_control_ok' },
-        {
-          key: 'mavsdkHealth',
-          ...t.items.mavsdkHealth,
-          code: 'mavsdk_health_ok',
-        },
+        item('aircraft_connection', 'Kết nối máy bay', 'Kết nối đang hoạt động và telemetry còn mới'),
+        item('command_link', 'Tín hiệu điều khiển', 'Chất lượng đường truyền lệnh điều khiển'),
+        item('flight_controller', 'Bộ điều khiển máy bay', 'Tình trạng bộ điều khiển bay'),
+        item('aircraft_readiness', 'Trạng thái sẵn sàng bay', 'Khả năng sẵn sàng bay do thiết bị xác nhận'),
+        item('monitoring_connection', 'Kết nối giám sát', 'Dữ liệu giám sát được cập nhật liên tục'),
+        item('manual_override', 'Điều khiển dự phòng', 'Phương án điều khiển dự phòng đã sẵn sàng'),
       ],
     },
     {
-      title: t.groups.system,
+      title: '3. Môi trường bay',
       items: [
-        { key: 'backend', ...t.items.backend, code: 'backend_ok' },
-        { key: 'media', ...t.items.media, code: 'media_ok' },
+        item('weather_conditions', 'Điều kiện thời tiết', 'Thời tiết phù hợp với thiết bị và nhiệm vụ'),
+        item('flight_visibility', 'Tầm nhìn', 'Tầm nhìn thực tế tại khu vực bay'),
+        item('takeoff_area', 'Khu vực cất cánh', 'Khu vực cất cánh thông thoáng và an toàn'),
+        item('landing_area', 'Khu vực hạ cánh', 'Khu vực hạ cánh thông thoáng và an toàn'),
+        item('airspace_permission', 'Khu vực được phép bay', 'Giấy phép hoặc xác nhận vùng trời hợp lệ'),
       ],
     },
   ]

@@ -9,18 +9,18 @@ export const pricingEstimateMessages = defineMessages({
     total: 'Tổng dự kiến',
     additionalServiceRow: 'Dịch vụ bổ sung',
     additionalPending: (count: number) =>
-      count > 1 ? `${count} nội dung · Chờ Manager duyệt báo giá` : 'Chờ Manager duyệt báo giá',
+      count > 1 ? `${count} nội dung · Chờ quản lý duyệt báo giá` : 'Chờ quản lý duyệt báo giá',
     estimateNotice:
-      'Đây là chi phí dự kiến. Việc thêm, sửa hoặc bỏ nội dung giám sát có thể làm thay đổi chi phí; manager sẽ review và gửi báo giá cuối cùng để bạn xác nhận trước khi thanh toán.',
+      'Đây là chi phí dự kiến. Quản lý sẽ xem xét nội dung và gửi báo giá cuối cùng để bạn xác nhận trước khi thanh toán.',
     loading: 'Đang tính chi phí...',
     unavailable:
       'Chưa lấy được báo giá cho dịch vụ này. Chi phí sẽ được xác nhận khi duyệt.',
     pickService: 'Chọn dịch vụ để xem chi phí dự kiến.',
     additionalServices: 'DỊCH VỤ BỔ SUNG',
     mediaCounts: (images: number, videos: number) => `${images} ảnh · ${videos} video`,
-    awaitingManagerQuote: 'Đang chờ Manager duyệt báo giá',
+    awaitingManagerQuote: 'Đang chờ quản lý duyệt báo giá',
     quotePending:
-      'Báo giá dự kiến chưa bao gồm dịch vụ bổ sung. Manager sẽ xem xét các yêu cầu ngoài gói và gửi báo giá cuối cùng để bạn xác nhận trước khi thanh toán.',
+      'Báo giá dự kiến chưa bao gồm dịch vụ bổ sung. Quản lý sẽ xem xét các yêu cầu ngoài gói và gửi báo giá cuối cùng để bạn xác nhận trước khi thanh toán.',
   },
   en: {
     title: 'Estimated cost',

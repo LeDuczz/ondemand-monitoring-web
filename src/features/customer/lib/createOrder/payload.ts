@@ -100,7 +100,6 @@ export function aiAddonPrice(estimate: ServicePricingEstimate | null) {
 /** `POST /api/orders` body (BE `OrderCreateRequest`). */
 export function buildOrderPayload(input: {
   form: FormState
-  consultationId?: string
   score: AiScore
   aiAnalysisRequested: boolean
   pricingEstimate: ServicePricingEstimate | null
@@ -125,35 +124,44 @@ export function buildOrderPayload(input: {
   const longitude = toNumber(form.longitude, DEFAULT_LONGITUDE)
   const lengthM = toNumber(form.estimatedLengthM, 0)
   const detail = {
-          radiusM: form.radiusM,
-          estimatedAreaHa: Number(calcArea(form.radiusM)),
-          areaFiles: form.areaFiles.map((file) => ({
-            id: file.id,
-            fileName: file.fileName,
-            contentType: file.contentType,
-            sizeBytes: file.sizeBytes,
-            dataUrl: file.dataUrl,
-          })),
-          customerAttachments: form.attachments.map((attachment) => ({
-            id: attachment.id,
-            fileName: attachment.fileName,
-            contentType: attachment.contentType,
-            sizeBytes: attachment.sizeBytes,
-            dataUrl: attachment.dataUrl,
-          })),
-          usagePurpose: form.usagePurpose || undefined,
-          consultationId: input.consultationId,
-          readinessScore: input.score.score,
-          aiAnalysisRequested,
-          additionalRequirements: aiAnalysisRequested
-            ? [
-                {
-                  type: 'AI_IMAGE_ANALYSIS',
-                  description: AI_IMAGE_ANALYSIS_REQUIREMENT,
-                  additionalPrice: aiAddonPrice(input.pricingEstimate),
-                },
-              ]
-            : [],
+    radiusM: form.radiusM,
+    estimatedAreaHa: Number(calcArea(form.radiusM)),
+    areaFiles: form.areaFiles.map((file) => ({
+      id: file.id,
+      fileName: file.fileName,
+      contentType: file.contentType,
+      sizeBytes: file.sizeBytes,
+      dataUrl: file.dataUrl,
+    })),
+    customerAttachments: form.attachments.map((attachment) => ({
+      id: attachment.id,
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+      sizeBytes: attachment.sizeBytes,
+      dataUrl: attachment.dataUrl,
+    })),
+    usagePurpose: form.usagePurpose || undefined,
+    otherFlightPurpose:
+      form.flightPurpose === 'OTHER'
+        ? form.otherFlightPurpose.trim()
+        : undefined,
+    otherUsagePurpose:
+      form.usagePurpose === 'OTHER' ? form.otherUsagePurpose.trim() : undefined,
+    otherMonitoringRelationship:
+      form.monitoringRelationship === 'OTHER'
+        ? form.otherMonitoringRelationship.trim()
+        : undefined,
+    readinessScore: input.score.score,
+    aiAnalysisRequested,
+    additionalRequirements: aiAnalysisRequested
+      ? [
+          {
+            type: 'AI_IMAGE_ANALYSIS',
+            description: AI_IMAGE_ANALYSIS_REQUIREMENT,
+            additionalPrice: aiAddonPrice(input.pricingEstimate),
+          },
+        ]
+      : [],
   }
   const deliverableEntries = buildDeliverables({
     fallbackTypeId: form.deliverableTypeId,
@@ -178,8 +186,7 @@ export function buildOrderPayload(input: {
     siteContactPhone: form.siteContactPhone.trim() || undefined,
     accessNotes: buildAccessNotes(form),
     monitoringRelationship: form.monitoringRelationship || undefined,
-    monitoringAuthorizationConfirmed:
-      form.monitoringAuthorizationConfirmed,
+    monitoringAuthorizationConfirmed: form.monitoringAuthorizationConfirmed,
     monitoringAuthorizationDocuments:
       form.monitoringAuthorizationDocuments.length > 0
         ? form.monitoringAuthorizationDocuments.map((document) => ({

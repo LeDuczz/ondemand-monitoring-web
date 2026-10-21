@@ -10,6 +10,7 @@ export const customerFinancePanelMessages = defineMessages({
       'Không thể khởi tạo thanh toán VNPAY. Vui lòng kiểm tra cấu hình cổng thanh toán hoặc thử lại sau.',
     missingPaymentUrl: 'Cổng thanh toán chưa trả về đường dẫn thanh toán.',
     loadError: 'Không thể tải dữ liệu tài chính.',
+    testPayment: 'Thanh toán nhanh (Test)',
   },
   en: {
     title: 'Quote and payment',
@@ -20,5 +21,6 @@ export const customerFinancePanelMessages = defineMessages({
       'Unable to start the VNPAY payment. Check the payment gateway configuration or try again later.',
     missingPaymentUrl: 'The payment gateway did not return a checkout URL.',
     loadError: 'Unable to load financial information.',
+    testPayment: 'Quick payment (Test)',
   },
 })

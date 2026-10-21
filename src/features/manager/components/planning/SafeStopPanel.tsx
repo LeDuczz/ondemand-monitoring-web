@@ -16,12 +16,14 @@ export function SafeStopPanel({
   missionId,
   revision,
   manager = false,
+  hideWhenIdle = false,
   onChanged,
   onCapabilitiesChanged,
 }: {
   missionId: string
   revision?: number
   manager?: boolean
+  hideWhenIdle?: boolean
   onChanged: () => void
   onCapabilitiesChanged?: (missionId: string, canCancel: boolean) => void
 }) {
@@ -80,6 +82,12 @@ export function SafeStopPanel({
       setBusy(false)
     }
   }
+  if (
+    hideWhenIdle &&
+    !manager &&
+    (!ready || !stop || !hasStopRequest(stop))
+  )
+    return null
   return (
     <section
       className="mission-stop"

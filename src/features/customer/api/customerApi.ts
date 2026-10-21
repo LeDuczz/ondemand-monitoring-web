@@ -1,7 +1,6 @@
 import { apiRequest } from '../../../shared/api/httpClient'
 import { displayOrderCode } from '../../../shared/lib/orderCode'
 import type { OrderStatus } from '../../../shared/types/domain'
-import type { RawAnalysis } from '../lib/analysis/types'
 import type { CustomerOrderItem } from '../types/orders'
 import { normalizeStatus } from '../lib/orders/mapOrder'
 import type { OrderCreateResponse } from './orderApi'
@@ -119,91 +118,26 @@ export type WeatherForecast = {
   warnings?: string[]
 }
 
-/** Level wording is fixed: never "safe". The text is advisory; final conditions are confirmed at planning/pre-flight. */
 export type FlightAreaRiskLevel = 'FAVORABLE' | 'NEEDS_REVIEW' | 'HIGH_RISK'
 export type FlightAreaFindingSeverity = 'INFO' | 'WARNING' | 'HIGH'
-
 export type FlightAreaNearbyFeature = {
   type: string
   name?: string | null
   distanceMeters?: number | null
-  /** Only ever a height OpenStreetMap actually carries. */
   heightMeters?: number | null
   latitude?: number | null
   longitude?: number | null
   source?: string
 }
-
 export type FlightAreaAssessment = {
   location: { latitude: number; longitude: number; radiusMeters: number }
-  elevation: {
-    available: boolean
-    /** Metres above mean sea level (AMSL). */
-    terrainElevationMeters?: number | null
-    reference?: string
-    /** Metres above ground level (AGL). */
-    requestedAltitudeAglMeters?: number | null
-    estimatedFlightAltitudeAmslMeters?: number | null
-    provider?: string
-    errorCode?: string | null
-  }
-  restrictedZones: {
-    dataAvailable: boolean
-    pointInsideRestrictedZone: boolean
-    monitoringAreaIntersectsRestrictedZone: boolean
-    nearestRestrictedZoneDistanceMeters?: number | null
-    affectedZones: Array<{
-      id: string
-      code: string
-      name: string
-      zoneType?: string
-      purpose?: string | null
-      restricted: boolean
-      distanceMeters?: number | null
-      intersectsMonitoringArea: boolean
-    }>
-  }
-  osmContext: {
-    available: boolean
-    errorCode?: string | null
-    queryRadiusMeters?: number | null
-    buildingCount: number
-    towerCount: number
-    mastCount: number
-    powerTowerCount: number
-    aerodromeNearby: boolean
-    helipadNearby: boolean
-    importantFeatures: FlightAreaNearbyFeature[]
-  }
-  ministryFlightBan?: {
-    available: boolean
-    totalAreaSquareMeters?: number | null
-    violatedAreaSquareMeters?: number | null
-    safeAreaSquareMeters?: number | null
-    violatedZones: string[]
-    sourceUrl: string
-    errorCode?: string | null
-  }
-  assessment: {
-    level: FlightAreaRiskLevel
-    findings: Array<{
-      code: string
-      severity: FlightAreaFindingSeverity
-      message: string
-    }>
-    disclaimer: string
-  }
+  elevation: { available: boolean; terrainElevationMeters?: number | null; reference?: string; requestedAltitudeAglMeters?: number | null; estimatedFlightAltitudeAmslMeters?: number | null; provider?: string; errorCode?: string | null }
+  restrictedZones: { dataAvailable: boolean; pointInsideRestrictedZone: boolean; monitoringAreaIntersectsRestrictedZone: boolean; nearestRestrictedZoneDistanceMeters?: number | null; affectedZones: Array<{ id: string; code: string; name: string; zoneType?: string; purpose?: string | null; restricted: boolean; distanceMeters?: number | null; intersectsMonitoringArea: boolean }> }
+  osmContext: { available: boolean; errorCode?: string | null; queryRadiusMeters?: number | null; buildingCount: number; towerCount: number; mastCount: number; powerTowerCount: number; aerodromeNearby: boolean; helipadNearby: boolean; importantFeatures: FlightAreaNearbyFeature[] }
+  ministryFlightBan?: { available: boolean; totalAreaSquareMeters?: number | null; violatedAreaSquareMeters?: number | null; safeAreaSquareMeters?: number | null; violatedZones: string[]; sourceUrl: string; errorCode?: string | null }
+  assessment: { level: FlightAreaRiskLevel; findings: Array<{ code: string; severity: FlightAreaFindingSeverity; message: string }>; disclaimer: string }
 }
-
-export type FlightAreaAssessmentQuery = {
-  latitude: number
-  longitude: number
-  radiusMeters: number
-  /** Desired altitude above ground level, metres. */
-  requestedAltitudeAgl?: number
-  /** Set false for manager checks that only need authoritative/local zone data. */
-  includeOsm?: boolean
-}
+export type FlightAreaAssessmentQuery = { latitude: number; longitude: number; radiusMeters: number; requestedAltitudeAgl?: number; includeOsm?: boolean }
 
 export type WeatherForecastQuery = {
   latitude: number
@@ -240,33 +174,6 @@ export type ServiceRequirementSuggestion = {
   source?: string
 }
 
-export type ConsultationMessage = {
-  id: string
-  senderType: 'CUSTOMER' | 'ASSISTANT'
-  message: string
-  createdAt?: string
-}
-
-export type CustomerConsultation = {
-  id: string
-  customerId?: string
-  orderId?: string
-  recommendedServiceId?: string
-  recommendedServiceName?: string
-  status?: string
-  requirementData?: string
-  requirementSummary?: string
-  requestTitle?: string
-  requestSummary?: string
-  startedAt?: string
-  completedAt?: string
-  messages?: ConsultationMessage[]
-}
-
-type SendConsultationMessageOptions = {
-  signal?: AbortSignal
-  requestContext?: string
-}
 
 const BACKEND_ORDER_STATUSES = new Set<OrderStatus>([
   'PENDING',
@@ -365,11 +272,7 @@ export const customerApi = {
       signal,
     }),
 
-  /** `GET /api/flight-area-assessment` [BE]: advisory aggregate, never approves or rejects an order. */
-  getFlightAreaAssessment: (
-    query: FlightAreaAssessmentQuery,
-    signal?: AbortSignal,
-  ) =>
+  getFlightAreaAssessment: (query: FlightAreaAssessmentQuery, signal?: AbortSignal) =>
     apiRequest<FlightAreaAssessment>('/api/flight-area-assessment', {
       query: {
         latitude: query.latitude.toFixed(7),
@@ -408,34 +311,6 @@ export const customerApi = {
       signal: params.signal,
     }),
 
-  startConsultation: (signal?: AbortSignal) =>
-    apiRequest<CustomerConsultation>('/api/customer/consultations', {
-      method: 'POST',
-      signal,
-    }),
-
-  getConsultation: (consultationId: string, signal?: AbortSignal) =>
-    apiRequest<CustomerConsultation>(
-      `/api/customer/consultations/${encodeURIComponent(consultationId)}`,
-      { signal },
-    ),
-
-  sendConsultationMessage: (
-    consultationId: string,
-    message: string,
-    options: SendConsultationMessageOptions = {},
-  ) =>
-    apiRequest<CustomerConsultation>(
-      `/api/customer/consultations/${encodeURIComponent(consultationId)}/messages`,
-      {
-        method: 'POST',
-        body: {
-          message,
-          requestContext: options.requestContext,
-        },
-        signal: options.signal,
-      },
-    ),
 
   /** `POST /api/orders` [BE] `OrderCreateRequest` -> `OrderCreateResponse`. */
   createOrder: (payload: CreateOrderPayload) =>
@@ -444,12 +319,6 @@ export const customerApi = {
       body: payload,
     }),
 
-  /** `GET /api/orders/{orderId}/analysis/latest` [BE]: `null` until analysed. */
-  getLatestAnalysis: (orderId: string, signal?: AbortSignal) =>
-    apiRequest<RawAnalysis | null>(
-      `/api/orders/${encodeURIComponent(orderId)}/analysis/latest`,
-      { signal },
-    ),
 
   /** Mock only: the BE has no endpoint to accept a finding suggestion. */
   applyFindingSuggestion: (orderId: string, findingId: string) =>

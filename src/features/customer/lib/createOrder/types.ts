@@ -1,12 +1,11 @@
-import type {
-  ConsultationMessage,
-  CustomerConsultation,
-} from '../../api/customerApi'
-
-export type Step = 1 | 2 | 3 | 4 | 5
-export const STEPS: readonly Step[] = [1, 2, 3, 4, 5]
+export type Step = 1 | 2 | 3 | 4 | 5 | 6
+export const STEPS: readonly Step[] = [1, 2, 3, 4, 5, 6]
 
 export type MapPoint = { x: number; y: number }
+
+export type LocationStatus =
+  'unconfirmed' | 'resolving' | 'confirmed' | 'stale' | 'error'
+export type LocationSource = 'search' | 'map' | 'gps' | 'file' | 'restored' | ''
 
 export type AiScore = {
   score: number
@@ -99,12 +98,22 @@ export type FormState = {
   usagePurpose: UsagePurpose
   /** Printed as the flight purpose on the flight-permit application. */
   flightPurpose: FlightPurpose
+  /** Free-text detail required when `flightPurpose` is OTHER. */
+  otherFlightPurpose: string
+  /** Free-text detail required when `usagePurpose` is OTHER. */
+  otherUsagePurpose: string
   description: string
   address: string
+  normalizedAddress: string
   latitude: string
   longitude: string
+  locationStatus: LocationStatus
+  locationSource: LocationSource
+  locationConfirmedAt: string
   radiusM: number
   monitoringRelationship: MonitoringRelationship | ''
+  /** Free-text detail required when `monitoringRelationship` is OTHER. */
+  otherMonitoringRelationship: string
   monitoringAuthorizationConfirmed: boolean
   monitoringAuthorizationDocuments: MonitoringAuthorizationDocument[]
   altitudeM: number
@@ -161,10 +170,6 @@ export type StoredCreateOrderDraft = {
   step?: Step
   form?: FormState
   mapPoint?: MapPoint
-  consultation?: CustomerConsultation | null
-  chatMessages?: ConsultationMessage[]
-  autoDraft?: { title: string; description: string }
-  aiAnalysisRequested?: boolean
 }
 
 export type UpdateField = <K extends keyof FormState>(

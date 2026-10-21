@@ -5,28 +5,17 @@ import { STAFF_ROLE_LABELS } from '../missionDetail/missionDetailParts'
 import { OrderIcon } from '../orderReview/OrderIcon'
 import { OrderWorkflowStepper } from '../OrderWorkflowStepper'
 import { planningSchedule } from './planningSchedule'
+import { FlightPermitCard } from './FlightPermitCard'
+import type { MissionResponse } from '../../types/missions'
 
-const ROLES: MissionStaffRole[] = ['PILOT', 'OPERATOR', 'MAINTAINER', 'INSPECTOR']
+const ROLES: MissionStaffRole[] = [
+  'PILOT',
+  'OPERATOR',
+  'MAINTAINER',
+  'INSPECTOR',
+]
 
-type OverviewMission = {
-  id: string
-  missionCode: string
-  status: string
-  scheduledStartAt?: string | null
-  scheduledEndAt?: string | null
-  deviceId?: string | null
-  droneId?: string | null
-  deviceCode?: string | null
-  droneCode?: string | null
-  deviceName?: string | null
-  staffAssignments?: {
-    staffId: string
-    staffName?: string | null
-    staffEmail?: string | null
-    assignedRole: MissionStaffRole
-    responseStatus?: string
-  }[]
-}
+type OverviewMission = MissionResponse
 
 /** Step 8: read-only summary of every Mission of the Order so the manager can double-check. */
 export function OrderMissionsOverview({
@@ -38,6 +27,7 @@ export function OrderMissionsOverview({
   onAssignMore,
   doneLabel,
   embedded = false,
+  mode = 'preparation',
 }: {
   missions: OverviewMission[]
   scopeLabels: Record<string, string | undefined>
@@ -48,6 +38,7 @@ export function OrderMissionsOverview({
   doneLabel: ReactNode
   /** The outer page already renders the heading and stepper. */
   embedded?: boolean
+  mode?: 'preparation' | 'permit'
 }) {
   const effective = missions.filter((mission) => mission.status !== 'CANCELLED')
   const completeCount = effective.filter(
@@ -59,26 +50,27 @@ export function OrderMissionsOverview({
     <div className="odm-or">
       {!embedded && (
         <>
-      <div className="odm-or-pagehead odm-or-pagehead-row">
-        <div>
-          <h1 className="odm-or-title">Tổng quan Mission</h1>
-          <p className="odm-or-subtitle">
-            Kiểm tra lại lịch, nhân sự và thiết bị của toàn bộ Mission trước
-            khi hoàn tất.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="odm-or-btn-outline"
-          disabled={loading}
-          onClick={onReload}
-        >
-          Làm mới
-        </button>
-      </div>
-      <OrderWorkflowStepper currentStep={8} />
+          <div className="odm-or-pagehead odm-or-pagehead-row">
+            <div>
+              <h1 className="odm-or-title">Tổng quan Mission</h1>
+              <p className="odm-or-subtitle">
+                Kiểm tra lại lịch, nhân sự và thiết bị của toàn bộ Mission trước
+                khi hoàn tất.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="odm-or-btn-outline"
+              disabled={loading}
+              onClick={onReload}
+            >
+              Làm mới
+            </button>
+          </div>
+          <OrderWorkflowStepper currentStep={mode === 'permit' ? 9 : 8} />
         </>
       )}
+      {mode === 'preparation' ? (
       <section className="odm-or-card" aria-label="Tổng quan Mission">
         <header className="odm-or-card-head">
           <span className="odm-or-card-title">
@@ -115,7 +107,9 @@ export function OrderMissionsOverview({
                     <strong>{mission.missionCode}</strong>
                     <span
                       className={`odm-or-pill ${
-                        readiness.complete ? 'odm-or-pill-green' : 'odm-or-pill-amber'
+                        readiness.complete
+                          ? 'odm-or-pill-green'
+                          : 'odm-or-pill-amber'
                       }`}
                     >
                       {cancelled
@@ -191,11 +185,27 @@ export function OrderMissionsOverview({
           </div>
         </div>
       </section>
+      ) : null}
+      {mode === 'permit' && missions
+        .filter(
+          (mission) =>
+            assignmentReadiness(mission).complete &&
+            mission.status !== 'CANCELLED',
+        )
+        .map((mission) => (
+          <FlightPermitCard
+            key={mission.id}
+            mission={mission}
+            onChanged={onReload}
+          />
+        ))}
       <div className="odm-or-actionbar">
         <div className="odm-or-actionbar-hint">
-          {allReady
-            ? 'Tất cả Mission đã đủ nhân sự và thiết bị.'
-            : 'Hoàn tất phân công các Mission còn thiếu để kết thúc kế hoạch.'}
+          {mode === 'permit'
+            ? 'Cập nhật giấy phép bay cho từng Mission trước khi thực hiện.'
+            : allReady
+              ? 'Tất cả Mission đã đủ nhân sự và thiết bị.'
+              : 'Hoàn tất phân công các Mission còn thiếu để kết thúc kế hoạch.'}
         </div>
         <button
           type="button"

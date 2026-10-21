@@ -701,6 +701,29 @@
   flex: none;
 }
 
+.checklist-card.is-compact .checklist-row.is-compact {
+  min-height: 64px;
+  flex-wrap: nowrap;
+}
+
+.checklist-card.is-compact .checklist-row.is-compact .checklist-guidance {
+  flex: 0 0 auto;
+  padding-left: 0;
+}
+
+.checklist-card.is-compact .checklist-row.is-compact .odm-cg {
+  margin-top: 0;
+}
+
+.checklist-card.is-compact .checklist-row.is-compact .odm-cg > summary {
+  white-space: nowrap;
+}
+
+.checklist-card.is-compact .checklist-evidence-summary {
+  background: var(--ui-surface-2);
+  color: var(--ui-text-2);
+}
+
 /* Guidance under a catalog row: always on its own line below the row controls. */
 .checklist-card .checklist-row.is-compact {
   flex-wrap: wrap;
@@ -708,4 +731,63 @@
 .checklist-card .checklist-row .checklist-guidance {
   flex: 0 0 100%;
   padding-left: 40px;
+}
+
+/* Create-order list: one continuous work surface instead of a stack of cards. */
+.checklist-card.is-compact .checklist-fields {
+  gap: 0;
+  margin-top: 14px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--ui-surface);
+}
+
+.checklist-card.is-compact .checklist-row.is-compact,
+.checklist-card.is-compact .checklist-row:not(.is-compact) {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.checklist-card.is-compact .checklist-row:last-child {
+  border-bottom: 0;
+}
+
+.checklist-card.is-compact .checklist-row.is-compact:hover {
+  border-color: var(--ui-border);
+  background: var(--ui-surface-2);
+}
+
+.checklist-card.is-compact .checklist-row.is-compact .checklist-index {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--ui-primary-soft);
+}
+
+.checklist-card .checklist-view button[aria-pressed='true'] {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  box-shadow: inset 0 0 0 1px var(--ui-border-strong);
+}
+
+@media (max-width: 600px) {
+  .checklist-card.is-compact .checklist-fields {
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .checklist-card.is-compact .checklist-row.is-compact {
+    flex-wrap: wrap;
+  }
+
+  .checklist-card.is-compact .checklist-row.is-compact .checklist-guidance {
+    order: 4;
+    flex-basis: 100%;
+    padding-left: 40px;
+  }
 }

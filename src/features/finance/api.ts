@@ -85,6 +85,11 @@ export const financeApi = {
         method: 'POST',
       },
     ),
+  completeTestDeposit: (invoiceId: string) =>
+    apiRequest<Payment>(
+      `/api/invoices/${encodeURIComponent(invoiceId)}/payments/test-deposit`,
+      { method: 'POST' },
+    ),
   createFinalPayment: (invoiceId: string) =>
     apiRequest<Payment>(
       `/api/invoices/${encodeURIComponent(invoiceId)}/payments/final`,

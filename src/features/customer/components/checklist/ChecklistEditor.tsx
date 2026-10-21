@@ -267,6 +267,11 @@ export function ChecklistEditor({
               </>
             )}
           </span>
+          {row.sourceChecklistId ? (
+            <div className="checklist-guidance">
+              <ChecklistGuidance guidance={row} />
+            </div>
+          ) : null}
           <span className="checklist-evidence-summary">
             {row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
               ? t.imageAndVideoSummary(
@@ -318,11 +323,6 @@ export function ChecklistEditor({
               <Icon name="trash" width={16} height={16} aria-hidden="true" />
             </button>
           )}
-          {row.sourceChecklistId ? (
-            <div className="checklist-guidance">
-              <ChecklistGuidance guidance={row} />
-            </div>
-          ) : null}
         </div>
       )
     }

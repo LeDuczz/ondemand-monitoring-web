@@ -342,7 +342,11 @@ describe('Order checklist state and editor', () => {
 
     const edit = await screen.findByRole('button', { name: 'Sửa nội dung 1' })
     expect(screen.getAllByRole('button', { name: 'Sửa nội dung 1' })).toHaveLength(1)
-    expect(screen.getByRole('checkbox', { name: /Chọn nội dung 1: First/ })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Chọn nội dung 1' })).toBeChecked()
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Chọn nội dung 1' }),
+    ).toHaveAttribute('aria-describedby', 'checklist-summary-link-1')
 
     fireEvent.click(edit)
     const content = screen.getByLabelText('Nội dung giám sát 1')
@@ -355,7 +359,7 @@ describe('Order checklist state and editor', () => {
     expect(screen.getByText('Updated monitoring content')).toBeInTheDocument()
     expect(
       screen.getByRole('checkbox', {
-        name: /Chọn nội dung 1: Updated monitoring content/,
+        name: 'Chọn nội dung 1',
       }),
     ).toBeChecked()
 

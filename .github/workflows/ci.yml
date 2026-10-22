@@ -38,8 +38,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm run test
+      - name: Monitoring UI regression tests
+        run: npm run test -- src/features/customer/pages/CreateOrder/components/ContentStep.test.tsx src/features/customer/lib/checklist/checklist.test.tsx
 
       - name: Build
         run: npm run build
+
+      - name: Test
+        run: npm run test

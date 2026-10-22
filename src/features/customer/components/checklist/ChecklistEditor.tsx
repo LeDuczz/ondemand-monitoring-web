@@ -137,7 +137,8 @@ export function ChecklistEditor({
         type="checkbox"
         className="checklist-check"
         checked={row.selected}
-        aria-label={`${t.select(index + 1)}: ${row.content}`}
+        aria-label={t.select(index + 1)}
+        aria-describedby={compact ? `checklist-summary-${row.key}` : undefined}
         disabled={row.mandatory}
         onChange={(event) =>
           checklist.change(row.key, {
@@ -253,7 +254,11 @@ export function ChecklistEditor({
             <span className="checklist-index">
               {String(index + 1).padStart(2, '0')}
             </span>
-            <span className="checklist-summary" title={row.content}>
+            <span
+              id={`checklist-summary-${row.key}`}
+              className="checklist-summary"
+              title={row.content}
+            >
               {row.content || t.emptyContent}
               {!row.sourceChecklistId && (
                 <span className="checklist-custom-tag">{t.custom}</span>

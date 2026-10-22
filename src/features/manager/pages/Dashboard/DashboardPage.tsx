@@ -1,38 +1,67 @@
 import { useState } from 'react'
-
 import { StateView } from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { managerApi } from '../../api/dashboardApi'
-import { formatDateTime } from '../../lib/formatVnDateTime'
-import { dashboardPageMessages } from './DashboardPage.messages'
-import { managerHref } from '../../routes'
 import '../../manager.css'
-import { type ActionItemType } from './dashboardTypes'
+import { dashboardPageMessages } from './DashboardPage.messages'
 import { DashboardSkeleton } from './components/DashboardSkeleton'
 import { KpiRow } from './components/KpiRow'
-import { DashboardCharts } from './components/DashboardCharts'
 import { ActionListCard } from './components/ActionListCard'
-import { FlyingMissionCard } from './components/FlyingMissionCard'
+import { OperationalSections } from './components/OperationalSections'
+import { AnalyticsCharts } from './components/AnalyticsCharts'
+import { formatDashboardDate } from './dashboardHelpers'
+import type {
+  ManagerDashboardData,
+  ManagerDashboardResponse,
+} from '../../types/dashboard'
 
-// Label for each action-item-type filter chip above "Cần xử lý ngay".
-// [TK MNG-01]'s own prototype ties the KPI cards themselves to this filter
-// (onClick sets local demo state), but here the KPI cards instead navigate
-// to their related queue screen (Đơn chờ duyệt -> orders queue, Mission hôm
-// nay -> missions, Mission đang bay -> live, Drone sẵn sàng -> drones, Việc
-// cần xử lý -> media) — a real shortcut instead of a prototype-only local
-// toggle. The list keeps its own small filter-chip row instead, matching
-// the design's "filter chip + Xoá lọc" affordance without depending on KPI
-// clicks (documented in evd/P3-manager-dashboard.md).
+function normalizeDashboard(data: ManagerDashboardResponse): ManagerDashboardData {
+  return {
+    summary: data.summary ?? {
+      totalOrders: 0,
+      totalQuoteValue: 0,
+      pendingOrderCount: data.kpis?.pendingOrders.count ?? 0,
+      pendingAdditionalChecklistCount: 0,
+      waitingDepositCount: 0,
+      activeMissionCount: data.kpis?.missionsInFlight.count ?? 0,
+      attentionRequiredCount: data.kpis?.actionItems.count ?? 0,
+    },
+    orderStatusDistribution: data.orderStatusDistribution ?? [],
+    serviceDistribution: data.serviceDistribution ?? [],
+    additionalServiceDistribution: data.additionalServiceDistribution ?? [],
+    priceAdjustmentSummary: data.priceAdjustmentSummary ?? { approvedAtSystemPrice: 0, adjustedByManager: 0 },
+    missionStatusDistribution: data.missionStatusDistribution ?? [],
+    missionTrend: data.missionTrend ?? [],
+    actionItems: data.actionItems ?? [],
+    recentOrders: data.recentOrders ?? [],
+    pricingPipeline: data.pricingPipeline ?? {
+      pricingReviewCount: 0,
+      quoteReadyCount: 0,
+      waitingCustomerCount: 0,
+      waitingDepositCount: 0,
+      depositPaidCount: 0,
+    },
+    missionOverview: data.missionOverview ?? {
+      scheduledCount: 0,
+      readyCount: 0,
+      inFlightCount: data.kpis?.missionsInFlight.count ?? 0,
+      returningCount: 0,
+      completedTodayCount: 0,
+      issueCount: 0,
+    },
+    activeMissions: data.activeMissions ?? [],
+    recentActivities: data.recentActivities ?? [],
+    generatedAt: data.generatedAt ?? new Date().toISOString(),
+  }
+}
 
 export function DashboardPage() {
   const { t, lang } = useI18n(dashboardPageMessages)
-  const [now] = useState(() => new Date())
-  const [filter, setFilter] = useState<ActionItemType | 'all'>('all')
-  const query = useApiQuery((signal) => managerApi.getDashboard(signal), [])
+  const [range, setRange] = useState<'7D' | '30D' | '90D'>('30D')
+  const query = useApiQuery((signal) => managerApi.getDashboard(range, signal), [range])
 
   if (query.loading) return <DashboardSkeleton t={t} />
-
   if (query.error) {
     return (
       <StateView
@@ -43,49 +72,39 @@ export function DashboardPage() {
       />
     )
   }
+  if (!query.data) return null
 
-  const data = query.data
-  if (!data) return null
-
-  const visibleItems =
-    filter === 'all'
-      ? data.actionItems
-      : data.actionItems.filter((item) => item.type === filter)
-
-  const presentTypes = Array.from(
-    new Set(data.actionItems.map((item) => item.type)),
-  )
-
+  const data = normalizeDashboard(query.data)
   return (
     <div className="odm-mgr-dash">
       <div className="odm-mgr-dash-head">
         <div>
           <h1 className="odm-mgr-dash-title">{t.title}</h1>
-          <div className="odm-mgr-dash-date">{formatDateTime(now, lang)}</div>
+          <span className="odm-visually-hidden">
+            {lang === 'vi' ? 'Dashboard điều hành' : 'Operations dashboard'}
+          </span>
+          <p className="odm-mgr-dash-subtitle">{t.subtitle}</p>
+          <div className="odm-mgr-dash-date">
+            {t.lastUpdated}: {formatDashboardDate(data.generatedAt)}
+          </div>
         </div>
-        <a className="odm-btn" href={managerHref({ screen: 'reports' })}>
-          {t.reports}
-        </a>
+        <div className="odm-mgr-dashboard-controls">
+          <div className="odm-mgr-range" role="group" aria-label="Khoảng thời gian phân tích">
+            {(['7D', '30D', '90D'] as const).map((value) => (
+              <button key={value} type="button" className={range === value ? 'is-active' : ''}
+                aria-pressed={range === value} onClick={() => setRange(value)}>
+                {value === '7D' ? '7 ngày' : value === '30D' ? '30 ngày' : '90 ngày'}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="odm-btn" onClick={query.reload}>{t.refresh}</button>
+        </div>
       </div>
 
       <KpiRow data={data} />
-
-      <DashboardCharts data={data} />
-
-      <div className="odm-mgr-lower">
-        <ActionListCard
-          filter={filter}
-          setFilter={setFilter}
-          presentTypes={presentTypes}
-          data={data}
-          visibleItems={visibleItems}
-          now={now}
-        />
-
-        {data.flyingMission ? (
-          <FlyingMissionCard flyingMission={data.flyingMission} now={now} />
-        ) : null}
-      </div>
+      <AnalyticsCharts data={data} />
+      <ActionListCard items={data.actionItems} />
+      <OperationalSections data={data} />
     </div>
   )
 }

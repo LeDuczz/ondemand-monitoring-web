@@ -1,110 +1,43 @@
-import { actionItemAge, actionItemRoute } from '../dashboardHelpers'
+import { formatVnd } from '../../../../../shared/lib/formatVnd'
 import { managerHref } from '../../../routes'
-import { dashboardPageMessages } from '../DashboardPage.messages'
-import { useI18n } from '../../../../../shared/i18n'
-import type { Dispatch, SetStateAction } from 'react'
-import type {
-  ManagerDashboardResponse,
-  ActionItem,
-} from '../../../types/dashboard'
+import type { ActionItem } from '../../../types/dashboard'
+import { actionItemRoute, formatDashboardDate } from '../dashboardHelpers'
 
-export function ActionListCard({
-  filter,
-  setFilter,
-  presentTypes,
-  data,
-  visibleItems,
-  now,
-}: {
-  filter:
-    | 'ORDER_PENDING'
-    | 'MISSION_UNASSIGNED'
-    | 'MAINTENANCE_TICKET'
-    | 'MEDIA_ACTION'
-    | 'MISSION_FLYING'
-    | 'all'
-  setFilter: Dispatch<
-    SetStateAction<
-      | 'ORDER_PENDING'
-      | 'MISSION_UNASSIGNED'
-      | 'MAINTENANCE_TICKET'
-      | 'MEDIA_ACTION'
-      | 'MISSION_FLYING'
-      | 'all'
-    >
-  >
-  presentTypes: (
-    | 'ORDER_PENDING'
-    | 'MISSION_UNASSIGNED'
-    | 'MAINTENANCE_TICKET'
-    | 'MEDIA_ACTION'
-    | 'MISSION_FLYING'
-  )[]
-  data: ManagerDashboardResponse
-  visibleItems: ActionItem[]
-  now: Date
-}) {
-  const { t, lang } = useI18n(dashboardPageMessages)
+const actionLabel: Record<NonNullable<ActionItem['actionType']>, string> = {
+  REVIEW_PRICING: 'Xem & duyệt giá',
+  VIEW_ORDER: 'Xem yêu cầu',
+  VIEW_QUOTE: 'Xem báo giá',
+  VIEW_MISSION: 'Xem Mission',
+}
+
+export function ActionListCard({ items }: { items: ActionItem[] }) {
   return (
-    <div className="odm-card">
-      <div className="odm-card-header">
-        <span>{t.actionListTitle}</span>
-        {filter !== 'all' ? (
-          <button
-            type="button"
-            className="odm-btn odm-btn-gh odm-btn-sm"
-            onClick={() => setFilter('all')}
-          >
-            {t.clearFilter}
-          </button>
-        ) : null}
-      </div>
-      {presentTypes.length > 1 ? (
-        <div className="odm-mgr-filter-chips">
-          {presentTypes.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className={`odm-mgr-chip ${filter === type ? 'is-active' : ''}`}
-              aria-pressed={filter === type}
-              onClick={() =>
-                setFilter((current) => (current === type ? 'all' : type))
-              }
-            >
-              {t.actionTypeFilter[type]} (
-              {data.actionItems.filter((item) => item.type === type).length})
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {visibleItems.length === 0 ? (
+    <section className="odm-card odm-mgr-section">
+      <div className="odm-card-header">Cần bạn xử lý</div>
+      {items.length === 0 ? (
         <div className="odm-mgr-empty-list">
-          <div className="odm-mgr-empty-list-title">{t.emptyListTitle}</div>
-          <div className="odm-mgr-empty-list-desc">
-            {t.emptyListDescription}
-          </div>
+          <div className="odm-mgr-empty-list-title">Hiện tại không có công việc nào cần xử lý.</div>
         </div>
       ) : (
         <ul className="odm-mgr-action-list">
-          {visibleItems.map((item) => (
+          {items.map((item) => (
             <li key={item.id} className="odm-mgr-action-row">
+              <span className={`odm-mgr-priority is-${(item.priority ?? 'MEDIUM').toLowerCase()}`}>{item.priority ?? 'MEDIUM'}</span>
               <div className="odm-mgr-action-text">
                 <div className="odm-mgr-action-title">{item.title}</div>
-                <div className="odm-mgr-action-subtitle">{item.subtitle}</div>
+                <div className="odm-mgr-action-subtitle">
+                  {[item.orderCode ?? item.code, item.description ?? item.subtitle].filter(Boolean).join(' · ')}
+                </div>
+                {item.systemCalculatedAmount != null ? (
+                  <div className="odm-mgr-action-price">Giá hệ thống: {formatVnd(item.systemCalculatedAmount)}</div>
+                ) : null}
               </div>
-              <div className="odm-mgr-action-age odm-tn">
-                {actionItemAge(now, item, lang)}
-              </div>
-              <a
-                className="odm-btn odm-btn-sm"
-                href={managerHref(actionItemRoute(item))}
-              >
-                {t.actionType[item.type]}
-              </a>
+              <time className="odm-mgr-action-age" dateTime={item.createdAt}>{item.createdAt ? formatDashboardDate(item.createdAt) : ''}</time>
+              <a className="odm-btn odm-btn-sm" href={managerHref(actionItemRoute(item))}>{item.actionType ? actionLabel[item.actionType] : 'Xem'}</a>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   )
 }

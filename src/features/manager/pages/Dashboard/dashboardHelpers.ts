@@ -1,44 +1,23 @@
 import type { ActionItem } from '../../types/dashboard'
 import type { ManagerRoute } from '../../routes'
-import type { Language } from '../../../../shared/i18n'
-import {
-  formatOrderAge,
-  formatMissionCountdown,
-  formatTicketAge,
-  formatMinutesAgo,
-  formatFlightMinutes,
-} from '../../lib/actionItemAge'
 
 export function actionItemRoute(item: ActionItem): ManagerRoute {
-  switch (item.type) {
-    case 'ORDER_PENDING':
-      return { screen: 'orderReview', orderId: item.orderId }
-    case 'MISSION_UNASSIGNED':
-      return { screen: 'missionDispatch', missionId: item.missionId }
-    case 'MAINTENANCE_TICKET':
-      return { screen: 'maintenance' }
-    case 'MEDIA_ACTION':
-      return { screen: 'media' }
-    case 'MISSION_FLYING':
-      return { screen: 'live', missionId: item.missionId }
+  if (item.actionType === 'VIEW_MISSION' && item.missionId) {
+    return { screen: 'missionDetail', missionId: item.missionId }
   }
+  if (item.orderId) return { screen: 'orderReview', orderId: item.orderId }
+  if (item.type === 'MAINTENANCE_TICKET') return { screen: 'maintenance' }
+  if (item.type === 'MEDIA_ACTION') return { screen: 'media' }
+  return { screen: 'dashboard' }
 }
 
-export function actionItemAge(
-  now: Date,
-  item: ActionItem,
-  lang: Language,
-): string {
-  switch (item.type) {
-    case 'ORDER_PENDING':
-      return formatOrderAge(now, item.submittedAtIso, 24, lang)
-    case 'MISSION_UNASSIGNED':
-      return formatMissionCountdown(now, item.scheduledStartIso, lang)
-    case 'MAINTENANCE_TICKET':
-      return formatTicketAge(now, item.openedAtIso, lang)
-    case 'MEDIA_ACTION':
-      return formatMinutesAgo(now, item.createdAtIso, lang)
-    case 'MISSION_FLYING':
-      return formatFlightMinutes(now, item.startedAtIso, lang)
-  }
+export function statusLabel(status: string): string {
+  return status.replaceAll('_', ' ')
+}
+
+export function formatDashboardDate(value: string): string {
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value))
 }

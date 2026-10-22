@@ -95,7 +95,12 @@ async function defaultTransport(
   if (env.useMockApi) {
     const method = init?.method ?? 'GET'
     const { pathname } = new URL(input, env.apiBaseUrl)
-    if (matchesRealApiRoute(env.realApiRoutes, method, pathname)) {
+    // The Manager dashboard is an operational surface: never serve seed KPIs
+    // in interactive hybrid mode. Its aggregate endpoint must remain real.
+    if (
+      (method === 'GET' && pathname === '/api/manager/dashboard') ||
+      matchesRealApiRoute(env.realApiRoutes, method, pathname)
+    ) {
       return authenticatedFetch(input, init)
     }
     const { mockFetch } = await import('../../mocks')

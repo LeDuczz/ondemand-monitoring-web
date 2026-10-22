@@ -8,7 +8,6 @@ import { ordersApi } from '../api/ordersApi'
 import { missionsApi } from '../api/missionsApi'
 import { planningApi } from '../api/planningApi'
 import { planningError } from '../lib/planningErrors'
-import { clearMissionCreationKey, missionCreationKey } from '../api/missionCreationIntent'
 import { OrderIcon, type OrderIconName } from '../components/orderReview/OrderIcon'
 import { formatOrderCode, humanizeMediaRequirement } from '../components/orderReview/format'
 import { OrderWorkflowStepper } from '../components/OrderWorkflowStepper'
@@ -335,16 +334,12 @@ function CreateMissionForm({
     try {
       const intent = {
         scopeLabel: scopeLabel.trim(),
-        ...(replacesMissionId ? { replacesMissionId } : {}),
         scheduledStart: startDate.toISOString(),
         scheduledEnd: endDate.toISOString(),
       }
-      const mission = await missionsApi.createMission(orderId, {
-        ...intent,
-        idempotencyKey: missionCreationKey(orderId, intent),
-        expectedPlanRevision: planRevision,
-      })
-      clearMissionCreationKey(orderId)
+      const mission = replacesMissionId
+        ? await missionsApi.replaceMission(replacesMissionId, intent)
+        : await missionsApi.createMission(orderId, intent)
       if (onCreated) onCreated(mission.id)
       else setNavigateTo(managerHref({ screen: 'orderReview', orderId }))
     } catch (err) {

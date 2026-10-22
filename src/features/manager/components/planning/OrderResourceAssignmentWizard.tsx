@@ -89,7 +89,6 @@ export function OrderResourceAssignmentWizard({
     )
   function eligible(id: string) {
     const mission = data?.missions.find((m) => m.id === id)
-    const scope = data?.plan.missions.find((m) => m.missionId === id)
     const stop = data?.stops.find((s) => s?.missionId === id)
     return Boolean(
       !query.loading &&
@@ -97,8 +96,7 @@ export function OrderResourceAssignmentWizard({
       mission?.orderId === orderId &&
       data?.plan.planStatus === 'FINALIZED' &&
       ['APPROVED', 'IN_PROGRESS'].includes(data.order.status) &&
-      (scope?.finalizedPlanRevision ?? 0) > 0 &&
-      ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+      ['READY', 'WAITING_CREW_CONFIRMATION'].includes(
         mission.status,
       ) &&
       stop &&
@@ -155,9 +153,7 @@ export function OrderResourceAssignmentWizard({
               ? 'Lịch sử · chỉ xem'
               : readiness.complete
                 ? 'Đã phân công nguồn lực'
-                : data.plan.planStatus !== 'FINALIZED' ||
-                    !data.plan.missions.find((m) => m.missionId === mission.id)
-                      ?.finalizedPlanRevision
+                : data.plan.planStatus !== 'FINALIZED'
                   ? 'Chưa chốt kế hoạch'
                   : !eligible(mission.id)
                     ? 'Chưa đủ điều kiện phân công'

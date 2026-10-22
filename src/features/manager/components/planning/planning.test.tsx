@@ -80,7 +80,7 @@ beforeEach(() => {
           id,
           orderId: 'o',
           missionCode: id.toUpperCase(),
-          status: 'RESOURCE_ASSIGNING',
+          status: 'PLANNING',
           staffAssignments: [],
         }) as unknown as MissionResponse,
     ),
@@ -363,7 +363,7 @@ describe('Manager multi-Mission planning', () => {
       '1',
     )
     expect(
-      screen.getByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+      screen.getByRole('button', { name: 'Chốt kế hoạch' }),
     ).toBeEnabled()
   })
   it('does not repeat uncovered items in the summary and refuses to continue', async () => {
@@ -384,7 +384,7 @@ describe('Manager multi-Mission planning', () => {
       'Còn 1 checklist chưa gán',
     )
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+      await screen.findByRole('button', { name: 'Chốt kế hoạch' }),
     )
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Còn checklist chưa được gán',
@@ -482,6 +482,18 @@ describe('Manager multi-Mission planning', () => {
     vi.spyOn(planningApi, 'finalizeExecutionPlan').mockImplementation(
       async () => {
         vi.mocked(planningApi.getExecutionPlan).mockResolvedValue(finalized)
+        vi.mocked(planningApi.getOrderMissions).mockResolvedValue(
+          ['m1', 'm2', 'm3'].map(
+            (id) =>
+              ({
+                id,
+                orderId: 'o',
+                missionCode: id.toUpperCase(),
+                status: 'READY',
+                staffAssignments: [],
+              }) as unknown as MissionResponse,
+          ),
+        )
         return finalized
       },
     )
@@ -503,7 +515,7 @@ describe('Manager multi-Mission planning', () => {
     )
     fireEvent.click(await screen.findByRole('button', { name: /^M1/ }))
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Tiếp: Gán nguồn lực' }),
+      await screen.findByRole('button', { name: 'Chốt kế hoạch' }),
     )
     await waitFor(() => expect(planningApi.finalizeExecutionPlan).toHaveBeenCalled())
     view.unmount()

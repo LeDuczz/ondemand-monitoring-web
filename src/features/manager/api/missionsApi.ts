@@ -84,7 +84,17 @@ export const missionsApi = {
     orderId: string,
     request: CreateMissionRequest,
   ): Promise<Mission> {
-    return apiRequest<Mission>(`/api/orders/${orderId}/missions`, {
+    return apiRequest<Mission>(`/api/missions/${encodeURIComponent(orderId)}`, {
+      method: 'POST',
+      body: request,
+    })
+  },
+
+  replaceMission(
+    missionId: string,
+    request: CreateMissionRequest,
+  ): Promise<Mission> {
+    return apiRequest<Mission>(`/api/missions/${encodeURIComponent(missionId)}/replacement`, {
       method: 'POST',
       body: request,
     })

@@ -177,11 +177,8 @@ export type CancelMissionRequest = {
   reason: string
 }
 
-/** Body of `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. */
+/** Body of `POST /api/missions/{orderId}`. */
 export type CreateMissionRequest = {
-  replacesMissionId?: string
-  idempotencyKey: string
-  expectedPlanRevision: number
   scopeLabel: string
   scheduledStart: string
   scheduledEnd: string

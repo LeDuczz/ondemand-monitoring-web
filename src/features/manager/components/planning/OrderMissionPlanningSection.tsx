@@ -468,7 +468,7 @@ function OrderPlanningWorkspace({
                       disabled={busy || saving || Boolean(creating)}
                       onClick={() => void continueToResourceAssignment()}
                     >
-                      Tiếp: Gán nguồn lực
+                      Chốt kế hoạch
                     </button>
                   )}
                 </>
@@ -625,8 +625,7 @@ function OrderPlanningWorkspace({
                           writable &&
                           !busy &&
                           draft &&
-                          scope?.finalizedPlanRevision == null &&
-                          mission.status === 'RESOURCE_ASSIGNING'
+                          mission.status === 'PLANNING'
                         }
                         items={data.order.checklistItems ?? []}
                         onChanged={query.reload}

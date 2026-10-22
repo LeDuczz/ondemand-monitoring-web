@@ -109,8 +109,10 @@ export function missionProgress(
     return { current: 'resources', finished: false, terminal: 'cancelled' }
   let stage: MissionStage = (
     {
+      PLANNING: 'resources',
       CREATED: 'resources',
       WAITING_DEPOSIT: 'resources',
+      READY: 'resources',
       RESOURCE_ASSIGNING: 'resources',
       WAITING_CREW_CONFIRMATION: 'prepare',
       WAITING_OPERATOR_ACCEPTANCE: 'prepare',
@@ -153,6 +155,6 @@ export type MissionBucket = 'finished' | 'active' | 'queued' | 'blocked'
 export function missionBucket(status: MissionStatus): MissionBucket {
   if (status === 'COMPLETED') return 'finished'
   if (status === 'FAILED' || status === 'CANCELLED') return 'blocked'
-  if (['CREATED', 'WAITING_DEPOSIT'].includes(status)) return 'queued'
+  if (['PLANNING', 'CREATED', 'WAITING_DEPOSIT'].includes(status)) return 'queued'
   return 'active'
 }

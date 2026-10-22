@@ -1327,7 +1327,7 @@ function LiveDispatchContent({
     orderContext &&
     (current.id !== missionId ||
       current.orderId !== orderContext.orderId ||
-      !['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+      !['READY', 'WAITING_CREW_CONFIRMATION'].includes(
         current.status,
       ))
   )
@@ -1349,10 +1349,10 @@ function LiveDispatchContent({
     )
   const currentOrderCode = displayOrderCode(current.orderCode, current.orderId)
   const assignable = orderContext
-    ? ['RESOURCE_ASSIGNING', 'WAITING_CREW_CONFIRMATION'].includes(
+    ? ['READY', 'WAITING_CREW_CONFIRMATION'].includes(
         current.status,
       )
-    : current.status === 'RESOURCE_ASSIGNING' || current.status === 'CREATED'
+    : current.status === 'READY'
   const activeStepIndex = dispatchSteps.indexOf(activeStep)
   const selectedDrones = (drones.data ?? []).filter((drone) =>
     droneIds.includes(drone.id),

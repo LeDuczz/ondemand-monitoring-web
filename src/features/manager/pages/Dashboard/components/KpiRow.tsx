@@ -1,43 +1,21 @@
-import { KpiCard } from './KpiCard'
+import type { ManagerDashboardData } from '../../../types/dashboard'
 import { managerHref } from '../../../routes'
-import { dashboardPageMessages } from '../DashboardPage.messages'
-import { useI18n } from '../../../../../shared/i18n'
-import type { ManagerDashboardResponse } from '../../../types/dashboard'
+import { KpiCard } from './KpiCard'
 
-export function KpiRow({ data }: { data: ManagerDashboardResponse }) {
-  const { t } = useI18n(dashboardPageMessages)
+const vnd = new Intl.NumberFormat('vi-VN', {
+  style: 'currency', currency: 'VND', notation: 'compact', maximumFractionDigits: 1,
+})
+
+export function KpiRow({ data }: { data: ManagerDashboardData }) {
+  const s = data.summary
   return (
     <div className="odm-mgr-kpi-row">
-      <KpiCard
-        label={t.kpis.pendingOrders}
-        value={String(data.kpis.pendingOrders.count)}
-        detail={data.kpis.pendingOrders.detail}
-        href={managerHref({ screen: 'orderQueue' })}
-      />
-      <KpiCard
-        label={t.kpis.missionsToday}
-        value={String(data.kpis.missionsToday.count)}
-        detail={data.kpis.missionsToday.detail}
-        href={managerHref({ screen: 'missions' })}
-      />
-      <KpiCard
-        label={t.kpis.missionsInFlight}
-        value={String(data.kpis.missionsInFlight.count)}
-        detail={data.kpis.missionsInFlight.detail}
-        href={managerHref({ screen: 'live' })}
-      />
-      <KpiCard
-        label={t.kpis.dronesReady}
-        value={`${data.kpis.dronesReady.ready}/${data.kpis.dronesReady.total}`}
-        detail={data.kpis.dronesReady.detail}
-        href={managerHref({ screen: 'drones' })}
-      />
-      <KpiCard
-        label={t.kpis.actionItems}
-        value={String(data.kpis.actionItems.count)}
-        detail={data.kpis.actionItems.detail}
-        href={managerHref({ screen: 'media' })}
-      />
+      <KpiCard label="Tổng yêu cầu" value={s.totalOrders} detail="Trong khoảng thời gian đã chọn" href={managerHref({ screen: 'orderQueue' })} />
+      <KpiCard label="Checklist chờ duyệt giá" value={s.pendingAdditionalChecklistCount} detail="Dịch vụ bổ sung cần báo giá" href={managerHref({ screen: 'orderQueue' })} tone="warning" />
+      <KpiCard label="Giá trị báo giá" value={vnd.format(s.totalQuoteValue)} detail="Bản mới nhất đã duyệt/chấp nhận" href={managerHref({ screen: 'orderQueue' })} />
+      <KpiCard label="Chờ thanh toán cọc" value={s.waitingDepositCount} detail="Chưa hoàn tất cọc" href={managerHref({ screen: 'orderQueue' })} tone="warning" />
+      <KpiCard label="Mission đang hoạt động" value={s.activeMissionCount} detail="Nhiệm vụ đang được triển khai" href={managerHref({ screen: 'missions' })} />
+      <KpiCard label="Cần chú ý" value={s.attentionRequiredCount} detail="Sự cố hoặc thiếu nguồn lực" href={managerHref({ screen: 'missions' })} tone="danger" />
     </div>
   )
 }

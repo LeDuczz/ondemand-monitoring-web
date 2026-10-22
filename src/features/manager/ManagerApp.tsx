@@ -63,7 +63,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
 export function ManagerApp() {
   const hash = useHash()
   const route = parseManagerRoute(hash)
-  const navCounts = useApiQuery((signal) => managerApi.getDashboard(signal), [])
+  const navCounts = useApiQuery((signal) => managerApi.getDashboard('30D', signal), [])
 
   const data = navCounts.data
   // Nav badges come from the dashboard's (PROPOSED) `navCounts` field, not
@@ -74,7 +74,11 @@ export function ManagerApp() {
   // src/features/manager/types/dashboard.ts and evd/P3-manager-dashboard.md.
   const counts = data
     ? {
-        pendingOrders: data.navCounts?.pendingOrders ?? 0,
+        pendingOrders:
+          data.navCounts?.pendingOrders ??
+          data.summary?.pendingOrderCount ??
+          data.kpis?.pendingOrders.count ??
+          0,
         openMaintenance: data.navCounts?.openMaintenanceTickets ?? 0,
         mediaNeedsAction: data.navCounts?.mediaNeedsAction ?? 0,
       }

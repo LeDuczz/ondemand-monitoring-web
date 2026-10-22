@@ -58,14 +58,25 @@ const readiness: OrderReadiness = {
   ],
 }
 
-function renderCard(editable = true) {
+function renderCard(
+  editable = true,
+  onLocalBlockChange?: (blocked: boolean) => void,
+  data: OrderReadiness = readiness,
+) {
   const query = {
-    data: readiness,
+    data,
     error: undefined,
     loading: false,
     reload: vi.fn(),
   }
-  render(<OrderReadinessCard orderId="o1" query={query} editable={editable} />)
+  render(
+    <OrderReadinessCard
+      orderId="o1"
+      query={query}
+      editable={editable}
+      onLocalBlockChange={onLocalBlockChange}
+    />,
+  )
   return query
 }
 
@@ -112,8 +123,15 @@ describe('OrderReadinessCard', () => {
   })
 
   it('requires a reason before saving a failing answer', async () => {
-    renderCard()
+    const onLocalBlockChange = vi.fn()
+    renderCard(true, onLocalBlockChange)
     fireEvent.click(screen.getByRole('button', { name: 'Không đạt' }))
+    await waitFor(() =>
+      expect(onLocalBlockChange).toHaveBeenLastCalledWith(true),
+    )
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Có tiêu chí bắt buộc không đạt',
+    )
     expect(readinessApi.answer).not.toHaveBeenCalled()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
     const requestMore = screen.getByRole('button', {
@@ -143,6 +161,19 @@ describe('OrderReadinessCard', () => {
       }),
     )
     expect(ordersApi.submitApproval).not.toHaveBeenCalled()
+  })
+
+  it('shows the reject-order action immediately for a local required failure', () => {
+    renderCard(true, undefined, {
+      ...readiness,
+      canApprove: true,
+      blockingReasons: [],
+      recommendation: 'APPROVE',
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Không đạt' }))
+
+    expect(screen.getByRole('button', { name: 'Từ chối đơn' })).toBeVisible()
   })
 
   it('is read-only once the order is no longer pending', () => {

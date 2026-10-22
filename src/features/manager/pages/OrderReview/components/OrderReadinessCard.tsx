@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
@@ -30,11 +30,13 @@ export function OrderReadinessCard({
   query,
   editable,
   onDecisionDone,
+  onLocalBlockChange,
 }: {
   orderId: string
   query: UseApiQueryState<OrderReadiness>
   editable: boolean
   onDecisionDone?: () => void
+  onLocalBlockChange?: (blocked: boolean) => void
 }) {
   const [drafts, setDrafts] = useState<
     Record<string, { result: Answer; note: string }>
@@ -46,6 +48,19 @@ export function OrderReadinessCard({
   >({})
 
   const readiness = query.data
+  const hasUnsavedRequiredFailure = Object.entries(drafts).some(
+    ([code, draft]) =>
+      draft.result === 'FAIL' &&
+      readiness?.criteria.some(
+        (criterion) => criterion.code === code && criterion.required,
+      ),
+  )
+
+  useEffect(() => {
+    onLocalBlockChange?.(hasUnsavedRequiredFailure)
+    return () => onLocalBlockChange?.(false)
+  }, [hasUnsavedRequiredFailure, onLocalBlockChange])
+
   if (!readiness) {
     return (
       <section
@@ -84,6 +99,7 @@ export function OrderReadinessCard({
   ).length
   const autoPassed = auto.filter((c) => c.result === 'PASS').length
   const manualAnswered = manual.filter((c) => c.result !== 'PENDING').length
+  const canContinue = readiness.canApprove && !hasUnsavedRequiredFailure
 
   async function save(code: string, result: Answer, note: string) {
     const previousResult = selectedResults[code]
@@ -189,14 +205,16 @@ export function OrderReadinessCard({
         </span>
         <div className="odm-or-readiness-head-actions">
           <span
-            className={`odm-or-readiness-verdict is-${readiness.canApprove ? 'ok' : 'blocked'}`}
+            className={`odm-or-readiness-verdict is-${canContinue ? 'ok' : 'blocked'}`}
             role="status"
           >
-            {readiness.canApprove
-              ? recommendationText[readiness.recommendation]
-              : pendingRequired > 0
-                ? `Còn ${pendingRequired} mục manager cần xác nhận`
-                : recommendationText[readiness.recommendation]}
+            {hasUnsavedRequiredFailure
+              ? 'Có tiêu chí bắt buộc không đạt'
+              : readiness.canApprove
+                ? recommendationText[readiness.recommendation]
+                : pendingRequired > 0
+                  ? `Còn ${pendingRequired} mục manager cần xác nhận`
+                  : recommendationText[readiness.recommendation]}
           </span>
         </div>
       </header>
@@ -245,7 +263,8 @@ export function OrderReadinessCard({
           {error}
         </p>
       ) : null}
-      {!readiness.canApprove && readiness.blockingReasons.length > 0 ? (
+      {!canContinue &&
+      (readiness.blockingReasons.length > 0 || failedRequired.length > 0) ? (
         <ReadinessBlockingNotice
           readiness={readiness}
           failedRequired={failedRequired}

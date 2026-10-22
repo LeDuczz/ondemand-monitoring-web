@@ -91,6 +91,20 @@ export function CustomerFinancePanel({
     }
   }
 
+  async function completeTestDeposit() {
+    if (!invoice) return
+    setBusy(true)
+    setError(null)
+    try {
+      await financeApi.completeTestDeposit(invoice.id)
+      await load()
+    } catch (cause) {
+      setError(messageOf(cause, t))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading && !quote && !invoice)
     return (
       <section className="ui-card customer-finance-card">{t.loading}</section>
@@ -129,6 +143,8 @@ export function CustomerFinancePanel({
           legalReady={legalReady}
           busy={busy}
           pay={pay}
+          completeTestDeposit={completeTestDeposit}
+          testPaymentLabel={t.testPayment}
         />
       ) : null}
       {error ? (

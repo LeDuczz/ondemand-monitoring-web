@@ -8,11 +8,15 @@ export function InvoiceSection({
   legalReady,
   busy,
   pay,
+  completeTestDeposit,
+  testPaymentLabel,
 }: {
   invoice: Invoice
   legalReady: boolean
   busy: boolean
   pay: (type: 'deposit' | 'final') => Promise<void>
+  completeTestDeposit: () => Promise<void>
+  testPaymentLabel: string
 }) {
   return (
     <div className="customer-invoice">
@@ -50,14 +54,26 @@ export function InvoiceSection({
       ) : null}
       <div className="finance-actions customer-payment-actions">
         {invoice.paidAmount < invoice.depositAmount && legalReady ? (
-          <button
-            className="odm-btn odm-btn-p"
-            type="button"
-            disabled={busy}
-            onClick={() => void pay('deposit')}
-          >
-            Thanh toán đặt cọc
-          </button>
+          <>
+            <button
+              className="odm-btn odm-btn-p"
+              type="button"
+              disabled={busy}
+              onClick={() => void pay('deposit')}
+            >
+              Thanh toán đặt cọc
+            </button>
+            {import.meta.env.DEV ? (
+              <button
+                className="odm-btn"
+                type="button"
+                disabled={busy}
+                onClick={() => void completeTestDeposit()}
+              >
+                {testPaymentLabel}
+              </button>
+            ) : null}
+          </>
         ) : null}
         {invoice.finalPaymentAllowed &&
         invoice.paidAmount >= invoice.depositAmount &&

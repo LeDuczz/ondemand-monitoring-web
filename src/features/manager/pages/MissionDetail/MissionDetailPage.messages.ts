@@ -68,7 +68,6 @@ export const missionDetailPageMessages = defineMessages({
     infoCard: 'Thông tin nhiệm vụ',
     crewCard: 'Phân công nguồn lực',
     crewDevice: 'Thiết bị',
-    crewReserved: 'Đã giữ lịch',
     crewEmpty: 'Nhiệm vụ này chưa có thiết bị hoặc nhân sự được gán.',
     crewAccepted: (accepted: number, total: number) =>
       `${accepted}/${total} đã nhận`,
@@ -164,7 +163,6 @@ export const missionDetailPageMessages = defineMessages({
     infoCard: 'Mission information',
     crewCard: 'Resource assignment',
     crewDevice: 'Device',
-    crewReserved: 'Reserved',
     crewEmpty: 'No device or staff assigned to this mission yet.',
     crewAccepted: (accepted: number, total: number) =>
       `${accepted}/${total} accepted`,

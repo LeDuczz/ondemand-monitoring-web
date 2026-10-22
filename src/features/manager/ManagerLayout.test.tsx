@@ -29,7 +29,7 @@ describe('ManagerLayout', () => {
       </ManagerLayout>,
     )
 
-    for (const group of ['Điều hành', 'Nguồn lực', 'Phân tích']) {
+    for (const group of ['Điều hành', 'Nguồn lực']) {
       expect(screen.getByText(group)).toBeInTheDocument()
     }
 
@@ -37,11 +37,8 @@ describe('ManagerLayout', () => {
       'Đơn hàng',
       'Nhiệm vụ',
       'Lịch nhiệm vụ',
-      'Giám sát realtime',
       'Đội drone',
       'Bảo trì',
-      'Media và giao kết quả',
-      'Báo cáo',
     ]) {
       expect(screen.getByText(item)).toBeInTheDocument()
     }
@@ -74,7 +71,7 @@ describe('ManagerLayout', () => {
       <ManagerLayout
         route={{ screen: 'dashboard' }}
         breadcrumb="Dashboard"
-        counts={{ pendingOrders: 6, openMaintenance: 1, mediaNeedsAction: 2 }}
+        counts={{ pendingOrders: 6 }}
       >
         <div>content</div>
       </ManagerLayout>,

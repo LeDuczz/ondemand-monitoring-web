@@ -1,4 +1,4 @@
-import type { DroneResponse } from '../../../types/drones'
+import type { DeviceResponse } from '../../../types/drones'
 import { useI18n } from '../../../../../shared/i18n'
 import { dronesPageMessages } from '../DronesPage.messages'
 import { MANUAL_TRANSITIONS } from '../droneHelpers'
@@ -8,9 +8,9 @@ import { dronesApi } from '../../../api/dronesApi'
 import { getDroneStatusLabel } from '../../../../../shared/lib/statusTone'
 
 export type StatusChangeModalProps = {
-  drone: DroneResponse
+  drone: DeviceResponse
   onClose: () => void
-  onChanged: (updated: DroneResponse) => void
+  onChanged: (updated: DeviceResponse) => void
 }
 
 export function StatusChangeModal({
@@ -23,23 +23,18 @@ export function StatusChangeModal({
   const [selectedStatus, setSelectedStatus] = useState<DroneStatus | ''>(
     nextStatuses[0] ?? '',
   )
-  const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSave() {
     if (!selectedStatus) return
-    if (!reason.trim()) {
-      setError(t.modal.reasonRequired)
-      return
-    }
     setSaving(true)
     setError(null)
     try {
       const updated = await dronesApi.updateDrone(drone.id, {
         serialNumber: drone.serialNumber,
-        droneModelId: drone.droneModel.id,
-        dronePayloadId: drone.dronePayload.id,
+        ...(drone.name ? { name: drone.name } : {}),
+        ...(drone.deviceModel ? { modelId: drone.deviceModel.id } : {}),
         status: selectedStatus,
       })
       onChanged(updated)
@@ -69,7 +64,7 @@ export function StatusChangeModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>
-          {t.modal.title(drone.serialNumber, drone.droneModel?.modelCode ?? '')}
+          {t.modal.title(drone.serialNumber, drone.deviceModel?.modelName ?? '')}
         </h3>
 
         {nextStatuses.length === 0 ? (
@@ -107,28 +102,6 @@ export function StatusChangeModal({
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="drone-reason"
-                style={{
-                  fontSize: 12,
-                  color: 'var(--tx2)',
-                  display: 'block',
-                  marginBottom: 4,
-                }}
-              >
-                {t.modal.reason}
-              </label>
-              <textarea
-                id="drone-reason"
-                className="odm-input"
-                rows={3}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={t.modal.reasonPlaceholder}
-                style={{ width: '100%', resize: 'vertical' }}
-              />
-            </div>
 
             {error && (
               <div style={{ color: 'var(--red-fg)', fontSize: 13 }}>

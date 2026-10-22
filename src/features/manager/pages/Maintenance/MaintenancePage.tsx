@@ -6,7 +6,6 @@ import { maintenanceApi } from '../../api/maintenanceApi'
 import type { MaintenanceTicket } from '../../types/maintenance'
 import '../../manager.css'
 import { AssignModal } from './components/AssignModal'
-import { CreateModal } from './components/CreateModal'
 import { MaintenanceStats } from './components/MaintenanceStats'
 import { TicketFilterBar } from './components/TicketFilterBar'
 import { MaintenanceLoadError } from './components/MaintenanceLoadError'
@@ -16,7 +15,6 @@ export function MaintenancePage() {
   const [tickets, setTickets] = useState<MaintenanceTicket[] | null>(null)
   const [selectedTicket, setSelectedTicket] =
     useState<MaintenanceTicket | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
   const [assignTicket, setAssignTicket] = useState<MaintenanceTicket | null>(
     null,
   )
@@ -93,12 +91,6 @@ export function MaintenancePage() {
     setAssignTicket(null)
   }
 
-  function handleCreated(ticket: MaintenanceTicket) {
-    const base = tickets ?? query.data?.items ?? []
-    setTickets([ticket, ...base])
-    setShowCreate(false)
-  }
-
   return (
     <div
       style={{
@@ -113,7 +105,6 @@ export function MaintenancePage() {
         unassignedCount={unassignedCount}
         urgentCount={urgentCount}
         resolvedCount={resolvedCount}
-        setShowCreate={setShowCreate}
       />
 
       {/* Search & Filter Toolbar */}
@@ -147,13 +138,6 @@ export function MaintenancePage() {
       )}
 
       {/* Modals */}
-      {showCreate && (
-        <CreateModal
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreated}
-        />
-      )}
-
       {assignTicket && (
         <AssignModal
           ticket={assignTicket}

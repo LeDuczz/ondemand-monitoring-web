@@ -15,7 +15,7 @@ type NavItem = {
   route?: ManagerRoute
   href?: string
   /** Key into `counts` for the numeric badge, when this item has one. */
-  countKey?: 'pendingOrders' | 'openMaintenance' | 'mediaNeedsAction'
+  countKey?: 'pendingOrders'
 }
 
 type NavGroup = { label: string; items: NavItem[] }
@@ -42,7 +42,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: 'schedule',
         route: { screen: 'schedule' },
       },
-      { label: 'Giám sát realtime', icon: 'live', route: { screen: 'live' } },
     ],
   },
   {
@@ -63,20 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
         label: 'Bảo trì',
         icon: 'maintenance',
         route: { screen: 'maintenance' },
-        countKey: 'openMaintenance',
       },
-      {
-        label: 'Media và giao kết quả',
-        icon: 'media',
-        route: { screen: 'media' },
-        countKey: 'mediaNeedsAction',
-      },
-    ],
-  },
-  {
-    label: 'Phân tích',
-    items: [
-      { label: 'Báo cáo', icon: 'reports', route: { screen: 'reports' } },
     ],
   },
 ]
@@ -93,12 +79,9 @@ const activeNavLabel: Record<ManagerScreen, string> = {
   missionSetup: 'Nhiệm vụ',
   missionDetail: 'Nhiệm vụ',
   schedule: 'Lịch nhiệm vụ',
-  live: 'Giám sát realtime',
   missions: 'Nhiệm vụ',
   drones: 'Đội drone',
   maintenance: 'Bảo trì',
-  media: 'Media và giao kết quả',
-  reports: 'Báo cáo',
   support: 'Trung tâm hỗ trợ',
   notFound: '',
 }
@@ -112,8 +95,6 @@ function initialsOf(fullName: string | undefined): string {
 
 export type ManagerNavCounts = {
   pendingOrders?: number
-  openMaintenance?: number
-  mediaNeedsAction?: number
 }
 
 export function ManagerLayout({

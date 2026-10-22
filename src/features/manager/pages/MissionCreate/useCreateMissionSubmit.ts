@@ -86,8 +86,8 @@ export function useCreateMissionSubmit({
       const intent = {
         scopeLabel: scopeLabel.trim(),
         ...(replacesMissionId ? { replacesMissionId } : {}),
-        scheduledStart: startDate.toISOString(),
-        scheduledEnd: endDate.toISOString(),
+        scheduledStartAt: startDate.toISOString(),
+        scheduledEndAt: endDate.toISOString(),
       }
       const mission = await missionsApi.createMission(orderId, {
         ...intent,

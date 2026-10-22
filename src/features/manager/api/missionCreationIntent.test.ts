@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { clearMissionCreationKey, missionCreationKey } from './missionCreationIntent'
 
 describe('pending Mission creation intent', () => {
-  const intent = { scopeLabel: 'Whole Order scope', scheduledStart: '2026-10-08T08:00:00+07:00', scheduledEnd: '2026-10-08T09:00:00+07:00' }
+  const intent = { scopeLabel: 'Whole Order scope', scheduledStartAt: '2026-10-08T08:00:00+07:00', scheduledEndAt: '2026-10-08T09:00:00+07:00' }
   beforeEach(() => sessionStorage.clear())
   it('reuses the persisted key across retries and equivalent timestamps/text', () => {
     const first = missionCreationKey('o', intent)
-    expect(missionCreationKey('o', { ...intent, scopeLabel: ' Whole  Order scope ', scheduledStart: '2026-10-08T01:00:00Z' })).toBe(first)
+    expect(missionCreationKey('o', { ...intent, scopeLabel: ' Whole  Order scope ', scheduledStartAt: '2026-10-08T01:00:00Z' })).toBe(first)
     expect(JSON.parse(sessionStorage.getItem('odms:pending-mission-creation:o')!).key).toBe(first)
   })
   it('separates Orders and distinct business intents', () => {

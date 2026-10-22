@@ -2,7 +2,7 @@ import type { MaintenanceTicket } from '../../../types/maintenance'
 import { useI18n } from '../../../../../shared/i18n'
 import { maintenancePageMessages } from '../MaintenancePage.messages'
 import { useState } from 'react'
-import { systemOperatorList } from '../maintenanceHelpers'
+import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { maintenanceApi } from '../../../api/maintenanceApi'
 import { formatTicketTitle } from '../../../lib/ticketText'
 
@@ -15,13 +15,18 @@ export function AssignModal({
   onClose: () => void
   onAssigned: (ticket: MaintenanceTicket) => void
 }) {
-  const { t, lang } = useI18n(maintenancePageMessages)
-  const [techId, setTechId] = useState('00000000-0000-0000-0000-000000000004')
+  const { t } = useI18n(maintenancePageMessages)
+  const staffQuery = useApiQuery(
+    (signal) => maintenanceApi.listAssignableStaff(signal),
+    [],
+  )
+  const [techId, setTechId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const operatorList = systemOperatorList(lang)
+  const staffList = staffQuery.data ?? []
 
   async function handleAssign() {
+    if (!techId) return
     setSaving(true)
     setError(null)
     try {
@@ -121,7 +126,29 @@ export function AssignModal({
           </label>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {operatorList.map((op) => {
+            {staffQuery.loading && (
+              <div style={{ fontSize: 13, color: '#64748b' }} aria-busy="true">
+                {t.assignModal.loadingStaff}
+              </div>
+            )}
+            {!staffQuery.loading && !!staffQuery.error && (
+              <div style={{ fontSize: 13, color: '#ef4444' }} role="alert">
+                {t.assignModal.staffLoadError}{' '}
+                <button
+                  type="button"
+                  className="odm-btn"
+                  onClick={staffQuery.reload}
+                >
+                  {t.assignModal.retry}
+                </button>
+              </div>
+            )}
+            {!staffQuery.loading && !staffQuery.error && staffList.length === 0 && (
+              <div style={{ fontSize: 13, color: '#64748b' }}>
+                {t.assignModal.noStaff}
+              </div>
+            )}
+            {staffList.map((op) => {
               const selected = techId === op.id
               return (
                 <div
@@ -158,7 +185,7 @@ export function AssignModal({
                         fontSize: 14,
                       }}
                     >
-                      {op.name.charAt(0)}
+                      {op.fullName.charAt(0)}
                     </div>
                     <div>
                       <div
@@ -168,10 +195,10 @@ export function AssignModal({
                           color: '#0f172a',
                         }}
                       >
-                        {op.name}
+                        {op.fullName}
                       </div>
                       <div style={{ fontSize: 12, color: '#64748b' }}>
-                        {op.role}
+                        {op.email}
                       </div>
                     </div>
                   </div>
@@ -215,7 +242,7 @@ export function AssignModal({
             type="button"
             className="odm-btn odm-btn-p"
             onClick={handleAssign}
-            disabled={saving}
+            disabled={saving || !techId}
             style={{
               fontWeight: 600,
               height: 38,

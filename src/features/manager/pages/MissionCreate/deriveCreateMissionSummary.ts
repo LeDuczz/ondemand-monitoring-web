@@ -47,12 +47,5 @@ export function deriveCreateMissionSummary({
       value: brief.radiusM != null ? `${brief.radiusM} m` : '—',
     },
   ]
-  if (brief.nearestBase) {
-    summaryRows.push({
-      icon: 'drone',
-      label: t.nearestBaseLabel,
-      value: brief.nearestBase,
-    })
-  }
   return { durationText, submitting, summaryRows }
 }

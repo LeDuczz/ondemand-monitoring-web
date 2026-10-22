@@ -80,7 +80,6 @@ beforeEach(() => {
     addressText: 'Đường Long Hậu',
     center: { lat: 10.63, lon: 106.69 },
     radiusM: 300,
-    nearestBase: null,
     mediaRequirements: null,
     purpose: null,
     attachments: null,

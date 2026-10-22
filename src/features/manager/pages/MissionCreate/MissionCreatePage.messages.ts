@@ -9,7 +9,6 @@ export const missionCreatePageMessages = defineMessages({
     customerLabel: 'Khách hàng',
     locationLabel: 'Địa điểm',
     radiusLabel: 'Bán kính giám sát',
-    nearestBaseLabel: 'Trạm gần nhất',
     mediaLabel: 'Yêu cầu media',
     durationLabel: (text: string) => `Thời lượng dự kiến: ${text}`,
     durationHours: (h: number, m: number) =>
@@ -90,7 +89,6 @@ export const missionCreatePageMessages = defineMessages({
     customerLabel: 'Customer',
     locationLabel: 'Location',
     radiusLabel: 'Monitoring radius',
-    nearestBaseLabel: 'Nearest base',
     mediaLabel: 'Media requirements',
     durationLabel: (text: string) => `Estimated duration: ${text}`,
     durationHours: (h: number, m: number) =>

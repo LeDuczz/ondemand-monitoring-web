@@ -5,7 +5,7 @@ import {
 } from '../../../../../shared/lib/statusTone'
 import { dronesPageMessages } from '../DronesPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
-import type { DroneResponse } from '../../../types/drones'
+import type { DeviceResponse } from '../../../types/drones'
 import type { Dispatch, SetStateAction } from 'react'
 
 export function DroneRow({
@@ -13,16 +13,16 @@ export function DroneRow({
   canChange,
   setChangingDrone,
 }: {
-  drone: DroneResponse
+  drone: DeviceResponse
   canChange: boolean
-  setChangingDrone: Dispatch<SetStateAction<DroneResponse | null>>
+  setChangingDrone: Dispatch<SetStateAction<DeviceResponse | null>>
 }) {
-  const { t, lang } = useI18n(dronesPageMessages)
+  const { t, lang, locale } = useI18n(dronesPageMessages)
   return (
     <tr style={{ borderBottom: '1px solid var(--border)' }}>
       <td style={{ padding: '8px 12px', fontWeight: 500 }}>
-        {drone.serialNumber}
-        {drone.droneModel?.modelCode ? (
+        {drone.name || drone.serialNumber}
+        {drone.name ? (
           <span
             style={{
               fontWeight: 400,
@@ -30,26 +30,22 @@ export function DroneRow({
               marginLeft: 4,
             }}
           >
-            {drone.droneModel.modelCode}
+            {drone.serialNumber}
           </span>
         ) : null}
       </td>
       <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.droneModel?.modelCode ?? '—'}
+        {drone.deviceModel?.modelName ?? drone.deviceModel?.code ?? '—'}
       </td>
       <td style={{ padding: '8px 12px' }}>
         <StatusBadge tone={droneStatusTone[drone.status]}>
           {getDroneStatusLabel(drone.status, lang)}
         </StatusBadge>
       </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>—</td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>—</td>
       <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.dronePayload?.modelName ?? '—'}
-      </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>—</td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.updatedAt ?? '—'}
+        {drone.updatedAt
+          ? new Date(drone.updatedAt).toLocaleString(locale)
+          : '—'}
       </td>
       <td style={{ padding: '8px 12px' }}>
         {canChange && (

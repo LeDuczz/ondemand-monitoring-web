@@ -3,12 +3,12 @@ import { ApiError } from '../../../../../shared/api/httpClient'
 import { dronesPageMessages } from '../DronesPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
-import type { PageResponseDroneResponse } from '../../../types/drones'
+import type { PageResponseDeviceResponse } from '../../../types/drones'
 
 export function DroneFilterChips({
   query,
 }: {
-  query: UseApiQueryState<PageResponseDroneResponse>
+  query: UseApiQueryState<PageResponseDeviceResponse>
 }) {
   const { t } = useI18n(dronesPageMessages)
   return (

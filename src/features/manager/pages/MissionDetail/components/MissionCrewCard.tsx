@@ -76,9 +76,6 @@ export function MissionCrewCard({
                     <span className="odm-or-crew-role">{t.crewDevice}</span>
                     <strong>{deviceLabel}</strong>
                   </span>
-                  <span className="odm-or-pill odm-or-pill-blue">
-                    {t.crewReserved}
-                  </span>
                 </li>
               ) : null}
               {staff.map((assignment) => {

@@ -2,11 +2,11 @@ import type { MissionCalendarItem } from '../../../types/missions'
 import type { PageMessages } from '../scheduleTypes'
 import { missionStatusTone } from '../../../../../shared/lib/statusTone'
 import { useState } from 'react'
-import { missionsApi } from '../../../api/missionsApi'
+import { missionsApi, toMissionCalendarItem } from '../../../api/missionsApi'
+import { planningApi } from '../../../api/planningApi'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
 import { managerHref } from '../../../routes'
-import { env } from '../../../../../config/env'
 
 // ── ReschedulePanel ────────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ export function ReschedulePanel({
   const [newEnd, setNewEnd] = useState(
     mission.scheduledEndAt?.slice(0, 16) ?? '',
   )
+  const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -49,11 +50,14 @@ export function ReschedulePanel({
     setSaving(true)
     setSaveError(null)
     try {
-      const updated = await missionsApi.patchSchedule(mission.id, {
-        scheduledStart: newStart + ':00+07:00',
-        scheduledEnd: newEnd + ':00+07:00',
+      const plan = await planningApi.getExecutionPlan(mission.orderId)
+      const updated = await missionsApi.rescheduleMission(mission.id, {
+        expectedPlanRevision: plan.revision,
+        scheduledStartAt: newStart + ':00+07:00',
+        scheduledEndAt: newEnd + ':00+07:00',
+        ...(reason.trim() ? { rescheduleReason: reason.trim() } : {}),
       })
-      onRescheduled({ ...mission, ...updated })
+      onRescheduled({ ...mission, ...toMissionCalendarItem(updated) })
     } catch (err) {
       if (err instanceof ApiError) {
         setSaveError(err.message ?? t.rescheduleFailed)
@@ -162,12 +166,6 @@ export function ReschedulePanel({
           <button
             type="button"
             className="odm-btn"
-            disabled={!env.useMockApi && import.meta.env.MODE !== 'test'}
-            title={
-              !env.useMockApi && import.meta.env.MODE !== 'test'
-                ? t.backendNotSupported
-                : undefined
-            }
             onClick={() => setReschedule(true)}
           >
             {t.reschedule}
@@ -202,6 +200,16 @@ export function ReschedulePanel({
               className="odm-inp"
               value={newEnd}
               onChange={(e) => setNewEnd(e.target.value)}
+              style={{ display: 'block', marginTop: 4, width: '100%' }}
+            />
+          </label>
+          <label style={{ fontSize: 12, color: 'var(--tx2)' }}>
+            {t.rescheduleReason}
+            <input
+              type="text"
+              className="odm-inp"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               style={{ display: 'block', marginTop: 4, width: '100%' }}
             />
           </label>

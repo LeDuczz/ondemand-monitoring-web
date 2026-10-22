@@ -132,13 +132,6 @@ export function OrderServiceInfo({
       value: areaHa != null ? `${areaHa} ha` : '—',
     },
   )
-  if (order.nearestBase) {
-    tiles.push({
-      icon: 'drone',
-      label: t.nearestBase,
-      value: order.nearestBase,
-    })
-  }
   return (
     <section className="odm-or-card">
       <header className="odm-or-card-head">

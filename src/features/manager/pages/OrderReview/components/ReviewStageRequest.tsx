@@ -4,7 +4,6 @@ import { OrderCustomerRequestDetails } from '../../../components/common/OrderCus
 import { OrderStatusCard } from './OrderStatusCard'
 import { OrderCustomerCard } from '../../../components/common/OrderCustomerCard'
 import { OrderAttachmentsCard } from '../../../components/common/OrderAttachmentsCard'
-import { InternalNoteCard } from './InternalNoteCard'
 import { ReviewStageActions } from './ReviewStageActions'
 import { orderReviewPageMessages } from '../OrderReviewPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
@@ -37,7 +36,6 @@ export function ReviewStageRequest({
         <section className="odm-or-grid odm-or-review-more">
           <div className="odm-or-col">
             <OrderAttachmentsCard order={order} t={t} />
-            <InternalNoteCard orderId={order.id} t={t} locale={locale} />
           </div>
         </section>
       </ReadOnlyScope>

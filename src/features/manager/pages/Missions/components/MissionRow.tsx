@@ -48,7 +48,6 @@ export function MissionRow({
           {m.orderCode ? formatOrderCode(m.orderCode) : 'Mở kế hoạch Order'}
         </a>
       </td>
-      <td>{m.attemptNumber == null ? '—' : `#${m.attemptNumber}`}</td>
       <td>{formatScheduled(m.scheduledStartAt, m.scheduledEndAt, locale)}</td>
       <td>
         {m.droneCode

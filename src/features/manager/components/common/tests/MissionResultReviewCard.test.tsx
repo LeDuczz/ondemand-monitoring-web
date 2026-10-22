@@ -176,17 +176,15 @@ describe('Mission result review card', () => {
     expect(screen.getByRole('button', { name: 'Duyệt kết quả' })).toBeEnabled()
     expect(screen.queryByText('Còn media chưa được duyệt')).toBeNull()
   })
-  it('approves the exact result and never implicitly approves media', async () => {
+  it('approves the exact result', async () => {
     const approve = vi
       .spyOn(missionsApi, 'approveMissionResult')
       .mockResolvedValue(result)
-    const media = vi.spyOn(missionsApi, 'approveMissionMedia')
     const refresh = vi.fn()
     card({ onReviewed: refresh })
     fireEvent.click(screen.getByRole('button', { name: 'Duyệt kết quả' }))
     await waitFor(() => expect(refresh).toHaveBeenCalledOnce())
     expect(approve).toHaveBeenCalledWith('result-1', '')
-    expect(media).not.toHaveBeenCalled()
   })
   it('renders the full-width optional rejection note and keeps rejection unchanged', async () => {
     const reject = vi

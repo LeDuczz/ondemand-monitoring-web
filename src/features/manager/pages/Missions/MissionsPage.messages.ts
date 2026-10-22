@@ -21,7 +21,6 @@ export const missionsPageMessages = defineMessages({
     fields: {
       order: 'Đơn hàng:',
       service: 'Dịch vụ:',
-      attempt: 'Lần bay:',
       schedule: 'Lịch bay:',
       drone: 'Thiết bị:',
       operator: 'Phi công:',
@@ -30,7 +29,6 @@ export const missionsPageMessages = defineMessages({
     assignments: {
       title: 'Phân công nguồn lực',
       device: 'Thiết bị',
-      reserved: 'Đã giữ lịch',
       empty: 'Mission này chưa có thiết bị hoặc nhân sự được gán.',
     },
     retryError: 'Lỗi không xác định',
@@ -43,7 +41,6 @@ export const missionsPageMessages = defineMessages({
     columns: {
       mission: 'Nhiệm vụ',
       order: 'Đơn hàng',
-      attempt: 'Lần',
       schedule: 'Lịch bay',
       drone: 'Thiết bị',
       operator: 'Phi công',
@@ -83,7 +80,6 @@ export const missionsPageMessages = defineMessages({
     fields: {
       order: 'Order:',
       service: 'Service:',
-      attempt: 'Flight #:',
       schedule: 'Schedule:',
       drone: 'Drone:',
       operator: 'Pilot:',
@@ -92,7 +88,6 @@ export const missionsPageMessages = defineMessages({
     assignments: {
       title: 'Resource assignments',
       device: 'Device',
-      reserved: 'Reserved',
       empty: 'No device or staff has been assigned to this mission yet.',
     },
     retryError: 'Unknown error',
@@ -105,7 +100,6 @@ export const missionsPageMessages = defineMessages({
     columns: {
       mission: 'Mission',
       order: 'Order',
-      attempt: '#',
       schedule: 'Schedule',
       drone: 'Drone',
       operator: 'Pilot',

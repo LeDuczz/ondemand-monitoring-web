@@ -11,50 +11,6 @@ import { ActionListCard } from './components/ActionListCard'
 import { OperationalSections } from './components/OperationalSections'
 import { AnalyticsCharts } from './components/AnalyticsCharts'
 import { formatDashboardDate } from './dashboardHelpers'
-import type {
-  ManagerDashboardData,
-  ManagerDashboardResponse,
-} from '../../types/dashboard'
-
-function normalizeDashboard(data: ManagerDashboardResponse): ManagerDashboardData {
-  return {
-    summary: data.summary ?? {
-      totalOrders: 0,
-      totalQuoteValue: 0,
-      pendingOrderCount: data.kpis?.pendingOrders.count ?? 0,
-      pendingAdditionalChecklistCount: 0,
-      waitingDepositCount: 0,
-      activeMissionCount: data.kpis?.missionsInFlight.count ?? 0,
-      attentionRequiredCount: data.kpis?.actionItems.count ?? 0,
-    },
-    orderStatusDistribution: data.orderStatusDistribution ?? [],
-    serviceDistribution: data.serviceDistribution ?? [],
-    additionalServiceDistribution: data.additionalServiceDistribution ?? [],
-    priceAdjustmentSummary: data.priceAdjustmentSummary ?? { approvedAtSystemPrice: 0, adjustedByManager: 0 },
-    missionStatusDistribution: data.missionStatusDistribution ?? [],
-    missionTrend: data.missionTrend ?? [],
-    actionItems: data.actionItems ?? [],
-    recentOrders: data.recentOrders ?? [],
-    pricingPipeline: data.pricingPipeline ?? {
-      pricingReviewCount: 0,
-      quoteReadyCount: 0,
-      waitingCustomerCount: 0,
-      waitingDepositCount: 0,
-      depositPaidCount: 0,
-    },
-    missionOverview: data.missionOverview ?? {
-      scheduledCount: 0,
-      readyCount: 0,
-      inFlightCount: data.kpis?.missionsInFlight.count ?? 0,
-      returningCount: 0,
-      completedTodayCount: 0,
-      issueCount: 0,
-    },
-    activeMissions: data.activeMissions ?? [],
-    recentActivities: data.recentActivities ?? [],
-    generatedAt: data.generatedAt ?? new Date().toISOString(),
-  }
-}
 
 export function DashboardPage() {
   const { t, lang } = useI18n(dashboardPageMessages)
@@ -74,7 +30,7 @@ export function DashboardPage() {
   }
   if (!query.data) return null
 
-  const data = normalizeDashboard(query.data)
+  const data = query.data
   return (
     <div className="odm-mgr-dash">
       <div className="odm-mgr-dash-head">

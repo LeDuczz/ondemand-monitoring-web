@@ -4,7 +4,7 @@ import type { LegalReviewStatus, OrderDetail } from '../../../types/orders'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { OrderLocationCard } from './OrderLocationCard'
 import { resolveOrderGpsCenter } from '../../../components/common/orderGps'
-import { areaReviewFromOrder, riskLabel } from '../areaHelpers'
+import { areaReviewFromOrder } from '../areaHelpers'
 import { useCachedAreaAssessment } from '../useCachedAreaAssessment'
 import { AreaReviewDialog } from './AreaReviewDialog'
 import { AreaAssessmentBody } from './AreaAssessmentBody'
@@ -45,22 +45,10 @@ export function OrderAreaCheck({
   })
 
   const data = assessment.data
-  const findings = data?.assessment.findings.filter(
-    (item) =>
-      !item.code.includes('UNAVAILABLE') &&
-      item.code !== 'RESTRICTED_ZONE_DATA_MISSING',
-  )
   const ministryViolatedZones = data?.ministryFlightBan?.available
     ? data.ministryFlightBan.violatedZones
     : []
   const hasMinistryViolations = ministryViolatedZones.length > 0
-  const hasAssessmentData = Boolean(
-    data &&
-    (data.ministryFlightBan?.available ||
-      data.restrictedZones.dataAvailable ||
-      data.elevation.available ||
-      data.osmContext.available),
-  )
 
   return (
     <section className="odm-or-area-check" aria-label="Kiểm tra vùng giám sát">
@@ -72,13 +60,6 @@ export function OrderAreaCheck({
             không. Kết quả này chỉ là cảnh báo sơ bộ, không tự động từ chối đơn.
           </p>
         </div>
-        {data && hasAssessmentData ? (
-          <span
-            className={`odm-or-area-risk is-${data.assessment.level.toLowerCase()}`}
-          >
-            {riskLabel(data.assessment.level)}
-          </span>
-        ) : null}
       </div>
 
       <div className="odm-or-area-check-grid">
@@ -122,8 +103,6 @@ export function OrderAreaCheck({
                 data={data}
                 hasMinistryViolations={hasMinistryViolations}
                 ministryViolatedZones={ministryViolatedZones}
-                findings={findings}
-                hasAssessmentData={hasAssessmentData}
                 order={order}
                 review={review}
                 setReviewOpen={setReviewOpen}

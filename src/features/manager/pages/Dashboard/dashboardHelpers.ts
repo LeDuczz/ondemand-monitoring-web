@@ -7,7 +7,6 @@ export function actionItemRoute(item: ActionItem): ManagerRoute {
   }
   if (item.orderId) return { screen: 'orderReview', orderId: item.orderId }
   if (item.type === 'MAINTENANCE_TICKET') return { screen: 'maintenance' }
-  if (item.type === 'MEDIA_ACTION') return { screen: 'media' }
   return { screen: 'dashboard' }
 }
 

@@ -59,7 +59,6 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
   const columns = [
     t.columns.mission,
     t.columns.order,
-    t.columns.attempt,
     t.columns.schedule,
     t.columns.drone,
     t.columns.operator,

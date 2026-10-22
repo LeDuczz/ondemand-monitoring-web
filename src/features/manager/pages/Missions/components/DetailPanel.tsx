@@ -32,10 +32,6 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
   if (mission.serviceLabel)
     rows.push({ label: t.fields.service, value: mission.serviceLabel })
   rows.push({
-    label: t.fields.attempt,
-    value: mission.attemptNumber == null ? '—' : `#${mission.attemptNumber}`,
-  })
-  rows.push({
     label: t.fields.schedule,
     value: formatScheduled(
       mission.scheduledStartAt,
@@ -152,11 +148,6 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
                       : '—'}
                   </strong>
                 </span>
-                {mission.droneCode ? (
-                  <span className="odm-or-pill odm-or-pill-blue">
-                    {t.assignments.reserved}
-                  </span>
-                ) : null}
               </li>
 
               {staffAssignments.map((assignment) => {

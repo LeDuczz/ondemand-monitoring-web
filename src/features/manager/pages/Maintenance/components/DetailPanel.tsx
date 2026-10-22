@@ -88,7 +88,6 @@ export function DetailPanel({
           <span style={{ color: '#64748b' }}>{t.detail.device}</span>
           <span>
             <b style={{ color: '#0f172a' }}>{ticket.droneCode}</b>
-            {ticket.droneName ? ` (${ticket.droneName})` : ''}
           </span>
         </div>
         {ticket.issueType && (

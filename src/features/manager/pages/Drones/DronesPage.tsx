@@ -4,7 +4,7 @@ import { StateView } from '../../../../shared/components/odm/StateView'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { dronesApi } from '../../api/dronesApi'
-import type { DroneResponse } from '../../types/drones'
+import type { DeviceResponse } from '../../types/drones'
 import { dronesPageMessages } from './DronesPage.messages'
 import '../../manager.css'
 import { type FilterChip, matchesFilter } from './droneHelpers'
@@ -21,8 +21,8 @@ type DronesPageProps = {
 export function DronesPage({ droneId: _droneId }: DronesPageProps) {
   const { t } = useI18n(dronesPageMessages)
   const [filter, setFilter] = useState<FilterChip>('ALL')
-  const [changingDrone, setChangingDrone] = useState<DroneResponse | null>(null)
-  const [drones, setDrones] = useState<DroneResponse[] | null>(null)
+  const [changingDrone, setChangingDrone] = useState<DeviceResponse | null>(null)
+  const [drones, setDrones] = useState<DeviceResponse[] | null>(null)
 
   const query = useApiQuery((signal) => dronesApi.listDrones({ signal }), [])
 
@@ -41,7 +41,7 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
     outOfService: allDrones.filter((d) => d.status === 'OUT_OF_SERVICE').length,
   }
 
-  function handleChanged(updated: DroneResponse) {
+  function handleChanged(updated: DeviceResponse) {
     const base = drones ?? query.data?.items ?? []
     setDrones(base.map((d) => (d.id === updated.id ? updated : d)))
     setChangingDrone(null)

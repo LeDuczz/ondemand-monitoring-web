@@ -23,7 +23,6 @@ const brief: OrderMissionBrief = {
   addressText: 'KCN Hiệp Phước, Nhà Bè',
   center: { lat: 10.6402, lon: 106.74 },
   radiusM: 300,
-  nearestBase: 'Trạm Nhà Bè',
   mediaRequirements: [
     { label: 'VIDEO × 1 · 240 giây' },
     { label: 'PHOTO × 30 · 640×512' },
@@ -40,7 +39,6 @@ const createdMission: Mission = {
   orderCode: 'ORD-2609-0153',
   missionCode: 'MSN-2609-0153-1',
   status: 'CREATED',
-  attemptNumber: 1,
   droneId: null,
   operatorId: null,
   droneAssignmentId: null,
@@ -52,7 +50,6 @@ const createdMission: Mission = {
   centerLon: 106.74,
   radiusM: 300,
   requiredSensor: 'THERMAL',
-  nearestBase: 'Trạm Nhà Bè',
   mediaRequirements: [],
   flightPlan: {
     planType: 'ORBIT',
@@ -202,8 +199,8 @@ describe('CreateMissionPage', () => {
           idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/i),
           expectedPlanRevision: 0,
           scopeLabel: 'Whole Order scope',
-          scheduledStart: '2026-09-24T01:00:00.000Z',
-          scheduledEnd: '2026-09-24T02:30:00.000Z',
+          scheduledStartAt: '2026-09-24T01:00:00.000Z',
+          scheduledEndAt: '2026-09-24T02:30:00.000Z',
         }),
       ),
     )

@@ -1,7 +1,7 @@
 import { MANUAL_TRANSITIONS } from '../droneHelpers'
 import { dronesPageMessages } from '../DronesPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
-import type { DroneResponse } from '../../../types/drones'
+import type { DeviceResponse } from '../../../types/drones'
 import type { Dispatch, SetStateAction } from 'react'
 import { DroneRow } from './DroneRow'
 
@@ -9,8 +9,8 @@ export function DronesTable({
   visible,
   setChangingDrone,
 }: {
-  visible: DroneResponse[]
-  setChangingDrone: Dispatch<SetStateAction<DroneResponse | null>>
+  visible: DeviceResponse[]
+  setChangingDrone: Dispatch<SetStateAction<DeviceResponse | null>>
 }) {
   const { t } = useI18n(dronesPageMessages)
   return (
@@ -36,19 +36,7 @@ export function DronesTable({
               {t.columns.status}
             </th>
             <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-              {t.columns.battery}
-            </th>
-            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-              {t.columns.station}
-            </th>
-            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-              {t.columns.payload}
-            </th>
-            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-              {t.columns.flightHours}
-            </th>
-            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
-              {t.columns.lastActivity}
+              {t.columns.lastUpdated}
             </th>
             <th style={{ padding: '8px 12px', fontWeight: 500 }} />
           </tr>

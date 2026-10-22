@@ -8,7 +8,7 @@ export function CreateMissionErrorState({ error }: { error: unknown }) {
   const debugLine =
     error instanceof ApiError
       ? `${error.method} ${error.path}${error.status ? ` · ${error.status}` : ''}`
-      : 'GET /orders/{id}/mission-brief'
+      : 'GET /api/orders/{id}'
   return (
     <div className="odm-mgr-dash">
       <div className="odm-card">

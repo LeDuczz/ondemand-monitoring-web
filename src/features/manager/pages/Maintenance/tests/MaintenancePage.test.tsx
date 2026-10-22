@@ -1,10 +1,8 @@
-import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 import { resetMockDb } from '../../../../../mocks/db'
 import '../../../../../mocks/index'
-import { setLanguage } from '../../../../../shared/i18n'
 import { MaintenancePage } from '../MaintenancePage'
 
 beforeEach(() => resetMockDb())
@@ -23,14 +21,8 @@ describe('MaintenancePage', () => {
     expect(busy ?? board).toBeTruthy()
   })
 
-  it('has a create ticket button', () => {
+  it('has no create-ticket button (backend has no POST endpoint)', () => {
     render(<MaintenancePage />)
-    expect(screen.getByText('+ Tạo ticket')).toBeTruthy()
-  })
-
-  it('shows the English create-ticket button when language is switched', () => {
-    render(<MaintenancePage />)
-    act(() => setLanguage('en'))
-    expect(screen.getByText('+ New ticket')).toBeTruthy()
+    expect(screen.queryByText('+ Tạo ticket')).toBeNull()
   })
 })

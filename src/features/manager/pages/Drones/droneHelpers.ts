@@ -1,5 +1,5 @@
 import type { DroneStatus } from '../../../../shared/types/domain'
-import type { DroneResponse } from '../../types/drones'
+import type { DeviceResponse } from '../../types/drones'
 
 export type FilterChip =
   'ALL' | 'AVAILABLE' | 'FLYING' | 'MAINTENANCE' | 'OUT_OF_SERVICE'
@@ -21,7 +21,7 @@ export const MANUAL_TRANSITIONS: Partial<Record<DroneStatus, DroneStatus[]>> = {
 }
 
 export function matchesFilter(
-  drone: DroneResponse,
+  drone: DeviceResponse,
   filter: FilterChip,
 ): boolean {
   if (filter === 'ALL') return true

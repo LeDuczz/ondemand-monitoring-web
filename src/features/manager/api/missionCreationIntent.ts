@@ -1,6 +1,6 @@
 import type { CreateMissionRequest } from '../types/missions'
 
-type Intent = Pick<CreateMissionRequest, 'scopeLabel' | 'scheduledStart' | 'scheduledEnd' | 'replacesMissionId'>
+type Intent = Pick<CreateMissionRequest, 'scopeLabel' | 'scheduledStartAt' | 'scheduledEndAt' | 'replacesMissionId'>
 const prefix = 'odms:pending-mission-creation:'
 
 /** Persist an unresolved command through retries/reloads; public plan revision is not identity. */
@@ -8,8 +8,8 @@ export function missionCreationKey(orderId: string, intent: Intent): string {
   const fingerprint = JSON.stringify([
     orderId,
     intent.scopeLabel.normalize('NFC').trim().replace(/\s+/g, ' '),
-    new Date(intent.scheduledStart).toISOString(),
-    new Date(intent.scheduledEnd).toISOString(),
+    new Date(intent.scheduledStartAt).toISOString(),
+    new Date(intent.scheduledEndAt).toISOString(),
     intent.replacesMissionId ?? null,
   ])
   const storageKey = prefix + orderId

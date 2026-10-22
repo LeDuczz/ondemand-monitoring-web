@@ -1,17 +1,14 @@
 import { maintenancePageMessages } from '../MaintenancePage.messages'
 import { useI18n } from '../../../../../shared/i18n'
-import type { Dispatch, SetStateAction } from 'react'
 
 export function MaintenanceStats({
   unassignedCount,
   urgentCount,
   resolvedCount,
-  setShowCreate,
 }: {
   unassignedCount: number
   urgentCount: number
   resolvedCount: number
-  setShowCreate: Dispatch<SetStateAction<boolean>>
 }) {
   const { t } = useI18n(maintenancePageMessages)
   return (
@@ -101,20 +98,6 @@ export function MaintenanceStats({
             {resolvedCount}
           </div>
         </div>
-
-        <button
-          type="button"
-          className="odm-btn odm-btn-p"
-          onClick={() => setShowCreate(true)}
-          style={{
-            fontWeight: 600,
-            padding: '9px 16px',
-            borderRadius: 10,
-            height: 40,
-          }}
-        >
-          {t.page.createButton}
-        </button>
       </div>
     </div>
   )

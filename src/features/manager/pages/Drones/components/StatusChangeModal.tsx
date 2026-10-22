@@ -33,8 +33,10 @@ export function StatusChangeModal({
     try {
       const updated = await dronesApi.updateDrone(drone.id, {
         serialNumber: drone.serialNumber,
-        ...(drone.name ? { name: drone.name } : {}),
-        ...(drone.deviceModel ? { modelId: drone.deviceModel.id } : {}),
+        // Always send the full body so a PUT cannot clear name/model.
+        // Null source values fall back to undefined (nothing to preserve).
+        name: drone.name ?? undefined,
+        modelId: drone.deviceModel?.id,
         status: selectedStatus,
       })
       onChanged(updated)

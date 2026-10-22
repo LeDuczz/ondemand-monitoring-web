@@ -2,7 +2,7 @@ import type { MissionCalendarItem } from '../../../types/missions'
 import type { PageMessages } from '../scheduleTypes'
 import { missionStatusTone } from '../../../../../shared/lib/statusTone'
 import { useState } from 'react'
-import { missionsApi, toMissionCalendarItem } from '../../../api/missionsApi'
+import { missionsApi } from '../../../api/missionsApi'
 import { planningApi } from '../../../api/planningApi'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
@@ -57,7 +57,14 @@ export function ReschedulePanel({
         scheduledEndAt: newEnd + ':00+07:00',
         ...(reason.trim() ? { rescheduleReason: reason.trim() } : {}),
       })
-      onRescheduled({ ...mission, ...toMissionCalendarItem(updated) })
+      // Merge only the fields a reschedule changes; the response lacks
+      // radiusM, mediaRequirements and flightPlan, so a full spread would wipe them.
+      onRescheduled({
+        ...mission,
+        scheduledStartAt: updated.scheduledStartAt ?? mission.scheduledStartAt,
+        scheduledEndAt: updated.scheduledEndAt ?? mission.scheduledEndAt,
+        ...(updated.status ? { status: updated.status } : {}),
+      })
     } catch (err) {
       if (err instanceof ApiError) {
         setSaveError(err.message ?? t.rescheduleFailed)

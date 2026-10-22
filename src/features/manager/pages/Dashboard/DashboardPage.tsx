@@ -10,7 +10,7 @@ import { KpiRow } from './components/KpiRow'
 import { ActionListCard } from './components/ActionListCard'
 import { OperationalSections } from './components/OperationalSections'
 import { AnalyticsCharts } from './components/AnalyticsCharts'
-import { formatDashboardDate } from './dashboardHelpers'
+import { formatDashboardDate, normalizeDashboard } from './dashboardHelpers'
 
 export function DashboardPage() {
   const { t, lang } = useI18n(dashboardPageMessages)
@@ -30,7 +30,7 @@ export function DashboardPage() {
   }
   if (!query.data) return null
 
-  const data = query.data
+  const data = normalizeDashboard(query.data)
   return (
     <div className="odm-mgr-dash">
       <div className="odm-mgr-dash-head">

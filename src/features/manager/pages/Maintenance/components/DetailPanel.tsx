@@ -12,6 +12,7 @@ import {
   ticketSeverityTone,
   getTicketSeverityLabel,
 } from '../../../../../shared/lib/statusTone'
+import { Button } from '../../../../../shared/components/ui'
 
 export type DetailPanelProps = {
   ticket: MaintenanceTicket
@@ -52,15 +53,14 @@ export function DetailPanel({
         >
           {ticket.code}
         </span>
-        <button
+        <Button
           type="button"
-          className="odm-btn"
           onClick={onClose}
           aria-label={t.detail.close}
           style={{ padding: '2px 8px', borderRadius: '50%' }}
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>
@@ -173,9 +173,9 @@ export function DetailPanel({
         }}
       >
         {(ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && (
-          <button
+          <Button
             type="button"
-            className="odm-btn odm-btn-p"
+            variant="primary"
             onClick={() => onAssignClick(ticket)}
             style={{
               width: '100%',
@@ -187,7 +187,7 @@ export function DetailPanel({
             {ticket.assignedTo
               ? t.detail.changeOperator
               : t.detail.assignOperator}
-          </button>
+          </Button>
         )}
 
         {ticket.status === 'RESOLVED' && (

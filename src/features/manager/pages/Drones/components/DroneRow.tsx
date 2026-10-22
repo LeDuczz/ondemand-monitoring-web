@@ -7,6 +7,7 @@ import { dronesPageMessages } from '../DronesPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
 import type { DeviceResponse } from '../../../types/drones'
 import type { Dispatch, SetStateAction } from 'react'
+import { Button } from '../../../../../shared/components/ui'
 
 export function DroneRow({
   drone,
@@ -49,14 +50,13 @@ export function DroneRow({
       </td>
       <td style={{ padding: '8px 12px' }}>
         {canChange && (
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             style={{ fontSize: 12 }}
             onClick={() => setChangingDrone(drone)}
           >
             {t.changeStatus}
-          </button>
+          </Button>
         )}
       </td>
     </tr>

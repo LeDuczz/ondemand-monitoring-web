@@ -6,6 +6,8 @@ import { useState } from 'react'
 import type { DroneStatus } from '../../../../../shared/types/domain'
 import { dronesApi } from '../../../api/dronesApi'
 import { getDroneStatusLabel } from '../../../../../shared/lib/statusTone'
+import { Button, useToast } from '../../../../../shared/components/ui'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 export type StatusChangeModalProps = {
   drone: DeviceResponse
@@ -19,6 +21,8 @@ export function StatusChangeModal({
   onChanged,
 }: StatusChangeModalProps) {
   const { t, lang } = useI18n(dronesPageMessages)
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const nextStatuses = MANUAL_TRANSITIONS[drone.status] ?? []
   const [selectedStatus, setSelectedStatus] = useState<DroneStatus | ''>(
     nextStatuses[0] ?? '',
@@ -39,9 +43,12 @@ export function StatusChangeModal({
         modelId: drone.deviceModel?.id,
         status: selectedStatus,
       })
+      toast.success(fb.droneUpdated)
       onChanged(updated)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.unknownError)
+      const failure = e instanceof Error ? e.message : t.unknownError
+      setError(failure)
+      toast.error(failure)
     } finally {
       setSaving(false)
     }
@@ -114,22 +121,21 @@ export function StatusChangeModal({
             <div
               style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}
             >
-              <button
+              <Button
                 type="button"
-                className="odm-btn"
                 onClick={onClose}
                 disabled={saving}
               >
                 {t.modal.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="odm-btn odm-btn-p"
+                variant="primary"
                 onClick={handleSave}
                 disabled={saving || !selectedStatus}
               >
                 {saving ? t.modal.saving : t.modal.confirm}
-              </button>
+              </Button>
             </div>
           </div>
         )}

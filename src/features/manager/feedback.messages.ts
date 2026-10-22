@@ -36,6 +36,9 @@ export const managerFeedbackMessages = defineMessages({
     missionCreated: 'Đã tạo Mission.',
     resourcesAssigned: 'Đã gán thiết bị và nhân sự cho Mission.',
     flightPermitSaved: 'Đã cập nhật giấy phép bay.',
+    missionRescheduled: 'Đã dời lịch Mission.',
+    droneUpdated: 'Đã cập nhật trạng thái drone.',
+    technicianAssigned: 'Đã gán System Operator cho phiếu bảo trì.',
   },
   en: {
     orderApproved: 'Order approved.',
@@ -71,5 +74,8 @@ export const managerFeedbackMessages = defineMessages({
     missionCreated: 'Mission created.',
     resourcesAssigned: 'Devices and crew assigned to the Mission.',
     flightPermitSaved: 'Flight permit updated.',
+    missionRescheduled: 'Mission rescheduled.',
+    droneUpdated: 'Drone status updated.',
+    technicianAssigned: 'Operator assigned to the maintenance ticket.',
   },
 })

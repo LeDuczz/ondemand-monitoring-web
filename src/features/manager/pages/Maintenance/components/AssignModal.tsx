@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
 import { maintenanceApi } from '../../../api/maintenanceApi'
 import { formatTicketTitle } from '../../../lib/ticketText'
+import { Button, useToast } from '../../../../../shared/components/ui'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 export function AssignModal({
   ticket,
@@ -16,6 +18,8 @@ export function AssignModal({
   onAssigned: (ticket: MaintenanceTicket) => void
 }) {
   const { t } = useI18n(maintenancePageMessages)
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const staffQuery = useApiQuery(
     (signal) => maintenanceApi.listAssignableStaff(signal),
     [],
@@ -31,9 +35,12 @@ export function AssignModal({
     setError(null)
     try {
       const updated = await maintenanceApi.assignTechnician(ticket.id, techId)
+      toast.success(fb.technicianAssigned)
       onAssigned(updated)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.assignModal.failed)
+      const failure = e instanceof Error ? e.message : t.assignModal.failed
+      setError(failure)
+      toast.error(failure)
     } finally {
       setSaving(false)
     }
@@ -82,14 +89,13 @@ export function AssignModal({
           >
             {t.assignModal.title}
           </h3>
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             onClick={onClose}
             style={{ padding: '2px 8px', borderRadius: '50%' }}
           >
             ✕
-          </button>
+          </Button>
         </div>
 
         <div
@@ -134,13 +140,12 @@ export function AssignModal({
             {!staffQuery.loading && !!staffQuery.error && (
               <div style={{ fontSize: 13, color: '#ef4444' }} role="alert">
                 {t.assignModal.staffLoadError}{' '}
-                <button
+                <Button
                   type="button"
-                  className="odm-btn"
                   onClick={staffQuery.reload}
                 >
                   {t.assignModal.retry}
-                </button>
+                </Button>
               </div>
             )}
             {!staffQuery.loading && !staffQuery.error && staffList.length === 0 && (
@@ -230,17 +235,16 @@ export function AssignModal({
         )}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             onClick={onClose}
             disabled={saving}
           >
             {t.assignModal.cancel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="odm-btn odm-btn-p"
+            variant="primary"
             onClick={handleAssign}
             disabled={saving || !techId}
             style={{
@@ -251,7 +255,7 @@ export function AssignModal({
             }}
           >
             {saving ? t.assignModal.assigning : t.assignModal.confirm}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -7,6 +7,10 @@ import { planningApi } from '../../../api/planningApi'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
 import { managerHref } from '../../../routes'
+import { useToast } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../../feedback.messages'
+import { Button } from '../../../../../shared/components/ui'
 
 // ── ReschedulePanel ────────────────────────────────────────────────────────
 
@@ -25,6 +29,8 @@ export function ReschedulePanel({
   t,
   locale,
 }: ReschedulePanelProps) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const tone = missionStatusTone[mission.status] ?? 'gray'
 
   const [reschedule, setReschedule] = useState(false)
@@ -65,12 +71,14 @@ export function ReschedulePanel({
         scheduledEndAt: updated.scheduledEndAt ?? mission.scheduledEndAt,
         ...(updated.status ? { status: updated.status } : {}),
       })
+      toast.success(fb.missionRescheduled)
     } catch (err) {
-      if (err instanceof ApiError) {
-        setSaveError(err.message ?? t.rescheduleFailed)
-      } else {
-        setSaveError(t.unknownError)
-      }
+      const failure =
+        err instanceof ApiError
+          ? (err.message ?? t.rescheduleFailed)
+          : t.unknownError
+      setSaveError(failure)
+      toast.error(failure)
     } finally {
       setSaving(false)
     }
@@ -107,15 +115,14 @@ export function ReschedulePanel({
             {mission.serviceLabel ?? mission.addressText ?? '—'}
           </div>
         </div>
-        <button
+        <Button
           type="button"
-          className="odm-btn"
           style={{ flex: 'none' }}
           onClick={onClose}
           aria-label={t.closeDetail}
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {/* Status badge + dispatch shortcut */}
@@ -131,15 +138,15 @@ export function ReschedulePanel({
         <StatusBadge kind="mission" status={mission.status} tone={tone} />
         {(mission.status === 'CREATED' ||
           mission.status === 'RESOURCE_ASSIGNING') && (
-          <a
+          <Button
             href={managerHref({
               screen: 'missionDispatch',
               missionId: mission.id,
             })}
-            className="odm-btn odm-btn-p odm-btn-sm"
+            variant="primary" size="sm"
           >
             {t.assignResources}
-          </a>
+          </Button>
         )}
       </div>
 
@@ -170,13 +177,12 @@ export function ReschedulePanel({
       {/* Reschedule section */}
       {!reschedule ? (
         <div style={{ padding: '0 16px 16px' }}>
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             onClick={() => setReschedule(true)}
           >
             {t.reschedule}
-          </button>
+          </Button>
         </div>
       ) : (
         <div
@@ -235,24 +241,23 @@ export function ReschedulePanel({
             </div>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
               type="button"
-              className="odm-btn odm-btn-p"
+              variant="primary"
               disabled={saving}
               onClick={handleSave}
             >
               {saving ? t.saving : t.save}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="odm-btn"
               onClick={() => {
                 setReschedule(false)
                 setSaveError(null)
               }}
             >
               {t.cancel}
-            </button>
+            </Button>
           </div>
         </div>
       )}

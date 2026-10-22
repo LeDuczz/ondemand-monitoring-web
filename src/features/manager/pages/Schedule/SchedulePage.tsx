@@ -17,6 +17,7 @@ import '../../manager.css'
 import { formatWeekLabel } from './scheduleHelpers'
 import { ReschedulePanel } from './components/ReschedulePanel'
 import { WeekGrid } from './components/WeekGrid'
+import { Button } from '../../../../shared/components/ui'
 
 // ── SchedulePage ───────────────────────────────────────────────────────────
 
@@ -63,32 +64,29 @@ export function SchedulePage() {
             marginLeft: 'auto',
           }}
         >
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             onClick={() => setAnchorDate(prevWeek(anchorDate))}
             aria-label={t.prevWeek}
           >
             ‹
-          </button>
+          </Button>
           <span style={{ fontSize: 13, minWidth: 160, textAlign: 'center' }}>
             {formatWeekLabel(weekStart, weekEnd)}
           </span>
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             onClick={() => setAnchorDate(nextWeek(anchorDate))}
             aria-label={t.nextWeek}
           >
             ›
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="odm-btn"
             onClick={() => setAnchorDate(new Date())}
           >
             {t.today}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -140,14 +138,13 @@ export function SchedulePage() {
                     {query.error.status ?? '—'}
                   </code>
                 )}
-                <button
+                <Button
                   type="button"
-                  className="odm-btn"
                   style={{ alignSelf: 'flex-start' }}
                   onClick={query.reload}
                 >
                   {t.retry}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -167,13 +164,12 @@ export function SchedulePage() {
                   <div style={{ fontSize: 13, marginTop: 4 }}>
                     {t.emptyDescription}
                   </div>
-                  <a
+                  <Button
                     href="#portal/manager/orders"
-                    className="odm-btn"
                     style={{ marginTop: 12, display: 'inline-flex' }}
                   >
                     {t.backToQueue}
-                  </a>
+                  </Button>
                 </div>
               ) : (
                 <WeekGrid

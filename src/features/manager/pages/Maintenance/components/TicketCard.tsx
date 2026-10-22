@@ -9,6 +9,7 @@ import {
   ticketSeverityTone,
   getTicketSeverityLabel,
 } from '../../../../../shared/lib/statusTone'
+import { Button } from '../../../../../shared/components/ui'
 
 export type TicketCardProps = {
   ticket: MaintenanceTicket
@@ -163,9 +164,9 @@ export function TicketCard({
       </div>
 
       {(ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && (
-        <button
+        <Button
           type="button"
-          className="odm-btn odm-btn-p"
+          variant="primary"
           style={{
             fontSize: 12.5,
             marginTop: 4,
@@ -179,7 +180,7 @@ export function TicketCard({
           }}
         >
           {ticket.assignedTo ? t.card.changeOperator : t.card.assignOperator}
-        </button>
+        </Button>
       )}
 
       {ticket.status === 'RESOLVED' && (

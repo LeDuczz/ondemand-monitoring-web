@@ -63,9 +63,19 @@ export function ChecklistEditor({
     previousCount.current = visibleRows.length
   }, [visibleRows])
 
+  const lastEditingKey = useRef<string | null>(null)
+
   useEffect(() => {
-    if (editingKey)
+    if (editingKey) {
+      lastEditingKey.current = editingKey
       document.getElementById(`requirement-${editingKey}`)?.focus()
+      return
+    }
+
+    // Return keyboard focus to the same item's edit action after "Done".
+    const key = lastEditingKey.current
+    lastEditingKey.current = null
+    if (key) document.getElementById(`checklist-edit-${key}`)?.focus()
   }, [editingKey])
 
   const needle = query.trim().toLowerCase()
@@ -128,6 +138,7 @@ export function ChecklistEditor({
         className="checklist-check"
         checked={row.selected}
         aria-label={t.select(index + 1)}
+        aria-describedby={compact ? `checklist-summary-${row.key}` : undefined}
         disabled={row.mandatory}
         onChange={(event) =>
           checklist.change(row.key, {
@@ -244,13 +255,9 @@ export function ChecklistEditor({
               {String(index + 1).padStart(2, '0')}
             </span>
             <span
+              id={`checklist-summary-${row.key}`}
               className="checklist-summary"
               title={row.content}
-              onClick={() => {
-                // Click-to-edit, but never while the user is selecting text.
-                if (row.selected && !window.getSelection()?.toString())
-                  setEditingKey(row.key)
-              }}
             >
               {row.content || t.emptyContent}
               {!row.sourceChecklistId && (
@@ -300,27 +307,30 @@ export function ChecklistEditor({
             <span className="checklist-length checklist-length-with-evidence">
               {row.content.length} / 500
             </span>
-            <button
-              type="button"
-              className="checklist-icon-btn"
-              aria-label={t.editRow(index + 1)}
-              title={t.edit}
-              disabled={!row.selected}
-              onClick={() => setEditingKey(row.key)}
-            >
-              <Icon name="edit" width={16} height={16} aria-hidden="true" />
-            </button>
-            {!row.sourceChecklistId && (
+            <div className="checklist-row-actions">
               <button
+                id={`checklist-edit-${row.key}`}
                 type="button"
-                className="checklist-icon-btn is-danger"
-                aria-label={`${t.remove} ${index + 1}`}
-                title={t.remove}
-                onClick={() => checklist.remove(row.key)}
+                className="checklist-icon-btn"
+                aria-label={t.editRow(index + 1)}
+                title={t.edit}
+                disabled={!row.selected}
+                onClick={() => setEditingKey(row.key)}
               >
-                <Icon name="trash" width={16} height={16} aria-hidden="true" />
+                <Icon name="edit" width={16} height={16} aria-hidden="true" />
               </button>
-            )}
+              {!row.sourceChecklistId && (
+                <button
+                  type="button"
+                  className="checklist-icon-btn is-danger"
+                  aria-label={`${t.remove} ${index + 1}`}
+                  title={t.remove}
+                  onClick={() => checklist.remove(row.key)}
+                >
+                  <Icon name="trash" width={16} height={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
           </div>
           {row.sourceChecklistId ? (
             <div className="checklist-guidance">
@@ -447,41 +457,46 @@ export function ChecklistEditor({
         {ready && <p className="checklist-pricing-notice">{t.pricingNotice}</p>}
         {compact && ready && visibleRows.length > 0 && (
           <div className="checklist-toolbar">
-            <label className="checklist-selectall">
+            <label className="checklist-search-wrap">
+              <Icon name="search" width={17} height={17} aria-hidden="true" />
               <input
-                type="checkbox"
-                disabled={disabled}
-                checked={visibleRows.every((row) => row.selected)}
-                onChange={(event) => {
-                  for (const row of visibleRows)
-                    if (row.selected !== event.target.checked)
-                      checklist.change(row.key, {
-                        selected: event.target.checked,
-                      })
-                }}
+                type="search"
+                className="checklist-search"
+                aria-label={t.searchLabel}
+                placeholder={t.searchPlaceholder}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
               />
-              {t.selectAll(visibleRows.length)}
             </label>
-            <button
-              type="button"
-              className="checklist-clear"
-              disabled={disabled || checklist.selectedCount === 0}
-              onClick={() => {
-                for (const row of visibleRows)
-                  if (row.selected)
-                    checklist.change(row.key, { selected: false })
-              }}
-            >
-              {t.deselectAll}
-            </button>
-            <input
-              type="search"
-              className="checklist-search"
-              aria-label={t.searchLabel}
-              placeholder={t.searchPlaceholder}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
+            <div className="checklist-toolbar-selection">
+              <label className="checklist-selectall">
+                <input
+                  type="checkbox"
+                  disabled={disabled}
+                  checked={visibleRows.every((row) => row.selected)}
+                  onChange={(event) => {
+                    for (const row of visibleRows)
+                      if (row.selected !== event.target.checked)
+                        checklist.change(row.key, {
+                          selected: event.target.checked,
+                        })
+                  }}
+                />
+                {t.selectAll(visibleRows.length)}
+              </label>
+              <button
+                type="button"
+                className="checklist-clear"
+                disabled={disabled || checklist.selectedCount === 0}
+                onClick={() => {
+                  for (const row of visibleRows)
+                    if (row.selected)
+                      checklist.change(row.key, { selected: false })
+                }}
+              >
+                {t.deselectAll}
+              </button>
+            </div>
             <div
               className="checklist-view"
               role="group"

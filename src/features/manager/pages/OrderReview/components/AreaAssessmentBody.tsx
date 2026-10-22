@@ -22,6 +22,7 @@ export function AreaAssessmentBody({
   hasMinistryViolations,
   ministryViolatedZones,
   findings,
+  hasAssessmentData,
   order,
   review,
   setReviewOpen,
@@ -32,54 +33,59 @@ export function AreaAssessmentBody({
   findings:
     | { code: string; severity: FlightAreaFindingSeverity; message: string }[]
     | undefined
+  hasAssessmentData: boolean
   order: OrderDetail
   review: SavedAreaReview | null
   setReviewOpen: Dispatch<SetStateAction<boolean>>
 }) {
   return (
     <>
-      <AreaDecisionSummary data={data} />
-      <details className="odm-or-area-details">
-        <summary>
-          <OrderIcon name="doc" size={18} />
-          <span>Xem dữ liệu kiểm tra chi tiết</span>
-          <span className="odm-or-area-chevron" aria-hidden="true">
-            <OrderIcon name="chevron-right" size={18} />
-          </span>
-        </summary>
-        <dl className="odm-or-area-facts">
-          <Fact
-            label="Đối chiếu bản đồ Bộ Quốc phòng"
-            value={ministryLabel(data.ministryFlightBan)}
-          />
-          <Fact
-            label="Dữ liệu vùng cấm nội bộ"
-            value={restrictedLabel(data.restrictedZones)}
-          />
-          <Fact
-            label="Khoảng cách tới vùng cấm gần nhất"
-            value={distanceLabel(
-              data.restrictedZones.nearestRestrictedZoneDistanceMeters,
-            )}
-          />
-          <Fact
-            label="Độ cao mặt đất tại vị trí"
-            value={metersLabel(data.elevation.terrainElevationMeters)}
-          />
-          <Fact
-            label="Công trình trong khu vực"
-            value={String(data.osmContext.buildingCount ?? 0)}
-          />
-          <Fact
-            label="Có sân bay gần khu vực"
-            value={data.osmContext.aerodromeNearby ? 'Có' : 'Không'}
-          />
-          <Fact
-            label="Có bãi đáp trực thăng gần khu vực"
-            value={data.osmContext.helipadNearby ? 'Có' : 'Không'}
-          />
-        </dl>
-      </details>
+      {hasAssessmentData ? <AreaDecisionSummary data={data} /> : null}
+      {hasAssessmentData ? (
+        <details className="odm-or-area-details">
+          <summary>
+            <OrderIcon name="doc" size={18} />
+            <span>Xem dữ liệu kiểm tra chi tiết</span>
+            <span className="odm-or-area-chevron" aria-hidden="true">
+              <OrderIcon name="chevron-right" size={18} />
+            </span>
+          </summary>
+          <dl className="odm-or-area-facts">
+            {data.ministryFlightBan?.available ? (
+              <Fact
+                label="Đối chiếu bản đồ Bộ Quốc phòng"
+                value={ministryLabel(data.ministryFlightBan)}
+              />
+            ) : null}
+            <Fact
+              label="Dữ liệu vùng cấm nội bộ"
+              value={restrictedLabel(data.restrictedZones)}
+            />
+            <Fact
+              label="Khoảng cách tới vùng cấm gần nhất"
+              value={distanceLabel(
+                data.restrictedZones.nearestRestrictedZoneDistanceMeters,
+              )}
+            />
+            <Fact
+              label="Độ cao mặt đất tại vị trí"
+              value={metersLabel(data.elevation.terrainElevationMeters)}
+            />
+            <Fact
+              label="Công trình trong khu vực"
+              value={String(data.osmContext.buildingCount ?? 0)}
+            />
+            <Fact
+              label="Có sân bay gần khu vực"
+              value={data.osmContext.aerodromeNearby ? 'Có' : 'Không'}
+            />
+            <Fact
+              label="Có bãi đáp trực thăng gần khu vực"
+              value={data.osmContext.helipadNearby ? 'Có' : 'Không'}
+            />
+          </dl>
+        </details>
+      ) : null}
       {hasMinistryViolations ? (
         <div className="odm-or-area-findings">
           <strong>Vùng cần đối chiếu</strong>
@@ -130,16 +136,18 @@ export function AreaAssessmentBody({
       {(findings && findings.length > 0) || hasMinistryViolations ? (
         <p className="odm-or-area-disclaimer">{data.assessment.disclaimer}</p>
       ) : null}
-      <a
-        className="odm-or-area-source"
-        href={data.ministryFlightBan?.sourceUrl ?? 'https://cambay.mod.gov.vn/'}
-        target="_blank"
-        rel="noreferrer"
-      >
-        <OrderIcon name="plane" size={18} />
-        <span>Mở bản đồ cấm bay của Bộ Quốc phòng</span>
-        <OrderIcon name="chevron-right" size={18} />
-      </a>
+      {data.ministryFlightBan?.available ? (
+        <a
+          className="odm-or-area-source"
+          href={data.ministryFlightBan.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <OrderIcon name="plane" size={18} />
+          <span>Mở bản đồ cấm bay của Bộ Quốc phòng</span>
+          <OrderIcon name="chevron-right" size={18} />
+        </a>
+      ) : null}
       <ManagerAreaReview
         order={order}
         review={review}

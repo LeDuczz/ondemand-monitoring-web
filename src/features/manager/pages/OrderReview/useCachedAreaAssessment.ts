@@ -6,6 +6,46 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 
 export const assessmentCache = new Map<string, FlightAreaAssessment>()
 
+function normalizeAreaAssessment(
+  result: FlightAreaAssessment,
+): FlightAreaAssessment {
+  const ministry = result.ministryFlightBan?.available
+    ? result.ministryFlightBan
+    : undefined
+  const hasMinistryConflict = Boolean(
+    ministry &&
+    (ministry.violatedZones.length > 0 ||
+      (ministry.violatedAreaSquareMeters ?? 0) > 0),
+  )
+
+  return {
+    location: result.location,
+    elevation: result.elevation ?? { available: false },
+    restrictedZones: result.restrictedZones ?? {
+      dataAvailable: false,
+      pointInsideRestrictedZone: false,
+      monitoringAreaIntersectsRestrictedZone: false,
+      affectedZones: [],
+    },
+    osmContext: result.osmContext ?? {
+      available: false,
+      buildingCount: 0,
+      towerCount: 0,
+      mastCount: 0,
+      powerTowerCount: 0,
+      aerodromeNearby: false,
+      helipadNearby: false,
+      importantFeatures: [],
+    },
+    ministryFlightBan: ministry,
+    assessment: result.assessment ?? {
+      level: hasMinistryConflict ? 'HIGH_RISK' : 'NEEDS_REVIEW',
+      findings: [],
+      disclaimer: '',
+    },
+  }
+}
+
 export function useCachedAreaAssessment({
   latitude,
   longitude,
@@ -64,8 +104,9 @@ export function useCachedAreaAssessment({
       )
       .then((result) => {
         if (requestId.current !== id) return
-        assessmentCache.set(cacheKey, result)
-        setData(result)
+        const normalized = normalizeAreaAssessment(result)
+        assessmentCache.set(cacheKey, normalized)
+        setData(normalized)
       })
       .catch((reason: unknown) => {
         if (requestId.current !== id) return

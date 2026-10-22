@@ -6,7 +6,10 @@ import { ApiError } from '../../../../../shared/api/httpClient'
 import { setLanguage } from '../../../../../shared/i18n'
 import { ordersApi } from '../../../api/ordersApi'
 import { planningApi } from '../../../api/planningApi'
-import { customerApi } from '../../../../customer/api/customerApi'
+import {
+  customerApi,
+  type FlightAreaAssessment,
+} from '../../../../customer/api/customerApi'
 import { financeApi } from '../../../../finance/api'
 import type { Quote } from '../../../../finance/types'
 import type {
@@ -310,6 +313,45 @@ describe('OrderReviewPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('keeps the condition step usable when the ministry provider is unavailable', async () => {
+    mockHappyPath(feasibleAnalysis)
+    vi.mocked(ordersApi.getOrder).mockResolvedValue({
+      ...order,
+      center: { lat: 10.700001, lon: 106.700001 },
+    })
+    vi.spyOn(customerApi, 'getFlightAreaAssessment').mockResolvedValue({
+      location: {
+        latitude: 10.700001,
+        longitude: 106.700001,
+        radiusMeters: 600,
+      },
+      ministryFlightBan: {
+        available: false,
+        violatedZones: [],
+        sourceUrl: 'https://cambay.mod.gov.vn/',
+        errorCode: 'PROVIDER_UNAVAILABLE',
+      },
+    } as unknown as FlightAreaAssessment)
+
+    render(<OrderReviewPage orderId="ord-2609-0157" />)
+    fireEvent.click(await screen.findByText('Kiểm tra điều kiện'))
+
+    expect(
+      await screen.findByText('Kết quả kiểm tra khu vực'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Đối chiếu bản đồ Bộ Quốc phòng'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Mở bản đồ cấm bay của Bộ Quốc phòng'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(
+        'Không tải được kết quả kiểm tra vùng. Vui lòng thử lại.',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
   it('keeps the area assessment when switching steps instead of requesting it again', async () => {
     mockHappyPath(feasibleAnalysis)
     vi.mocked(ordersApi.getOrder).mockResolvedValue({
@@ -407,7 +449,9 @@ describe('OrderReviewPage', () => {
 
     await screen.findByText('Lê Quốc Bảo')
     expect(screen.queryByText('Định dạng kết quả')).not.toBeInTheDocument()
-    expect(screen.getByText('Video', { selector: 'strong' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Video', { selector: 'strong' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('10 mục · 4K')).toBeInTheDocument()
     expect(screen.queryByText('Video · 10 mục · 4K')).not.toBeInTheDocument()
   })
@@ -474,7 +518,9 @@ describe('OrderReviewPage', () => {
     const briefSpy = vi.spyOn(ordersApi, 'getOrderForMission')
     window.location.hash = '#portal/manager/orders/' + order.id
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }))
+    await waitFor(() =>
+      screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }),
+    )
     await openPricingStep()
     fireEvent.click(
       await screen.findByRole('button', { name: 'Duyệt báo giá' }),
@@ -526,7 +572,9 @@ describe('OrderReviewPage', () => {
 
     render(<OrderReviewPage orderId="ord-2609-0149" />)
 
-    await waitFor(() => screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }))
+    await waitFor(() =>
+      screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }),
+    )
     expect(screen.getByText('Nguyễn Minh Khoa')).toBeInTheDocument()
     expect(
       screen.getByText('Chưa có dữ liệu tệp đính kèm cho đơn này.'),
@@ -548,7 +596,9 @@ describe('OrderReviewPage', () => {
       updatedAt: '2026-09-19T13:50:00+07:00',
     })
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }))
+    await waitFor(() =>
+      screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }),
+    )
 
     fireEvent.change(
       screen.getByPlaceholderText(
@@ -564,11 +614,15 @@ describe('OrderReviewPage', () => {
   it('renders English labels and the uppercase English verdict after switching language', async () => {
     mockHappyPath(feasibleAnalysis)
     render(<OrderReviewPage orderId="ord-2609-0157" />)
-    await waitFor(() => screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }))
+    await waitFor(() =>
+      screen.getByRole('heading', { name: 'Chi tiết đơn hàng' }),
+    )
     await openPricingStep()
 
     act(() => setLanguage('en'))
 
-    expect(screen.getByRole('heading', { name: 'Order details' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Order details' }),
+    ).toBeInTheDocument()
   })
 })

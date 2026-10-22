@@ -3,7 +3,6 @@ import { Icon, type IconName } from '../../../../shared/components/Icon'
 export type AsideValueProp = {
   icon: IconName
   text: string
-  detail?: string
 }
 
 /**
@@ -28,12 +27,7 @@ export function AsideFloatCards({
           <span className="odm-aside-card-icon" aria-hidden="true">
             <Icon name={item.icon} />
           </span>
-          <span className="odm-aside-card-copy">
-            <strong className="odm-aside-card-text">{item.text}</strong>
-            {item.detail ? (
-              <small className="odm-aside-card-detail">{item.detail}</small>
-            ) : null}
-          </span>
+          <strong className="odm-aside-card-text">{item.text}</strong>
         </li>
       ))}
     </ul>

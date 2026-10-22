@@ -54,6 +54,13 @@ export function OrderAreaCheck({
     ? data.ministryFlightBan.violatedZones
     : []
   const hasMinistryViolations = ministryViolatedZones.length > 0
+  const hasAssessmentData = Boolean(
+    data &&
+    (data.ministryFlightBan?.available ||
+      data.restrictedZones.dataAvailable ||
+      data.elevation.available ||
+      data.osmContext.available),
+  )
 
   return (
     <section className="odm-or-area-check" aria-label="Kiểm tra vùng giám sát">
@@ -65,7 +72,7 @@ export function OrderAreaCheck({
             không. Kết quả này chỉ là cảnh báo sơ bộ, không tự động từ chối đơn.
           </p>
         </div>
-        {data ? (
+        {data && hasAssessmentData ? (
           <span
             className={`odm-or-area-risk is-${data.assessment.level.toLowerCase()}`}
           >
@@ -116,6 +123,7 @@ export function OrderAreaCheck({
                 hasMinistryViolations={hasMinistryViolations}
                 ministryViolatedZones={ministryViolatedZones}
                 findings={findings}
+                hasAssessmentData={hasAssessmentData}
                 order={order}
                 review={review}
                 setReviewOpen={setReviewOpen}

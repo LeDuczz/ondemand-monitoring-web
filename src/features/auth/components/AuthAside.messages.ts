@@ -9,27 +9,24 @@ export const authAsideMessages = defineMessages({
     brandSubtitle: 'Dịch vụ giám sát bằng drone theo yêu cầu',
     heroTitle: 'Giám sát thông minh',
     heroAccent: 'vươn xa tầm nhìn',
-    heroDescription: 'Khai thác sức mạnh công nghệ drone và AI để giám sát, phân tích và bảo vệ những gì quan trọng với bạn.',
+    heroDescription:
+      'Drone và AI giúp bạn giám sát, phân tích và bảo vệ những gì quan trọng.',
     valueProps: [
       {
         icon: 'map-pin',
-        text: 'Chọn vị trí và bán kính giám sát ngay trên bản đồ',
-        detail: 'Dễ dàng thiết lập khu vực cần giám sát với bản đồ trực quan.',
+        text: 'Chọn vùng giám sát trên bản đồ',
       },
       {
         icon: 'zap',
-        text: 'AI kiểm tra tính khả thi, gợi ý ngày thay thế trước khi gửi duyệt',
-        detail: 'Công nghệ AI giúp tối ưu thời gian và điều kiện bay.',
+        text: 'AI kiểm tra điều kiện bay',
       },
       {
         icon: 'radio',
-        text: 'Xem trực tiếp khi drone bay và nhận ảnh, video đã xác thực',
-        detail: 'Theo dõi thời gian thực với dữ liệu an toàn và minh bạch.',
+        text: 'Theo dõi trực tiếp, nhận ảnh và video',
       },
     ] as {
       icon: 'map-pin' | 'zap' | 'radio'
       text: string
-      detail: string
     }[],
   },
   en: {
@@ -37,27 +34,24 @@ export const authAsideMessages = defineMessages({
     brandSubtitle: 'On-demand drone monitoring service',
     heroTitle: 'Smarter monitoring',
     heroAccent: 'a wider perspective',
-    heroDescription: 'Harness drone technology and AI to monitor, analyze, and protect what matters most.',
+    heroDescription:
+      'Use drones and AI to monitor, analyze, and protect what matters.',
     valueProps: [
       {
         icon: 'map-pin',
-        text: 'Pick a location and monitoring radius right on the map',
-        detail: 'Set the monitoring area easily on an intuitive map.',
+        text: 'Choose a monitoring area on the map',
       },
       {
         icon: 'zap',
-        text: 'AI checks feasibility and suggests an alternative date before you submit',
-        detail: 'AI helps optimize flight timing and conditions.',
+        text: 'AI checks flight conditions',
       },
       {
         icon: 'radio',
-        text: 'Watch live while the drone flies and get verified photos and video',
-        detail: 'Follow every flight with secure, transparent live data.',
+        text: 'Watch live and receive photos and video',
       },
     ] as {
       icon: 'map-pin' | 'zap' | 'radio'
       text: string
-      detail: string
     }[],
   },
 })

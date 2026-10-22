@@ -892,7 +892,7 @@
 .odm-stop-progress li > span:first-child {
   color: var(--tx2);
 }
-.odm-manager-stop-flow > .odm-btn {
+.odm-manager-stop-flow > :is(.odm-btn, .ui-btn) {
   margin-top: 12px;
 }
 .odm-planning-complete {
@@ -966,7 +966,7 @@
   margin: 0;
 }
 
-.odm-planning-payment-gate .odm-btn {
+.odm-planning-payment-gate :is(.odm-btn, .ui-btn) {
   justify-self: start;
   margin-top: 4px;
 }
@@ -1034,7 +1034,7 @@
   font-size: 13.5px;
   line-height: 1.5;
 }
-.odm-planning-payment-gate .odm-btn {
+.odm-planning-payment-gate :is(.odm-btn, .ui-btn) {
   margin-top: 0;
 }
 .odm-gate-deposit {
@@ -1103,7 +1103,7 @@
   gap: 8px;
   margin: 4px 0 10px;
 }
-.odm-planning-bulk .odm-btn {
+.odm-planning-bulk :is(.odm-btn, .ui-btn) {
   padding: 4px 10px;
   font-size: 12.5px;
 }
@@ -1151,7 +1151,7 @@
   padding-top: 14px;
   border-top: 1px solid var(--bd);
 }
-.odm-mission-actions .odm-btn {
+.odm-mission-actions :is(.odm-btn, .ui-btn) {
   padding: 6px 12px;
   font-size: 13px;
 }

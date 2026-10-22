@@ -15,6 +15,7 @@ import '../../manager.css'
 import { QueueHeader } from './components/QueueHeader'
 import { QueueSkeleton } from './components/QueueSkeleton'
 import { AllOrdersSection } from './components/AllOrdersSection'
+import { Button } from '../../../../shared/components/ui'
 
 export function OrderQueuePage() {
   const { t, locale } = useI18n(orderQueuePageMessages)
@@ -86,16 +87,16 @@ export function OrderQueuePage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a
-            className="odm-btn odm-btn-p"
+          <Button
+            variant="primary"
             href={managerHref({ screen: 'missions' })}
             style={{ textDecoration: 'none' }}
           >
             {t.viewMissions}
-          </a>
-          <button type="button" className="odm-btn" onClick={query.reload}>
+          </Button>
+          <Button type="button" onClick={query.reload}>
             {t.refresh}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -146,15 +147,15 @@ export function OrderQueuePage() {
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <a
-                        className="odm-btn odm-btn-p odm-btn-sm"
+                      <Button
+                        variant="primary" size="sm"
                         href={managerHref({
                           screen: 'orderReview',
                           orderId: row.id,
                         })}
                       >
                         {t.paid.action}
-                      </a>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -170,13 +171,13 @@ export function OrderQueuePage() {
           title={t.emptyTitle}
           description={t.emptyDescription}
           action={
-            <a
-              className="odm-btn odm-btn-p"
+            <Button
+              variant="primary"
               href={managerHref({ screen: 'missions' })}
               style={{ textDecoration: 'none' }}
             >
               {t.viewMissions}
-            </a>
+            </Button>
           }
         />
       ) : data.length > 0 ? (
@@ -212,15 +213,15 @@ export function OrderQueuePage() {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <a
-                      className="odm-btn odm-btn-p odm-btn-sm"
+                    <Button
+                      variant="primary" size="sm"
                       href={managerHref({
                         screen: 'orderReview',
                         orderId: row.id,
                       })}
                     >
                       {t.review}
-                    </a>
+                    </Button>
                   </td>
                 </tr>
               ))}

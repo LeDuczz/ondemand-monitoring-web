@@ -1128,7 +1128,7 @@
   gap: 10px;
 }
 
-.odm-mgr-review-actionbar-actions .odm-btn {
+.odm-mgr-review-actionbar-actions :is(.odm-btn, .ui-btn) {
   min-width: 112px;
 }
 
@@ -1154,7 +1154,7 @@
     width: 100%;
   }
 
-  .odm-mgr-review-actionbar-actions .odm-btn {
+  .odm-mgr-review-actionbar-actions :is(.odm-btn, .ui-btn) {
     width: 100%;
     min-width: 0;
   }
@@ -1170,7 +1170,7 @@
     width: 100%;
   }
 
-  .odm-mgr-review-actionbar-actions .odm-btn {
+  .odm-mgr-review-actionbar-actions :is(.odm-btn, .ui-btn) {
     flex: 1;
   }
 }
@@ -2248,7 +2248,7 @@
 .odm-or-review-stage-actions .odm-btn-p {
   margin-left: auto;
 }
-.odm-or-review-stage-actions .odm-btn:disabled {
+.odm-or-review-stage-actions :is(.odm-btn, .ui-btn):disabled {
   border-color: #cbd5e1;
   background: #e2e8f0;
   color: #64748b;
@@ -5649,12 +5649,12 @@ a.odm-or-btn.odm-or-view-btn {
   font-size: 12px;
   text-align: right;
 }
-.odm-or-area-modal footer .odm-btn.is-danger {
+.odm-or-area-modal footer :is(.odm-btn, .ui-btn).is-danger {
   border-color: #dc2626;
   background: #dc2626;
   color: #fff;
 }
-.odm-or-area-modal footer .odm-btn.is-danger:hover:not(:disabled) {
+.odm-or-area-modal footer :is(.odm-btn, .ui-btn).is-danger:hover:not(:disabled) {
   background: #b91c1c;
 }
 .odm-or-area-permission-note {

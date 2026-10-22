@@ -9,7 +9,7 @@ const vnd = new Intl.NumberFormat('vi-VN', {
 export function KpiRow({ data }: { data: ManagerDashboardData }) {
   const s = data.summary
   return (
-    <div className="odm-mgr-kpi-row">
+    <div className="odm-mgr-kpi-row ui-stagger">
       <KpiCard label="Tổng yêu cầu" value={s.totalOrders} detail="Trong khoảng thời gian đã chọn" href={managerHref({ screen: 'orderQueue' })} />
       <KpiCard label="Checklist chờ duyệt giá" value={s.pendingAdditionalChecklistCount} detail="Dịch vụ bổ sung cần báo giá" href={managerHref({ screen: 'orderQueue' })} tone="warning" />
       <KpiCard label="Giá trị báo giá" value={vnd.format(s.totalQuoteValue)} detail="Bản mới nhất đã duyệt/chấp nhận" href={managerHref({ screen: 'orderQueue' })} />

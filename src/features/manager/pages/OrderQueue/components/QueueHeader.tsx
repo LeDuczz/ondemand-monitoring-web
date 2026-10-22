@@ -1,4 +1,5 @@
 import { orderQueuePageMessages } from '../OrderQueuePage.messages'
+import { Button } from '../../../../../shared/components/ui'
 
 export function QueueHeader({
   onRefresh,
@@ -12,9 +13,9 @@ export function QueueHeader({
       <div>
         <h1 className="odm-mgr-dash-title">{t.title}</h1>
       </div>
-      <button type="button" className="odm-btn" onClick={onRefresh}>
+      <Button type="button" onClick={onRefresh}>
         {t.refresh}
-      </button>
+      </Button>
     </div>
   )
 }

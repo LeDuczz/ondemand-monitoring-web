@@ -14,6 +14,7 @@ import {
   orderStatusLabel,
 } from '../../../../../shared/lib/statusTone'
 import { managerHref } from '../../../routes'
+import { Button } from '../../../../../shared/components/ui'
 
 /** Every order, newest first, so an order never "disappears" once it leaves the review queue. */
 export function AllOrdersSection() {
@@ -125,15 +126,15 @@ export function AllOrdersSection() {
                     </StatusBadge>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <a
-                      className="odm-btn odm-btn-sm"
+                    <Button
+                      size="sm"
                       href={managerHref({
                         screen: 'orderReview',
                         orderId: row.id,
                       })}
                     >
                       {t.all.view}
-                    </a>
+                    </Button>
                   </td>
                 </tr>
               ))}

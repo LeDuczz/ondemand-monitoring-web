@@ -2,6 +2,7 @@ import { formatVnd } from '../../../../../shared/lib/formatVnd'
 import { managerHref } from '../../../routes'
 import type { ActionItem } from '../../../types/dashboard'
 import { actionItemRoute, formatDashboardDate } from '../dashboardHelpers'
+import { Button } from '../../../../../shared/components/ui'
 
 const actionLabel: Record<NonNullable<ActionItem['actionType']>, string> = {
   REVIEW_PRICING: 'Xem & duyệt giá',
@@ -33,7 +34,7 @@ export function ActionListCard({ items }: { items: ActionItem[] }) {
                 ) : null}
               </div>
               <time className="odm-mgr-action-age" dateTime={item.createdAt}>{item.createdAt ? formatDashboardDate(item.createdAt) : ''}</time>
-              <a className="odm-btn odm-btn-sm" href={managerHref(actionItemRoute(item))}>{item.actionType ? actionLabel[item.actionType] : 'Xem'}</a>
+              <Button size="sm" href={managerHref(actionItemRoute(item))}>{item.actionType ? actionLabel[item.actionType] : 'Xem'}</Button>
             </li>
           ))}
         </ul>

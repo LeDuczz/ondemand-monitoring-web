@@ -11,6 +11,7 @@ import { ActionListCard } from './components/ActionListCard'
 import { OperationalSections } from './components/OperationalSections'
 import { AnalyticsCharts } from './components/AnalyticsCharts'
 import { formatDashboardDate, normalizeDashboard } from './dashboardHelpers'
+import { Button } from '../../../../shared/components/ui'
 
 export function DashboardPage() {
   const { t, lang } = useI18n(dashboardPageMessages)
@@ -53,7 +54,7 @@ export function DashboardPage() {
               </button>
             ))}
           </div>
-          <button type="button" className="odm-btn" onClick={query.reload}>{t.refresh}</button>
+          <Button type="button" onClick={query.reload}>{t.refresh}</Button>
         </div>
       </div>
 

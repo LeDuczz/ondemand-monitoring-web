@@ -8,6 +8,7 @@ import {
   type ManagerIconName,
 } from './components/common/ManagerIcon'
 import './manager.css'
+import { Button } from '../../shared/components/ui'
 
 type NavItem = {
   label: string
@@ -213,9 +214,9 @@ export function ManagerLayout({
             </button>
             <div className="odm-mgr-breadcrumb">{breadcrumb}</div>
             <div className="odm-mgr-topbar-spacer" />
-            <a
+            <Button
               href="#portal/manager/support"
-              className="odm-btn odm-btn-gh"
+              variant="ghost"
               style={{
                 fontSize: 13,
                 textDecoration: 'none',
@@ -228,15 +229,15 @@ export function ManagerLayout({
               }}
             >
               🎧 Trung tâm hỗ trợ
-            </a>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="odm-btn odm-btn-gh odm-btn-ic1"
+              variant="ghost"
               aria-label="Đổi giao diện sáng / tối"
               onClick={() => setDark((value) => !value)}
             >
               <ManagerIcon name={dark ? 'sun' : 'moon'} />
-            </button>
+            </Button>
           </header>
           <main className="odm-mgr-content">{children}</main>
         </div>

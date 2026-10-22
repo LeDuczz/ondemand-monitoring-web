@@ -152,7 +152,7 @@
   gap: 10px;
   margin-top: 12px;
 }
-.odm-or-readiness-list .odm-btn {
+.odm-or-readiness-list :is(.odm-btn, .ui-btn) {
   margin-top: 6px;
 }
 .odm-or-readiness-choices {

@@ -16,6 +16,7 @@ import { OrderQueuePage } from './pages/OrderQueue'
 import { SchedulePage } from './pages/Schedule'
 import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
 import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
+import { Button } from '../../shared/components/ui'
 
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash)
@@ -114,12 +115,12 @@ function renderScreen(route: ManagerRoute) {
       title="Không tìm thấy màn hình"
       description="Đường dẫn này không tồn tại trong khu vực Staff."
       action={
-        <a
-          className="odm-btn odm-btn-p"
+        <Button
+          variant="primary"
           href={managerHref({ screen: 'dashboard' })}
         >
           Về Dashboard
-        </a>
+        </Button>
       }
     />
   )

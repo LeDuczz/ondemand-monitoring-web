@@ -8,61 +8,64 @@ import type { ChecklistRow } from '../../../lib/checklist/types'
 import { contentStepMessages } from './ContentStep.messages'
 import { Metric } from './Metric'
 import { PricingEstimateCard } from './PricingEstimateCard'
+import './ContentStep.css'
 
 type Props = {
   selected?: ServiceOption
-  /** Monitoring-content editor. */
   checklist: ReactNode
   selectedCount: number
   packageSelectedCount: number
   packageCount: number
   additionalChecklists: ChecklistRow[]
-  /** False while the list is loading or has invalid items; shows a short reason. */
   valid: boolean
   pricingEstimate: ServicePricingEstimate | null
   pricingLoading: boolean
   aiAnalysisRequested: boolean
-  /** Wizard actions, rendered in-flow at the bottom of the summary panel. */
   footer?: ReactNode
 }
 
-/** Step 2: review and edit the monitoring content; the sidebar keeps the context visible. */
+/** Step 2: content editing stays primary; summary, prices and actions stay together. */
 export function ContentStep(p: Props) {
   const { t, lang } = useI18n(contentStepMessages)
+  const serviceName = p.selected
+    ? localizeServiceName(p.selected.id, lang, p.selected.name)
+    : t.notSelected
+
   return (
-    <>
-      <div className="co-grid is-service">
-        <div className="co-stack">{p.checklist}</div>
-        <aside className="co-stack co-summary">
-          <Card title={t.summaryTitle}>
-            <div className="co-two">
-              <Metric
-                label={t.service}
-                value={
-                  p.selected
-                    ? localizeServiceName(p.selected.id, lang, p.selected.name)
-                    : t.notSelected
-                }
-              />
-              <Metric label={t.totalContent} value={String(p.selectedCount)} />
-              <Metric
-                label={t.packageContent}
-                value={t.count(p.packageSelectedCount, p.packageCount)}
-              />
-              <Metric label={t.additionalContent} value={String(p.additionalChecklists.length)} />
-            </div>
-            <p className="co-hint co-mt">{p.valid ? t.hint : t.invalid}</p>
-          </Card>
-          <PricingEstimateCard
-            estimate={p.pricingEstimate}
-            loading={p.pricingLoading}
-            hasService={Boolean(p.selected)}
-            aiAnalysisRequested={p.aiAnalysisRequested}
-            additionalChecklists={p.additionalChecklists}
-          />
-          {p.footer && <div className="co-summary-cta">{p.footer}</div>}
-        </aside>
-      </div>
-    </>
+    <div className="co-content-layout">
+      <section className="co-content-editor" aria-label={t.editorTitle}>
+        {p.checklist}
+      </section>
+      <aside className="co-summary co-content-aside" aria-label={t.summaryTitle}>
+        <Card title={t.summaryTitle}>
+          <div className="co-content-service">
+            <span className="co-content-service-label">{t.service}</span>
+            <strong className="co-content-service-name">{serviceName}</strong>
+          </div>
+          <div className="co-content-stats">
+            <Metric label={t.totalContent} value={String(p.selectedCount)} />
+            <Metric
+              label={t.packageContent}
+              value={t.count(p.packageSelectedCount, p.packageCount)}
+            />
+            <Metric
+              label={t.additionalContent}
+              value={String(p.additionalChecklists.length)}
+            />
+          </div>
+          <p className="co-content-hint" role={p.valid ? undefined : 'alert'}>
+            {p.valid ? t.hint : t.invalid}
+          </p>
+        </Card>
+        <PricingEstimateCard
+          estimate={p.pricingEstimate}
+          loading={p.pricingLoading}
+          hasService={Boolean(p.selected)}
+          aiAnalysisRequested={p.aiAnalysisRequested}
+          additionalChecklists={p.additionalChecklists}
+        />
+        {p.footer && <div className="co-summary-cta">{p.footer}</div>}
+      </aside>
+    </div>
   )
 }

@@ -3,6 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const contentStepMessages = defineMessages({
   vi: {
     summaryTitle: 'Tóm tắt yêu cầu',
+    editorTitle: 'Danh sách nội dung giám sát',
     service: 'Dịch vụ đã chọn',
     notSelected: 'Chưa chọn',
     selectedCount: 'Nội dung đã chọn',
@@ -15,6 +16,7 @@ export const contentStepMessages = defineMessages({
   },
   en: {
     summaryTitle: 'Request summary',
+    editorTitle: 'Monitoring content list',
     service: 'Selected service',
     notSelected: 'Not selected',
     selectedCount: 'Selected content',

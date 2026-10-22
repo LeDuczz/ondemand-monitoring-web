@@ -7,6 +7,9 @@ export const authAsideMessages = defineMessages({
   vi: {
     asideLabel: 'OnDemand Monitor - dịch vụ giám sát bằng drone theo yêu cầu',
     brandSubtitle: 'Dịch vụ giám sát bằng drone theo yêu cầu',
+    heroTitle: 'Giám sát thông minh',
+    heroAccent: 'vươn xa tầm nhìn',
+    heroDescription: 'Khai thác sức mạnh công nghệ drone và AI để giám sát, phân tích và bảo vệ những gì quan trọng với bạn.',
     valueProps: [
       {
         icon: 'map-pin',
@@ -25,6 +28,9 @@ export const authAsideMessages = defineMessages({
   en: {
     asideLabel: 'OnDemand Monitor - on-demand drone monitoring service',
     brandSubtitle: 'On-demand drone monitoring service',
+    heroTitle: 'Smarter monitoring',
+    heroAccent: 'a wider perspective',
+    heroDescription: 'Harness drone technology and AI to monitor, analyze, and protect what matters most.',
     valueProps: [
       {
         icon: 'map-pin',

@@ -8,6 +8,7 @@ import { OrderIcon } from '../../../components/common/OrderIcon'
 import { missionDetailPageMessages } from '../MissionDetailPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
 import type { MissionResponse } from '../../../types/missions'
+import { Button } from '../../../../../shared/components/ui'
 
 export function MissionDetailHeader({
   mission,
@@ -42,8 +43,7 @@ export function MissionDetailHeader({
             <span>{formatOrderCode(mission.orderCode)}</span>
           ) : null}
           <span>{formatDateTime(mission.scheduledStartAt, locale)}</span>
-          <a
-            className="odm-or-btn-outline"
+          <Button
             href={managerHref({
               screen: 'orderReview',
               orderId: mission.orderId,
@@ -51,20 +51,20 @@ export function MissionDetailHeader({
           >
             {t.viewOrderPlan}
             <OrderIcon name="arrow-right" size={13} />
-          </a>
+          </Button>
         </div>
       </div>
       {canSetup ? (
         <div className="odm-or-md-actions">
-          <a
-            className="odm-or-btn odm-or-btn-blue"
+          <Button
+            variant="primary"
             href={managerHref({
               screen: 'missionSetup',
               missionId: mission.id,
             })}
           >
             {t.continueSetup}
-          </a>
+          </Button>
         </div>
       ) : null}
     </div>

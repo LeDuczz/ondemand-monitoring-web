@@ -1,3 +1,6 @@
+import { Button, useConfirm, useToast } from '../../shared/components/ui'
+import { useI18n } from '../../shared/i18n'
+import { managerDeliveryFeedbackMessages } from './managerDelivery.messages'
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../shared/api/httpClient'
 import { deliveryApi } from './api'
@@ -12,6 +15,9 @@ export function ManagerDeliveryPanel({
   orderId: string
   refreshKey?: number
 }) {
+  const { t: fb } = useI18n(managerDeliveryFeedbackMessages)
+  const toast = useToast()
+  const confirm = useConfirm()
   const [delivery, setDelivery] = useState<Delivery | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [notes, setNotes] = useState('')
@@ -44,14 +50,21 @@ export function ManagerDeliveryPanel({
       </p>
     ) : null
 
-  async function run(action: () => Promise<Delivery>) {
+  async function run(
+    action: () => Promise<Delivery>,
+    successMessage?: string,
+  ) {
     setBusy(true)
     setError(null)
     try {
       setDelivery(await action())
       await load()
+      if (successMessage) toast.success(successMessage)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Thao tác thất bại.')
+      const failure =
+        cause instanceof Error ? cause.message : 'Thao tác thất bại.'
+      setError(failure)
+      toast.error(failure)
     } finally {
       setBusy(false)
     }
@@ -192,9 +205,9 @@ export function ManagerDeliveryPanel({
                 <b>{selected.length} tệp</b>
                 <span>sẽ được gửi dưới dạng bản xem trước</span>
               </div>
-              <button
+              <Button
                 type="button"
-                className="odm-btn odm-btn-p delivery-primary-action"
+                variant="primary" className="delivery-primary-action"
                 disabled={busy || selected.length === 0}
                 title={
                   selected.length === 0
@@ -202,15 +215,16 @@ export function ManagerDeliveryPanel({
                     : undefined
                 }
                 onClick={() =>
-                  void run(() =>
-                    deliveryApi.releasePreview(orderId, selected, notes),
+                  void run(
+                    () => deliveryApi.releasePreview(orderId, selected, notes),
+                    fb.previewReleased,
                   )
                 }
               >
                 {busy
                   ? 'Đang gửi…'
                   : `Gửi kết quả cho khách hàng (${selected.length})`}
-              </button>
+              </Button>
             </div>
           </section>
         ) : null}
@@ -240,16 +254,26 @@ export function ManagerDeliveryPanel({
                 <span>Bản gốc đã sẵn sàng để phát hành cho khách hàng.</span>
               </div>
             </div>
-            <button
+            <Button
               type="button"
-              className="odm-btn odm-btn-p delivery-primary-action"
+              variant="primary" className="delivery-primary-action"
               disabled={busy}
-              onClick={() =>
-                void run(() => deliveryApi.releaseOriginals(orderId))
-              }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: fb.releaseOriginalsTitle,
+                  description: fb.releaseOriginalsBody,
+                  confirmLabel: fb.releaseOriginalsAction,
+                  tone: 'danger',
+                })
+                if (ok)
+                  void run(
+                    () => deliveryApi.releaseOriginals(orderId),
+                    fb.originalsReleased,
+                  )
+              }}
             >
               {busy ? 'Đang bàn giao…' : 'Bàn giao bản gốc'}
-            </button>
+            </Button>
           </div>
         ) : null}
         {delivery.deliveryStatus === 'DELIVERED' ? (

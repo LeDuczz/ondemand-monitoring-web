@@ -1,11 +1,11 @@
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { managerHref } from '../../../routes'
-import { Button } from '../../../../../shared/components/Button'
 import { missionCreatePageMessages } from '../MissionCreatePage.messages'
 import { useI18n } from '../../../../../shared/i18n'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { ExecutionPlan } from '../../../types/planning'
 import type { MissionResponse } from '../../../types/missions'
+import { Button } from '../../../../../shared/components/ui'
 
 export function MissionCreateActionBar({
   handleSubmit,
@@ -32,15 +32,15 @@ export function MissionCreateActionBar({
         <span>{t.actionHint}</span>
       </div>
       <div className="odm-or-actionbar-actions">
-        <a
-          className="odm-or-btn odm-or-btn-ghost"
+        <Button
+          variant="ghost"
           href={managerHref({ screen: 'orderQueue' })}
         >
           {t.backToOrders}
-        </a>
+        </Button>
         <Button
           type="button"
-          className="odm-or-btn odm-or-btn-primary"
+          variant="primary"
           onClick={handleSubmit}
           disabled={
             submitting ||

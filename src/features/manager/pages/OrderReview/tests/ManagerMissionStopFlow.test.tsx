@@ -92,6 +92,11 @@ it('requests, waits for crew, cleans up, refreshes then cancels without route ch
     target: { value: 'Thời tiết' },
   })
   fireEvent.click(screen.getByRole('button', { name: 'Yêu cầu dừng an toàn' }))
+  fireEvent.click(
+    within(await screen.findByRole('dialog')).getByRole('button', {
+      name: 'Yêu cầu dừng an toàn',
+    }),
+  )
   await screen.findByText('Đã yêu cầu dừng')
   expect(planningApi.requestSafeStop).toHaveBeenCalledWith('m1', {
     expectedPlanRevision: 7,
@@ -230,6 +235,11 @@ it('localizes errors and reloads without inventing a local transition or retryin
     target: { value: 'Dừng' },
   })
   fireEvent.click(screen.getByRole('button', { name: 'Yêu cầu dừng an toàn' }))
+  fireEvent.click(
+    within(await screen.findByRole('dialog')).getByRole('button', {
+      name: 'Yêu cầu dừng an toàn',
+    }),
+  )
   await screen.findByText(/Mission chưa ở trạng thái an toàn/)
   expect(
     screen.queryByText('MISSION_SAFE_STOP_NOT_READY'),

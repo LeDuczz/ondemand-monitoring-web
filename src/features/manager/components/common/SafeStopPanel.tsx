@@ -11,6 +11,9 @@ import {
   safeStopError,
 } from '../../../mission/lib/safeStopPresentation'
 import { planningApi } from '../../api/planningApi'
+import { Button, useConfirm, useToast } from '../../../../shared/components/ui'
+import { useI18n } from '../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../feedback.messages'
 
 export function SafeStopPanel({
   missionId,
@@ -31,6 +34,9 @@ export function SafeStopPanel({
     (signal) => planningApi.getSafeStop(missionId, signal),
     [missionId, revision],
   )
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
+  const confirm = useConfirm()
   const [reason, setReason] = useState('')
   const [attested, setAttested] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -58,6 +64,26 @@ export function SafeStopPanel({
     if (action !== 'confirm' && (!manager || managerAction !== action)) return
     if (action === 'request' && (revision === undefined || !reason.trim()))
       return
+    if (
+      action === 'request' &&
+      !(await confirm({
+        title: fb.requestSafeStopTitle,
+        description: fb.requestSafeStopBody,
+        confirmLabel: fb.requestSafeStopAction,
+        tone: 'danger',
+      }))
+    )
+      return
+    if (
+      action === 'cleanup' &&
+      !(await confirm({
+        title: fb.cleanupTitle,
+        description: fb.cleanupBody,
+        confirmLabel: fb.cleanupAction,
+        tone: 'danger',
+      }))
+    )
+      return
     setBusy(true)
     setMessage('')
     try {
@@ -74,9 +100,17 @@ export function SafeStopPanel({
           ? 'Đã gửi xác nhận an toàn.'
           : 'Thao tác đã được ghi nhận.',
       )
+      toast.success(
+        action === 'request'
+          ? fb.safeStopRequested
+          : action === 'confirm'
+            ? fb.safeStopConfirmed
+            : fb.safeStopCleaned,
+      )
       setAttested(false)
     } catch (error) {
       setMessage(safeStopError(error))
+      toast.error(safeStopError(error))
     } finally {
       refresh()
       setBusy(false)
@@ -156,12 +190,12 @@ export function SafeStopPanel({
                 />
               </label>
               <div className="mission-stop__actions">
-                <button
-                  className="odm-btn odm-btn-p"
+                <Button type="submit"
+                  variant="primary"
                   disabled={busy || !reason.trim()}
                 >
                   Yêu cầu dừng an toàn
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -200,32 +234,25 @@ export function SafeStopPanel({
                 khiển.
               </label>
               <div className="mission-stop__actions">
-                <button
-                  className="odm-btn odm-btn-p"
+                <Button type="submit"
+                  variant="primary"
                   disabled={busy || !attested || !reason.trim()}
                 >
                   Xác nhận đã an toàn
-                </button>
+                </Button>
               </div>
             </form>
           )}
           {manager && managerAction === 'cleanup' && (
             <div className="mission-stop__actions">
-              <button
+              <Button
                 type="button"
-                className="odm-btn odm-btn-p"
+                variant="primary"
                 disabled={busy}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      'Giải phóng thiết bị và nhân sự của Mission này?',
-                    )
-                  )
-                    void command('cleanup')
-                }}
+                onClick={() => void command('cleanup')}
               >
                 Giải phóng tài nguyên
-              </button>
+              </Button>
             </div>
           )}
         </>

@@ -2,6 +2,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import { missionCreatePageMessages } from '../MissionCreatePage.messages'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import { managerHref } from '../../../routes'
+import { Button } from '../../../../../shared/components/ui'
 
 export function CreateMissionErrorState({ error }: { error: unknown }) {
   const { t } = useI18n(missionCreatePageMessages)
@@ -23,12 +24,12 @@ export function CreateMissionErrorState({ error }: { error: unknown }) {
           >
             {debugLine}
           </div>
-          <a
-            className="odm-btn odm-btn-p"
+          <Button
+            variant="primary"
             href={managerHref({ screen: 'orderQueue' })}
           >
             {t.backToQueue}
-          </a>
+          </Button>
         </div>
       </div>
     </div>

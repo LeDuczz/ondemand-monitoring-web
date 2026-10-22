@@ -14,6 +14,7 @@ import {
   assignmentTone,
   STAFF_RESPONSE_LABELS,
 } from '../../../components/common/missionDetailHelpers'
+import { Button } from '../../../../../shared/components/ui'
 
 export type DetailPanelProps = {
   mission: MissionCalendarItem
@@ -78,15 +79,15 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
             />
           )}
           {assignmentReadiness(mission).needsSetup && (
-            <a
+            <Button
               href={managerHref({
                 screen: 'missionSetup',
                 missionId: mission.id,
               })}
-              className="odm-or-btn odm-or-btn-sm odm-or-btn-blue"
+              variant="primary" size="sm"
             >
               {t.dispatch}
-            </a>
+            </Button>
           )}
         </div>
 
@@ -99,13 +100,13 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
           ))}
         </dl>
 
-        <a
-          className="odm-or-btn odm-or-btn-blue odm-or-view-btn"
+        <Button
+          variant="primary" className="odm-or-view-btn"
           href={managerHref({ screen: 'missionDetail', missionId: mission.id })}
         >
           {t.viewDetail}
           <OrderIcon name="arrow-right" size={16} />
-        </a>
+        </Button>
 
         <section className="odm-or-crew">
           <div className="odm-or-crew-head">
@@ -185,15 +186,15 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
           )}
         </section>
 
-        <a
-          className="odm-or-btn odm-or-btn-blue"
+        <Button
+          variant="primary"
           href={managerHref({
             screen: 'orderReview',
             orderId: mission.orderId,
           })}
         >
           Mở kế hoạch Order
-        </a>
+        </Button>
       </div>
     </aside>
   )

@@ -14,6 +14,7 @@ import {
 } from './workflowModel'
 import { workflowStepperMessages } from './WorkflowStepper.messages'
 import '../../manager.css'
+import { Button } from '../../../../shared/components/ui'
 
 export type WorkflowOrderLayer = {
   progress: OrderProgress
@@ -185,22 +186,20 @@ export function WorkflowStepper({
             ) : null}
             {mission.onPrev || mission.onNext ? (
               <span className="odm-wf-pager">
-                <button
+                <Button
                   type="button"
-                  className="odm-btn"
                   disabled={!mission.onPrev}
                   onClick={mission.onPrev}
                 >
                   ← {t.missionPrev}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="odm-btn"
                   disabled={!mission.onNext}
                   onClick={mission.onNext}
                 >
                   {t.missionNext} →
-                </button>
+                </Button>
               </span>
             ) : null}
           </header>

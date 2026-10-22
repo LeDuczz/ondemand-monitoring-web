@@ -10,6 +10,7 @@ import { usePlanningConfirmation } from './usePlanningConfirmation'
 import { WizardRoleSelection } from './WizardRoleSelection'
 import { WizardOverviewStep } from './WizardOverviewStep'
 import { WizardMissionStep } from './WizardMissionStep'
+import { Button } from '../../../../shared/components/ui'
 
 const roles: MissionStaffRole[] = [
   'PILOT',
@@ -169,18 +170,17 @@ export function OrderResourceAssignmentWizard({
           Nhiệm vụ chưa đủ điều kiện phân công nguồn lực. Chốt kế hoạch Order và
           kiểm tra trạng thái nhiệm vụ trước khi tiếp tục.
         </p>
-        <a
-          className="odm-btn"
+        <Button
           href={`#portal/manager/orders/${encodeURIComponent(orderId)}`}
         >
           Mở kế hoạch Order
-        </a>
-        <button className="odm-btn" onClick={query.reload}>
+        </Button>
+        <Button onClick={query.reload}>
           Tải lại trạng thái
-        </button>
-        <button className="odm-btn" onClick={onClose}>
+        </Button>
+        <Button onClick={onClose}>
           {returnLabel}
-        </button>
+        </Button>
       </section>
     )
   if (activeId && !current && !query.loading)
@@ -189,12 +189,12 @@ export function OrderResourceAssignmentWizard({
         <p role="alert">
           Không thể tải đúng nhiệm vụ để phân công. Vui lòng tải lại dữ liệu.
         </p>
-        <button className="odm-btn" onClick={query.reload}>
+        <Button onClick={query.reload}>
           Thử lại
-        </button>
-        <button className="odm-btn" onClick={onClose}>
+        </Button>
+        <Button onClick={onClose}>
           {returnLabel}
-        </button>
+        </Button>
       </section>
     )
   if (current) {
@@ -241,13 +241,12 @@ export function OrderResourceAssignmentWizard({
       {confirmation.dialog}
       <div className="odm-or-pagehead odm-or-pagehead-row">
         <h1 className="odm-or-title">Phân công nguồn lực</h1>
-        <button
-          className="odm-or-btn-outline"
+        <Button
           disabled={busy}
           onClick={() => leave(true)}
         >
           {returnLabel}
-        </button>
+        </Button>
       </div>
       <OrderWorkflowStepper currentStep={6} />
       <DispatchWizardTabs
@@ -259,22 +258,22 @@ export function OrderResourceAssignmentWizard({
       {allAssigned && (
         <div className="odm-planning-complete" role="status">
           <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
-          <button className="odm-or-btn odm-or-btn-blue" onClick={onClose}>
+          <Button variant="primary" onClick={onClose}>
             Hoàn tất phân công
-          </button>
+          </Button>
         </div>
       )}
       <div className="odm-or-actionbar">
         <div className="odm-or-actionbar-hint">
           Chọn đúng nhiệm vụ trước khi phân công nhân sự và thiết bị.
         </div>
-        <button
-          className="odm-or-btn odm-or-btn-blue"
+        <Button
+          variant="primary"
           disabled={!candidateId || !eligible(candidateId)}
           onClick={next}
         >
           Tiếp theo
-        </button>
+        </Button>
       </div>
     </div>
   )

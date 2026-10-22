@@ -3,6 +3,7 @@ import { StaffStatusBadge } from './StaffStatusBadge'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import type { RefObject } from 'react'
 import type { AvailableOperator } from '../../../staff/api/operatorApi'
+import { Button } from '../../../../shared/components/ui'
 
 export function StaffSelectedTrigger({
   triggerRef,
@@ -110,15 +111,15 @@ export function StaffSelectedTrigger({
           ))}
         </span>
       </button>
-      <button
+      <Button
         ref={triggerRef}
         type="button"
-        className="odm-btn odm-btn-gh odm-btn-sm"
+        variant="ghost" size="sm"
         onClick={openPicker}
         style={{ justifySelf: 'start', minHeight: 30, borderRadius: 8 }}
       >
         {t.changeStaff}
-      </button>
+      </Button>
     </>
   )
 }

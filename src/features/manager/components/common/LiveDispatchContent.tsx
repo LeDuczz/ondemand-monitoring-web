@@ -18,6 +18,7 @@ import { DispatchStaffStep } from './DispatchStaffStep'
 import { DispatchDeviceStep } from './DispatchDeviceStep'
 import { DispatchReviewStep } from './DispatchReviewStep'
 import { DispatchActionBar } from './DispatchActionBar'
+import { Button } from '../../../../shared/components/ui'
 
 export function LiveDispatchContent({
   missionId,
@@ -128,14 +129,13 @@ export function LiveDispatchContent({
           Nhiệm vụ không còn đủ điều kiện phân công trong Order này. Vui lòng
           chọn lại nhiệm vụ.
         </p>
-        <button
-          className="odm-or-btn-outline"
+        <Button
           onClick={() => orderContext.onReturn()}
         >
           {orderContext.missionScoped
             ? orderContext.returnLabel
             : 'Chọn nhiệm vụ khác'}
-        </button>
+        </Button>
       </section>
     )
   const {

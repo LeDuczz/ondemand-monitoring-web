@@ -7,6 +7,7 @@ import { safeStopError } from '../../../../mission/lib/safeStopPresentation'
 import type { RefObject, Dispatch, SetStateAction } from 'react'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { SafeStop } from '../../../types/planning'
+import { Button } from '../../../../../shared/components/ui'
 
 export function StopFlowPanel({
   flowRef,
@@ -68,8 +69,7 @@ export function StopFlowPanel({
         </h4>
         <div className="mission-stop__header-actions">
           <SafeStopRefresh disabled={busy || query.loading} onClick={refresh} />
-          <button
-            className="odm-btn"
+          <Button
             disabled={busy}
             onClick={() => {
               setIntent(null)
@@ -82,7 +82,7 @@ export function StopFlowPanel({
             }}
           >
             Đóng bảng thao tác
-          </button>
+          </Button>
         </div>
       </div>
       {query.loading && <p role="status">Đang kiểm tra trạng thái…</p>}
@@ -154,8 +154,8 @@ export function StopFlowPanel({
           )}
           {nextAction && (
             <div className="mission-stop__actions">
-              <button
-                className={`odm-btn ${nextAction === 'cancel' ? 'odm-btn-rd' : 'odm-btn-p'}`}
+              <Button
+                variant={nextAction === 'cancel' ? 'danger' : 'primary'}
                 disabled={
                   !allowed || (nextAction !== 'cleanup' && !actionReason)
                 }
@@ -168,7 +168,7 @@ export function StopFlowPanel({
                       cleanup: 'Giải phóng tài nguyên',
                       cancel: 'Hủy Mission',
                     }[nextAction]}
-              </button>
+              </Button>
             </div>
           )}
         </>

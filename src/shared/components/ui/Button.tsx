@@ -5,6 +5,7 @@ import {
   type ComponentType,
   type MouseEvent,
   type ReactNode,
+  type Ref,
 } from 'react'
 
 import { Icon, type IconName } from '../Icon'
@@ -24,6 +25,8 @@ type OwnProps = {
   /** Custom element/component, e.g. a router Link (receives `to` etc. via props). */
   as?: ComponentType<Record<string, unknown>>
   children?: ReactNode
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+  ref?: Ref<HTMLButtonElement>
 }
 
 type Props = OwnProps &
@@ -45,6 +48,7 @@ export function Button({
   disabled,
   onClick,
   type,
+  ref,
   ...rest
 }: Props) {
   const inactive = Boolean(disabled) || loading
@@ -78,10 +82,11 @@ export function Button({
         e.preventDefault()
         return
       }
-      ;(onClick as ((ev: MouseEvent<HTMLElement>) => void) | undefined)?.(e)
+      onClick?.(e as unknown as MouseEvent<HTMLButtonElement>)
     }
     const linkProps = {
       ...rest,
+      ref,
       className: classes,
       onClick: handleClick,
       'aria-disabled': inactive || undefined,
@@ -94,6 +99,7 @@ export function Button({
   return (
     <button
       {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+      ref={ref}
       type={type ?? 'button'}
       className={classes}
       disabled={inactive}

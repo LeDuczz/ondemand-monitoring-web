@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { missionsApi } from '../../api/missionsApi'
 import type { FlightPermitStatus, MissionResponse } from '../../types/missions'
+import { Button, useToast } from '../../../../shared/components/ui'
+import { useI18n } from '../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../feedback.messages'
 
 const labels: Record<FlightPermitStatus, string> = {
   NOT_REQUESTED: 'Chưa xin phép',
@@ -16,6 +19,8 @@ export function FlightPermitCard({
   mission: MissionResponse
   onChanged: () => void
 }) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const status = mission.flightPermitStatus ?? 'NOT_REQUESTED'
   const [note, setNote] = useState(mission.flightPermitNote ?? '')
   const [file, setFile] = useState<File | null>(null)
@@ -46,13 +51,15 @@ export function FlightPermitCard({
         dataUrl: file ? await readFile(file) : null,
       })
       setFile(null)
+      toast.success(fb.flightPermitSaved)
       onChanged()
     } catch (cause) {
-      setError(
+      const failure =
         cause instanceof Error
           ? cause.message
-          : 'Không thể cập nhật giấy phép bay.',
-      )
+          : 'Không thể cập nhật giấy phép bay.'
+      setError(failure)
+      toast.error(failure)
     } finally {
       setBusy(false)
     }
@@ -147,8 +154,8 @@ export function FlightPermitCard({
         ) : null}
         <div className="odm-flight-permit__actions">
           {status !== 'APPROVED' ? (
-            <button
-              className="odm-or-btn odm-or-btn-blue odm-flight-permit__approve"
+            <Button
+              variant="primary" className="odm-flight-permit__approve"
               disabled={busy}
               onClick={() => save('APPROVED')}
             >
@@ -156,19 +163,19 @@ export function FlightPermitCard({
                 <path d="M5 12.5l4.5 4.5L19 7.5" />
               </svg>
               Xác nhận đã được cấp phép
-            </button>
+            </Button>
           ) : hasChanges ? (
-            <button
-              className="odm-or-btn odm-or-btn-blue odm-flight-permit__save"
+            <Button
+              variant="primary" className="odm-flight-permit__save"
               disabled={busy}
               onClick={() => save('APPROVED')}
             >
               Lưu thay đổi
-            </button>
+            </Button>
           ) : null}
           {status !== 'REJECTED' && status !== 'APPROVED' ? (
-            <button
-              className="odm-or-btn-outline odm-flight-permit__reject"
+            <Button
+              className="odm-flight-permit__reject"
               disabled={busy}
               onClick={() => save('REJECTED')}
             >
@@ -176,7 +183,7 @@ export function FlightPermitCard({
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
               Từ chối
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>

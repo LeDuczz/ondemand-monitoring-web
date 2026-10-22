@@ -145,11 +145,6 @@ export function CreateMissionForm({
     }
   }, [brief.center, forecastDates, forecastTime])
 
-  if (navigateTo) {
-    window.location.hash = navigateTo
-    return null
-  }
-
   const { handleSubmit } = useCreateMissionSubmit({
     submit,
     planQuery,
@@ -167,6 +162,11 @@ export function CreateMissionForm({
     setNavigateTo,
     setPlanRevision,
   })
+
+  if (navigateTo) {
+    window.location.hash = navigateTo
+    return null
+  }
 
   if (submit.kind === 'planFailed') {
     return (

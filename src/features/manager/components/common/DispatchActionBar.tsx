@@ -3,6 +3,7 @@ import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import { useI18n } from '../../../../shared/i18n'
 import type { DispatchStep, OrderDispatchContext } from './liveDispatchTypes'
 import type { AvailableDrone } from '../../../staff/api/droneApi'
+import { Button } from '../../../../shared/components/ui'
 
 export function DispatchActionBar({
   stepHint,
@@ -48,32 +49,33 @@ export function DispatchActionBar({
         )}
       </div>
       <div className="odm-or-actionbar-actions">
-        <button
+        <Button
           type="button"
-          className="odm-or-btn odm-or-btn-ghost"
+          variant="ghost"
           disabled={activeStepIndex === 0}
           onClick={goPrevious}
         >
           {t.previous}
-        </button>
+        </Button>
         {activeStep !== 'confirm' ? (
-          <button
+          <Button
             type="button"
-            className={`odm-or-btn odm-or-btn-blue${
+            variant="primary"
+            className={
               (activeStep === 'staff' && missingRoles > 0) ||
               (activeStep === 'device' && selectedDrones.length === 0)
-                ? ' is-blocked'
-                : ''
-            }`}
+                ? 'is-blocked'
+                : undefined
+            }
             onClick={goNext}
           >
             {t.next}
             <OrderIcon name="chevron-right" size={16} />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
-            className="odm-or-btn odm-or-btn-primary"
+            variant="primary"
             disabled={
               busy ||
               droneIds.length === 0 ||
@@ -83,7 +85,7 @@ export function DispatchActionBar({
             onClick={() => void assign()}
           >
             {busy ? t.assigning : t.assign}
-          </button>
+          </Button>
         )}
       </div>
     </div>

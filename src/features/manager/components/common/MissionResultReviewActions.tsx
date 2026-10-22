@@ -4,6 +4,9 @@ import type { MissionResultApprovalStatus } from '../../../mission/types/mission
 import { OrderIcon } from './OrderIcon'
 import { missionResultReviewErrorMessage } from './missionResultReviewReadiness'
 import './MissionResultReviewCard.css'
+import { Button, useConfirm, useToast } from '../../../../shared/components/ui'
+import { useI18n } from '../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../feedback.messages'
 
 export function MissionResultReviewActions({
   resultId,
@@ -20,6 +23,9 @@ export function MissionResultReviewActions({
   disabledReasonId?: string
   onReviewed: () => void
 }) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
+  const confirm = useConfirm()
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
@@ -32,15 +38,27 @@ export function MissionResultReviewActions({
       (!reject && !ready)
     )
       return
+    if (
+      reject &&
+      !(await confirm({
+        title: fb.rejectResultTitle,
+        description: fb.rejectResultBody,
+        confirmLabel: fb.rejectResultAction,
+        tone: 'danger',
+      }))
+    )
+      return
     setBusy(true)
     setError(null)
     try {
       if (reject) await missionsApi.rejectMissionResult(resultId, note)
       else await missionsApi.approveMissionResult(resultId, note)
       setNote('')
+      toast.success(reject ? fb.resultRejected : fb.resultApproved)
       onReviewed()
     } catch (cause) {
       setError(cause)
+      toast.error(missionResultReviewErrorMessage(cause))
       onReviewed()
     } finally {
       setBusy(false)
@@ -82,25 +100,26 @@ export function MissionResultReviewActions({
             <p>Checklist chưa sẵn sàng để duyệt kết quả.</p>
           )}
           <div className="odm-result-review-buttons">
-            <button
+            <Button
               type="button"
-              className="odm-or-btn odm-result-review-reject"
+              variant="danger"
+              className="odm-result-review-reject"
               disabled={busy || refreshing}
               onClick={() => void review(true)}
             >
               <OrderIcon name="x" size={16} />
               Từ chối kết quả
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="odm-or-btn odm-or-btn-blue"
+              variant="primary"
               disabled={busy || refreshing || !ready}
               aria-describedby={!ready ? disabledReasonId : undefined}
               onClick={() => void review(false)}
             >
               <OrderIcon name="check" size={16} />
               Duyệt kết quả
-            </button>
+            </Button>
           </div>
         </>
       )}

@@ -15,6 +15,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import type { MissionCalendarItem } from '../../../types/missions'
 import type { Dispatch, SetStateAction } from 'react'
 import type { DeliveryStatus } from '../missionsTypes'
+import { Button } from '../../../../../shared/components/ui'
 
 export function MissionRow({
   selectedMission,
@@ -82,8 +83,8 @@ export function MissionRow({
         )}
       </td>
       <td className="odm-or-table-action">
-        <a
-          className="odm-or-btn odm-or-btn-sm odm-or-btn-outline"
+        <Button
+          size="sm"
           href={managerHref({
             screen: 'missionDetail',
             missionId: m.id,
@@ -91,10 +92,10 @@ export function MissionRow({
           onClick={(event) => event.stopPropagation()}
         >
           {t.view}
-        </a>
+        </Button>
         {assignmentReadiness(m).needsSetup && (
-          <a
-            className="odm-or-btn odm-or-btn-sm odm-or-btn-blue"
+          <Button
+            variant="primary" size="sm"
             href={managerHref({
               screen: 'missionSetup',
               missionId: m.id,
@@ -102,7 +103,7 @@ export function MissionRow({
             onClick={(event) => event.stopPropagation()}
           >
             {t.continueSetup}
-          </a>
+          </Button>
         )}
       </td>
     </tr>

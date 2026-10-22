@@ -7,6 +7,7 @@ import { OrderWorkflowStepper } from './OrderWorkflowStepper'
 import { planningSchedule } from './planningSchedule'
 import { FlightPermitCard } from './FlightPermitCard'
 import type { MissionResponse } from '../../types/missions'
+import { Button } from '../../../../shared/components/ui'
 
 const ROLES: MissionStaffRole[] = [
   'PILOT',
@@ -58,14 +59,13 @@ export function OrderMissionsOverview({
                 khi hoàn tất.
               </p>
             </div>
-            <button
+            <Button
               type="button"
-              className="odm-or-btn-outline"
               disabled={loading}
               onClick={onReload}
             >
               Làm mới
-            </button>
+            </Button>
           </div>
           <OrderWorkflowStepper currentStep={mode === 'permit' ? 9 : 8} />
         </>
@@ -171,13 +171,12 @@ export function OrderMissionsOverview({
                     })}
                   </dl>
                   {!cancelled && !readiness.complete && onAssignMore ? (
-                    <button
+                    <Button
                       type="button"
-                      className="odm-or-btn-outline"
                       onClick={() => onAssignMore(mission.id)}
                     >
                       Phân công tiếp
-                    </button>
+                    </Button>
                   ) : null}
                 </article>
               )
@@ -209,13 +208,13 @@ export function OrderMissionsOverview({
               ? 'Tất cả Mission đã đủ nhân sự và thiết bị.'
               : 'Hoàn tất phân công các Mission còn thiếu để kết thúc kế hoạch.'}
         </div>
-        <button
+        <Button
           type="button"
-          className="odm-or-btn odm-or-btn-blue"
+          variant="primary"
           onClick={onDone}
         >
           {doneLabel}
-        </button>
+        </Button>
       </div>
     </div>
   )

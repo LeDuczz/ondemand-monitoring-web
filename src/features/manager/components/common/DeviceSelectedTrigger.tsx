@@ -3,6 +3,7 @@ import { StaffStatusBadge } from './StaffStatusBadge'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import type { RefObject } from 'react'
 import type { AvailableDrone } from '../../../staff/api/droneApi'
+import { Button } from '../../../../shared/components/ui'
 
 export function DeviceSelectedTrigger({
   triggerRef,
@@ -128,23 +129,23 @@ export function DeviceSelectedTrigger({
         })}
       </button>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button
+        <Button
           ref={triggerRef}
           type="button"
-          className="odm-btn odm-btn-gh odm-btn-sm"
+          variant="ghost" size="sm"
           onClick={openPicker}
           style={{ minHeight: 30, borderRadius: 8 }}
         >
           {t.changeDevice}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="odm-btn odm-btn-gh odm-btn-sm"
+          variant="ghost" size="sm"
           onClick={onClear}
           style={{ minHeight: 30, borderRadius: 8 }}
         >
           {t.clearDevice}
-        </button>
+        </Button>
       </div>
     </>
   )

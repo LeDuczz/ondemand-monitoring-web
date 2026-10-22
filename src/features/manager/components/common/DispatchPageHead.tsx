@@ -3,6 +3,7 @@ import { managerHref } from '../../routes'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import { useI18n } from '../../../../shared/i18n'
 import type { OrderDispatchContext } from './liveDispatchTypes'
+import { Button } from '../../../../shared/components/ui'
 
 export function DispatchPageHead({
   orderContext,
@@ -26,22 +27,20 @@ export function DispatchPageHead({
         )}
       </div>
       {orderContext ? (
-        <button
-          className="odm-or-btn-outline"
+        <Button
           disabled={busy}
           onClick={() => orderContext.onReturn()}
         >
           {orderContext.missionScoped
             ? orderContext.returnLabel
             : 'Chọn nhiệm vụ khác'}
-        </button>
+        </Button>
       ) : (
-        <a
-          className="odm-or-btn-outline"
+        <Button
           href={managerHref({ screen: 'orderQueue' })}
         >
           {t.backToOrders}
-        </a>
+        </Button>
       )}
     </div>
   )

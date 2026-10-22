@@ -6,6 +6,7 @@ import type { ExecutionPlan, SafeStop } from '../../types/planning'
 import type { MissionResponse } from '../../types/missions'
 import type { OrderDetail } from '../../types/orders'
 import type { Dispatch, SetStateAction } from 'react'
+import { Button } from '../../../../shared/components/ui'
 
 export function WizardRoleSelection({
   busy,
@@ -40,13 +41,12 @@ export function WizardRoleSelection({
     <section className="odm-or-card" aria-label="Chọn nhiệm vụ để phân công">
       <header className="odm-or-card-head">
         <span className="odm-or-card-title">Chọn nhiệm vụ để phân công</span>
-        <button
-          className="odm-or-btn-outline"
+        <Button
           disabled={busy || query.loading}
           onClick={query.reload}
         >
           Làm mới nhiệm vụ
-        </button>
+        </Button>
       </header>
       <div className="odm-or-card-body">
         {query.loading && <p role="status">Đang tải nhiệm vụ…</p>}

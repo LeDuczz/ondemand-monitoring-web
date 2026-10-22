@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - dev
+      - feature/depot-management-ui
 
 concurrency:
   group: web-ci-${{ github.workflow }}-${{ github.ref }}
@@ -33,6 +34,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
 
       - name: Test
         run: npm run test

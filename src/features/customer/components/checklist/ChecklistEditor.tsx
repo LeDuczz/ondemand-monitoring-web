@@ -63,9 +63,19 @@ export function ChecklistEditor({
     previousCount.current = visibleRows.length
   }, [visibleRows])
 
+  const lastEditingKey = useRef<string | null>(null)
+
   useEffect(() => {
-    if (editingKey)
+    if (editingKey) {
+      lastEditingKey.current = editingKey
       document.getElementById(`requirement-${editingKey}`)?.focus()
+      return
+    }
+
+    // Return keyboard focus to the same item's edit action after "Done".
+    const key = lastEditingKey.current
+    lastEditingKey.current = null
+    if (key) document.getElementById(`checklist-edit-${key}`)?.focus()
   }, [editingKey])
 
   const needle = query.trim().toLowerCase()
@@ -127,7 +137,7 @@ export function ChecklistEditor({
         type="checkbox"
         className="checklist-check"
         checked={row.selected}
-        aria-label={t.select(index + 1)}
+        aria-label={`${t.select(index + 1)}: ${row.content}`}
         disabled={row.mandatory}
         onChange={(event) =>
           checklist.change(row.key, {
@@ -243,14 +253,7 @@ export function ChecklistEditor({
             <span className="checklist-index">
               {String(index + 1).padStart(2, '0')}
             </span>
-            <button
-              type="button"
-              className="checklist-summary"
-              title={row.content}
-              aria-label={t.editRow(index + 1)}
-              disabled={!row.selected}
-              onClick={() => setEditingKey(row.key)}
-            >
+            <span className="checklist-summary" title={row.content}>
               {row.content || t.emptyContent}
               {!row.sourceChecklistId && (
                 <span className="checklist-custom-tag">{t.custom}</span>
@@ -266,7 +269,7 @@ export function ChecklistEditor({
                   </small>
                 </>
               )}
-            </button>
+            </span>
             <span className="checklist-evidence-summary">
               {row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
                 ? t.imageAndVideoSummary(
@@ -301,6 +304,7 @@ export function ChecklistEditor({
             </span>
             <div className="checklist-row-actions">
               <button
+                id={`checklist-edit-${row.key}`}
                 type="button"
                 className="checklist-icon-btn"
                 aria-label={t.editRow(index + 1)}
@@ -448,6 +452,17 @@ export function ChecklistEditor({
         {ready && <p className="checklist-pricing-notice">{t.pricingNotice}</p>}
         {compact && ready && visibleRows.length > 0 && (
           <div className="checklist-toolbar">
+            <label className="checklist-search-wrap">
+              <Icon name="search" width={17} height={17} aria-hidden="true" />
+              <input
+                type="search"
+                className="checklist-search"
+                aria-label={t.searchLabel}
+                placeholder={t.searchPlaceholder}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
             <div className="checklist-toolbar-selection">
               <label className="checklist-selectall">
                 <input
@@ -477,17 +492,6 @@ export function ChecklistEditor({
                 {t.deselectAll}
               </button>
             </div>
-            <label className="checklist-search-wrap">
-              <Icon name="search" width={17} height={17} aria-hidden="true" />
-              <input
-                type="search"
-                className="checklist-search"
-                aria-label={t.searchLabel}
-                placeholder={t.searchPlaceholder}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
             <div
               className="checklist-view"
               role="group"

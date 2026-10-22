@@ -7,7 +7,7 @@ import { useLanguage } from '../../../../../shared/i18n'
 import { customerApi } from '../../../api/customerApi'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import type { OrderDetailView } from '../../../lib/orders/types'
-import { OrderIcon } from '../../../../manager/components/orderReview/OrderIcon'
+import { OrderIcon } from '../../../../manager/components/common/OrderIcon'
 
 function ReadonlyOrderMap({
   order,

@@ -1,0 +1,259 @@
+import { useState } from 'react'
+
+import { ApiError } from '../../../../../shared/api/httpClient'
+import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
+import { readinessApi } from '../../../api/readinessApi'
+import { ordersApi } from '../../../api/ordersApi'
+import type {
+  OrderReadiness,
+  ReadinessCriterion,
+} from '../../../types/readiness'
+import { OrderIcon } from '../../../components/common/OrderIcon'
+import './OrderReadinessCard.css'
+import { type Answer, type FailureAction } from '../readinessTypes'
+import {
+  recommendationText,
+  riskLevelOptions,
+  answerOptions,
+} from '../readinessHelpers'
+import { ReadinessSummary } from './ReadinessSummary'
+import { ReadinessCriterionRow } from './ReadinessCriterionRow'
+import { ReadinessBlockingNotice } from './ReadinessBlockingNotice'
+
+/**
+ * Approval criteria for an order. Left: what the system checked on its own.
+ * Right: what only the manager can judge. The backend enforces the same rules
+ * when the quote is approved; this card makes them visible.
+ */
+export function OrderReadinessCard({
+  orderId,
+  query,
+  editable,
+  onDecisionDone,
+}: {
+  orderId: string
+  query: UseApiQueryState<OrderReadiness>
+  editable: boolean
+  onDecisionDone?: () => void
+}) {
+  const [drafts, setDrafts] = useState<
+    Record<string, { result: Answer; note: string }>
+  >({})
+  const [savingCode, setSavingCode] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedResults, setSelectedResults] = useState<
+    Record<string, Answer>
+  >({})
+
+  const readiness = query.data
+  if (!readiness) {
+    return (
+      <section
+        className="odm-or-card odm-or-readiness"
+        aria-label="Điều kiện duyệt"
+      >
+        <header className="odm-or-card-head">
+          <span className="odm-or-card-title">
+            <OrderIcon name="check" size={18} />
+            Điều kiện duyệt
+          </span>
+        </header>
+        <div className="odm-or-card-body odm-or-empty">
+          {query.loading
+            ? 'Đang kiểm tra điều kiện duyệt...'
+            : 'Không tải được điều kiện duyệt.'}
+        </div>
+      </section>
+    )
+  }
+
+  const auto = readiness.criteria.filter(
+    (c) =>
+      c.type === 'AUTO' &&
+      c.code !== 'CHECKLIST_REVIEWED' &&
+      c.code !== 'SCHEDULE_DATE',
+  )
+  const manual = readiness.criteria.filter(
+    (c) =>
+      c.type === 'MANUAL' &&
+      c.code !== 'SURVEY_NEEDED' &&
+      c.code !== 'AIRSPACE_PERMIT',
+  )
+  const pendingRequired = manual.filter(
+    (c) => c.required && c.result === 'PENDING',
+  ).length
+  const autoPassed = auto.filter((c) => c.result === 'PASS').length
+  const manualAnswered = manual.filter((c) => c.result !== 'PENDING').length
+
+  async function save(code: string, result: Answer, note: string) {
+    const previousResult = selectedResults[code]
+    setSelectedResults((state) => ({ ...state, [code]: result }))
+    setSavingCode(code)
+    setError(null)
+    try {
+      await readinessApi.answer(orderId, code, {
+        result,
+        note: note.trim() || null,
+      })
+      setDrafts((state) => {
+        const next = { ...state }
+        delete next[code]
+        return next
+      })
+      query.reload()
+    } catch (cause) {
+      setSelectedResults((state) => {
+        const next = { ...state }
+        if (previousResult) next[code] = previousResult
+        else delete next[code]
+        return next
+      })
+      setError(
+        cause instanceof ApiError || cause instanceof Error
+          ? cause.message
+          : 'Không lưu được. Vui lòng thử lại.',
+      )
+    } finally {
+      setSavingCode(null)
+    }
+  }
+
+  const failedRequired = manual.filter((criterion) => {
+    const effectiveResult =
+      drafts[criterion.code]?.result ??
+      selectedResults[criterion.code] ??
+      criterion.result
+    return criterion.required && effectiveResult === 'FAIL'
+  })
+  const failedReasonsComplete = failedRequired.every((criterion) =>
+    Boolean(drafts[criterion.code]?.note.trim() || criterion.note?.trim()),
+  )
+
+  async function submitFailedDecision(decision: FailureAction) {
+    if (!failedReasonsComplete) {
+      setError(
+        'Vui lòng nhập lý do cho tất cả tiêu chí không đạt trước khi tiếp tục.',
+      )
+      return
+    }
+    const reason = failedRequired
+      .map((criterion) => {
+        const note =
+          drafts[criterion.code]?.note.trim() || criterion.note?.trim()
+        return note ? `${criterion.title}: ${note}` : criterion.title
+      })
+      .join('; ')
+    if (!reason) return
+    setSavingCode('decision')
+    setError(null)
+    try {
+      await Promise.all(
+        failedRequired
+          .filter((criterion) => drafts[criterion.code]?.result === 'FAIL')
+          .map((criterion) =>
+            readinessApi.answer(orderId, criterion.code, {
+              result: 'FAIL',
+              note: drafts[criterion.code].note.trim(),
+            }),
+          ),
+      )
+      await ordersApi.submitApproval(orderId, { decision, reason })
+      onDecisionDone?.()
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Không gửi được quyết định.',
+      )
+      setSavingCode(null)
+    }
+  }
+
+  function choose(criterion: ReadinessCriterion, result: Answer) {
+    const note = drafts[criterion.code]?.note ?? criterion.note ?? ''
+    if (result === 'FAIL') {
+      // A failing answer needs a reason first.
+      setDrafts((state) => ({ ...state, [criterion.code]: { result, note } }))
+      return
+    }
+    void save(criterion.code, result, note)
+  }
+
+  return (
+    <section
+      className="odm-or-card odm-or-readiness"
+      aria-label="Điều kiện duyệt"
+    >
+      <header className="odm-or-card-head">
+        <span className="odm-or-card-title">
+          <OrderIcon name="check" size={18} />
+          Điều kiện duyệt
+        </span>
+        <div className="odm-or-readiness-head-actions">
+          <span
+            className={`odm-or-readiness-verdict is-${readiness.canApprove ? 'ok' : 'blocked'}`}
+            role="status"
+          >
+            {readiness.canApprove
+              ? recommendationText[readiness.recommendation]
+              : pendingRequired > 0
+                ? `Còn ${pendingRequired} mục manager cần xác nhận`
+                : recommendationText[readiness.recommendation]}
+          </span>
+        </div>
+      </header>
+      <div className="odm-or-readiness-body">
+        <ReadinessSummary autoPassed={autoPassed} auto={auto} />
+        <div className="odm-or-readiness-col">
+          <h3>
+            Manager xác nhận
+            <span className="odm-or-readiness-count">
+              {manualAnswered}/{manual.length} đã xác nhận
+            </span>
+          </h3>
+          <ul className="odm-or-readiness-list">
+            {manual.map((c) => {
+              const options =
+                c.code === 'RISK_LEVEL' ? riskLevelOptions : answerOptions
+              const draft = drafts[c.code]
+              const current =
+                draft?.result ??
+                selectedResults[c.code] ??
+                (c.result === 'PENDING' ? null : c.result)
+              const note = draft?.note ?? c.note ?? ''
+              const needsNote = draft?.result === 'FAIL'
+              return (
+                <ReadinessCriterionRow
+                  key={c.code}
+                  current={current}
+                  c={c}
+                  draft={draft}
+                  needsNote={needsNote}
+                  note={note}
+                  editable={editable}
+                  setDrafts={setDrafts}
+                  savingCode={savingCode}
+                  save={save}
+                  options={options}
+                  choose={choose}
+                />
+              )
+            })}
+          </ul>
+        </div>
+      </div>
+      {error ? (
+        <p className="odm-or-readiness-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {!readiness.canApprove && readiness.blockingReasons.length > 0 ? (
+        <ReadinessBlockingNotice
+          readiness={readiness}
+          failedRequired={failedRequired}
+          editable={editable}
+          savingCode={savingCode}
+          submitFailedDecision={submitFailedDecision}
+        />
+      ) : null}
+    </section>
+  )
+}

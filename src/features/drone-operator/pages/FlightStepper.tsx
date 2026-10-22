@@ -46,6 +46,7 @@ export function FlightStepper({ active }: { active: number }) {
         return (
           <li
             key={step.key}
+            aria-current={current ? 'step' : undefined}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -139,10 +140,12 @@ export function FlightStepHeader({
           lineHeight: 1.2,
         }}
       >
-        <div
+        <h1
+          className="odm-flight-step-title"
           style={{
             fontSize: 16,
             fontWeight: 700,
+            margin: 0,
             letterSpacing: '-.01em',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -150,7 +153,7 @@ export function FlightStepHeader({
           }}
         >
           {title}
-        </div>
+        </h1>
         <div
           className="odm-mono"
           title={idTitle}

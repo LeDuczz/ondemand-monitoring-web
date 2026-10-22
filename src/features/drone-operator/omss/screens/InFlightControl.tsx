@@ -26,6 +26,7 @@ import {
 import { SatelliteFlightMap } from './SatelliteFlightMap'
 import { DroneCameraView, type DroneCameraTelemetry } from './DroneCameraView'
 import { FlightCockpit } from './FlightCockpit'
+import { resolveCockpitBatteryPercent } from '../lib/batteryTelemetry'
 import {
   buildExecutableFlightRoute,
   gpsDistanceMeters,
@@ -1306,11 +1307,7 @@ const TelemetryPanel = memo(function TelemetryPanel({
 }) {
   useRenderDiagnostics('TelemetryPanel')
   const { t } = useI18n(inFlightControlMessages)
-  const telemetryBattery =
-    typeof status?.batteryPercent === 'number' &&
-    Number.isFinite(status.batteryPercent)
-      ? Math.max(0, Math.min(100, status.batteryPercent))
-      : null
+  const telemetryBattery = resolveCockpitBatteryPercent(status)
   const batteryDisplay =
     telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`
   const batteryState = status?.batteryState ?? 'NORMAL'
@@ -3624,14 +3621,7 @@ export default function InFlightControl({
     t,
   ])
 
-  const liveBatteryPercent =
-    typeof controlStatus?.batteryPercent === 'number' &&
-    Number.isFinite(controlStatus.batteryPercent)
-      ? controlStatus.batteryPercent
-      : typeof controlStatus?.rawPx4BatteryPercent === 'number' &&
-          Number.isFinite(controlStatus.rawPx4BatteryPercent)
-        ? controlStatus.rawPx4BatteryPercent
-        : undefined
+  const liveBatteryPercent = resolveCockpitBatteryPercent(controlStatus)
 
   // Camera view reads the SAME GPS telemetry as the main flight map (controlStatus.positionGps).
   const cameraTelemetry = useMemo<DroneCameraTelemetry | null>(() => {
@@ -3655,11 +3645,7 @@ export default function InFlightControl({
     liveBatteryPercent,
   ])
 
-  const telemetryBattery =
-    typeof liveBatteryPercent === 'number' &&
-    Number.isFinite(liveBatteryPercent)
-      ? Math.max(0, Math.min(100, liveBatteryPercent))
-      : null
+  const telemetryBattery = liveBatteryPercent
   const batteryDisplay =
     telemetryBattery === null ? '--' : `${telemetryBattery.toFixed(1)}%`
   const batteryState = controlStatus?.batteryState ?? 'NORMAL'

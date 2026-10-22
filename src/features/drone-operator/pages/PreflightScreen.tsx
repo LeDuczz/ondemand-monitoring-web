@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { env } from '../../../config/env'
 import { useI18n } from '../../../shared/i18n'
@@ -78,6 +78,8 @@ type PersistedPreflightCheck = {
     measuredValue?: string | null
     errorCode?: string | null
     checkedAt?: string | null
+    expiresAt?: string | null
+    required?: boolean
   }>
 }
 
@@ -299,33 +301,46 @@ function clearStoredPreflightState(storageKey: string) {
 function runtimeStatusFromPersisted(
   persisted: PersistedPreflightCheck,
 ): RuntimePreflightStatus {
-  return {
-    checkId: persisted.id,
-    status:
-      persisted.status === 'PASSED'
-        ? 'READY'
-        : persisted.status === 'FAILED' || persisted.status === 'CANCELLED'
-          ? 'FAILED'
-          : 'CHECKING',
-    progress: persisted.progressPercent,
-    checks: persisted.items.map((item) => ({
+  const now = Date.now()
+  const checks = persisted.items.map((item) => {
+    const expiresAt = item.expiresAt ? Date.parse(item.expiresAt) : Number.NaN
+    const expired =
+      item.required !== false &&
+      item.status === 'PASSED' &&
+      (!Number.isFinite(expiresAt) || expiresAt <= now)
+
+    return {
       key: item.checkType,
       name: item.checkName,
-      status:
-        item.status === 'PASSED'
-          ? 'PASS'
+      status: expired
+        ? ('STALE' as const)
+        : item.status === 'PASSED'
+          ? ('PASS' as const)
           : item.status === 'WARNING'
-            ? 'WARN'
-          : item.status === 'FAILED'
-            ? 'FAIL'
-            : item.status,
-      message: item.message ?? '',
+            ? ('WARN' as const)
+            : item.status === 'FAILED'
+              ? ('FAIL' as const)
+              : item.status,
+      message: expired ? 'Kết quả đã hết hiệu lực' : (item.message ?? ''),
       critical: item.checkLevel === 'CRITICAL',
       source: item.source,
       measuredValue: item.measuredValue,
       errorCode: item.errorCode,
       checkedAt: item.checkedAt,
-    })),
+    }
+  })
+  const hasStaleRequiredItem = checks.some((item) => item.status === 'STALE')
+
+  return {
+    checkId: persisted.id,
+    status:
+      persisted.status === 'PASSED' && !hasStaleRequiredItem
+        ? 'READY'
+        : persisted.status === 'FAILED' || persisted.status === 'CANCELLED'
+          ? 'FAILED'
+          : 'CHECKING',
+    progress: persisted.progressPercent,
+    checks,
   }
 }
 
@@ -498,8 +513,7 @@ function demoFlightToken(missionId: string, deviceId: string) {
 
 export function PreflightScreen({ missionId }: { missionId?: string }) {
   const mission = useActiveMission(missionId)
-  useI18n(preflightScreenMessages)
-  const t = preflightScreenMessages.vi
+  const { t } = useI18n(preflightScreenMessages)
   const [startError, setStartError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
@@ -581,6 +595,7 @@ export function PreflightScreen({ missionId }: { missionId?: string }) {
         missionStatus={mission.data?.status}
         latitude={mission.data?.latitude ?? undefined}
         longitude={mission.data?.longitude ?? undefined}
+        readySubmitting={starting}
         onReady={() => {
           void handleContinueToHandover()
         }}
@@ -598,6 +613,7 @@ export function PreflightChecklistPanel({
   latitude,
   longitude,
   onReady,
+  readySubmitting = false,
   embedded = false,
 }: {
   missionId: string
@@ -608,11 +624,11 @@ export function PreflightChecklistPanel({
   latitude?: number | null
   longitude?: number | null
   onReady?: () => void
+  readySubmitting?: boolean
   embedded?: boolean
 }) {
-  useI18n(preflightScreenMessages)
-  const t = preflightScreenMessages.vi
-  const PREFLIGHT_GROUPS = useMemo(() => preflightGroups('vi'), [])
+  const { t, lang } = useI18n(preflightScreenMessages)
+  const PREFLIGHT_GROUPS = useMemo(() => preflightGroups(lang), [lang])
   const RUNTIME_GROUPS = useMemo(
     () => PREFLIGHT_GROUPS,
     [PREFLIGHT_GROUPS],
@@ -642,12 +658,6 @@ export function PreflightChecklistPanel({
     weatherFormFromStatus(readStoredWeatherState(weatherStorageKey)),
   )
   const [error, setError] = useState<string | null>(null)
-  const [backendPreflightMessage, setBackendPreflightMessage] = useState<
-    string | null
-  >(null)
-  const [backendPreflightRegistering, setBackendPreflightRegistering] =
-    useState(false)
-  const backendPreflightRegisteredRef = useRef(false)
   const [triggering, setTriggering] = useState(false)
   const [weatherSuggesting, setWeatherSuggesting] = useState(false)
   const [weatherError, setWeatherError] = useState<string | null>(null)
@@ -730,17 +740,14 @@ export function PreflightChecklistPanel({
     persistedPreflightStatus === 'PASSED'
   const progress = runtimeStatus?.progress ?? 0
   const hasTriggered = runtimeStatus !== null || checkId !== null || triggering
+  const needsRecheck =
+    runtimeStatus?.checks.some((item) => item.status === 'STALE') ?? false
   const canContinueToHandover = isReady
   const isAlreadyInFlight = isMissionInFlight(missionStatus)
   const isFailed =
     runtimeStatus?.status === 'FAILED' ||
     persistedPreflightStatus === 'FAILED' ||
     weatherStatus?.safeToFly === false
-
-  useEffect(() => {
-    backendPreflightRegisteredRef.current = false
-    setBackendPreflightMessage(null)
-  }, [missionId, deviceId])
 
   async function syncRuntimeStatusToBackend(
     status: RuntimePreflightStatus,
@@ -793,7 +800,6 @@ export function PreflightChecklistPanel({
     setPersistedWeatherPassed(false)
     syncedPersistedItemsRef.current = {}
     syncingPersistedItemsRef.current = false
-    backendPreflightRegisteredRef.current = false
     window.sessionStorage.removeItem(
       backendPreflightTokenStorageKey(missionId, deviceId),
     )
@@ -1214,9 +1220,7 @@ export function PreflightChecklistPanel({
             setPersistedWeatherPassed(false)
             syncedPersistedItemsRef.current = {}
             syncingPersistedItemsRef.current = false
-            setBackendPreflightMessage(null)
             setWeatherError(null)
-            backendPreflightRegisteredRef.current = false
             validatedStoredCheckRef.current = false
             clearStoredPreflightState(storageKey)
           }
@@ -1230,8 +1234,6 @@ export function PreflightChecklistPanel({
         if (controllerOfflineMissesRef.current >= 3) {
           setRuntimeSessionId(null)
           setCheckId(null)
-          setBackendPreflightMessage(null)
-          backendPreflightRegisteredRef.current = false
         }
       }
     }
@@ -1265,8 +1267,7 @@ export function PreflightChecklistPanel({
             item.status === 'PASSED',
         ),
       )
-      setRuntimeStatus((current) => {
-        if (current?.checkId === persisted.id) return current
+      setRuntimeStatus(() => {
         writeStoredPreflightState(
           storageKey,
           persistedRuntime,
@@ -1433,55 +1434,6 @@ export function PreflightChecklistPanel({
     triggering,
   ])
 
-  useEffect(() => {
-    if (
-      !canContinueToHandover ||
-      isAlreadyInFlight ||
-      backendPreflightRegisteredRef.current ||
-      missionId === NO_MISSION_SENTINEL ||
-      deviceId === NO_DRONE_SENTINEL
-    ) {
-      return
-    }
-
-    backendPreflightRegisteredRef.current = true
-    let alive = true
-
-    async function registerBackendPreflight() {
-      setBackendPreflightRegistering(true)
-      setBackendPreflightMessage(t.switchingToReady)
-      try {
-        if (!alive) return
-        const completedPreflight = await missionApi.runPreflightCheck(
-          missionId,
-          deviceId,
-        )
-        window.sessionStorage.setItem(
-          backendPreflightTokenStorageKey(missionId, deviceId),
-          completedPreflight.flightToken?.tokenValue ??
-            demoFlightToken(missionId, deviceId),
-        )
-        setBackendPreflightMessage(t.backendSwitchedReady)
-      } catch (cause) {
-        if (!alive) return
-        backendPreflightRegisteredRef.current = false
-        setBackendPreflightMessage(
-          cause instanceof Error
-            ? cause.message
-            : t.backendPreflightUnconfirmed,
-        )
-      } finally {
-        if (alive) setBackendPreflightRegistering(false)
-      }
-    }
-
-    void registerBackendPreflight()
-
-    return () => {
-      alive = false
-    }
-  }, [canContinueToHandover, deviceId, isAlreadyInFlight, missionId])
-
   return (
     <div
       className="odm-card"
@@ -1523,6 +1475,7 @@ export function PreflightChecklistPanel({
         }
       />
       <div
+        className="odm-preflight-scroll"
         style={{
           padding: '18px 22px',
           overflow: embedded ? 'auto' : undefined,
@@ -1538,12 +1491,12 @@ export function PreflightChecklistPanel({
             failedItems={failedItems}
             error={error}
             hasTriggered={hasTriggered}
+            needsRecheck={needsRecheck}
             triggering={triggering}
             onTrigger={handleTriggerCheck}
             onReady={onReady}
             missionId={missionId}
-            backendPreflightMessage={backendPreflightMessage}
-            backendPreflightRegistering={backendPreflightRegistering}
+            readySubmitting={readySubmitting}
           />
           <WeatherCheckPanel
             status={weatherStatus}
@@ -1556,13 +1509,14 @@ export function PreflightChecklistPanel({
             onSuggest={handleWeatherSuggestion}
           />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div className="odm-preflight-groups">
             {RUNTIME_GROUPS.map((group) => (
               <div
                 key={group.title}
                 style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
               >
                 <div
+                  className="odm-preflight-group-heading"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -1575,7 +1529,7 @@ export function PreflightChecklistPanel({
                     letterSpacing: '.04em',
                   }}
                 >
-                  <span>{group.title}</span>
+                  <h2>{group.title}</h2>
                   {group.title.startsWith('2.') && (
                     <button
                       type="button"
@@ -1595,13 +1549,7 @@ export function PreflightChecklistPanel({
                     {connectionCheckNotice}
                   </div>
                 )}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                    gap: 10,
-                  }}
-                >
+                <div className="odm-preflight-checklist-grid">
                   {group.items.map((def) => {
                     const state = itemStates[def.key] ?? { result: null }
                     const mediaFallback =
@@ -1671,12 +1619,12 @@ function SummaryBanner({
   failedItems,
   error,
   hasTriggered,
+  needsRecheck,
   triggering,
   onTrigger,
   onReady,
   missionId,
-  backendPreflightMessage,
-  backendPreflightRegistering,
+  readySubmitting,
 }: {
   nOk: number
   nTotal: number
@@ -1686,19 +1634,18 @@ function SummaryBanner({
   failedItems: PreflightItemDef[]
   error: string | null
   hasTriggered: boolean
+  needsRecheck: boolean
   triggering: boolean
   onTrigger: () => void
   onReady?: () => void
   missionId: string
-  backendPreflightMessage?: string | null
-  backendPreflightRegistering?: boolean
+  readySubmitting: boolean
 }) {
-  useI18n(preflightScreenMessages)
-  const t = preflightScreenMessages.vi
+  const { t } = useI18n(preflightScreenMessages)
   const bg = isFailed
     ? 'var(--red-bg)'
     : isReady
-      ? 'var(--green-bg)'
+      ? 'var(--sf)'
       : 'var(--sf)'
   const border = isFailed
     ? 'var(--red-dot)'
@@ -1708,11 +1655,12 @@ function SummaryBanner({
   const fg = isFailed
     ? 'var(--red-fg)'
     : isReady
-      ? 'var(--green-fg)'
+      ? 'var(--tx)'
       : 'var(--tx)'
 
   return (
-    <div
+    <section
+      className={`odm-preflight-summary is-${isFailed ? 'failed' : isReady ? 'ready' : 'pending'}`}
       style={{
         display: 'flex',
         gap: 18,
@@ -1726,23 +1674,16 @@ function SummaryBanner({
     >
       <div style={{ minWidth: 150 }}>
         <div
-          className="odm-mono"
+          className="odm-mono odm-preflight-progress-number"
           style={{ fontSize: 26, fontWeight: 700, lineHeight: 1 }}
         >
           {nOk}/{nTotal}
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 600 }}>{t.itemsPassed}</div>
       </div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1 }} role="status" aria-live="polite" aria-atomic="true">
         {isReady ? (
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{t.passReady}</div>
-            {backendPreflightMessage ? (
-              <div style={{ fontSize: 12.5, marginTop: 4 }}>
-                {backendPreflightMessage}
-              </div>
-            ) : null}
-          </div>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>{t.passReady}</div>
         ) : isFailed ? (
           <div style={{ fontSize: 18, fontWeight: 700 }}>
             {t.failBlocked(failedItems.map((item) => item.label).join(', '))}
@@ -1750,6 +1691,7 @@ function SummaryBanner({
         ) : (
           <div style={{ fontSize: 13.5 }}>
             {error ??
+              (needsRecheck ? t.precheckExpired : null) ??
               (hasTriggered ? t.runningPrecheck(progress) : t.pressTriggerHint)}
           </div>
         )}
@@ -1760,10 +1702,10 @@ function SummaryBanner({
             type="button"
             className="odm-btn odm-btn-ok"
             onClick={onReady}
-            disabled={backendPreflightRegistering}
+            disabled={readySubmitting}
             style={{ minWidth: 220 }}
           >
-            {backendPreflightRegistering
+            {readySubmitting
               ? t.switchingToReady
               : t.continueToHandover}
           </button>
@@ -1786,7 +1728,7 @@ function SummaryBanner({
         >
           {triggering ? t.triggeringAgain : t.triggerAgain}
         </button>
-      ) : !hasTriggered || error ? (
+      ) : !hasTriggered || error || needsRecheck ? (
         <button
           type="button"
           className="odm-btn odm-btn-p"
@@ -1794,7 +1736,11 @@ function SummaryBanner({
           disabled={triggering}
           style={{ minWidth: 220 }}
         >
-          {triggering ? t.triggeringAgain : t.triggerPrecheck}
+          {triggering
+            ? t.triggeringAgain
+            : needsRecheck
+              ? t.triggerAgain
+              : t.triggerPrecheck}
         </button>
       ) : (
         <button
@@ -1806,7 +1752,7 @@ function SummaryBanner({
           {t.continueToHandover}
         </button>
       )}
-    </div>
+    </section>
   )
 }
 
@@ -1829,8 +1775,7 @@ function WeatherCheckPanel({
   onFormChange: (form: WeatherObservationForm) => void
   onSuggest: () => void
 }) {
-  useI18n(preflightScreenMessages)
-  const t = preflightScreenMessages.vi
+  const { t } = useI18n(preflightScreenMessages)
   const failed = status?.status === 'FAIL'
   const warned = status?.status === 'WARN'
   const passed = status?.status === 'PASS'
@@ -1842,7 +1787,7 @@ function WeatherCheckPanel({
     : warned
       ? '#fff7ed'
       : passed
-        ? 'var(--green-bg)'
+        ? 'var(--sf)'
         : 'var(--sf)'
   const border = failed
     ? 'var(--red-dot)'
@@ -1856,11 +1801,12 @@ function WeatherCheckPanel({
     : warned
       ? '#92400e'
       : passed
-        ? 'var(--green-fg)'
+        ? 'var(--tx)'
         : 'var(--tx)'
 
   return (
-    <div
+    <section
+      className={`odm-preflight-weather is-${failed ? 'failed' : warned ? 'warning' : passed ? 'passed' : 'idle'}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -1881,7 +1827,7 @@ function WeatherCheckPanel({
             flexWrap: 'wrap',
           }}
         >
-          <strong style={{ fontSize: 14.5 }}>{t.weatherTitle}</strong>
+          <h2 className="odm-preflight-weather-title">{t.weatherTitle}</h2>
           <span
             style={{
               height: 24,
@@ -1901,7 +1847,7 @@ function WeatherCheckPanel({
               fontWeight: 800,
             }}
           >
-            {status ? status.status : t.weatherNotChecked}
+            {status ? weatherStatusLabel(status.status, t) : t.weatherNotChecked}
           </span>
           {status && (
             <span style={{ fontSize: 12, color: 'inherit' }}>
@@ -1915,13 +1861,14 @@ function WeatherCheckPanel({
           )}
         </div>
         <div
+          className="odm-preflight-weather-message"
+          role={error || failed ? 'alert' : 'status'}
+          aria-live={error || failed ? 'assertive' : 'polite'}
+          aria-atomic="true"
           style={{
             marginTop: 4,
             fontSize: 12,
             color: error ? 'var(--red-fg)' : 'var(--tx2)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
           }}
           title={error ?? status?.advisories.join(' ') ?? undefined}
         >
@@ -1962,70 +1909,85 @@ function WeatherCheckPanel({
           </button>
         </div>
       </div>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: 10,
-        }}
-      >
+      <div className="odm-preflight-weather-grid">
         <WeatherField
+          name="weatherSource"
           label={t.weatherSource}
           value={form.source}
           placeholder={t.weatherSourcePlaceholder}
           onChange={(value) => setField('source', value)}
-          style={{ gridColumn: 'span 2' }}
+          span={2}
         />
         <WeatherField
+          name="weatherObservedAt"
           label={t.weatherObservedAt}
           type="datetime-local"
           value={form.observedAt}
           onChange={(value) => setField('observedAt', value)}
-          style={{ gridColumn: 'span 2' }}
+          span={2}
         />
         <WeatherField
+          name="windSpeedMps"
           label={t.weatherWind}
+          type="number"
+          inputMode="decimal"
           value={form.windSpeedMps}
           placeholder="0.0"
           suffix="m/s"
           onChange={(value) => setField('windSpeedMps', value)}
         />
         <WeatherField
+          name="windGustMps"
           label={t.weatherGust}
+          type="number"
+          inputMode="decimal"
           value={form.windGustMps}
           placeholder="0.0"
           suffix="m/s"
           onChange={(value) => setField('windGustMps', value)}
         />
         <WeatherField
+          name="precipitationMmH"
           label={t.weatherRain}
+          type="number"
+          inputMode="decimal"
           value={form.precipitationMmH}
           placeholder="0.0"
           suffix="mm/h"
           onChange={(value) => setField('precipitationMmH', value)}
         />
         <WeatherField
+          name="visibilityKm"
           label={t.weatherVisibility}
+          type="number"
+          inputMode="decimal"
           value={form.visibilityKm}
           placeholder="0.0"
           suffix="km"
           onChange={(value) => setField('visibilityKm', value)}
         />
         <WeatherField
+          name="temperatureC"
           label={t.weatherTemperature}
+          type="number"
+          inputMode="decimal"
           value={form.temperatureC}
           placeholder="0.0"
           suffix="°C"
           onChange={(value) => setField('temperatureC', value)}
         />
         <WeatherField
+          name="humidityPercent"
           label={t.weatherHumidity}
+          type="number"
+          inputMode="decimal"
           value={form.humidityPercent}
           placeholder="0"
           suffix="%"
           onChange={(value) => setField('humidityPercent', value)}
         />
         <label
+          className="odm-preflight-weather-field is-span-2"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -2038,6 +2000,8 @@ function WeatherCheckPanel({
         >
           {t.weatherDecision}
           <select
+            name="weatherDecision"
+            autoComplete="off"
             value={form.decision}
             onChange={(event) =>
               onFormChange({
@@ -2061,36 +2025,51 @@ function WeatherCheckPanel({
           </select>
         </label>
         <WeatherField
+          name="weatherNotes"
           label={t.weatherNotes}
           value={form.notes}
           placeholder={t.weatherNotesPlaceholder}
           onChange={(value) => setField('notes', value)}
-          style={{ gridColumn: 'span 4' }}
+          span={4}
         />
       </div>
-    </div>
+    </section>
   )
 }
 
+function weatherStatusLabel(
+  status: WeatherCheckStatus,
+  t: typeof preflightScreenMessages.vi,
+) {
+  if (status === 'PASS') return t.itemPass
+  if (status === 'WARN') return t.statusWarnNoBlock
+  return t.itemFail
+}
+
 function WeatherField({
+  name,
   label,
   value,
   onChange,
   placeholder,
   suffix,
   type = 'text',
-  style,
+  inputMode,
+  span = 1,
 }: {
+  name: string
   label: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
   suffix?: string
   type?: string
-  style?: CSSProperties
+  inputMode?: 'decimal' | 'numeric'
+  span?: 1 | 2 | 4
 }) {
   return (
     <label
+      className={`odm-preflight-weather-field is-span-${span}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -2099,13 +2078,17 @@ function WeatherField({
         fontSize: 12,
         fontWeight: 700,
         color: 'var(--tx2)',
-        ...style,
       }}
     >
       {label}
       <span style={{ position: 'relative', display: 'block' }}>
         <input
+          className="odm-preflight-weather-input"
+          name={name}
+          autoComplete="off"
           type={type}
+          inputMode={inputMode}
+          step={type === 'number' ? 'any' : undefined}
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
@@ -2170,12 +2153,12 @@ function RuntimePreflightItemRow({
   onBatterySave?: () => void
   batterySaving?: boolean
 }) {
-  useI18n(preflightScreenMessages)
-  const t = preflightScreenMessages.vi
+  const { t, locale } = useI18n(preflightScreenMessages)
   const failed = state.result === 'fail'
   const passed = state.result === 'ok'
   return (
     <div
+      className={`odm-preflight-item${manual ? ' is-manual' : ' is-automatic'}${failed ? ' is-failed' : passed ? ' is-passed' : ''}`}
       style={{
         background: failed ? 'var(--red-bg)' : 'var(--sf)',
         border: `1.5px solid ${
@@ -2186,14 +2169,16 @@ function RuntimePreflightItemRow({
       }}
     >
       <div
+        className="odm-preflight-item-main"
         style={{
           display: 'grid',
-          gridTemplateColumns: '44px minmax(0, 1fr) 210px',
           alignItems: 'center',
           gap: 12,
         }}
       >
         <span
+          aria-hidden="true"
+          className="odm-preflight-item-icon"
           style={{
             width: 40,
             height: 40,
@@ -2223,40 +2208,37 @@ function RuntimePreflightItemRow({
                 ? '◌'
                 : '•'}
         </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="odm-preflight-item-copy" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.2 }}>
             {def.label}
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>
+          <div className="odm-preflight-item-detail">
             {def.detail}
           </div>
-          <div style={{ marginTop: 3, fontSize: 11, color: 'var(--tx3)' }}>
+          <div className="odm-preflight-item-meta">
             {state.measuredValue ? state.measuredValue : ''}
             {state.checkedAt
-              ? ` · ${new Date(state.checkedAt).toLocaleString('vi-VN')}`
+              ? ` · ${new Intl.DateTimeFormat(locale, {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                  hour12: false,
+                }).format(new Date(state.checkedAt))}`
               : ''}
           </div>
           <div
+            className="odm-preflight-item-status"
             style={{
               marginTop: 2,
-              fontSize: 11,
               color: failed ? 'var(--red-fg)' : 'var(--tx3)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
             }}
             title={statusText(t, state.status, state.message)}
           >
             {statusText(t, state.status, state.message)}
           </div>
         </div>
-        <div
-          style={{
-            justifySelf: 'end',
-            display: 'flex',
-            gap: 8,
-          }}
-        >
+        <div className="odm-preflight-item-action">
+          {manual ? (
+            <>
             <button
               type="button"
               className="odm-btn"
@@ -2287,6 +2269,16 @@ function RuntimePreflightItemRow({
             >
               ✕ {t.itemFail}
             </button>
+            </>
+          ) : (
+            <output
+              className={`odm-preflight-readonly-result is-${failed ? 'failed' : passed ? 'passed' : 'pending'}`}
+              aria-label={`${def.label}: ${failed ? t.itemFail : passed ? t.itemPass : statusText(t, state.status, state.message)}`}
+            >
+              <span aria-hidden="true">{failed ? '✕' : passed ? '✓' : '—'}</span>
+              {failed ? t.itemFail : passed ? t.itemPass : statusText(t, state.status, state.message)}
+            </output>
+          )}
         </div>
       </div>
       {onBatteryRecheck && (

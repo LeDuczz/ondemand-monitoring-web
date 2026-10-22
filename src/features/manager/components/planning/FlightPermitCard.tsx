@@ -21,9 +21,13 @@ export function FlightPermitCard({
   const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const hasChanges =
+    note !== (mission.flightPermitNote ?? '') || file !== null
   useEffect(
-    () => setNote(mission.flightPermitNote ?? ''),
-    [mission.flightPermitNote],
+    () => {
+      setNote(mission.flightPermitNote ?? '')
+      setFile(null)
+    }, [mission.id, mission.flightPermitNote],
   )
 
   async function save(nextStatus: FlightPermitStatus) {
@@ -56,10 +60,10 @@ export function FlightPermitCard({
 
   return (
     <section
-      className="odm-or-card"
+      className="odm-or-card odm-flight-permit"
       aria-label={`Giấy phép bay ${mission.missionCode}`}
     >
-      <header className="odm-or-card-head">
+      <header className="odm-or-card-head odm-flight-permit__head">
         <span className="odm-or-card-title">
           Giấy phép bay · {mission.missionCode}
         </span>
@@ -69,24 +73,24 @@ export function FlightPermitCard({
           {labels[status]}
         </span>
       </header>
-      <div className="odm-or-card-body" style={{ display: 'grid', gap: 12 }}>
-        <p className="odm-or-muted" style={{ margin: 0 }}>
+      <div className="odm-or-card-body odm-flight-permit__body">
+        <p className="odm-or-muted odm-flight-permit__intro">
           Mission chỉ được bắt đầu sau khi giấy phép được xác nhận là đã cấp.
         </p>
-        <label>
-          <strong style={{ display: 'block', marginBottom: 6 }}>Ghi chú</strong>
+        <label className="odm-flight-permit__field">
+          <strong>Ghi chú</strong>
           <textarea
+            className="odm-flight-permit__textarea"
             value={note}
             maxLength={1000}
             rows={3}
             disabled={busy}
             onChange={(event) => setNote(event.target.value)}
             placeholder="Ví dụ: Đã gửi thông tin xin phép"
-            style={{ width: '100%', resize: 'vertical' }}
           />
         </label>
-        <div>
-          <strong style={{ display: 'block', marginBottom: 6 }}>
+        <div className="odm-flight-permit__field">
+          <strong>
             File giấy phép (không bắt buộc)
           </strong>
           <input
@@ -98,21 +102,24 @@ export function FlightPermitCard({
             style={{ display: 'none' }}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="odm-flight-permit__dropzone">
             <label
-              className="odm-or-btn-outline"
+              className="odm-flight-permit__file-button"
               htmlFor={`flight-permit-file-${mission.id}`}
               aria-disabled={busy}
             >
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+                <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" />
+              </svg>
               Chọn tệp
             </label>
-            <span className="odm-or-muted">
+            <span className="odm-or-muted odm-flight-permit__file-name" title={file?.name}>
               {file?.name ?? 'Chưa chọn tệp'}
             </span>
           </div>
         </div>
         {mission.flightPermitFileName ? (
-          <div>
+          <div className="odm-flight-permit__current-file">
             File hiện tại:{' '}
             {mission.flightPermitDataUrl ? (
               <a
@@ -126,50 +133,49 @@ export function FlightPermitCard({
             )}
           </div>
         ) : (
-          <div className="odm-or-muted">File giấy phép: Chưa có</div>
+          <div className="odm-or-muted odm-flight-permit__current-file">
+            File giấy phép: Chưa có
+          </div>
         )}
         {error ? (
           <p
             role="alert"
-            style={{ color: 'var(--red-solid, #dc2626)', margin: 0 }}
+            className="odm-flight-permit__error"
           >
             {error}
           </p>
         ) : null}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {status === 'NOT_REQUESTED' ? (
-            <button
-              className="odm-or-btn odm-or-btn-blue"
-              disabled={busy}
-              onClick={() => save('PENDING')}
-            >
-              Bắt đầu chờ giấy phép
-            </button>
-          ) : null}
+        <div className="odm-flight-permit__actions">
           {status !== 'APPROVED' ? (
             <button
-              className="odm-or-btn odm-or-btn-blue"
+              className="odm-or-btn odm-or-btn-blue odm-flight-permit__approve"
               disabled={busy}
               onClick={() => save('APPROVED')}
             >
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
               Xác nhận đã được cấp phép
             </button>
-          ) : (
+          ) : hasChanges ? (
             <button
-              className="odm-or-btn-outline"
+              className="odm-or-btn odm-or-btn-blue odm-flight-permit__save"
               disabled={busy}
               onClick={() => save('APPROVED')}
             >
-              Lưu thông tin giấy phép
+              Lưu thay đổi
             </button>
-          )}
+          ) : null}
           {status !== 'REJECTED' && status !== 'APPROVED' ? (
             <button
-              className="odm-or-btn-outline"
+              className="odm-or-btn-outline odm-flight-permit__reject"
               disabled={busy}
               onClick={() => save('REJECTED')}
             >
-              Ghi nhận bị từ chối
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+              Từ chối
             </button>
           ) : null}
         </div>

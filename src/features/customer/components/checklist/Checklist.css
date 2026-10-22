@@ -239,6 +239,131 @@
   }
 }
 
+/* Compact order checklist: the item header owns one stable grid row while the
+   optional work guidance opens below it at full width. Selection and disclosure
+   are intentionally independent states. */
+.checklist-card.is-compact .checklist-row.is-compact {
+  display: block;
+  min-height: 0;
+  padding: 0;
+}
+
+.checklist-card.is-compact .checklist-row-header {
+  display: grid;
+  grid-template-columns: 20px 28px minmax(180px, 1fr) auto minmax(
+      96px,
+      auto
+    ) 32px auto;
+  grid-template-areas: 'check index summary evidence price edit remove';
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 16px;
+}
+
+.checklist-card.is-compact .checklist-row-header > .checklist-check {
+  grid-area: check;
+}
+
+.checklist-card.is-compact .checklist-row-header > .checklist-index {
+  grid-area: index;
+}
+
+.checklist-card.is-compact .checklist-row-header > .checklist-summary {
+  grid-area: summary;
+}
+
+.checklist-card.is-compact .checklist-row-header > .checklist-evidence-summary {
+  grid-area: evidence;
+  margin-left: 0;
+}
+
+.checklist-card.is-compact .checklist-row-header > .checklist-row-price {
+  grid-area: price;
+}
+
+.checklist-card.is-compact
+  .checklist-row-header
+  > .checklist-icon-btn:not(.is-danger) {
+  grid-area: edit;
+}
+
+.checklist-card.is-compact
+  .checklist-row-header
+  > .checklist-icon-btn.is-danger {
+  grid-area: remove;
+}
+
+.checklist-card.is-compact .checklist-row > .checklist-guidance {
+  width: 100%;
+  padding: 0 16px 14px 76px;
+}
+
+.checklist-card.is-compact .checklist-row > .checklist-guidance .odm-cg {
+  margin-top: 0;
+}
+
+.checklist-card.is-compact .checklist-row > .checklist-guidance .odm-cg-body {
+  max-width: none;
+  margin-top: 10px;
+  padding: 14px 16px;
+}
+
+.checklist-card .checklist-row.is-compact.is-selected {
+  background: color-mix(in srgb, var(--ui-primary-soft) 35%, var(--ui-surface));
+  box-shadow: inset 3px 0 0 var(--ui-primary);
+}
+
+.checklist-card .checklist-row.is-compact.is-removed,
+.checklist-card .checklist-row.is-compact.is-removed:hover {
+  background: var(--ui-surface);
+}
+
+.checklist-card .checklist-row.is-compact.is-removed .checklist-summary {
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+.checklist-card .checklist-row.is-compact.is-removed .checklist-index {
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+}
+
+@media (max-width: 780px) {
+  .checklist-card.is-compact .checklist-row-header {
+    grid-template-columns: 20px 28px minmax(0, 1fr) 32px auto;
+    grid-template-areas:
+      'check index summary edit remove'
+      '. . evidence price price';
+    row-gap: 8px;
+  }
+
+  .checklist-card.is-compact .checklist-row > .checklist-guidance {
+    padding-left: 76px;
+  }
+}
+
+@media (max-width: 520px) {
+  .checklist-card.is-compact .checklist-row-header {
+    grid-template-columns: 20px 28px minmax(0, 1fr) 32px;
+    grid-template-areas:
+      'check index summary edit'
+      '. . evidence price';
+    padding: 12px;
+  }
+
+  .checklist-card.is-compact
+    .checklist-row-header
+    > .checklist-icon-btn.is-danger {
+    grid-area: auto;
+    display: none;
+  }
+
+  .checklist-card.is-compact .checklist-row > .checklist-guidance {
+    padding: 0 12px 12px 60px;
+  }
+}
+
 .checklist-evidence-requirements {
   display: flex;
   flex-wrap: wrap;
@@ -789,5 +914,62 @@
     order: 4;
     flex-basis: 100%;
     padding-left: 40px;
+  }
+}
+
+/* Final scoped overrides for the compact accordion. This block intentionally
+   follows the legacy compatibility rules above so admin checklist styles
+   cannot restore the old side-by-side disclosure layout. */
+.checklist-card.is-compact .checklist-row.is-compact {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: var(--ui-surface);
+}
+
+.checklist-card.is-compact .checklist-row.is-compact.is-selected,
+.checklist-card.is-compact .checklist-row.is-compact.is-selected:hover {
+  background: color-mix(in srgb, var(--ui-primary-soft) 35%, var(--ui-surface));
+  box-shadow: inset 3px 0 0 var(--ui-primary);
+}
+
+.checklist-card.is-compact .checklist-row.is-compact.is-removed,
+.checklist-card.is-compact .checklist-row.is-compact.is-removed:hover {
+  background: var(--ui-surface);
+}
+
+.checklist-card.is-compact
+  .checklist-row.is-compact.is-removed
+  .checklist-summary {
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+.checklist-card.is-compact
+  .checklist-row.is-compact.is-removed
+  .checklist-index {
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+}
+
+.checklist-card.is-compact .checklist-row.is-compact > .checklist-guidance {
+  width: 100%;
+  padding: 0 16px 14px 76px;
+}
+
+@media (max-width: 780px) {
+  .checklist-card.is-compact .checklist-row.is-compact > .checklist-guidance {
+    padding-left: 76px;
+  }
+}
+
+@media (max-width: 520px) {
+  .checklist-card.is-compact .checklist-row-header > .checklist-summary {
+    order: initial;
+    flex-basis: auto;
+  }
+
+  .checklist-card.is-compact .checklist-row.is-compact > .checklist-guidance {
+    padding: 0 12px 12px 60px;
   }
 }

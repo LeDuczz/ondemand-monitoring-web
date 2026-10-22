@@ -24,6 +24,13 @@ export const MISSION_STAGES = [
 ] as const
 export type MissionStage = (typeof MISSION_STAGES)[number]
 
+/**
+ * The Order planning flow ends after the flight permit. Execution and result
+ * review live on the dedicated Mission detail screen, so they must not be
+ * rendered as additional planning steps.
+ */
+export const MISSION_PLANNING_STAGES = MISSION_STAGES.slice(0, 3) as readonly MissionStage[]
+
 /** done = can be reopened read-only; blocked = cannot continue (e.g. after a rejection). */
 export type StageState = 'done' | 'current' | 'waiting' | 'upcoming' | 'blocked'
 

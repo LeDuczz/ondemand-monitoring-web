@@ -308,7 +308,9 @@ describe('Order checklist state and editor', () => {
     render(<Editor />)
     await screen.findByLabelText('Nội dung giám sát 1')
     expect(
-      screen.getByText(/Thay đổi danh sách này có thể làm thay đổi chi phí/),
+      screen.getByText(
+        /Thay đổi danh sách có thể làm thay đổi chi phí dự kiến/,
+      ),
     ).toBeInTheDocument()
     expect(screen.getAllByText(/Mặc định của dịch vụ/)).toHaveLength(2)
     expect(screen.getByLabelText('Nội dung giám sát 1')).toHaveValue('First')

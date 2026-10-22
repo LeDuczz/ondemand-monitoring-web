@@ -252,25 +252,25 @@ describe('Upload media and monitoring workspace', () => {
       screen.getByText(/Upload ảnh cần Pilot hoặc Inspector/),
     ).toBeInTheDocument()
     fireEvent.click(screen.getByText('Chỉnh sửa'))
-    expect(screen.getByLabelText('Trạng thái')).toBeEnabled()
-    expect(screen.getByLabelText('Đánh giá')).toBeDisabled()
+    expect(screen.getByLabelText('Trạng thái thực hiện')).toBeEnabled()
+    expect(screen.queryByLabelText('Đánh giá nghiệm thu')).toBeNull()
     fireEvent.click(screen.getByText('Xem ảnh lớn'))
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce()
   })
-  it('lets the Inspector edit both execution status and assessment', async () => {
+  it('lets only the Inspector edit the acceptance assessment', async () => {
     active.status = 'IN_FLIGHT'
     vi.mocked(missionApi.getPermissions).mockResolvedValue({
       ...permissions,
       canInspectDevice: true,
-      canExecuteMonitoringChecklist: true,
+      canExecuteMonitoringChecklist: false,
       canSubmitMissionResult: false,
     })
 
     render(<UploadMediaScreen missionId="m" />)
 
     fireEvent.click(await screen.findByText('Chỉnh sửa'))
-    expect(screen.getByLabelText('Trạng thái')).toBeEnabled()
-    expect(screen.getByLabelText('Đánh giá')).toBeEnabled()
+    expect(screen.queryByLabelText('Trạng thái thực hiện')).toBeNull()
+    expect(screen.getByLabelText('Đánh giá nghiệm thu')).toBeEnabled()
   })
   it('saves a checklist item directly on upload screen with expectedVersion', async () => {
     active.status = 'COMPLETED'
@@ -293,7 +293,7 @@ describe('Upload media and monitoring workspace', () => {
       })
     render(<UploadMediaScreen missionId="m" />)
     fireEvent.click(await screen.findByText('Chỉnh sửa'))
-    fireEvent.change(screen.getByLabelText('Trạng thái'), {
+    fireEvent.change(screen.getByLabelText('Trạng thái thực hiện'), {
       target: { value: 'COMPLETED' },
     })
     fireEvent.click(screen.getByText('Lưu'))

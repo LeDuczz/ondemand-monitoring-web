@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { MISSION_STAGES, missionProgress } from './workflowModel'
+import {
+  MISSION_PLANNING_STAGES,
+  MISSION_STAGES,
+  missionProgress,
+} from './workflowModel'
 
 describe('Mission workflow', () => {
   it('shows flight permit as step 3 before execution and completion', () => {
@@ -10,6 +14,11 @@ describe('Mission workflow', () => {
       'permit',
       'execute',
       'done',
+    ])
+    expect(MISSION_PLANNING_STAGES).toEqual([
+      'resources',
+      'prepare',
+      'permit',
     ])
     expect(missionProgress('PENDING_APPROVAL').current).toBe('permit')
   })

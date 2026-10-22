@@ -63,7 +63,6 @@ export function RequestInfoPanel({ form, errors, update }: Props) {
             ))}
           </select>
         </FormField>
-        <div className="co-help">{t.flightPurposeHint}</div>
         {form.flightPurpose === 'OTHER' ? (
           <div className="co-conditional-field">
             <FormField

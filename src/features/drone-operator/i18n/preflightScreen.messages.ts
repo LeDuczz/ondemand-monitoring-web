@@ -13,11 +13,13 @@ export const preflightScreenMessages = defineMessages({
     itemsPassed: 'mục đạt',
     passReady: 'ĐẠT · đủ điều kiện xác nhận sẵn sàng bay',
     failBlocked: (items: string) => `CHẶN BAY · Không đạt: ${items}`,
-    runningPrecheck: (progress: number) => `Đang kiểm tra... ${progress}%`,
+    runningPrecheck: (progress: number) => `Đang kiểm tra… ${progress}%`,
     pressTriggerHint: 'Bấm “Bắt đầu kiểm tra” để đánh giá các điều kiện hiện tại.',
-    switchingToReady: 'Đang xác nhận sẵn sàng bay...',
-    continueToHandover: 'Tiếp tục tới bàn giao',
-    triggeringAgain: 'Đang kiểm...',
+    precheckExpired:
+      'Một hoặc nhiều kết quả đã hết hiệu lực. Bấm “Kiểm tra lại” trước khi xác nhận sẵn sàng bay.',
+    switchingToReady: 'Đang xác nhận sẵn sàng bay…',
+    continueToHandover: 'Xác nhận sẵn sàng và chuyển sang bàn giao',
+    triggeringAgain: 'Đang kiểm…',
     triggerAgain: 'Kiểm tra lại',
     triggerPrecheck: 'Bắt đầu kiểm tra',
     weatherTitle: 'Thời tiết bay',
@@ -30,21 +32,21 @@ export const preflightScreenMessages = defineMessages({
     ) =>
       `Gió ${wind} m/s · Giật ${gust} m/s · Mưa ${rain} mm/h · Tầm nhìn ${visibility} km`,
     weatherHint:
-      'Hệ thống có thể lấy thời tiết hiện tại theo tọa độ mission; operator đối chiếu ngoài đời rồi xác nhận biên bản.',
+      'Hệ thống có thể lấy thời tiết hiện tại theo tọa độ nhiệm vụ; người vận hành đối chiếu thực tế rồi xác nhận biên bản.',
     weatherSuggest: 'Lấy thời tiết hiện tại',
-    weatherSuggesting: 'Đang lấy thời tiết...',
-    weatherForecastApplied: 'Đã lấy thời tiết hiện tại theo tọa độ mission',
+    weatherSuggesting: 'Đang lấy thời tiết…',
+    weatherForecastApplied: 'Đã lấy thời tiết hiện tại theo tọa độ nhiệm vụ',
     weatherForecastUnavailable:
-      'Chưa lấy được gợi ý thời tiết theo tọa độ. Operator có thể nhập từ nguồn quan trắc khác.',
+      'Chưa lấy được gợi ý thời tiết theo tọa độ. Người vận hành có thể nhập từ nguồn quan trắc khác.',
     weatherCoordinateHint: (lat: string, lon: string) =>
-      `Tọa độ mission: ${lat}, ${lon}. Dữ liệu hiện tại chỉ hỗ trợ quyết định, không thay thế xác nhận của operator.`,
+      `Tọa độ nhiệm vụ: ${lat}, ${lon}. Dữ liệu hiện tại chỉ hỗ trợ quyết định, không thay thế xác nhận của người vận hành.`,
     weatherNoCoordinates:
-      'Mission chưa có latitude/longitude nên không thể lấy gợi ý tự động.',
-    weatherSaving: 'Đang lưu...',
+      'Nhiệm vụ chưa có tọa độ nên không thể lấy gợi ý tự động.',
+    weatherSaving: 'Đang lưu…',
     weatherUpdate: 'Cập nhật biên bản',
     weatherRecord: 'Ghi nhận thời tiết',
     weatherSource: 'Nguồn kiểm tra',
-    weatherSourcePlaceholder: 'VD: Windy, AccuWeather, trạm khí tượng...',
+    weatherSourcePlaceholder: 'Ví dụ: Windy, AccuWeather, trạm khí tượng…',
     weatherObservedAt: 'Thời điểm xem',
     weatherWind: 'Gió',
     weatherGust: 'Gió giật',
@@ -52,15 +54,15 @@ export const preflightScreenMessages = defineMessages({
     weatherVisibility: 'Tầm nhìn',
     weatherTemperature: 'Nhiệt độ',
     weatherHumidity: 'Độ ẩm',
-    weatherDecision: 'Kết luận của operator',
+    weatherDecision: 'Kết luận của người vận hành',
     weatherDecisionPass: 'An toàn để bay',
     weatherDecisionWarn: 'Cảnh báo, vẫn cho phép bay',
     weatherDecisionFail: 'Không an toàn, chặn bay',
     weatherNotes: 'Ghi chú căn cứ',
     weatherNotesPlaceholder:
-      'VD: trời quang, gió ổn định; đã đối chiếu khu vực bay...',
+      'Ví dụ: trời quang, gió ổn định; đã đối chiếu khu vực bay…',
     weatherManualSafe: 'Thời tiết ngoài đời phù hợp để bay.',
-    weatherManualCaution: 'Có yếu tố cần chú ý, operator xác nhận vẫn bay được.',
+    weatherManualCaution: 'Có yếu tố cần chú ý, người vận hành xác nhận vẫn bay được.',
     weatherManualUnsafe: 'Thời tiết ngoài đời không an toàn để bay.',
     weatherManualMissing:
       'Nhập đầy đủ nguồn kiểm tra, thời điểm và các chỉ số thời tiết trước khi lưu.',
@@ -76,7 +78,7 @@ export const preflightScreenMessages = defineMessages({
       'Không lưu được biên bản thời tiết. Kiểm tra dữ liệu rồi thử lại.',
     precheckConnectionLost:
       'Mất kết nối dịch vụ kiểm tra. Bấm “Kiểm tra lại” để thử lại.',
-    confirmingBackendPrecheck: 'Đang xác nhận kết quả với hệ thống...',
+    confirmingBackendPrecheck: 'Đang xác nhận kết quả với hệ thống…',
     backendSwitchedReady: 'Nhiệm vụ đã được xác nhận sẵn sàng bay.',
     backendPreflightUnconfirmed: 'Hệ thống chưa xác nhận kết quả kiểm tra.',
     statusNoTrigger: 'Chưa thực hiện kiểm tra',
@@ -96,11 +98,13 @@ export const preflightScreenMessages = defineMessages({
     itemsPassed: 'items passed',
     passReady: 'PASS · cleared for takeoff',
     failBlocked: (items: string) => `FAIL · FLIGHT BLOCKED · Failed: ${items}`,
-    runningPrecheck: (progress: number) => `Running precheck... ${progress}%`,
+    runningPrecheck: (progress: number) => `Running precheck… ${progress}%`,
     pressTriggerHint: 'Press "Trigger precheck" to call the device check API.',
-    switchingToReady: 'Switching to READY_TO_FLY...',
+    precheckExpired:
+      'One or more results have expired. Run the precheck again before confirming flight readiness.',
+    switchingToReady: 'Switching to READY_TO_FLY…',
     continueToHandover: 'Continue to handover',
-    triggeringAgain: 'Triggering...',
+    triggeringAgain: 'Triggering…',
     triggerAgain: 'Trigger precheck again',
     triggerPrecheck: 'Trigger precheck',
     weatherTitle: 'Flight weather',
@@ -115,7 +119,7 @@ export const preflightScreenMessages = defineMessages({
     weatherHint:
       'The system can fetch current weather from mission coordinates; the operator cross-checks and confirms the log.',
     weatherSuggest: 'Fetch current weather',
-    weatherSuggesting: 'Fetching weather...',
+    weatherSuggesting: 'Fetching weather…',
     weatherForecastApplied:
       'Current weather loaded from the mission coordinates',
     weatherForecastUnavailable:
@@ -124,11 +128,11 @@ export const preflightScreenMessages = defineMessages({
       `Mission coordinates: ${lat}, ${lon}. This current weather supports the decision and does not replace operator confirmation.`,
     weatherNoCoordinates:
       'This mission has no latitude/longitude, so automatic suggestion is unavailable.',
-    weatherSaving: 'Saving...',
+    weatherSaving: 'Saving…',
     weatherUpdate: 'Update weather log',
     weatherRecord: 'Record weather',
     weatherSource: 'Source checked',
-    weatherSourcePlaceholder: 'Ex: Windy, AccuWeather, weather station...',
+    weatherSourcePlaceholder: 'Ex: Windy, AccuWeather, weather station…',
     weatherObservedAt: 'Observed at',
     weatherWind: 'Wind',
     weatherGust: 'Gust',
@@ -142,7 +146,7 @@ export const preflightScreenMessages = defineMessages({
     weatherDecisionFail: 'Unsafe, block flight',
     weatherNotes: 'Evidence notes',
     weatherNotesPlaceholder:
-      'Ex: clear sky, stable wind; cross-checked near the flight area...',
+      'Ex: clear sky, stable wind; cross-checked near the flight area…',
     weatherManualSafe: 'Real-world weather is suitable for flight.',
     weatherManualCaution:
       'Weather needs attention; operator confirms flight is still allowed.',
@@ -161,7 +165,7 @@ export const preflightScreenMessages = defineMessages({
       'Could not save the weather log. Check the data and try again.',
     precheckConnectionLost:
       'Lost connection to the precheck API. Press "Trigger precheck" to run it again.',
-    confirmingBackendPrecheck: 'Confirming the precheck with the backend...',
+    confirmingBackendPrecheck: 'Confirming the precheck with the backend…',
     backendSwitchedReady: 'The backend switched the mission to READY_TO_FLY.',
     backendPreflightUnconfirmed: 'Could not confirm the backend preflight.',
     statusNoTrigger: 'Precheck not triggered yet',

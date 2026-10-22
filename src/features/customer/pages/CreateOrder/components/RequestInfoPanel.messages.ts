@@ -13,8 +13,6 @@ export const requestInfoPanelMessages = defineMessages({
     descriptionPlaceholder: 'Bối cảnh, lưu ý hoặc yêu cầu bổ sung nếu cần...',
     optionalDetails: 'Ghi chú và tệp đính kèm (không bắt buộc)',
     flightPurposeLabel: 'Mục đích chuyến bay',
-    flightPurposeHint:
-      'Theo Nghị định 288/2025/NĐ-CP, dùng để lập hồ sơ xin phép bay.',
     otherFlightPurposeLabel: 'Mô tả mục đích chuyến bay khác',
     otherFlightPurposePlaceholder: 'Nhập mục đích chuyến bay cụ thể',
     flightPurposes: {
@@ -61,8 +59,6 @@ export const requestInfoPanelMessages = defineMessages({
       'Context, caveats or extra requirements if needed...',
     optionalDetails: 'Notes and attachments (optional)',
     flightPurposeLabel: 'Purpose of the flight',
-    flightPurposeHint:
-      'Per Decree 288/2025/ND-CP; used to prepare the flight-permit application.',
     otherFlightPurposeLabel: 'Describe the other flight purpose',
     otherFlightPurposePlaceholder: 'Enter the specific flight purpose',
     flightPurposes: {

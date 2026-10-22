@@ -55,20 +55,40 @@ const noActions = {
 describe('MissionDetailScreen', () => {
   it('keeps the execution checklist in its own tab', async () => {
     vi.spyOn(operatorApi, 'getMission').mockResolvedValue(mission)
-    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(noActions)
+    vi.spyOn(missionApi, 'getPermissions').mockResolvedValue({
+      ...noActions,
+      canUploadMedia: true,
+    })
 
     render(<MissionDetailScreen missionId="m" />)
 
     const checklistTab = await screen.findByRole('tab', {
-      name: 'Checklist thực hiện',
+      name: 'Kết quả checklist',
     })
     expect(
-      screen.queryByRole('region', { name: 'Monitoring Checklist' }),
+      screen.queryByRole('region', { name: 'Kết quả checklist' }),
     ).not.toBeInTheDocument()
     fireEvent.click(checklistTab)
     expect(
-      await screen.findByRole('region', { name: 'Monitoring Checklist' }),
+      await screen.findByRole('region', { name: 'Kết quả checklist' }),
     ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole('tab', { name: 'Kết quả kiểm tra thiết bị' }),
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Kết quả checklist' }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Tổng quan' }))
+    expect(
+      screen.queryByRole('region', { name: 'Kết quả checklist' }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Ảnh & video' }))
+    expect(
+      screen.queryByRole('region', { name: 'Kết quả checklist' }),
+    ).not.toBeInTheDocument()
   })
 
   it('missing permission response keeps legacy detail readable without granting actions', async () => {
@@ -77,9 +97,7 @@ describe('MissionDetailScreen', () => {
     vi.spyOn(missionApi, 'getPermissions').mockResolvedValue(null as never)
     render(<MissionDetailScreen missionId="m" />)
     expect((await screen.findAllByText('MS-1'))[0]).toBeInTheDocument()
-    fireEvent.click(
-      screen.getByRole('tab', { name: 'Checklist thực hiện' }),
-    )
+    fireEvent.click(screen.getByRole('tab', { name: 'Kết quả checklist' }))
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(
       screen.queryByRole('button', { name: 'Hoàn thành Mission' }),
@@ -208,12 +226,17 @@ describe('MissionDetailScreen', () => {
         ],
       })
       render(<MissionDetailScreen missionId="m" />)
+      fireEvent.click(
+        await screen.findByRole('tab', { name: 'Kết quả checklist' }),
+      )
       await screen.findByText('Monitoring lịch sử')
       if (canExecuteMonitoringChecklist)
         expect(screen.getByText('Cập nhật mục')).toBeInTheDocument()
       else expect(screen.queryByText('Cập nhật mục')).toBeNull()
       if (canCompleteMission) {
-        expect(await screen.findByText('Mở dữ liệu nghiệm thu')).toBeInTheDocument()
+        expect(
+          await screen.findByText('Mở dữ liệu nghiệm thu'),
+        ).toBeInTheDocument()
         expect(screen.queryByText('Xác nhận hoàn thành Mission')).toBeNull()
       }
       expect(
@@ -241,6 +264,9 @@ describe('MissionDetailScreen', () => {
       executions: [],
     })
     render(<MissionDetailScreen missionId="m" />)
+    fireEvent.click(
+      await screen.findByRole('tab', { name: 'Kết quả checklist' }),
+    )
     expect(
       await screen.findByText('Chưa sẵn sàng gửi kết quả'),
     ).toBeInTheDocument()
@@ -268,6 +294,9 @@ describe('MissionDetailScreen', () => {
     }
     vi.mocked(missionApi.getMissionResult).mockResolvedValue(result)
     render(<MissionDetailScreen missionId="m" />)
+    fireEvent.click(
+      await screen.findByRole('tab', { name: 'Kết quả checklist' }),
+    )
     await screen.findByText(
       'Chỉ đọc — kết quả đang chờ duyệt hoặc đã được duyệt.',
     )
@@ -280,9 +309,6 @@ describe('MissionDetailScreen', () => {
       screen.queryByRole('button', { name: 'Gửi kết quả cho Manager' }),
     ).toBeNull()
 
-    fireEvent.click(
-      screen.getByRole('tab', { name: 'Checklist thực hiện' }),
-    )
     fireEvent.click(screen.getByRole('button', { name: /Tải lại/ }))
     await waitFor(() =>
       expect(

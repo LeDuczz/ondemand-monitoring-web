@@ -3,7 +3,7 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const deliverablesCardMessages = defineMessages({
   vi: {
     cardTitle: 'Kết quả bàn giao',
-    cardSubtitle: 'Chọn định dạng kết quả bạn muốn nhận sau khi mission hoàn thành.',
+    cardSubtitle: 'Số lượng được tổng hợp từ nội dung giám sát đã chọn.',
     deliverableType: 'Loại kết quả',
     selectDeliverable: 'Chọn kết quả',
     loading: 'Đang tải kết quả bàn giao...',
@@ -13,8 +13,7 @@ export const deliverablesCardMessages = defineMessages({
     mediaSummary: 'Số lượng media yêu cầu',
     requestedPhotos: 'Số ảnh yêu cầu',
     requestedVideos: 'Số video yêu cầu',
-    mediaFromChecklist:
-      'Số ảnh và video được tính tự động từ các checklist đã chọn ở bước nội dung giám sát. Muốn thay đổi, hãy sửa trong checklist.',
+    mediaFromChecklist: 'Muốn thay đổi số lượng, quay lại bước Nội dung.',
     media: 'Định dạng media',
     photo: 'Ảnh',
     video: 'Video',
@@ -35,7 +34,8 @@ export const deliverablesCardMessages = defineMessages({
   },
   en: {
     cardTitle: 'Deliverables',
-    cardSubtitle: 'Choose the result format you want after the mission is completed.',
+    cardSubtitle:
+      'Quantities are calculated from the selected monitoring content.',
     deliverableType: 'Deliverable type',
     selectDeliverable: 'Select a deliverable',
     loading: 'Loading deliverables...',
@@ -45,8 +45,7 @@ export const deliverablesCardMessages = defineMessages({
     mediaSummary: 'Requested media',
     requestedPhotos: 'Photos requested',
     requestedVideos: 'Videos requested',
-    mediaFromChecklist:
-      'Photo and video counts come from the checklists you selected in the monitoring content step. Edit them there to change them.',
+    mediaFromChecklist: 'To change quantities, return to the Content step.',
     media: 'Media type',
     photo: 'Photo',
     video: 'Video',

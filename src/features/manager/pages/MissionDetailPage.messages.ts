@@ -3,7 +3,10 @@ import { defineMessages } from '../../../shared/i18n'
 export const missionDetailPageMessages = defineMessages({
   vi: {
     tabs: {
-      overview: 'Bản đồ & Media',
+      result: 'Kết quả nhiệm vụ',
+      media: 'Ảnh & video',
+      checklist: 'Kết quả checklist',
+      route: 'Bản đồ đường bay',
       order: 'Thông tin đơn hàng',
       plan: 'Kế hoạch bay',
       checks: 'Kết quả check',
@@ -32,7 +35,14 @@ export const missionDetailPageMessages = defineMessages({
     },
     waypoints: {
       title: 'Danh sách waypoint',
-      columns: { seq: '#', type: 'Loại điểm', x: 'X', y: 'Y', altitude: 'Độ cao', speed: 'Tốc độ' },
+      columns: {
+        seq: '#',
+        type: 'Loại điểm',
+        x: 'X',
+        y: 'Y',
+        altitude: 'Độ cao',
+        speed: 'Tốc độ',
+      },
       empty: 'Chưa có waypoint.',
     },
     back: 'Nhiệm vụ',
@@ -45,7 +55,8 @@ export const missionDetailPageMessages = defineMessages({
     checklistAcceptance: 'Checklist nghiệm thu',
     checklistAccepted: 'Đã nghiệm thu',
     checklistLoading: 'Đang tải checklist',
-    checklistCompliant: (ok: number, total: number) => `${ok}/${total} đạt yêu cầu`,
+    checklistCompliant: (ok: number, total: number) =>
+      `${ok}/${total} đạt yêu cầu`,
     resultCard: 'Kết quả nhiệm vụ & media',
     deliverToCustomer: 'Gửi cho khách hàng',
     deliveringToCustomer: 'Đang gửi...',
@@ -59,7 +70,8 @@ export const missionDetailPageMessages = defineMessages({
     crewDevice: 'Thiết bị',
     crewReserved: 'Đã giữ lịch',
     crewEmpty: 'Nhiệm vụ này chưa có thiết bị hoặc nhân sự được gán.',
-    crewAccepted: (accepted: number, total: number) => `${accepted}/${total} đã nhận`,
+    crewAccepted: (accepted: number, total: number) =>
+      `${accepted}/${total} đã nhận`,
     noPrecheck: 'Chưa có kết quả precheck.',
     noPostcheck: 'Chưa có kết quả postcheck.',
     fields: {
@@ -87,7 +99,10 @@ export const missionDetailPageMessages = defineMessages({
   },
   en: {
     tabs: {
-      overview: 'Map & Media',
+      result: 'Mission result',
+      media: 'Photos & videos',
+      checklist: 'Checklist result',
+      route: 'Flight map',
       order: 'Order information',
       plan: 'Flight plan',
       checks: 'Check results',
@@ -116,7 +131,14 @@ export const missionDetailPageMessages = defineMessages({
     },
     waypoints: {
       title: 'Waypoints',
-      columns: { seq: '#', type: 'Type', x: 'X', y: 'Y', altitude: 'Altitude', speed: 'Speed' },
+      columns: {
+        seq: '#',
+        type: 'Type',
+        x: 'X',
+        y: 'Y',
+        altitude: 'Altitude',
+        speed: 'Speed',
+      },
       empty: 'No waypoints yet.',
     },
     back: 'Missions',
@@ -129,7 +151,8 @@ export const missionDetailPageMessages = defineMessages({
     checklistAcceptance: 'Acceptance checklist',
     checklistAccepted: 'Accepted',
     checklistLoading: 'Loading checklist',
-    checklistCompliant: (ok: number, total: number) => `${ok}/${total} compliant`,
+    checklistCompliant: (ok: number, total: number) =>
+      `${ok}/${total} compliant`,
     resultCard: 'Mission result & media',
     deliverToCustomer: 'Send to customer',
     deliveringToCustomer: 'Sending...',
@@ -143,7 +166,8 @@ export const missionDetailPageMessages = defineMessages({
     crewDevice: 'Device',
     crewReserved: 'Reserved',
     crewEmpty: 'No device or staff assigned to this mission yet.',
-    crewAccepted: (accepted: number, total: number) => `${accepted}/${total} accepted`,
+    crewAccepted: (accepted: number, total: number) =>
+      `${accepted}/${total} accepted`,
     noPrecheck: 'No pre-flight check result yet.',
     noPostcheck: 'No post-flight check result yet.',
     fields: {

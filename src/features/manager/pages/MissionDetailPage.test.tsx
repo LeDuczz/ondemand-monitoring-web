@@ -142,20 +142,18 @@ beforeEach(() => {
 })
 afterEach(() => vi.restoreAllMocks())
 describe('Manager Mission Detail monitoring review', () => {
-  it('opens the media library in place without changing the active route', async () => {
+  it('opens the media section without changing the active route', async () => {
     render(<MissionDetailPage missionId="m" />)
     const link = await screen.findByRole('button', {
       name: 'Xem thư viện media',
     })
-    const library = screen.getByRole('region', { name: 'Thư viện media' })
-    library.scrollIntoView = vi.fn()
     const route = window.location.hash
     fireEvent.click(link)
-    expect(library.scrollIntoView).toHaveBeenCalledWith({
-      behavior: 'smooth',
-      block: 'start',
-    })
-    expect(library).toHaveFocus()
+    expect(screen.getByRole('tab', { name: 'Ảnh & video' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    expect(screen.getByRole('region', { name: 'Thư viện media' })).toBeVisible()
     expect(window.location.hash).toBe(route)
   })
   it('renders per-item historical outcomes read-only', async () => {
@@ -172,8 +170,11 @@ describe('Manager Mission Detail monitoring review', () => {
   it('uses the satellite mission map on result review', async () => {
     render(<MissionDetailPage missionId="m" />)
 
+    fireEvent.click(
+      await screen.findByRole('tab', { name: 'Bản đồ đường bay' }),
+    )
     expect(
-      await screen.findByRole('application', {
+      screen.getByRole('application', {
         name: 'Bản đồ vệ tinh mission',
       }),
     ).toBeInTheDocument()
@@ -191,7 +192,7 @@ describe('Manager Mission Detail monitoring review', () => {
   it('hides the flight plan tab after mission completion', async () => {
     render(<MissionDetailPage missionId="m" />)
 
-    await screen.findByRole('tab', { name: 'Bản đồ & Media' })
+    await screen.findByRole('tab', { name: 'Kết quả nhiệm vụ' })
     expect(screen.queryByRole('tab', { name: 'Kế hoạch bay' })).toBeNull()
     expect(
       screen.getByRole('tab', { name: 'Kết quả check' }),
@@ -200,7 +201,7 @@ describe('Manager Mission Detail monitoring review', () => {
   it('does not show weather on manager mission detail', async () => {
     render(<MissionDetailPage missionId="m" />)
 
-    await screen.findByText('Kết quả nhiệm vụ')
+    await screen.findByRole('heading', { name: 'Kết quả nhiệm vụ' })
     expect(screen.queryByText('Kết quả thời tiết')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('tab', { name: 'Kết quả check' }))
     expect(screen.queryByText('Kết quả thời tiết')).not.toBeInTheDocument()

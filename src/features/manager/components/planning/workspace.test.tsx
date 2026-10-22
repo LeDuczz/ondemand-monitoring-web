@@ -229,19 +229,12 @@ it('fails closed for finalized responses without materialization metadata', asyn
   expect(droneApi.getAvailable).not.toHaveBeenCalled()
   expect(operatorApi.getAvailable).not.toHaveBeenCalled()
 })
-it('keeps completed Missions read-only after plan finalization', async () => {
+it('opens the dedicated result page for a completed Mission', async () => {
   finalized = true
   missions[0].status = 'COMPLETED'
   render(<OrderMissionPlanningSection orderId="o" />)
-  await screen.findByRole('button', { name: /^M1/ })
-  expect(
-    screen.queryByRole('button', { name: 'Lưu tài nguyên' }),
-  ).not.toBeInTheDocument()
-  expect(
-    screen.queryByRole('button', { name: 'Lưu phân công' }),
-  ).not.toBeInTheDocument()
-  expect(missionApi.assignResources).not.toHaveBeenCalled()
-  expect(window.location.hash).toBe('#portal/manager/orders/o')
+  fireEvent.click(await screen.findByRole('button', { name: /^M1/ }))
+  expect(window.location.hash).toBe('#portal/manager/missions/m1/detail')
 })
 async function saveChecklist(id: string, indices: number[]) {
   choose(id)

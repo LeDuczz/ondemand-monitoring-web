@@ -374,14 +374,10 @@ it('all assignments submitted provides an explicit navigation-only finish', asyn
   const close = vi.fn()
   render(<OrderResourceAssignmentWizard orderId="o" onClose={close} />)
   const missionSteps = await screen.findByRole('region', { name: 'Nhiệm vụ' })
-  expect(within(missionSteps).getAllByRole('listitem')).toHaveLength(5)
+  expect(within(missionSteps).getAllByRole('listitem')).toHaveLength(3)
   expect(within(missionSteps).getByText('Giấy phép bay')).toBeInTheDocument()
-  expect(
-    within(missionSteps).getByText('Thực hiện').closest('li'),
-  ).toHaveTextContent('4')
-  expect(
-    within(missionSteps).getByText('Hoàn tất').closest('li'),
-  ).toHaveTextContent('5')
+  expect(within(missionSteps).queryByText('Thực hiện')).not.toBeInTheDocument()
+  expect(within(missionSteps).queryByText('Hoàn tất')).not.toBeInTheDocument()
   fireEvent.click(
     await screen.findByRole('button', { name: 'Hoàn tất phân công' }),
   )

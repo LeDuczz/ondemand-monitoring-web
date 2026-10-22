@@ -46,7 +46,8 @@ import { missionDetailPageMessages } from './MissionDetailPage.messages'
 import { orderReviewPageMessages } from './OrderReviewPage.messages'
 import '../manager.css'
 
-type MissionDetailTab = 'overview' | 'order' | 'checks'
+type MissionDetailTab =
+  'result' | 'media' | 'checklist' | 'route' | 'order' | 'checks'
 const MISSION_DETAIL_POLL_MS = 5_000
 
 export function MissionDetailPage({ missionId }: { missionId: string }) {
@@ -67,10 +68,15 @@ function MissionDetail({ missionId }: { missionId: string }) {
     [missionId, revision],
   )
   const refreshDetail = () => setRevision((value) => value + 1)
-  const [tab, setTab] = useState<MissionDetailTab>('overview')
+  const [tab, setTab] = useState<MissionDetailTab>('result')
   const mediaLibrary = useRef<HTMLElement>(null)
+  const loadedMissionRef = useRef<string | null>(null)
 
   useEffect(() => {
+    const terminal = detail
+      ? ['COMPLETED', 'FAILED', 'CANCELLED'].includes(detail.mission.status)
+      : false
+    if (terminal) return
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') {
         setRevision((value) => value + 1)
@@ -85,11 +91,11 @@ function MissionDetail({ missionId }: { missionId: string }) {
       window.clearInterval(interval)
       window.removeEventListener('focus', refreshWhenVisible)
     }
-  }, [])
+  }, [detail?.mission.status])
 
   useEffect(() => {
     const abort = new AbortController()
-    setLoading(true)
+    if (loadedMissionRef.current !== missionId) setLoading(true)
     setError(null)
     Promise.allSettled([
       missionsApi.getMissionResponse(missionId, abort.signal),
@@ -120,6 +126,7 @@ function MissionDetail({ missionId }: { missionId: string }) {
           ),
           weather: unwrapSettled(weather),
         })
+        loadedMissionRef.current = missionId
         ordersApi
           .getOrder(fullMission.orderId, abort.signal)
           .then((order) => {
@@ -307,7 +314,10 @@ function MissionDetail({ missionId }: { missionId: string }) {
   ).length
   const activeTab: MissionDetailTab = tab
   const tabs: Array<{ id: MissionDetailTab; label: string }> = [
-    { id: 'overview', label: t.tabs.overview },
+    { id: 'result', label: t.tabs.result },
+    { id: 'media', label: t.tabs.media },
+    { id: 'checklist', label: t.tabs.checklist },
+    { id: 'route', label: t.tabs.route },
     { id: 'order', label: t.tabs.order },
     { id: 'checks', label: t.tabs.checks },
   ]
@@ -402,39 +412,42 @@ function MissionDetail({ missionId }: { missionId: string }) {
             ))}
           </div>
 
-          {activeTab === 'overview' ? (
-            <>
+          {(
+            ['result', 'media', 'checklist', 'route'] as MissionDetailTab[]
+          ).includes(activeTab) ? (
+            <div className={`odm-md-sections is-${activeTab}`}>
               {isCompleted ? (
                 <>
-                  <MissionResultReviewCard
-                    mission={mission}
-                    result={detail.result}
-                    checklist={checklist.data}
-                    checklistLoading={checklist.loading}
-                    checklistFailed={!!checklist.error}
-                    refreshing={loading}
-                    mediaCount={detail.media.length}
-                    locale={locale}
-                    onReviewed={refreshDetail}
-                    onViewMedia={() => {
-                      mediaLibrary.current?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start',
-                      })
-                      mediaLibrary.current?.focus({ preventScroll: true })
-                    }}
-                  />
-
-                  {isCompleted && resultApproved ? (
-                    <ManagerDeliveryPanel
-                      orderId={mission.orderId}
-                      refreshKey={revision}
+                  <div
+                    className="odm-md-panel is-result"
+                    hidden={activeTab !== 'result'}
+                  >
+                    <MissionResultReviewCard
+                      mission={mission}
+                      result={detail.result}
+                      checklist={checklist.data}
+                      checklistLoading={checklist.loading}
+                      checklistFailed={!!checklist.error}
+                      refreshing={loading}
+                      mediaCount={detail.media.length}
+                      locale={locale}
+                      onReviewed={refreshDetail}
+                      onViewMedia={() => setTab('media')}
                     />
-                  ) : null}
+
+                    {resultApproved ? (
+                      <ManagerDeliveryPanel
+                        orderId={mission.orderId}
+                        refreshKey={revision}
+                      />
+                    ) : null}
+                  </div>
 
                   <section
                     ref={mediaLibrary}
                     tabIndex={-1}
+                    className="odm-md-panel is-media"
+                    hidden={activeTab !== 'media'}
                     aria-label="Thư viện media"
                   >
                     <MissionUploadedMedia
@@ -445,7 +458,11 @@ function MissionDetail({ missionId }: { missionId: string }) {
                     />
                   </section>
                   {isCompleted && resultApproved ? (
-                    <details className="odm-or-card odm-md-collapse">
+                    <details
+                      className="odm-or-card odm-md-collapse odm-md-panel is-checklist"
+                      hidden={activeTab !== 'checklist'}
+                      open
+                    >
                       <summary>
                         <span className="odm-md-collapse-title">
                           {t.checklistAcceptance}
@@ -487,31 +504,39 @@ function MissionDetail({ missionId }: { missionId: string }) {
                       />
                     </details>
                   ) : (
-                    <MonitoringChecklistSection
-                      hideImplementationHints
-                      missionId={mission.id}
-                      data={
-                        checklist.data?.missionId === missionId
-                          ? checklist.data
-                          : undefined
-                      }
-                      loading={checklist.loading}
-                      error={
-                        checklist.error
-                          ? new Error(
-                              'Không thể tải checklist của Mission này. Vui lòng thử lại.',
-                            )
-                          : undefined
-                      }
-                      resultStatus={detail.result?.approvalStatus}
-                      resultNote={detail.result?.reviewNote}
-                      refresh={() => {
-                        checklist.reload()
-                        refreshDetail()
-                      }}
-                    />
+                    <div
+                      className="odm-md-panel is-checklist"
+                      hidden={activeTab !== 'checklist'}
+                    >
+                      <MonitoringChecklistSection
+                        hideImplementationHints
+                        missionId={mission.id}
+                        data={
+                          checklist.data?.missionId === missionId
+                            ? checklist.data
+                            : undefined
+                        }
+                        loading={checklist.loading}
+                        error={
+                          checklist.error
+                            ? new Error(
+                                'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+                              )
+                            : undefined
+                        }
+                        resultStatus={detail.result?.approvalStatus}
+                        resultNote={detail.result?.reviewNote}
+                        refresh={() => {
+                          checklist.reload()
+                          refreshDetail()
+                        }}
+                      />
+                    </div>
                   )}
-                  <section className="odm-or-card odm-rm-card">
+                  <section
+                    className="odm-or-card odm-rm-card odm-md-panel is-route"
+                    hidden={activeTab !== 'route'}
+                  >
                     <div className="odm-rm-stage">
                       <MissionSatelliteMap
                         missionId={mission.id}
@@ -579,7 +604,10 @@ function MissionDetail({ missionId }: { missionId: string }) {
                 </>
               ) : (
                 <>
-                  <section className="odm-or-card odm-rm-card">
+                  <section
+                    className="odm-or-card odm-rm-card odm-md-panel is-route"
+                    hidden={activeTab !== 'route'}
+                  >
                     <div className="odm-rm-stage">
                       <MissionSatelliteMap
                         missionId={mission.id}
@@ -645,24 +673,23 @@ function MissionDetail({ missionId }: { missionId: string }) {
                     </div>
                   </section>
 
-                  <MissionResultReviewCard
-                    mission={mission}
-                    result={detail.result}
-                    checklist={checklist.data}
-                    checklistLoading={checklist.loading}
-                    checklistFailed={!!checklist.error}
-                    refreshing={loading}
-                    mediaCount={detail.media.length}
-                    locale={locale}
-                    onReviewed={refreshDetail}
-                    onViewMedia={() => {
-                      mediaLibrary.current?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start',
-                      })
-                      mediaLibrary.current?.focus({ preventScroll: true })
-                    }}
-                  />
+                  <div
+                    className="odm-md-panel is-result"
+                    hidden={activeTab !== 'result'}
+                  >
+                    <MissionResultReviewCard
+                      mission={mission}
+                      result={detail.result}
+                      checklist={checklist.data}
+                      checklistLoading={checklist.loading}
+                      checklistFailed={!!checklist.error}
+                      refreshing={loading}
+                      mediaCount={detail.media.length}
+                      locale={locale}
+                      onReviewed={refreshDetail}
+                      onViewMedia={() => setTab('media')}
+                    />
+                  </div>
 
                   {isCompleted && resultApproved ? (
                     <ManagerDeliveryPanel
@@ -671,32 +698,39 @@ function MissionDetail({ missionId }: { missionId: string }) {
                     />
                   ) : null}
 
-                  <MonitoringChecklistSection
-                    hideImplementationHints
-                    missionId={mission.id}
-                    data={
-                      checklist.data?.missionId === missionId
-                        ? checklist.data
-                        : undefined
-                    }
-                    loading={checklist.loading}
-                    error={
-                      checklist.error
-                        ? new Error(
-                            'Không thể tải checklist của Mission này. Vui lòng thử lại.',
-                          )
-                        : undefined
-                    }
-                    resultStatus={detail.result?.approvalStatus}
-                    resultNote={detail.result?.reviewNote}
-                    refresh={() => {
-                      checklist.reload()
-                      refreshDetail()
-                    }}
-                  />
+                  <div
+                    className="odm-md-panel is-checklist"
+                    hidden={activeTab !== 'checklist'}
+                  >
+                    <MonitoringChecklistSection
+                      hideImplementationHints
+                      missionId={mission.id}
+                      data={
+                        checklist.data?.missionId === missionId
+                          ? checklist.data
+                          : undefined
+                      }
+                      loading={checklist.loading}
+                      error={
+                        checklist.error
+                          ? new Error(
+                              'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+                            )
+                          : undefined
+                      }
+                      resultStatus={detail.result?.approvalStatus}
+                      resultNote={detail.result?.reviewNote}
+                      refresh={() => {
+                        checklist.reload()
+                        refreshDetail()
+                      }}
+                    />
+                  </div>
                   <section
                     ref={mediaLibrary}
                     tabIndex={-1}
+                    className="odm-md-panel is-media"
+                    hidden={activeTab !== 'media'}
                     aria-label="Thư viện media"
                   >
                     <MissionUploadedMedia
@@ -708,7 +742,7 @@ function MissionDetail({ missionId }: { missionId: string }) {
                   </section>
                 </>
               )}
-            </>
+            </div>
           ) : null}
 
           {activeTab === 'order' ? (

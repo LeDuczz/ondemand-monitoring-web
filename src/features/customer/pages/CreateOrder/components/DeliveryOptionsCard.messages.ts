@@ -3,10 +3,9 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const deliveryOptionsCardMessages = defineMessages({
   vi: {
     cardTitle: 'Nhận kết quả & cam kết',
-    cardSubtitle: 'Chọn định dạng, cách nhận kết quả và xác nhận điều khoản trước khi gửi.',
+    cardSubtitle: 'Chọn cách nhận kết quả và xác nhận trước khi gửi.',
     formatsLabel: 'Định dạng kết quả',
-    formatsHint:
-      'Ảnh và Video được chọn tự động theo số ảnh/video trong checklist. Bạn chỉ cần chọn thêm Báo cáo PDF nếu muốn.',
+    formatsHint: 'Ảnh và video lấy từ checklist; Báo cáo PDF là tùy chọn.',
     formats: {
       PHOTO: 'Ảnh',
       VIDEO: 'Video',
@@ -18,15 +17,15 @@ export const deliveryOptionsCardMessages = defineMessages({
       EMAIL: 'Email',
     },
     retentionLabel: 'Thời hạn lưu trữ dữ liệu',
-    retentionHint: 'Tính từ khi bàn giao kết quả.',
+    retentionHint: 'Tính từ ngày bàn giao.',
     days: (n: number) => `${n} ngày`,
     termsHeading: 'Điều khoản và cam kết bảo mật',
     termsRequired: 'Bắt buộc',
     termsLabel:
       'Tôi xác nhận mục đích giám sát và đồng ý với chính sách xử lý dữ liệu.',
     termsPrivacyNotice:
-      'Hình ảnh phát hiện có người sẽ tự động bị loại bỏ khỏi kết quả nhiệm vụ.',
-    commitmentsToggle: 'Xem nội dung cam kết',
+      'ODMS xử lý hình ảnh có người để bảo vệ quyền riêng tư.',
+    commitmentsToggle: 'Xem chi tiết điều khoản',
     commitmentUse:
       'Dữ liệu giám sát chỉ được sử dụng để thực hiện và bàn giao dịch vụ theo yêu cầu đã thống nhất.',
     commitmentRetention:
@@ -40,10 +39,11 @@ export const deliveryOptionsCardMessages = defineMessages({
   },
   en: {
     cardTitle: 'Result delivery & commitments',
-    cardSubtitle: 'Choose the formats, how you receive the result, and accept the terms before submitting.',
+    cardSubtitle:
+      'Choose how to receive the result and confirm before submitting.',
     formatsLabel: 'Result formats',
     formatsHint:
-      'Photo and Video follow the photo/video counts in your checklists. You only choose whether to add a PDF report.',
+      'Photos and video follow the checklist; the PDF report is optional.',
     formats: {
       PHOTO: 'Photos',
       VIDEO: 'Video',
@@ -55,15 +55,15 @@ export const deliveryOptionsCardMessages = defineMessages({
       EMAIL: 'Email',
     },
     retentionLabel: 'Data retention period',
-    retentionHint: 'Counted from the day the result is handed over.',
+    retentionHint: 'Counted from the delivery date.',
     days: (n: number) => `${n} days`,
     termsHeading: 'Terms and security commitment',
     termsRequired: 'Required',
     termsLabel:
       'I confirm the monitoring purpose and agree to the data processing policy.',
     termsPrivacyNotice:
-      'Images containing people will be automatically excluded from the mission results.',
-    commitmentsToggle: 'View the commitment',
+      'ODMS processes images containing people to protect privacy.',
+    commitmentsToggle: 'View detailed terms',
     commitmentUse:
       'Monitoring data is used only to perform and deliver the service in accordance with the agreed request.',
     commitmentRetention:

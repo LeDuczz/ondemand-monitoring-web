@@ -16,12 +16,12 @@ import { CreateMissionPage } from '../../pages/CreateMissionPage'
 import './planning.css'
 import { useI18n } from '../../../../shared/i18n'
 import { planningPresentationMessages } from './planningPresentation.messages'
-import { MissionExecutionPanel } from './MissionExecutionPanel'
 import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { usePlanningConfirmation } from './usePlanningConfirmation'
 import { finalizeError } from '../../lib/planningErrors'
 import { ApiError } from '../../../../shared/api/httpClient'
 import { financeApi } from '../../../finance/api'
+import { managerHref } from '../../routes'
 
 /** What the page header needs to draw the Order/Mission workflow honestly. */
 export type PlanningWorkflowInfo = {
@@ -170,6 +170,25 @@ function OrderPlanningWorkspace({
     )
   }, [data])
   const selected = selectedId ?? undefined
+  const selectMission = useCallback(
+    (missionId: string) => {
+      const mission = data?.missions.find((item) => item.id === missionId)
+      if (
+        mission &&
+        ['IN_FLIGHT', 'IN_PROGRESS', 'RETURNING', 'POSTFLIGHT_CHECKING', 'PENDING_REVIEW', 'COMPLETED'].includes(
+          mission.status,
+        )
+      ) {
+        window.location.hash = managerHref({
+          screen: 'missionDetail',
+          missionId,
+        })
+        return
+      }
+      setSelectedId(missionId)
+    },
+    [data?.missions],
+  )
   const effective =
     data?.missions.filter((mission) => mission.status !== 'CANCELLED') ?? []
   const depositPaid = Boolean(
@@ -602,7 +621,7 @@ function OrderPlanningWorkspace({
               noChecklist={!data.order.checklistItems?.length}
               disabled={busy || saving}
               drafts={drafts}
-              onSelect={setSelectedId}
+              onSelect={selectMission}
             />
             <div className="odm-workspace-panels">
               {data.missions.map((mission) => {
@@ -730,13 +749,6 @@ function OrderPlanningWorkspace({
                           setCreating({ replacesMissionId: id })
                         }
                       />
-                      {mission.id === selected &&
-                        scope?.finalizedPlanRevision != null && (
-                          <MissionExecutionPanel
-                            key={mission.id}
-                            mission={mission}
-                          />
-                        )}
                     </MissionPlanningCard>
                   </div>
                 )

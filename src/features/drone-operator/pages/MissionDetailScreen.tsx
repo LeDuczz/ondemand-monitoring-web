@@ -108,7 +108,10 @@ function missionProgressBadge(status?: string | null) {
     return { tone: 'blue' as const, label: 'Quy trình: đã kết nối GCS' }
   }
   if (status === 'PREFLIGHT_CHECKING') {
-    return { tone: 'blue' as const, label: 'Quy trình: đang kiểm tra trước bay' }
+    return {
+      tone: 'blue' as const,
+      label: 'Quy trình: đang kiểm tra trước bay',
+    }
   }
   if (status === 'READY_TO_FLY') {
     return { tone: 'green' as const, label: 'Quy trình: sẵn sàng bàn giao' }
@@ -865,9 +868,7 @@ function MissionDetailContent({ missionId }: { missionId: string }) {
             canExecute={
               monitoring.data?.permissions.canExecuteMonitoringChecklist
             }
-            canAssess={
-              monitoring.data?.permissions.canInspectDevice === true
-            }
+            canAssess={monitoring.data?.permissions.canInspectDevice === true}
             canAttach={monitoring.data?.permissions.canAttachChecklistEvidence}
             canDetach={monitoring.data?.permissions.canDetachChecklistEvidence}
             resultStatus={resultApprovalStatus}
@@ -966,9 +967,9 @@ function MissionDashboard({
     )
   const [postflightStatus, setPostflightStatus] =
     useState<PostflightCheckStatus | null>(null)
-  const [tab, setTab] = useState<
-    'overview' | 'checklist' | 'checks' | 'media'
-  >('overview')
+  const [tab, setTab] = useState<'overview' | 'checklist' | 'checks' | 'media'>(
+    'overview',
+  )
   const canViewMissionMedia =
     access?.canInspectDevice === true ||
     access?.canUploadMedia === true ||
@@ -979,7 +980,7 @@ function MissionDashboard({
     label: string
   }> = [
     { id: 'overview', label: 'Tổng quan' },
-    { id: 'checklist', label: 'Checklist thực hiện' },
+    { id: 'checklist', label: 'Kết quả checklist' },
     { id: 'checks', label: 'Kết quả kiểm tra thiết bị' },
     ...(canViewMissionMedia
       ? [{ id: 'media' as const, label: 'Ảnh & video' }]
@@ -1089,7 +1090,7 @@ function MissionDashboard({
         </div>
         <details className="odm-card mds-pending-checklist">
           <summary>
-            Checklist thực hiện
+            Kết quả checklist
             <small>
               🔒 Checklist sẽ được mở sau khi bạn chấp nhận nhiệm vụ. Bấm để xem
               trước.
@@ -1158,12 +1159,11 @@ function MissionDashboard({
         </div>
       ) : null}
 
-      <div
-        className="mds-tab-grid mds-tab-grid--single"
-        hidden={tab !== 'checklist'}
-      >
-        <div className="mds-col">{monitoringSection}</div>
-      </div>
+      {tab === 'checklist' ? (
+        <div className="mds-tab-grid mds-tab-grid--single">
+          <div className="mds-col">{monitoringSection}</div>
+        </div>
+      ) : null}
 
       {tab === 'checks' ? (
         <div className="mds-tab-grid">

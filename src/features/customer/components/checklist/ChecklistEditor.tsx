@@ -235,94 +235,98 @@ export function ChecklistEditor({
     if (!expanded) {
       return (
         <div
-          className={`checklist-row is-compact${row.selected ? '' : ' is-removed'}`}
+          className={`checklist-row is-compact${row.selected ? ' is-selected' : ' is-removed'}`}
           key={row.key}
         >
-          {checkbox}
-          <span className="checklist-index">
-            {String(index + 1).padStart(2, '0')}
-          </span>
-          <span
-            className="checklist-summary"
-            title={row.content}
-            onClick={() => {
-              // Click-to-edit, but never while the user is selecting text.
-              if (row.selected && !window.getSelection()?.toString())
-                setEditingKey(row.key)
-            }}
-          >
-            {row.content || t.emptyContent}
-            {!row.sourceChecklistId && (
-              <span className="checklist-custom-tag">{t.custom}</span>
-            )}
-            {awaitingManagerQuote(row) && (
-              <>
-                <span className="checklist-custom-tag is-pending-quote">
-                  Dịch vụ theo yêu cầu
+          <div className="checklist-row-header">
+            {checkbox}
+            <span className="checklist-index">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span
+              className="checklist-summary"
+              title={row.content}
+              onClick={() => {
+                // Click-to-edit, but never while the user is selecting text.
+                if (row.selected && !window.getSelection()?.toString())
+                  setEditingKey(row.key)
+              }}
+            >
+              {row.content || t.emptyContent}
+              {!row.sourceChecklistId && (
+                <span className="checklist-custom-tag">{t.custom}</span>
+              )}
+              {awaitingManagerQuote(row) && (
+                <>
+                  <span className="checklist-custom-tag is-pending-quote">
+                    Dịch vụ theo yêu cầu
+                  </span>
+                  <small className="checklist-hint">
+                    Giá của dịch vụ này sẽ được xem xét và báo giá sau khi
+                    Manager duyệt yêu cầu.
+                  </small>
+                </>
+              )}
+            </span>
+            <span className="checklist-evidence-summary">
+              {row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
+                ? t.imageAndVideoSummary(
+                    row.requestedImageCount,
+                    row.requestedVideoCount,
+                  )
+                : `${singleEvidenceCount(row)} · ${
+                    row.requiredEvidenceType === 'VIDEO' ? t.video : t.image
+                  }`}
+            </span>
+            {(() => {
+              const priced = row.selected ? priceOf(row) : undefined
+              return priced && !priced.quotePending ? (
+                <span
+                  className="checklist-row-price"
+                  title={
+                    (checklist.quote.preview?.occurrences ?? 1) > 1
+                      ? t.rowPriceVisits(
+                          checklist.quote.preview?.occurrences ?? 1,
+                        )
+                      : undefined
+                  }
+                >
+                  {formatVnd(priced.subtotal)}
                 </span>
-                <small className="checklist-hint">
-                  Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager
-                  duyệt yêu cầu.
-                </small>
-              </>
+              ) : (
+                <span className="checklist-row-price" aria-hidden="true" />
+              )
+            })()}
+            <span className="checklist-length checklist-length-with-evidence">
+              {row.content.length} / 500
+            </span>
+            <button
+              type="button"
+              className="checklist-icon-btn"
+              aria-label={t.editRow(index + 1)}
+              title={t.edit}
+              disabled={!row.selected}
+              onClick={() => setEditingKey(row.key)}
+            >
+              <Icon name="edit" width={16} height={16} aria-hidden="true" />
+            </button>
+            {!row.sourceChecklistId && (
+              <button
+                type="button"
+                className="checklist-icon-btn is-danger"
+                aria-label={`${t.remove} ${index + 1}`}
+                title={t.remove}
+                onClick={() => checklist.remove(row.key)}
+              >
+                <Icon name="trash" width={16} height={16} aria-hidden="true" />
+              </button>
             )}
-          </span>
+          </div>
           {row.sourceChecklistId ? (
             <div className="checklist-guidance">
               <ChecklistGuidance guidance={row} />
             </div>
           ) : null}
-          <span className="checklist-evidence-summary">
-            {row.requiredEvidenceType === 'IMAGE_AND_VIDEO'
-              ? t.imageAndVideoSummary(
-                  row.requestedImageCount,
-                  row.requestedVideoCount,
-                )
-              : `${singleEvidenceCount(row)} · ${
-                  row.requiredEvidenceType === 'VIDEO' ? t.video : t.image
-                }`}
-          </span>
-          {(() => {
-            const priced = row.selected ? priceOf(row) : undefined
-            return priced && !priced.quotePending ? (
-              <span
-                className="checklist-row-price"
-                title={
-                  (checklist.quote.preview?.occurrences ?? 1) > 1
-                    ? t.rowPriceVisits(
-                        checklist.quote.preview?.occurrences ?? 1,
-                      )
-                    : undefined
-                }
-              >
-                {formatVnd(priced.subtotal)}
-              </span>
-            ) : null
-          })()}
-          <span className="checklist-length checklist-length-with-evidence">
-            {row.content.length} / 500
-          </span>
-          <button
-            type="button"
-            className="checklist-icon-btn"
-            aria-label={t.editRow(index + 1)}
-            title={t.edit}
-            disabled={!row.selected}
-            onClick={() => setEditingKey(row.key)}
-          >
-            <Icon name="edit" width={16} height={16} aria-hidden="true" />
-          </button>
-          {!row.sourceChecklistId && (
-            <button
-              type="button"
-              className="checklist-icon-btn is-danger"
-              aria-label={`${t.remove} ${index + 1}`}
-              title={t.remove}
-              onClick={() => checklist.remove(row.key)}
-            >
-              <Icon name="trash" width={16} height={16} aria-hidden="true" />
-            </button>
-          )}
         </div>
       )
     }

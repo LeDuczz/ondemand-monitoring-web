@@ -82,8 +82,9 @@ export async function resolveUnsuitable(
     title: string
     body: string
     action?: string
+    tone?: 'warning' | 'danger'
   }) => Promise<boolean>,
-) {
+): Promise<boolean> {
   const needInfo = decision === 'NEED_INFO'
   const accepted = await confirm({
     title: needInfo ? 'Yêu cầu khách đổi khu vực?' : 'Từ chối đơn hàng?',
@@ -91,8 +92,9 @@ export async function resolveUnsuitable(
       ? 'Đơn sẽ được chuyển về cho khách để chọn lại khu vực giám sát. Bạn nên gọi báo trước cho khách.'
       : 'Đơn sẽ bị từ chối và đóng lại. Bạn nên gọi báo cho khách trước khi từ chối.',
     action: needInfo ? 'Yêu cầu đổi khu vực' : 'Từ chối đơn',
+    tone: needInfo ? 'warning' : 'danger',
   })
-  if (!accepted) return
+  if (!accepted) return false
   const reason = [review.reason, review.note].filter(Boolean).join(' — ')
   await ordersApi.submitApproval(order.id, {
     decision,
@@ -100,6 +102,7 @@ export async function resolveUnsuitable(
     ...(needInfo ? { requestedUpdateScope: 'LOCATION' as const } : {}),
   })
   window.location.hash = managerHref({ screen: 'orderQueue' })
+  return true
 }
 
 export function openMinistryMap(zoneCode: string) {

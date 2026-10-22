@@ -4,6 +4,9 @@ import type {
 } from '../../../types/readiness'
 import { useMemo, useState } from 'react'
 import type { FailureAction, SupplementRequest } from '../readinessTypes'
+import { Button, useConfirm } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 const supplementOptions: Record<
   string,
@@ -45,6 +48,8 @@ export function ReadinessBlockingNotice({
     supplements?: SupplementRequest[],
   ) => Promise<void>
 }) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const confirm = useConfirm()
   const [showSupplementForm, setShowSupplementForm] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
   const availableOptions = useMemo(
@@ -82,23 +87,31 @@ export function ReadinessBlockingNotice({
       {failedRequired.length > 0 && editable ? (
         <div className="odm-or-readiness-blocking-actions">
           {availableOptions.length > 0 ? (
-            <button
+            <Button
               type="button"
-              className="odm-btn odm-btn-ok"
+              variant="primary"
               disabled={savingCode === 'decision'}
               onClick={() => setShowSupplementForm(true)}
             >
               Yêu cầu bổ sung
-            </button>
+            </Button>
           ) : null}
-          <button
+          <Button
             type="button"
-            className="odm-btn odm-btn-rd"
+            variant="danger"
             disabled={savingCode === 'decision'}
-            onClick={() => void submitFailedDecision('REJECTED')}
+            onClick={async () => {
+              const ok = await confirm({
+                title: fb.rejectOrderTitle,
+                description: fb.rejectOrderBody,
+                confirmLabel: fb.rejectOrderAction,
+                tone: 'danger',
+              })
+              if (ok) void submitFailedDecision('REJECTED')
+            }}
           >
             Từ chối đơn
-          </button>
+          </Button>
         </div>
       ) : null}
       {showSupplementForm && availableOptions.length > 0 ? (
@@ -126,9 +139,8 @@ export function ReadinessBlockingNotice({
             </div>
           </fieldset>
           <div className="odm-or-supplement-actions">
-            <button
+            <Button
               type="button"
-              className="odm-btn"
               disabled={savingCode === 'decision'}
               onClick={() => {
                 setShowSupplementForm(false)
@@ -136,10 +148,10 @@ export function ReadinessBlockingNotice({
               }}
             >
               Hủy
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="odm-btn odm-btn-p"
+              variant="primary"
               disabled={
                 selectedRequests.length === 0 || savingCode === 'decision'
               }
@@ -148,7 +160,7 @@ export function ReadinessBlockingNotice({
               }
             >
               {savingCode === 'decision' ? 'Đang gửi…' : 'Gửi yêu cầu bổ sung'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

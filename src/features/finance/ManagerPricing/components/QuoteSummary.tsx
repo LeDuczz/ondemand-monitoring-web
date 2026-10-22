@@ -4,6 +4,7 @@ import { MIN_REASON_LENGTH } from '../pricingHelpers'
 import type { Draft } from '../pricingHelpers'
 import type { Dispatch, SetStateAction } from 'react'
 import type { PricingReview } from '../../types'
+import { Button } from '../../../../shared/components/ui'
 
 export function QuoteSummary({
   systemPrice,
@@ -140,9 +141,9 @@ export function QuoteSummary({
           ) : null}
           {!accepted ? (
             <div className="finance-actions">
-              <button
+              <Button
                 id="manager-approve-quote"
-                className="odm-btn odm-btn-p"
+                variant="primary"
                 type="button"
                 disabled={
                   busy ||
@@ -161,7 +162,7 @@ export function QuoteSummary({
                 onClick={() => void approve()}
               >
                 {approved ? 'Đã duyệt thành công' : 'Duyệt báo giá'}
-              </button>
+              </Button>
             </div>
           ) : null}
         </div>

@@ -23,6 +23,9 @@ import {
 import { ReadinessSummary } from './ReadinessSummary'
 import { ReadinessCriterionRow } from './ReadinessCriterionRow'
 import { ReadinessBlockingNotice } from './ReadinessBlockingNotice'
+import { useToast } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 /**
  * Approval criteria for an order. Left: what the system checked on its own.
@@ -42,6 +45,8 @@ export function OrderReadinessCard({
   onDecisionDone?: () => void
   onLocalBlockChange?: (blocked: boolean) => void
 }) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const [drafts, setDrafts] = useState<
     Record<string, { result: Answer; note: string }>
   >({})
@@ -120,6 +125,7 @@ export function OrderReadinessCard({
         delete next[code]
         return next
       })
+      toast.success(fb.readinessSaved)
       query.reload()
     } catch (cause) {
       setSelectedResults((state) => {
@@ -128,11 +134,12 @@ export function OrderReadinessCard({
         else delete next[code]
         return next
       })
-      setError(
+      const failure =
         cause instanceof ApiError || cause instanceof Error
           ? cause.message
-          : 'Không lưu được. Vui lòng thử lại.',
-      )
+          : 'Không lưu được. Vui lòng thử lại.'
+      setError(failure)
+      toast.error(failure)
     } finally {
       setSavingCode(null)
     }
@@ -203,11 +210,13 @@ export function OrderReadinessCard({
         reason: [reason, supplementReason].filter(Boolean).join('. '),
         ...(decision === 'NEED_INFO' ? { requestedUpdateScope } : {}),
       })
+      toast.success(decision === 'REJECTED' ? fb.orderRejected : fb.infoRequested)
       onDecisionDone?.()
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : 'Không gửi được quyết định.',
-      )
+      const failure =
+        cause instanceof Error ? cause.message : 'Không gửi được quyết định.'
+      setError(failure)
+      toast.error(failure)
       setSavingCode(null)
     }
   }

@@ -22,6 +22,7 @@ import { PlanningCreatePanel } from './PlanningCreatePanel'
 import { PlanningAdjustmentForm } from './PlanningAdjustmentForm'
 import { PlanningMissionItem } from './PlanningMissionItem'
 import { managerHref } from '../../../routes'
+import { Button } from '../../../../../shared/components/ui'
 
 /** What the page header needs to draw the Order/Mission workflow honestly. */
 export type PlanningWorkflowInfo = {
@@ -221,14 +222,13 @@ function OrderPlanningWorkspace({
         revision={data?.plan.revision ?? 0}
         loading={query.loading}
         action={
-          <button
+          <Button
             type="button"
-            className="odm-btn"
             disabled={busy || saving || query.loading}
             onClick={query.reload}
           >
             Tải lại kế hoạch
-          </button>
+          </Button>
         }
       />
       {query.loading && <p role="status">Đang tải kế hoạch…</p>}
@@ -259,9 +259,9 @@ function OrderPlanningWorkspace({
           {allAssigned && (
             <div className="odm-planning-complete" role="status">
               <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
-              <a className="odm-btn odm-btn-p" href="#portal/manager/orders">
+              <Button variant="primary" href="#portal/manager/orders">
                 Về danh sách đơn
-              </a>
+              </Button>
             </div>
           )}
           {writable && (

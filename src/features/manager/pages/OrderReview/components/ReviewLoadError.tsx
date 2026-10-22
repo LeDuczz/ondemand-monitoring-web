@@ -2,6 +2,7 @@ import { ReviewBreadcrumbHeader } from './ReviewBreadcrumbHeader'
 import { managerHref } from '../../../routes'
 import { orderReviewPageMessages } from '../OrderReviewPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
+import { Button } from '../../../../../shared/components/ui'
 
 export function ReviewLoadError({
   orderId,
@@ -23,12 +24,12 @@ export function ReviewLoadError({
           <div style={{ color: 'var(--tx3)', maxWidth: 420, lineHeight: 1.5 }}>
             {is409 ? t.error409 : t.errorGeneric}
           </div>
-          <a
-            className="odm-btn odm-btn-p"
+          <Button
+            variant="primary"
             href={managerHref({ screen: 'orderQueue' })}
           >
             {t.backToQueue}
-          </a>
+          </Button>
         </div>
       </div>
     </div>

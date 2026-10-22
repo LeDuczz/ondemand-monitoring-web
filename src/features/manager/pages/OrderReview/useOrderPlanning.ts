@@ -12,6 +12,9 @@ import type { Invoice } from '../../../finance/types'
 import type { PlanningWorkflowInfo } from './components/OrderMissionPlanningSection'
 import type { UseApiQueryState } from '../../../../shared/hooks/useApiQuery'
 import type { Dispatch, SetStateAction } from 'react'
+import { useToast } from '../../../../shared/components/ui'
+import { useI18n } from '../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../feedback.messages'
 
 export function useOrderPlanning({
   selectedId,
@@ -66,6 +69,8 @@ export function useOrderPlanning({
   setCheckingPayment: Dispatch<SetStateAction<boolean>>
   onAssignResources: ((missionId: string) => void) | undefined
 }) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const selected = selectedId ?? undefined
   const effective =
     data?.missions.filter((mission) => mission.status !== 'CANCELLED') ?? []
@@ -132,6 +137,7 @@ export function useOrderPlanning({
                   : 'Mission sẽ được hủy và giữ lại trong lịch sử.',
               action:
                 action === 'amend' ? 'Điều chỉnh kế hoạch' : 'Hủy Mission',
+              tone: action === 'cancel' ? 'danger' : 'warning',
             },
       ))
     )
@@ -160,17 +166,27 @@ export function useOrderPlanning({
           ? 'Kế hoạch đã được chốt thành công.'
           : 'Đã cập nhật kế hoạch.',
       )
+      toast.success(
+        action === 'finalize'
+          ? fb.planFinalized
+          : action === 'cancel'
+            ? fb.missionCancelled
+            : fb.planUpdated,
+      )
     } catch (error) {
       if (
         action === 'finalize' &&
         error instanceof ApiError &&
         error.code === 'CHECKLIST_COVERAGE_INCOMPLETE'
-      )
+      ) {
         setCoverageWarning(finalizeError(error))
-      else
-        setMessage(
-          action === 'finalize' ? finalizeError(error) : planningError(error),
-        )
+        toast.error(finalizeError(error))
+      } else {
+        const failure =
+          action === 'finalize' ? finalizeError(error) : planningError(error)
+        setMessage(failure)
+        toast.error(failure)
+      }
     } finally {
       setBusy(false)
       query.reload()
@@ -191,8 +207,10 @@ export function useOrderPlanning({
     try {
       await financeApi.refreshOrderPayments(orderId)
       setMessage('Đã đối soát với VNPAY. Trạng thái đặt cọc đã được cập nhật.')
+      toast.success(fb.paymentRefreshed)
     } catch (cause) {
       setMessage(planningError(cause))
+      toast.error(planningError(cause))
     } finally {
       setCheckingPayment(false)
       query.reload()
@@ -225,6 +243,7 @@ export function useOrderPlanning({
       onAssignResources(selected)
     } catch (error) {
       setCoverageWarning(finalizeError(error))
+      toast.error(finalizeError(error))
       setBusy(false)
       query.reload()
     }

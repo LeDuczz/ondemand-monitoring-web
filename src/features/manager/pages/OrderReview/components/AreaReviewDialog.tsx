@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { ordersApi } from '../../../api/ordersApi'
 import { managerHref } from '../../../routes'
 import { REVIEW_OPTIONS, UNSUITABLE_REASONS } from '../areaHelpers'
+import { Button, useToast } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 export function AreaReviewDialog({
   order,
@@ -18,6 +21,8 @@ export function AreaReviewDialog({
   onClose: () => void
   onSaved: (review: SavedAreaReview) => void
 }) {
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const [status, setStatus] = useState<AreaReviewChoice | null>(
     initial?.status ?? null,
   )
@@ -47,9 +52,11 @@ export function AreaReviewDialog({
           reason: [reason.trim(), note.trim()].filter(Boolean).join(' — '),
           requestedUpdateScope: 'LOCATION',
         })
+        toast.success(fb.infoRequested)
         window.location.hash = managerHref({ screen: 'orderQueue' })
         return
       }
+      toast.success(fb.areaReviewSaved)
       onSaved({
         status: result.legalReviewStatus ?? savedStatus,
         requestedScopeFeasible: result.requestedScopeFeasible ?? null,
@@ -60,6 +67,7 @@ export function AreaReviewDialog({
       })
     } catch {
       setError('Không thể lưu đánh giá. Vui lòng thử lại.')
+      toast.error('Không thể lưu đánh giá. Vui lòng thử lại.')
     } finally {
       setSaving(false)
     }
@@ -143,17 +151,17 @@ export function AreaReviewDialog({
           </p>
         ) : null}
         <footer>
-          <button type="button" className="odm-btn" onClick={onClose}>
+          <Button type="button" onClick={onClose}>
             Hủy
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="odm-btn odm-btn-p"
+            variant="primary"
             disabled={saving}
             onClick={save}
           >
             {saving ? 'Đang lưu…' : 'Xác nhận đánh giá'}
-          </button>
+          </Button>
         </footer>
       </section>
     </div>

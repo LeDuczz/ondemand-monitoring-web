@@ -2,6 +2,7 @@ import type { ExecutionPlan } from '../../../types/planning'
 import type { MissionResponse } from '../../../types/missions'
 import type { OrderDetail } from '../../../types/orders'
 import type { Invoice } from '../../../../finance/types'
+import { Button } from '../../../../../shared/components/ui'
 
 export function PlanningPaymentGate({
   checkingPayment,
@@ -21,14 +22,13 @@ export function PlanningPaymentGate({
     <div className="odm-planning-payment-gate" role="status">
       <div className="odm-gate-head">
         <strong>Đang chờ khách hàng thanh toán đặt cọc</strong>
-        <button
+        <Button
           type="button"
-          className="odm-btn"
           disabled={checkingPayment}
           onClick={() => void checkPayment()}
         >
           {checkingPayment ? 'Đang kiểm tra…' : 'Kiểm tra thanh toán'}
-        </button>
+        </Button>
       </div>
       <p>
         Tạo Mission và chốt kế hoạch sẽ được mở sau khi hệ thống xác nhận khoản

@@ -3,6 +3,9 @@ import type { SavedAreaReview } from '../areaTypes'
 import { usePlanningConfirmation } from '../../../components/common/usePlanningConfirmation'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { areaReviewLabel, resolveUnsuitable } from '../areaHelpers'
+import { Button, useToast } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 export function ManagerAreaReview({
   order,
@@ -14,6 +17,27 @@ export function ManagerAreaReview({
   onEdit: () => void
 }) {
   const confirmation = usePlanningConfirmation()
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
+  async function resolve(decision: 'NEED_INFO' | 'REJECTED') {
+    if (!review) return
+    try {
+      const done = await resolveUnsuitable(
+        order,
+        review,
+        decision,
+        confirmation.confirm,
+      )
+      if (done)
+        toast.success(
+          decision === 'REJECTED' ? fb.orderRejected : fb.infoRequested,
+        )
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error ? cause.message : 'Không gửi được quyết định.',
+      )
+    }
+  }
   // Once the order is rejected/cancelled/sent back, the review is history: no more actions.
   const decided = order.status !== 'PENDING'
   return (
@@ -91,35 +115,14 @@ export function ManagerAreaReview({
             ) : null}
             {review.status === 'REJECTED' && !decided ? (
               <div className="odm-or-area-secondary-actions">
-                <button
-                  type="button"
-                  onClick={() =>
-                    void resolveUnsuitable(
-                      order,
-                      review,
-                      'NEED_INFO',
-                      confirmation.confirm,
-                    )
-                  }
-                >
+                <Button onClick={() => void resolve('NEED_INFO')}>
                   <OrderIcon name="swap" size={16} />
                   Yêu cầu khách đổi khu vực
-                </button>
-                <button
-                  type="button"
-                  className="is-danger"
-                  onClick={() =>
-                    void resolveUnsuitable(
-                      order,
-                      review,
-                      'REJECTED',
-                      confirmation.confirm,
-                    )
-                  }
-                >
+                </Button>
+                <Button variant="danger" onClick={() => void resolve('REJECTED')}>
                   <OrderIcon name="x" size={16} />
                   Từ chối đơn hàng
-                </button>
+                </Button>
               </div>
             ) : null}
           </>
@@ -127,13 +130,13 @@ export function ManagerAreaReview({
           <>
             <p>Chưa có đánh giá của Manager.</p>
             {decided ? null : (
-              <button
+              <Button
                 type="button"
-                className="odm-btn odm-btn-p"
+                variant="primary"
                 onClick={onEdit}
               >
                 Đánh giá khu vực
-              </button>
+              </Button>
             )}
             <a href="#portal/manager/support">Cần trợ giúp? Liên hệ hỗ trợ</a>
           </>

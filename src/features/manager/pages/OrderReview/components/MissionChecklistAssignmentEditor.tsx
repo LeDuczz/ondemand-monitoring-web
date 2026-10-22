@@ -4,6 +4,9 @@ import { planningApi } from '../../../api/planningApi'
 import { planningError } from '../../../lib/planningErrors'
 import type { OrderChecklistSnapshot } from '../../../types/orders'
 import { OrderIcon } from '../../../components/common/OrderIcon'
+import { Button, useToast } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { managerFeedbackMessages } from '../../../feedback.messages'
 
 export function MissionChecklistAssignmentEditor({
   missionId,
@@ -24,6 +27,8 @@ export function MissionChecklistAssignmentEditor({
     (signal) => planningApi.getAssignments(missionId, signal),
     [missionId, revision],
   )
+  const { t: fb } = useI18n(managerFeedbackMessages)
+  const toast = useToast()
   const [selected, setSelected] = useState<string[]>([])
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -60,8 +65,10 @@ export function MissionChecklistAssignmentEditor({
       query.reload()
       onChanged()
       setMessage('Đã lưu phân công checklist.')
+      toast.success(fb.checklistAssignmentSaved)
     } catch (error) {
       setMessage(planningError(error))
+      toast.error(planningError(error))
       query.reload()
       onChanged()
     } finally {
@@ -83,9 +90,9 @@ export function MissionChecklistAssignmentEditor({
       {query.error ? (
         <p role="alert">
           {planningError(query.error)}{' '}
-          <button type="button" onClick={query.reload}>
+          <Button type="button" size="sm" onClick={query.reload}>
             Tải lại
-          </button>
+          </Button>
         </p>
       ) : null}
       {!editable && !query.loading && !query.error && (
@@ -115,9 +122,8 @@ export function MissionChecklistAssignmentEditor({
         <>
           {items.length > 1 && (
             <div className="odm-planning-bulk">
-              <button
+              <Button
                 type="button"
-                className="odm-btn"
                 disabled={
                   busy || query.loading || selected.length === items.length
                 }
@@ -127,10 +133,9 @@ export function MissionChecklistAssignmentEditor({
                 }}
               >
                 Chọn tất cả
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="odm-btn"
                 disabled={busy || query.loading || selected.length === 0}
                 onClick={() => {
                   setDirty(true)
@@ -138,7 +143,7 @@ export function MissionChecklistAssignmentEditor({
                 }}
               >
                 Bỏ chọn
-              </button>
+              </Button>
             </div>
           )}
           <fieldset
@@ -185,8 +190,8 @@ export function MissionChecklistAssignmentEditor({
       )}
       {message && <p role="status">{message}</p>}
       {editable && (
-        <button
-          className="odm-btn odm-btn-p"
+        <Button
+          variant="primary"
           type="button"
           disabled={
             !dirty ||
@@ -198,7 +203,7 @@ export function MissionChecklistAssignmentEditor({
           onClick={() => void save()}
         >
           {busy ? 'Đang lưu…' : 'Lưu phân công'}
-        </button>
+        </Button>
       )}
     </details>
   )

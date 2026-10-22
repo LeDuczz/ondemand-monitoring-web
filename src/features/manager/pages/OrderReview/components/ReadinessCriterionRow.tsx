@@ -8,6 +8,7 @@ import {
 import type { Answer } from '../readinessTypes'
 import type { ReadinessCriterion } from '../../../types/readiness'
 import type { Dispatch, SetStateAction } from 'react'
+import { Button } from '../../../../../shared/components/ui'
 
 export function ReadinessCriterionRow({
   current,
@@ -76,9 +77,9 @@ export function ReadinessCriterionRow({
           />
         ) : null}
         {draft ? (
-          <button
+          <Button
             type="button"
-            className="odm-btn odm-btn-sm"
+            size="sm"
             disabled={
               savingCode === c.code ||
               (draft.result === 'FAIL' && !draft.note.trim())
@@ -86,7 +87,7 @@ export function ReadinessCriterionRow({
             onClick={() => void save(c.code, draft.result, draft.note)}
           >
             Lưu
-          </button>
+          </Button>
         ) : null}
       </div>
       <div

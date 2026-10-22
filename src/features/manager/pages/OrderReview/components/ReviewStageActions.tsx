@@ -1,5 +1,6 @@
 import type { ReviewStep } from '../reviewTypes'
 import { REVIEW_PAGE_COUNT } from '../reviewHelpers'
+import { Button } from '../../../../../shared/components/ui'
 
 export function ReviewStageActions({
   step,
@@ -19,9 +20,9 @@ export function ReviewStageActions({
   return (
     <div className="odm-or-review-stage-actions">
       {onBack ? (
-        <button type="button" className="odm-btn" onClick={onBack}>
+        <Button type="button" onClick={onBack}>
           Quay lại
-        </button>
+        </Button>
       ) : null}
       <span className="odm-or-review-stage-progress">
         Bước {step}/{REVIEW_PAGE_COUNT}
@@ -32,14 +33,14 @@ export function ReviewStageActions({
         </span>
       ) : null}
       {onNext ? (
-        <button
+        <Button
           type="button"
-          className="odm-btn odm-btn-p"
+          variant="primary"
           onClick={onNext}
           disabled={nextDisabled}
         >
           {nextLabel}
-        </button>
+        </Button>
       ) : null}
     </div>
   )

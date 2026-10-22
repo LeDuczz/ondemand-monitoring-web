@@ -7,6 +7,7 @@ import { missionsApi } from '../../../api/missionsApi'
 import { staffMissionMediaReader } from '../../../api/missionMediaReader'
 import type { MissionResponse } from '../../../types/missions'
 import { MissionResultReviewCard } from '../../../components/common/MissionResultReviewCard'
+import { Button } from '../../../../../shared/components/ui'
 
 /** Mounted by exact selected ID, never by Order ID. Switching destroys old request/state. */
 export function MissionExecutionPanel({
@@ -57,9 +58,9 @@ export function MissionExecutionPanel({
       {result.error ? (
         <p role="alert">
           Không thể tải kết quả của Mission này.{' '}
-          <button className="odm-btn" onClick={result.reload}>
+          <Button onClick={result.reload}>
             Thử lại
-          </button>
+          </Button>
         </p>
       ) : null}
       {matchingResult && (

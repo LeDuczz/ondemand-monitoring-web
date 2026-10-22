@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { Button } from '../../../../../shared/components/ui'
 
 export function PlanningAdjustmentForm({
   mutate,
@@ -39,16 +40,15 @@ export function PlanningAdjustmentForm({
           onChange={(e) => setReason(e.target.value)}
         />
       </label>
-      <button className="odm-btn odm-btn-p" disabled={busy || !reason.trim()}>
+      <Button type="submit" variant="primary" disabled={busy || !reason.trim()}>
         Xác nhận điều chỉnh
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
-        className="odm-btn"
         onClick={() => setAmending(false)}
       >
         Đóng
-      </button>
+      </Button>
     </form>
   )
 }

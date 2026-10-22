@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ApiError } from '../../../shared/api/httpClient'
 import { useApiQuery } from '../../../shared/hooks/useApiQuery'
+import { useToast } from '../../../shared/components/ui'
+import { useI18n } from '../../../shared/i18n'
 import { financeApi } from '../api'
+import { pricingFeedbackMessages } from './pricingFeedback.messages'
 import type { ChecklistReviewStatus, PricingChecklistItem } from '../types'
 import '../finance.css'
 import {
@@ -37,6 +40,8 @@ export function ManagerPricingPanel({
     (signal) => financeApi.getPricingReview(orderId, signal),
     [orderId],
   )
+  const { t: fb } = useI18n(pricingFeedbackMessages)
+  const toast = useToast()
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState<
@@ -155,10 +160,12 @@ export function ManagerPricingPanel({
         status,
         managerNote: managerNote.trim() || null,
       })
+      toast.success(fb.reviewSaved)
       query.reload()
       onChecklistReviewChanged?.()
     } catch (cause) {
       setError(errorMessage(cause))
+      toast.error(errorMessage(cause))
     }
   }
 
@@ -223,9 +230,11 @@ export function ManagerPricingPanel({
       setMessage(
         'Duyệt báo giá thành công. Báo giá đã sẵn sàng để khách hàng chấp nhận.',
       )
+      toast.success(fb.quoteApproved)
       query.reload()
     } catch (cause) {
       setError(errorMessage(cause))
+      toast.error(errorMessage(cause))
       if (cause instanceof ApiError && cause.code === 'STALE_PRICING_POLICY') {
         // Show the Manager the prices that now apply; typed prices would be judged against the old ones.
         dirtyPriceIds.current.clear()

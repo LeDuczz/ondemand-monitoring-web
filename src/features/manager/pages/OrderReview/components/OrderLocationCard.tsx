@@ -11,6 +11,7 @@ import type { OrderReviewMessages } from '../OrderReviewPage.messages'
 import { estimatedAreaHa } from '../../../components/common/format'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import { resolveOrderGpsCenter } from '../../../components/common/orderGps'
+import { Button } from '../../../../../shared/components/ui'
 
 function useLeafletOrderMap(order: OrderDetail) {
   const container = useRef<HTMLDivElement>(null)
@@ -141,14 +142,13 @@ export function OrderLocationCard({
 
   const areaHa = estimatedAreaHa(order.radiusM)
   const openButton = (
-    <button
+    <Button
       type="button"
-      className="odm-or-btn-outline"
       onClick={toggleFullscreen}
     >
       {t.openInMap}
       <OrderIcon name="external" size={14} />
-    </button>
+    </Button>
   )
 
   return (

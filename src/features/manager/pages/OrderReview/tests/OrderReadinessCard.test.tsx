@@ -134,19 +134,11 @@ describe('OrderReadinessCard', () => {
     )
     expect(readinessApi.answer).not.toHaveBeenCalled()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
-    const requestMore = screen.getByRole('button', {
-      name: 'Yêu cầu bổ sung',
-    })
     const reject = screen.getByRole('button', { name: 'Từ chối đơn' })
-    expect(requestMore).toBeEnabled()
-    expect(reject).toBeEnabled()
-    fireEvent.click(requestMore)
     expect(
-      screen.getByText(
-        'Vui lòng nhập lý do cho tất cả tiêu chí không đạt trước khi tiếp tục.',
-      ),
-    ).toBeInTheDocument()
-    expect(ordersApi.submitApproval).not.toHaveBeenCalled()
+      screen.queryByRole('button', { name: 'Yêu cầu bổ sung' }),
+    ).not.toBeInTheDocument()
+    expect(reject).toBeEnabled()
     const save = screen.getByRole('button', { name: 'Lưu' })
     expect(save).toBeDisabled()
     fireEvent.change(screen.getByLabelText('Ghi chú: Năng lực thực hiện'), {
@@ -161,6 +153,93 @@ describe('OrderReadinessCard', () => {
       }),
     )
     expect(ordersApi.submitApproval).not.toHaveBeenCalled()
+  })
+
+  it('requires choosing what the customer must supplement before sending', async () => {
+    renderCard(true, undefined, {
+      ...readiness,
+      blockingReasons: ['Quyền truy cập hiện trường: manager chưa xác nhận'],
+      criteria: readiness.criteria.map((criterion) =>
+        criterion.code === 'CAPABILITY'
+          ? {
+              ...criterion,
+              code: 'SITE_ACCESS',
+              title: 'Quyền truy cập hiện trường',
+              description: 'Khách hàng có quyền sử dụng khu vực',
+            }
+          : criterion,
+      ),
+    })
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Chưa liên hệ được / không đồng ý',
+      }),
+    )
+    fireEvent.change(
+      screen.getByLabelText('Ghi chú: Quyền truy cập hiện trường'),
+      {
+        target: { value: 'Chưa có giấy đồng ý của chủ khu vực' },
+      },
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Yêu cầu bổ sung' }))
+
+    const send = screen.getByRole('button', { name: 'Gửi yêu cầu bổ sung' })
+    expect(send).toBeDisabled()
+    fireEvent.click(
+      screen.getByLabelText(
+        'Giấy tờ chứng minh quyền sử dụng hoặc giấy ủy quyền tại khu vực',
+      ),
+    )
+    expect(send).toBeEnabled()
+    fireEvent.click(send)
+
+    await waitFor(() =>
+      expect(ordersApi.submitApproval).toHaveBeenCalledWith('o1', {
+        decision: 'NEED_INFO',
+        reason: expect.stringContaining(
+          'Giấy tờ chứng minh quyền sử dụng hoặc giấy ủy quyền tại khu vực',
+        ),
+        requestedUpdateScope: 'ADDITIONAL_INFORMATION',
+      }),
+    )
+  })
+
+  it('only suggests a clear usage-purpose description when PURPOSE fails', () => {
+    renderCard(true, undefined, {
+      ...readiness,
+      canApprove: true,
+      blockingReasons: [],
+      recommendation: 'APPROVE_WITH_NOTES',
+      criteria: [
+        ...readiness.criteria,
+        {
+          code: 'PURPOSE',
+          type: 'MANUAL',
+          title: 'Mục đích sử dụng',
+          description: 'Mục đích sử dụng dữ liệu của khách chấp nhận được',
+          required: false,
+          result: 'FAIL',
+          reason: null,
+          note: 'Mục đích hiện tại chưa rõ',
+          decidedByName: 'Seed Manager 1',
+          decidedAt: '2026-10-22T08:00:00Z',
+        },
+      ],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yêu cầu bổ sung' }))
+
+    expect(
+      screen.getByLabelText('Mô tả rõ mục đích sử dụng ảnh và dữ liệu'),
+    ).toBeVisible()
+    expect(
+      screen.queryByText(
+        'Giấy tờ chứng minh nhu cầu sử dụng hoặc văn bản ủy quyền',
+      ),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Thông tin đơn vị nhận và phạm vi sử dụng kết quả'),
+    ).not.toBeInTheDocument()
   })
 
   it('shows the reject-order action immediately for a local required failure', () => {

@@ -240,6 +240,56 @@
   margin: 0;
   padding-left: 18px;
 }
+.odm-or-supplement-form {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #e7c45b;
+  border-radius: 10px;
+  background: var(--or-card, #fff);
+  color: var(--or-tx, #172033);
+}
+.odm-or-supplement-form fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.odm-or-supplement-form legend {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 750;
+}
+.odm-or-supplement-form p {
+  margin: 3px 0 10px;
+  color: var(--or-tx2, #667085);
+}
+.odm-or-supplement-options {
+  display: grid;
+  gap: 8px;
+}
+.odm-or-supplement-options label {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--or-border, #d8dee9);
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+.odm-or-supplement-options input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--or-blue, #1769e0);
+}
+.odm-or-supplement-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
 @media (max-width: 1100px) {
   .odm-or-readiness-body {
     grid-template-columns: minmax(0, 1fr);

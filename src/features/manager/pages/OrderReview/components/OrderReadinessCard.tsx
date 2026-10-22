@@ -10,7 +10,11 @@ import type {
 } from '../../../types/readiness'
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import './OrderReadinessCard.css'
-import { type Answer, type FailureAction } from '../readinessTypes'
+import {
+  type Answer,
+  type FailureAction,
+  type SupplementRequest,
+} from '../readinessTypes'
 import {
   recommendationText,
   riskLevelOptions,
@@ -134,18 +138,25 @@ export function OrderReadinessCard({
     }
   }
 
-  const failedRequired = manual.filter((criterion) => {
+  const failedRequired = readiness.criteria.filter((criterion) => {
     const effectiveResult =
       drafts[criterion.code]?.result ??
       selectedResults[criterion.code] ??
       criterion.result
-    return criterion.required && effectiveResult === 'FAIL'
+    return effectiveResult === 'FAIL'
   })
   const failedReasonsComplete = failedRequired.every((criterion) =>
-    Boolean(drafts[criterion.code]?.note.trim() || criterion.note?.trim()),
+    Boolean(
+      drafts[criterion.code]?.note.trim() ||
+      criterion.note?.trim() ||
+      criterion.reason?.trim(),
+    ),
   )
 
-  async function submitFailedDecision(decision: FailureAction) {
+  async function submitFailedDecision(
+    decision: FailureAction,
+    supplements: SupplementRequest[] = [],
+  ) {
     if (!failedReasonsComplete) {
       setError(
         'Vui lòng nhập lý do cho tất cả tiêu chí không đạt trước khi tiếp tục.',
@@ -155,11 +166,25 @@ export function OrderReadinessCard({
     const reason = failedRequired
       .map((criterion) => {
         const note =
-          drafts[criterion.code]?.note.trim() || criterion.note?.trim()
+          drafts[criterion.code]?.note.trim() ||
+          criterion.note?.trim() ||
+          criterion.reason?.trim()
         return note ? `${criterion.title}: ${note}` : criterion.title
       })
       .join('; ')
     if (!reason) return
+    if (decision === 'NEED_INFO' && supplements.length === 0) {
+      setError('Chọn ít nhất một nội dung khách hàng cần bổ sung.')
+      return
+    }
+    const supplementReason = supplements.length
+      ? `Khách hàng cần bổ sung: ${supplements.map((item) => item.label).join('; ')}`
+      : ''
+    const requestedUpdateScope = supplements.some(
+      (item) => item.scope === 'LOCATION',
+    )
+      ? 'LOCATION'
+      : 'ADDITIONAL_INFORMATION'
     setSavingCode('decision')
     setError(null)
     try {
@@ -173,7 +198,11 @@ export function OrderReadinessCard({
             }),
           ),
       )
-      await ordersApi.submitApproval(orderId, { decision, reason })
+      await ordersApi.submitApproval(orderId, {
+        decision,
+        reason: [reason, supplementReason].filter(Boolean).join('. '),
+        ...(decision === 'NEED_INFO' ? { requestedUpdateScope } : {}),
+      })
       onDecisionDone?.()
     } catch (cause) {
       setError(
@@ -263,8 +292,8 @@ export function OrderReadinessCard({
           {error}
         </p>
       ) : null}
-      {!canContinue &&
-      (readiness.blockingReasons.length > 0 || failedRequired.length > 0) ? (
+      {failedRequired.length > 0 ||
+      (!canContinue && readiness.blockingReasons.length > 0) ? (
         <ReadinessBlockingNotice
           readiness={readiness}
           failedRequired={failedRequired}

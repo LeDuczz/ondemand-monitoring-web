@@ -36,7 +36,11 @@ describe('ReviewNotice', () => {
       screen.getByText(/Cần xác nhận quyền truy cập hiện trường/),
     ).toBeInTheDocument()
     const submit = screen.getByRole('button', { name: 'Gửi lại cho manager' })
-    expect(submit).toBeDisabled()
+    expect(submit).toBeEnabled()
+    fireEvent.click(submit)
+    expect(
+      screen.getByText('Vui lòng nhập thông tin cần bổ sung trước khi gửi.'),
+    ).toBeVisible()
 
     fireEvent.change(
       screen.getByLabelText('Nhập thông tin hoặc xác nhận bổ sung...'),
@@ -57,12 +61,70 @@ describe('ReviewNotice', () => {
             accessNotes: '',
             monitoringRelationship: null,
             monitoringAuthorizationConfirmed: false,
+            monitoringAuthorizationDocuments: [],
           },
         },
       ),
     )
     expect(onInformationSubmitted).toHaveBeenCalledOnce()
     expect(screen.getByText('Đã gửi thông tin bổ sung.')).toBeInTheDocument()
+  })
+
+  it('requires and submits a document when the manager requests authorization evidence', async () => {
+    render(
+      <ReviewNotice
+        order={{
+          ...order,
+          rejectReason:
+            'Khách hàng cần bổ sung: Giấy tờ chứng minh quyền sử dụng hoặc giấy ủy quyền tại khu vực',
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Tài liệu xác minh quyền truy cập')).toBeVisible()
+    const submit = screen.getByRole('button', { name: 'Gửi lại cho manager' })
+    expect(submit).toBeEnabled()
+    fireEvent.click(submit)
+    expect(
+      screen.getByText('Vui lòng tải lên giấy tờ được yêu cầu.'),
+    ).toBeVisible()
+
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement
+    fireEvent.change(input, {
+      target: {
+        files: [
+          new File(['authorization'], 'uy-quyen.pdf', {
+            type: 'application/pdf',
+          }),
+        ],
+      },
+    })
+
+    await waitFor(() => expect(screen.getByText('uy-quyen.pdf')).toBeVisible())
+    fireEvent.click(submit)
+
+    await waitFor(() =>
+      expect(apiRequest).toHaveBeenCalledWith(
+        '/api/orders/order-1/additional-information',
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.objectContaining({
+            information:
+              'Đã bổ sung tài liệu xác minh quyền truy cập hiện trường.',
+            monitoringAuthorizationDocuments: [
+              expect.objectContaining({
+                documentType: 'AUTHORIZATION_LETTER',
+                documentName: 'uy-quyen.pdf',
+                fileName: 'uy-quyen.pdf',
+                contentType: 'application/pdf',
+              }),
+            ],
+          }),
+        }),
+      ),
+    )
   })
 
   it('shows only the requested location correction fields', async () => {
@@ -81,7 +143,9 @@ describe('ReviewNotice', () => {
 
     expect(screen.getByText('Cập nhật khu vực giám sát')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Vị trí cũ')).toBeInTheDocument()
-    expect(screen.queryByText('Người liên hệ hiện trường')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Người liên hệ hiện trường'),
+    ).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Vĩ độ'), {
       target: { value: '10.65' },

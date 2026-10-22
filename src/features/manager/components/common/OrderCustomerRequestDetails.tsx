@@ -13,7 +13,6 @@ import {
   dateOnly,
   dateTime,
 } from './requestDetailHelpers'
-import { FactList } from './FactList'
 import { FactSection } from './FactSection'
 
 export function OrderCustomerRequestDetails({
@@ -87,23 +86,60 @@ export function OrderCustomerRequestDetails({
   const siteFacts: DetailItem[] = [
     { label: t.siteContact, value: contact },
     { label: t.accessNotes, value: order.accessNotes },
+    {
+      label: 'Quan hệ với hiện trường',
+      value: text(order.monitoringRelationship),
+    },
+    {
+      label: 'Xác nhận quyền giám sát',
+      value:
+        order.monitoringAuthorizationConfirmed == null
+          ? null
+          : order.monitoringAuthorizationConfirmed
+            ? 'Đã xác nhận'
+            : 'Chưa xác nhận',
+    },
+    {
+      label: 'Tài liệu hiện trường',
+      value:
+        order.monitoringAuthorizationDocuments &&
+        order.monitoringAuthorizationDocuments.length > 0 ? (
+          <span className="odm-or-req-files">
+            {order.monitoringAuthorizationDocuments.map((file) => (
+              <a
+                key={file.id}
+                href={file.dataUrl}
+                download={file.fileName}
+                title={file.documentName || file.fileName}
+              >
+                {file.documentName || file.fileName}
+              </a>
+            ))}
+          </span>
+        ) : null,
+    },
   ]
   const weatherFallback = text(order.weatherFallback)
 
-  const permitFacts: DetailItem[] = [
+  const hasPermitInformation =
+    order.permitRequired === true ||
+    Boolean(
+      (order.permitStatus && order.permitStatus !== 'NONE') ||
+      order.permitNumber ||
+      order.permitZoneName ||
+      order.permitExpiresOn ||
+      order.permitDocuments?.length,
+    )
+  const permitFacts: DetailItem[] = hasPermitInformation ? [
     {
       label: 'Yêu cầu giấy phép',
       value:
-        order.permitRequired == null
-          ? null
-          : order.permitRequired
-            ? 'Có yêu cầu'
-            : 'Không yêu cầu',
+        order.permitRequired ? 'Có yêu cầu' : null,
     },
     {
       label: 'Trạng thái giấy phép',
       value:
-        permit || (order.permitRequired === false ? 'Không áp dụng' : null),
+        permit || null,
     },
     { label: 'Hiệu lực đến', value: dateOnly(order.permitExpiresOn) },
     {
@@ -126,7 +162,7 @@ export function OrderCustomerRequestDetails({
           'Chưa cung cấp'
         ) : null,
     },
-  ]
+  ] : []
 
   const resultFacts: DetailItem[] = [
     ...deliverableFacts,
@@ -153,17 +189,16 @@ export function OrderCustomerRequestDetails({
     },
   ]
 
-  // Technical / legal record: collapsed by default.
-  const legalFacts: DetailItem[] = [
+  const termsFacts: DetailItem[] = [
     {
-      label: t.dataRetention,
-      value:
-        order.dataRetentionDays != null
-          ? `${order.dataRetentionDays} ngày`
-          : null,
+      label: 'Khách gửi yêu cầu lúc',
+      value: dateTime(order.submittedAt),
     },
-    { label: t.termsAcceptedAt, value: dateTime(order.termsAcceptedAt) },
-    { label: t.termsVersion, value: order.termsVersion },
+    {
+      label: 'Khách đồng ý điều khoản lúc',
+      value: dateTime(order.termsAcceptedAt),
+    },
+    { label: 'Phiên bản điều khoản', value: order.termsVersion },
   ]
 
   const hasSummary = Boolean(order.title || order.description)
@@ -174,7 +209,7 @@ export function OrderCustomerRequestDetails({
       ...siteFacts,
       ...permitFacts,
       ...resultFacts,
-      ...legalFacts,
+      ...termsFacts,
     ]).length > 0 ||
     (order.deliverables != null && order.deliverables.length > 0) ||
     (order.mediaRequirements != null && order.mediaRequirements.length > 0)
@@ -229,6 +264,11 @@ export function OrderCustomerRequestDetails({
               </div>
             ) : null}
           </FactSection>
+          <FactSection
+            title="Xác nhận gửi yêu cầu"
+            icon="check"
+            items={termsFacts}
+          />
         </div>
 
         {weatherFallback ? (
@@ -243,12 +283,6 @@ export function OrderCustomerRequestDetails({
           </aside>
         ) : null}
 
-        {visibleItems(legalFacts).length > 0 ? (
-          <details className="odm-or-req-legal">
-            <summary>Pháp lý và điều khoản</summary>
-            <FactList items={legalFacts} />
-          </details>
-        ) : null}
       </div>
     </section>
   )

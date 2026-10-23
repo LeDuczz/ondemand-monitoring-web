@@ -1,4 +1,8 @@
+import { useI18n } from '../../../../shared/i18n'
+import { commonMiscMessages } from './commonMisc.messages'
+
 export function StaffStatusBadge() {
+  const { t } = useI18n(commonMiscMessages)
   return (
     <span
       style={{
@@ -20,7 +24,7 @@ export function StaffStatusBadge() {
           background: '#16a34a',
         }}
       />
-      Sẵn sàng
+      {t.ready}
     </span>
   )
 }

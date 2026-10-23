@@ -1,18 +1,22 @@
+import { getLanguage } from '../../../../shared/i18n'
+import { liveDispatchHelpersMessages } from './liveDispatchHelpers.messages'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import type { AvailableOperator } from '../../../staff/api/operatorApi'
+
+const localeNow = () => (getLanguage() === 'en' ? 'en-US' : 'vi-VN')
 
 export function fmtDate(value?: string | null) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('vi-VN')
+  return date.toLocaleDateString(localeNow())
 }
 
 export function fmtDateTime(value?: string | null) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('vi-VN', {
+  return date.toLocaleString(localeNow(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -24,12 +28,7 @@ export function fmtDateTime(value?: string | null) {
 export function preferredTimeLabel(value?: string | null) {
   const key = value?.trim().toUpperCase()
   if (!key) return ''
-  const labels: Record<string, string> = {
-    MORNING: 'Buổi sáng',
-    AFTERNOON: 'Buổi chiều',
-    EVENING: 'Buổi tối',
-    NIGHT: 'Buổi đêm',
-  }
+  const labels = liveDispatchHelpersMessages[getLanguage()].preferredTimes
   return labels[key] ?? value?.trim() ?? ''
 }
 

@@ -8,6 +8,8 @@ import { areaReviewFromOrder } from '../areaHelpers'
 import { useCachedAreaAssessment } from '../useCachedAreaAssessment'
 import { AreaReviewDialog } from './AreaReviewDialog'
 import { AreaAssessmentBody } from './AreaAssessmentBody'
+import { useI18n } from '../../../../../shared/i18n'
+import { orderAreaCheckMessages } from './OrderAreaCheck.messages'
 
 export function OrderAreaCheck({
   order,
@@ -18,6 +20,7 @@ export function OrderAreaCheck({
   t: OrderReviewMessages
   onReviewSaved?: (status: LegalReviewStatus) => void
 }) {
+  const { t: ta } = useI18n(orderAreaCheckMessages)
   const [review, setReview] = useState(() => areaReviewFromOrder(order))
   const [reviewOpen, setReviewOpen] = useState(false)
   useEffect(() => {
@@ -51,14 +54,11 @@ export function OrderAreaCheck({
   const hasMinistryViolations = ministryViolatedZones.length > 0
 
   return (
-    <section className="odm-or-area-check" aria-label="Kiểm tra vùng giám sát">
+    <section className="odm-or-area-check" aria-label={ta.title}>
       <div className="odm-or-area-check-head">
         <div>
-          <h2>Kiểm tra vùng giám sát</h2>
-          <p>
-            Giúp xác định khu vực có cần kiểm tra thêm trước khi duyệt đơn hay
-            không. Kết quả này chỉ là cảnh báo sơ bộ, không tự động từ chối đơn.
-          </p>
+          <h2>{ta.title}</h2>
+          <p>{ta.intro}</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function OrderAreaCheck({
               <span className="odm-or-area-title-icon" aria-hidden="true">
                 <OrderIcon name="chart" size={20} />
               </span>
-              Kết quả kiểm tra khu vực
+              {ta.resultTitle}
             </span>
             {order.status === 'PENDING' ? (
               <button
@@ -78,10 +78,8 @@ export function OrderAreaCheck({
                 className={`odm-or-area-refresh${assessment.loading ? ' is-loading' : ''}`}
                 onClick={assessment.reload}
                 disabled={assessment.loading}
-                aria-label={
-                  assessment.loading ? 'Đang kiểm tra…' : 'Kiểm tra lại'
-                }
-                title={assessment.loading ? 'Đang kiểm tra…' : 'Kiểm tra lại'}
+                aria-label={assessment.loading ? ta.checking : ta.recheck}
+                title={assessment.loading ? ta.checking : ta.recheck}
               >
                 <OrderIcon name="refresh" size={18} />
               </button>
@@ -89,15 +87,13 @@ export function OrderAreaCheck({
           </header>
           <div className="odm-or-card-body odm-or-area-results">
             {!resolved || radiusM <= 0 ? (
-              <p className="odm-or-empty">
-                Đơn chưa có đủ tọa độ hoặc bán kính để kiểm tra vùng.
-              </p>
+              <p className="odm-or-empty">{ta.missingCoords}</p>
             ) : assessment.error ? (
               <p className="odm-or-area-error" role="alert">
-                Không tải được kết quả kiểm tra vùng. Vui lòng thử lại.
+                {ta.loadFailed}
               </p>
             ) : assessment.loading && !data ? (
-              <p className="odm-or-empty">Đang phân tích vùng giám sát…</p>
+              <p className="odm-or-empty">{ta.analyzing}</p>
             ) : data ? (
               <AreaAssessmentBody
                 data={data}

@@ -1,5 +1,6 @@
 import { OrderIcon } from './OrderIcon'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
+import { commonMiscMessages } from './commonMisc.messages'
 import { useI18n } from '../../../../shared/i18n'
 import type { DispatchStep, OrderDispatchContext } from './liveDispatchTypes'
 import type { AvailableDrone } from '../../../staff/api/droneApi'
@@ -35,6 +36,7 @@ export function DispatchActionBar({
   assign: () => Promise<void>
 }) {
   const { t } = useI18n(liveDispatchPageMessages)
+  const { t: m } = useI18n(commonMiscMessages)
   return (
     <div className="odm-or-actionbar">
       <div className="odm-or-actionbar-hint">
@@ -44,7 +46,7 @@ export function DispatchActionBar({
         <span>{stepHint[activeStep]}</span>
         {activeStep === 'staff' && missingRoleNames.length > 0 && (
           <strong className="odm-or-actionbar-missing">
-            Còn thiếu: {missingRoleNames.join(', ')}
+            {m.missingPrefix} {missingRoleNames.join(', ')}
           </strong>
         )}
       </div>

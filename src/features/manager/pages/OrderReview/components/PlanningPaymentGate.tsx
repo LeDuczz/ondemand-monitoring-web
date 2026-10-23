@@ -3,6 +3,8 @@ import type { MissionResponse } from '../../../types/missions'
 import type { OrderDetail } from '../../../types/orders'
 import type { Invoice } from '../../../../finance/types'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { planningPaymentGateMessages } from './PlanningPaymentGate.messages'
 
 export function PlanningPaymentGate({
   checkingPayment,
@@ -18,22 +20,20 @@ export function PlanningPaymentGate({
     invoice: Invoice | null
   }
 }) {
+  const { t, locale } = useI18n(planningPaymentGateMessages)
   return (
     <div className="odm-planning-payment-gate" role="status">
       <div className="odm-gate-head">
-        <strong>Đang chờ khách hàng thanh toán đặt cọc</strong>
+        <strong>{t.waiting}</strong>
         <Button
           type="button"
           disabled={checkingPayment}
           onClick={() => void checkPayment()}
         >
-          {checkingPayment ? 'Đang kiểm tra…' : 'Kiểm tra thanh toán'}
+          {checkingPayment ? t.checking : t.checkPayment}
         </Button>
       </div>
-      <p>
-        Tạo Mission và chốt kế hoạch sẽ được mở sau khi hệ thống xác nhận khoản
-        đặt cọc.
-      </p>
+      <p>{t.unlockNote}</p>
       {data.invoice ? (
         <div className="odm-gate-deposit">
           <div
@@ -56,14 +56,14 @@ export function PlanningPaymentGate({
             />
           </div>
           <span>
-            Đã thanh toán {data.invoice.paidAmount.toLocaleString('vi-VN')} /{' '}
-            {data.invoice.depositAmount.toLocaleString('vi-VN')} ₫ tiền đặt cọc
+            {t.paid(
+              data.invoice.paidAmount.toLocaleString(locale),
+              data.invoice.depositAmount.toLocaleString(locale),
+            )}
           </span>
         </div>
       ) : (
-        <span>
-          Khách hàng chưa chấp nhận báo giá hoặc chưa phát hành hóa đơn.
-        </span>
+        <span>{t.notAccepted}</span>
       )}
     </div>
   )

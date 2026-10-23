@@ -12,6 +12,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import { managerFeedbackMessages } from '../../../feedback.messages'
 import { StopFlowActions } from './StopFlowActions'
 import { StopFlowPanel } from './StopFlowPanel'
+import { managerMissionStopFlowMessages } from './ManagerMissionStopFlow.messages'
 
 /** Backend capabilities remain the source of truth; no crew attestation here. */
 export function ManagerMissionStopFlow({
@@ -52,6 +53,7 @@ export function ManagerMissionStopFlow({
   const [intent, setIntent] = useState<'cancel' | 'replace' | null>(null)
   const confirmation = usePlanningConfirmation()
   const { t: fb } = useI18n(managerFeedbackMessages)
+  const { t } = useI18n(managerMissionStopFlowMessages)
   const toast = useToast()
   const flowRef = useRef<HTMLElement>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
@@ -117,20 +119,20 @@ export function ManagerMissionStopFlow({
           action === 'request'
             ? fb.requestSafeStopTitle
             : action === 'cleanup'
-              ? 'Giải phóng tài nguyên?'
-              : 'Hủy Mission?',
+              ? t.releaseTitle
+              : t.cancelTitle,
         body:
           action === 'request'
             ? fb.requestSafeStopBody
             : action === 'cleanup'
-              ? `Giải phóng thiết bị và nhân sự của ${missionCode}.`
-              : `Hủy ${missionCode} và giữ lại lịch sử.`,
+              ? t.releaseBody(missionCode)
+              : t.cancelBody(missionCode),
         action:
           action === 'request'
             ? fb.requestSafeStopAction
             : action === 'cleanup'
-              ? 'Giải phóng tài nguyên'
-              : 'Hủy Mission',
+              ? t.releaseAction
+              : t.cancelAction,
         tone: 'danger',
       }))
     )
@@ -152,7 +154,7 @@ export function ManagerMissionStopFlow({
         if (intent === 'replace') onReplacement(missionId)
         setIntent(null)
       }
-      setMessage('Thao tác đã được ghi nhận.')
+      setMessage(t.recorded)
       toast.success(
         action === 'request'
           ? fb.safeStopRequested

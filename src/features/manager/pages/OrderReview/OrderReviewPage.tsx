@@ -16,6 +16,7 @@ import {
   type OrderStage,
 } from '../../components/common/workflowModel'
 import { orderReviewPageMessages } from './OrderReviewPage.messages'
+import { orderPlanningMessages } from './orderPlanning.messages'
 import '../../manager.css'
 import type { LegalReviewStatus } from '../../types/orders'
 import { type ReviewStep } from './reviewTypes'
@@ -31,6 +32,7 @@ import { ReviewStagePricing } from './components/ReviewStagePricing'
 
 export function OrderReviewPage({ orderId }: { orderId: string }) {
   const { t } = useI18n(orderReviewPageMessages)
+  const { t: pm } = useI18n(orderPlanningMessages)
   const orderQuery = useApiQuery(
     (signal) => ordersApi.getOrder(orderId, signal),
     [orderId],
@@ -121,7 +123,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
   const readiness = readinessQuery.data
   const approveBlockedReason =
     order.status === 'PENDING' && readiness && !readiness.canApprove
-      ? `Chưa đủ điều kiện duyệt: ${readiness.blockingReasons.join('; ')}`
+      ? pm.approveBlocked(readiness.blockingReasons.join('; '))
       : null
   const pendingRequired =
     readiness?.criteria.filter(

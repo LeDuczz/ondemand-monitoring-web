@@ -1,17 +1,20 @@
 import { OrderIcon } from '../../../components/common/OrderIcon'
 import type { MinistryFlightBan } from '../areaTypes'
+import { useI18n } from '../../../../../shared/i18n'
+import { areaDecisionSummaryMessages } from './AreaDecisionSummary.messages'
 
-export function AreaDecisionSummary({ ministry }: { ministry: MinistryFlightBan }) {
+export function AreaDecisionSummary({
+  ministry,
+}: {
+  ministry: MinistryFlightBan
+}) {
+  const { t } = useI18n(areaDecisionSummaryMessages)
   const hasConflict =
     ministry.violatedZones.length > 0 ||
     (ministry.violatedAreaSquareMeters ?? 0) > 0
   const level = hasConflict ? 'needs_review' : 'favorable'
-  const title = hasConflict
-    ? 'Cần đối chiếu với bản đồ cấm bay'
-    : 'Chưa ghi nhận giao vùng cấm bay'
-  const guidance = hasConflict
-    ? 'Bản đồ của Bộ Quốc phòng ghi nhận khu vực giao vùng cấm hoặc hạn chế bay. Hãy mở bản đồ, đối chiếu mã vùng bên dưới và xác nhận điều kiện trước khi duyệt.'
-    : 'Bạn có thể tiếp tục xem các điều kiện duyệt khác. Điều kiện bay cuối cùng vẫn cần được xác nhận khi lập kế hoạch.'
+  const title = hasConflict ? t.conflictTitle : t.clearTitle
+  const guidance = hasConflict ? t.conflictGuidance : t.clearGuidance
 
   return (
     <div className={`odm-or-area-decision is-${level}`}>

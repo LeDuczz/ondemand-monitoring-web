@@ -9,6 +9,8 @@ import type { Answer } from '../readinessTypes'
 import type { ReadinessCriterion } from '../../../types/readiness'
 import type { Dispatch, SetStateAction } from 'react'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { readinessCriterionRowMessages } from './ReadinessCriterionRow.messages'
 
 export function ReadinessCriterionRow({
   current,
@@ -37,6 +39,7 @@ export function ReadinessCriterionRow({
   options: Answer[]
   choose: (criterion: ReadinessCriterion, result: Answer) => void
 }) {
+  const { t } = useI18n(readinessCriterionRowMessages)
   return (
     <li className={`is-${(current ?? 'pending').toLowerCase()}`}>
       <span className="odm-or-readiness-dot" aria-hidden="true" />
@@ -44,13 +47,13 @@ export function ReadinessCriterionRow({
         <strong>
           {criterionTitleOverrides[c.code] ?? c.title}
           {c.required ? (
-            <span className="odm-or-readiness-tag">Bắt buộc</span>
+            <span className="odm-or-readiness-tag">{t.required}</span>
           ) : null}
         </strong>
         <span>{criterionDescriptionOverrides[c.code] ?? c.description}</span>
         {c.decidedByName && !draft ? (
           <span className="odm-or-readiness-meta">
-            Người xác nhận: {c.decidedByName}
+            {t.decidedBy}: {c.decidedByName}
           </span>
         ) : null}
         {needsNote || (c.note && !draft) || draft ? (
@@ -60,10 +63,10 @@ export function ReadinessCriterionRow({
             disabled={!editable}
             placeholder={
               needsNote
-                ? (failNotePlaceholders[c.code] ?? 'Lý do không đạt (bắt buộc)')
-                : 'Ghi chú'
+                ? (failNotePlaceholders[c.code] ?? t.failReasonPlaceholder)
+                : t.notePlaceholder
             }
-            aria-label={`Ghi chú: ${criterionTitleOverrides[c.code] ?? c.title}`}
+            aria-label={`${t.noteLabel}: ${criterionTitleOverrides[c.code] ?? c.title}`}
             onChange={(event) =>
               setDrafts((state) => ({
                 ...state,
@@ -86,7 +89,7 @@ export function ReadinessCriterionRow({
             }
             onClick={() => void save(c.code, draft.result, draft.note)}
           >
-            Lưu
+            {t.save}
           </Button>
         ) : null}
       </div>
@@ -106,7 +109,7 @@ export function ReadinessCriterionRow({
             onClick={() => choose(c, option)}
           >
             {savingCode === c.code && current === option
-              ? 'Đang lưu…'
+              ? t.saving
               : (contextualAnswerLabels[c.code]?.[option] ??
                 resultLabel[option])}
           </button>

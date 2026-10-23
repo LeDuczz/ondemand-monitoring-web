@@ -3,6 +3,7 @@ import { OrderIcon } from './OrderIcon'
 import { missionRoles } from './liveDispatchConstants'
 import { StaffCombobox } from './StaffCombobox'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
+import { commonMiscMessages } from './commonMisc.messages'
 import { useI18n } from '../../../../shared/i18n'
 import type { MissionStaffRole } from '../../../mission/types/mission'
 import type { Dispatch, SetStateAction } from 'react'
@@ -34,6 +35,7 @@ export function DispatchStaffStep({
   selectedStaffIds: string[]
 }) {
   const { t } = useI18n(liveDispatchPageMessages)
+  const { t: m } = useI18n(commonMiscMessages)
   return (
     <section className="odm-or-card">
       <header className="odm-or-card-head">
@@ -99,7 +101,7 @@ export function DispatchStaffStep({
                         setError(null)
                       }}
                     >
-                      Dùng người này cho các vai trò còn trống
+                      {m.useForEmptyRoles}
                     </button>
                   )}
                 <StaffCombobox

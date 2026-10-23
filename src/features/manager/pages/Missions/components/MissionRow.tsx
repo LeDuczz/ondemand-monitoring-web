@@ -44,9 +44,9 @@ export function MissionRow({
             orderId: m.orderId,
           })}
           onClick={(event) => event.stopPropagation()}
-          aria-label={`Mở kế hoạch Order của ${m.missionCode}`}
+          aria-label={t.openOrderPlanOf(m.missionCode)}
         >
-          {m.orderCode ? formatOrderCode(m.orderCode) : 'Mở kế hoạch Order'}
+          {m.orderCode ? formatOrderCode(m.orderCode) : t.openOrderPlan}
         </a>
       </td>
       <td>{formatScheduled(m.scheduledStartAt, m.scheduledEndAt, locale)}</td>
@@ -95,7 +95,8 @@ export function MissionRow({
         </Button>
         {assignmentReadiness(m).needsSetup && (
           <Button
-            variant="primary" size="sm"
+            variant="primary"
+            size="sm"
             href={managerHref({
               screen: 'missionSetup',
               missionId: m.id,

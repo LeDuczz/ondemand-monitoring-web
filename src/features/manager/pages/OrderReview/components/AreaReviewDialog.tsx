@@ -7,6 +7,7 @@ import { REVIEW_OPTIONS, UNSUITABLE_REASONS } from '../areaHelpers'
 import { Button, useToast } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { managerFeedbackMessages } from '../../../feedback.messages'
+import { areaReviewDialogMessages } from './AreaReviewDialog.messages'
 
 export function AreaReviewDialog({
   order,
@@ -22,6 +23,7 @@ export function AreaReviewDialog({
   onSaved: (review: SavedAreaReview) => void
 }) {
   const { t: fb } = useI18n(managerFeedbackMessages)
+  const { t } = useI18n(areaReviewDialogMessages)
   const toast = useToast()
   const [status, setStatus] = useState<AreaReviewChoice | null>(
     initial?.status ?? null,
@@ -33,9 +35,8 @@ export function AreaReviewDialog({
   const reasonRequired = status === 'REJECTED' || status === 'CHANGE_LOCATION'
 
   async function save() {
-    if (!status) return setError('Chọn một kết quả đánh giá.')
-    if (reasonRequired && !reason.trim())
-      return setError('Chọn lý do khu vực không phù hợp.')
+    if (!status) return setError(t.chooseResult)
+    if (reasonRequired && !reason.trim()) return setError(t.chooseReason)
     setSaving(true)
     setError('')
     try {
@@ -66,8 +67,8 @@ export function AreaReviewDialog({
         reviewedAt: result.flightAreaReviewedAt ?? new Date().toISOString(),
       })
     } catch {
-      setError('Không thể lưu đánh giá. Vui lòng thử lại.')
-      toast.error('Không thể lưu đánh giá. Vui lòng thử lại.')
+      setError(t.saveFailed)
+      toast.error(t.saveFailed)
     } finally {
       setSaving(false)
     }
@@ -89,16 +90,16 @@ export function AreaReviewDialog({
       >
         <header>
           <div>
-            <h3 id="area-review-title">Đánh giá điều kiện khu vực bay</h3>
-            <p>Kết quả bản đồ cần được Manager xác nhận trước khi tiếp tục.</p>
+            <h3 id="area-review-title">{t.title}</h3>
+            <p>{t.subtitle}</p>
           </div>
-          <button type="button" aria-label="Đóng" onClick={onClose}>
+          <button type="button" aria-label={t.close} onClick={onClose}>
             ×
           </button>
         </header>
         <div className="odm-or-area-modal-context">
-          <b>{order.title || 'Yêu cầu giám sát'}</b>
-          <span>{zoneCount} vùng cần đối chiếu</span>
+          <b>{order.title || t.monitoringRequest}</b>
+          <span>{t.zonesToCheck(zoneCount)}</span>
         </div>
         <div className="odm-or-area-review-options">
           {REVIEW_OPTIONS.map((option) => (
@@ -124,12 +125,12 @@ export function AreaReviewDialog({
         </div>
         {reasonRequired ? (
           <label className="odm-or-area-field">
-            Lý do
+            {t.reason}
             <select
               value={reason}
               onChange={(event) => setReason(event.target.value)}
             >
-              <option value="">Chọn lý do</option>
+              <option value="">{t.selectReason}</option>
               {UNSUITABLE_REASONS.map((item) => (
                 <option key={item}>{item}</option>
               ))}
@@ -137,12 +138,12 @@ export function AreaReviewDialog({
           </label>
         ) : null}
         <label className="odm-or-area-field">
-          Ghi chú của Manager
+          {t.managerNote}
           <textarea
             rows={3}
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="Ghi lại nội dung đã đối chiếu hoặc lưu ý cho bước tiếp theo…"
+            placeholder={t.notePlaceholder}
           />
         </label>
         {error ? (
@@ -152,7 +153,7 @@ export function AreaReviewDialog({
         ) : null}
         <footer>
           <Button type="button" onClick={onClose}>
-            Hủy
+            {t.cancel}
           </Button>
           <Button
             type="button"
@@ -160,7 +161,7 @@ export function AreaReviewDialog({
             disabled={saving}
             onClick={save}
           >
-            {saving ? 'Đang lưu…' : 'Xác nhận đánh giá'}
+            {saving ? t.saving : t.confirm}
           </Button>
         </footer>
       </section>

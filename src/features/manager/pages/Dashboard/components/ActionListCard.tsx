@@ -1,23 +1,20 @@
 import { formatVnd } from '../../../../../shared/lib/formatVnd'
 import { managerHref } from '../../../routes'
 import type { ActionItem } from '../../../types/dashboard'
+import { dashboardPageMessages } from '../DashboardPage.messages'
 import { actionItemRoute, formatDashboardDate } from '../dashboardHelpers'
+import { useI18n } from '../../../../../shared/i18n'
 import { Button } from '../../../../../shared/components/ui'
 
-const actionLabel: Record<NonNullable<ActionItem['actionType']>, string> = {
-  REVIEW_PRICING: 'Xem & duyệt giá',
-  VIEW_ORDER: 'Xem yêu cầu',
-  VIEW_QUOTE: 'Xem báo giá',
-  VIEW_MISSION: 'Xem Mission',
-}
-
 export function ActionListCard({ items }: { items: ActionItem[] }) {
+  const { t } = useI18n(dashboardPageMessages)
+  const a = t.actions
   return (
     <section className="odm-card odm-mgr-section">
-      <div className="odm-card-header">Cần bạn xử lý</div>
+      <div className="odm-card-header">{a.title}</div>
       {items.length === 0 ? (
         <div className="odm-mgr-empty-list">
-          <div className="odm-mgr-empty-list-title">Hiện tại không có công việc nào cần xử lý.</div>
+          <div className="odm-mgr-empty-list-title">{a.empty}</div>
         </div>
       ) : (
         <ul className="odm-mgr-action-list">
@@ -30,11 +27,11 @@ export function ActionListCard({ items }: { items: ActionItem[] }) {
                   {[item.orderCode ?? item.code, item.description ?? item.subtitle].filter(Boolean).join(' · ')}
                 </div>
                 {item.systemCalculatedAmount != null ? (
-                  <div className="odm-mgr-action-price">Giá hệ thống: {formatVnd(item.systemCalculatedAmount)}</div>
+                  <div className="odm-mgr-action-price">{a.systemPrice}: {formatVnd(item.systemCalculatedAmount)}</div>
                 ) : null}
               </div>
               <time className="odm-mgr-action-age" dateTime={item.createdAt}>{item.createdAt ? formatDashboardDate(item.createdAt) : ''}</time>
-              <Button size="sm" href={managerHref(actionItemRoute(item))}>{item.actionType ? actionLabel[item.actionType] : 'Xem'}</Button>
+              <Button size="sm" href={managerHref(actionItemRoute(item))}>{item.actionType ? a[item.actionType] : a.view}</Button>
             </li>
           ))}
         </ul>

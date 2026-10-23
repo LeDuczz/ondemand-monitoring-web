@@ -7,6 +7,7 @@ import { OrderAttachmentsCard } from '../../../components/common/OrderAttachment
 import { ReviewStageActions } from './ReviewStageActions'
 import { orderReviewPageMessages } from '../OrderReviewPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
+import { reviewStageRequestMessages } from './ReviewStageRequest.messages'
 import type { OrderDetail } from '../../../types/orders'
 import type { ReviewStep } from '../reviewTypes'
 
@@ -20,8 +21,9 @@ export function ReviewStageRequest({
   goToStep: (step: ReviewStep) => void
 }) {
   const { t, locale } = useI18n(orderReviewPageMessages)
+  const { t: tr } = useI18n(reviewStageRequestMessages)
   return (
-    <div className="odm-or-review-stage" aria-label="Thông tin đơn">
+    <div className="odm-or-review-stage" aria-label={tr.orderInfo}>
       <ReadOnlyScope on={readOnly}>
         <section className="odm-or-grid odm-or-review-summary">
           <div className="odm-or-col">

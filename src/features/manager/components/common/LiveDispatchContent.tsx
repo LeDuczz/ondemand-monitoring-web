@@ -1,4 +1,5 @@
 import type { OrderDispatchContext, DispatchStep } from './liveDispatchTypes'
+import { commonMiscMessages } from './commonMisc.messages'
 import { useI18n } from '../../../../shared/i18n'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
 import { useState, useRef } from 'react'
@@ -28,6 +29,7 @@ export function LiveDispatchContent({
   orderContext?: OrderDispatchContext
 }) {
   const { t } = useI18n(liveDispatchPageMessages)
+  const { t: m } = useI18n(commonMiscMessages)
   const {
     mission,
     scope,
@@ -103,7 +105,7 @@ export function LiveDispatchContent({
           new Error(
             !validWindow
               ? t.scheduleRequired
-              : 'Không thể tải nguồn lực của nhiệm vụ này. Vui lòng thử lại.',
+              : m.resourcesLoadFailed,
           )
         }
         onRetry={() => {
@@ -126,15 +128,14 @@ export function LiveDispatchContent({
     return (
       <section className="odm-or-card odm-or-card-body">
         <p role="alert">
-          Nhiệm vụ không còn đủ điều kiện phân công trong Order này. Vui lòng
-          chọn lại nhiệm vụ.
+          {m.missionNotEligible}
         </p>
         <Button
           onClick={() => orderContext.onReturn()}
         >
           {orderContext.missionScoped
             ? orderContext.returnLabel
-            : 'Chọn nhiệm vụ khác'}
+            : m.chooseOtherMission}
         </Button>
       </section>
     )

@@ -1,12 +1,14 @@
 import type { ReviewStep } from '../reviewTypes'
 import { REVIEW_PAGE_COUNT } from '../reviewHelpers'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { reviewStageActionsMessages } from './ReviewStageActions.messages'
 
 export function ReviewStageActions({
   step,
   onBack,
   onNext,
-  nextLabel = 'Tiếp: Điều kiện duyệt',
+  nextLabel,
   hint,
   nextDisabled = false,
 }: {
@@ -17,15 +19,16 @@ export function ReviewStageActions({
   hint?: string | null
   nextDisabled?: boolean
 }) {
+  const { t } = useI18n(reviewStageActionsMessages)
   return (
     <div className="odm-or-review-stage-actions">
       {onBack ? (
         <Button type="button" onClick={onBack}>
-          Quay lại
+          {t.back}
         </Button>
       ) : null}
       <span className="odm-or-review-stage-progress">
-        Bước {step}/{REVIEW_PAGE_COUNT}
+        {t.step(step, REVIEW_PAGE_COUNT)}
       </span>
       {hint ? (
         <span className="odm-or-review-stage-hint" role="status">
@@ -39,7 +42,7 @@ export function ReviewStageActions({
           onClick={onNext}
           disabled={nextDisabled}
         >
-          {nextLabel}
+          {nextLabel ?? t.nextDefault}
         </Button>
       ) : null}
     </div>

@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react'
 import { missionsApi } from '../../api/missionsApi'
 import type { FlightPermitStatus, MissionResponse } from '../../types/missions'
 import { Button, useToast } from '../../../../shared/components/ui'
-import { useI18n } from '../../../../shared/i18n'
+import { getLanguage, useI18n } from '../../../../shared/i18n'
+import { flightPermitCardMessages } from './FlightPermitCard.messages'
 import { managerFeedbackMessages } from '../../feedback.messages'
-
-const labels: Record<FlightPermitStatus, string> = {
-  NOT_REQUESTED: 'Chưa xin phép',
-  PENDING: 'Đang chờ cấp phép',
-  APPROVED: 'Đã được cấp phép',
-  REJECTED: 'Bị từ chối',
-}
 
 export function FlightPermitCard({
   mission,
@@ -19,6 +13,7 @@ export function FlightPermitCard({
   mission: MissionResponse
   onChanged: () => void
 }) {
+  const { t } = useI18n(flightPermitCardMessages)
   const { t: fb } = useI18n(managerFeedbackMessages)
   const toast = useToast()
   const status = mission.flightPermitStatus ?? 'NOT_REQUESTED'
@@ -38,7 +33,7 @@ export function FlightPermitCard({
   async function save(nextStatus: FlightPermitStatus) {
     setError('')
     if (file && file.size > 5 * 1024 * 1024) {
-      setError('File giấy phép không được vượt quá 5 MB.')
+      setError(t.fileTooLarge)
       return
     }
     setBusy(true)
@@ -57,7 +52,7 @@ export function FlightPermitCard({
       const failure =
         cause instanceof Error
           ? cause.message
-          : 'Không thể cập nhật giấy phép bay.'
+          : t.updateFailed
       setError(failure)
       toast.error(failure)
     } finally {
@@ -68,24 +63,24 @@ export function FlightPermitCard({
   return (
     <section
       className="odm-or-card odm-flight-permit"
-      aria-label={`Giấy phép bay ${mission.missionCode}`}
+      aria-label={t.ariaLabel(mission.missionCode)}
     >
       <header className="odm-or-card-head odm-flight-permit__head">
         <span className="odm-or-card-title">
-          Giấy phép bay · {mission.missionCode}
+          {t.title(mission.missionCode)}
         </span>
         <span
           className={`odm-or-pill ${status === 'APPROVED' ? 'odm-or-pill-green' : 'odm-or-pill-amber'}`}
         >
-          {labels[status]}
+          {t.statuses[status]}
         </span>
       </header>
       <div className="odm-or-card-body odm-flight-permit__body">
         <p className="odm-or-muted odm-flight-permit__intro">
-          Mission chỉ được bắt đầu sau khi giấy phép được xác nhận là đã cấp.
+          {t.intro}
         </p>
         <label className="odm-flight-permit__field">
-          <strong>Ghi chú</strong>
+          <strong>{t.note}</strong>
           <textarea
             className="odm-flight-permit__textarea"
             value={note}
@@ -93,19 +88,17 @@ export function FlightPermitCard({
             rows={3}
             disabled={busy}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="Ví dụ: Đã gửi thông tin xin phép"
+            placeholder={t.notePlaceholder}
           />
         </label>
         <div className="odm-flight-permit__field">
-          <strong>
-            File giấy phép (không bắt buộc)
-          </strong>
+          <strong>{t.fileOptional}</strong>
           <input
             id={`flight-permit-file-${mission.id}`}
             type="file"
             accept="application/pdf,image/*"
             disabled={busy}
-            aria-label="Chọn tệp giấy phép"
+            aria-label={t.chooseFileAria}
             style={{ display: 'none' }}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
@@ -118,16 +111,16 @@ export function FlightPermitCard({
               <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
                 <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" />
               </svg>
-              Chọn tệp
+              {t.chooseFile}
             </label>
             <span className="odm-or-muted odm-flight-permit__file-name" title={file?.name}>
-              {file?.name ?? 'Chưa chọn tệp'}
+              {file?.name ?? t.noFileChosen}
             </span>
           </div>
         </div>
         {mission.flightPermitFileName ? (
           <div className="odm-flight-permit__current-file">
-            File hiện tại:{' '}
+            {t.currentFile}{' '}
             {mission.flightPermitDataUrl ? (
               <a
                 href={mission.flightPermitDataUrl}
@@ -141,7 +134,7 @@ export function FlightPermitCard({
           </div>
         ) : (
           <div className="odm-or-muted odm-flight-permit__current-file">
-            File giấy phép: Chưa có
+            {t.noPermitFile}
           </div>
         )}
         {error ? (
@@ -162,7 +155,7 @@ export function FlightPermitCard({
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
                 <path d="M5 12.5l4.5 4.5L19 7.5" />
               </svg>
-              Xác nhận đã được cấp phép
+              {t.confirmApproved}
             </Button>
           ) : hasChanges ? (
             <Button
@@ -170,7 +163,7 @@ export function FlightPermitCard({
               disabled={busy}
               onClick={() => save('APPROVED')}
             >
-              Lưu thay đổi
+              {t.saveChanges}
             </Button>
           ) : null}
           {status !== 'REJECTED' && status !== 'APPROVED' ? (
@@ -182,7 +175,7 @@ export function FlightPermitCard({
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
-              Từ chối
+              {t.reject}
             </Button>
           ) : null}
         </div>
@@ -195,7 +188,7 @@ function readFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(new Error('Không thể đọc file giấy phép.'))
+    reader.onerror = () => reject(new Error(flightPermitCardMessages[getLanguage()].readFailed))
     reader.readAsDataURL(file)
   })
 }

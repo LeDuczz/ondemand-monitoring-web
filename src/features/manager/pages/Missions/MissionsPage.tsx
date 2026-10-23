@@ -108,7 +108,7 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
                 <StateView
                   state="error"
                   title={t.loadError}
-                  error="Không thể tải danh sách nhiệm vụ. Vui lòng thử lại."
+                  error={t.loadErrorDetail}
                   onRetry={query.reload}
                 />
               </div>

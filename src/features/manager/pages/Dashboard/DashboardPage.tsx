@@ -14,7 +14,7 @@ import { formatDashboardDate, normalizeDashboard } from './dashboardHelpers'
 import { Button } from '../../../../shared/components/ui'
 
 export function DashboardPage() {
-  const { t, lang } = useI18n(dashboardPageMessages)
+  const { t } = useI18n(dashboardPageMessages)
   const [range, setRange] = useState<'7D' | '30D' | '90D'>('30D')
   const query = useApiQuery((signal) => managerApi.getDashboard(range, signal), [range])
 
@@ -38,7 +38,7 @@ export function DashboardPage() {
         <div>
           <h1 className="odm-mgr-dash-title">{t.title}</h1>
           <span className="odm-visually-hidden">
-            {lang === 'vi' ? 'Dashboard điều hành' : 'Operations dashboard'}
+            {t.opsDashboard}
           </span>
           <p className="odm-mgr-dash-subtitle">{t.subtitle}</p>
           <div className="odm-mgr-dash-date">
@@ -46,11 +46,11 @@ export function DashboardPage() {
           </div>
         </div>
         <div className="odm-mgr-dashboard-controls">
-          <div className="odm-mgr-range" role="group" aria-label="Khoảng thời gian phân tích">
+          <div className="odm-mgr-range" role="group" aria-label={t.rangeLabel}>
             {(['7D', '30D', '90D'] as const).map((value) => (
               <button key={value} type="button" className={range === value ? 'is-active' : ''}
                 aria-pressed={range === value} onClick={() => setRange(value)}>
-                {value === '7D' ? '7 ngày' : value === '30D' ? '30 ngày' : '90 ngày'}
+                {t.ranges[value]}
               </button>
             ))}
           </div>

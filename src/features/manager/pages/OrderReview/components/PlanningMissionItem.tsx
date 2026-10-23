@@ -9,6 +9,8 @@ import type { Invoice } from '../../../../finance/types'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import type { Dispatch, SetStateAction } from 'react'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { planningMissionItemMessages } from './PlanningMissionItem.messages'
 
 export function PlanningMissionItem({
   mission,
@@ -77,6 +79,7 @@ export function PlanningMissionItem({
   updateCancelCapability: (missionId: string, canCancel: boolean) => void
   updateRuntimeBlocked: (id: string, blocked: boolean) => void
 }) {
+  const { t } = useI18n(planningMissionItemMessages)
   return (
     <div hidden={mission.id !== selected}>
       <MissionPlanningCard
@@ -110,7 +113,8 @@ export function PlanningMissionItem({
               !['COMPLETED', 'CANCELLED'].includes(mission.status) &&
               cancelCapabilities[mission.id] === true &&
               runtimeBlocked[mission.id] === false && (
-                <Button type="submit"
+                <Button
+                  type="submit"
                   variant="danger"
                   disabled={busy || saving || dirty}
                   onClick={() => {
@@ -118,7 +122,7 @@ export function PlanningMissionItem({
                     setReason('')
                   }}
                 >
-                  Hủy Mission {mission.missionCode}
+                  {t.cancelMission(mission.missionCode)}
                 </Button>
               )}
             {cancelling === mission.id &&
@@ -130,7 +134,7 @@ export function PlanningMissionItem({
                   }}
                 >
                   <label>
-                    Lý do hủy {mission.missionCode}
+                    {t.cancelReason(mission.missionCode)}
                     <textarea
                       required
                       maxLength={1000}
@@ -138,7 +142,8 @@ export function PlanningMissionItem({
                       onChange={(e) => setReason(e.target.value)}
                     />
                   </label>
-                  <Button type="submit"
+                  <Button
+                    type="submit"
                     disabled={
                       busy ||
                       !reason.trim() ||
@@ -146,13 +151,10 @@ export function PlanningMissionItem({
                       cancelCapabilities[mission.id] !== true
                     }
                   >
-                    Xác nhận hủy Mission
+                    {t.confirmCancel}
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setCancelling(null)}
-                  >
-                    Đóng
+                  <Button type="button" onClick={() => setCancelling(null)}>
+                    {t.close}
                   </Button>
                 </form>
               )}
@@ -162,7 +164,7 @@ export function PlanningMissionItem({
                 disabled={busy || saving}
                 onClick={() => setCreating({ replacesMissionId: mission.id })}
               >
-                Tạo Mission thay thế cho {mission.missionCode}
+                {t.createReplacement(mission.missionCode)}
               </Button>
             )}
           </div>

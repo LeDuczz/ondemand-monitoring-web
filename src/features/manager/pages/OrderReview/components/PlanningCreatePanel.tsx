@@ -6,6 +6,8 @@ import type { ExecutionPlan } from '../../../types/planning'
 import type { MissionResponse } from '../../../types/missions'
 import type { OrderDetail } from '../../../types/orders'
 import type { Invoice } from '../../../../finance/types'
+import { useI18n } from '../../../../../shared/i18n'
+import { planningCreatePanelMessages } from './PlanningCreatePanel.messages'
 
 export function PlanningCreatePanel({
   confirmation,
@@ -29,32 +31,28 @@ export function PlanningCreatePanel({
     invoice: Invoice | null
   }>
 }) {
+  const { t } = useI18n(planningCreatePanelMessages)
   return (
-    <section
-      className="odm-planning-create-panel"
-      aria-label="Tạo Mission trong Order"
-    >
+    <section className="odm-planning-create-panel" aria-label={t.panelLabel}>
       <header className="odm-planning-create-head">
         <span className="odm-planning-create-icon" aria-hidden="true">
           ＋
         </span>
         <div>
-          <h3>Tạo Mission mới</h3>
-          <p>
-            Đặt tên dễ nhận biết, sau đó kiểm tra thời tiết và chọn lịch bay.
-          </p>
+          <h3>{t.title}</h3>
+          <p>{t.intro}</p>
         </div>
         <button
           className="odm-planning-create-close"
           type="button"
-          aria-label="Đóng form tạo Mission"
-          title="Đóng form"
+          aria-label={t.closeFormLabel}
+          title={t.closeFormTitle}
           onClick={async () => {
             if (
               await confirmation.confirm({
-                title: 'Đóng form tạo Mission?',
-                body: 'Dữ liệu chưa gửi sẽ không được lưu.',
-                action: 'Đóng form',
+                title: t.confirmTitle,
+                body: t.confirmBody,
+                action: t.confirmAction,
               })
             )
               setCreating(null)

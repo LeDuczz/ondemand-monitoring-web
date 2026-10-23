@@ -23,6 +23,7 @@ import { PlanningAdjustmentForm } from './PlanningAdjustmentForm'
 import { PlanningMissionItem } from './PlanningMissionItem'
 import { managerHref } from '../../../routes'
 import { Button } from '../../../../../shared/components/ui'
+import { orderMissionPlanningSectionMessages } from './OrderMissionPlanningSection.messages'
 
 /** What the page header needs to draw the Order/Mission workflow honestly. */
 export type PlanningWorkflowInfo = {
@@ -65,6 +66,7 @@ function OrderPlanningWorkspace({
   onWorkflowInfo?: (info: PlanningWorkflowInfo) => void
 }) {
   const { t } = useI18n(planningPresentationMessages)
+  const { t: ts } = useI18n(orderMissionPlanningSectionMessages)
   const confirmation = usePlanningConfirmation()
   const initialOrderRef = useRef(
     initialOrder?.id === orderId ? initialOrder : undefined,
@@ -227,11 +229,11 @@ function OrderPlanningWorkspace({
             disabled={busy || saving || query.loading}
             onClick={query.reload}
           >
-            Tải lại kế hoạch
+            {ts.reloadPlan}
           </Button>
         }
       />
-      {query.loading && <p role="status">Đang tải kế hoạch…</p>}
+      {query.loading && <p role="status">{ts.loadingPlan}</p>}
       {query.error ? <p role="alert">{planningError(query.error)}</p> : null}
       {message && (
         <p role="status" className="odm-planning-notice">
@@ -258,9 +260,9 @@ function OrderPlanningWorkspace({
           )}
           {allAssigned && (
             <div className="odm-planning-complete" role="status">
-              <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
+              <span>{ts.allAssigned}</span>
               <Button variant="primary" href="#portal/manager/orders">
-                Về danh sách đơn
+                {ts.backToOrders}
               </Button>
             </div>
           )}
@@ -284,8 +286,7 @@ function OrderPlanningWorkspace({
           )}
           {dirty && (
             <p className="odm-mission-meta" role="status">
-              Thay đổi chưa lưu được giữ riêng theo Mission. Lưu phân công trước
-              khi chốt hoặc điều chỉnh kế hoạch.
+              {ts.unsavedPerMission}
             </p>
           )}
           {creating && (

@@ -1,5 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { planningAdjustmentFormMessages } from './PlanningAdjustmentForm.messages'
 
 export function PlanningAdjustmentForm({
   mutate,
@@ -17,6 +19,7 @@ export function PlanningAdjustmentForm({
   busy: boolean
   setAmending: Dispatch<SetStateAction<boolean>>
 }) {
+  const { t } = useI18n(planningAdjustmentFormMessages)
   return (
     <form
       className="odm-planning-adjustment"
@@ -25,13 +28,10 @@ export function PlanningAdjustmentForm({
         void mutate('amend')
       }}
     >
-      <h3>Điều chỉnh kế hoạch</h3>
-      <p>
-        Mở lại kế hoạch để thêm hoặc thay thế Mission. Lịch sử thực thi vẫn được
-        giữ nguyên.
-      </p>
+      <h3>{t.title}</h3>
+      <p>{t.intro}</p>
       <label>
-        Lý do điều chỉnh kế hoạch
+        {t.reasonLabel}
         <textarea
           required
           autoFocus
@@ -41,13 +41,10 @@ export function PlanningAdjustmentForm({
         />
       </label>
       <Button type="submit" variant="primary" disabled={busy || !reason.trim()}>
-        Xác nhận điều chỉnh
+        {t.confirm}
       </Button>
-      <Button
-        type="button"
-        onClick={() => setAmending(false)}
-      >
-        Đóng
+      <Button type="button" onClick={() => setAmending(false)}>
+        {t.close}
       </Button>
     </form>
   )

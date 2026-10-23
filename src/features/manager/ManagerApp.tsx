@@ -17,6 +17,8 @@ import { SchedulePage } from './pages/Schedule'
 import { StaffSupportDashboardPage } from '../support/pages/StaffSupportDashboardPage'
 import { managerHref, parseManagerRoute, type ManagerRoute } from './routes'
 import { Button } from '../../shared/components/ui'
+import { useI18n } from '../../shared/i18n'
+import { managerLayoutMessages } from './ManagerLayout.messages'
 
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash)
@@ -28,20 +30,23 @@ function useHash(): string {
   return hash
 }
 
-const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
-  dashboard: 'Dashboard',
-  orderQueue: 'Đơn hàng',
-  orderReview: 'Đơn hàng',
-  missionCreate: 'Đơn hàng',
-  missionDispatch: 'Nhiệm vụ',
-  missionSetup: 'Thiết lập nhiệm vụ',
-  missionDetail: 'Chi tiết nhiệm vụ',
-  schedule: 'Lịch nhiệm vụ',
-  missions: 'Nhiệm vụ',
-  drones: 'Đội drone',
-  maintenance: 'Bảo trì',
-  support: 'Trung tâm Hỗ trợ',
-  notFound: 'Không tìm thấy',
+const breadcrumbKey: Record<
+  ManagerRoute['screen'],
+  keyof (typeof managerLayoutMessages)['vi']['breadcrumbs']
+> = {
+  dashboard: 'dashboard',
+  orderQueue: 'orders',
+  orderReview: 'orders',
+  missionCreate: 'orders',
+  missionDispatch: 'missions',
+  missionSetup: 'missionSetup',
+  missionDetail: 'missionDetail',
+  schedule: 'schedule',
+  missions: 'missions',
+  drones: 'drones',
+  maintenance: 'maintenance',
+  support: 'support',
+  notFound: 'notFound',
 }
 
 /**
@@ -57,6 +62,7 @@ const breadcrumbLabel: Record<ManagerRoute['screen'], string> = {
  */
 export function ManagerApp() {
   const hash = useHash()
+  const { t } = useI18n(managerLayoutMessages)
   const route = parseManagerRoute(hash)
   const navCounts = useApiQuery((signal) => managerApi.getDashboard('30D', signal), [])
 
@@ -67,15 +73,18 @@ export function ManagerApp() {
   return (
     <ManagerLayout
       route={route}
-      breadcrumb={breadcrumbLabel[route.screen]}
+      breadcrumb={t.breadcrumbs[breadcrumbKey[route.screen]]}
       counts={counts}
     >
-      {renderScreen(route)}
+      {renderScreen(route, t.notFound)}
     </ManagerLayout>
   )
 }
 
-function renderScreen(route: ManagerRoute) {
+function renderScreen(
+  route: ManagerRoute,
+  notFound: (typeof managerLayoutMessages)['vi']['notFound'],
+) {
   if (route.screen === 'dashboard') return <DashboardPage />
   if (route.screen === 'orderQueue') return <OrderQueuePage />
   if (route.screen === 'orderReview')
@@ -112,14 +121,14 @@ function renderScreen(route: ManagerRoute) {
   return (
     <StateView
       state="empty"
-      title="Không tìm thấy màn hình"
-      description="Đường dẫn này không tồn tại trong khu vực Staff."
+      title={notFound.title}
+      description={notFound.description}
       action={
         <Button
           variant="primary"
           href={managerHref({ screen: 'dashboard' })}
         >
-          Về Dashboard
+          {notFound.back}
         </Button>
       }
     />

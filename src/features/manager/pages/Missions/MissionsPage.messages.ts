@@ -57,8 +57,18 @@ export const missionsPageMessages = defineMessages({
       readyForDelivery: 'Chờ giao bản gốc',
       delivered: 'Đã bàn giao',
       loading: 'Đang kiểm tra...',
+      approved: 'Kết quả đã duyệt',
+      pendingApproval: 'Kết quả chờ duyệt',
+      rejected: 'Kết quả bị từ chối',
+      noResult: 'Chưa có kết quả',
     },
     backendNotSupported: 'Hệ thống chưa hỗ trợ tạo lại nhiệm vụ',
+    loadErrorDetail: 'Không thể tải danh sách nhiệm vụ. Vui lòng thử lại.',
+    assignedStaffFallback: 'Nhân sự đã phân công',
+    openOrderPlan: 'Mở kế hoạch Order',
+    openOrderPlanOf: (code: string) => `Mở kế hoạch Order của ${code}`,
+    staffAccepted: (accepted: number, total: number) =>
+      `${accepted}/${total} đã nhận`,
   },
   en: {
     statusChips: {
@@ -116,7 +126,17 @@ export const missionsPageMessages = defineMessages({
       readyForDelivery: 'Ready to release originals',
       delivered: 'Delivered',
       loading: 'Checking...',
+      approved: 'Result approved',
+      pendingApproval: 'Result awaiting approval',
+      rejected: 'Result rejected',
+      noResult: 'No result yet',
     },
     backendNotSupported: 'Backend does not support retrying missions yet',
+    loadErrorDetail: 'Could not load the mission list. Please try again.',
+    assignedStaffFallback: 'Assigned staff',
+    openOrderPlan: 'Open Order plan',
+    openOrderPlanOf: (code: string) => `Open Order plan for ${code}`,
+    staffAccepted: (accepted: number, total: number) =>
+      `${accepted}/${total} accepted`,
   },
 })

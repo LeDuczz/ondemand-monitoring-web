@@ -26,6 +26,7 @@ import { ReadinessBlockingNotice } from './ReadinessBlockingNotice'
 import { useToast } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { managerFeedbackMessages } from '../../../feedback.messages'
+import { orderReadinessCardMessages } from './OrderReadinessCard.messages'
 
 /**
  * Approval criteria for an order. Left: what the system checked on its own.
@@ -46,6 +47,7 @@ export function OrderReadinessCard({
   onLocalBlockChange?: (blocked: boolean) => void
 }) {
   const { t: fb } = useI18n(managerFeedbackMessages)
+  const { t } = useI18n(orderReadinessCardMessages)
   const toast = useToast()
   const [drafts, setDrafts] = useState<
     Record<string, { result: Answer; note: string }>
@@ -74,18 +76,16 @@ export function OrderReadinessCard({
     return (
       <section
         className="odm-or-card odm-or-readiness"
-        aria-label="Điều kiện duyệt"
+        aria-label={t.approvalCriteria}
       >
         <header className="odm-or-card-head">
           <span className="odm-or-card-title">
             <OrderIcon name="check" size={18} />
-            Điều kiện duyệt
+            {t.approvalCriteria}
           </span>
         </header>
         <div className="odm-or-card-body odm-or-empty">
-          {query.loading
-            ? 'Đang kiểm tra điều kiện duyệt...'
-            : 'Không tải được điều kiện duyệt.'}
+          {query.loading ? t.checking : t.loadFailed}
         </div>
       </section>
     )
@@ -137,7 +137,7 @@ export function OrderReadinessCard({
       const failure =
         cause instanceof ApiError || cause instanceof Error
           ? cause.message
-          : 'Không lưu được. Vui lòng thử lại.'
+          : t.saveFailed
       setError(failure)
       toast.error(failure)
     } finally {
@@ -165,9 +165,7 @@ export function OrderReadinessCard({
     supplements: SupplementRequest[] = [],
   ) {
     if (!failedReasonsComplete) {
-      setError(
-        'Vui lòng nhập lý do cho tất cả tiêu chí không đạt trước khi tiếp tục.',
-      )
+      setError(t.reasonRequired)
       return
     }
     const reason = failedRequired
@@ -181,11 +179,11 @@ export function OrderReadinessCard({
       .join('; ')
     if (!reason) return
     if (decision === 'NEED_INFO' && supplements.length === 0) {
-      setError('Chọn ít nhất một nội dung khách hàng cần bổ sung.')
+      setError(t.chooseSupplement)
       return
     }
     const supplementReason = supplements.length
-      ? `Khách hàng cần bổ sung: ${supplements.map((item) => item.label).join('; ')}`
+      ? t.customerSupplement(supplements.map((item) => item.label).join('; '))
       : ''
     const requestedUpdateScope = supplements.some(
       (item) => item.scope === 'LOCATION',
@@ -210,11 +208,12 @@ export function OrderReadinessCard({
         reason: [reason, supplementReason].filter(Boolean).join('. '),
         ...(decision === 'NEED_INFO' ? { requestedUpdateScope } : {}),
       })
-      toast.success(decision === 'REJECTED' ? fb.orderRejected : fb.infoRequested)
+      toast.success(
+        decision === 'REJECTED' ? fb.orderRejected : fb.infoRequested,
+      )
       onDecisionDone?.()
     } catch (cause) {
-      const failure =
-        cause instanceof Error ? cause.message : 'Không gửi được quyết định.'
+      const failure = cause instanceof Error ? cause.message : t.submitFailed
       setError(failure)
       toast.error(failure)
       setSavingCode(null)
@@ -234,12 +233,12 @@ export function OrderReadinessCard({
   return (
     <section
       className="odm-or-card odm-or-readiness"
-      aria-label="Điều kiện duyệt"
+      aria-label={t.approvalCriteria}
     >
       <header className="odm-or-card-head">
         <span className="odm-or-card-title">
           <OrderIcon name="check" size={18} />
-          Điều kiện duyệt
+          {t.approvalCriteria}
         </span>
         <div className="odm-or-readiness-head-actions">
           <span
@@ -247,11 +246,11 @@ export function OrderReadinessCard({
             role="status"
           >
             {hasUnsavedRequiredFailure
-              ? 'Có tiêu chí bắt buộc không đạt'
+              ? t.requiredFailed
               : readiness.canApprove
                 ? recommendationText[readiness.recommendation]
                 : pendingRequired > 0
-                  ? `Còn ${pendingRequired} mục manager cần xác nhận`
+                  ? t.pendingManager(pendingRequired)
                   : recommendationText[readiness.recommendation]}
           </span>
         </div>
@@ -260,9 +259,9 @@ export function OrderReadinessCard({
         <ReadinessSummary autoPassed={autoPassed} auto={auto} />
         <div className="odm-or-readiness-col">
           <h3>
-            Manager xác nhận
+            {t.managerConfirm}
             <span className="odm-or-readiness-count">
-              {manualAnswered}/{manual.length} đã xác nhận
+              {manualAnswered}/{manual.length} {t.confirmedCount}
             </span>
           </h3>
           <ul className="odm-or-readiness-list">

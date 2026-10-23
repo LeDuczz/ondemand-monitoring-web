@@ -145,17 +145,11 @@ export function ActiveMissionOverview({
           hideImplementationHints
           missionId={mission.id}
           data={
-            checklist.data?.missionId === missionId
-              ? checklist.data
-              : undefined
+            checklist.data?.missionId === missionId ? checklist.data : undefined
           }
           loading={checklist.loading}
           error={
-            checklist.error
-              ? new Error(
-                  'Không thể tải checklist của Mission này. Vui lòng thử lại.',
-                )
-              : undefined
+            checklist.error ? new Error(t.extra.checklistLoadError) : undefined
           }
           resultStatus={detail.result?.approvalStatus}
           resultNote={detail.result?.reviewNote}
@@ -170,7 +164,7 @@ export function ActiveMissionOverview({
         tabIndex={-1}
         className="odm-md-panel is-media"
         hidden={activeTab !== 'media'}
-        aria-label="Thư viện media"
+        aria-label={t.extra.mediaLibrary}
       >
         <MissionUploadedMedia
           missionId={mission.id}

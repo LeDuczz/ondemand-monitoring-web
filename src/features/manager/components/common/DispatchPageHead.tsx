@@ -1,6 +1,7 @@
 import type { Mission } from '../../../mission/types/mission'
 import { managerHref } from '../../routes'
 import { liveDispatchPageMessages } from './LiveDispatchPage.messages'
+import { commonMiscMessages } from './commonMisc.messages'
 import { useI18n } from '../../../../shared/i18n'
 import type { OrderDispatchContext } from './liveDispatchTypes'
 import { Button } from '../../../../shared/components/ui'
@@ -15,6 +16,7 @@ export function DispatchPageHead({
   busy: boolean
 }) {
   const { t } = useI18n(liveDispatchPageMessages)
+  const { t: m } = useI18n(commonMiscMessages)
   return (
     <div className="odm-or-pagehead odm-or-pagehead-row">
       <div>
@@ -33,7 +35,7 @@ export function DispatchPageHead({
         >
           {orderContext.missionScoped
             ? orderContext.returnLabel
-            : 'Chọn nhiệm vụ khác'}
+            : m.chooseOtherMission}
         </Button>
       ) : (
         <Button

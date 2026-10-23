@@ -87,7 +87,7 @@ export function CompletedMissionOverview({
         tabIndex={-1}
         className="odm-md-panel is-media"
         hidden={activeTab !== 'media'}
-        aria-label="Thư viện media"
+        aria-label={t.extra.mediaLibrary}
       >
         <MissionUploadedMedia
           missionId={mission.id}
@@ -129,9 +129,7 @@ export function CompletedMissionOverview({
             loading={checklist.loading}
             error={
               checklist.error
-                ? new Error(
-                    'Không thể tải checklist của Mission này. Vui lòng thử lại.',
-                  )
+                ? new Error(t.extra.checklistLoadError)
                 : undefined
             }
             resultStatus={detail.result?.approvalStatus}
@@ -158,9 +156,7 @@ export function CompletedMissionOverview({
             loading={checklist.loading}
             error={
               checklist.error
-                ? new Error(
-                    'Không thể tải checklist của Mission này. Vui lòng thử lại.',
-                  )
+                ? new Error(t.extra.checklistLoadError)
                 : undefined
             }
             resultStatus={detail.result?.approvalStatus}

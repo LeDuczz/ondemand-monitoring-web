@@ -84,7 +84,8 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
                 screen: 'missionSetup',
                 missionId: mission.id,
               })}
-              variant="primary" size="sm"
+              variant="primary"
+              size="sm"
             >
               {t.dispatch}
             </Button>
@@ -101,7 +102,8 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
         </dl>
 
         <Button
-          variant="primary" className="odm-or-view-btn"
+          variant="primary"
+          className="odm-or-view-btn"
           href={managerHref({ screen: 'missionDetail', missionId: mission.id })}
         >
           {t.viewDetail}
@@ -155,7 +157,7 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
                 const name =
                   assignment.staffName ??
                   assignment.staffEmail ??
-                  'Nhân sự đã phân công'
+                  t.assignedStaffFallback
                 return (
                   <li key={assignment.id} className="odm-or-crew-item">
                     <span className="odm-or-crew-avatar" aria-hidden="true">
@@ -193,7 +195,7 @@ export function DetailPanel({ mission, onClose, t, locale }: DetailPanelProps) {
             orderId: mission.orderId,
           })}
         >
-          Mở kế hoạch Order
+          {t.openOrderPlan}
         </Button>
       </div>
     </aside>

@@ -7,29 +7,19 @@ import type { FailureAction, SupplementRequest } from '../readinessTypes'
 import { Button, useConfirm } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { managerFeedbackMessages } from '../../../feedback.messages'
+import { readinessBlockingNoticeMessages } from './ReadinessBlockingNotice.messages'
 
-const supplementOptions: Record<
-  string,
-  Array<Omit<SupplementRequest, 'id'>>
-> = {
-  SERVICE_AREA: [
-    { label: 'Chọn lại vị trí hoặc vùng giám sát', scope: 'LOCATION' },
-  ],
-  SITE_ACCESS: [
-    {
-      label: 'Giấy tờ chứng minh quyền sử dụng hoặc giấy ủy quyền tại khu vực',
-      scope: 'ADDITIONAL_INFORMATION',
-    },
-  ],
-  REQUESTED_SCOPE_FEASIBLE: [
-    { label: 'Chọn lại vùng và bán kính giám sát', scope: 'LOCATION' },
-  ],
-  PURPOSE: [
-    {
-      label: 'Mô tả rõ mục đích sử dụng ảnh và dữ liệu',
-      scope: 'ADDITIONAL_INFORMATION',
-    },
-  ],
+type BlockingT = (typeof readinessBlockingNoticeMessages)['vi']
+
+function buildSupplementOptions(
+  t: BlockingT,
+): Record<string, Array<Omit<SupplementRequest, 'id'>>> {
+  return {
+    SERVICE_AREA: [{ label: t.serviceArea, scope: 'LOCATION' }],
+    SITE_ACCESS: [{ label: t.siteAccess, scope: 'ADDITIONAL_INFORMATION' }],
+    REQUESTED_SCOPE_FEASIBLE: [{ label: t.requestedScope, scope: 'LOCATION' }],
+    PURPOSE: [{ label: t.purpose, scope: 'ADDITIONAL_INFORMATION' }],
+  }
 }
 
 export function ReadinessBlockingNotice({
@@ -49,17 +39,18 @@ export function ReadinessBlockingNotice({
   ) => Promise<void>
 }) {
   const { t: fb } = useI18n(managerFeedbackMessages)
+  const { t } = useI18n(readinessBlockingNoticeMessages)
   const confirm = useConfirm()
   const [showSupplementForm, setShowSupplementForm] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
-  const availableOptions = useMemo(
-    () =>
-      failedRequired
-        .filter((criterion) => criterion.code !== 'CAPABILITY')
-        .flatMap((criterion) => {
+  const availableOptions = useMemo(() => {
+    const supplementOptions = buildSupplementOptions(t)
+    return failedRequired
+      .filter((criterion) => criterion.code !== 'CAPABILITY')
+      .flatMap((criterion) => {
         const options = supplementOptions[criterion.code] ?? [
           {
-            label: `Bổ sung thông tin và tài liệu làm rõ: ${criterion.title}`,
+            label: t.clarify(criterion.title),
             scope: 'ADDITIONAL_INFORMATION' as const,
           },
         ]
@@ -67,18 +58,14 @@ export function ReadinessBlockingNotice({
           ...option,
           id: `${criterion.code}-${index}`,
         }))
-        }),
-    [failedRequired],
-  )
+      })
+  }, [failedRequired, t])
   const selectedRequests = availableOptions.filter((option) =>
     selected.includes(option.id),
   )
 
   return (
-    <div
-      className="odm-or-readiness-blocking"
-      aria-label="Lý do chưa thể duyệt"
-    >
+    <div className="odm-or-readiness-blocking" aria-label={t.cannotApprove}>
       <ul>
         {readiness.blockingReasons.map((reason) => (
           <li key={reason}>{reason}</li>
@@ -93,7 +80,7 @@ export function ReadinessBlockingNotice({
               disabled={savingCode === 'decision'}
               onClick={() => setShowSupplementForm(true)}
             >
-              Yêu cầu bổ sung
+              {t.requestSupplement}
             </Button>
           ) : null}
           <Button
@@ -110,15 +97,15 @@ export function ReadinessBlockingNotice({
               if (ok) void submitFailedDecision('REJECTED')
             }}
           >
-            Từ chối đơn
+            {t.rejectOrder}
           </Button>
         </div>
       ) : null}
       {showSupplementForm && availableOptions.length > 0 ? (
         <div className="odm-or-supplement-form">
           <fieldset>
-            <legend>Chọn nội dung khách hàng cần bổ sung</legend>
-            <p>Khách hàng sẽ nhìn thấy đúng các yêu cầu được chọn dưới đây.</p>
+            <legend>{t.chooseContent}</legend>
+            <p>{t.customerWillSee}</p>
             <div className="odm-or-supplement-options">
               {availableOptions.map((option) => (
                 <label key={option.id}>
@@ -147,7 +134,7 @@ export function ReadinessBlockingNotice({
                 setSelected([])
               }}
             >
-              Hủy
+              {t.cancel}
             </Button>
             <Button
               type="button"
@@ -159,7 +146,7 @@ export function ReadinessBlockingNotice({
                 void submitFailedDecision('NEED_INFO', selectedRequests)
               }
             >
-              {savingCode === 'decision' ? 'Đang gửi…' : 'Gửi yêu cầu bổ sung'}
+              {savingCode === 'decision' ? t.sending : t.sendRequest}
             </Button>
           </div>
         </div>

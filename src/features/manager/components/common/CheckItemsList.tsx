@@ -2,6 +2,8 @@ import type {
   PreflightCheckItem,
   PostDeviceCheckItem,
 } from '../../types/missions'
+import { useI18n } from '../../../../shared/i18n'
+import { commonMiscMessages } from './commonMisc.messages'
 import { checkTone, checkLabel } from './missionDetailHelpers'
 import { viCheckName, viCheckMessage } from '../../../../shared/lib/checkText'
 
@@ -10,8 +12,9 @@ export function CheckItemsList({
 }: {
   items: Array<PreflightCheckItem | PostDeviceCheckItem>
 }) {
+  const { t } = useI18n(commonMiscMessages)
   if (items.length === 0) {
-    return <div className="odm-or-empty">Chưa có hạng mục kiểm tra.</div>
+    return <div className="odm-or-empty">{t.noCheckItems}</div>
   }
   return (
     <ul className="odm-or-check-list">

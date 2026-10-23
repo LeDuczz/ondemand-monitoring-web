@@ -2,6 +2,8 @@ import type { SafeStop } from '../../../types/planning'
 import type { RefObject, Dispatch, SetStateAction } from 'react'
 import type { UseApiQueryState } from '../../../../../shared/hooks/useApiQuery'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { stopFlowActionsMessages } from './StopFlowActions.messages'
 
 export function StopFlowActions({
   stop,
@@ -26,6 +28,7 @@ export function StopFlowActions({
   missionCode: string
   draft: boolean
 }) {
+  const { t } = useI18n(stopFlowActionsMessages)
   return (
     <div className="odm-mission-actions">
       {(stop?.canCancelMission !== true || requested) && relevant && (
@@ -39,7 +42,7 @@ export function StopFlowActions({
             query.reload()
           }}
         >
-          Hủy Mission {missionCode}
+          {t.cancelMission(missionCode)}
         </Button>
       )}
       {draft && (stop?.canCancelMission === true || relevant) && (
@@ -52,7 +55,7 @@ export function StopFlowActions({
             query.reload()
           }}
         >
-          Thay thế Mission {missionCode}
+          {t.replaceMission(missionCode)}
         </Button>
       )}
     </div>

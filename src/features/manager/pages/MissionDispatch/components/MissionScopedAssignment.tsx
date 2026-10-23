@@ -3,6 +3,8 @@ import { missionsApi } from '../../../api/missionsApi'
 import { OrderResourceAssignmentWizard } from '../../../components/common/OrderResourceAssignmentWizard'
 import { managerHref } from '../../../routes'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { missionScopedAssignmentMessages } from './MissionScopedAssignment.messages'
 
 /** Mission list entry resolves Order context, but never asks to select the known Mission again. */
 export function MissionScopedAssignmentPage({
@@ -10,6 +12,7 @@ export function MissionScopedAssignmentPage({
 }: {
   missionId: string
 }) {
+  const { t } = useI18n(missionScopedAssignmentMessages)
   const query = useApiQuery(
     (signal) => missionsApi.getMissionResponse(missionId, signal),
     [missionId],
@@ -17,17 +20,13 @@ export function MissionScopedAssignmentPage({
   const close = () => {
     window.location.hash = managerHref({ screen: 'missions' })
   }
-  if (query.loading) return <p role="status">Đang tải phân công…</p>
+  if (query.loading) return <p role="status">{t.loading}</p>
   if (query.error || query.data?.id !== missionId || !query.data.orderId)
     return (
       <section className="odm-or-card odm-or-card-body">
-        <p role="alert">Không thể tải nhiệm vụ để tiếp tục phân công.</p>
-        <Button onClick={query.reload}>
-          Thử lại
-        </Button>
-        <Button onClick={close}>
-          Về danh sách nhiệm vụ
-        </Button>
+        <p role="alert">{t.loadError}</p>
+        <Button onClick={query.reload}>{t.retry}</Button>
+        <Button onClick={close}>{t.backToMissions}</Button>
       </section>
     )
   return (
@@ -35,7 +34,7 @@ export function MissionScopedAssignmentPage({
       key={missionId}
       orderId={query.data.orderId}
       initialMissionId={missionId}
-      returnLabel="Về danh sách nhiệm vụ"
+      returnLabel={t.backToMissions}
       onClose={close}
     />
   )

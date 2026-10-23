@@ -1,4 +1,6 @@
 import { ApiError, apiRequest } from '../../../shared/api/httpClient'
+import { getLanguage } from '../../../shared/i18n'
+import { managerLibMessages } from '../lib/lib.messages'
 import { readOrderChecklistSnapshot } from '../lib/orderChecklistSnapshot'
 import type {
   ApprovalRequest,
@@ -18,7 +20,10 @@ function formatRequirement(requirement: Record<string, unknown> | null) {
   if (!requirement) return ''
   const parts = [
     formatRequirementValue(requirement.mediaType),
-    formatRequirementValue(requirement.quantity, ' mục'),
+    formatRequirementValue(
+      requirement.quantity,
+      managerLibMessages[getLanguage()].api.itemsUnit,
+    ),
     formatRequirementValue(requirement.resolution),
     formatRequirementValue(requirement.radiusM, ' m'),
     formatRequirementValue(requirement.estimatedAreaHa, ' ha'),
@@ -63,7 +68,7 @@ function attachmentsFromDeliverables(order: OrderCreateResponse) {
         files.set(`${name}:${url}`, {
           name,
           sizeLabel:
-            sizeBytes == null ? 'Không rõ dung lượng' : `${(sizeBytes / 1_000_000).toFixed(2)} MB`,
+            sizeBytes == null ? managerLibMessages[getLanguage()].api.unknownSize : `${(sizeBytes / 1_000_000).toFixed(2)} MB`,
           mimeType:
             typeof file.contentType === 'string'
               ? file.contentType
@@ -238,7 +243,7 @@ export const ordersApi = {
     return this.getOrder(id, signal)
       .then((order) => {
         if (order.status !== 'APPROVED' && order.status !== 'IN_PROGRESS') {
-          throw new ApiError('Đơn không còn ở trạng thái đã duyệt.', {
+          throw new ApiError(managerLibMessages[getLanguage()].api.orderNotApproved, {
             status: 409,
             method: 'GET',
             path: `/api/orders/${id}`,

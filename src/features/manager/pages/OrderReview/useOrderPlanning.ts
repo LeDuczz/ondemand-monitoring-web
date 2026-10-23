@@ -15,6 +15,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useToast } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
 import { managerFeedbackMessages } from '../../feedback.messages'
+import { orderPlanningMessages } from './orderPlanning.messages'
 
 export function useOrderPlanning({
   selectedId,
@@ -70,6 +71,7 @@ export function useOrderPlanning({
   onAssignResources: ((missionId: string) => void) | undefined
 }) {
   const { t: fb } = useI18n(managerFeedbackMessages)
+  const { t: pm } = useI18n(orderPlanningMessages)
   const toast = useToast()
   const selected = selectedId ?? undefined
   const effective =
@@ -124,19 +126,14 @@ export function useOrderPlanning({
       !(await confirmation.confirm(
         action === 'finalize'
           ? {
-              title: 'Chốt kế hoạch?',
-              body: 'Sau khi chốt, cấu trúc Mission và phân công checklist của phiên bản hiện tại sẽ được cố định.',
-              action: 'Chốt kế hoạch',
+              title: pm.finalizeTitle,
+              body: pm.finalizeBody,
+              action: pm.finalizeAction,
             }
           : {
-              title:
-                action === 'amend' ? 'Điều chỉnh kế hoạch?' : 'Hủy Mission?',
-              body:
-                action === 'amend'
-                  ? 'Mở phiên bản kế hoạch mới để thay đổi cấu trúc Mission. Lịch sử vẫn được giữ nguyên.'
-                  : 'Mission sẽ được hủy và giữ lại trong lịch sử.',
-              action:
-                action === 'amend' ? 'Điều chỉnh kế hoạch' : 'Hủy Mission',
+              title: action === 'amend' ? pm.amendTitle : pm.cancelTitle,
+              body: action === 'amend' ? pm.amendBody : pm.cancelBody,
+              action: action === 'amend' ? pm.amendAction : pm.cancelAction,
               tone: action === 'cancel' ? 'danger' : 'warning',
             },
       ))
@@ -161,11 +158,7 @@ export function useOrderPlanning({
       setAmending(false)
       setCancelling(null)
       setReason('')
-      setMessage(
-        action === 'finalize'
-          ? 'Kế hoạch đã được chốt thành công.'
-          : 'Đã cập nhật kế hoạch.',
-      )
+      setMessage(action === 'finalize' ? pm.finalized : pm.updated)
       toast.success(
         action === 'finalize'
           ? fb.planFinalized
@@ -197,16 +190,14 @@ export function useOrderPlanning({
   async function checkPayment() {
     setMessage('')
     if (!data?.invoice) {
-      setMessage(
-        'Khách hàng chưa chấp nhận báo giá nên chưa có khoản đặt cọc để kiểm tra.',
-      )
+      setMessage(pm.noInvoice)
       query.reload()
       return
     }
     setCheckingPayment(true)
     try {
       await financeApi.refreshOrderPayments(orderId)
-      setMessage('Đã đối soát với VNPAY. Trạng thái đặt cọc đã được cập nhật.')
+      setMessage(pm.paymentReconciled)
       toast.success(fb.paymentRefreshed)
     } catch (cause) {
       setMessage(planningError(cause))
@@ -221,15 +212,11 @@ export function useOrderPlanning({
     if (!data || !selected || !onAssignResources || !writable || busy || saving)
       return
     if (dirty) {
-      setCoverageWarning(
-        'Bạn vừa thay đổi checklist. Hãy bấm “Lưu phân công” trước khi tiếp tục.',
-      )
+      setCoverageWarning(pm.checklistDirty)
       return
     }
     if (!data.plan.coverage.coverageReady || data.plan.blockers.length > 0) {
-      setCoverageWarning(
-        'Còn checklist chưa được gán cho Mission. Hãy chọn các mục còn thiếu và bấm “Lưu phân công”, sau đó tiếp tục gán nguồn lực.',
-      )
+      setCoverageWarning(pm.coverageIncomplete)
       return
     }
     setBusy(true)

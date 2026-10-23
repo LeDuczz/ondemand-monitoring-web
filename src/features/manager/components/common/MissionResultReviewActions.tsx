@@ -6,6 +6,7 @@ import { missionResultReviewErrorMessage } from './missionResultReviewReadiness'
 import './MissionResultReviewCard.css'
 import { Button, useConfirm, useToast } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
+import { missionResultReviewMessages } from './MissionResultReview.messages'
 import { managerFeedbackMessages } from '../../feedback.messages'
 
 export function MissionResultReviewActions({
@@ -23,6 +24,7 @@ export function MissionResultReviewActions({
   disabledReasonId?: string
   onReviewed: () => void
 }) {
+  const { t } = useI18n(missionResultReviewMessages)
   const { t: fb } = useI18n(managerFeedbackMessages)
   const toast = useToast()
   const confirm = useConfirm()
@@ -66,13 +68,11 @@ export function MissionResultReviewActions({
   }
   return (
     <div className="odm-result-review-actions" aria-busy={busy}>
-      {status === 'DRAFT' && <p>Kết quả nháp — chưa được gửi để duyệt.</p>}
+      {status === 'DRAFT' && <p>{t.draftNotice}</p>}
       {status === 'REJECTED' && (
-        <p>
-          Kết quả đã bị từ chối. Nhân sự thực hiện cần chỉnh sửa và gửi lại.
-        </p>
+        <p>{t.rejectedNotice}</p>
       )}
-      {status === 'APPROVED' && <p>Kết quả đã được duyệt.</p>}
+      {status === 'APPROVED' && <p>{t.approvedNotice}</p>}
       {error != null && (
         <p className="odm-result-review-error" role="alert">
           {missionResultReviewErrorMessage(error)}
@@ -82,10 +82,8 @@ export function MissionResultReviewActions({
         <>
           <div className="odm-result-review-note">
             <div className="odm-result-review-note-label">
-              <label htmlFor={noteId}>Ghi chú / lý do</label>
-              <span>
-                Cần khi từ chối, hoặc khi duyệt dù thiếu ảnh/video so với đơn
-              </span>
+              <label htmlFor={noteId}>{t.noteLabel}</label>
+              <span>{t.noteHint}</span>
             </div>
             <textarea
               id={noteId}
@@ -93,11 +91,11 @@ export function MissionResultReviewActions({
               onChange={(event) => setNote(event.target.value)}
               disabled={busy}
               rows={3}
-              placeholder="Nhập lý do (ít nhất 10 ký tự) nếu từ chối hoặc duyệt khi còn thiếu media…"
+              placeholder={t.notePlaceholder}
             />
           </div>
           {!ready && !disabledReasonId && (
-            <p>Checklist chưa sẵn sàng để duyệt kết quả.</p>
+            <p>{t.checklistNotReadyToApprove}</p>
           )}
           <div className="odm-result-review-buttons">
             <Button
@@ -108,7 +106,7 @@ export function MissionResultReviewActions({
               onClick={() => void review(true)}
             >
               <OrderIcon name="x" size={16} />
-              Từ chối kết quả
+              {t.rejectResult}
             </Button>
             <Button
               type="button"
@@ -118,7 +116,7 @@ export function MissionResultReviewActions({
               onClick={() => void review(false)}
             >
               <OrderIcon name="check" size={16} />
-              Duyệt kết quả
+              {t.approveResult}
             </Button>
           </div>
         </>

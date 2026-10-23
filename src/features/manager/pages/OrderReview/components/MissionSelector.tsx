@@ -15,6 +15,7 @@ import {
 import { workflowStepperMessages } from '../../../components/common/WorkflowStepper.messages'
 import { useI18n, useLanguage } from '../../../../../shared/i18n'
 import { localizePlanningScopeLabel } from './planningScopeLabel'
+import { missionSelectorMessages } from './MissionSelector.messages'
 
 export function MissionSelector({
   missions,
@@ -34,6 +35,7 @@ export function MissionSelector({
   onSelect: (id: string) => void
 }) {
   const { lang } = useLanguage()
+  const { t } = useI18n(missionSelectorMessages)
   const { t: wf } = useI18n(workflowStepperMessages)
   return (
     <nav className="odm-workspace-selector" aria-label="Mission trong Order">
@@ -76,7 +78,7 @@ export function MissionSelector({
               <StatusBadge
                 tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}
               >
-                {missionStatusLabel[mission.status] ?? 'Chưa xác định'}
+                {missionStatusLabel[mission.status] ?? t.unknownStatus}
               </StatusBadge>
             </span>
             <span className={`odm-workspace-rank is-${bucket}`}>
@@ -93,7 +95,7 @@ export function MissionSelector({
             <span className="odm-workspace-scope">
               {scope?.scopeLabel
                 ? localizePlanningScopeLabel(scope.scopeLabel, lang)
-                : 'Lịch sử nhiệm vụ'}
+                : t.missionHistory}
             </span>
             <small>
               {planningSchedule(
@@ -106,8 +108,8 @@ export function MissionSelector({
                 className={count > 0 || noChecklist ? 'is-ready' : 'is-missing'}
                 title={
                   count > 0 || noChecklist
-                    ? 'Đã phân công checklist'
-                    : 'Cần phân công checklist'
+                    ? t.checklistAssigned
+                    : t.checklistNeeded
                 }
               >
                 {count > 0 || noChecklist ? '✓' : '!'} Checklist{' '}
@@ -115,52 +117,58 @@ export function MissionSelector({
               </span>
               <span
                 className={device ? 'is-ready' : 'is-missing'}
-                title={device ? 'Đã có thiết bị' : 'Chưa phân công thiết bị'}
+                title={device ? t.deviceAssigned : t.deviceMissing}
               >
-                {device ? '✓' : '!'} Thiết bị
+                {device ? '✓' : '!'} {t.device}
               </span>
               <span
                 className={!missing.length ? 'is-ready' : 'is-missing'}
                 title={
                   missing.length
-                    ? `Thiếu: ${missing.map((role) => STAFF_ROLE_LABELS[role]).join(', ')}`
-                    : 'Đủ nhân sự'
+                    ? t.missing(
+                        missing
+                          .map((role) => STAFF_ROLE_LABELS[role])
+                          .join(', '),
+                      )
+                    : t.staffComplete
                 }
               >
-                {!missing.length ? '✓' : '!'} Nhân sự {4 - missing.length}/4
+                {!missing.length ? '✓' : '!'} {t.staff} {4 - missing.length}/4
               </span>
             </span>
             {historical && (
               <small className="odm-workspace-plan-state">
-                Lịch sử · chỉ xem
+                {t.historyReadOnly}
               </small>
             )}
             {mission.replacesMissionId && (
               <small>
-                Thay thế{' '}
+                {t.replaces}{' '}
                 {missions.find((m) => m.id === mission.replacesMissionId)
-                  ?.missionCode || 'Mission trước'}
+                  ?.missionCode || t.previousMission}
               </small>
             )}
             {missions
               .filter((m) => m.replacesMissionId === mission.id)
               .map((m) => (
-                <small key={m.id}>Được thay thế bởi {m.missionCode}</small>
+                <small key={m.id}>
+                  {t.replacedBy} {m.missionCode}
+                </small>
               ))}
             {(drafts[mission.id]?.dirty ||
               drafts[`resources:${mission.id}`]?.dirty) && (
-              <small>Thay đổi chưa lưu được giữ tại Mission này</small>
+              <small>{t.unsavedKept}</small>
             )}
             <span className="odm-workspace-choice-action">
               {historical
-                ? 'Xem lịch sử'
+                ? t.viewHistory
                 : checklistEditable
-                  ? 'Phân công checklist'
+                  ? t.assignChecklist
                   : !resourcesEditable
-                    ? 'Xem phân công'
+                    ? t.viewAssignment
                     : complete
-                      ? 'Chỉnh sửa phân công'
-                      : 'Tiếp tục phân công'}
+                      ? t.editAssignment
+                      : t.continueAssignment}
             </span>
           </button>
         )

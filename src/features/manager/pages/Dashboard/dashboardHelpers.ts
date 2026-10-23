@@ -1,3 +1,4 @@
+import { getLanguage } from '../../../../shared/i18n'
 import type { ActionItem, ManagerDashboardData } from '../../types/dashboard'
 import type { ManagerRoute } from '../../routes'
 
@@ -15,7 +16,7 @@ export function statusLabel(status: string): string {
 }
 
 export function formatDashboardDate(value: string): string {
-  return new Intl.DateTimeFormat('vi-VN', {
+  return new Intl.DateTimeFormat(getLanguage() === 'en' ? 'en-US' : 'vi-VN', {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value))

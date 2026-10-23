@@ -1,5 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { readonlyBannerMessages } from './ReadonlyBanner.messages'
 
 export function ReadonlyBanner({
   setViewStage,
@@ -10,16 +12,17 @@ export function ReadonlyBanner({
     >
   >
 }) {
+  const { t } = useI18n(readonlyBannerMessages)
   return (
     <div className="odm-or-readonly-banner" role="status">
-      <strong>Bạn đang xem lại bước đã hoàn thành</strong>
-      <span>Thông tin này đã được xác nhận và hiện chỉ có thể xem.</span>
+      <strong>{t.title}</strong>
+      <span>{t.body}</span>
       <Button
         type="button"
         variant="primary"
         onClick={() => setViewStage(null)}
       >
-        Quay lại bước hiện tại
+        {t.back}
       </Button>
     </div>
   )

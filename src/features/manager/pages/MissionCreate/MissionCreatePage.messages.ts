@@ -80,6 +80,11 @@ export const missionCreatePageMessages = defineMessages({
     addWaypoint: 'Thêm điểm bay',
     removeWaypointAria: (seq: number) => `Xoá điểm bay ${seq}`,
     createMission: 'Tạo Mission',
+    weatherCheckTitle: 'Kiểm tra thời tiết theo lịch bay',
+    weatherCheckHint:
+      'Chọn một ngày và giờ bất kỳ để kiểm tra trước khi quyết định lịch bay.',
+    weatherCheckDate: 'Ngày muốn kiểm tra',
+    weatherCheckTime: 'Giờ muốn kiểm tra',
   },
   en: {
     pageSubtitle:
@@ -161,5 +166,10 @@ export const missionCreatePageMessages = defineMessages({
     addWaypoint: 'Add waypoint',
     removeWaypointAria: (seq: number) => `Remove waypoint ${seq}`,
     createMission: 'Create mission',
+    weatherCheckTitle: 'Check weather for the flight schedule',
+    weatherCheckHint:
+      'Pick any date and time to check before deciding the flight schedule.',
+    weatherCheckDate: 'Date to check',
+    weatherCheckTime: 'Time to check',
   },
 })

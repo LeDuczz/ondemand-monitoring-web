@@ -13,6 +13,7 @@ import {
 import { planningApi } from '../../api/planningApi'
 import { Button, useConfirm, useToast } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
+import { safeStopPanelMessages } from './SafeStopPanel.messages'
 import { managerFeedbackMessages } from '../../feedback.messages'
 
 export function SafeStopPanel({
@@ -34,6 +35,7 @@ export function SafeStopPanel({
     (signal) => planningApi.getSafeStop(missionId, signal),
     [missionId, revision],
   )
+  const { t } = useI18n(safeStopPanelMessages)
   const { t: fb } = useI18n(managerFeedbackMessages)
   const toast = useToast()
   const confirm = useConfirm()
@@ -97,8 +99,8 @@ export function SafeStopPanel({
       if (action === 'cleanup') await planningApi.cleanupSafeStop(missionId)
       setMessage(
         action === 'confirm'
-          ? 'Đã gửi xác nhận an toàn.'
-          : 'Thao tác đã được ghi nhận.',
+          ? t.confirmSent
+          : t.actionRecorded,
       )
       toast.success(
         action === 'request'
@@ -125,17 +127,17 @@ export function SafeStopPanel({
   return (
     <section
       className="mission-stop"
-      aria-label={`Dừng Mission an toàn ${missionId}`}
+      aria-label={t.ariaLabel(missionId)}
       aria-busy={busy || query.loading}
     >
       <div className="mission-stop__header">
         <h4>
           <Icon name="shield" width={18} height={18} />
-          Dừng Mission an toàn
+          {t.title}
         </h4>
         <SafeStopRefresh disabled={busy || query.loading} onClick={refresh} />
       </div>
-      {query.loading && <p role="status">Đang tải trạng thái…</p>}
+      {query.loading && <p role="status">{t.loadingStatus}</p>}
       {query.error ? (
         <p role="alert" className="mission-stop__warning">
           {safeStopError(query.error)}
@@ -143,7 +145,7 @@ export function SafeStopPanel({
       ) : null}
       {!query.loading && !query.error && !ready && (
         <p role="alert">
-          Không thể xác minh trạng thái của Mission này. Vui lòng làm mới.
+          {t.cannotVerify}
         </p>
       )}
       {ready && (
@@ -151,13 +153,13 @@ export function SafeStopPanel({
           <SafeStopSummary stop={stop} actor={manager ? 'manager' : 'staff'} />
           {stop.reason && (
             <dl className="mission-stop__reason">
-              <dt>Lý do dừng / hủy Mission</dt>
+              <dt>{t.stopReason}</dt>
               <dd>{stop.reason}</dd>
             </dl>
           )}
           {stop.confirmedAt && stop.confirmation && (
             <dl className="mission-stop__reason">
-              <dt>Ghi nhận an toàn</dt>
+              <dt>{t.safetyRecord}</dt>
               <dd>{stop.confirmation}</dd>
             </dl>
           )}
@@ -167,8 +169,7 @@ export function SafeStopPanel({
             hasStopRequest(stop) &&
             !canConfirm && (
               <p className="mission-stop__guidance">
-                Đang chờ người được phân công xác nhận an toàn. Bạn chưa thể xác
-                nhận lúc này.
+                {t.waitingAssignee}
               </p>
             )}
           {manager && managerAction === 'request' && revision !== undefined && (
@@ -180,7 +181,7 @@ export function SafeStopPanel({
               }}
             >
               <label>
-                Lý do dừng / hủy Mission
+                {t.stopReason}
                 <textarea
                   maxLength={1000}
                   required
@@ -194,7 +195,7 @@ export function SafeStopPanel({
                   variant="primary"
                   disabled={busy || !reason.trim()}
                 >
-                  Yêu cầu dừng an toàn
+                  {t.requestStop}
                 </Button>
               </div>
             </form>
@@ -208,17 +209,16 @@ export function SafeStopPanel({
               }}
             >
               <p className="mission-stop__guidance">
-                Chỉ xác nhận sau khi drone đã hạ cánh, dừng động cơ và kết thúc
-                điều khiển.
+                {t.confirmGuidance}
               </p>
               <label>
-                Ghi nhận an toàn
+                {t.safetyRecord}
                 <textarea
                   required
                   maxLength={1000}
                   value={reason}
                   disabled={busy}
-                  placeholder="Mô tả tình trạng an toàn đã kiểm tra"
+                  placeholder={t.safetyPlaceholder}
                   onChange={(e) => setReason(e.target.value)}
                 />
               </label>
@@ -230,15 +230,14 @@ export function SafeStopPanel({
                   disabled={busy}
                   onChange={(e) => setAttested(e.target.checked)}
                 />
-                Tôi đã kiểm tra: drone đã hạ cánh, dừng động cơ và kết thúc điều
-                khiển.
+                {t.attestation}
               </label>
               <div className="mission-stop__actions">
                 <Button type="submit"
                   variant="primary"
                   disabled={busy || !attested || !reason.trim()}
                 >
-                  Xác nhận đã an toàn
+                  {t.confirmSafe}
                 </Button>
               </div>
             </form>
@@ -251,7 +250,7 @@ export function SafeStopPanel({
                 disabled={busy}
                 onClick={() => void command('cleanup')}
               >
-                Giải phóng tài nguyên
+                {t.releaseResources}
               </Button>
             </div>
           )}

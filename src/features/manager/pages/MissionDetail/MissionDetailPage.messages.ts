@@ -95,6 +95,45 @@ export const missionDetailPageMessages = defineMessages({
     batteryLeft: 'Pin còn lại',
     batteryState: 'Trạng thái pin',
     checkedAt: 'Thời điểm check',
+    extra: {
+      checklistLoadError:
+        'Không thể tải checklist của Mission này. Vui lòng thử lại.',
+      mediaLibrary: 'Thư viện media',
+      satelliteAria: 'Bản đồ vệ tinh mission',
+      startPoint: 'Điểm xuất phát',
+      targetPoint: 'Điểm giám sát',
+      targetChip: 'ĐIỂM GIÁM SÁT',
+      routeChip: 'Đường bay: HOME → điểm giám sát',
+      radiusChip: 'Bán kính giám sát:',
+      noCoordinates: 'Chưa có tọa độ mission',
+      wpDefault: 'Điểm bay',
+      wpStart: 'Điểm xuất phát',
+      wpTarget: 'Tiếp cận mục tiêu',
+      wpCruise: 'Điểm trung gian',
+      wpTerrain: 'Tránh địa hình',
+      wpObstacle: 'Tránh chướng ngại',
+      nextStep: {
+        assignTitle: 'Cần phân công nguồn lực',
+        assignDetail:
+          'Gán đủ nhân sự và thiết bị để Mission được gửi cho đội bay.',
+        waitCrewTitle: 'Đang chờ đội bay xác nhận',
+        waitCrewDetail: (accepted: number, crew: number) =>
+          `${accepted}/${crew} nhân sự đã nhận. Mission sẽ được lên lịch khi tất cả xác nhận.`,
+        waitCrewDetailNoCrew: 'Mission sẽ được lên lịch khi nhân sự xác nhận.',
+        scheduledTitle: 'Đã lên lịch',
+        scheduledDetail:
+          'Đội bay sẽ kết nối thiết bị và kiểm tra trước chuyến bay.',
+        failedPreflightTitle: 'Không đạt kiểm tra trước bay',
+        failedPreflightDetail:
+          'Xem tab Kết quả check, xử lý rồi cho đội bay kiểm tra lại.',
+        pendingReviewTitle: 'Chờ duyệt kết quả',
+        pendingReviewDetail:
+          'Xem media và checklist rồi duyệt hoặc yêu cầu bổ sung.',
+        failedTitle: 'Nhiệm vụ thất bại',
+        cancelledTitle: 'Nhiệm vụ đã hủy',
+        endedDetail: 'Có thể tạo Mission thay thế trong kế hoạch Order.',
+      },
+    },
   },
   en: {
     tabs: {
@@ -190,5 +229,45 @@ export const missionDetailPageMessages = defineMessages({
     batteryLeft: 'Battery left',
     batteryState: 'Battery state',
     checkedAt: 'Checked at',
+    extra: {
+      checklistLoadError:
+        'Could not load this Mission checklist. Please try again.',
+      mediaLibrary: 'Media library',
+      satelliteAria: 'Mission satellite map',
+      startPoint: 'Start point',
+      targetPoint: 'Monitoring point',
+      targetChip: 'MONITORING POINT',
+      routeChip: 'Flight path: HOME → monitoring point',
+      radiusChip: 'Monitoring radius:',
+      noCoordinates: 'No mission coordinates yet',
+      wpDefault: 'Waypoint',
+      wpStart: 'Start point',
+      wpTarget: 'Target approach',
+      wpCruise: 'Intermediate point',
+      wpTerrain: 'Terrain clearance',
+      wpObstacle: 'Obstacle avoidance',
+      nextStep: {
+        assignTitle: 'Resources need to be assigned',
+        assignDetail:
+          'Assign enough staff and devices so the Mission can be sent to the flight crew.',
+        waitCrewTitle: 'Waiting for the flight crew to confirm',
+        waitCrewDetail: (accepted: number, crew: number) =>
+          `${accepted}/${crew} staff accepted. The Mission will be scheduled once everyone confirms.`,
+        waitCrewDetailNoCrew:
+          'The Mission will be scheduled once staff confirm.',
+        scheduledTitle: 'Scheduled',
+        scheduledDetail:
+          'The flight crew will connect the device and run the pre-flight check.',
+        failedPreflightTitle: 'Pre-flight check failed',
+        failedPreflightDetail:
+          'See the Check results tab, fix the issues, then ask the crew to check again.',
+        pendingReviewTitle: 'Awaiting result review',
+        pendingReviewDetail:
+          'Review the media and checklist, then approve or request changes.',
+        failedTitle: 'Mission failed',
+        cancelledTitle: 'Mission cancelled',
+        endedDetail: 'A replacement Mission can be created in the Order plan.',
+      },
+    },
   },
 })

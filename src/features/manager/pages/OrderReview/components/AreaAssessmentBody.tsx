@@ -5,6 +5,8 @@ import { ManagerAreaReview } from './ManagerAreaReview'
 import type { OrderDetail } from '../../../types/orders'
 import type { ManagerAreaAssessment, SavedAreaReview } from '../areaTypes'
 import type { Dispatch, SetStateAction } from 'react'
+import { useI18n } from '../../../../../shared/i18n'
+import { areaAssessmentBodyMessages } from './AreaAssessmentBody.messages'
 
 export function AreaAssessmentBody({
   data,
@@ -21,6 +23,7 @@ export function AreaAssessmentBody({
   review: SavedAreaReview | null
   setReviewOpen: Dispatch<SetStateAction<boolean>>
 }) {
+  const { t } = useI18n(areaAssessmentBodyMessages)
   const ministry = data.ministryFlightBan?.available
     ? data.ministryFlightBan
     : undefined
@@ -29,7 +32,7 @@ export function AreaAssessmentBody({
       {ministry ? <AreaDecisionSummary ministry={ministry} /> : null}
       {hasMinistryViolations ? (
         <div className="odm-or-area-findings">
-          <strong>Vùng cần đối chiếu</strong>
+          <strong>{t.zonesToCheck}</strong>
           <ul>
             {ministryViolatedZones.map((zone) => (
               <li key={zone} className="is-high odm-or-area-zone-row">
@@ -37,10 +40,10 @@ export function AreaAssessmentBody({
                 <button
                   type="button"
                   className="odm-or-area-zone-link"
-                  title={`Mở cambay.mod.gov.vn và sao chép mã ${zone}`}
+                  title={t.openMapTitle(zone)}
                   onClick={() => openMinistryMap(zone)}
                 >
-                  Xem trên bản đồ
+                  {t.viewOnMap}
                 </button>
               </li>
             ))}
@@ -55,7 +58,7 @@ export function AreaAssessmentBody({
           rel="noreferrer"
         >
           <OrderIcon name="plane" size={18} />
-          <span>Mở bản đồ cấm bay của Bộ Quốc phòng</span>
+          <span>{t.openMinistryMap}</span>
           <OrderIcon name="chevron-right" size={18} />
         </a>
       ) : null}

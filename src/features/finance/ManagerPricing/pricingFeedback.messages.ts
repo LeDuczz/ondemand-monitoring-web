@@ -3,7 +3,8 @@ import { defineMessages } from '../../../shared/i18n'
 export const pricingFeedbackMessages = defineMessages({
   vi: {
     reviewSaved: 'Đã lưu kết quả xem xét checklist.',
-    quoteApproved: 'Đã duyệt báo giá. Báo giá sẵn sàng để khách hàng chấp nhận.',
+    quoteApproved:
+      'Đã duyệt báo giá. Báo giá sẵn sàng để khách hàng chấp nhận.',
   },
   en: {
     reviewSaved: 'Checklist review saved.',

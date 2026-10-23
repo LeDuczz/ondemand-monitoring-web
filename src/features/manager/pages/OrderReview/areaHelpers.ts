@@ -2,6 +2,10 @@ import type { OrderDetail, LegalReviewStatus } from '../../types/orders'
 import type { SavedAreaReview, AreaReviewChoice } from './areaTypes'
 import { ordersApi } from '../../api/ordersApi'
 import { managerHref } from '../../routes'
+import { getLanguage } from '../../../../shared/i18n'
+import { areaHelpersMessages } from './areaHelpers.messages'
+
+const am = () => areaHelpersMessages[getLanguage()]
 
 export function areaReviewFromOrder(
   order: OrderDetail,
@@ -41,36 +45,50 @@ export const REVIEW_OPTIONS: Array<{
 }> = [
   {
     status: 'NOT_REQUIRED',
-    label: 'Khu vực phù hợp sơ bộ',
-    hint: 'Có thể tiếp tục duyệt đơn và phân nguồn lực. Hồ sơ xin phép bay được thực hiện ở bước sau.',
+    get label() {
+      return am().options.notRequired.label
+    },
+    get hint() {
+      return am().options.notRequired.hint
+    },
   },
   {
     status: 'CHANGE_LOCATION',
-    label: 'Yêu cầu khách đổi khu vực',
-    hint: 'Trả đơn về cho khách chọn lại vị trí giám sát.',
+    get label() {
+      return am().options.changeLocation.label
+    },
+    get hint() {
+      return am().options.changeLocation.hint
+    },
   },
   {
     status: 'REJECTED',
-    label: 'Khu vực không khả thi',
-    hint: 'Khu vực hiện tại không thể triển khai theo yêu cầu.',
+    get label() {
+      return am().options.rejected.label
+    },
+    get hint() {
+      return am().options.rejected.hint
+    },
   },
 ]
 
-export const UNSUITABLE_REASONS = [
-  'Khu vực cấm/hạn chế không đáp ứng điều kiện',
-  'Không thể bảo đảm phạm vi hoạt động',
-  'Không thể xác minh điều kiện khu vực',
-  'Lý do khác',
-]
+// Language-aware view over the reasons list: every read resolves against the
+// current language, so the export keeps its array shape.
+export const UNSUITABLE_REASONS: string[] = new Proxy([] as string[], {
+  get: (_target, key) => Reflect.get(am().unsuitableReasons, key),
+  has: (_target, key) => Reflect.has(am().unsuitableReasons, key),
+  ownKeys: () => Reflect.ownKeys(am().unsuitableReasons),
+  getOwnPropertyDescriptor: (_target, key) => {
+    const descriptor = Reflect.getOwnPropertyDescriptor(
+      am().unsuitableReasons,
+      key,
+    )
+    return descriptor ? { ...descriptor, configurable: true } : undefined
+  },
+})
 
 export function areaReviewLabel(status: LegalReviewStatus) {
-  const labels: Record<LegalReviewStatus, string> = {
-    NOT_REVIEWED: 'Chưa đánh giá',
-    NOT_REQUIRED: 'Khu vực phù hợp sơ bộ',
-    PENDING_PERMIT: 'Chờ xử lý giấy phép',
-    APPROVED: 'Khu vực đã được xác nhận',
-    REJECTED: 'Khu vực không khả thi',
-  }
+  const labels: Record<LegalReviewStatus, string> = am().reviewLabels
   return labels[status]
 }
 
@@ -86,12 +104,11 @@ export async function resolveUnsuitable(
   }) => Promise<boolean>,
 ): Promise<boolean> {
   const needInfo = decision === 'NEED_INFO'
+  const c = am().confirm
   const accepted = await confirm({
-    title: needInfo ? 'Yêu cầu khách đổi khu vực?' : 'Từ chối đơn hàng?',
-    body: needInfo
-      ? 'Đơn sẽ được chuyển về cho khách để chọn lại khu vực giám sát. Bạn nên gọi báo trước cho khách.'
-      : 'Đơn sẽ bị từ chối và đóng lại. Bạn nên gọi báo cho khách trước khi từ chối.',
-    action: needInfo ? 'Yêu cầu đổi khu vực' : 'Từ chối đơn',
+    title: needInfo ? c.needInfoTitle : c.rejectTitle,
+    body: needInfo ? c.needInfoBody : c.rejectBody,
+    action: needInfo ? c.needInfoAction : c.rejectAction,
     tone: needInfo ? 'warning' : 'danger',
   })
   if (!accepted) return false
@@ -109,4 +126,3 @@ export function openMinistryMap(zoneCode: string) {
   window.open('https://cambay.mod.gov.vn/', '_blank', 'noopener,noreferrer')
   void navigator.clipboard?.writeText(zoneCode).catch(() => undefined)
 }
-

@@ -1,4 +1,6 @@
 import type { MissionStaffAssignmentResponse } from '../../types/missions'
+import { getLanguage } from '../../../../shared/i18n'
+import { missionsPageMessages } from './MissionsPage.messages'
 import type { DeliveryStatus, PageMessages } from './missionsTypes'
 
 export function formatScheduled(
@@ -30,7 +32,10 @@ export function formatStaffSummary(
   const accepted = active.filter(
     (item) => item.responseStatus === 'ACCEPTED',
   ).length
-  return `${accepted}/${active.length} đã nhận`
+  return missionsPageMessages[getLanguage()].staffAccepted(
+    accepted,
+    active.length,
+  )
 }
 
 export function deliveryTone(
@@ -51,10 +56,11 @@ export function deliveryTone(
 }
 
 export function deliveryLabel(status: DeliveryStatus, t: PageMessages) {
-  if (status === 'APPROVED') return 'Kết quả đã duyệt'
-  if (status === 'PENDING_MANAGER_APPROVAL') return 'Kết quả chờ duyệt'
-  if (status === 'REJECTED') return 'Kết quả bị từ chối'
-  if (status === 'NO_RESULT') return 'Chưa có kết quả'
+  if (status === 'APPROVED') return t.deliveryStatus.approved
+  if (status === 'PENDING_MANAGER_APPROVAL')
+    return t.deliveryStatus.pendingApproval
+  if (status === 'REJECTED') return t.deliveryStatus.rejected
+  if (status === 'NO_RESULT') return t.deliveryStatus.noResult
   if (status === 'PROCESSING') return t.deliveryStatus.processing
   if (status === 'READY_FOR_MANAGER_REVIEW')
     return t.deliveryStatus.readyForPreview

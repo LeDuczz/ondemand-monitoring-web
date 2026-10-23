@@ -122,7 +122,7 @@ export function CreateOrderPage() {
           services={meta.services}
           servicesLoading={meta.loading}
           pricingEstimate={estimate}
-          pricingLoading={meta.pricingLoading}
+          pricingLoading={checklist.quote.loading}
           additionalChecklists={additionalChecklists}
           footer={footer}
         />
@@ -136,7 +136,7 @@ export function CreateOrderPage() {
           additionalChecklists={additionalChecklists}
           valid={checklist.valid}
           pricingEstimate={estimate}
-          pricingLoading={meta.pricingLoading}
+          pricingLoading={checklist.quote.loading}
           aiAnalysisRequested={false}
           checklist={
             <ChecklistEditor
@@ -186,7 +186,7 @@ export function CreateOrderPage() {
           reloadDeliverables={meta.reloadDeliverables}
           mediaTotals={checklist.mediaTotals}
           pricingEstimate={estimate}
-          pricingLoading={meta.pricingLoading}
+          pricingLoading={checklist.quote.loading}
           additionalChecklists={additionalChecklists}
           packageSelectedCount={packageSelectedCount}
           packageCount={packageChecklists.length}

@@ -135,4 +135,31 @@ describe('PricingEstimateCard', () => {
       ],
     })
   })
+
+  it('shows an order-level video as a customer-visible deliverable fee', () => {
+    render(
+      <PricingEstimateCard
+        estimate={{
+          serviceId: 'service-1',
+          servicePrice: 4_050_000,
+          additionalRequirements: [
+            {
+              type: 'OUTPUT_VIDEO',
+              description: 'Video bàn giao',
+              additionalPrice: 300_000,
+            },
+          ],
+          totalPrice: 4_350_000,
+        }}
+        loading={false}
+        hasService
+        aiAnalysisRequested={false}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Sản phẩm bàn giao' })).toBeInTheDocument()
+    expect(screen.getByText('Video bàn giao')).toBeInTheDocument()
+    expect(screen.getByText(/\+300\.000/)).toBeInTheDocument()
+    expect(screen.getByText(/4\.350\.000/)).toBeInTheDocument()
+  })
 })

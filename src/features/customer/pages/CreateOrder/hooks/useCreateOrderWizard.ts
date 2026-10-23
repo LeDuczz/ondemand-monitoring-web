@@ -60,6 +60,8 @@ export function useCreateOrderWizard() {
       form.recurrenceType !== 'NONE' && form.recurrenceOccurrences > 1
         ? form.recurrenceOccurrences
         : 1,
+    resultFormats: form.resultFormats,
+    permitStatus: form.permitStatus,
   })
   const meta = useCreateOrderMeta(form.serviceId, false, f.setForm)
   const service = meta.services.find((s) => s.id === form.serviceId)

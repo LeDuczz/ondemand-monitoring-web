@@ -37,6 +37,9 @@ export function PricingEstimateCard({
   else if (loading && !estimate) body = <p className="co-hint">{t.loading}</p>
   else if (!estimate) body = <p className="co-hint">{t.unavailable}</p>
   else {
+    const deliverableFees = estimate.additionalRequirements.filter((item) =>
+      item.type.startsWith('OUTPUT_'),
+    )
     const hasAdditionalServices =
       additionalChecklists.length > 0 || Boolean(estimate.quotePending)
     body = (
@@ -50,6 +53,17 @@ export function PricingEstimateCard({
             <span>{t.aiAnalysis}</span>
             <strong>+{formatMoney(aiAddonPrice(estimate), locale)}</strong>
           </div>
+        )}
+        {deliverableFees.length > 0 && (
+          <section className="co-price-section" aria-label={t.deliverables}>
+            <h3>{t.deliverables}</h3>
+            {deliverableFees.map((fee) => (
+              <div className="co-money-row" key={fee.type}>
+                <span>{fee.description}</span>
+                <strong>+{formatMoney(fee.additionalPrice, locale)}</strong>
+              </div>
+            ))}
+          </section>
         )}
         {additionalChecklists.length > 0 && (
           <div className="co-money-row co-money-pending">

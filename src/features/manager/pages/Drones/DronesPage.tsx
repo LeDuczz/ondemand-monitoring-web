@@ -1,23 +1,16 @@
 // MNG-09: Drone fleet management page
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { StateView } from '../../../../shared/components/odm/StateView'
-import { PageHeader, Skeleton } from '../../../../shared/components/ui'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { dronesApi } from '../../api/dronesApi'
 import type { DeviceResponse } from '../../types/drones'
 import { dronesPageMessages } from './DronesPage.messages'
 import '../../manager.css'
-import {
-  type FilterChip,
-  groupCounts,
-  matchesFilter,
-  matchesSearch,
-} from './droneHelpers'
+import { type FilterChip, matchesFilter } from './droneHelpers'
 import { StatusChangeModal } from './components/StatusChangeModal'
 import { DronesStats } from './components/DronesStats'
-import { DronesToolbar } from './components/DronesToolbar'
-import { DronesLoadError } from './components/DronesLoadError'
+import { DroneFilterChips } from './components/DroneFilterChips'
 import { DronesTable } from './components/DronesTable'
 
 type DronesPageProps = {
@@ -28,30 +21,25 @@ type DronesPageProps = {
 export function DronesPage({ droneId: _droneId }: DronesPageProps) {
   const { t } = useI18n(dronesPageMessages)
   const [filter, setFilter] = useState<FilterChip>('ALL')
-  const [search, setSearch] = useState('')
   const [changingDrone, setChangingDrone] = useState<DeviceResponse | null>(null)
   const [drones, setDrones] = useState<DeviceResponse[] | null>(null)
 
   const query = useApiQuery((signal) => dronesApi.listDrones({ signal }), [])
 
-  const allDrones = useMemo(
-    () => drones ?? query.data?.items ?? [],
-    [drones, query.data?.items],
-  )
-  const searched = useMemo(
-    () => allDrones.filter((d) => matchesSearch(d, search)),
-    [allDrones, search],
-  )
-  const visible = useMemo(
-    () => searched.filter((d) => matchesFilter(d, filter)),
-    [searched, filter],
-  )
-  const counts = useMemo(() => groupCounts(allDrones), [allDrones])
-  const statusCounts = useMemo(() => {
-    const map: Record<string, number> = { ALL: searched.length }
-    for (const d of searched) map[d.status] = (map[d.status] ?? 0) + 1
-    return map
-  }, [searched])
+  const allDrones = drones ?? query.data?.items ?? []
+  const visible = allDrones.filter((d) => matchesFilter(d, filter))
+
+  const counts = {
+    available: allDrones.filter((d) => d.status === 'AVAILABLE').length,
+    flying: allDrones.filter(
+      (d) =>
+        d.status === 'IN_MISSION' ||
+        d.status === 'RESERVED' ||
+        d.status === 'RETURNING',
+    ).length,
+    maintenance: allDrones.filter((d) => d.status === 'MAINTENANCE').length,
+    outOfService: allDrones.filter((d) => d.status === 'OUT_OF_SERVICE').length,
+  }
 
   function handleChanged(updated: DeviceResponse) {
     const base = drones ?? query.data?.items ?? []
@@ -59,51 +47,50 @@ export function DronesPage({ droneId: _droneId }: DronesPageProps) {
     setChangingDrone(null)
   }
 
-  const ready = !query.loading && !query.error
-
   return (
-    <div className="odm-or">
-      <PageHeader
-        title={t.title}
-        subtitle={ready ? t.subtitle(allDrones.length) : undefined}
-      />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
+      <div className="odm-mgr-dash-head">
+        <div>
+          <h1 className="odm-mgr-dash-title">{t.title}</h1>
+          {!query.loading && !query.error && (
+            <div className="odm-mgr-dash-date" style={{ fontSize: 13 }}>
+              {t.summary(
+                counts.available,
+                counts.flying,
+                counts.maintenance,
+                counts.outOfService,
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
-      <DronesStats counts={counts} />
+      {/* Filter chips */}
+      <DronesStats filter={filter} setFilter={setFilter} />
 
-      <DronesToolbar
-        search={search}
-        onSearch={setSearch}
-        filter={filter}
-        onFilter={setFilter}
-        counts={statusCounts}
-      />
-
+      {/* Content */}
       {query.loading && (
-        <div aria-busy="true">
-          <Skeleton variant="block" height={300} />
+        <div style={{ padding: 40, textAlign: 'center' }} aria-busy="true">
+          <div className="odm-sk" style={{ height: 300, borderRadius: 8 }} />
         </div>
       )}
 
-      {!query.loading && !!query.error && <DronesLoadError query={query} />}
+      {!query.loading && !!query.error && <DroneFilterChips query={query} />}
 
-      {ready && visible.length === 0 && (
-        <section className="odm-or-card">
-          <StateView
-            state="empty"
-            title={t.emptyTitle}
-            description={t.emptyDescription}
-          />
-        </section>
-      )}
-
-      {ready && visible.length > 0 && (
-        <DronesTable
-          visible={visible}
-          total={allDrones.length}
-          onChangeStatus={setChangingDrone}
+      {!query.loading && !query.error && visible.length === 0 && (
+        <StateView
+          state="empty"
+          title={t.emptyTitle}
+          description={t.emptyDescription}
         />
       )}
 
+      {!query.loading && !query.error && visible.length > 0 && (
+        <DronesTable visible={visible} setChangingDrone={setChangingDrone} />
+      )}
+
+      {/* Status change modal */}
       {changingDrone && (
         <StatusChangeModal
           drone={changingDrone}

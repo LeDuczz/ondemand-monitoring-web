@@ -1,37 +1,61 @@
-import { TableCard } from '../../../../../shared/components/ui'
+import { MANUAL_TRANSITIONS } from '../droneHelpers'
+import { dronesPageMessages } from '../DronesPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
 import type { DeviceResponse } from '../../../types/drones'
-import { dronesPageMessages } from '../DronesPage.messages'
+import type { Dispatch, SetStateAction } from 'react'
 import { DroneRow } from './DroneRow'
 
 export function DronesTable({
   visible,
-  total,
-  onChangeStatus,
+  setChangingDrone,
 }: {
   visible: DeviceResponse[]
-  total: number
-  onChangeStatus: (drone: DeviceResponse) => void
+  setChangingDrone: Dispatch<SetStateAction<DeviceResponse | null>>
 }) {
   const { t } = useI18n(dronesPageMessages)
   return (
-    <TableCard footer={t.resultCount(visible.length, total)}>
-      <table className="odm-or-table odm-or-table-static">
+    <div style={{ overflowX: 'auto' }}>
+      <table
+        style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}
+      >
         <thead>
-          <tr>
-            <th>{t.columns.device}</th>
-            <th>{t.columns.model}</th>
-            <th>{t.columns.status}</th>
-            <th>{t.columns.updated}</th>
-            <th className="odm-or-table-action">{t.columns.actions}</th>
+          <tr
+            style={{
+              borderBottom: '1px solid var(--border)',
+              color: 'var(--tx3)',
+              textAlign: 'left',
+            }}
+          >
+            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+              {t.columns.drone}
+            </th>
+            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+              {t.columns.model}
+            </th>
+            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+              {t.columns.status}
+            </th>
+            <th style={{ padding: '8px 12px', fontWeight: 500 }}>
+              {t.columns.lastUpdated}
+            </th>
+            <th style={{ padding: '8px 12px', fontWeight: 500 }} />
           </tr>
         </thead>
         <tbody>
-          {visible.map((drone) => (
-            <DroneRow key={drone.id} drone={drone} onChangeStatus={onChangeStatus} />
-          ))}
+          {visible.map((drone) => {
+            const canChange =
+              (MANUAL_TRANSITIONS[drone.status]?.length ?? 0) > 0
+            return (
+              <DroneRow
+                key={drone.id}
+                drone={drone}
+                canChange={canChange}
+                setChangingDrone={setChangingDrone}
+              />
+            )
+          })}
         </tbody>
       </table>
-    </TableCard>
+    </div>
   )
 }

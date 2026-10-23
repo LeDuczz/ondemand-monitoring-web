@@ -23,10 +23,6 @@ export function ExecutionPlanSummary({
           <dt>Còn lại</dt>
           <dd>{coverage.uncovered}</dd>
         </div>
-        <div>
-          <dt>Phân công lặp</dt>
-          <dd>{coverage.repeated}</dd>
-        </div>
       </dl>
     </section>
   )

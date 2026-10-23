@@ -52,32 +52,21 @@ export function MasterChecklistSidebar({
   )
 
   if (collapsed) {
-    return (
-      <aside className="odm-master-checklist-sidebar odm-master-collapsed" aria-label="Master Checklist">
-        <button
-          type="button"
-          className="odm-btn odm-btn-sm"
-          title="Mở rộng kho Checklist"
-          onClick={onToggleCollapse}
-        >
-          <OrderIcon name="check" size={16} /> Checklist ({unassignedItems.length} chưa gán)
-        </button>
-      </aside>
-    )
+    return null
   }
 
   return (
     <aside className="odm-master-checklist-sidebar" aria-label="Master Checklist">
       <header className="odm-sidebar-header">
         <h3>
-          <OrderIcon name="check" size={18} /> Kho Checklist gốc
+          <OrderIcon name="check" size={18} /> Danh sách checklist
         </h3>
         <button
           type="button"
           className="odm-btn odm-btn-sm"
           onClick={onToggleCollapse}
-          title="Thu gọn sidebar"
-          aria-label="Thu gọn sidebar"
+          title="Thu gọn "
+          aria-label="Thu gọn "
         >
           Thu gọn ‹
         </button>
@@ -129,7 +118,7 @@ export function MasterChecklistSidebar({
       <div className="odm-checklist-block">
         <div className="odm-checklist-block-head">
           <span style={{ color: unassignedItems.length > 0 ? '#d97706' : '#6b7280' }}>
-            ⏳ Chưa phân công ({unassignedItems.length})
+            Chưa phân công ({unassignedItems.length})
           </span>
         </div>
         <div className="odm-checklist-card-list">

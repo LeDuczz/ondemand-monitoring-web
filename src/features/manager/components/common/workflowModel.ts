@@ -59,10 +59,12 @@ export function orderProgress({
   status,
   depositPaid,
   reviewStep,
+  planFinalized,
 }: {
   status: OrderStatus
   depositPaid: boolean
   reviewStep: 1 | 2 | 3 | 4
+  planFinalized?: boolean
 }): OrderProgress {
   if (status === 'REJECTED' || status === 'CANCELLED')
     return {
@@ -70,12 +72,16 @@ export function orderProgress({
       waiting: false,
       terminal: status === 'REJECTED' ? 'rejected' : 'cancelled',
     }
-  if (status === 'APPROVED')
+  if (status === 'APPROVED') {
+    if (planFinalized) {
+      return { current: 'complete', waiting: false, terminal: null }
+    }
     return {
       current: depositPaid ? 'planning' : 'deposit',
       waiting: !depositPaid,
       terminal: null,
     }
+  }
   if (['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'].includes(status))
     return { current: 'complete', waiting: false, terminal: null }
   return {

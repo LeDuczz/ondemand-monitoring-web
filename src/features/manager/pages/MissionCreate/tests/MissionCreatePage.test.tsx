@@ -124,7 +124,7 @@ describe('CreateMissionPage', () => {
     vi.spyOn(ordersApi, 'getOrderForMission').mockResolvedValue(brief)
     vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({ orderId: brief.id, planStatus: 'FINALIZED', revision: 4, missions: [], coverage: { total: 0, covered: 0, uncovered: 0, repeated: 0, coverageReady: true, uncoveredItemIds: [] }, blockers: [] })
     render(<MissionCreatePage orderId={brief.id} />)
-    expect(await screen.findByText('Cần điều chỉnh kế hoạch trước khi tạo Mission mới.')).toBeInTheDocument()
+    expect(await screen.findByText('Kế hoạch đã chốt. Có thể tạo Mission thay thế và chốt riêng Mission đó.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Tạo Mission' })).toBeDisabled()
   })
   it('shows the customer window but leaves the flight schedule for staff to choose', async () => {

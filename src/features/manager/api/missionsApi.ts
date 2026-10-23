@@ -100,6 +100,13 @@ export const missionsApi = {
     })
   },
 
+  finalizeReplacementMission(missionId: string): Promise<MissionResponse> {
+    return apiRequest<MissionResponse>(
+      `/api/missions/${encodeURIComponent(missionId)}/finalize-replacement`,
+      { method: 'POST' },
+    )
+  },
+
   /** `GET /api/missions/{id}` [BE `MissionController.getById`]. */
   getMission(id: string, signal?: AbortSignal): Promise<Mission> {
     return apiRequest<Mission>(`/api/missions/${id}`, { signal })

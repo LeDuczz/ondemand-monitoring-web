@@ -10,6 +10,14 @@ export function missionLayer(
   missionId: string | null,
   lang: 'vi' | 'en',
   stage?: 'permit' | 'review',
+  options?: {
+    onSelect?: (stage: import('../../components/common/workflowModel').MissionStage) => void
+    selectable?: (
+      stage: import('../../components/common/workflowModel').MissionStage,
+      state: import('../../components/common/workflowModel').StageState,
+    ) => boolean
+    viewing?: import('../../components/common/workflowModel').MissionStage | null
+  },
 ) {
   const total = planning?.missions.length
   const index = planning?.missions.findIndex((m) => m.id === missionId) ?? -1
@@ -26,5 +34,8 @@ export function missionLayer(
     statusLabel: mission
       ? getMissionStatusLabel(mission.status, lang)
       : undefined,
+    onSelect: options?.onSelect,
+    selectable: options?.selectable,
+    viewing: options?.viewing,
   }
 }

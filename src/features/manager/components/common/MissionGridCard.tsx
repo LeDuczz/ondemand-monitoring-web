@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { OrderChecklistSnapshot } from '../../types/orders'
+import type { OrderChecklistSnapshot, OrderDetail } from '../../types/orders'
 import type { MissionResponse } from '../../types/missions'
 import type { ExecutionPlan } from '../../types/planning'
 import { StatusBadge, toUiTone } from '../../../../shared/components/ui'
@@ -20,22 +20,32 @@ import type { MissionStaffRole } from '../../../mission/types/mission'
 
 interface MissionGridCardProps {
   mission: MissionResponse
+  order: OrderDetail
   plan: ExecutionPlan
   orderChecklistItems: OrderChecklistSnapshot[]
   disabled: boolean
   onPlanChanged: () => void
   onRequestReason: (title: string, hint: string, onConfirm: (reason: string) => Promise<void>) => void
+  onEditMission?: (mission: MissionResponse) => void
+  onReplaceMission?: (mission: MissionResponse) => void
+  onFinalizeReplacement?: (mission: MissionResponse) => void
+  hasReplacement?: boolean
 }
 
 const ROLES: MissionStaffRole[] = ['PILOT', 'OPERATOR', 'MAINTAINER', 'INSPECTOR']
 
 export function MissionGridCard({
   mission,
+  order,
   plan,
   orderChecklistItems,
   disabled,
   onPlanChanged,
   onRequestReason,
+  onEditMission,
+  onReplaceMission,
+  onFinalizeReplacement,
+  hasReplacement,
 }: MissionGridCardProps) {
   const isPlanning = mission.status === 'PLANNING'
   const isReady = mission.status === 'READY' || mission.status === 'WAITING_CREW_CONFIRMATION'
@@ -67,6 +77,23 @@ export function MissionGridCard({
 
   // Staff and device counts
   const currentStaff = mission.staffAssignments || []
+  const currentDevices = mission.deviceAssignments && mission.deviceAssignments.length > 0
+    ? mission.deviceAssignments
+    : mission.droneId || mission.deviceId
+    ? [
+        {
+          id: mission.deviceId || mission.droneId || 'default-device',
+          deviceId: mission.deviceId || mission.droneId || '',
+          deviceCode: mission.deviceCode || mission.droneCode || null,
+          deviceName: mission.deviceName || mission.deviceCode || 'Drone',
+          deviceSerialNumber: null,
+          deviceStatus: null,
+          deviceRole: 'MAIN' as const,
+          checkupStatus: 'PENDING' as const,
+          assignedAt: null,
+        },
+      ]
+    : []
   const maxStaff = 10
   const maxDevices = 10
 
@@ -283,23 +310,48 @@ export function MissionGridCard({
             </a>
           </strong>
           <span>{mission.orderTitle || 'Phạm vi theo đơn'}</span>
+          {mission.replacesMissionId && (
+            <span style={{ fontSize: 11, color: '#4f46e5', fontWeight: 600 }}>
+              (Mission thay thế)
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <StatusBadge tone={toUiTone(missionStatusTone[mission.status] ?? 'gray')}>
             {missionStatusLabel[mission.status] ?? mission.status}
           </StatusBadge>
           {isPlanning && !disabled && (
-            <MissionUpdatePanel
-              missionId={mission.id}
-              missionCode={mission.missionCode}
-              scheduledStartAt={mission.scheduledStartAt}
-              scheduledEndAt={mission.scheduledEndAt}
-              revision={plan.revision}
-              items={orderChecklistItems}
-              uncoveredItemIds={plan.coverage.uncoveredItemIds}
+            onEditMission ? (
+              <button
+                type="button"
+                className="odm-btn odm-btn-sm"
+                disabled={disabled || busy}
+                onClick={() => onEditMission(mission)}
+                title={`Chỉnh sửa Mission ${mission.missionCode ?? ''}`}
+              >
+                ✎ Chỉnh sửa
+              </button>
+            ) : (
+              <MissionUpdatePanel
+                mission={mission}
+                order={order}
+                plan={plan}
+                orderChecklistItems={orderChecklistItems}
+                disabled={disabled || busy}
+                onUpdated={onPlanChanged}
+              />
+            )
+          )}
+          {isCancelled && !disabled && !hasReplacement && onReplaceMission && (
+            <button
+              type="button"
+              className="odm-btn odm-btn-sm odm-btn-p"
               disabled={disabled || busy}
-              onUpdated={onPlanChanged}
-            />
+              onClick={() => onReplaceMission(mission)}
+              title={`Tạo Mission thay thế cho ${mission.missionCode ?? ''}`}
+            >
+              ⟲ Thay thế
+            </button>
           )}
         </div>
       </div>
@@ -362,16 +414,15 @@ export function MissionGridCard({
               className="odm-btn odm-btn-sm"
               onClick={handleOpenAddStaff}
               disabled={busy || currentStaff.length >= maxStaff}
-              style={{ padding: '2px 8px', fontSize: 11 }}
             >
-              + Add Staff
+              + Thêm
             </button>
           )}
         </div>
 
         {/* Inline Add Staff Form */}
         {showAddStaff && (
-          <div style={{ background: '#f8fafc', padding: 10, borderRadius: 8, border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="odm-mcard-inline-form">
             <div style={{ display: 'flex', gap: 6 }}>
               <select
                 value={selectedStaffRole}
@@ -460,23 +511,22 @@ export function MissionGridCard({
       {/* Device Section */}
       <div className="odm-mcard-section">
         <div className="odm-mcard-sec-head">
-          <span>Thiết bị ({mission.droneId || mission.deviceId ? 1 : 0}/{maxDevices})</span>
-          {!isCancelled && !disabled && !(mission.droneId || mission.deviceId) && (
+          <span>Thiết bị ({currentDevices.length}/{maxDevices})</span>
+          {!isCancelled && !disabled && currentDevices.length < maxDevices && (
             <button
               type="button"
               className="odm-btn odm-btn-sm"
               onClick={handleOpenAddDevice}
               disabled={busy}
-              style={{ padding: '2px 8px', fontSize: 11 }}
             >
-              + Add Device
+              + Thêm
             </button>
           )}
         </div>
 
         {/* Inline Add Device Form */}
         {showAddDevice && (
-          <div style={{ background: '#f8fafc', padding: 10, borderRadius: 8, border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="odm-mcard-inline-form">
             <div style={{ display: 'flex', gap: 6 }}>
               <select
                 value={selectedDeviceRole}
@@ -485,7 +535,7 @@ export function MissionGridCard({
                 style={{ flex: 1 }}
               >
                 <option value="MAIN">Chính (MAIN)</option>
-                <option value="BACKUP">Dự phòng</option>
+                <option value="SUPPORT">Dự phòng / Hỗ trợ (SUPPORT)</option>
               </select>
               <select
                 value={selectedDeviceId}
@@ -529,28 +579,32 @@ export function MissionGridCard({
         )}
 
         <div className="odm-mcard-res-list">
-          {mission.droneId || mission.deviceId ? (
-            <div className="odm-mcard-res-item">
-              <div>
-                <span className="odm-mcard-res-role">Drone:</span>{' '}
-                <strong>{mission.deviceName || mission.deviceCode || 'Drone'}</strong>
-              </div>
-              {!isCancelled && !disabled && (
-                <button
-                  type="button"
-                  className="odm-mcard-res-remove"
-                  title="Gỡ thiết bị"
-                  onClick={() => handleRemoveDevice(mission.droneId || mission.deviceId || '')}
-                  disabled={busy}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ) : (
+          {currentDevices.length === 0 ? (
             <p className="odm-mission-meta" style={{ fontStyle: 'italic', margin: 0 }}>
               Chưa phân công thiết bị
             </p>
+          ) : (
+            currentDevices.map((dev, idx) => (
+              <div key={dev.id || `${dev.deviceId}-${idx}`} className="odm-mcard-res-item">
+                <div>
+                  <span className="odm-mcard-res-role">
+                    {dev.deviceRole === 'SUPPORT' ? 'Phụ (Support)' : 'Chính (Main)'}:
+                  </span>{' '}
+                  <strong>{dev.deviceName || dev.deviceCode || 'Drone'}</strong>
+                </div>
+                {!isCancelled && !disabled && (
+                  <button
+                    type="button"
+                    className="odm-mcard-res-remove"
+                    title="Gỡ thiết bị"
+                    onClick={() => handleRemoveDevice(dev.deviceId)}
+                    disabled={busy}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -570,9 +624,40 @@ export function MissionGridCard({
         </div>
       )}
 
+      {isPlanning && mission.replacesMissionId && plan.planStatus === 'FINALIZED' && !disabled && onFinalizeReplacement && (
+        <div className="odm-mcard-footer">
+          <button
+            type="button"
+            className="odm-btn odm-btn-p"
+            style={{ width: '100%', justifyContent: 'center' }}
+            onClick={() => onFinalizeReplacement(mission)}
+            disabled={busy}
+          >
+            Chốt Mission và chuyển sang READY
+          </button>
+        </div>
+      )}
+
       {isCancelled && (
-        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
-          <strong>Đã hủy:</strong> {mission.failureReason || mission.rejectionReason || 'Đã hủy theo quyết định của quản lý.'}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
+            <strong>Đã hủy:</strong> {mission.failureReason || mission.rejectionReason || 'Đã hủy theo quyết định của quản lý.'}
+          </div>
+          {hasReplacement ? (
+            <div style={{ color: '#059669', fontSize: 12, fontWeight: 500, padding: '6px 10px', background: '#ecfdf5', borderRadius: 6, textAlign: 'center' }}>
+              ✓ Đã có Mission thay thế
+            </div>
+          ) : !disabled && onReplaceMission ? (
+            <button
+              type="button"
+              className="odm-btn odm-btn-p"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => onReplaceMission(mission)}
+              disabled={busy}
+            >
+              ⟲ Tạo Mission thay thế
+            </button>
+          ) : null}
         </div>
       )}
     </article>

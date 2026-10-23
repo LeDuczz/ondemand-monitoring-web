@@ -4,6 +4,7 @@ export const orderDetailPageMessages = defineMessages({
   vi: {
     errorTitle: 'Không tải được đơn hàng',
     back: 'Đơn của tôi',
+    backToOrders: '← Đơn của tôi',
     orderPrefix: 'Đơn',
     tabOverview: 'Tổng quan',
     tabResults: 'Kết quả',
@@ -11,6 +12,7 @@ export const orderDetailPageMessages = defineMessages({
   en: {
     errorTitle: 'Unable to load this order',
     back: 'My orders',
+    backToOrders: '← My orders',
     orderPrefix: 'Order',
     tabOverview: 'Overview',
     tabResults: 'Results',

@@ -16,20 +16,26 @@ export function MissionHistoryPage() {
 
   return (
     <div className="mh-page">
-      <PageHeader
-        title={t.title}
-        subtitle={t.subtitle}
-        actions={
-          <button
-            type="button"
-            className="odm-btn odm-btn-gh"
-            disabled={history.loading}
-            onClick={history.reload}
-          >
-            {t.refresh}
-          </button>
-        }
-      />
+      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <section className="mh-toolbar-card" aria-label={t.title}>
+        <p className="mh-total" role="status">
+          {data ? (
+            <>
+              <strong>{data.totalItems}</strong> {t.unit}
+            </>
+          ) : (
+            t.unit
+          )}
+        </p>
+        <button
+          type="button"
+          className="odm-btn odm-btn-gh mh-btn"
+          disabled={history.loading}
+          onClick={history.reload}
+        >
+          {t.refresh}
+        </button>
+      </section>
       {history.loading && !data && <LoadingState />}
       {failed && (
         <ErrorState title={t.errorTitle} error={history.error} onRetry={history.reload} />

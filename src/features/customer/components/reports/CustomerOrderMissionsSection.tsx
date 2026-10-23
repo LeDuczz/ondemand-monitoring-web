@@ -25,6 +25,7 @@ export function CustomerOrderMissionsSection({ orderId, onMissionsChange }: { or
         </h2>
         {Boolean(query.error) && (
           <button
+            type="button"
             className="odm-btn odm-btn-gh cr-refresh"
             disabled={query.loading}
             onClick={query.reload}

@@ -2,7 +2,7 @@ import {
   ErrorState,
   LoadingState,
 } from '../../../../shared/components/odm/StateView'
-import { EmptyState, PageHeader } from '../../../../shared/components/ui'
+import { EmptyState, PageHeader, StatCard } from '../../../../shared/components/ui'
 import { useI18n } from '../../../../shared/i18n'
 import { MediaPreviewModal } from '../../components/common/media'
 import { customerHref } from '../../routes'
@@ -16,16 +16,33 @@ export function MediaPage({ orderId }: { orderId: string }) {
   const { t } = useI18n(mediaPageMessages)
   const media = useOrderMedia(orderId)
 
-  if (media.loading && !media.loaded) return <LoadingState />
-  if (!media.loaded || media.error) {
+  if (media.loading && !media.loaded) {
     return (
-      <ErrorState
-        title={t.errorTitle}
-        error={undefined}
-        onRetry={media.reload}
-      />
+      <div className="om-page">
+        <LoadingState />
+      </div>
     )
   }
+  if (!media.loaded || media.error) {
+    return (
+      <div className="om-page">
+        <div className="ui-page-back om-state-back">
+          <a href={customerHref({ screen: 'orderDetail', orderId })}>
+            {t.backToOrder}
+          </a>
+        </div>
+        <ErrorState
+          title={t.errorTitle}
+          error={undefined}
+          onRetry={media.reload}
+        />
+      </div>
+    )
+  }
+
+  const allItems = media.sections.flatMap((section) => section.items)
+  const photos = allItems.filter((item) => item.kind === 'image').length
+  const videos = allItems.filter((item) => item.kind === 'video').length
 
   return (
     <div className="om-page">
@@ -38,6 +55,15 @@ export function MediaPage({ orderId }: { orderId: string }) {
         title={t.title}
         subtitle={t.subtitle}
       />
+      {media.sections.length > 0 && (
+        <section className="om-toolbar-card" aria-label={t.title}>
+          <div className="om-stats">
+            <StatCard label={t.missions} value={media.sections.length} />
+            <StatCard label={t.photos} value={photos} />
+            <StatCard label={t.videos} value={videos} />
+          </div>
+        </section>
+      )}
       {media.sections.length === 0 ? (
         <EmptyState
           title={t.emptyTitle}

@@ -1,14 +1,134 @@
-/* Media of one order. Tokens come from shared/components/ui/ui.css. */
+/* Media of one order. Tokens come from shared/components/ui/ui.css.
+   Same page rhythm as Orders.css: 16px header gap, 24px between cards. */
 
 .om-page {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-4);
+  gap: 24px;
   min-width: 0;
+}
+
+.om-page .ui-page-header {
+  margin-bottom: -8px;
+}
+
+.om-page .ui-page-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.3;
+  color: var(--ui-text);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.om-page .ui-page-subtitle {
+  max-width: 75ch;
+}
+
+.om-page .ui-page-back a,
+.om-state-back a {
+  color: var(--ui-primary);
+  font-weight: 500;
+}
+
+.om-state-back {
+  margin-bottom: -8px;
+}
+
+/* Toolbar card: flat inline tiles like the Orders list. */
+.om-toolbar-card {
+  padding: var(--ui-space-4) var(--ui-space-5);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-1);
+  min-width: 0;
+}
+
+.om-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 560px;
+}
+
+.odm-cus .om-toolbar-card .om-stats .ui-stat,
+.odm-cus .om-toolbar-card .om-stats .ui-stat:hover {
+  padding: 0 var(--ui-space-4);
+  border: 0;
+  border-left: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.om-stats .ui-stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.om-page .ui-stat-label {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.odm-cus .om-page .ui-stat .ui-stat-value {
+  margin-top: 2px;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.om-page .ui-card {
+  margin-bottom: 0;
+  border-radius: 16px;
+  border-color: var(--ui-border);
+  box-shadow: 0 1px 2px rgba(15, 40, 90, 0.04);
+}
+
+.om-page .ui-card-title {
+  overflow-wrap: anywhere;
+}
+
+.om-page .ui-empty {
+  border-radius: 16px;
+}
+
+/* Responsive media grid: as many 200px+ columns as fit, one column on phones. */
+.om-page .md-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 16px;
 }
 
 .om-empty {
   margin: 0;
+  max-width: 75ch;
   font-size: 13.5px;
   color: var(--ui-text-3);
+}
+
+@media (max-width: 640px) {
+  .om-page .ui-page-title {
+    font-size: 21px;
+  }
+
+  .om-toolbar-card {
+    padding: var(--ui-space-4);
+  }
+
+  .om-stats .ui-stat {
+    min-width: 0;
+  }
+
+  .odm-cus .om-toolbar-card .om-stats .ui-stat,
+  .odm-cus .om-toolbar-card .om-stats .ui-stat:hover {
+    padding: 0 var(--ui-space-3);
+  }
+}
+
+@media (max-width: 640px) {
+  .om-page .md-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
 }

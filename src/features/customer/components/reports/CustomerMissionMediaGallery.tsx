@@ -43,7 +43,8 @@ export function CustomerMissionMediaGallery({
           ) : null}
         </h2>
         <button
-          className="odm-btn odm-btn-gh"
+          type="button"
+          className="odm-btn odm-btn-gh cr-btn"
           disabled={query.loading}
           onClick={() => {
             setPreview(null)
@@ -53,9 +54,15 @@ export function CustomerMissionMediaGallery({
           {t.retry}
         </button>
       </div>
-      {query.loading && <p role="status">{t.loading}</p>}
+      {query.loading && (
+        <p role="status" className="cr-state">
+          {t.loading}
+        </p>
+      )}
       {query.error ? (
-        <p role="alert">{t.error}</p>
+        <p role="alert" className="cr-state is-error">
+          {t.error}
+        </p>
       ) : (
         query.data && (
           <>

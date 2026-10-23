@@ -10,6 +10,9 @@ export const mediaPageMessages = defineMessages({
     emptyDescription:
       'Ảnh/video được công bố sẽ xuất hiện theo từng phiên giám sát.',
     openLibrary: 'Mở thư viện kết quả',
+    missions: 'Lần bay',
+    photos: 'Ảnh',
+    videos: 'Video',
   },
   en: {
     backToOrder: '← Back to order',
@@ -20,5 +23,8 @@ export const mediaPageMessages = defineMessages({
     emptyDescription:
       'Published photos and videos appear under each monitoring session.',
     openLibrary: 'Open result library',
+    missions: 'Missions',
+    photos: 'Photos',
+    videos: 'Videos',
   },
 })

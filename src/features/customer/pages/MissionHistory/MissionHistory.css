@@ -1,40 +1,133 @@
-/* Customer mission history. Tokens come from shared/components/ui/ui.css. */
+/* Customer mission history. Tokens come from shared/components/ui/ui.css.
+   Mirrors the Orders list (Orders.css): 16px rhythm, stacked cards at <=640px. */
 
 .mh-page {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-4);
+  gap: 16px;
   min-width: 0;
+}
+
+.mh-page .ui-page-header {
+  margin-bottom: 0;
+}
+
+.mh-page .ui-page-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.3;
+  color: var(--ui-text);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.mh-page .ui-page-subtitle {
+  max-width: 75ch;
+}
+
+/* Toolbar card: total count on the left, ghost refresh on the right. */
+.mh-toolbar-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3) var(--ui-space-6);
+  padding: var(--ui-space-4) var(--ui-space-5);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-1);
+  min-width: 0;
+}
+
+.mh-total {
+  margin: 0;
+  color: var(--ui-text-2);
+  font-size: 14px;
+}
+
+.mh-total strong {
+  color: var(--ui-text);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.odm-btn.mh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.odm-btn.mh-btn:hover:not(:disabled) {
+  background: var(--ui-surface-2);
+}
+
+.odm-btn.mh-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.mh-page .ui-table-card {
+  border-radius: 16px;
+  border-color: var(--ui-border);
+  box-shadow: 0 1px 2px rgba(15, 40, 90, 0.04);
+}
+
+.mh-page .ui-empty {
+  border-radius: 16px;
 }
 
 .mh-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 14px;
+  color: var(--ui-text);
 }
 
 .mh-table th {
-  padding: var(--ui-space-3) var(--ui-space-4);
+  padding: 12px 20px;
   text-align: left;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ui-text-3);
+  background: var(--ui-surface-2);
   border-bottom: 1px solid var(--ui-border);
+  white-space: normal;
 }
 
 .mh-table td {
-  padding: var(--ui-space-3) var(--ui-space-4);
+  padding: 14px 20px;
   border-bottom: 1px solid var(--ui-border);
-  vertical-align: top;
+  vertical-align: middle;
   overflow-wrap: anywhere;
   min-width: 120px;
+}
+
+.mh-table .ui-badge {
+  white-space: nowrap;
+}
+
+.mh-table tbody tr {
+  transition: background-color 150ms;
 }
 
 .mh-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.mh-table tbody tr:hover td {
+.mh-table tbody tr:hover {
   background: var(--ui-surface-2);
 }
 
@@ -45,23 +138,144 @@
   text-decoration: none;
 }
 
-.mh-code:hover,
-.mh-link:hover {
+.mh-code:hover {
   text-decoration: underline;
 }
 
 .mh-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 8px;
+  background: transparent;
   color: var(--ui-primary-text);
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   text-decoration: none;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.mh-link:hover {
+  background: var(--ui-primary-soft);
+  border-color: var(--ui-primary);
+}
+
+.mh-link:focus-visible,
+.mh-code:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
 }
 
 .mh-muted {
   margin-top: 2px;
   color: var(--ui-text-3);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .mh-nowrap {
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .mh-page .ui-page-title {
+    font-size: 21px;
+  }
+
+  .mh-toolbar-card {
+    padding: var(--ui-space-4);
+  }
+
+  /* The table becomes one stacked card per mission: no sideways scroll. */
+  .odm-cus .odm-cus-content-inner .mh-page .ui-table-card {
+    border: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .mh-page .ui-table-scroll {
+    overflow: visible;
+  }
+
+  .mh-table,
+  .mh-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .mh-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .mh-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--ui-space-2) var(--ui-space-3);
+    margin-bottom: var(--ui-space-3);
+    padding: var(--ui-space-4);
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow-1);
+  }
+
+  .mh-table tbody tr:hover {
+    background: var(--ui-surface);
+  }
+
+  .mh-table td,
+  .mh-table tbody tr:last-child td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .mh-table td.mh-col-mission {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .mh-table td.mh-col-status {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .mh-table td.mh-col-order,
+  .mh-table td.mh-col-finished,
+  .mh-table td.mh-col-results {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+
+  .mh-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ui-text-3);
+  }
+
+  .mh-table td.mh-col-results .mh-link {
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh-link,
+  .mh-table tbody tr {
+    transition: none;
+  }
 }

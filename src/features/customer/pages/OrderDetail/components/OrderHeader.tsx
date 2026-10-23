@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { PageHeader } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { OrderStatusBadge } from '../../../components/common/OrderStatusBadge'
@@ -6,7 +8,8 @@ import { customerHref } from '../../../routes'
 import { CopyButton } from './CopyButton'
 import { orderHeaderMessages } from './OrderHeader.messages'
 
-export function OrderHeader({ order }: { order: OrderDetailView }) {
+/** Title, status + code, and the header actions slot (one primary at most). */
+export function OrderHeader({ order, actions }: { order: OrderDetailView; actions?: ReactNode }) {
   const { t } = useI18n(orderHeaderMessages)
   return (
     <PageHeader
@@ -22,6 +25,7 @@ export function OrderHeader({ order }: { order: OrderDetailView }) {
           </span>
         </span>
       }
+      actions={actions}
     />
   )
 }

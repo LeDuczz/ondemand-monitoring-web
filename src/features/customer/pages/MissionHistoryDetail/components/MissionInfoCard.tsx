@@ -2,7 +2,6 @@ import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { fmtDateTime } from '../../../lib/orderStatus'
 import type { MissionRow } from '../../../lib/missionHistory/types'
-import { customerHref } from '../../../routes'
 import { missionInfoCardMessages } from './MissionInfoCard.messages'
 
 const DASH = '—'
@@ -18,14 +17,7 @@ export function MissionInfoCard({ mission }: { mission: MissionRow }) {
     [t.completed, when(mission.completedAt)],
   ]
   return (
-    <Card
-      title={t.title}
-      actions={
-        <a href={customerHref({ screen: 'orderDetail', orderId: mission.orderId })}>
-          {t.viewOrder}
-        </a>
-      }
-    >
+    <Card title={t.title}>
       <dl className="mhd-fields">
         {rows.map(([label, value]) => (
           <div key={label}>

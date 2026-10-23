@@ -14,11 +14,11 @@ export function MissionHistoryTable({ rows }: { rows: MissionRow[] }) {
     <table className="mh-table">
       <thead>
         <tr>
-          <th>{c.mission}</th>
-          <th>{c.order}</th>
-          <th>{c.status}</th>
-          <th>{c.finished}</th>
-          <th>{c.results}</th>
+          <th className="mh-col-mission">{c.mission}</th>
+          <th className="mh-col-order">{c.order}</th>
+          <th className="mh-col-status">{c.status}</th>
+          <th className="mh-col-finished">{c.finished}</th>
+          <th className="mh-col-results">{c.results}</th>
         </tr>
       </thead>
       <tbody>
@@ -26,22 +26,22 @@ export function MissionHistoryTable({ rows }: { rows: MissionRow[] }) {
           const href = customerHref({ screen: 'missionHistoryDetail', missionId: row.id })
           return (
             <tr key={row.id}>
-              <td>
+              <td className="mh-col-mission">
                 <a className="mh-code" href={href}>
                   {row.code}
                 </a>
               </td>
-              <td>
+              <td className="mh-col-order" data-label={c.order}>
                 {row.orderTitle}
                 {row.address && <div className="mh-muted">{row.address}</div>}
               </td>
-              <td>
+              <td className="mh-col-status">
                 <MissionStatusBadge status={row.status} />
               </td>
-              <td className="mh-nowrap">
+              <td className="mh-nowrap mh-col-finished" data-label={c.finished}>
                 {row.completedAt ? fmtDateTime(row.completedAt, locale) : DASH}
               </td>
-              <td>
+              <td className="mh-col-results">
                 <a className="mh-link" href={href}>
                   {t.view}
                 </a>

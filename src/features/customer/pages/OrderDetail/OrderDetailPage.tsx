@@ -6,6 +6,7 @@ import {
 } from '../../../../shared/components/odm/StateView'
 import { useI18n } from '../../../../shared/i18n'
 import { ContextAwareHelpWidget } from '../../../support/components/ContextAwareHelpWidget'
+import { customerHref } from '../../routes'
 import { OrderActions } from './components/OrderActions'
 import { OrderHeader } from './components/OrderHeader'
 import { OrderInfoCard } from './components/OrderInfoCard'
@@ -44,14 +45,36 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
     setFinance(state)
   }, [])
 
-  if (detail.loading && !order) return <LoadingState />
+  const goToFinance = useCallback(() => {
+    setTab('overview')
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById('od-finance')
+      if (!target) return
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+      target.querySelector<HTMLElement>('button.odm-btn-p:not(:disabled)')?.focus({ preventScroll: true })
+    })
+  }, [])
+
+  if (detail.loading && !order) {
+    return (
+      <div className="od-page">
+        <LoadingState />
+      </div>
+    )
+  }
   if (!order || detail.error) {
     return (
-      <ErrorState
-        title={t.errorTitle}
-        error={undefined}
-        onRetry={detail.reload}
-      />
+      <div className="od-page">
+        <div className="ui-page-back od-state-back">
+          <a href={customerHref({ screen: 'orders' })}>{t.backToOrders}</a>
+        </div>
+        <ErrorState
+          title={t.errorTitle}
+          error={undefined}
+          onRetry={detail.reload}
+        />
+      </div>
     )
   }
 
@@ -60,62 +83,70 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
 
   return (
     <div className="od-page">
-      <OrderHeader order={order} />
+      <OrderHeader
+        order={order}
+        actions={<OrderActions order={order} finance={finance} onNextAction={goToFinance} />}
+      />
       <ReviewNotice order={order} onInformationSubmitted={detail.reload} />
-      <OrderActions order={order} />
-      <OrderOverviewVisualCard order={order} />
-      {hasResults ? (
-        <div className="od-tabs" role="tablist">
-          {(['overview', 'results'] as const).map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === key}
-              className={`od-tab${activeTab === key ? ' is-active' : ''}`}
-              onClick={() => setTab(key)}
-            >
-              {key === 'overview' ? t.tabOverview : t.tabResults}
-            </button>
-          ))}
+      <div className="od-layout">
+        <div className="od-main">
+          <OrderOverviewVisualCard order={order} />
+          {hasResults ? (
+            <div className="od-tabs" role="tablist">
+              {(['overview', 'results'] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === key}
+                  className={`od-tab${activeTab === key ? ' is-active' : ''}`}
+                  onClick={() => setTab(key)}
+                >
+                  {key === 'overview' ? t.tabOverview : t.tabResults}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {activeTab === 'results' ? <CustomerDeliveryPanel orderId={order.id} /> : null}
+          <div className="od-stack od-main-overview" hidden={activeTab !== 'overview'}>
+            <div id="od-finance" className="od-anchor">
+              <CustomerFinancePanel
+                orderId={order.id}
+                legalStatus={order.legalReviewStatus}
+                onStateChange={updateFinance}
+              />
+            </div>
+            <CustomerOrderMissionsSection key={order.id} orderId={order.id} onMissionsChange={setMissions} />
+            <OrderInfoCard
+              order={order}
+              canEdit={
+                (['PENDING', 'NEEDS_INFO'].includes(order.status) &&
+                  !(order.status === 'NEEDS_INFO' && order.requestedUpdateScope)) ||
+                (order.status === 'APPROVED' && finance.quote?.status !== 'ACCEPTED_BY_CUSTOMER' && !finance.invoice)
+              }
+              onUpdated={detail.reload}
+            />
+            <ChecklistSnapshotCard
+              title={<CardTitle icon="drone">{checklistT.title}</CardTitle>}
+              items={order.checklistItems}
+              snapshotAt={order.checklistSnapshotAt}
+            />
+          </div>
         </div>
-      ) : null}
-      {activeTab === 'results' ? <CustomerDeliveryPanel orderId={order.id} /> : null}
-      <div hidden={activeTab !== 'overview'}>
-      <CustomerOrderMissionsSection key={order.id} orderId={order.id} onMissionsChange={setMissions} />
-      <div className="od-grid">
-        <div className="od-stack">
-          <OrderInfoCard
-            order={order}
-            canEdit={
-              (['PENDING', 'NEEDS_INFO'].includes(order.status) &&
-                !(order.status === 'NEEDS_INFO' && order.requestedUpdateScope)) ||
-              (order.status === 'APPROVED' && finance.quote?.status !== 'ACCEPTED_BY_CUSTOMER' && !finance.invoice)
-            }
-            onUpdated={detail.reload}
-          />
-          <ChecklistSnapshotCard
-            title={<CardTitle icon="drone">{checklistT.title}</CardTitle>}
-            items={order.checklistItems}
-            snapshotAt={order.checklistSnapshotAt}
-          />
-        </div>
-        <div className="od-stack">
-          <CustomerFinancePanel
-            orderId={order.id}
-            legalStatus={order.legalReviewStatus}
-            onStateChange={updateFinance}
-          />
-          <OrderTimeline status={order.status} events={order.timeline} finance={finance} missions={missions} />
-          <ContextAwareHelpWidget
-            type="ORDER"
-            id={order.code}
-            status={order.status}
-            statusLabel={getOrderStatusMeta(order.status, lang).label}
-            orderId={order.id}
-          />
-        </div>
-      </div>
+        <aside className="od-side">
+          <div className="od-side-status">
+            <OrderTimeline status={order.status} events={order.timeline} finance={finance} missions={missions} />
+          </div>
+          <div className="od-side-help">
+            <ContextAwareHelpWidget
+              type="ORDER"
+              id={order.code}
+              status={order.status}
+              statusLabel={getOrderStatusMeta(order.status, lang).label}
+              orderId={order.id}
+            />
+          </div>
+        </aside>
       </div>
     </div>
   )

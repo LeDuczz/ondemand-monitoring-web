@@ -1,31 +1,35 @@
-import { FILTER_CHIP_VALUES } from '../droneHelpers'
-import { dronesPageMessages } from '../DronesPage.messages'
+import { StatCard } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
-import type { FilterChip } from '../droneHelpers'
-import type { Dispatch, SetStateAction } from 'react'
+import type { DroneGroup } from '../droneHelpers'
+import { dronesPageMessages } from '../DronesPage.messages'
 
-export function DronesStats({
-  filter,
-  setFilter,
-}: {
-  filter: FilterChip
-  setFilter: Dispatch<SetStateAction<FilterChip>>
-}) {
+export function DronesStats({ counts }: { counts: Record<DroneGroup, number> }) {
   const { t } = useI18n(dronesPageMessages)
   return (
-    <div
-      style={{ display: 'flex', gap: 6, padding: '8px 0', flexWrap: 'wrap' }}
-    >
-      {FILTER_CHIP_VALUES.map((chip) => (
-        <button
-          key={chip}
-          type="button"
-          className={`odm-chip${filter === chip ? ' odm-chip-active' : ''}`}
-          onClick={() => setFilter(chip)}
-        >
-          {t.filters[chip]}
-        </button>
-      ))}
+    <div className="odm-or-stats">
+      <StatCard
+        label={t.stats.available}
+        value={counts.available}
+        hint={t.stats.availableHint}
+        tone={counts.available > 0 ? 'success' : 'default'}
+      />
+      <StatCard
+        label={t.stats.inMission}
+        value={counts.inMission}
+        hint={t.stats.inMissionHint}
+      />
+      <StatCard
+        label={t.stats.maintenance}
+        value={counts.maintenance}
+        hint={t.stats.maintenanceHint}
+        tone={counts.maintenance > 0 ? 'warning' : 'default'}
+      />
+      <StatCard
+        label={t.stats.outOfService}
+        value={counts.outOfService}
+        hint={t.stats.outOfServiceHint}
+        tone={counts.outOfService > 0 ? 'danger' : 'default'}
+      />
     </div>
   )
 }

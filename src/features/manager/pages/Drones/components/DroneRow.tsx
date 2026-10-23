@@ -1,60 +1,48 @@
 import { StatusBadge } from '../../../../../shared/components/odm/StatusBadge'
-import {
-  droneStatusTone,
-  getDroneStatusLabel,
-} from '../../../../../shared/lib/statusTone'
-import { dronesPageMessages } from '../DronesPage.messages'
-import { useI18n } from '../../../../../shared/i18n'
-import type { DeviceResponse } from '../../../types/drones'
-import type { Dispatch, SetStateAction } from 'react'
 import { Button } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
+import { droneStatusTone } from '../../../../../shared/lib/statusTone'
+import type { DeviceResponse } from '../../../types/drones'
+import { MANUAL_TRANSITIONS } from '../droneHelpers'
+import { dronesPageMessages } from '../DronesPage.messages'
 
 export function DroneRow({
   drone,
-  canChange,
-  setChangingDrone,
+  onChangeStatus,
 }: {
   drone: DeviceResponse
-  canChange: boolean
-  setChangingDrone: Dispatch<SetStateAction<DeviceResponse | null>>
+  onChangeStatus: (drone: DeviceResponse) => void
 }) {
-  const { t, lang, locale } = useI18n(dronesPageMessages)
+  const { t, locale } = useI18n(dronesPageMessages)
+  const canChange = (MANUAL_TRANSITIONS[drone.status]?.length ?? 0) > 0
+  const model = drone.deviceModel
   return (
-    <tr style={{ borderBottom: '1px solid var(--border)' }}>
-      <td style={{ padding: '8px 12px', fontWeight: 500 }}>
-        {drone.name || drone.serialNumber}
-        {drone.name ? (
-          <span
-            style={{
-              fontWeight: 400,
-              color: 'var(--tx2)',
-              marginLeft: 4,
-            }}
-          >
-            {drone.serialNumber}
-          </span>
+    <tr>
+      <td>
+        <div className="odm-or-cell-main odm-mono">{drone.serialNumber}</div>
+        <div className="odm-or-cell-sub">{drone.name || t.unnamed}</div>
+      </td>
+      <td>
+        <div className="odm-or-cell-main">
+          {model?.modelName ?? model?.code ?? '—'}
+        </div>
+        {model?.manufacturer ? (
+          <div className="odm-or-cell-sub">{model.manufacturer}</div>
         ) : null}
       </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.deviceModel?.modelName ?? drone.deviceModel?.code ?? '—'}
+      <td>
+        <StatusBadge
+          kind="drone"
+          status={drone.status}
+          tone={droneStatusTone[drone.status]}
+        />
       </td>
-      <td style={{ padding: '8px 12px' }}>
-        <StatusBadge tone={droneStatusTone[drone.status]}>
-          {getDroneStatusLabel(drone.status, lang)}
-        </StatusBadge>
+      <td>
+        {drone.updatedAt ? new Date(drone.updatedAt).toLocaleString(locale) : '—'}
       </td>
-      <td style={{ padding: '8px 12px', color: 'var(--tx2)' }}>
-        {drone.updatedAt
-          ? new Date(drone.updatedAt).toLocaleString(locale)
-          : '—'}
-      </td>
-      <td style={{ padding: '8px 12px' }}>
+      <td className="odm-or-table-action">
         {canChange && (
-          <Button
-            type="button"
-            style={{ fontSize: 12 }}
-            onClick={() => setChangingDrone(drone)}
-          >
+          <Button size="sm" onClick={() => onChangeStatus(drone)}>
             {t.changeStatus}
           </Button>
         )}

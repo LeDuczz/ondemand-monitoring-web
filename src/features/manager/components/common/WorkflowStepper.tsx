@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n'
 import { OrderIcon } from './OrderIcon'
 import {
-  MISSION_PLANNING_STAGES,
+  MISSION_STAGES,
   ORDER_STAGES,
   missionStageState,
   orderStageState,
@@ -205,7 +205,7 @@ export function WorkflowStepper({
             ) : null}
           </header>
           <ol className="odm-wf-steps">
-            {MISSION_PLANNING_STAGES.map((stage, index) => {
+            {MISSION_STAGES.map((stage, index) => {
               const state: StageState = mission.progress
                 ? missionStageState(stage, mission.progress)
                 : 'upcoming'

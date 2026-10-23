@@ -3,8 +3,8 @@ import { defineMessages } from '../../shared/i18n'
 export const customerAppMessages = defineMessages({
   vi: {
     breadcrumb: {
-      missionHistory: 'Lịch sử mission',
-      missionHistoryDetail: 'Chi tiết mission',
+      missionHistory: 'Lịch sử lần bay',
+      missionHistoryDetail: 'Chi tiết lần bay',
       missionReport: 'Báo cáo phiên giám sát',
       dashboard: 'Tổng quan',
       orders: 'Đơn của tôi',

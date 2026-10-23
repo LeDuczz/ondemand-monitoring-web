@@ -179,7 +179,7 @@ const ROUTES: Route[] = [
   {
     name: 'MissionHistory',
     hash: '#portal/customer/mission-history',
-    vi: 'Lịch sử mission',
+    vi: 'Lịch sử lần bay',
     en: 'Mission history',
   },
   {

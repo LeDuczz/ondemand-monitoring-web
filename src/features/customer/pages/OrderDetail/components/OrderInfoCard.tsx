@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Children, useState, type ReactNode } from 'react'
 
 import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
@@ -72,7 +72,11 @@ function Section({
           </button>
         ) : null}
       </div>
-      <dl className="od-info-list">{children}</dl>
+      {Children.toArray(children).length === 0 ? (
+        <p className="od-info-empty">{t.noInfo}</p>
+      ) : (
+        <dl className="od-info-list">{children}</dl>
+      )}
       {editor}
     </section>
   )

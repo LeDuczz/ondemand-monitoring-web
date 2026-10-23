@@ -113,7 +113,7 @@ describe('Customer aggregate/report publication', () => {
       'Scope m1',
     )
     expect(
-      screen.getByText('Bạn có thể xem đầy đủ kết quả và media của Mission.'),
+      screen.getByText('Bạn có thể xem đầy đủ kết quả và media của phiên giám sát.'),
     ).toBeInTheDocument()
     expect(screen.getAllByText('Trạng thái')).toHaveLength(3)
     expect(screen.queryByRole('checkbox')).toBeNull()

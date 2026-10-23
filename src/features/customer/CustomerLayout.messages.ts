@@ -10,7 +10,7 @@ export const customerLayoutMessages = defineMessages({
       support: 'Hỗ trợ',
     },
     navItems: {
-      missionHistory: 'Lịch sử mission',
+      missionHistory: 'Lịch sử lần bay',
       dashboard: 'Tổng quan',
       help: 'Trợ giúp & FAQ',
       support: 'Yêu cầu hỗ trợ',

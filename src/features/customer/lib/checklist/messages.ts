@@ -100,12 +100,12 @@ export const checklistMessages = defineMessages({
     emptySnapshot: 'Yêu cầu được gửi không kèm nội dung giám sát.',
     pendingQuoteTag: 'Dịch vụ theo yêu cầu',
     pendingQuoteHint:
-      'Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager duyệt yêu cầu.',
+      'Giá của dịch vụ này sẽ được xem xét và báo giá sau khi quản lý duyệt yêu cầu.',
     snapshotDuplicate:
       'Không tính phí — yêu cầu đã được bao gồm trong dịch vụ hiện tại.',
     snapshotRejected: (zero: string) => `Yêu cầu không được chấp thuận · ${zero}`,
     snapshotAddOn: (amount: string) => `Dịch vụ bổ sung: ${amount}`,
-    snapshotAwaiting: 'Đang chờ Manager xem xét giá.',
+    snapshotAwaiting: 'Đang chờ quản lý xem xét giá.',
   },
   en: {
     title: 'Monitoring requirements',

@@ -14,8 +14,8 @@ export const contextAwareHelpWidgetMessages = defineMessages({
     thisOrder: 'Đơn hàng này',
     thisMission: 'Nhiệm vụ này',
     needHelpFor: 'Cần hỗ trợ riêng cho',
-    autoAttach: 'Tạo ticket đính kèm tự động:',
-    createTicketFor: (label: string) => `Tạo ticket cho ${label}`,
+    autoAttach: 'Tạo yêu cầu hỗ trợ đính kèm tự động:',
+    createTicketFor: (label: string) => `Tạo yêu cầu hỗ trợ cho ${label}`,
     subject: (isOrder: boolean, label: string) =>
       `Cần hỗ trợ cho ${isOrder ? 'đơn hàng' : 'nhiệm vụ'} ${label}`,
     questions: {

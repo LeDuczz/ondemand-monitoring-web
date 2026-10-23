@@ -12,16 +12,16 @@ export const customerReportMessages = defineMessages({
     publicationPublished: 'Báo cáo đã được công bố',
     publicationPending: 'Báo cáo chưa được công bố',
     publicationPublishedNote:
-      'Bạn có thể xem đầy đủ kết quả và media của Mission.',
+      'Bạn có thể xem đầy đủ kết quả và media của phiên giám sát.',
     publicationPendingNote:
-      'Kết quả Mission đang chờ hoàn tất quy trình phê duyệt.',
+      'Kết quả của phiên giám sát đang chờ hoàn tất quy trình phê duyệt.',
     actualPeriod: 'Thời gian giám sát',
     duration: 'Thời lượng',
     minutes: (n: number) => `${n} phút`,
     executionLabel: 'Trạng thái',
     assessmentLabel: 'Đánh giá',
     unknown: 'Chưa có thông tin',
-    noMissionMedia: 'Chưa có ảnh/video được công bố cho Mission này.',
+    noMissionMedia: 'Chưa có ảnh/video được công bố cho phiên giám sát này.',
     loading: 'Đang tải…',
     error:
       'Không thể tải thông tin. Vui lòng kiểm tra quyền truy cập hoặc thử lại.',

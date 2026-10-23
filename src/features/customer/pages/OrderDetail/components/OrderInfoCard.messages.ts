@@ -4,6 +4,7 @@ export const orderInfoCardMessages = defineMessages({
   vi: {
     title: 'Chi tiết đơn hàng',
     edit: 'Chỉnh sửa',
+    noInfo: 'Chưa có thông tin',
     subtitle: 'Xem đầy đủ thông tin yêu cầu và điều kiện thực hiện',
     sectionGeneral: 'Thông tin chung', sectionScope: 'Phạm vi giám sát', sectionSite: 'Thông tin hiện trường',
     sectionPermit: 'Quyền & giấy phép', sectionResult: 'Kết quả & dữ liệu',
@@ -43,6 +44,7 @@ export const orderInfoCardMessages = defineMessages({
   en: {
     title: 'Order details',
     edit: 'Edit',
+    noInfo: 'No information yet',
     subtitle: 'Full request information and execution conditions',
     sectionGeneral: 'General', sectionScope: 'Monitoring scope', sectionSite: 'Site information',
     sectionPermit: 'Authorization & permits', sectionResult: 'Results & data',

@@ -12,7 +12,7 @@ export const reviewNoticeMessages = defineMessages({
     accessNotes: 'Hướng dẫn hoặc điều kiện ra vào hiện trường',
     relationship: 'Quan hệ với khu vực giám sát',
     authorization: 'Tôi xác nhận có quyền yêu cầu giám sát tại khu vực này',
-    sendInformation: 'Gửi lại cho manager',
+    sendInformation: 'Gửi lại cho quản lý',
     sending: 'Đang gửi…',
     sent: 'Đã gửi thông tin bổ sung.',
     sendFailed: 'Không gửi được thông tin. Vui lòng thử lại.',

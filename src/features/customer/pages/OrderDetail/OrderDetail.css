@@ -1362,3 +1362,35 @@
   border-color: var(--ui-border);
   background: var(--ui-surface);
 }
+
+/* Empty info sections */
+.od-info-empty {
+  margin: 0;
+  color: var(--ui-text-3);
+  font-size: 13.5px;
+}
+
+/* Missions card heading: same plain look as the other card titles. */
+.od-page .cr-section .cr-heading h2 .od-card-title > span:last-child {
+  color: var(--ui-text);
+  -webkit-text-fill-color: currentColor;
+  background: none;
+}
+
+/* One solid primary per page header: the in-card accept/pay button and the help
+   widget button are secondary (the header CTA scrolls to and focuses them). */
+.odm-cus .od-page .customer-quote-body .odm-btn-p,
+.odm-cus .od-page .customer-payment-actions .odm-btn-p,
+.odm-cus .od-page .hw-foot .odm-btn-p {
+  border: 1px solid var(--ui-border-strong);
+  background: transparent;
+  color: var(--ui-primary-text);
+  box-shadow: none;
+}
+
+.odm-cus .od-page .customer-quote-body .odm-btn-p:hover:not(:disabled),
+.odm-cus .od-page .customer-payment-actions .odm-btn-p:hover:not(:disabled),
+.odm-cus .od-page .hw-foot .odm-btn-p:hover:not(:disabled) {
+  background: var(--ui-primary-soft);
+  border-color: var(--ui-primary);
+}

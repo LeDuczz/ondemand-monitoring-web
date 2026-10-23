@@ -11,7 +11,7 @@ afterEach(() => resetMockDb())
 describe('MaintenancePage', () => {
   it('renders the page title', () => {
     render(<MaintenancePage />)
-    expect(screen.getByText('Bảo trì')).toBeTruthy()
+    expect(screen.getByText('Quản lý Ticket & Phân công Bảo trì')).toBeTruthy()
   })
 
   it('shows loading state initially', () => {

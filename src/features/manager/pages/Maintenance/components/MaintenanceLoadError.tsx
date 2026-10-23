@@ -12,20 +12,26 @@ export function MaintenanceLoadError({
 }) {
   const { t } = useI18n(maintenancePageMessages)
   return (
-    <section className="odm-or-card">
-      <div className="odm-or-card-body">
-        <StateView
-          state="error"
-          title={t.loadError}
-          error={query.error}
-          onRetry={query.reload}
-        />
-        {query.error instanceof ApiError && (
-          <code className="odm-mono odm-or-load-error-code">
-            GET /api/maintenance-tickets · {query.error.status ?? '—'}
-          </code>
-        )}
-      </div>
-    </section>
+    <div style={{ padding: 24 }}>
+      <StateView
+        state="error"
+        title={t.page.loadError}
+        error={query.error}
+        onRetry={query.reload}
+      />
+      {query.error instanceof ApiError && (
+        <code
+          className="odm-mono"
+          style={{
+            display: 'block',
+            fontSize: 11,
+            color: 'var(--tx3)',
+            marginTop: 8,
+          }}
+        >
+          GET /api/maintenance-tickets · {query.error.status ?? '—'}
+        </code>
+      )}
+    </div>
   )
 }

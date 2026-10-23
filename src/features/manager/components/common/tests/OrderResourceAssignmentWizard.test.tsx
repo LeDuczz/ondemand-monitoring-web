@@ -106,7 +106,7 @@ async function enter(id: string) {
   )
   fireEvent.click(screen.getByRole('button', { name: 'Tiếp theo' }))
   await waitFor(() =>
-    expect(document.querySelector('.odm-or-pagehead')).toHaveTextContent(
+    expect(document.querySelector('.ui-page-header')).toHaveTextContent(
       'Gán nguồn lực',
     ),
   )

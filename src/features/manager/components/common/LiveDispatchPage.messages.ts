@@ -23,6 +23,9 @@ export const liveDispatchPageMessages = defineMessages({
     loadError: 'Không tải được dữ liệu phân công',
     title: 'Phân công nguồn lực',
     createMissionTitle: 'Gán nguồn lực',
+    sideMission: 'Nhiệm vụ',
+    sideSelection: 'Lựa chọn hiện tại',
+    sideActions: 'Thao tác',
     createMissionSubtitle:
       'Chọn nhân sự, thiết bị và xác nhận phân công cho nhiệm vụ',
     missionSummary: (_code: string, order: string) =>
@@ -167,6 +170,9 @@ export const liveDispatchPageMessages = defineMessages({
     loadError: 'Could not load the assignment data',
     title: 'Resource assignment',
     createMissionTitle: 'Assign resources',
+    sideMission: 'Mission',
+    sideSelection: 'Current selection',
+    sideActions: 'Actions',
     createMissionSubtitle: 'Assign resources and configure the mission',
     missionSummary: (_code: string, order: string) =>
       `Order to operate · ${order}`,

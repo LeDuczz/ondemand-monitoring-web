@@ -1,3 +1,4 @@
+import { PageHeader } from '../../../../../shared/components/ui'
 import { WorkflowStepper } from '../../../components/common/WorkflowStepper'
 import { missionLayer } from '../reviewHelpers'
 import { orderDeliverableLabels } from './OrderServiceBanner'
@@ -34,10 +35,7 @@ export function AssignmentWizardView({
   return (
     <div className="odm-or odm-or-review-page">
       <div className="odm-or-review-top">
-        <div className="odm-or-pagehead">
-          <h1 className="odm-or-title">{tw.title}</h1>
-          <p className="odm-or-subtitle">{tw.subtitle}</p>
-        </div>
+        <PageHeader title={tw.title} subtitle={tw.subtitle} />
         <WorkflowStepper
           compactOrder
           order={{

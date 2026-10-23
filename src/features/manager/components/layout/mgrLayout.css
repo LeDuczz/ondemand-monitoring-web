@@ -67,14 +67,14 @@
   padding: var(--ui-space-2) var(--ui-space-3); border-radius: var(--ui-radius-sm);
   background: var(--ui-surface-2); color: var(--ui-text-3); font-size: 12px; font-weight: 600;
 }
-.mgr-stepper li > span:first-child {
+.mgr-stepper .mgr-step-dot {
   flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
   background: var(--ui-surface); border: 1px solid var(--ui-border-strong); font-size: 11px;
 }
 .mgr-stepper li.is-done { color: var(--ui-success-text); }
-.mgr-stepper li.is-done > span:first-child { background: var(--ui-success); border-color: var(--ui-success); color: var(--ui-on-primary); }
+.mgr-stepper li.is-done .mgr-step-dot { background: var(--ui-success); border-color: var(--ui-success); color: var(--ui-on-primary); }
 .mgr-stepper li.is-current { background: var(--ui-primary-soft); color: var(--ui-primary-text); }
-.mgr-stepper li.is-current > span:first-child { background: var(--ui-primary); border-color: var(--ui-primary); color: var(--ui-on-primary); }
+.mgr-stepper li.is-current .mgr-step-dot { background: var(--ui-primary); border-color: var(--ui-primary); color: var(--ui-on-primary); }
 
 .mgr-sk-stack { display: flex; flex-direction: column; gap: var(--ui-space-2); padding: var(--ui-space-4); }
 .mgr-header-actions { display: flex; align-items: center; gap: var(--ui-space-2); flex-wrap: wrap; }
@@ -103,3 +103,13 @@
 @media (max-width: 1100px) {
   .mgr-detail-grid.is-wide > .mgr-detail-side { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Stepper whose steps are buttons */
+.mgr-step-btn {
+  display: flex; align-items: center; gap: var(--ui-space-2); width: 100%; padding: 0; border: 0;
+  background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.mgr-step-btn:disabled { cursor: default; }
+.mgr-step-btn:focus-visible { outline: none; box-shadow: var(--ui-ring); border-radius: var(--ui-radius-sm); }
+.mgr-dispatch-hint { display: flex; gap: var(--ui-space-2); align-items: flex-start; color: var(--ui-text-2); font-size: 13px; margin-bottom: var(--ui-space-3); }
+.mgr-dispatch-missing { display: block; margin-bottom: var(--ui-space-3); color: var(--ui-warning-text); font-size: 13px; }

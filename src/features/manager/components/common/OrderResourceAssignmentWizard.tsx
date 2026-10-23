@@ -12,7 +12,8 @@ import { usePlanningConfirmation } from './usePlanningConfirmation'
 import { WizardRoleSelection } from './WizardRoleSelection'
 import { WizardOverviewStep } from './WizardOverviewStep'
 import { WizardMissionStep } from './WizardMissionStep'
-import { Button } from '../../../../shared/components/ui'
+import { Button, PageHeader } from '../../../../shared/components/ui'
+import '../layout/mgrLayout.css'
 
 const roles: MissionStaffRole[] = [
   'PILOT',
@@ -170,34 +171,20 @@ export function OrderResourceAssignmentWizard({
   if (current && !query.loading && !eligible(current.id))
     return (
       <section className="odm-or-card odm-or-card-body">
-        <p role="alert">
-          {t.notEligible}
-        </p>
-        <Button
-          href={`#portal/manager/orders/${encodeURIComponent(orderId)}`}
-        >
+        <p role="alert">{t.notEligible}</p>
+        <Button href={`#portal/manager/orders/${encodeURIComponent(orderId)}`}>
           {t.openPlan}
         </Button>
-        <Button onClick={query.reload}>
-          {t.reloadStatus}
-        </Button>
-        <Button onClick={onClose}>
-          {returnLabel}
-        </Button>
+        <Button onClick={query.reload}>{t.reloadStatus}</Button>
+        <Button onClick={onClose}>{returnLabel}</Button>
       </section>
     )
   if (activeId && !current && !query.loading)
     return (
       <section className="odm-or-card odm-or-card-body">
-        <p role="alert">
-          {t.loadFailed}
-        </p>
-        <Button onClick={query.reload}>
-          {t.retry}
-        </Button>
-        <Button onClick={onClose}>
-          {returnLabel}
-        </Button>
+        <p role="alert">{t.loadFailed}</p>
+        <Button onClick={query.reload}>{t.retry}</Button>
+        <Button onClick={onClose}>{returnLabel}</Button>
       </section>
     )
   if (current) {
@@ -240,17 +227,16 @@ export function OrderResourceAssignmentWizard({
     )
   }
   return (
-    <div className="odm-or">
+    <div className="odm-or mgr-page">
       {confirmation.dialog}
-      <div className="odm-or-pagehead odm-or-pagehead-row">
-        <h1 className="odm-or-title">{t.title}</h1>
-        <Button
-          disabled={busy}
-          onClick={() => leave(true)}
-        >
-          {returnLabel}
-        </Button>
-      </div>
+      <PageHeader
+        title={t.title}
+        actions={
+          <Button disabled={busy} onClick={() => leave(true)}>
+            {returnLabel}
+          </Button>
+        }
+      />
       <OrderWorkflowStepper currentStep={6} />
       <DispatchWizardTabs
         activeStep="mission"
@@ -267,9 +253,7 @@ export function OrderResourceAssignmentWizard({
         </div>
       )}
       <div className="odm-or-actionbar">
-        <div className="odm-or-actionbar-hint">
-          {t.hint}
-        </div>
+        <div className="odm-or-actionbar-hint">{t.hint}</div>
         <Button
           variant="primary"
           disabled={!candidateId || !eligible(candidateId)}

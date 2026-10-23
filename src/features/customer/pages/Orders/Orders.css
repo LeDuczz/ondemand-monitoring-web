@@ -59,22 +59,58 @@
   background: transparent;
 }
 
+/* One compact card: summary tiles, search, then the status chips. */
+.ord-toolbar-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 440px);
+  align-items: center;
+  gap: var(--ui-space-4) var(--ui-space-6);
+  padding: var(--ui-space-4) var(--ui-space-5);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-1);
+  min-width: 0;
+}
+
+.ord-toolbar-card > .ord-toolbar {
+  display: contents;
+}
+
 .ord-stats {
   display: grid;
+  grid-column: 1;
+  grid-row: 1;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  min-width: 0;
 }
 
-.ord-page .ui-stat {
-  padding: 16px 20px;
-  border-radius: 16px;
-  border-color: var(--ui-border);
-  box-shadow: 0 1px 2px rgba(15, 40, 90, 0.04);
+/* Flat inline tiles: no border, shadow or hover motion inside the toolbar. */
+.odm-cus .ord-toolbar-card .ord-stats .ui-stat,
+.odm-cus .ord-toolbar-card .ord-stats .ui-stat:hover {
+  padding: 0 var(--ui-space-4);
+  border: 0;
+  border-left: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
 }
 
-.ord-page .ui-stat-value {
-  margin-top: 4px;
-  font-size: 28px;
+.ord-stats .ui-stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.ord-page .ui-stat-label {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.odm-cus .ord-page .ui-stat .ui-stat-value {
+  margin-top: 2px;
+  font-size: 24px;
+  line-height: 1.2;
 }
 
 .ord-toolbar {
@@ -87,18 +123,22 @@
 
 .ord-chips {
   display: flex;
+  grid-column: 1 / -1;
+  grid-row: 2;
   flex-wrap: wrap;
   gap: var(--ui-space-2);
   min-width: 0;
+  padding-top: var(--ui-space-4);
+  border-top: 1px solid var(--ui-border);
 }
 
 .ord-chip {
-  min-height: 36px;
+  min-height: 32px;
   border: 1px solid var(--ui-border);
   background: var(--ui-surface);
   color: var(--ui-text-2);
   border-radius: 999px;
-  padding: 0 14px;
+  padding: 0 12px;
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
@@ -145,8 +185,8 @@
 
 .ord-search-wrap {
   position: relative;
-  flex: 1 1 260px;
-  max-width: 380px;
+  grid-column: 2;
+  grid-row: 1;
   min-width: 0;
 }
 
@@ -364,8 +404,26 @@
 }
 
 @media (max-width: 900px) {
+  .ord-toolbar-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ord-stats,
+  .ord-search-wrap,
+  .ord-chips {
+    grid-column: 1;
+  }
+
   .ord-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-row: 1;
+  }
+
+  .ord-search-wrap {
+    grid-row: 2;
+  }
+
+  .ord-chips {
+    grid-row: 3;
   }
 }
 
@@ -374,14 +432,28 @@
     font-size: 21px;
   }
 
-  .ord-table th,
-  .ord-table td {
-    padding: 12px 16px;
+  .ord-toolbar-card {
+    padding: var(--ui-space-4);
   }
 
-  .ord-search-wrap {
-    flex-basis: 100%;
-    max-width: none;
+  .ord-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ui-space-3) 0;
+  }
+
+  .odm-cus .ord-toolbar-card .ord-stats .ui-stat,
+  .odm-cus .ord-toolbar-card .ord-stats .ui-stat:hover {
+    padding: 0 var(--ui-space-3);
+  }
+
+  .ord-stats .ui-stat:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .ord-chip {
+    padding: 0 10px;
+    font-size: 13px;
   }
 
   .ord-page .ui-page-actions {
@@ -391,6 +463,110 @@
   .ord-page .ui-page-actions .ord-btn {
     flex: 1 1 100%;
     justify-content: center;
+  }
+
+  /* The table becomes one stacked card per order: no sideways scroll. */
+  .odm-cus .odm-cus-content-inner .ord-page .ui-table-card {
+    border: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .ord-page .ui-table-scroll {
+    overflow: visible;
+  }
+
+  .ord-table,
+  .ord-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .ord-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .ord-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--ui-space-2) var(--ui-space-3);
+    margin-bottom: var(--ui-space-3);
+    padding: var(--ui-space-4);
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow-1);
+  }
+
+  .ord-table tbody tr:hover {
+    background: var(--ui-surface);
+  }
+
+  .ord-table td,
+  .ord-table tbody tr:last-child td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .ord-table td.ord-col-order {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+  }
+
+  .ord-table td.ord-col-status {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .ord-status-stack {
+    align-items: flex-end;
+  }
+
+  .ord-payment-required,
+  .ord-deposit-paid {
+    white-space: normal;
+    text-align: right;
+  }
+
+  .ord-table td.ord-col-location,
+  .ord-table td.ord-col-schedule {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+
+  .ord-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ui-text-3);
+  }
+
+  .ord-table tbody tr td.ord-col-service,
+  .ord-table tbody tr td.ord-col-actions {
+    display: none;
+  }
+
+  /* The title already links to the order; keep the call to action when info is missing. */
+  .ord-table tbody tr.is-attention td.ord-col-actions {
+    display: block;
+    grid-column: 1 / -1;
+    width: auto;
+    text-align: left;
+  }
+
+  .ord-pager {
+    justify-content: center;
+    text-align: center;
   }
 }
 

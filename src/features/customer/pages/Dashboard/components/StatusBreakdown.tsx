@@ -20,9 +20,15 @@ export function StatusBreakdown({ stats }: { stats: OrderStats }) {
     <Card title={t.title}>
       <ul className="dash-breakdown">
         {ROWS.map(([status, key]) => (
-          <li key={status}>
+          <li key={status} className="dash-breakdown-row" data-status={status}>
             <OrderStatusBadge status={status} />
-            <strong>{stats[key]}</strong>
+            <strong className="dash-breakdown-count">{stats[key]}</strong>
+            <span className="dash-bar" aria-hidden="true">
+              <span
+                className="dash-bar-fill"
+                style={{ width: `${stats.total > 0 ? (stats[key] / stats.total) * 100 : 0}%` }}
+              />
+            </span>
           </li>
         ))}
       </ul>

@@ -8,20 +8,19 @@ import { liveOrderCardMessages } from './LiveOrderCard.messages'
 export function LiveOrderCard({ order }: { order: OrderRow }) {
   const { t } = useI18n(liveOrderCardMessages)
   return (
-    <Card>
+    <Card className="lh-card-shell">
       <div className="lh-card">
-        <div className="lh-card-main">
-          <div className="lh-card-head">
-            <span className="lh-live">{t.live}</span>
-            <strong className="lh-title">{order.title}</strong>
-            <OrderStatusBadge status={order.status} />
-          </div>
-          <div className="lh-sub">
-            {[order.code, order.address].filter(Boolean).join(' · ')}
-          </div>
+        <div className="lh-card-head">
+          <span className="lh-live">{t.live}</span>
+          <OrderStatusBadge status={order.status} />
+        </div>
+        <strong className="lh-title">{order.title}</strong>
+        <div className="lh-sub">
+          {order.code ? <span className="lh-code">{order.code}</span> : null}
+          {order.address ? <span>{order.address}</span> : null}
         </div>
         <a
-          className="odm-btn odm-btn-p"
+          className="odm-btn odm-btn-gh lh-enter"
           href={customerHref({ screen: 'orderDetail', orderId: order.id })}
         >
           {t.enter}

@@ -31,17 +31,17 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
         {rows.map((row) => {
           const href = customerHref({ screen: 'orderDetail', orderId: row.id })
           return (
-            <tr key={row.id}>
+            <tr key={row.id} className={row.status === 'NEEDS_INFO' ? 'is-attention' : undefined}>
               <td className="ord-col-order">
                 <a className="ord-title" href={href}>
                   {row.title}
                 </a>
                 <div className="ord-code">{row.code}</div>
               </td>
-              <td className="ord-muted ord-col-location">
+              <td className="ord-muted ord-col-location" data-label={c.location}>
                 {row.address ?? DASH}
               </td>
-              <td className="ord-nowrap">
+              <td className="ord-nowrap ord-col-schedule" data-label={c.schedule}>
                 {formatDateRange(row.dateFrom, row.dateTo, locale) ?? DASH}
                 {row.timeName || row.timeId ? (
                   <div className="ord-muted">
@@ -58,7 +58,7 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
                     )
                   : DASH}
               </td>
-              <td>
+              <td className="ord-col-status">
                 <div className="ord-status-stack">
                   <OrderStatusBadge status={row.status} />
                   {row.depositState === 'ACTION_REQUIRED' ? (

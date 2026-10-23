@@ -31,14 +31,16 @@ export function OrdersPage() {
           </a>
         }
       />
-      {list.stats && <OrdersStats stats={list.stats} />}
-      <OrdersToolbar
-        status={list.status}
-        query={list.query}
-        stats={list.stats}
-        onStatus={list.setStatus}
-        onQuery={list.setQuery}
-      />
+      <section className="ord-toolbar-card">
+        {list.stats && <OrdersStats stats={list.stats} />}
+        <OrdersToolbar
+          status={list.status}
+          query={list.query}
+          stats={list.stats}
+          onStatus={list.setStatus}
+          onQuery={list.setQuery}
+        />
+      </section>
 
       {showLoading && <LoadingState />}
       {!list.loading && list.error !== undefined && (

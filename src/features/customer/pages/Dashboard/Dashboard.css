@@ -3,7 +3,7 @@
 .dash-page {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-4);
+  gap: var(--ui-space-6);
   min-width: 0;
 }
 
@@ -11,6 +11,11 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--ui-space-4);
+}
+
+/* KPI row: the number leads, the unit stays quiet. */
+.dash-page .ui-stat-hint {
+  margin-top: 0;
 }
 
 @media (max-width: 900px) {
@@ -22,8 +27,14 @@
 .dash-grid {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: var(--ui-space-4);
+  gap: var(--ui-space-6);
   align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 900px) {
@@ -53,6 +64,64 @@
 .dash-list li:last-child,
 .dash-breakdown li:last-child {
   border-bottom: none;
+}
+
+.dash-breakdown li.dash-breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-2) var(--ui-space-3);
+  padding: var(--ui-space-3) 0;
+}
+
+.dash-breakdown-row > :first-child {
+  justify-self: start;
+}
+
+.dash-breakdown-count {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Share of all orders, drawn from the counts above. */
+.dash-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ui-surface-2);
+  overflow: hidden;
+}
+
+.dash-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--ui-primary);
+  transition: width var(--ui-dur-slow) var(--ui-ease);
+}
+
+[data-status='PENDING'] .dash-bar-fill {
+  background: var(--ui-warning);
+}
+
+[data-status='IN_PROGRESS'] .dash-bar-fill,
+[data-status='COMPLETED'] .dash-bar-fill {
+  background: var(--ui-success);
+}
+
+[data-status='REJECTED'] .dash-bar-fill {
+  background: var(--ui-danger);
+}
+
+[data-status='CANCELLED'] .dash-bar-fill {
+  background: var(--ui-text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-bar-fill {
+    transition: none;
+  }
 }
 
 .dash-list-main {

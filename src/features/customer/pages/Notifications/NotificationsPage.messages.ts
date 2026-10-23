@@ -9,6 +9,9 @@ export const notificationsPageMessages = defineMessages({
     emptyTitle: 'Chưa có thông báo',
     emptyDescription: 'Thông báo về kết quả lần bay sẽ xuất hiện ở đây.',
     unit: 'thông báo',
+    today: 'Hôm nay',
+    yesterday: 'Hôm qua',
+    unknownDay: 'Không rõ ngày',
   },
   en: {
     title: 'Notifications',
@@ -18,5 +21,8 @@ export const notificationsPageMessages = defineMessages({
     emptyTitle: 'No notifications yet',
     emptyDescription: 'Notifications about your mission results will appear here.',
     unit: 'notifications',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    unknownDay: 'Unknown date',
   },
 })

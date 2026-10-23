@@ -3,8 +3,23 @@
 .nt-page {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-4);
+  gap: var(--ui-space-6);
   min-width: 0;
+}
+
+.nt-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.nt-day-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ui-text-3);
 }
 
 .nt-list {
@@ -53,7 +68,8 @@
 .nt-link {
   flex: none;
   color: var(--ui-primary-text);
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -62,5 +78,23 @@
 }
 
 .nt-footer {
-  margin-top: var(--ui-space-3);
+  margin-top: calc(-1 * var(--ui-space-2));
+}
+
+@media (max-width: 640px) {
+  .nt-item {
+    flex-wrap: wrap;
+  }
+
+  .nt-main {
+    flex-basis: calc(100% - 24px);
+  }
+
+  .nt-link {
+    margin-left: 20px;
+  }
+}
+
+.odm-cus .nt-page .nt-link {
+  color: var(--ui-primary-text);
 }

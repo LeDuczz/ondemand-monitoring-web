@@ -73,3 +73,37 @@ export function normalizeDashboard(
     generatedAt: typeof r.generatedAt === 'string' ? r.generatedAt : new Date().toISOString(),
   }
 }
+
+/** Relative age ("2 giờ trước") measured against the time the snapshot was generated. */
+export function formatAge(value: string | undefined, reference: string, locale: string, nowLabel: string): string {
+  if (!value) return ''
+  const diffMs = new Date(reference).getTime() - new Date(value).getTime()
+  if (Number.isNaN(diffMs)) return ''
+  const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 1) return nowLabel
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  if (minutes < 60) return rtf.format(-minutes, 'minute')
+  if (minutes < 1440) return rtf.format(-Math.floor(minutes / 60), 'hour')
+  return rtf.format(-Math.floor(minutes / 1440), 'day')
+}
+
+export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral' | 'info'
+
+export function orderStatusTone(status: string): BadgeTone {
+  if (status === 'COMPLETED' || status === 'APPROVED') return 'success'
+  if (status === 'PENDING' || status === 'NEEDS_INFO') return 'warning'
+  if (status === 'REJECTED' || status === 'CANCELLED') return 'danger'
+  if (status === 'IN_PROGRESS') return 'info'
+  return 'neutral'
+}
+
+/** Groups action items by their `type`, keeping first-seen order of the types. */
+export function groupActionItems(items: ActionItem[]): { type: string; items: ActionItem[] }[] {
+  const groups = new Map<string, ActionItem[]>()
+  for (const item of items) {
+    const list = groups.get(item.type)
+    if (list) list.push(item)
+    else groups.set(item.type, [item])
+  }
+  return [...groups].map(([type, list]) => ({ type, items: list }))
+}

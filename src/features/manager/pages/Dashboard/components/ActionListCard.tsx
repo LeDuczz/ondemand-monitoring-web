@@ -1,41 +1,68 @@
-import { formatVnd } from '../../../../../shared/lib/formatVnd'
+import { useState } from 'react'
+
+import { Button, Card, EmptyState } from '../../../../../shared/components/ui'
+import { useI18n } from '../../../../../shared/i18n'
 import { managerHref } from '../../../routes'
 import type { ActionItem } from '../../../types/dashboard'
 import { dashboardPageMessages } from '../DashboardPage.messages'
-import { actionItemRoute, formatDashboardDate } from '../dashboardHelpers'
-import { useI18n } from '../../../../../shared/i18n'
-import { Button } from '../../../../../shared/components/ui'
+import { actionItemRoute, formatAge, groupActionItems, statusLabel } from '../dashboardHelpers'
 
-export function ActionListCard({ items }: { items: ActionItem[] }) {
-  const { t } = useI18n(dashboardPageMessages)
+export function ActionListCard({ items, generatedAt }: { items: ActionItem[]; generatedAt: string }) {
+  const { t, locale } = useI18n(dashboardPageMessages)
   const a = t.actions
+  const [filter, setFilter] = useState<string>('ALL')
+  const groups = groupActionItems(items)
+  const active = groups.find((g) => g.type === filter)
+  const visible = active ? [active] : groups
+  const typeLabel = (type: string) => a.types[type] ?? statusLabel(type)
+
   return (
-    <section className="odm-card odm-mgr-section">
-      <div className="odm-card-header">{a.title}</div>
+    <Card title={a.title} actions={items.length > 0 ? <span className="odm-dash-count">{items.length}</span> : undefined}>
       {items.length === 0 ? (
-        <div className="odm-mgr-empty-list">
-          <div className="odm-mgr-empty-list-title">{a.empty}</div>
-        </div>
+        <EmptyState title={a.empty} />
       ) : (
-        <ul className="odm-mgr-action-list">
-          {items.map((item) => (
-            <li key={item.id} className="odm-mgr-action-row">
-              <span className={`odm-mgr-priority is-${(item.priority ?? 'MEDIUM').toLowerCase()}`}>{item.priority ?? 'MEDIUM'}</span>
-              <div className="odm-mgr-action-text">
-                <div className="odm-mgr-action-title">{item.title}</div>
-                <div className="odm-mgr-action-subtitle">
-                  {[item.orderCode ?? item.code, item.description ?? item.subtitle].filter(Boolean).join(' · ')}
-                </div>
-                {item.systemCalculatedAmount != null ? (
-                  <div className="odm-mgr-action-price">{a.systemPrice}: {formatVnd(item.systemCalculatedAmount)}</div>
+        <>
+          {groups.length > 1 ? (
+            <div className="odm-dash-seg odm-dash-seg-wrap" role="group" aria-label={a.filterLabel}>
+              <button type="button" className={filter === 'ALL' ? 'is-active' : ''}
+                aria-pressed={filter === 'ALL'} onClick={() => setFilter('ALL')}>
+                {a.all} <span>{items.length}</span>
+              </button>
+              {groups.map((g) => (
+                <button key={g.type} type="button" className={filter === g.type ? 'is-active' : ''}
+                  aria-pressed={filter === g.type} onClick={() => setFilter(g.type)}>
+                  {typeLabel(g.type)} <span>{g.items.length}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="odm-dash-actions">
+            {visible.map((g) => (
+              <section key={g.type} className="odm-dash-group">
+                {groups.length > 1 && !active ? (
+                  <h3 className="odm-dash-group-title">{typeLabel(g.type)} <span>{g.items.length}</span></h3>
                 ) : null}
-              </div>
-              <time className="odm-mgr-action-age" dateTime={item.createdAt}>{item.createdAt ? formatDashboardDate(item.createdAt) : ''}</time>
-              <Button size="sm" href={managerHref(actionItemRoute(item))}>{item.actionType ? a[item.actionType] : a.view}</Button>
-            </li>
-          ))}
-        </ul>
+                <ul className="odm-dash-list">
+                  {g.items.map((item) => (
+                    <li key={item.id} className="odm-dash-row">
+                      <span className={`odm-dash-dot is-${item.priority === 'HIGH' ? 'danger' : item.priority === 'LOW' ? 'neutral' : 'warning'}`} aria-hidden="true" />
+                      <div className="odm-dash-row-main">
+                        <div className="odm-dash-row-title">{item.title}</div>
+                        <div className="odm-dash-row-meta">
+                          {[item.orderCode ?? item.code, formatAge(item.createdAt, generatedAt, locale, t.age.now)].filter(Boolean).join(' · ')}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="primary" href={managerHref(actionItemRoute(item))}>
+                        {item.actionType ? a[item.actionType] : a.view}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </>
       )}
-    </section>
+    </Card>
   )
 }

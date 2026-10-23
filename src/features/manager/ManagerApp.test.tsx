@@ -73,7 +73,7 @@ describe('ManagerApp', () => {
     render(<ManagerApp />)
 
     await waitFor(() =>
-      expect(screen.getByText('Dashboard điều hành')).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Manager Dashboard' })).toBeInTheDocument(),
     )
   })
 

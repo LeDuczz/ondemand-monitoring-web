@@ -39,21 +39,18 @@ export function DispatchDeviceStep({
           </span>
         )}
       </header>
-      <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
-        <p className="odm-or-muted" style={{ margin: 0 }}>
+      <div className="odm-or-card-body mgr-stack">
+        <p className="odm-or-muted mgr-flush">
           {t.deviceHelp} {t.deviceAvailabilityHint}
         </p>
         {!drones.data?.length ? (
           <p className="odm-or-empty">{t.noAvailableDrones}</p>
         ) : (
           <section className="odm-or-device-box">
-            <div className="odm-or-role-head" style={{ marginBottom: 10 }}>
+            <div className="odm-or-role-head mgr-spaced">
               <span>
                 <b>{t.selectedDevice}</b>
-                <span
-                  className="odm-or-muted"
-                  style={{ display: 'block', fontSize: 13 }}
-                >
+                <span className="odm-or-muted mgr-block-note">
                   {selectedDrones.length > 0
                     ? t.deviceSelectedCount(selectedDrones.length)
                     : t.chooseDroneOption}

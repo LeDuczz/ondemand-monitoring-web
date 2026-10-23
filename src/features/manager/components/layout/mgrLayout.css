@@ -125,3 +125,10 @@ small.mgr-cell-sub { display: block; }
   .mgr-list-grid.has-panel { grid-template-columns: minmax(0, 1fr); }
   .mgr-missions-panel { position: static; }
 }
+
+/* Small helpers that replace inline styles in the dispatch steps */
+.mgr-stack { display: grid; gap: var(--ui-space-4); }
+.mgr-flush { margin: 0; }
+.mgr-small { font-size: 12px; }
+.mgr-spaced { margin-bottom: var(--ui-space-3); }
+.mgr-block-note { display: block; font-size: 13px; }

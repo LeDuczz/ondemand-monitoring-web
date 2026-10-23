@@ -49,14 +49,14 @@ export function DispatchStaffStep({
           {missingRoles === 0 ? t.rolesComplete : t.rolesMissing(missingRoles)}
         </span>
       </header>
-      <div className="odm-or-card-body" style={{ display: 'grid', gap: 14 }}>
+      <div className="odm-or-card-body mgr-stack">
         {current && (
           <p className="odm-assign-mission">
             <strong>{current.missionCode}</strong>
             <span>{scheduleText}</span>
           </p>
         )}
-        <p className="odm-or-muted" style={{ margin: 0 }}>
+        <p className="odm-or-muted mgr-flush">
           {t.roleHelp} {t.staffAvailabilityHint}
         </p>
         <div className="odm-or-role-grid">
@@ -77,7 +77,7 @@ export function DispatchStaffStep({
                     </span>
                   )}
                 </span>
-                <span className="odm-or-muted" style={{ fontSize: 12 }}>
+                <span className="odm-or-muted mgr-small">
                   {t.roleDescriptions[role]}
                 </span>
                 {selected.length > 0 &&

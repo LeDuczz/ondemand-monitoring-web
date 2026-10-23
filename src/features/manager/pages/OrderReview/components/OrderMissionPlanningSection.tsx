@@ -151,7 +151,7 @@ function OrderPlanningWorkspace({
       selectedMissionId: null,
       missions: effective.map((mission) => ({
         id: mission.id,
-        code: mission.missionCode || 'Mission',
+        code: mission.missionCode || 'Nhiệm vụ',
         status: mission.status,
         flightPermitStatus: mission.flightPermitStatus,
       })),
@@ -188,8 +188,8 @@ function OrderPlanningWorkspace({
     if (!data || !writable || busy) return
     if (
       !(await confirmation.confirm({
-        title: 'Chốt kế hoạch (Confirm Planning)?',
-        body: 'Sau khi chốt, các Mission sẽ chuyển sang trạng thái READY. Mọi thay đổi tài nguyên sau đó sẽ yêu cầu nhập lý do.',
+        title: 'Chốt kế hoạch ?',
+        body: 'Sau khi chốt, các nhiệm vụ sẽ chuyển sang trạng thái sẵn sàng. Mọi thay đổi tài nguyên sau đó sẽ yêu cầu nhập lý do.',
         action: 'Chốt kế hoạch',
       }))
     )
@@ -268,7 +268,7 @@ function OrderPlanningWorkspace({
   }
 
   return (
-    <section className="odm-or-card odm-planning" aria-label="Order Mission planning">
+    <section className="odm-or-card odm-planning" aria-label="Lập kế hoạch nhiệm vụ">
       {confirmation.dialog}
 
       <ReasonModal
@@ -321,7 +321,7 @@ function OrderPlanningWorkspace({
                 </button>
               </div>
               <p>
-                Tạo Mission và chốt kế hoạch sẽ được mở sau khi hệ thống xác nhận khoản đặt cọc.
+                Tạo nhiệm vụ và chốt kế hoạch sẽ được mở sau khi hệ thống xác nhận khoản đặt cọc.
               </p>
               {data.invoice ? (
                 <div className="odm-gate-deposit">
@@ -362,7 +362,7 @@ function OrderPlanningWorkspace({
                 if (e.target === e.currentTarget) {
                   if (
                     await confirmation.confirm({
-                      title: 'Đóng form tạo Mission?',
+                      title: 'Đóng form tạo nhiệm vụ?',
                       body: 'Dữ liệu chưa gửi sẽ không được lưu.',
                       action: 'Đóng form',
                     })
@@ -372,7 +372,7 @@ function OrderPlanningWorkspace({
               }}
               role="dialog"
               aria-modal="true"
-              aria-label="Tạo Mission trong Order"
+              aria-label="Tạo nhiệm vụ trong đơn hàng"
             >
               <div
                 className="odm-planning-modal-dialog"
@@ -383,7 +383,7 @@ function OrderPlanningWorkspace({
                     ＋
                   </span>
                   <div>
-                    <h3>Tạo Mission mới</h3>
+                    <h3>Tạo nhiệm vụ mới</h3>
                     <p>
                       Đặt tên dễ nhận biết, sau đó kiểm tra thời tiết và chọn lịch bay.
                     </p>
@@ -391,12 +391,12 @@ function OrderPlanningWorkspace({
                   <button
                     className="odm-planning-create-close"
                     type="button"
-                    aria-label="Đóng form tạo Mission"
+                    aria-label="Đóng form tạo nhiệm vụ"
                     title="Đóng form"
                     onClick={async () => {
                       if (
                         await confirmation.confirm({
-                          title: 'Đóng form tạo Mission?',
+                          title: 'Đóng form tạo nhiệm vụ?',
                           body: 'Dữ liệu chưa gửi sẽ không được lưu.',
                           action: 'Đóng form',
                         })
@@ -445,7 +445,7 @@ function OrderPlanningWorkspace({
                 if (e.target === e.currentTarget) {
                   if (
                     await confirmation.confirm({
-                      title: 'Đóng form tạo Mission thay thế?',
+                      title: 'Đóng form tạo nhiệm vụ thay thế?',
                       body: 'Dữ liệu chưa gửi sẽ không được lưu.',
                       action: 'Đóng form',
                     })
@@ -455,7 +455,7 @@ function OrderPlanningWorkspace({
               }}
               role="dialog"
               aria-modal="true"
-              aria-label={`Tạo Mission thay thế cho ${replacingMission.missionCode ?? ''}`}
+              aria-label={`Tạo nhiệm vụ thay thế cho ${replacingMission.missionCode ?? ''}`}
             >
               <div
                 className="odm-planning-modal-dialog"
@@ -466,20 +466,20 @@ function OrderPlanningWorkspace({
                     ⟲
                   </span>
                   <div>
-                    <h3>Tạo Mission thay thế cho {replacingMission.missionCode}</h3>
+                    <h3>Tạo nhiệm vụ thay thế cho {replacingMission.missionCode}</h3>
                     <p>
-                      Thiết lập lại lịch bay, phạm vi và checklist thay thế cho nhiệm vụ đã hủy.
+                      Thiết lập lại lịch bay, phạm vi và danh sách công việc thay thế cho nhiệm vụ đã hủy.
                     </p>
                   </div>
                   <button
                     className="odm-planning-create-close"
                     type="button"
-                    aria-label="Đóng form tạo Mission thay thế"
+                    aria-label="Đóng form tạo nhiệm vụ thay thế"
                     title="Đóng form"
                     onClick={async () => {
                       if (
                         await confirmation.confirm({
-                          title: 'Đóng form tạo Mission thay thế?',
+                          title: 'Đóng form tạo nhiệm vụ thay thế?',
                           body: 'Dữ liệu chưa gửi sẽ không được lưu.',
                           action: 'Đóng form',
                         })
@@ -516,8 +516,8 @@ function OrderPlanningWorkspace({
             >
               {effective.length === 0 ? (
                 <div className="odm-plan-empty">
-                  <h3>Chưa có Mission nào</h3>
-                  <p>Cần lập kế hoạch và khởi tạo Mission trước khi quản lý giấy phép bay.</p>
+                  <h3>Chưa có nhiệm vụ nào</h3>
+                  <p>Cần lập kế hoạch và khởi tạo nhiệm trước khi quản lý giấy phép bay.</p>
                 </div>
               ) : (
                 effective.map((mission) => (
@@ -550,9 +550,9 @@ function OrderPlanningWorkspace({
                       type="button"
                       className="odm-btn odm-btn-sm"
                       onClick={() => setSidebarCollapsed(false)}
-                      title="Mở rộng kho Checklist"
+                      title="Mở danh sách công việc"
                     >
-                      › Mở Kho Checklist ({data.plan.coverage.uncovered} chưa gán)
+                      › Mở danh sách công việc ({data.plan.coverage.uncovered} chưa gán)
                     </button>
                   )}
                   {writable && data.plan.planStatus === 'DRAFT' && (
@@ -562,7 +562,7 @@ function OrderPlanningWorkspace({
                       disabled={busy || creating}
                       onClick={() => setCreating(true)}
                     >
-                      + Add New Mission
+                      + Thêm mới nhiệm vụ
                     </button>
                   )}
                 </div>
@@ -570,7 +570,7 @@ function OrderPlanningWorkspace({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {data.plan.coverage.uncovered > 0 && (
                     <span style={{ fontSize: 13, color: '#b45309' }}>
-                      ⚠️ Còn <strong>{data.plan.coverage.uncovered}</strong> checklist chưa gán
+                      Còn <strong>{data.plan.coverage.uncovered}</strong> công việc chưa được phân công
                     </span>
                   )}
                   {writable && data.plan.planStatus === 'DRAFT' && (
@@ -581,11 +581,11 @@ function OrderPlanningWorkspace({
                       onClick={() => void handleFinalizePlan()}
                       title={
                         data.plan.coverage.uncovered > 0
-                          ? 'Cần gán hết tất cả Checklist mới có thể chốt kế hoạch'
-                          : 'Chốt kế hoạch để chuyển sang READY'
+                          ? 'Cần phân công toàn bộ công việc mới có thể chốt kế hoạch'
+                          : ""
                       }
                     >
-                      Chốt kế hoạch (Confirm Planning)
+                      Chốt kế hoạch 
                     </button>
                   )}
                 </div>
@@ -593,8 +593,8 @@ function OrderPlanningWorkspace({
 
               {data.missions.length === 0 ? (
                 <div className="odm-plan-empty">
-                  <h3>Chưa có Mission nào</h3>
-                  <p>Bấm nút [+ Add New Mission] ở trên để khởi tạo Mission đầu tiên cho đơn hàng.</p>
+                  <h3>Chưa có nhiệm vụ nào</h3>
+                  <p>Bấm nút “Thêm nhiệm vụ” ở trên để khởi tạo nhiệm vụ đầu tiên cho đơn hàng.</p>
                 </div>
               ) : (
                 <div className="odm-workspace-grid">

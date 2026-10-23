@@ -25,7 +25,7 @@ export function MasterChecklistSidebar({
   const assignedItemMap = new Map<string, { missionId: string; missionCode: string }>()
   plan.missions.forEach((mScope) => {
     const mission = missions.find((m) => m.id === mScope.missionId)
-    const missionCode = mission?.missionCode || mScope.scopeLabel || 'Mission'
+    const missionCode = mission?.missionCode || mScope.scopeLabel || 'Nhiệm vụ'
     mScope.checklistItemIds?.forEach((cId: string) => {
       assignedItemMap.set(cId, { missionId: mScope.missionId, missionCode })
     })
@@ -56,10 +56,10 @@ export function MasterChecklistSidebar({
   }
 
   return (
-    <aside className="odm-master-checklist-sidebar" aria-label="Master Checklist">
+    <aside className="odm-master-checklist-sidebar" aria-label="Danh sách nhiệm vụ">
       <header className="odm-sidebar-header">
         <h3>
-          <OrderIcon name="check" size={18} /> Danh sách checklist
+          <OrderIcon name="check" size={18} /> Danh sách nhiệm vụ
         </h3>
         <button
           type="button"
@@ -75,7 +75,7 @@ export function MasterChecklistSidebar({
       {items.length > 5 && (
         <input
           type="search"
-          placeholder="Tìm checklist..."
+          placeholder="Tìm nhiệm vụ..."
           value={filterQuery}
           onChange={(e) => setFilterQuery(e.target.value)}
           className="odm-input odm-input-sm"
@@ -87,13 +87,13 @@ export function MasterChecklistSidebar({
       <div className="odm-checklist-block">
         <div className="odm-checklist-block-head">
           <span style={{ color: '#059669' }}>
-            ✓ Đã phân công ({assignedItems.length}/{items.length})
+            Đã phân công ({assignedItems.length}/{items.length})
           </span>
         </div>
         <div className="odm-checklist-card-list">
           {filteredAssigned.length === 0 ? (
             <p className="odm-mission-meta" style={{ fontStyle: 'italic', margin: '4px 0' }}>
-              Chưa có checklist nào được phân công.
+              Chưa có nhiệm vụ nào được phân công.
             </p>
           ) : (
             filteredAssigned.map((item) => (
@@ -124,7 +124,7 @@ export function MasterChecklistSidebar({
         <div className="odm-checklist-card-list">
           {filteredUnassigned.length === 0 ? (
             <p className="odm-mission-meta" style={{ fontStyle: 'italic', margin: '4px 0', color: '#10b981' }}>
-              Tất cả checklist đã được phân bổ đầy đủ!
+              Tất cả nhiệm vụ đã được phân công đầy đủ
             </p>
           ) : (
             filteredUnassigned.map((item) => (

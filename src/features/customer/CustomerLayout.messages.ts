@@ -4,6 +4,11 @@ export const customerLayoutMessages = defineMessages({
   vi: {
     nav: 'Điều hướng khách hàng',
     menu: 'Menu',
+    groups: {
+      operations: 'Vận hành',
+      media: 'Kết quả',
+      support: 'Hỗ trợ',
+    },
     navItems: {
       missionHistory: 'Lịch sử mission',
       dashboard: 'Tổng quan',
@@ -28,6 +33,11 @@ export const customerLayoutMessages = defineMessages({
   en: {
     nav: 'Customer navigation',
     menu: 'Menu',
+    groups: {
+      operations: 'Operations',
+      media: 'Media',
+      support: 'Support',
+    },
     navItems: {
       missionHistory: 'Mission history',
       dashboard: 'Overview',

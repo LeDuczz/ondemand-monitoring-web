@@ -4,6 +4,7 @@ import { authSession } from '../auth/api/authApi'
 import { LogoutButton } from '../auth/components/LogoutButton'
 import { Icon, type IconName } from '../../shared/components/Icon'
 import { LanguageToggle } from '../../shared/components/LanguageToggle'
+import { Button } from '../../shared/components/ui'
 import { useI18n } from '../../shared/i18n'
 import { customerHref, type CustomerRoute, type CustomerScreen } from './routes'
 import { customerLayoutMessages } from './CustomerLayout.messages'
@@ -19,20 +20,48 @@ type NavItem = {
   newMediaBadge?: boolean
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { key: 'missionHistory', icon: 'clock', route: { screen: 'missionHistory' } },
-  { key: 'dashboard', icon: 'home', route: { screen: 'dashboard' } },
-  { key: 'orders', icon: 'clipboard', route: { screen: 'orders' } },
-  { key: 'createOrder', icon: 'plus', route: { screen: 'createOrder' } },
+type NavGroup = {
+  key: keyof typeof customerLayoutMessages.vi.groups
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    key: 'mediaLibrary',
-    icon: 'camera',
-    route: { screen: 'mediaLibrary' },
-    newMediaBadge: true,
+    key: 'operations',
+    items: [
+      { key: 'dashboard', icon: 'home', route: { screen: 'dashboard' } },
+      { key: 'orders', icon: 'clipboard', route: { screen: 'orders' } },
+      { key: 'createOrder', icon: 'plus', route: { screen: 'createOrder' } },
+      {
+        key: 'missionHistory',
+        icon: 'clock',
+        route: { screen: 'missionHistory' },
+      },
+    ],
   },
-  { key: 'help', icon: 'file-text', href: '#help' },
-  { key: 'support', icon: 'ticket', href: '#help/tickets' },
-  { key: 'notifications', icon: 'bell', route: { screen: 'notifications' } },
+  {
+    key: 'media',
+    items: [
+      {
+        key: 'mediaLibrary',
+        icon: 'camera',
+        route: { screen: 'mediaLibrary' },
+        newMediaBadge: true,
+      },
+      {
+        key: 'notifications',
+        icon: 'bell',
+        route: { screen: 'notifications' },
+      },
+    ],
+  },
+  {
+    key: 'support',
+    items: [
+      { key: 'help', icon: 'file-text', href: '#help' },
+      { key: 'support', icon: 'ticket', href: '#help/tickets' },
+    ],
+  },
 ]
 
 const activeNavKey: Record<CustomerScreen, CustomerNavItemKey | null> = {
@@ -107,34 +136,41 @@ export function CustomerLayout({
           </a>
 
           <div className="odm-cus-nav-scroll">
-            <div className="odm-cus-navg">{t.menu}</div>
-            {NAV_ITEMS.map((item) => {
-              const isActive = item.key === activeKey
-              const badge =
-                item.newMediaBadge && (newMediaCount ?? 0) > 0
-                  ? newMediaCount
-                  : undefined
-              return (
-                <a
-                  key={item.key}
-                  href={
-                    item.href || (item.route ? customerHref(item.route) : '#')
-                  }
-                  className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
-                  aria-current={isActive ? 'page' : undefined}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <Icon
-                    name={item.icon}
-                    width={18}
-                    height={18}
-                    aria-hidden="true"
-                  />
-                  <span>{t.navItems[item.key]}</span>
-                  {badge ? <span className="odm-cus-navc">{badge}</span> : null}
-                </a>
-              )
-            })}
+            {NAV_GROUPS.map((group) => (
+              <div key={group.key} role="group" aria-label={t.groups[group.key]}>
+                <div className="odm-cus-navg">{t.groups[group.key]}</div>
+                {group.items.map((item) => {
+                  const isActive = item.key === activeKey
+                  const badge =
+                    item.newMediaBadge && (newMediaCount ?? 0) > 0
+                      ? newMediaCount
+                      : undefined
+                  return (
+                    <a
+                      key={item.key}
+                      href={
+                        item.href ||
+                        (item.route ? customerHref(item.route) : '#')
+                      }
+                      className={`odm-cus-navi ${isActive ? 'is-active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <Icon
+                        name={item.icon}
+                        width={18}
+                        height={18}
+                        aria-hidden="true"
+                      />
+                      <span>{t.navItems[item.key]}</span>
+                      {badge ? (
+                        <span className="odm-cus-navc">{badge}</span>
+                      ) : null}
+                    </a>
+                  )
+                })}
+              </div>
+            ))}
           </div>
 
           <a
@@ -176,24 +212,24 @@ export function CustomerLayout({
             </button>
             <div className="odm-cus-breadcrumb">{breadcrumb}</div>
             <div className="odm-cus-topbar-spacer" />
-            <a href="#help" className="odm-btn odm-btn-gh odm-cus-help-link">
-              <Icon
-                name="file-text"
-                width={15}
-                height={15}
-                aria-hidden="true"
-              />
+            <Button
+              href="#help"
+              variant="ghost"
+              className="odm-cus-help-link"
+              icon="file-text"
+            >
               {t.helpLink}
-            </a>
+            </Button>
             <LanguageToggle />
-            <button
+            <Button
               type="button"
-              className="odm-btn odm-btn-gh odm-btn-ic1"
+              variant="ghost"
+              className="odm-cus-theme-toggle"
               aria-label={t.toggleTheme}
               onClick={() => setDark((v) => !v)}
             >
               <Icon name={dark ? 'sun' : 'moon'} width={17} height={17} />
-            </button>
+            </Button>
           </header>
           <main className="odm-cus-content">
             <div className="odm-cus-content-inner">{children}</div>

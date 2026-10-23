@@ -1,15 +1,20 @@
 /*
  * Customer portal shell (sidebar + top bar), scoped under `.odm-cus`.
- * Mirrors the admin shell (240px sidebar, active left bar, 1280px content)
- * and uses the shared --ui-* tokens from src/shared/components/ui/ui.css.
+ * Visually mirrors the manager shell (`.odm-mgr-*`): 232px sidebar on
+ * --sf/--bd, grouped 34px nav items, 3px active bar, 52px top bar and
+ * 20px 24px content padding. Tokens come from src/styles/odm.css (--sf,
+ * --bd, --tx*) and the shared --ui-* tokens from shared/components/ui/ui.css.
  */
 
 .odm-cus {
-  --cus-sidebar-w: 240px;
-  height: 100vh;
+  --cus-sidebar-w: 232px;
+  --cus-ease: var(--ui-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+  position: fixed;
+  inset: 0;
+  width: 100%;
   overflow: hidden;
-  background: var(--ui-bg);
-  color: var(--ui-text);
+  background: var(--bg);
+  color: var(--tx);
 }
 
 /* Long English / Vietnamese labels must wrap instead of clipping. */
@@ -31,25 +36,26 @@
 .odm-cus-side {
   width: var(--cus-sidebar-w);
   flex: none;
-  background: var(--ui-surface);
-  border-right: 1px solid var(--ui-border);
+  background: var(--sf);
+  border-right: 1px solid var(--bd);
   display: flex;
   flex-direction: column;
-  padding: var(--ui-space-4) var(--ui-space-3);
+  padding: 12px 10px;
 }
 
 .odm-cus-brand {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
-  padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-5);
+  padding: 6px 6px 16px;
   text-decoration: none;
-  color: var(--ui-text);
+  color: var(--tx);
 }
 
 .odm-cus-brand-mark {
-  width: 44px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   object-fit: contain;
   object-position: left center;
   flex: none;
@@ -59,25 +65,26 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  font-size: 18px;
+  color: var(--brand-primary);
+  font-size: 20px;
   font-weight: 900;
   line-height: 0.95;
 }
 
 .odm-cus-brand-primary {
-  color: var(--brand-primary, var(--ui-text));
+  color: var(--brand-primary);
 }
 
 .odm-cus-brand-accent {
-  color: var(--brand-accent, var(--ui-primary));
-  -webkit-text-fill-color: var(--brand-accent, var(--ui-primary));
+  color: var(--brand-accent);
+  -webkit-text-fill-color: var(--brand-accent);
   font-size: 1.22em;
 }
 
 .odm-cus-nav-scroll {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-1);
+  gap: 1px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
@@ -86,25 +93,30 @@
 .odm-cus-navg {
   font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ui-text-3);
-  padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-1);
+  color: var(--tx3);
+  padding: 12px 10px 4px;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 
 .odm-cus-navi {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px var(--ui-space-3);
-  border-radius: var(--ui-radius-sm);
-  font-size: 13.5px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  padding-left: 7px;
+  color: var(--tx2);
   font-weight: 500;
-  color: var(--ui-text-2);
-  text-decoration: none;
+  font-size: 13px;
   overflow-wrap: anywhere;
-  transition: background 0.1s;
+  transition:
+    background var(--ui-dur-fast, 150ms) var(--cus-ease),
+    color var(--ui-dur-fast, 150ms) var(--cus-ease),
+    border-color var(--ui-dur-fast, 150ms) var(--cus-ease),
+    transform var(--ui-dur-fast, 150ms) var(--cus-ease);
 }
 
 .odm-cus-navi > span:not(.odm-cus-navc) {
@@ -116,86 +128,93 @@
 }
 
 .odm-cus-navi:hover {
-  background: var(--ui-surface-2);
+  background: var(--sf3);
+  color: var(--tx);
 }
 
 .odm-cus-navi.is-active {
-  background: var(--ui-primary-soft);
-  color: var(--ui-primary-text);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-tx);
   font-weight: 600;
-}
-
-.odm-cus-navi.is-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--ui-primary);
+  border-left-color: var(--sidebar-active-border);
 }
 
 .odm-cus-navc {
   margin-left: auto;
   flex: none;
-  background: var(--ui-warning-soft);
-  color: var(--ui-warning-text);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--inkfg);
   font-size: 11px;
   font-weight: 700;
-  border-radius: 999px;
-  padding: 1px 8px;
-  min-width: 20px;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .odm-cus-user {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: var(--ui-space-3) var(--ui-space-2);
-  border-top: 1px solid var(--ui-border);
-  margin-top: var(--ui-space-2);
+  gap: 9px;
+  padding: 10px 6px 2px;
+  border-top: 1px solid var(--bd);
+  margin-top: 8px;
 }
 
 .odm-cus-avatar {
+  flex: none;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--ui-primary-soft);
-  color: var(--ui-primary-text);
-  display: flex;
+  background: var(--sf3);
+  border: 1px solid var(--bd);
+  color: var(--tx2);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  flex: none;
 }
 
 .odm-cus-user-text {
-  display: flex;
-  flex-direction: column;
   min-width: 0;
+  flex: 1;
+  line-height: 1.25;
 }
 
 .odm-cus-user-name {
-  font-size: 12.5px;
+  display: block;
   font-weight: 600;
-  overflow-wrap: anywhere;
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .odm-cus-user-email {
+  display: block;
   font-size: 11px;
-  color: var(--ui-text-3);
-  overflow-wrap: anywhere;
+  color: var(--tx3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .odm-cus-logout {
   width: 100%;
-  margin-top: var(--ui-space-1);
+  justify-content: flex-start;
+  margin-top: 4px;
+  border-color: transparent;
 }
 
-/* ---------- Main area ---------- */
+.odm-cus-scrim {
+  display: none;
+}
+
+/* ---------- Top bar ---------- */
 
 .odm-cus-main {
   flex: 1;
@@ -206,33 +225,52 @@
 }
 
 .odm-cus-topbar {
-  min-height: 56px;
+  height: 52px;
   flex: none;
   display: flex;
   align-items: center;
-  gap: var(--ui-space-3);
-  padding: var(--ui-space-2) var(--ui-space-8);
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-surface);
+  gap: 14px;
+  padding: 0 20px;
+  background: var(--sf);
+  border-bottom: 1px solid var(--bd);
 }
 
 .odm-cus-breadcrumb {
   min-width: 0;
-  font-size: 14px;
   font-weight: 600;
-  color: var(--ui-text-2);
-  overflow-wrap: anywhere;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .odm-cus-topbar-spacer {
   flex: 1;
 }
 
-.odm-cus-help-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.odm-cus-topbar .ui-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
   text-decoration: none;
+}
+
+.odm-cus-help-link {
+  gap: 6px;
+}
+
+.odm-cus-menu-toggle {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tx2);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
 }
 
 .odm-cus-content {
@@ -240,14 +278,27 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--ui-space-8);
+  padding: 20px 24px 28px;
+  background: var(--bg);
 }
 
 .odm-cus-content-inner {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1360px;
   margin: 0 auto;
   min-width: 0;
+  animation: odm-cus-page-in var(--ui-dur-slow, 250ms) var(--cus-ease) both;
+}
+
+@keyframes odm-cus-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ---------- Floating chatbot ---------- */
@@ -437,55 +488,206 @@
   }
 }
 
-/* ---------- Sidebar drawer (below 900px) ---------- */
+/* ---------- Page language shared by every customer page ---------- */
+/* Cards, stat tiles, tables and pills use the same shapes as the manager
+   `.odm-or-*` cards; the shared kit (.ui-*) is restyled here so the
+   manager / admin portals are untouched. */
 
-@media (min-width: 900px) {
-  .odm-cus-menu-toggle,
-  .odm-cus-scrim {
-    display: none;
+.odm-cus .odm-cus-content-inner .ui-page-header {
+  margin-bottom: 16px;
+}
+
+.odm-cus .odm-cus-content-inner .ui-page-title {
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+
+.odm-cus .odm-cus-content-inner .ui-page-subtitle {
+  font-size: 13.5px;
+  color: var(--tx3);
+}
+
+.odm-cus .odm-cus-content-inner .ui-card,
+.odm-cus .odm-cus-content-inner .ui-table-card,
+.odm-cus .odm-cus-content-inner .ui-stat,
+.odm-cus .odm-cus-content-inner .ui-empty {
+  background: var(--sf);
+  border-color: var(--bd);
+  border-radius: 12px;
+  box-shadow: var(--ui-shadow-1), var(--ui-shadow-inset-top);
+}
+
+.odm-cus .odm-cus-content-inner .ui-card .ui-card-header {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--bd);
+  flex-wrap: nowrap;
+}
+
+.odm-cus .odm-cus-content-inner .ui-card .ui-card-title,
+.odm-cus .odm-cus-content-inner .ui-card-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.odm-cus .odm-cus-content-inner .ui-card-title svg {
+  color: var(--ui-primary);
+}
+
+.odm-cus .odm-cus-content-inner .ui-card .ui-card-body {
+  padding: 16px 18px;
+}
+
+.odm-cus .odm-cus-content-inner .ui-card .ui-card-body.is-flush {
+  padding: 0;
+}
+
+.odm-cus .odm-cus-content-inner .ui-stat {
+  padding: 16px 18px;
+  box-shadow: var(--ui-shadow-1), var(--ui-shadow-inset-top);
+}
+
+.odm-cus .odm-cus-content-inner .ui-stat .ui-stat-value {
+  font-size: 30px;
+}
+
+.odm-cus .odm-cus-content-inner .ui-badge {
+  box-shadow: none;
+}
+
+/* Tables: tile header row, hairline rows, soft hover */
+.odm-cus .odm-cus-content-inner .ui-table-card th {
+  background: var(--sf2);
+  color: var(--tx3);
+  border-bottom: 1px solid var(--bd);
+}
+
+.odm-cus .odm-cus-content-inner .ui-table-card td {
+  border-bottom-color: var(--bd);
+}
+
+.odm-cus .odm-cus-content-inner .ui-table-card tbody tr:hover {
+  background: var(--sf2);
+}
+
+.odm-cus .odm-cus-content-inner .ui-table-footer {
+  border-top-color: var(--bd);
+}
+
+/* ---------- Subtle 3D: layered shadow, hover lift, KPI tilt ---------- */
+
+.odm-cus {
+  --cus-lift-shadow:
+    0 1px 0 rgb(255 255 255 / 70%) inset,
+    0 2px 4px rgb(17 21 28 / 5%),
+    0 8px 20px rgb(17 21 28 / 8%);
+}
+
+:root[data-theme='dark'] .odm-cus {
+  --cus-lift-shadow:
+    0 1px 0 rgb(255 255 255 / 5%) inset,
+    0 2px 4px rgb(0 0 0 / 35%),
+    0 10px 24px rgb(0 0 0 / 40%);
+}
+
+.odm-cus .dash-stats,
+.odm-cus .ord-stats,
+.odm-cus .mhd-stats {
+  perspective: 900px;
+}
+
+@media (hover: hover) {
+  .odm-cus .odm-cus-content-inner .ui-card,
+  .odm-cus .odm-cus-content-inner .ui-stat {
+    transition:
+      transform var(--ui-dur) var(--cus-ease),
+      box-shadow var(--ui-dur) var(--cus-ease),
+      border-color var(--ui-dur) var(--cus-ease);
+  }
+
+  .odm-cus .odm-cus-content-inner .ui-card:not(:has(input, select, textarea)):hover,
+  .odm-cus .odm-cus-content-inner .ui-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cus-lift-shadow);
+  }
+
+  .odm-cus .odm-cus-content-inner .ui-stat:hover {
+    transform: translateY(-2px) rotateX(2deg);
   }
 }
 
-@media (max-width: 899px) {
+/* ---------- Sidebar drawer (below 1024px, same as the manager shell) ---------- */
+
+@media (max-width: 1024px) {
   .odm-cus-side {
     position: fixed;
     top: 0;
-    left: calc(-1 * var(--cus-sidebar-w) - 24px);
     bottom: 0;
+    left: 0;
     z-index: 200;
-    transition: left 0.2s;
+    transform: translateX(-100%);
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+    box-shadow: var(--shadow);
+    visibility: hidden;
   }
 
   .odm-cus-side.is-open {
-    left: 0;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
-  }
-
-  .odm-cus-scrim {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 199;
-    border: 0;
-    cursor: default;
+    transform: translateX(0);
+    visibility: visible;
+    transition-delay: 0s;
   }
 
   .odm-cus-menu-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--ui-space-1);
-    color: var(--ui-text-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex;
   }
 
+  .odm-cus-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgb(6 9 14 / 55%);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 640px) {
   .odm-cus-topbar {
-    padding: var(--ui-space-2) var(--ui-space-4);
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .odm-cus-help-link {
+    display: none;
   }
 
   .odm-cus-content {
-    padding: var(--ui-space-5) var(--ui-space-4);
+    padding: 14px 12px 20px;
   }
+}
+
+/* ---------- Reduced motion: no animation, no transforms ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .odm-cus *,
+  .odm-cus *::before,
+  .odm-cus *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .odm-cus .ui-card:hover,
+  .odm-cus .ui-stat:hover {
+    transform: none !important;
+  }
+}
+
+/* Pages that lay cards out with flex/grid `gap` must not double the spacing. */
+.odm-cus .dash-page > .ui-card,
+.odm-cus .dash-grid > .ui-card {
+  margin-bottom: 0;
 }

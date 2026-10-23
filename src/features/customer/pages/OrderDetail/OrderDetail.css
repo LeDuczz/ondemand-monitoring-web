@@ -1269,3 +1269,10 @@
 .od-notice .od-additional-info-form [role='alert'] {
   color: var(--ui-danger-text);
 }
+
+/* Phones: stack label over value (the 150px label column overflowed 375px). */
+@media (max-width: 640px) {
+  .od-info-list .od-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

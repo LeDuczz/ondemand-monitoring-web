@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Icon } from '../../../../shared/components/Icon'
-import { formatVnd } from '../../../../shared/lib/formatVnd'
+import { formatMoney } from '../../lib/createOrder/format'
 import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
 import { useI18n } from '../../../../shared/i18n'
 import { Card } from '../../../../shared/components/ui'
@@ -37,7 +37,7 @@ export function ChecklistEditor({
   /** Show the backend-calculated price of the selection (needs an authenticated customer). */
   quote?: boolean
 }) {
-  const { t } = useI18n(checklistMessages)
+  const { t, locale } = useI18n(checklistMessages)
   const { status, rows } = checklist
   // Catalog entries outside the selected service package are kept in state for
   // identity/pricing purposes, but they must not look like service defaults.
@@ -266,11 +266,10 @@ export function ChecklistEditor({
               {awaitingManagerQuote(row) && (
                 <>
                   <span className="checklist-custom-tag is-pending-quote">
-                    Dịch vụ theo yêu cầu
+                    {t.pendingQuoteTag}
                   </span>
                   <small className="checklist-hint">
-                    Giá của dịch vụ này sẽ được xem xét và báo giá sau khi
-                    Manager duyệt yêu cầu.
+                    {t.pendingQuoteHint}
                   </small>
                 </>
               )}
@@ -298,7 +297,7 @@ export function ChecklistEditor({
                       : undefined
                   }
                 >
-                  {formatVnd(priced.subtotal)}
+                  {formatMoney(priced.subtotal, locale)}
                 </span>
               ) : (
                 <span className="checklist-row-price" aria-hidden="true" />

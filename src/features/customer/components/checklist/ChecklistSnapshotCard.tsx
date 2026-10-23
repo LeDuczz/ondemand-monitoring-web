@@ -6,7 +6,7 @@ import { checklistMessages } from '../../lib/checklist/messages'
 import type { ChecklistSnapshot } from '../../lib/checklist/types'
 import './Checklist.css'
 import { ChecklistGuidance } from '../../../../shared/components/ChecklistGuidance'
-import { formatVnd } from '../../../../shared/lib/formatVnd'
+import { formatMoney } from '../../lib/createOrder/format'
 
 export function ChecklistSnapshotCard({
   items = [],
@@ -18,7 +18,7 @@ export function ChecklistSnapshotCard({
   /** Optional heading node (e.g. with an icon chip); defaults to the plain title. */
   title?: ReactNode
 }) {
-  const { t } = useI18n(checklistMessages)
+  const { t, locale } = useI18n(checklistMessages)
   return (
     <div role="region" aria-label={t.title}>
       <Card className="checklist-card" title={title ?? t.title}>
@@ -68,14 +68,14 @@ export function ChecklistSnapshotCard({
                     <span className="checklist-snapshot-evidence">
                       {item.priceAvailable ? (
                         item.pricingStatus === 'DUPLICATE' ? (
-                          'Không tính phí — yêu cầu đã được bao gồm trong dịch vụ hiện tại.'
+                          t.snapshotDuplicate
                         ) : item.pricingStatus === 'REJECTED' ? (
-                          'Yêu cầu không được chấp thuận · 0 ₫'
+                          t.snapshotRejected(formatMoney(0, locale))
                         ) : (
-                          <>Dịch vụ bổ sung: {formatVnd(item.approvedPrice ?? 0)}</>
+                          t.snapshotAddOn(formatMoney(item.approvedPrice ?? 0, locale))
                         )
                       ) : (
-                        'Đang chờ Manager xem xét giá.'
+                        t.snapshotAwaiting
                       )}
                     </span>
                   )}

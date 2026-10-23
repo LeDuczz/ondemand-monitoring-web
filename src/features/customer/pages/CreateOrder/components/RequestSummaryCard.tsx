@@ -6,6 +6,7 @@ import type {
   ServiceDeliverableOption,
   ServiceOption,
 } from '../../../api/customerApi'
+import { formatIsoDate } from '../../../lib/createOrder/dateFormat'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import { localizeDeliverableName } from '../../../lib/i18n/catalogNames'
 import { localizeTimeslot } from '../../../lib/i18n/timeslots'
@@ -44,10 +45,9 @@ type Item = {
   step?: Step
 }
 
-/** `2026-10-07` → `07/10/2026` for Vietnamese; other values pass through. */
+/** ISO date in the UI language's format; other values pass through. */
 function formatDate(value: string, lang: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  return match && lang === 'vi' ? `${match[3]}/${match[2]}/${match[1]}` : value
+  return formatIsoDate(value, lang) || value
 }
 
 /** Bold headline line(s) first, everything else folded into one muted line. */

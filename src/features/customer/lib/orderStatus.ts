@@ -4,6 +4,7 @@ import type {
   MissionStatus,
   StatusTone,
 } from '../../../shared/types/domain'
+import { orderStatusMessages } from './orderStatus.messages'
 
 export const ORDER_STATUS_TONE: Record<OrderStatus, StatusTone> = {
   DRAFT: 'gray',
@@ -17,34 +18,6 @@ export const ORDER_STATUS_TONE: Record<OrderStatus, StatusTone> = {
   COMPLETED: 'green',
   REJECTED: 'red',
   CANCELLED: 'gray',
-}
-
-const ORDER_STATUS_LABEL_VI: Record<OrderStatus, string> = {
-  DRAFT: 'Nháp',
-  AI_ANALYZED: 'Đã phân tích AI',
-  SUBMITTED: 'Đã gửi duyệt',
-  PENDING: 'Đang duyệt',
-  NEEDS_INFO: 'Cần bổ sung thông tin',
-  APPROVED: 'Đã duyệt',
-  SCHEDULED: 'Đã lên lịch',
-  IN_PROGRESS: 'Đang thực hiện',
-  COMPLETED: 'Hoàn thành',
-  REJECTED: 'Bị từ chối',
-  CANCELLED: 'Đã huỷ',
-}
-
-const ORDER_STATUS_LABEL_EN: Record<OrderStatus, string> = {
-  DRAFT: 'Draft',
-  AI_ANALYZED: 'AI analyzed',
-  SUBMITTED: 'Submitted',
-  PENDING: 'Pending review',
-  NEEDS_INFO: 'More information required',
-  APPROVED: 'Approved',
-  SCHEDULED: 'Scheduled',
-  IN_PROGRESS: 'In progress',
-  COMPLETED: 'Completed',
-  REJECTED: 'Rejected',
-  CANCELLED: 'Cancelled',
 }
 
 export const MISSION_STATUS_TONE: Record<MissionStatus, StatusTone> = {
@@ -69,50 +42,6 @@ export const MISSION_STATUS_TONE: Record<MissionStatus, StatusTone> = {
   CANCELLED: 'gray',
 }
 
-const MISSION_STATUS_LABEL_VI: Record<MissionStatus, string> = {
-  CREATED: 'Mới tạo',
-  WAITING_DEPOSIT: 'Chờ thanh toán tiền cọc',
-  RESOURCE_ASSIGNING: 'Phân công nguồn lực',
-  WAITING_CREW_CONFIRMATION: 'Chờ đội bay xác nhận',
-  WAITING_OPERATOR_ACCEPTANCE: 'Chờ phi công xác nhận',
-  SCHEDULED: 'Đã lên lịch',
-  CONNECTED: 'Đã kết nối',
-  PREFLIGHT_CHECKING: 'Kiểm tra trước bay',
-  READY_TO_FLY: 'Sẵn sàng bay',
-  FAILED_PREFLIGHT: 'Lỗi kiểm tra',
-  PENDING_APPROVAL: 'Chờ phê duyệt',
-  IN_FLIGHT: 'Đang bay',
-  IN_PROGRESS: 'Đang thực hiện',
-  RETURNING: 'Đang quay về',
-  POSTFLIGHT_CHECKING: 'Kiểm tra sau bay',
-  PENDING_REVIEW: 'Chờ nghiệm thu',
-  COMPLETED: 'Hoàn thành',
-  FAILED: 'Thất bại',
-  CANCELLED: 'Đã huỷ',
-}
-
-const MISSION_STATUS_LABEL_EN: Record<MissionStatus, string> = {
-  CREATED: 'Created',
-  WAITING_DEPOSIT: 'Waiting for deposit',
-  RESOURCE_ASSIGNING: 'Assigning resources',
-  WAITING_CREW_CONFIRMATION: 'Waiting for crew confirmation',
-  WAITING_OPERATOR_ACCEPTANCE: 'Waiting for operator',
-  SCHEDULED: 'Scheduled',
-  CONNECTED: 'Connected',
-  PREFLIGHT_CHECKING: 'Preflight check running',
-  READY_TO_FLY: 'Ready to fly',
-  FAILED_PREFLIGHT: 'Preflight check failed',
-  PENDING_APPROVAL: 'Pending approval',
-  IN_FLIGHT: 'In flight',
-  IN_PROGRESS: 'In progress',
-  RETURNING: 'Returning',
-  POSTFLIGHT_CHECKING: 'Postflight check running',
-  PENDING_REVIEW: 'Awaiting inspection',
-  COMPLETED: 'Completed',
-  FAILED: 'Failed',
-  CANCELLED: 'Cancelled',
-}
-
 export type StatusMeta = { label: string; tone: StatusTone }
 
 export function getOrderStatusMeta(
@@ -120,10 +49,7 @@ export function getOrderStatusMeta(
   lang: Language,
 ): StatusMeta {
   return {
-    label:
-      lang === 'en'
-        ? ORDER_STATUS_LABEL_EN[status]
-        : ORDER_STATUS_LABEL_VI[status],
+    label: orderStatusMessages[lang].order[status],
     tone: ORDER_STATUS_TONE[status],
   }
 }
@@ -133,10 +59,7 @@ export function getMissionStatusMeta(
   lang: Language,
 ): StatusMeta {
   return {
-    label:
-      lang === 'en'
-        ? MISSION_STATUS_LABEL_EN[status]
-        : MISSION_STATUS_LABEL_VI[status],
+    label: orderStatusMessages[lang].mission[status],
     tone: MISSION_STATUS_TONE[status],
   }
 }

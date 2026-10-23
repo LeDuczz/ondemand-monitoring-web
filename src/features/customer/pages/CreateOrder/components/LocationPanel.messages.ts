@@ -7,6 +7,8 @@ export const locationPanelMessages = defineMessages({
     addressPlaceholder: 'VD: Chợ Bến Thành, Quận 1, TP.HCM…',
     addressHint:
       'Nhập địa chỉ rồi tìm, hoặc chọn trực tiếp một điểm trên bản đồ.',
+    addressLookupFailed: 'Không thể tìm địa chỉ.',
+    reverseLookupFailed: 'Không thể tìm địa chỉ tại vị trí này.',
     locateAddress: 'Tìm vị trí',
     locatingAddress: 'Đang tìm…',
     addressNotFound:
@@ -43,6 +45,8 @@ export const locationPanelMessages = defineMessages({
     addressLabel: 'Address or area',
     addressPlaceholder: 'E.g. Ben Thanh Market, District 1, Ho Chi Minh City…',
     addressHint: 'Search an address or select a point directly on the map.',
+    addressLookupFailed: 'Could not look up the address.',
+    reverseLookupFailed: 'Could not find an address at this location.',
     locateAddress: 'Find location',
     locatingAddress: 'Searching…',
     addressNotFound:

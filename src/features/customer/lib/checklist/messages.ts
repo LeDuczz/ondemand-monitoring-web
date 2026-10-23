@@ -98,6 +98,14 @@ export const checklistMessages = defineMessages({
       'Đây là nội dung đã lưu của yêu cầu, không thay đổi theo danh mục dịch vụ.',
     legacy: 'Yêu cầu này chưa lưu danh sách nội dung giám sát.',
     emptySnapshot: 'Yêu cầu được gửi không kèm nội dung giám sát.',
+    pendingQuoteTag: 'Dịch vụ theo yêu cầu',
+    pendingQuoteHint:
+      'Giá của dịch vụ này sẽ được xem xét và báo giá sau khi Manager duyệt yêu cầu.',
+    snapshotDuplicate:
+      'Không tính phí — yêu cầu đã được bao gồm trong dịch vụ hiện tại.',
+    snapshotRejected: (zero: string) => `Yêu cầu không được chấp thuận · ${zero}`,
+    snapshotAddOn: (amount: string) => `Dịch vụ bổ sung: ${amount}`,
+    snapshotAwaiting: 'Đang chờ Manager xem xét giá.',
   },
   en: {
     title: 'Monitoring requirements',
@@ -201,5 +209,13 @@ export const checklistMessages = defineMessages({
     legacy: 'This request has no saved monitoring requirements.',
     emptySnapshot:
       'This request was submitted with no monitoring requirements.',
+    pendingQuoteTag: 'Custom-quoted service',
+    pendingQuoteHint:
+      'The price of this item will be reviewed and quoted after a manager approves the request.',
+    snapshotDuplicate:
+      'No charge — this requirement is already included in the current service.',
+    snapshotRejected: (zero: string) => `Requirement not approved · ${zero}`,
+    snapshotAddOn: (amount: string) => `Add-on service: ${amount}`,
+    snapshotAwaiting: 'Waiting for a manager to review the price.',
   },
 })

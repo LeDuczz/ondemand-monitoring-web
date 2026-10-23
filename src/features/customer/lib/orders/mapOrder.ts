@@ -84,7 +84,15 @@ function requirementText(value: unknown): string | null {
     const preferred = [record.description, record.documentName, record.fileName, record.name, record.type]
       .map(requirementText)
       .filter((item): item is string => Boolean(item))
-    if (record.additionalPrice != null) preferred.push(`${requirementText(record.additionalPrice)} đ`)
+    if (record.additionalPrice != null) {
+      // Amounts are VND in both languages; the currency symbol is language-neutral.
+      const price = Number(record.additionalPrice)
+      preferred.push(
+        Number.isFinite(price)
+          ? `${price.toLocaleString('vi-VN')} ₫`
+          : `${requirementText(record.additionalPrice)} ₫`,
+      )
+    }
     if (preferred.length) return preferred.join(' · ')
     return Object.entries(record)
       .map(([key, item]) => {

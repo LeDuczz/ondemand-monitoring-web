@@ -3,6 +3,9 @@ import { defineMessages } from '../../../../../shared/i18n'
 export const locationStepMessages = defineMessages({
   vi: {
     mapLabel: 'Bản đồ chọn vị trí giám sát',
+    invalidCoordinates: 'Vĩ độ phải từ -90 đến 90, kinh độ từ -180 đến 180.',
+    outsideServiceArea:
+      'Hiện chỉ phục vụ trong khu vực TP.HCM. Vui lòng chọn điểm trong vùng xanh.',
     layerStreet: 'Bản đồ',
     layerSatellite: 'Vệ tinh',
     mapInstructions:
@@ -23,6 +26,9 @@ export const locationStepMessages = defineMessages({
   },
   en: {
     mapLabel: 'Monitoring location map',
+    invalidCoordinates: 'Latitude must be between -90 and 90, longitude between -180 and 180.',
+    outsideServiceArea:
+      'We currently only serve the Ho Chi Minh City area. Please choose a point inside the green zone.',
     layerStreet: 'Map',
     layerSatellite: 'Satellite',
     mapInstructions:

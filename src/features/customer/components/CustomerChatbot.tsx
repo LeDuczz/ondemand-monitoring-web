@@ -8,15 +8,15 @@ type ChipKey = keyof (typeof customerChatbotMessages.vi)['chips']
 
 const CHIP_KEYS: ChipKey[] = ['createRequest', 'flightZone', 'cost', 'weather']
 
-// Keyword matching stays Vietnamese-only (matches the customer's typed
-// question, independent of the current UI language) — only the reply text
-// shown to the customer is bilingual.
+// Keyword matching accepts Vietnamese (with or without diacritics) and English
+// questions, independent of the current UI language; only the reply text shown
+// to the customer follows the UI language.
 const KB: [RegExp, ReplyKey][] = [
-  [/t[aạ]o|[dđ][aặ]t|y[eê]u c[aầ]u/i, 'createRequest'],
-  [/v[uù]ng|c[aấ]m bay|b[aả]n [dđ][oồ]/i, 'flightZone'],
-  [/gi[aá]|ph[ií]|chi ph[ií]|bao nhi[eê]u/i, 'cost'],
-  [/th[oờ]i ti[eế]t|m[uư]a|gi[oó]/i, 'weather'],
-  [/duy[eệ]t|tr[aạ]ng th[aá]i/i, 'status'],
+  [/t[aạ]o|[dđ][aặ]t|y[eê]u c[aầ]u|\b(create|request|book)/i, 'createRequest'],
+  [/v[uù]ng|c[aấ]m bay|b[aả]n [dđ][oồ]|\b(zone|no-fly|restricted|airspace|map)/i, 'flightZone'],
+  [/gi[aá]|ph[ií]|chi ph[ií]|bao nhi[eê]u|\b(cost|price|pricing|fee|how much)/i, 'cost'],
+  [/th[oờ]i ti[eế]t|m[uư]a|gi[oó]|\b(weather|rain|wind|forecast)/i, 'weather'],
+  [/duy[eệ]t|tr[aạ]ng th[aá]i|\b(approv|status)/i, 'status'],
 ]
 
 /** Bot messages keep a key (not text) so they re-render when the language changes. */

@@ -36,7 +36,7 @@ export function LocationPanel({
   onConfirmCoordinates,
   onRadiusChange,
 }: Props) {
-  const { t } = useI18n(locationPanelMessages)
+  const { t, locale } = useI18n(locationPanelMessages)
   const statusLabels: Record<LocationStatus, string> = {
     unconfirmed: t.statusUnconfirmed,
     resolving: t.statusResolving,
@@ -107,7 +107,11 @@ export function LocationPanel({
           <div className="co-address-error" role="alert">
             {addressLookupError === 'NOT_FOUND'
               ? t.addressNotFound
-              : addressLookupError}
+              : addressLookupError === 'LOOKUP_FAILED'
+                ? t.addressLookupFailed
+                : addressLookupError === 'REVERSE_FAILED'
+                  ? t.reverseLookupFailed
+                  : addressLookupError}
           </div>
         ) : null}
       </FormField>
@@ -187,7 +191,7 @@ export function LocationPanel({
         />
         <div className="co-range-ends" aria-hidden="true">
           <span>{RADIUS_MIN} m</span>
-          <span>{RADIUS_MAX.toLocaleString()} m</span>
+          <span>{RADIUS_MAX.toLocaleString(locale)} m</span>
         </div>
         <div className="co-radius-presets" aria-label={t.radiusPresets}>
           {RADIUS_PRESETS.map((radius) => (
@@ -198,7 +202,7 @@ export function LocationPanel({
               aria-pressed={form.radiusM === radius}
               onClick={() => onRadiusChange(radius)}
             >
-              {radius.toLocaleString()} m
+              {radius.toLocaleString(locale)} m
             </button>
           ))}
           <button type="button" onClick={() => onRadiusChange(RADIUS_DEFAULT)}>
@@ -208,11 +212,11 @@ export function LocationPanel({
         <dl className="co-area-metrics">
           <div>
             <dt>{t.radiusMetric}</dt>
-            <dd>{form.radiusM.toLocaleString()} m</dd>
+            <dd>{form.radiusM.toLocaleString(locale)} m</dd>
           </div>
           <div>
             <dt>{t.diameterMetric}</dt>
-            <dd>{(form.radiusM * 2).toLocaleString()} m</dd>
+            <dd>{(form.radiusM * 2).toLocaleString(locale)} m</dd>
           </div>
           <div>
             <dt>{t.areaEstimate}</dt>

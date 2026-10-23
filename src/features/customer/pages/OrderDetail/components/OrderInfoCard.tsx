@@ -14,21 +14,6 @@ import { OrderSectionEditor, type EditableOrderSection } from './OrderSectionEdi
 
 const DASH = '—'
 
-const LABELS: Record<string, string> = {
-  INTERNAL: 'Nội bộ', LEGAL: 'Pháp lý', PARTNER_REPORT: 'Báo cáo cho đối tác', OTHER: 'Khác',
-  SURVEY_MONITORING: 'Đo đạc, khảo sát, giám sát từ trên cao', AGRICULTURE: 'Phục vụ nông nghiệp',
-  CONSTRUCTION_MONITORING: 'Giám sát tiến độ công trình', INDUSTRIAL_INSPECTION: 'Kiểm tra nhà xưởng',
-  AREA_MONITORING: 'Giám sát khu vực', FOREST_MONITORING: 'Giám sát tài nguyên rừng',
-  NORMAL: 'Bình thường', HIGH: 'Cao', URGENT: 'Khẩn cấp', NONE: 'Không có',
-  HAVE_PERMIT: 'Đã có giấy phép', NEED_SUPPORT: 'Cần hỗ trợ xin phép',
-  WEEKLY: 'Hằng tuần', MONTHLY: 'Hằng tháng', AUTO_RESCHEDULE: 'Tự dời lịch',
-  CONTACT_CUSTOMER: 'Liên hệ khách trước', CANCEL_ORDER: 'Huỷ yêu cầu',
-  OWNER: 'Chủ sở hữu / Chủ đầu tư', AUTHORIZED_PERSON: 'Người được ủy quyền',
-  CONTRACTOR: 'Nhà thầu / Đơn vị thi công', MANAGER_OR_SUPERVISOR: 'Đơn vị quản lý / Tư vấn giám sát',
-  PHOTO: 'Ảnh', IMAGE: 'Ảnh', VIDEO: 'Video', PDF_REPORT: 'Báo cáo PDF', DOWNLOAD: 'Tải về', EMAIL: 'Email', API: 'API',
-}
-const label = (value: string | null) => value ? (LABELS[value] ?? value) : DASH
-const join = (values: string[]) => values.length ? values.map((value) => LABELS[value] ?? value).join(', ') : DASH
 
 function Field({
   icon,
@@ -104,6 +89,9 @@ export function OrderInfoCard({
 }) {
   const [editing, setEditing] = useState<EditableOrderSection | null>(null)
   const { t, locale, lang } = useI18n(orderInfoCardMessages)
+  const label = (value: string | null) => (value ? (t.enums[value] ?? value) : DASH)
+  const join = (values: string[]) =>
+    values.length ? values.map((value) => t.enums[value] ?? value).join(', ') : DASH
   const timeLabel = useTimeslotLabel()
   const time =
     order.timeName || order.timeId ? timeLabel({ id: order.timeId, name: order.timeName }) : null

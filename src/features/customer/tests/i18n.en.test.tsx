@@ -163,12 +163,6 @@ const ROUTES: Route[] = [
     vi: 'Chọn dịch vụ giám sát',
     en: 'Choose a monitoring service',
   },
-  {
-    name: 'Analysis',
-    hash: '#portal/customer/orders/cus-ord-002/analysis',
-    vi: 'Phân tích AI',
-    en: 'AI analysis',
-  },
   { name: 'LiveHub', hash: '#portal/customer/live', vi: 'Xem trực tiếp', en: 'Live view' },
   {
     name: 'Media (order)',
@@ -285,13 +279,29 @@ describe('Customer portal i18n (vi -> en)', () => {
     fireEvent.click(locationNext)
 
     // Step 3: location is now the active wizard step.
-    fireEvent.change(await screen.findByLabelText(/Address\/area/), {
+    fireEvent.change(await screen.findByLabelText(/Address or area/), {
       target: { value: 'KCN Long Hậu' },
     })
+    // The address must be resolved to a point inside the service area before moving on.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: { latitude: 10.7769, longitude: 106.7009, displayName: 'KCN Long Hậu' },
+        }),
+      }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Find location' }))
+    await screen.findByText('Location confirmed')
     await settled()
     expect(viLines()).toEqual([])
-    // The right-to-monitor declaration is required before moving on.
-    fireEvent.change(screen.getByLabelText(/Contact person/), { target: { value: 'An' } })
+    fireEvent.click(screen.getByRole('button', { name: /^Continue:/ }))
+
+    // Step 4: site details and the right-to-monitor declaration, required before moving on.
+    fireEvent.change(await screen.findByLabelText(/Contact person/), { target: { value: 'An' } })
     fireEvent.change(screen.getByLabelText(/Phone number/), { target: { value: '0901234567' } })
     fireEvent.change(screen.getByLabelText(/Access conditions/), { target: { value: 'Main gate' } })
     fireEvent.click(screen.getByLabelText('Owner / Investor'))
@@ -301,7 +311,7 @@ describe('Customer portal i18n (vi -> en)', () => {
     await settled()
     expect(viLines()).toEqual([])
 
-    // Step 4: choose a time window to reach the deliverables/review step.
+    // Step 5: choose a time window to reach the deliverables/review step.
     const time = screen.getByLabelText(/Preferred time window/) as HTMLSelectElement
     await waitFor(() => expect(time.options.length).toBeGreaterThan(1))
     fireEvent.change(time, { target: { value: time.options[1].value } })
@@ -310,7 +320,7 @@ describe('Customer portal i18n (vi -> en)', () => {
     await settled()
     expect(viLines()).toEqual([])
 
-    // Step 5 and the confirmation dialog.
+    // Step 6 and the confirmation dialog.
     fireEvent.click(screen.getByLabelText(/I confirm the monitoring purpose/))
     fireEvent.click(await screen.findByRole('button', { name: 'Submit request' }))
     await screen.findByRole('dialog')

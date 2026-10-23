@@ -3,18 +3,21 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import { useApiQuery } from '../../../../../shared/hooks/useApiQuery'
-import { useLanguage } from '../../../../../shared/i18n'
+import { useI18n } from '../../../../../shared/i18n'
 import { customerApi } from '../../../api/customerApi'
 import { localizeServiceName } from '../../../lib/i18n/serviceNames'
 import type { OrderDetailView } from '../../../lib/orders/types'
+import { orderOverviewVisualCardMessages } from './OrderOverviewVisualCard.messages'
 import { OrderIcon } from '../../../../manager/components/common/OrderIcon'
 
 function ReadonlyOrderMap({
   order,
   layerLabels,
+  mapLabel,
 }: {
   order: OrderDetailView
   layerLabels: { street: string; satellite: string }
+  mapLabel: string
 }) {
   const container = useRef<HTMLDivElement>(null)
 
@@ -85,16 +88,15 @@ function ReadonlyOrderMap({
     }
   }, [layerLabels.satellite, layerLabels.street, order.latitude, order.longitude, order.radiusM])
 
-  return <div ref={container} className="od-order-map" aria-label={layerLabels.street === 'Map' ? 'Monitoring area map' : 'Bản đồ khu vực giám sát'} />
+  return <div ref={container} className="od-order-map" aria-label={mapLabel} />
 }
 
 export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
-  const { lang } = useLanguage()
-  const en = lang === 'en'
-  const layerLabels =
-    en
-      ? { street: 'Map', satellite: 'Satellite' }
-      : { street: 'Bản đồ', satellite: 'Vệ tinh' }
+  const { t, lang } = useI18n(orderOverviewVisualCardMessages)
+  const layerLabels = useMemo(
+    () => ({ street: t.street, satellite: t.satellite }),
+    [t.street, t.satellite],
+  )
   const services = useApiQuery((signal) => customerApi.listServices(signal), [])
   const service = useMemo(
     () => services.data?.find((item) => item.id === order.serviceId),
@@ -111,7 +113,7 @@ export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
   )
 
   return (
-    <section className="od-overview-visual" aria-label={en ? 'Service and location overview' : 'Tổng quan dịch vụ và vị trí'}>
+    <section className="od-overview-visual" aria-label={t.sectionLabel}>
       <div className="od-service-hero">
         {image ? (
           <img src={image} alt="" onError={() => setFailed((items) => [...items, image])} />
@@ -121,23 +123,23 @@ export function OrderOverviewVisualCard({ order }: { order: OrderDetailView }) {
           </div>
         )}
         <div className="od-service-hero-overlay">
-          <span>{en ? 'Selected service' : 'Dịch vụ đã chọn'}</span>
+          <span>{t.selectedService}</span>
           <strong>{serviceName || order.serviceName || '—'}</strong>
           {service?.description ? <p>{service.description}</p> : null}
         </div>
       </div>
       <div className="od-map-panel">
         {order.latitude != null && order.longitude != null ? (
-          <ReadonlyOrderMap order={order} layerLabels={layerLabels} />
+          <ReadonlyOrderMap order={order} layerLabels={layerLabels} mapLabel={t.mapLabel} />
         ) : (
           <div className="od-map-empty">
             <OrderIcon name="pin" size={24} />
-            <span>{en ? 'This order has no monitoring-area coordinates yet.' : 'Order chưa có tọa độ khu vực giám sát.'}</span>
+            <span>{t.noCoordinates}</span>
           </div>
         )}
         <div className="od-map-caption">
-          <strong>{order.address || (en ? 'Monitoring location' : 'Vị trí giám sát')}</strong>
-          <span>{order.radiusM != null ? (en ? `Radius ${order.radiusM} m` : `Phạm vi ${order.radiusM} m`) : en ? 'No radius' : 'Chưa có bán kính'}</span>
+          <strong>{order.address || t.locationFallback}</strong>
+          <span>{order.radiusM != null ? t.radius(order.radiusM) : t.noRadius}</span>
         </div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { useI18n } from '../../../../shared/i18n'
-import { formatVnd } from '../../../../shared/lib/formatVnd'
+import { formatMoney } from '../../lib/createOrder/format'
 import type { ServicePricePreview } from '../../../../shared/api/checklistPricingApi'
 import { checklistMessages } from '../../lib/checklist/messages'
 import type { ChecklistQuoteState } from '../../lib/checklist/useChecklistQuote'
@@ -30,12 +30,12 @@ export function ChecklistQuoteCard({ quote }: { quote: ChecklistQuoteState }) {
 }
 
 function QuoteDetails({ preview }: { preview: ServicePricePreview }) {
-  const { t } = useI18n(checklistMessages)
+  const { t, locale } = useI18n(checklistMessages)
   return (
     <details className="checklist-quote-details">
       <summary>
         <span>{t.quoteTitle}</span>
-        <strong>{formatVnd(preview.total)}</strong>
+        <strong>{formatMoney(preview.total, locale)}</strong>
       </summary>
       <div className="checklist-quote-body">
         <p className="checklist-hint">{t.quoteHint}</p>
@@ -62,7 +62,7 @@ function QuoteDetails({ preview }: { preview: ServicePricePreview }) {
             <header>
               <strong>{row.content}</strong>
               <span>
-                {row.quotePending ? t.quoteAwaiting : formatVnd(row.subtotal)}
+                {row.quotePending ? t.quoteAwaiting : formatMoney(row.subtotal, locale)}
               </span>
             </header>
             {!row.quotePending && (
@@ -72,7 +72,7 @@ function QuoteDetails({ preview }: { preview: ServicePricePreview }) {
                   .map((line, lineIndex) => (
                     <li key={`${line.component}-${lineIndex}`}>
                       <span>{line.description}</span>
-                      <span>{formatVnd(line.amount)}</span>
+                      <span>{formatMoney(line.amount, locale)}</span>
                     </li>
                   ))}
               </ul>
@@ -89,12 +89,12 @@ function QuoteDetails({ preview }: { preview: ServicePricePreview }) {
             <span>
               {t.quoteAddOns}: {addOn.description}
             </span>
-            <strong>{formatVnd(addOn.amount)}</strong>
+            <strong>{formatMoney(addOn.amount, locale)}</strong>
           </div>
         ))}
         <div className="checklist-quote-sum is-total">
           <span>{t.quoteTotal}</span>
-          <strong>{formatVnd(preview.total)}</strong>
+          <strong>{formatMoney(preview.total, locale)}</strong>
         </div>
         <p className="checklist-hint">{t.quoteNote}</p>
       </div>

@@ -42,6 +42,9 @@ type ApiResponse<T> = {
   data?: T
 }
 
+/** Error whose message came from the backend and is shown to the customer as is. */
+class ApiMessageError extends Error {}
+
 export function RealLocationMap({
   latitude,
   longitude,
@@ -70,6 +73,7 @@ export function RealLocationMap({
   const layersControl = useRef<L.Control.Layers | null>(null)
   const [mapReady, setMapReady] = useState(false)
   const onPickRef = useRef(onPick)
+  const { t } = useI18n(locationStepMessages)
   const [tilesFailed, setTilesFailed] = useState(false)
   const loadedTileCount = useRef(0)
   onPickRef.current = onPick
@@ -288,13 +292,12 @@ export function RealLocationMap({
       />
       {invalidCoordinates ? (
         <div className="co-real-map-notice">
-          Vĩ độ phải từ -90 đến 90, kinh độ từ -180 đến 180.
+          {t.invalidCoordinates}
         </div>
       ) : null}
       {outsideServiceArea ? (
         <div className="co-real-map-notice">
-          Hiện chỉ phục vụ trong khu vực TP.HCM. Vui lòng chọn điểm trong vùng
-          xanh.
+          {t.outsideServiceArea}
         </div>
       ) : null}
     </div>
@@ -337,7 +340,9 @@ export function LocationStep({ form, errors, update, footer }: Props) {
           update('locationStatus', 'error')
           return
         }
-        throw new Error(payload?.message ?? `HTTP ${response.status}`)
+        throw payload?.message
+          ? new ApiMessageError(payload.message)
+          : new Error(`HTTP ${response.status}`)
       }
       const place = payload?.data
       if (!place) {
@@ -364,7 +369,7 @@ export function LocationStep({ form, errors, update, footer }: Props) {
     } catch (error) {
       console.error('[CreateRequestMap] Address geocoding failed', error)
       setAddressLookupError(
-        error instanceof Error ? error.message : 'Không thể tìm địa chỉ.',
+        error instanceof ApiMessageError ? error.message : 'LOOKUP_FAILED',
       )
       update('locationStatus', 'error')
     } finally {
@@ -403,7 +408,9 @@ export function LocationStep({ form, errors, update, footer }: Props) {
         .catch(() => null)) as ApiResponse<GeocodeResult> | null
       if (lookupId !== reverseLookupId.current) return
       if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.message ?? `HTTP ${response.status}`)
+        throw payload?.message
+          ? new ApiMessageError(payload.message)
+          : new Error(`HTTP ${response.status}`)
       }
       const address = payload?.data?.displayName?.trim()
       if (address) {
@@ -416,9 +423,7 @@ export function LocationStep({ form, errors, update, footer }: Props) {
       if (lookupId !== reverseLookupId.current) return
       console.error('[CreateRequestMap] Reverse geocoding failed', error)
       setAddressLookupError(
-        error instanceof Error
-          ? error.message
-          : 'Không thể tìm địa chỉ tại vị trí này.',
+        error instanceof ApiMessageError ? error.message : 'REVERSE_FAILED',
       )
       update('locationStatus', 'error')
     }

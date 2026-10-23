@@ -102,7 +102,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
                 ? 'permit'
                 : assignStep >= 8
                   ? 'review'
-                  : 'resources',
+                  : 'prepare',
             )}
           />
           <div className="odm-assign-context" aria-label={t.serviceEyebrow}>
@@ -391,7 +391,7 @@ function missionLayer(
   planning: PlanningWorkflowInfo | null,
   missionId: string | null,
   lang: 'vi' | 'en',
-  stage?: 'resources' | 'review' | 'permit',
+  stage?: 'prepare' | 'review' | 'permit',
 ) {
   const total = planning?.missions.length
   const index = planning?.missions.findIndex((m) => m.id === missionId) ?? -1
@@ -401,12 +401,10 @@ function missionLayer(
     : null
   return {
     progress:
-      stage === 'resources'
-        ? { current: 'resources' as const, finished: false, terminal: null }
-        : stage === 'review'
-          ? { current: 'prepare' as const, finished: false, terminal: null }
-          : stage === 'permit'
-            ? { current: 'permit' as const, finished: false, terminal: null }
+      stage === 'prepare' || stage === 'review'
+        ? { current: 'prepare' as const, finished: false, terminal: null }
+        : stage === 'permit'
+          ? { current: 'permit' as const, finished: false, terminal: null }
           : progress,
     index: mission ? index + 1 : undefined,
     total: mission ? total : undefined,

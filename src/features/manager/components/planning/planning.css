@@ -1164,3 +1164,334 @@
   color: #92560a;
   font-size: 13px;
 }
+
+/* =========================================================================
+   New Split-View Planning Layout (30% Master Checklist - 70% Workspace)
+   ========================================================================= */
+.odm-planning-split-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 30%) minmax(0, 70%);
+  gap: 24px;
+  align-items: start;
+  margin-top: 20px;
+}
+.odm-planning-split-layout.is-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .odm-planning-split-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Master Checklist Column (Left) */
+.odm-master-checklist-sidebar {
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.odm-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--bd);
+  padding-bottom: 12px;
+}
+.odm-sidebar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.odm-checklist-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.odm-checklist-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx2);
+}
+.odm-checklist-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.odm-master-item-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+  background: var(--sf2);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+.odm-master-item-card.is-unassigned {
+  border-left: 3px solid #f59e0b;
+  background: #fffdf5;
+}
+.odm-master-item-card.is-assigned {
+  border-left: 3px solid #10b981;
+  background: #f0fdf4;
+}
+.odm-master-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+
+/* Workspace Grid (Right) */
+.odm-missions-workspace-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.odm-workspace-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+}
+.odm-workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .odm-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mission Card Redesign */
+.odm-mission-grid-card {
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  position: relative;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.odm-mission-grid-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+.odm-mission-grid-card.is-ready {
+  border-top: 4px solid #10b981;
+}
+.odm-mission-grid-card.is-planning {
+  border-top: 4px solid #3b82f6;
+}
+.odm-mission-grid-card.is-cancelled {
+  border-top: 4px solid #ef4444;
+  background: #fcfcfc;
+  opacity: 0.88;
+}
+
+.odm-mcard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--bd);
+  padding-bottom: 10px;
+}
+.odm-mcard-title-group strong {
+  font-size: 16px;
+  color: var(--tx);
+  display: block;
+}
+.odm-mcard-title-group span {
+  font-size: 12.5px;
+  color: var(--tx3);
+}
+
+.odm-mcard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.odm-mcard-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx2);
+}
+.odm-mcard-sec-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sf3);
+  color: var(--tx3);
+}
+
+.odm-mcard-schedule {
+  padding: 8px 12px;
+  background: var(--sf2);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--tx);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Checklist in Card */
+.odm-mcard-checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.odm-mcard-ch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--sf2);
+  font-size: 12.5px;
+}
+.odm-mcard-ch-remove {
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-weight: bold;
+  border-radius: 4px;
+}
+.odm-mcard-ch-remove:hover {
+  background: #fee2e2;
+}
+
+/* Resource Rows (Staff & Device) */
+.odm-mcard-res-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.odm-mcard-res-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12.5px;
+}
+.odm-mcard-res-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue-fg);
+  text-transform: uppercase;
+}
+.odm-mcard-res-remove {
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1;
+}
+.odm-mcard-res-remove:hover {
+  background: #fee2e2;
+}
+
+.odm-mcard-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--bd);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Modal Reason Popup */
+.odm-reason-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.odm-reason-modal {
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.odm-reason-modal h3 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--tx);
+}
+.odm-reason-modal p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--tx2);
+  line-height: 1.5;
+}
+.odm-reason-modal textarea {
+  width: 100%;
+  min-height: 88px;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13.5px;
+}
+.odm-reason-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+

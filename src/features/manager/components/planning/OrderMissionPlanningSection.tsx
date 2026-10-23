@@ -1,29 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { OrderDetail } from '../../types/orders'
 import type { MissionStatus } from '../../../../shared/types/domain'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { ordersApi } from '../../api/ordersApi'
 import { planningApi } from '../../api/planningApi'
-import { planningError } from '../../lib/planningErrors'
+import { planningError, finalizeError } from '../../lib/planningErrors'
 import { ExecutionPlanSummary } from './ExecutionPlanSummary'
-import { MissionPlanningCard } from './MissionPlanningCard'
 import { PlanningHeader } from './PlanningHeader'
-import { MissionChecklistAssignmentEditor } from './MissionChecklistAssignmentEditor'
-import { ManagerMissionStopFlow } from './ManagerMissionStopFlow'
-import { MissionSelector } from './MissionSelector'
-import { OrderResourceAssignmentWizard } from './OrderResourceAssignmentWizard'
 import { CreateMissionPage } from '../../pages/CreateMissionPage'
+import { MasterChecklistSidebar } from './MasterChecklistSidebar'
+import { MissionGridCard } from './MissionGridCard'
+import { ReasonModal } from './ReasonModal'
 import './planning.css'
-import { useI18n } from '../../../../shared/i18n'
-import { planningPresentationMessages } from './planningPresentation.messages'
-import { MissionExecutionPanel } from './MissionExecutionPanel'
-import { assignmentReadiness } from '../../lib/assignmentReadiness'
 import { usePlanningConfirmation } from './usePlanningConfirmation'
-import { finalizeError } from '../../lib/planningErrors'
 import { ApiError } from '../../../../shared/api/httpClient'
 import { financeApi } from '../../../finance/api'
 
-/** What the page header needs to draw the Order/Mission workflow honestly. */
 export type PlanningWorkflowInfo = {
   depositPaid: boolean
   selectedMissionId: string | null
@@ -40,7 +32,6 @@ const PLANNING_RUNTIME_POLL_MS = 5_000
 export function OrderMissionPlanningSection({
   orderId,
   initialOrder,
-  onAssignResources,
   onWorkflowInfo,
 }: {
   orderId: string
@@ -53,7 +44,6 @@ export function OrderMissionPlanningSection({
       key={orderId}
       orderId={orderId}
       initialOrder={initialOrder}
-      onAssignResources={onAssignResources}
       onWorkflowInfo={onWorkflowInfo}
     />
   )
@@ -62,19 +52,17 @@ export function OrderMissionPlanningSection({
 function OrderPlanningWorkspace({
   orderId,
   initialOrder,
-  onAssignResources,
   onWorkflowInfo,
 }: {
   orderId: string
   initialOrder?: OrderDetail
-  onAssignResources?: (missionId: string) => void
   onWorkflowInfo?: (info: PlanningWorkflowInfo) => void
 }) {
-  const { t } = useI18n(planningPresentationMessages)
   const confirmation = usePlanningConfirmation()
   const initialOrderRef = useRef(
     initialOrder?.id === orderId ? initialOrder : undefined,
   )
+
   const query = useApiQuery(
     async (signal) => {
       const [plan, missions, order, invoice] = await Promise.all([
@@ -86,100 +74,57 @@ function OrderPlanningWorkspace({
           throw error
         }),
       ])
-      // Reuse only the initial exact-Order read. Every later refresh remains authoritative.
-      // An aborted StrictMode/dependency request must not consume the initial snapshot.
       if (!signal.aborted) initialOrderRef.current = undefined
       return { plan, missions, order, invoice }
     },
     [orderId],
   )
 
-  // Mission lifecycle changes are driven from the Operator cockpit. Keep the
-  // Manager planning workspace current without requiring a manual page reload.
+  // Polling for live updates
   useEffect(() => {
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') query.reload()
     }
-    const interval = window.setInterval(
-      refreshWhenVisible,
-      PLANNING_RUNTIME_POLL_MS,
-    )
+    const interval = window.setInterval(refreshWhenVisible, PLANNING_RUNTIME_POLL_MS)
     window.addEventListener('focus', refreshWhenVisible)
     return () => {
       window.clearInterval(interval)
       window.removeEventListener('focus', refreshWhenVisible)
     }
   }, [query.reload])
-  const [assigningResources, setAssigningResources] = useState<{
-    missionId: string
-  } | null>(null)
+
   const [busy, setBusy] = useState(false)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [creating, setCreating] = useState<{
-    replacesMissionId?: string
-  } | null>(null)
-  const [drafts, setDrafts] = useState<
-    Record<string, { dirty: boolean; busy: boolean }>
-  >({})
-  const updateDraft = useCallback(
-    (id: string, dirty: boolean, saving: boolean) => {
-      setDrafts((current) =>
-        current[id]?.dirty === dirty && current[id]?.busy === saving
-          ? current
-          : { ...current, [id]: { dirty, busy: saving } },
-      )
-    },
-    [],
-  )
-  const saving = Object.values(drafts).some((draft) => draft.busy)
-  const dirty = Object.values(drafts).some((draft) => draft.dirty)
+  const [creating, setCreating] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [message, setMessage] = useState('')
   const [checkingPayment, setCheckingPayment] = useState(false)
   const [coverageWarning, setCoverageWarning] = useState('')
-  const [reason, setReason] = useState('')
-  const [amending, setAmending] = useState(false)
-  const [cancelling, setCancelling] = useState<string | null>(null)
-  const [cancelCapabilities, setCancelCapabilities] = useState<
-    Record<string, boolean>
-  >({})
-  const [runtimeBlocked, setRuntimeBlocked] = useState<Record<string, boolean>>(
-    {},
-  )
-  const updateRuntimeBlocked = useCallback((id: string, blocked: boolean) => {
-    setRuntimeBlocked((current) =>
-      current[id] === blocked ? current : { ...current, [id]: blocked },
-    )
-  }, [])
-  const updateCancelCapability = useCallback(
-    (missionId: string, canCancel: boolean) => {
-      setCancelCapabilities((current) =>
-        current[missionId] === canCancel
-          ? current
-          : { ...current, [missionId]: canCancel },
-      )
-    },
-    [],
-  )
+
+  // Reason modal state
+  const [reasonModalState, setReasonModalState] = useState<{
+    isOpen: boolean
+    title: string
+    hint: string
+    onConfirm: (reason: string) => Promise<void>
+  }>({
+    isOpen: false,
+    title: '',
+    hint: '',
+    onConfirm: async () => {},
+  })
+
   const data = query.data
-  useEffect(() => {
-    if (!data) return
-    setSelectedId((id) =>
-      data.missions.some((m) => m.id === id)
-        ? id
-        : (data.missions.at(0)?.id ?? null),
-    )
-  }, [data])
-  const selected = selectedId ?? undefined
-  const effective =
-    data?.missions.filter((mission) => mission.status !== 'CANCELLED') ?? []
+  const isFinalized = data?.plan.planStatus === 'FINALIZED'
+  const effective = data?.missions.filter((mission) => mission.status !== 'CANCELLED') ?? []
   const depositPaid = Boolean(
     data?.invoice && data.invoice.paidAmount >= data.invoice.depositAmount,
   )
+
   useEffect(() => {
     if (!data || !onWorkflowInfo) return
     onWorkflowInfo({
       depositPaid,
-      selectedMissionId: selectedId,
+      selectedMissionId: null,
       missions: effective.map((mission) => ({
         id: mission.id,
         code: mission.missionCode || 'Mission',
@@ -187,101 +132,66 @@ function OrderPlanningWorkspace({
         flightPermitStatus: mission.flightPermitStatus,
       })),
     })
-  }, [data, depositPaid, selectedId])
-  const allAssigned = writablePlanComplete()
-  function writablePlanComplete() {
-    return Boolean(
-      data &&
-      depositPaid &&
-      data.plan.planStatus === 'FINALIZED' &&
-      effective.length &&
-      effective.every(
-        (mission) =>
-          mission.status !== 'FAILED' && assignmentReadiness(mission).complete,
-      ),
-    )
-  }
+  }, [data, depositPaid])
+
+  // Automatically collapse sidebar when plan is finalized/ready
+  useEffect(() => {
+    if (isFinalized) {
+      setSidebarCollapsed(true)
+    }
+  }, [isFinalized])
+
   const writable =
-    !query.loading &&
+    (!query.loading || Boolean(data)) &&
     !query.error &&
     Boolean(
       data &&
         depositPaid &&
         ['APPROVED', 'IN_PROGRESS'].includes(data.order.status),
     )
-  async function mutate(
-    action: 'finalize' | 'amend' | 'cancel',
-    missionId?: string,
-  ) {
-    if (!data || !writable || busy || saving || dirty) return
+
+  const canConfirmPlan = Boolean(
+    data &&
+      writable &&
+      !busy &&
+      data.plan.planStatus === 'DRAFT' &&
+      data.missions.length > 0 &&
+      data.plan.coverage.uncovered === 0,
+  )
+
+  async function handleFinalizePlan() {
+    if (!data || !writable || busy) return
     if (
-      action === 'cancel' &&
-      (!missionId || cancelCapabilities[missionId] !== true)
+      !(await confirmation.confirm({
+        title: 'Chốt kế hoạch (Confirm Planning)?',
+        body: 'Sau khi chốt, các Mission sẽ chuyển sang trạng thái READY. Mọi thay đổi tài nguyên sau đó sẽ yêu cầu nhập lý do.',
+        action: 'Chốt kế hoạch',
+      }))
     )
       return
-    if (
-      !(await confirmation.confirm(
-        action === 'finalize'
-          ? {
-              title: 'Chốt kế hoạch?',
-              body: 'Sau khi chốt, cấu trúc Mission và phân công checklist của phiên bản hiện tại sẽ được cố định.',
-              action: 'Chốt kế hoạch',
-            }
-          : {
-              title:
-                action === 'amend' ? 'Điều chỉnh kế hoạch?' : 'Hủy Mission?',
-              body:
-                action === 'amend'
-                  ? 'Mở phiên bản kế hoạch mới để thay đổi cấu trúc Mission. Lịch sử vẫn được giữ nguyên.'
-                  : 'Mission sẽ được hủy và giữ lại trong lịch sử.',
-              action:
-                action === 'amend' ? 'Điều chỉnh kế hoạch' : 'Hủy Mission',
-            },
-      ))
-    )
-      return
+
     setBusy(true)
     setMessage('')
     setCoverageWarning('')
     try {
-      if (action === 'finalize')
-        await planningApi.finalizeExecutionPlan(orderId, data.plan.revision)
-      else if (action === 'amend')
-        await planningApi.amendExecutionPlan(orderId, {
-          expectedPlanRevision: data.plan.revision,
-          reason: reason.trim(),
-        })
-      else if (missionId)
-        await planningApi.cancelMission(missionId, {
-          expectedPlanRevision: data.plan.revision,
-          reason: reason.trim(),
-        })
-      setAmending(false)
-      setCancelling(null)
-      setReason('')
-      setMessage(
-        action === 'finalize'
-          ? 'Kế hoạch đã được chốt thành công.'
-          : 'Đã cập nhật kế hoạch.',
-      )
+      await planningApi.finalizeExecutionPlan(orderId, data.plan.revision)
+      setMessage('Kế hoạch đã được chốt thành công. Các Mission đã chuyển sang READY.')
+      setSidebarCollapsed(true)
     } catch (error) {
       if (
-        action === 'finalize' &&
         error instanceof ApiError &&
         error.code === 'CHECKLIST_COVERAGE_INCOMPLETE'
-      )
+      ) {
         setCoverageWarning(finalizeError(error))
-      else
-        setMessage(
-          action === 'finalize' ? finalizeError(error) : planningError(error),
-        )
+      } else {
+        setMessage(finalizeError(error))
+      }
     } finally {
       setBusy(false)
       query.reload()
     }
   }
 
-  /** Asks VNPAY about pending deposits (the notification may not reach this server), then reloads the plan. */
   async function checkPayment() {
     setMessage('')
     if (!data?.invoice) {
@@ -292,9 +202,7 @@ function OrderPlanningWorkspace({
     setCheckingPayment(true)
     try {
       await financeApi.refreshOrderPayments(orderId)
-      setMessage(
-        'Đã đối soát với VNPAY. Trạng thái đặt cọc đã được cập nhật.',
-      )
+      setMessage('Đã đối soát với VNPAY. Trạng thái đặt cọc đã được cập nhật.')
     } catch (cause) {
       setMessage(planningError(cause))
     } finally {
@@ -303,53 +211,31 @@ function OrderPlanningWorkspace({
     }
   }
 
-  async function continueToResourceAssignment() {
-    if (!data || !selected || !onAssignResources || !writable || busy || saving)
-      return
-    if (dirty) {
-      setCoverageWarning(
-        'Bạn vừa thay đổi checklist. Hãy bấm “Lưu phân công” trước khi tiếp tục.',
-      )
-      return
-    }
-    if (!data.plan.coverage.coverageReady || data.plan.blockers.length > 0) {
-      setCoverageWarning(
-        'Còn checklist chưa được gán cho Mission. Hãy chọn các mục còn thiếu và bấm “Lưu phân công”, sau đó tiếp tục gán nguồn lực.',
-      )
-      return
-    }
-    setBusy(true)
-    setMessage('')
-    setCoverageWarning('')
-    try {
-      // The backend locks the Mission/checklist structure before resources can
-      // be reserved. Keep that technical transition inside the Next action so
-      // the manager-facing flow remains: schedule -> resources -> confirmation.
-      await planningApi.finalizeExecutionPlan(orderId, data.plan.revision)
-      onAssignResources(selected)
-    } catch (error) {
-      setCoverageWarning(finalizeError(error))
-      setBusy(false)
-      query.reload()
-    }
+  function handleOpenReasonModal(
+    title: string,
+    hint: string,
+    onConfirm: (reason: string) => Promise<void>,
+  ) {
+    setReasonModalState({
+      isOpen: true,
+      title,
+      hint,
+      onConfirm,
+    })
   }
-  if (assigningResources)
-    return (
-      <OrderResourceAssignmentWizard
-        orderId={orderId}
-        initialMissionId={assigningResources.missionId}
-        onClose={() => {
-          setAssigningResources(null)
-          query.reload()
-        }}
-      />
-    )
+
   return (
-    <section
-      className="odm-or-card odm-planning"
-      aria-label="Order Mission planning"
-    >
+    <section className="odm-or-card odm-planning" aria-label="Order Mission planning">
       {confirmation.dialog}
+
+      <ReasonModal
+        isOpen={reasonModalState.isOpen}
+        title={reasonModalState.title}
+        hint={reasonModalState.hint}
+        onClose={() => setReasonModalState((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={reasonModalState.onConfirm}
+      />
+
       <PlanningHeader
         primary
         status={data?.plan.planStatus}
@@ -359,26 +245,23 @@ function OrderPlanningWorkspace({
           <button
             type="button"
             className="odm-btn"
-            disabled={busy || saving || query.loading}
+            disabled={busy || query.loading}
             onClick={query.reload}
           >
             Tải lại kế hoạch
           </button>
         }
       />
+
       {query.loading && !data && <p role="status">Đang tải kế hoạch…</p>}
       {query.error ? <p role="alert">{planningError(query.error)}</p> : null}
-      {message && (
-        <p role="status" className="odm-planning-notice">
-          {message}
-        </p>
-      )}
+      {message && <p role="status" className="odm-planning-notice">{message}</p>}
+      {coverageWarning && <p role="alert" className="odm-planning-notice">{coverageWarning}</p>}
+
       {data && !query.error && (
         <>
-          <ExecutionPlanSummary
-            plan={data.plan}
-            items={data.order.checklistItems ?? []}
-          />
+          <ExecutionPlanSummary plan={data.plan} items={data.order.checklistItems ?? []} />
+
           {!depositPaid && data.order.status === 'APPROVED' ? (
             <div className="odm-planning-payment-gate" role="status">
               <div className="odm-gate-head">
@@ -393,8 +276,7 @@ function OrderPlanningWorkspace({
                 </button>
               </div>
               <p>
-                Tạo Mission và chốt kế hoạch sẽ được mở sau khi hệ thống xác
-                nhận khoản đặt cọc.
+                Tạo Mission và chốt kế hoạch sẽ được mở sau khi hệ thống xác nhận khoản đặt cọc.
               </p>
               {data.invoice ? (
                 <div className="odm-gate-deposit">
@@ -410,9 +292,7 @@ function OrderPlanningWorkspace({
                         width: `${Math.min(
                           100,
                           data.invoice.depositAmount > 0
-                            ? (data.invoice.paidAmount /
-                                data.invoice.depositAmount) *
-                                100
+                            ? (data.invoice.paidAmount / data.invoice.depositAmount) * 100
                             : 0,
                         )}%`,
                       }}
@@ -424,94 +304,12 @@ function OrderPlanningWorkspace({
                   </span>
                 </div>
               ) : (
-                <span>
-                  Khách hàng chưa chấp nhận báo giá hoặc chưa phát hành hóa đơn.
-                </span>
+                <span>Khách hàng chưa chấp nhận báo giá hoặc chưa phát hành hóa đơn.</span>
               )}
             </div>
           ) : null}
-          {coverageWarning && (
-            <p role="alert" className="odm-planning-notice">
-              {coverageWarning}
-            </p>
-          )}
-          {allAssigned && (
-            <div className="odm-planning-complete" role="status">
-              <span>✓ Tất cả Mission đã được phân công đầy đủ.</span>
-              <a className="odm-btn odm-btn-p" href="#portal/manager/orders">
-                Về danh sách đơn
-              </a>
-            </div>
-          )}
-          {writable && (
-            <div className="odm-planning-actions">
-              {writable && data.plan.planStatus === 'DRAFT' && (
-                <>
-                  <button
-                    type="button"
-                    className="odm-btn"
-                    disabled={busy || saving || Boolean(creating)}
-                    onClick={() => setCreating({})}
-                  >
-                    {creating ? 'Đang tạo Mission' : 'Tạo thêm Mission'}
-                  </button>
-                  {data.missions.length > 0 && !data.plan.coverage.coverageReady && (
-                    <span className="odm-planning-next-hint" role="note">
-                      Còn {data.plan.coverage.uncovered} checklist chưa gán cho
-                      Mission nào. Gán đủ rồi mới tiếp tục được.
-                    </span>
-                  )}
-                  {data.missions.length > 0 && (
-                    <button
-                      type="button"
-                      className="odm-btn odm-btn-p"
-                      disabled={busy || saving || Boolean(creating)}
-                      onClick={() => void continueToResourceAssignment()}
-                    >
-                      Chốt kế hoạch
-                    </button>
-                  )}
-                </>
-              )}
-              {writable &&
-                data.plan.planStatus === 'FINALIZED' &&
-                !amending && (
-                  <>
-                    <button
-                      className="odm-btn"
-                      disabled={busy}
-                      onClick={() => {
-                        setAmending(true)
-                        setReason('')
-                      }}
-                    >
-                      Điều chỉnh kế hoạch
-                    </button>
-                    {selected && !allAssigned && (
-                      <button
-                        className="odm-btn odm-btn-p odm-planning-next-resource"
-                        disabled={busy || saving || dirty}
-                        onClick={() =>
-                          onAssignResources
-                            ? onAssignResources(selected)
-                            : setAssigningResources({ missionId: selected })
-                        }
-                      >
-                        Phân công nguồn lực cho{' '}
-                        {data.missions.find((mission) => mission.id === selected)
-                          ?.missionCode ?? 'Mission'}
-                      </button>
-                    )}
-                  </>
-                )}
-            </div>
-          )}
-          {dirty && (
-            <p className="odm-mission-meta" role="status">
-              Thay đổi chưa lưu được giữ riêng theo Mission. Lưu phân công trước
-              khi chốt hoặc điều chỉnh kế hoạch.
-            </p>
-          )}
+
+          {/* Create Mission Modal / Panel */}
           {creating && (
             <section className="odm-planning-create-panel" aria-label="Tạo Mission trong Order">
               <header className="odm-planning-create-head">
@@ -533,7 +331,7 @@ function OrderPlanningWorkspace({
                         action: 'Đóng form',
                       })
                     )
-                      setCreating(null)
+                      setCreating(false)
                   }}
                 >
                   ×
@@ -541,205 +339,95 @@ function OrderPlanningWorkspace({
               </header>
               <CreateMissionPage
                 orderId={orderId}
-                replacesMissionId={creating.replacesMissionId}
-                onCreated={(id) => {
-                  setSelectedId(id)
-                  setCreating(null)
+                onCreated={() => {
+                  setCreating(false)
                   query.reload()
                 }}
               />
             </section>
           )}
-          {amending && (
-            <form
-              className="odm-planning-adjustment"
-              onSubmit={(e) => {
-                e.preventDefault()
-                void mutate('amend')
-              }}
-            >
-              <h3>Điều chỉnh kế hoạch</h3>
-              <p>
-                Mở lại kế hoạch để thêm hoặc thay thế Mission. Lịch sử thực thi
-                vẫn được giữ nguyên.
-              </p>
-              <label>
-                Lý do điều chỉnh kế hoạch
-                <textarea
-                  required
-                  autoFocus
-                  maxLength={1000}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </label>
-              <button
-                className="odm-btn odm-btn-p"
-                disabled={busy || !reason.trim()}
-              >
-                Xác nhận điều chỉnh
-              </button>
-              <button
-                type="button"
-                className="odm-btn"
-                onClick={() => setAmending(false)}
-              >
-                Đóng
-              </button>
-            </form>
-          )}
-          {data.missions.length === 0 && (
-            <div className="odm-plan-empty">
-              <h3>{t.empty}</h3>
-              <p>{t.emptyHint}</p>
-            </div>
-          )}
-          <div className="odm-planning-workspace">
-            <MissionSelector
-              missions={data.missions}
+
+          {/* Split-View Planning Layout: Left 30% Master Checklist, Right 70% Workspace */}
+          <div className={`odm-planning-split-layout ${sidebarCollapsed ? 'is-collapsed' : ''}`}>
+            {/* Left 30%: Master Checklist */}
+            <MasterChecklistSidebar
+              items={data.order.checklistItems ?? []}
               plan={data.plan}
-              selectedId={selected}
-              noChecklist={!data.order.checklistItems?.length}
-              disabled={busy || saving}
-              drafts={drafts}
-              onSelect={setSelectedId}
+              missions={data.missions}
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
             />
-            <div className="odm-workspace-panels">
-              {data.missions.map((mission) => {
-                const scope = data.plan.missions.find(
-                  (m) => m.missionId === mission.id,
-                )
-                const draft = data.plan.planStatus === 'DRAFT'
-                return (
-                  <div key={mission.id} hidden={mission.id !== selected}>
-                    <MissionPlanningCard
-                      mission={mission}
-                      scope={scope}
-                      missions={data.missions}
-                      key={mission.id}
+
+            {/* Right 70%: Missions Workspace */}
+            <div className="odm-missions-workspace-panel">
+              <div className="odm-workspace-topbar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {sidebarCollapsed && (
+                    <button
+                      type="button"
+                      className="odm-btn odm-btn-sm"
+                      onClick={() => setSidebarCollapsed(false)}
+                      title="Mở rộng kho Checklist"
                     >
-                      <MissionChecklistAssignmentEditor
-                        missionId={mission.id}
-                        revision={data.plan.revision}
-                        editable={
-                          writable &&
-                          !busy &&
-                          draft &&
-                          mission.status === 'PLANNING'
-                        }
-                        items={data.order.checklistItems ?? []}
-                        onChanged={query.reload}
-                        onDraftState={updateDraft}
-                      />
-                      {((writable &&
-                        !['COMPLETED', 'CANCELLED'].includes(mission.status) &&
-                        cancelCapabilities[mission.id] === true &&
-                        runtimeBlocked[mission.id] === false) ||
-                        (cancelling === mission.id &&
-                          runtimeBlocked[mission.id] !== true) ||
-                        (writable &&
-                          draft &&
-                          mission.status === 'CANCELLED')) && (
-                        <div className="odm-mission-actions">
-                          {writable &&
-                            !['COMPLETED', 'CANCELLED'].includes(
-                              mission.status,
-                            ) &&
-                            cancelCapabilities[mission.id] === true &&
-                            runtimeBlocked[mission.id] === false && (
-                              <button
-                                className="odm-btn odm-btn-danger-soft"
-                                disabled={busy || saving || dirty}
-                                onClick={() => {
-                                  setCancelling(mission.id)
-                                  setReason('')
-                                }}
-                              >
-                                Hủy Mission {mission.missionCode}
-                              </button>
-                            )}
-                          {cancelling === mission.id &&
-                            runtimeBlocked[mission.id] !== true && (
-                              <form
-                                onSubmit={(e) => {
-                                  e.preventDefault()
-                                  void mutate('cancel', mission.id)
-                                }}
-                              >
-                                <label>
-                                  Lý do hủy {mission.missionCode}
-                                  <textarea
-                                    required
-                                    maxLength={1000}
-                                    value={reason}
-                                    onChange={(e) => setReason(e.target.value)}
-                                  />
-                                </label>
-                                <button
-                                  className="odm-btn"
-                                  disabled={
-                                    busy ||
-                                    !reason.trim() ||
-                                    !writable ||
-                                    cancelCapabilities[mission.id] !== true
-                                  }
-                                >
-                                  Xác nhận hủy Mission
-                                </button>
-                                <button
-                                  type="button"
-                                  className="odm-btn"
-                                  onClick={() => setCancelling(null)}
-                                >
-                                  Đóng
-                                </button>
-                              </form>
-                            )}
-                          {writable &&
-                            draft &&
-                            mission.status === 'CANCELLED' && (
-                              <button
-                                type="button"
-                                className="odm-btn"
-                                disabled={busy || saving}
-                                onClick={() =>
-                                  setCreating({ replacesMissionId: mission.id })
-                                }
-                              >
-                                Tạo Mission thay thế cho {mission.missionCode}
-                              </button>
-                            )}
-                        </div>
-                      )}
-                      <ManagerMissionStopFlow
-                        missionId={mission.id}
-                        missionCode={mission.missionCode || 'Mission'}
-                        status={mission.status}
-                        revision={data.plan.revision}
-                        refreshKey={data}
-                        writable={writable}
-                        draft={draft}
-                        active={mission.id === selected}
-                        blocked={busy || saving || dirty}
-                        onChanged={query.reload}
-                        onCapabilitiesChanged={updateCancelCapability}
-                        onRuntimeBlocked={updateRuntimeBlocked}
-                        onBusyChanged={updateDraft}
-                        onReplacement={(id) =>
-                          setCreating({ replacesMissionId: id })
-                        }
-                      />
-                      {mission.id === selected &&
-                        scope?.finalizedPlanRevision != null && (
-                          <MissionExecutionPanel
-                            key={mission.id}
-                            mission={mission}
-                          />
-                        )}
-                    </MissionPlanningCard>
-                  </div>
-                )
-              })}
+                      › Mở Kho Checklist ({data.plan.coverage.uncovered} chưa gán)
+                    </button>
+                  )}
+                  {writable && data.plan.planStatus === 'DRAFT' && (
+                    <button
+                      type="button"
+                      className="odm-btn odm-btn-p"
+                      disabled={busy || creating}
+                      onClick={() => setCreating(true)}
+                    >
+                      + Add New Mission
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {data.plan.coverage.uncovered > 0 && (
+                    <span style={{ fontSize: 13, color: '#b45309' }}>
+                      ⚠️ Còn <strong>{data.plan.coverage.uncovered}</strong> checklist chưa gán
+                    </span>
+                  )}
+                  {writable && data.plan.planStatus === 'DRAFT' && (
+                    <button
+                      type="button"
+                      className="odm-btn odm-btn-p"
+                      disabled={!canConfirmPlan}
+                      onClick={() => void handleFinalizePlan()}
+                      title={
+                        data.plan.coverage.uncovered > 0
+                          ? 'Cần gán hết tất cả Checklist mới có thể chốt kế hoạch'
+                          : 'Chốt kế hoạch để chuyển sang READY'
+                      }
+                    >
+                      Chốt kế hoạch (Confirm Planning)
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {data.missions.length === 0 ? (
+                <div className="odm-plan-empty">
+                  <h3>Chưa có Mission nào</h3>
+                  <p>Bấm nút [+ Add New Mission] ở trên để khởi tạo Mission đầu tiên cho đơn hàng.</p>
+                </div>
+              ) : (
+                <div className="odm-workspace-grid">
+                  {data.missions.map((mission) => (
+                    <MissionGridCard
+                      key={mission.id}
+                      mission={mission}
+                      plan={data.plan}
+                      orderChecklistItems={data.order.checklistItems ?? []}
+                      disabled={busy}
+                      onPlanChanged={query.reload}
+                      onRequestReason={handleOpenReasonModal}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </>

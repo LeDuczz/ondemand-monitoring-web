@@ -16,7 +16,6 @@ export const ORDER_STAGES = [
 export type OrderStage = (typeof ORDER_STAGES)[number]
 
 export const MISSION_STAGES = [
-  'resources',
   'prepare',
   'permit',
   'execute',
@@ -106,14 +105,14 @@ export function missionProgress(
   if (status === 'FAILED')
     return { current: 'execute', finished: false, terminal: 'failed' }
   if (status === 'CANCELLED')
-    return { current: 'resources', finished: false, terminal: 'cancelled' }
+    return { current: 'prepare', finished: false, terminal: 'cancelled' }
   let stage: MissionStage = (
     {
-      PLANNING: 'resources',
-      CREATED: 'resources',
-      WAITING_DEPOSIT: 'resources',
-      READY: 'resources',
-      RESOURCE_ASSIGNING: 'resources',
+      PLANNING: 'prepare',
+      CREATED: 'prepare',
+      WAITING_DEPOSIT: 'prepare',
+      READY: 'prepare',
+      RESOURCE_ASSIGNING: 'prepare',
       WAITING_CREW_CONFIRMATION: 'prepare',
       WAITING_OPERATOR_ACCEPTANCE: 'prepare',
       SCHEDULED: 'prepare',

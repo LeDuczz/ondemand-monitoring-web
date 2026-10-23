@@ -48,15 +48,12 @@ export function planningBlocker(code: string): string {
 }
 
 export function finalizeError(error: unknown): string {
-  if (
-    error instanceof ApiError &&
-    [
-      'EXECUTION_PLAN_REVISION_CONFLICT',
-      'ORDER_NOT_APPROVED',
-      'CHECKLIST_COVERAGE_INCOMPLETE',
-    ].includes(error.code ?? '')
-  )
-    return planningBlocker(error.code!)
+  if (error instanceof ApiError && error.code) {
+    return planningBlocker(error.code)
+  }
+  if (error instanceof ApiError && error.message) {
+    return error.message
+  }
   return 'Không thể chốt kế hoạch. Vui lòng thử lại.'
 }
 

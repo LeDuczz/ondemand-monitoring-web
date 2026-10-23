@@ -302,6 +302,10 @@ describe('Manager multi-Mission planning', () => {
     ).toBeGreaterThanOrEqual(2)
   })
   it('does not infer cancellation from READY_FOR_CANCELLATION when the server denies it', async () => {
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({
+      ...plan,
+      planStatus: 'FINALIZED',
+    })
     vi.mocked(planningApi.getSafeStop).mockResolvedValue({
       ...stop,
       status: 'READY_FOR_CANCELLATION',
@@ -319,6 +323,10 @@ describe('Manager multi-Mission planning', () => {
     ).not.toBeInTheDocument()
   })
   it('enables actual cancellation only after refreshing an explicit server capability', async () => {
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({
+      ...plan,
+      planStatus: 'FINALIZED',
+    })
     let permitted = false
     vi.mocked(planningApi.getSafeStop).mockImplementation(
       async (missionId) => ({
@@ -554,6 +562,10 @@ describe('Manager multi-Mission planning', () => {
     expect(parseManagerRoute(managerHref(route))).toEqual(route)
   })
   it('cancel safe-stop blocker remains visible and does not remove the Mission locally', async () => {
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({
+      ...plan,
+      planStatus: 'FINALIZED',
+    })
     const safetyCommands = [
       vi.spyOn(planningApi, 'requestSafeStop'),
       vi.spyOn(planningApi, 'confirmSafeStop'),
@@ -616,6 +628,10 @@ describe('Manager multi-Mission planning', () => {
 })
 describe('safe-stop role boundaries', () => {
   it('reopens a cleaned Mission in the workflow card instead of a second editable cancellation form', async () => {
+    vi.mocked(planningApi.getExecutionPlan).mockResolvedValue({
+      ...plan,
+      planStatus: 'FINALIZED',
+    })
     vi.mocked(planningApi.getOrderMissions).mockResolvedValue([
       {
         id: 'm1',

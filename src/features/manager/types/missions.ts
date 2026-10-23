@@ -182,6 +182,7 @@ export type CreateMissionRequest = {
   scopeLabel: string
   scheduledStart: string
   scheduledEnd: string
+  checklistIds: string[]
 }
 
 export type ResourceCandidateBase = {

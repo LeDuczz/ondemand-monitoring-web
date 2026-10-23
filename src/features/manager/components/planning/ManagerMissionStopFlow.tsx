@@ -61,7 +61,7 @@ export function ManagerMissionStopFlow({
   const [message, setMessage] = useState('')
   const terminal = ['COMPLETED', 'CANCELLED'].includes(status)
   const stop = query.data
-  const ready = !query.loading && !query.error && stop?.missionId === missionId
+  const ready = (!query.loading || Boolean(stop)) && !query.error && stop?.missionId === missionId
   useEffect(() => {
     onBusyChanged(`stop:${missionId}`, false, busy)
   }, [missionId, busy, onBusyChanged])
@@ -150,7 +150,7 @@ export function ManagerMissionStopFlow({
   return (
     <>
       {confirmation.dialog}
-      {writable && ready && !intent && (
+      {writable && ready && !intent && !draft && (
         <div className="odm-mission-actions">
           {(stop?.canCancelMission !== true || requested) && relevant && (
             <button
@@ -164,20 +164,6 @@ export function ManagerMissionStopFlow({
               }}
             >
               Hủy Mission {missionCode}
-            </button>
-          )}
-          {draft && (stop?.canCancelMission === true || relevant) && (
-            <button
-              className="odm-btn odm-btn-secondary-soft"
-              data-stop-trigger={`${missionId}:replace`}
-              disabled={!allowed}
-              onClick={(event) => {
-                triggerRef.current = event.currentTarget
-                setIntent('replace')
-                query.reload()
-              }}
-            >
-              Thay thế Mission {missionCode}
             </button>
           )}
         </div>
@@ -219,7 +205,7 @@ export function ManagerMissionStopFlow({
               </button>
             </div>
           </div>
-          {query.loading && <p role="status">Đang kiểm tra trạng thái…</p>}
+          {query.loading && !stop && <p role="status">Đang kiểm tra trạng thái…</p>}
           {query.error ? (
             <p role="alert" className="mission-stop__warning">
               {safeStopError(query.error)}
@@ -276,8 +262,8 @@ export function ManagerMissionStopFlow({
               {stop.cleanedAt && stop.canCancelMission !== true && (
                 <p className="mission-stop__guidance">
                   {draft
-                    ? 'Chưa thể hủy Mission lúc này. Làm mới trạng thái để kiểm tra lại.'
-                    : 'Mở điều chỉnh kế hoạch trước khi tiếp tục hủy Mission.'}
+                    ? 'Chỉ có thể hủy Mission khi kế hoạch đã được chốt (Finalized).'
+                    : 'Chưa thể hủy Mission lúc này. Làm mới trạng thái để kiểm tra lại.'}
                 </p>
               )}
               {stop.confirmedAt && !stop.cleanedAt && nextAction === null && (

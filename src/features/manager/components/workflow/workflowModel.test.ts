@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { MISSION_STAGES, missionProgress } from './workflowModel'
 
 describe('Mission workflow', () => {
-  it('shows flight permit as step 3 before execution and completion', () => {
+  it('shows flight permit as step 2 before execution and completion', () => {
     expect(MISSION_STAGES).toEqual([
-      'resources',
       'prepare',
       'permit',
       'execute',

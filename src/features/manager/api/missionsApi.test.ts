@@ -16,6 +16,7 @@ const validRequest: CreateMissionRequest = {
   scopeLabel: 'Whole Order scope',
   scheduledStart: '2026-09-26T08:00:00+07:00',
   scheduledEnd: '2026-09-26T09:00:00+07:00',
+  checklistIds: ['checklist-item-1'],
 }
 
 describe('Staff mission response mapping', () => {

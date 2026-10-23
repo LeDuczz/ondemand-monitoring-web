@@ -243,6 +243,8 @@ function CreateMissionForm({
   )
   const [planRevision, setPlanRevision] = useState(brief.executionPlanRevision ?? 0)
   const [scopeLabel, setScopeLabel] = useState('Whole Order scope')
+  const [checklistIds, setChecklistIds] = useState<string[]>([])
+  const [checklistError, setChecklistError] = useState(false)
   const planQuery = useApiQuery(signal => planningApi.getExecutionPlan(orderId, signal), [orderId])
   const replacementQuery = useApiQuery(signal => replacesMissionId ? missionsApi.getMissionResponse(replacesMissionId, signal) : Promise.resolve(null), [replacesMissionId])
   useEffect(() => { if (planQuery.data) setPlanRevision(planQuery.data.revision) }, [planQuery.data])
@@ -314,6 +316,7 @@ function CreateMissionForm({
     if (submit.kind === 'submitting' || planQuery.loading || planQuery.error || planQuery.data?.planStatus !== 'DRAFT'
       || replacementQuery.loading || replacementQuery.error || (replacesMissionId && (replacementQuery.data?.status !== 'CANCELLED' || replacementQuery.data.orderId !== orderId))) return
     if (!scopeLabel.trim()) { setSubmit({ kind: 'validationFailed', message: planningT.scopeRequired }); return }
+    if (checklistIds.length === 0) { setChecklistError(true); return }
     if (!scheduledStart || !scheduledEnd) {
       setSubmit({
         kind: 'validationFailed',
@@ -336,6 +339,7 @@ function CreateMissionForm({
         scopeLabel: scopeLabel.trim(),
         scheduledStart: startDate.toISOString(),
         scheduledEnd: endDate.toISOString(),
+        checklistIds,
       }
       const mission = replacesMissionId
         ? await missionsApi.replaceMission(replacesMissionId, intent)
@@ -420,6 +424,10 @@ function CreateMissionForm({
       ? t.durationHours(Math.floor(durationMinutes / 60), durationMinutes % 60)
       : null
   const submitting = submit.kind === 'submitting'
+  const uncovered = planQuery.data?.coverage.uncoveredItemIds
+  const availableChecklist = (brief.checklistItems ?? []).filter(
+    (item) => !uncovered || uncovered.includes(item.id),
+  )
 
   const summaryRows: Array<{
     icon: OrderIconName
@@ -616,6 +624,51 @@ function CreateMissionForm({
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          </section>
+
+          <section className="odm-or-card" aria-label="Checklist của Mission">
+            <header className="odm-or-card-head">
+              <span className="odm-or-card-title">
+                <OrderIcon name="info" size={18} />
+                Checklist của Mission <span aria-hidden="true">*</span>
+              </span>
+              <span className="odm-or-pill odm-or-pill-blue">
+                {checklistIds.length}/{availableChecklist.length} mục
+              </span>
+            </header>
+            <div className="odm-or-card-body">
+              <p className="odm-or-muted odm-or-hint">
+                Mission phải có ít nhất một checklist. Chỉ hiển thị các mục chưa được gán cho Mission khác.
+              </p>
+              {availableChecklist.length === 0 ? (
+                <p className="odm-or-muted">Không còn checklist nào để gán cho Mission mới.</p>
+              ) : (
+                <fieldset aria-label="Chọn checklist" disabled={submitting}>
+                  {[...availableChecklist]
+                    .sort((a, b) => a.displayOrder - b.displayOrder)
+                    .map((item) => (
+                      <label key={item.id} className="odm-planning-item">
+                        <input
+                          type="checkbox"
+                          checked={checklistIds.includes(item.id)}
+                          onChange={(event) => {
+                            setChecklistError(false)
+                            setChecklistIds((current) =>
+                              event.target.checked
+                                ? [...current, item.id]
+                                : current.filter((id) => id !== item.id),
+                            )
+                          }}
+                        />
+                        <span>{item.content}</span>
+                      </label>
+                    ))}
+                </fieldset>
+              )}
+              {checklistError && (
+                <p role="alert" className="odm-plan-field-error">Hãy chọn ít nhất một checklist cho Mission.</p>
               )}
             </div>
           </section>

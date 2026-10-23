@@ -16,6 +16,7 @@ export function ReviewStageActions({
   nextLabel,
   hint,
   nextDisabled = false,
+  decisionHostRef,
 }: {
   step: ReviewStep
   onBack?: () => void
@@ -23,6 +24,8 @@ export function ReviewStageActions({
   nextLabel?: string
   hint?: string | null
   nextDisabled?: boolean
+  /** Receives an empty container in the card for relocated decision buttons. */
+  decisionHostRef?: (el: HTMLDivElement | null) => void
 }) {
   const { t } = useI18n(reviewStageActionsMessages)
   const { t: page } = useI18n(orderReviewPageMessages)
@@ -36,6 +39,9 @@ export function ReviewStageActions({
         <span className="odm-or-review-stage-hint" role="status">
           {hint}
         </span>
+      ) : null}
+      {decisionHostRef ? (
+        <div ref={decisionHostRef} className="mgr-decision-host" />
       ) : null}
       <div className="mgr-actions">
         {onNext ? (

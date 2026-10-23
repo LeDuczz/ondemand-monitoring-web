@@ -6,14 +6,6 @@
   margin-bottom: 20px;
   overflow: hidden;
 }
-.odm-plan-page .button.odm-or-btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--inkfg);
-}
-.odm-plan-page .button.odm-or-btn-primary:hover:not(:disabled) {
-  background: var(--blue-fg);
-}
 .odm-plan-header {
   display: flex;
   align-items: flex-start;
@@ -190,7 +182,6 @@
     padding-left: 56px;
   }
 }
-.odm-planning-heading,
 .odm-planning-actions {
   display: flex;
   align-items: center;
@@ -288,48 +279,6 @@
 .odm-workspace-panels .odm-planning-mission {
   margin-top: 0;
 }
-.odm-resource-assignment {
-  margin-top: 16px;
-}
-.odm-resource-assignment h4 {
-  margin: 0 0 12px;
-}
-.odm-resource-assignment fieldset {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.odm-resource-assignment label {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  font-size: 13px;
-}
-.odm-resource-assignment label small {
-  color: var(--tx3);
-}
-.odm-resource-assignment select {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 40px;
-  border: 1px solid var(--bd);
-  border-radius: 6px;
-  background: var(--sf);
-  color: var(--tx);
-  padding: 10px 12px;
-  font: inherit;
-}
-.odm-resource-assignment legend {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-.odm-resource-assignment fieldset {
-  margin: 0 0 20px;
-}
-.odm-resource-assignment .odm-resource-device {
-  grid-template-columns: minmax(0, 1fr);
-}
 @media (max-width: 900px) {
   .odm-planning-workspace {
     grid-template-columns: minmax(0, 1fr);
@@ -339,8 +288,7 @@
   }
 }
 @media (max-width: 540px) {
-  .odm-workspace-selector,
-  .odm-resource-assignment fieldset {
+  .odm-workspace-selector {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -555,63 +503,6 @@
     margin-left: 0;
   }
 }
-.odm-planning-create-panel {
-  margin-top: 16px;
-  overflow: hidden;
-  border: 1px solid var(--bd);
-  border-radius: 16px;
-  background: var(--sf);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-}
-.odm-planning-create-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--bd);
-  background: linear-gradient(135deg, var(--blue-bg), var(--sf) 58%);
-}
-.odm-planning-create-icon {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  flex: none;
-  border-radius: 12px;
-  background: var(--blue-fg);
-  color: #fff;
-  font-size: 23px;
-  font-weight: 500;
-}
-.odm-planning-create-head h3 {
-  margin: 0 0 4px;
-  font-size: 19px;
-}
-.odm-planning-create-head p {
-  margin: 0;
-  color: var(--tx2);
-  font-size: 13px;
-}
-.odm-planning-create-close {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  flex: none;
-  border: 1px solid var(--bd);
-  border-radius: 9px;
-  background: var(--sf);
-  color: var(--tx2);
-  font: 24px/1 inherit;
-  cursor: pointer;
-  margin-left: auto;
-  transition: 160ms ease;
-}
-.odm-planning-create-close:hover {
-  border-color: var(--blue-fg);
-  color: var(--blue-fg);
-  background: var(--blue-bg);
-}
 
 /* Chế độ nhúng trong kế hoạch: chỉ giữ các trường cần để tạo Mission. */
 .odm-plan-page.is-embedded {
@@ -743,7 +634,6 @@
   justify-content: flex-end;
 }
 @media (max-width: 640px) {
-  .odm-planning-create-head,
   .odm-plan-page.is-embedded .odm-plan-create-body,
   .odm-plan-page.is-embedded .odm-or-actionbar {
     padding: 16px;
@@ -751,15 +641,8 @@
   .odm-plan-page.is-embedded > .odm-or-grid {
     padding: 0 16px;
   }
-  .odm-plan-page.is-embedded .odm-or-actionbar-actions .odm-or-btn {
-    width: 100%;
-  }
   .odm-weather-check-controls {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .odm-planning-create-icon {
-    width: 36px;
-    height: 36px;
   }
   .odm-plan-page.is-embedded .odm-plan-geography {
     display: grid;
@@ -877,21 +760,6 @@
 .odm-planning-adjustment > button {
   margin: 4px 8px 0 0;
 }
-.odm-stop-progress {
-  display: grid;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin: 16px 0;
-}
-.odm-stop-progress li {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-}
-.odm-stop-progress li > span:first-child {
-  color: var(--tx2);
-}
 .odm-manager-stop-flow > :is(.odm-btn, .ui-btn) {
   margin-top: 12px;
 }
@@ -951,25 +819,6 @@
     overflow-y: auto;
   }
 }
-.odm-planning-payment-gate {
-  display: grid;
-  gap: 8px;
-  margin: 16px 0;
-  padding: 16px;
-  border: 1px solid #f0c36a;
-  border-radius: 12px;
-  background: #fff7df;
-  color: #805100;
-}
-
-.odm-planning-payment-gate p {
-  margin: 0;
-}
-
-.odm-planning-payment-gate :is(.odm-btn, .ui-btn) {
-  justify-self: start;
-  margin-top: 4px;
-}
 
 /* Mission rail: position in the Order ("Mission 2 / 3") and a clear bucket. */
 .odm-workspace-rank {
@@ -1012,46 +861,6 @@
   order: 1;
   font-size: 24px;
   line-height: 1.1;
-}
-.odm-planning-payment-gate {
-  gap: 10px;
-  margin: 0 0 16px;
-  padding: 14px 16px;
-  border-radius: 12px;
-}
-.odm-planning-payment-gate .odm-gate-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-}
-.odm-planning-payment-gate .odm-gate-head strong {
-  font-size: 15px;
-}
-.odm-planning-payment-gate p,
-.odm-planning-payment-gate span {
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-.odm-planning-payment-gate :is(.odm-btn, .ui-btn) {
-  margin-top: 0;
-}
-.odm-gate-deposit {
-  display: grid;
-  gap: 6px;
-}
-.odm-gate-bar {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(128, 81, 0, 0.15);
-  overflow: hidden;
-}
-.odm-gate-bar > span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: #d97706;
 }
 .odm-plan-empty {
   padding: 16px 18px;

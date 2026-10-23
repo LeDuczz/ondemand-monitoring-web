@@ -39,12 +39,14 @@ export function OrderReadinessCard({
   editable,
   onDecisionDone,
   onLocalBlockChange,
+  actionsHost,
 }: {
   orderId: string
   query: UseApiQueryState<OrderReadiness>
   editable: boolean
   onDecisionDone?: () => void
   onLocalBlockChange?: (blocked: boolean) => void
+  actionsHost?: HTMLElement | null
 }) {
   const { t: fb } = useI18n(managerFeedbackMessages)
   const { t } = useI18n(orderReadinessCardMessages)
@@ -308,6 +310,7 @@ export function OrderReadinessCard({
           editable={editable}
           savingCode={savingCode}
           submitFailedDecision={submitFailedDecision}
+          actionsHost={actionsHost}
         />
       ) : null}
     </section>

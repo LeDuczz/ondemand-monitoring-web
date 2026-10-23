@@ -26,6 +26,7 @@ export function ReviewStageReadiness({
 }) {
   const { t } = useI18n(reviewStageReadinessMessages)
   const [localDraftBlocked, setLocalDraftBlocked] = useState(false)
+  const [decisionHost, setDecisionHost] = useState<HTMLDivElement | null>(null)
   const readiness = readinessQuery.data
   const requiredCriterionBlocked =
     readiness?.criteria.some(
@@ -63,6 +64,7 @@ export function ReviewStageReadiness({
             editable={order.status === 'PENDING'}
             onDecisionDone={() => setNavigateHome(true)}
             onLocalBlockChange={setLocalDraftBlocked}
+            actionsHost={decisionHost}
           />
         </section>
       </ReadOnlyScope>
@@ -73,6 +75,7 @@ export function ReviewStageReadiness({
         nextLabel={t.nextLabel}
         hint={nextHint}
         nextDisabled={nextBlocked}
+        decisionHostRef={setDecisionHost}
       />
     </div>
   )

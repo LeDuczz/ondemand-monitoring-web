@@ -57,7 +57,7 @@
 }
 .odm-or-readiness-list > li {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr);
   align-items: start;
   gap: 10px;
   padding: 9px 0;
@@ -155,8 +155,14 @@
 .odm-or-readiness-list :is(.odm-btn, .ui-btn) {
   margin-top: 6px;
 }
+.odm-or-readiness-list > li > .odm-or-readiness-choices {
+  grid-column: 2;
+  justify-self: start;
+}
 .odm-or-readiness-choices {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   overflow: hidden;
@@ -304,11 +310,11 @@
     align-items: flex-end;
     flex-direction: column;
   }
-  .odm-or-readiness-list > li {
-    grid-template-columns: 10px minmax(0, 1fr);
-  }
-  .odm-or-readiness-list > li > em,
-  .odm-or-readiness-choices {
-    grid-column: 2;
-  }
+}
+
+.mgr-decision-host:empty {
+  display: none;
+}
+.mgr-decision-host .mgr-decision-actions {
+  margin: 0 0 12px;
 }

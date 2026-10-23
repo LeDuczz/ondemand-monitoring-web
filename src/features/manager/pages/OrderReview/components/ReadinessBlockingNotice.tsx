@@ -3,6 +3,7 @@ import type {
   ReadinessCriterion,
 } from '../../../types/readiness'
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { FailureAction, SupplementRequest } from '../readinessTypes'
 import { Button, useConfirm } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
@@ -28,6 +29,7 @@ export function ReadinessBlockingNotice({
   editable,
   savingCode,
   submitFailedDecision,
+  actionsHost,
 }: {
   readiness: OrderReadiness
   failedRequired: ReadinessCriterion[]
@@ -37,6 +39,8 @@ export function ReadinessBlockingNotice({
     decision: FailureAction,
     supplements?: SupplementRequest[],
   ) => Promise<void>
+  /** Sidebar element that hosts the decision buttons; inline when absent. */
+  actionsHost?: HTMLElement | null
 }) {
   const { t: fb } = useI18n(managerFeedbackMessages)
   const { t } = useI18n(readinessBlockingNoticeMessages)
@@ -64,15 +68,9 @@ export function ReadinessBlockingNotice({
     selected.includes(option.id),
   )
 
-  return (
-    <div className="odm-or-readiness-blocking" aria-label={t.cannotApprove}>
-      <ul>
-        {readiness.blockingReasons.map((reason) => (
-          <li key={reason}>{reason}</li>
-        ))}
-      </ul>
-      {failedRequired.length > 0 && editable ? (
-        <div className="odm-or-readiness-blocking-actions">
+  const actions =
+    failedRequired.length > 0 && editable ? (
+        <div className="odm-or-readiness-blocking-actions mgr-decision-actions">
           {availableOptions.length > 0 ? (
             <Button
               type="button"
@@ -100,7 +98,18 @@ export function ReadinessBlockingNotice({
             {t.rejectOrder}
           </Button>
         </div>
-      ) : null}
+      ) : null
+
+  return (
+    <div className="odm-or-readiness-blocking" aria-label={t.cannotApprove}>
+      <ul>
+        {readiness.blockingReasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+      {actionsHost === undefined || actionsHost === null
+        ? actions
+        : createPortal(actions, actionsHost)}
       {showSupplementForm && availableOptions.length > 0 ? (
         <div className="odm-or-supplement-form">
           <fieldset>

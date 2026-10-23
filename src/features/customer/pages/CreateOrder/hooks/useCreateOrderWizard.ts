@@ -76,7 +76,7 @@ export function useCreateOrderWizard() {
       blockedZoneNames: [],
     },
     messages: t.validation,
-    canAdvance: (current) => current !== 2 || checklist.valid,
+    canAdvance: (current) => current !== 3 || checklist.valid,
   })
 
   const score = useMemo(

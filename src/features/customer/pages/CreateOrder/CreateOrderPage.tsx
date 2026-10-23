@@ -24,7 +24,7 @@ import { ChecklistEditor } from '../../components/checklist/ChecklistEditor'
 import { selectionEstimate } from '../../lib/checklist/selectionEstimate'
 import type { Step } from '../../lib/createOrder/types'
 
-/** Customer wizard: service, content, location, site details, schedule, then confirmation. */
+/** Customer wizard: service, location, content, site details, schedule, then confirmation. */
 export function CreateOrderPage() {
   const pageRef = useRef<HTMLDivElement>(null)
   const { t } = useI18n(createOrderPageMessages)
@@ -72,9 +72,9 @@ export function CreateOrderPage() {
       step={step}
       nextLabel={t.stepLabels[Math.min(6, step + 1) as Step]}
       submitDisabled={meta.loading || submit.submitting || !checklist.valid}
-      nextDisabled={step === 2 && !checklist.valid}
+      nextDisabled={step === 3 && !checklist.valid}
       blockedReason={
-        (step === 2 || step === 6) && !checklist.valid
+        (step === 3 || step === 6) && !checklist.valid
           ? t.blockedChecklist
           : step === 6 && meta.loading
             ? t.blockedLoading
@@ -128,6 +128,9 @@ export function CreateOrderPage() {
         />
       )}
       {step === 2 && (
+        <LocationStep form={form} errors={f.errors} update={f.update} footer={footer} />
+      )}
+      {step === 3 && (
         <ContentStep
           selected={meta.services.find((s) => s.id === form.serviceId)}
           selectedCount={checklist.selectedCount}
@@ -149,9 +152,6 @@ export function CreateOrderPage() {
           }
           footer={footer}
         />
-      )}
-      {step === 3 && (
-        <LocationStep form={form} errors={f.errors} update={f.update} footer={footer} />
       )}
       {step === 4 && (
         <SiteDetailsStep

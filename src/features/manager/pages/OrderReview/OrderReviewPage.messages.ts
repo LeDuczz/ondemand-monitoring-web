@@ -96,6 +96,8 @@ export const orderReviewPageMessages = defineMessages({
     sendRequest: 'Gửi yêu cầu',
     submitFailed: 'Gửi thất bại, thử lại.',
     pageTitle: 'Chi tiết đơn hàng',
+    summaryTitle: 'Tóm tắt đơn',
+    stageActionsTitle: 'Thao tác',
     pageSubtitle:
       'Xem chi tiết đơn hàng và phê duyệt để tiếp tục lên lịch thực hiện',
     statusPending: 'Chờ duyệt',
@@ -270,6 +272,8 @@ export const orderReviewPageMessages = defineMessages({
     sendRequest: 'Send request',
     submitFailed: 'Submitting failed, try again.',
     pageTitle: 'Order details',
+    summaryTitle: 'Order summary',
+    stageActionsTitle: 'Actions',
     pageSubtitle: 'Review the order details and approve to continue scheduling',
     statusPending: 'Pending review',
     orderStatus: 'Order status',

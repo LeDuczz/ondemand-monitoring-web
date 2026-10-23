@@ -1291,3 +1291,13 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* Quote total: prominent block, tokens only */
+.finance-quote .finance-summary .is-total {
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-primary-soft);
+}
+.finance-quote .finance-summary .is-total dd {
+  color: var(--ui-primary-text);
+}

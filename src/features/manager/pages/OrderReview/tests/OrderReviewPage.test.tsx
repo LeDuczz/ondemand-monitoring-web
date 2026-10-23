@@ -1,5 +1,11 @@
 import { act } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../../../shared/api/httpClient'
@@ -242,7 +248,9 @@ describe('OrderReviewPage', () => {
 
     expect(screen.getByText('Địa chỉ khu vực')).toBeInTheDocument()
     expect(
-      screen.getByText('Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức'),
+      within(
+        document.querySelector<HTMLElement>('.odm-or-review-stage')!,
+      ).getByText('Cảng Cát Lái, P. Cát Lái, TP. Thủ Đức'),
     ).toBeInTheDocument()
   })
 

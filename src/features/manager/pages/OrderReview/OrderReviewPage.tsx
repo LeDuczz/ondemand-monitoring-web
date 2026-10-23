@@ -29,6 +29,8 @@ import { ReviewStageRequest } from './components/ReviewStageRequest'
 import { ReviewStageArea } from './components/ReviewStageArea'
 import { ReviewStageReadiness } from './components/ReviewStageReadiness'
 import { ReviewStagePricing } from './components/ReviewStagePricing'
+import { ReviewLayout } from './components/ReviewLayout'
+import '../../components/layout/mgrLayout.css'
 
 export function OrderReviewPage({ orderId }: { orderId: string }) {
   const { t } = useI18n(orderReviewPageMessages)
@@ -131,7 +133,7 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
     ).length ?? 0
 
   return (
-    <div className="odm-or odm-or-review-page" ref={pageRef}>
+    <div className="odm-or odm-or-review-page mgr-page" ref={pageRef}>
       <ReviewTop
         showExecutionPlan={showExecutionPlan}
         stepperProgress={stepperProgress}
@@ -155,44 +157,48 @@ export function OrderReviewPage({ orderId }: { orderId: string }) {
       {readOnly && viewStage !== null && (
         <ReadonlyBanner setViewStage={setViewStage} />
       )}
-      {reviewing && reviewStep === 1 ? (
-        <ReviewStageRequest
-          readOnly={readOnly}
-          order={order}
-          goToStep={goToStep}
-        />
-      ) : null}
+      {reviewing ? (
+        <ReviewLayout order={order} wide={reviewStep === 4}>
+          {reviewing && reviewStep === 1 ? (
+            <ReviewStageRequest
+              readOnly={readOnly}
+              order={order}
+              goToStep={goToStep}
+            />
+          ) : null}
 
-      {reviewing && reviewStep === 2 ? (
-        <ReviewStageArea
-          readOnly={readOnly}
-          order={order}
-          setAreaReviewStatus={setAreaReviewStatus}
-          goToStep={goToStep}
-          areaReviewStatus={areaReviewStatus}
-        />
-      ) : null}
+          {reviewing && reviewStep === 2 ? (
+            <ReviewStageArea
+              readOnly={readOnly}
+              order={order}
+              setAreaReviewStatus={setAreaReviewStatus}
+              goToStep={goToStep}
+              areaReviewStatus={areaReviewStatus}
+            />
+          ) : null}
 
-      {reviewing && reviewStep === 3 ? (
-        <ReviewStageReadiness
-          readOnly={readOnly}
-          order={order}
-          readinessQuery={readinessQuery}
-          setNavigateHome={setNavigateHome}
-          goToStep={goToStep}
-          pendingRequired={pendingRequired}
-        />
-      ) : null}
+          {reviewing && reviewStep === 3 ? (
+            <ReviewStageReadiness
+              readOnly={readOnly}
+              order={order}
+              readinessQuery={readinessQuery}
+              setNavigateHome={setNavigateHome}
+              goToStep={goToStep}
+              pendingRequired={pendingRequired}
+            />
+          ) : null}
 
-      {reviewing && reviewStep === 4 ? (
-        <ReviewStagePricing
-          readOnly={readOnly}
-          order={order}
-          handleApproved={handleApproved}
-          readinessQuery={readinessQuery}
-          approveBlockedReason={approveBlockedReason}
-          goToStep={goToStep}
-        />
+          {reviewing && reviewStep === 4 ? (
+            <ReviewStagePricing
+              readOnly={readOnly}
+              order={order}
+              handleApproved={handleApproved}
+              readinessQuery={readinessQuery}
+              approveBlockedReason={approveBlockedReason}
+              goToStep={goToStep}
+            />
+          ) : null}
+        </ReviewLayout>
       ) : null}
     </div>
   )

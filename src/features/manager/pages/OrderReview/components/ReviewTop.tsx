@@ -7,12 +7,26 @@ import {
   orderDeliverableLabels,
 } from './OrderServiceBanner'
 import { OrderBannerMeta } from './OrderBannerMeta'
+import { PageHeader, StatusBadge, toUiTone } from '../../../../../shared/components/ui'
+import { orderStatusTone } from '../../../../../shared/lib/statusTone'
+import { formatOrderCode } from '../../../components/common/format'
+import { managerHref } from '../../../routes'
 import { orderReviewPageMessages } from '../OrderReviewPage.messages'
 import { useI18n } from '../../../../../shared/i18n'
 import type { OrderProgress } from '../../../components/common/workflowModel'
 import type { OrderDetail } from '../../../types/orders'
 import type { ReviewStep } from '../reviewTypes'
 import type { PlanningWorkflowInfo } from './OrderMissionPlanningSection'
+
+function OrderStatusBadge({ order, lang }: { order: OrderDetail; lang: 'vi' | 'en' }) {
+  return (
+    <StatusBadge
+      tone={toUiTone(order.status === 'PENDING' ? 'yellow' : orderStatusTone[order.status])}
+    >
+      {getOrderStatusLabel(order.status, lang)}
+    </StatusBadge>
+  )
+}
 
 export function ReviewTop({
   showExecutionPlan,
@@ -37,10 +51,16 @@ export function ReviewTop({
   return (
     <div className="odm-or-review-top">
       {!showExecutionPlan && (
-        <div className="odm-or-pagehead">
-          <h1 className="odm-or-title">{t.pageTitle}</h1>
-          <p className="odm-or-subtitle">{t.pageSubtitle}</p>
-        </div>
+        <PageHeader
+          back={<a href={managerHref({ screen: 'orderQueue' })}>{t.breadcrumb}</a>}
+          title={t.pageTitle}
+          subtitle={
+            <>
+              <span>{formatOrderCode(order.code)}</span> · {order.serviceName}
+            </>
+          }
+          actions={<OrderStatusBadge order={order} lang={lang} />}
+        />
       )}
       <WorkflowStepper
         order={{
@@ -63,14 +83,16 @@ export function ReviewTop({
             : undefined
         }
       />
-      <OrderServiceBanner
-        serviceName={order.serviceName}
-        serviceDescription={order.serviceDescription}
-        deliverables={orderDeliverableLabels(order, locale)}
-        deliverablesLabel={t.deliverableFormat}
-        eyebrow={t.serviceEyebrow}
-        meta={<OrderBannerMeta order={order} locale={locale} />}
-      />
+      {showExecutionPlan && (
+        <OrderServiceBanner
+          serviceName={order.serviceName}
+          serviceDescription={order.serviceDescription}
+          deliverables={orderDeliverableLabels(order, locale)}
+          deliverablesLabel={t.deliverableFormat}
+          eyebrow={t.serviceEyebrow}
+          meta={<OrderBannerMeta order={order} locale={locale} />}
+        />
+      )}
     </div>
   )
 }

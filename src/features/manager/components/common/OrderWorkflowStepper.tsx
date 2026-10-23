@@ -31,10 +31,7 @@ export function OrderWorkflowStepper({
     currentStep <= 5
       ? null
       : {
-          current:
-            currentStep >= 9
-              ? MISSION_STAGES[1] // permit
-              : MISSION_STAGES[0], // prepare
+          current: MISSION_STAGES[0], // permit
           finished: false,
           terminal: null,
         }

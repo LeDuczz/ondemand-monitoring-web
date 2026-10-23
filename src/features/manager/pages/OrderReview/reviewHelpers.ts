@@ -9,16 +9,16 @@ export function missionLayer(
   planning: PlanningWorkflowInfo | null,
   missionId: string | null,
   lang: 'vi' | 'en',
-  stage?: 'prepare' | 'review',
+  stage?: 'permit' | 'review',
 ) {
   const total = planning?.missions.length
   const index = planning?.missions.findIndex((m) => m.id === missionId) ?? -1
   const mission = index >= 0 ? planning?.missions[index] : undefined
-  const progress = mission ? missionProgress(mission.status) : null
+  const progress = mission ? missionProgress(mission.status, mission.flightPermitStatus) : null
   return {
     progress:
-      stage === 'prepare' || stage === 'review'
-        ? { current: 'prepare' as const, finished: false, terminal: null }
+      stage === 'permit' || stage === 'review'
+        ? { current: 'permit' as const, finished: false, terminal: null }
         : progress,
     index: mission ? index + 1 : undefined,
     total: mission ? total : undefined,

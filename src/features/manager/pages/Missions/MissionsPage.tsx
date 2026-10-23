@@ -1,6 +1,16 @@
 // MNG-08: Mission list + detail panel
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { StateView } from '../../../../shared/components/odm/StateView'
+import {
+  Card,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  StatCard,
+} from '../../../../shared/components/ui'
+import { Segmented } from '../../components/layout/Segmented'
+import type { MissionCalendarItem } from '../../types/missions'
+import '../../components/layout/mgrLayout.css'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
 import { useI18n } from '../../../../shared/i18n'
 import { missionsApi } from '../../api/missionsApi'
@@ -11,6 +21,7 @@ import { type DeliveryStatus, type StatusChip } from './missionsTypes'
 import { DetailPanel } from './components/DetailPanel'
 import { useMissionDeliveryStatuses } from './useMissionDeliveryStatuses'
 import { MissionsTable } from './components/MissionsTable'
+import { groupCounts, matchesMissionSearch } from './missionsHelpers'
 
 type MissionsListPageProps = {
   missionId?: string
@@ -43,6 +54,12 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
     [statusFilter],
   )
   const missions = useMemo(() => query.data?.items ?? [], [query.data?.items])
+  // KPI counts always describe the whole list, even while a status filter is applied.
+  const [snapshot, setSnapshot] = useState<MissionCalendarItem[] | null>(null)
+  useEffect(() => {
+    if (statusFilter === 'ALL' && query.data) setSnapshot(query.data.items)
+  }, [statusFilter, query.data])
+  const [search, setSearch] = useState('')
   const selected =
     missions.find((mission) => mission.id === selectedMission) ?? null
   const [orderDeliveryStatuses, setOrderDeliveryStatuses] = useState<
@@ -56,79 +73,94 @@ export function MissionsPage({ missionId }: MissionsListPageProps) {
     setSelectedMission,
   })
 
-  const columns = [
-    t.columns.mission,
-    t.columns.order,
-    t.columns.schedule,
-    t.columns.drone,
-    t.columns.operator,
-    t.columns.status,
-    t.columns.delivery,
-    '',
-  ]
+  const snapshotCounts = useMemo(
+    () => groupCounts(snapshot ?? missions),
+    [snapshot, missions],
+  )
+  const visible = useMemo(
+    () => missions.filter((mission) => matchesMissionSearch(mission, search)),
+    [missions, search],
+  )
+  const ready = !query.loading && !query.error
 
   return (
-    <div className="odm-or">
-      <div className="odm-or-pagehead">
-        <h1 className="odm-or-title">{t.title}</h1>
-        <p className="odm-or-subtitle">
-          {!query.loading && !query.error
-            ? t.missionCount(missions.length)
-            : ' '}
-        </p>
+    <div className="odm-or mgr-page">
+      <PageHeader
+        title={t.title}
+        subtitle={ready ? t.missionCount(missions.length) : undefined}
+      />
+
+      <div className="mgr-kpis">
+        <StatCard label={t.kpis.preparing} value={snapshotCounts.preparing} />
+        <StatCard
+          label={t.kpis.running}
+          value={snapshotCounts.running}
+          tone={snapshotCounts.running > 0 ? 'success' : 'default'}
+        />
+        <StatCard
+          label={t.kpis.review}
+          value={snapshotCounts.review}
+          tone={snapshotCounts.review > 0 ? 'warning' : 'default'}
+        />
+        <StatCard label={t.kpis.completed} value={snapshotCounts.completed} />
+        <StatCard
+          label={t.kpis.failed}
+          value={snapshotCounts.failed}
+          tone={snapshotCounts.failed > 0 ? 'danger' : 'default'}
+        />
       </div>
 
-      <div className="odm-or-filters" role="group" aria-label={t.title}>
-        {statusChips.map((chip) => (
-          <button
-            key={chip.value}
-            type="button"
-            className={`odm-or-filter${statusFilter === chip.value ? ' is-active' : ''}`}
-            aria-pressed={statusFilter === chip.value}
-            onClick={() => setStatusFilter(chip.value)}
-          >
-            {chip.label}
-          </button>
-        ))}
+      <div className="mgr-toolbar">
+        <input
+          type="search"
+          className="mgr-search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t.searchPlaceholder}
+          aria-label={t.searchAria}
+        />
+        <Segmented<StatusChip>
+          ariaLabel={t.statusAria}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={statusChips}
+        />
       </div>
 
-      <div
-        className={`odm-or-list-layout${selectedMission ? ' has-panel' : ''}`}
-      >
-        <div className="odm-or-col">
+      <div className={`mgr-list-grid${selectedMission ? ' has-panel' : ''}`}>
+        <div className="mgr-detail-main">
           {query.loading && (
             <div aria-busy="true">
-              <span className="odm-sk" style={{ width: '100%', height: 260 }} />
+              <Skeleton variant="block" height={260} />
             </div>
           )}
 
           {!query.loading && !!query.error && (
-            <section className="odm-or-card">
-              <div className="odm-or-card-body">
-                <StateView
-                  state="error"
-                  title={t.loadError}
-                  error={t.loadErrorDetail}
-                  onRetry={query.reload}
-                />
-              </div>
-            </section>
-          )}
-
-          {!query.loading && !query.error && missions.length === 0 && (
-            <section className="odm-or-card">
+            <Card>
               <StateView
-                state="empty"
-                title={t.emptyTitle}
-                description={t.emptyDescription}
+                state="error"
+                title={t.loadError}
+                error={t.loadErrorDetail}
+                onRetry={query.reload}
               />
-            </section>
+            </Card>
           )}
 
-          {!query.loading && !query.error && missions.length > 0 && (
+          {ready && visible.length === 0 && (
+            <div className="ui-table-card">
+              <EmptyState
+                title={missions.length === 0 ? t.emptyTitle : t.emptySearch}
+                description={
+                  missions.length === 0 ? t.emptyDescription : undefined
+                }
+              />
+            </div>
+          )}
+
+          {ready && visible.length > 0 && (
             <MissionsTable
-              columns={columns}
-              missions={missions}
+              missions={visible}
+              total={missions.length}
               selectedMission={selectedMission}
               setSelectedMission={setSelectedMission}
               deliveryStatuses={deliveryStatuses}

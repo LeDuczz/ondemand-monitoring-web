@@ -113,3 +113,15 @@
 .mgr-step-btn:focus-visible { outline: none; box-shadow: var(--ui-ring); border-radius: var(--ui-radius-sm); }
 .mgr-dispatch-hint { display: flex; gap: var(--ui-space-2); align-items: flex-start; color: var(--ui-text-2); font-size: 13px; margin-bottom: var(--ui-space-3); }
 .mgr-dispatch-missing { display: block; margin-bottom: var(--ui-space-3); color: var(--ui-warning-text); font-size: 13px; }
+
+small.mgr-cell-sub { display: block; }
+.mgr-cell-sub a { color: var(--ui-primary); text-decoration: none; }
+
+/* List page with an optional detail side panel */
+.mgr-list-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ui-space-4); align-items: start; }
+.mgr-list-grid.has-panel { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
+.mgr-missions-panel { position: sticky; top: var(--ui-space-4); }
+@media (max-width: 1100px) {
+  .mgr-list-grid.has-panel { grid-template-columns: minmax(0, 1fr); }
+  .mgr-missions-panel { position: static; }
+}

@@ -33,23 +33,27 @@ export function MissionRow({
   const { t, locale } = useI18n(missionsPageMessages)
   return (
     <tr
-      className={selectedMission === m.id ? 'is-selected' : undefined}
+      className={`is-clickable${selectedMission === m.id ? ' is-selected' : ''}`}
       onClick={() => setSelectedMission(selectedMission === m.id ? null : m.id)}
     >
-      <td className="odm-or-table-strong odm-mono">{m.missionCode}</td>
       <td>
-        <a
-          href={managerHref({
-            screen: 'orderReview',
-            orderId: m.orderId,
-          })}
-          onClick={(event) => event.stopPropagation()}
-          aria-label={t.openOrderPlanOf(m.missionCode)}
-        >
-          {m.orderCode ? formatOrderCode(m.orderCode) : t.openOrderPlan}
-        </a>
+        <div className="mgr-cell-main odm-mono">{m.missionCode}</div>
+        <div className="mgr-cell-sub">
+          <a
+            href={managerHref({
+              screen: 'orderReview',
+              orderId: m.orderId,
+            })}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={t.openOrderPlanOf(m.missionCode)}
+          >
+            {m.orderCode ? formatOrderCode(m.orderCode) : t.openOrderPlan}
+          </a>
+        </div>
       </td>
-      <td>{formatScheduled(m.scheduledStartAt, m.scheduledEndAt, locale)}</td>
+      <td className="mgr-nowrap">
+        {formatScheduled(m.scheduledStartAt, m.scheduledEndAt, locale)}
+      </td>
       <td>
         {m.droneCode
           ? `${m.droneCode}${m.droneName ? ` ${m.droneName}` : ''}`
@@ -67,9 +71,7 @@ export function MissionRow({
           />
         )}
         {assignmentReadiness(m).label && (
-          <small className="odm-mission-meta">
-            {assignmentReadiness(m).label}
-          </small>
+          <small className="mgr-cell-sub">{assignmentReadiness(m).label}</small>
         )}
       </td>
       <td>
@@ -77,12 +79,12 @@ export function MissionRow({
           {deliveryLabel(deliveryStatuses[m.id] ?? 'NOT_READY', t)}
         </StatusBadge>
         {orderDeliveryStatuses[m.orderId] && (
-          <small className="odm-mission-meta">
+          <small className="mgr-cell-sub">
             {deliveryLabel(orderDeliveryStatuses[m.orderId], t)}
           </small>
         )}
       </td>
-      <td className="odm-or-table-action">
+      <td className="is-right">
         <Button
           size="sm"
           href={managerHref({

@@ -1,5 +1,4 @@
 import { MissionResultReviewCard } from '../../../components/common/MissionResultReviewCard'
-import { ManagerDeliveryPanel } from '../../../../delivery/ManagerDeliveryPanel'
 import { MissionUploadedMedia } from '../../../../media/components/MissionUploadedMedia'
 import { staffMissionMediaReader } from '../../../api/missionMediaReader'
 import { MonitoringChecklistSection } from '../../../../mission/components/MonitoringChecklistSection'
@@ -33,7 +32,6 @@ export function CompletedMissionOverview({
   mediaLibrary,
   isCompleted,
   resultApproved,
-  revision,
   checklistExecutions,
   compliantCount,
   missionId,
@@ -50,7 +48,6 @@ export function CompletedMissionOverview({
   mediaLibrary: RefObject<HTMLElement | null>
   isCompleted: true
   resultApproved: boolean
-  revision: number
   checklistExecutions: MissionChecklistExecution[]
   compliantCount: number
   missionId: string
@@ -73,13 +70,6 @@ export function CompletedMissionOverview({
           onReviewed={refreshDetail}
           onViewMedia={() => onTabChange('media')}
         />
-
-        {isCompleted && resultApproved ? (
-          <ManagerDeliveryPanel
-            orderId={mission.orderId}
-            refreshKey={revision}
-          />
-        ) : null}
       </div>
 
       <section

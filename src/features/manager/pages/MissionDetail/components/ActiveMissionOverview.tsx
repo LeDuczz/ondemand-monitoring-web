@@ -2,7 +2,6 @@ import { MissionSatelliteMap } from './MissionSatelliteMap'
 import { formatNumber } from '../../../components/common/missionDetailHelpers'
 import { waypointReasonLabel } from './MissionRouteMap'
 import { MissionResultReviewCard } from '../../../components/common/MissionResultReviewCard'
-import { ManagerDeliveryPanel } from '../../../../delivery/ManagerDeliveryPanel'
 import { MonitoringChecklistSection } from '../../../../mission/components/MonitoringChecklistSection'
 import { MissionUploadedMedia } from '../../../../media/components/MissionUploadedMedia'
 import { staffMissionMediaReader } from '../../../api/missionMediaReader'
@@ -30,9 +29,6 @@ export function ActiveMissionOverview({
   loading,
   refreshDetail,
   mediaLibrary,
-  isCompleted,
-  resultApproved,
-  revision,
   missionId,
 }: {
   activeTab: MissionDetailTab
@@ -45,9 +41,6 @@ export function ActiveMissionOverview({
   loading: boolean
   refreshDetail: () => void
   mediaLibrary: RefObject<HTMLElement | null>
-  isCompleted: false
-  resultApproved: boolean
-  revision: number
   missionId: string
 }) {
   const { t, locale } = useI18n(missionDetailPageMessages)
@@ -132,10 +125,6 @@ export function ActiveMissionOverview({
           onViewMedia={() => onTabChange('media')}
         />
       </div>
-
-      {isCompleted && resultApproved ? (
-        <ManagerDeliveryPanel orderId={mission.orderId} refreshKey={revision} />
-      ) : null}
 
       <div
         className="odm-md-panel is-checklist"

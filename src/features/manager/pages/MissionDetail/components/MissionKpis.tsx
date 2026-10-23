@@ -1,15 +1,14 @@
+import { StatCard } from '../../../../../shared/components/ui'
+
 export function MissionKpis({
   kpis,
 }: {
   kpis: { label: string; value: string }[]
 }) {
   return (
-    <div className="odm-or-md-kpis">
+    <div className="mgr-kpis">
       {kpis.map((item) => (
-        <div key={item.label} className="odm-or-md-kpi">
-          <span>{item.label}</span>
-          <strong title={item.value}>{item.value}</strong>
-        </div>
+        <StatCard key={item.label} label={item.label} value={item.value} />
       ))}
     </div>
   )

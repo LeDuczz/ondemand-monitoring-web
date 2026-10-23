@@ -4,7 +4,10 @@ import { missionsApi } from '../../../api/missionsApi'
 import { ordersApi } from '../../../api/ordersApi'
 import { checklistExecutionApi } from '../../../../mission/api/checklistExecutionApi'
 import { MissionDetailPage } from '../MissionDetailPage'
-import type { MissionResponse, MissionResultResponse } from '../../../types/missions'
+import type {
+  MissionResponse,
+  MissionResultResponse,
+} from '../../../types/missions'
 import type { OrderDetail } from '../../../types/orders'
 
 vi.mock('../../../../media/components/MissionUploadedMedia', () => ({

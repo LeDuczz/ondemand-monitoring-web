@@ -12,6 +12,9 @@ import { OrderServiceInfo } from '../../components/common/OrderServiceInfo'
 import { type DetailData } from '../../components/common/missionDetailTypes'
 import { OrderIcon } from '../../components/common/OrderIcon'
 import { managerHref } from '../../routes'
+import { Card, EmptyState, Skeleton } from '../../../../shared/components/ui'
+import { ManagerDeliveryPanel } from '../../../delivery/ManagerDeliveryPanel'
+import '../../components/layout/mgrLayout.css'
 import { missionDetailPageMessages } from './MissionDetailPage.messages'
 import { orderReviewPageMessages } from '../OrderReview/OrderReviewPage.messages'
 import '../../manager.css'
@@ -66,9 +69,14 @@ function MissionDetail({ missionId }: { missionId: string }) {
 
   if (loading && (!detail || detail.mission?.id !== missionId)) {
     return (
-      <div className="odm-or" aria-busy="true">
+      <div className="odm-or mgr-page" aria-busy="true">
         {backLink}
-        <span className="odm-sk" style={{ width: '100%', height: 320 }} />
+        <div className="mgr-kpis">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} variant="block" height={88} />
+          ))}
+        </div>
+        <Skeleton variant="block" height={320} />
       </div>
     )
   }
@@ -76,15 +84,15 @@ function MissionDetail({ missionId }: { missionId: string }) {
   const mission = detail?.mission
   if (error || !mission || !detail) {
     return (
-      <div className="odm-or">
+      <div className="odm-or mgr-page">
         {backLink}
-        <section className="odm-or-card">
+        <Card>
           <StateView
             state="error"
             title={t.loadError}
             error={error ?? undefined}
           />
-        </section>
+        </Card>
       </div>
     )
   }
@@ -121,8 +129,7 @@ function MissionDetail({ missionId }: { missionId: string }) {
   })
 
   return (
-    <div className="odm-or">
-      {backLink}
+    <div className="odm-or mgr-page">
       <MissionDetailHeader
         mission={mission}
         headline={headline}
@@ -133,17 +140,17 @@ function MissionDetail({ missionId }: { missionId: string }) {
 
       <MissionKpis kpis={kpis} />
 
-      <div className="odm-or-md-grid">
-        <div className="odm-or-col">
+      <div className="mgr-detail-grid">
+        <div className="mgr-detail-main">
           <MissionDetailTabs
             tabs={tabs}
             activeTab={activeTab}
             setTab={setTab}
           />
 
-          {(['result', 'media', 'checklist', 'route'] as MissionDetailTab[]).includes(
-            activeTab,
-          ) ? (
+          {(
+            ['result', 'media', 'checklist', 'route'] as MissionDetailTab[]
+          ).includes(activeTab) ? (
             <OverviewTab
               activeTab={activeTab}
               onTabChange={setTab}
@@ -155,7 +162,6 @@ function MissionDetail({ missionId }: { missionId: string }) {
               refreshDetail={refreshDetail}
               mediaLibrary={mediaLibrary}
               resultApproved={resultApproved}
-              revision={revision}
               checklistExecutions={checklistExecutions}
               compliantCount={compliantCount}
               missionId={missionId}
@@ -174,11 +180,9 @@ function MissionDetail({ missionId }: { missionId: string }) {
                 <OrderAttachmentsCard order={detail.order} t={orderT} />
               </div>
             ) : (
-              <section className="odm-or-card">
-                <div className="odm-or-card-body odm-or-empty">
-                  {t.loadError}
-                </div>
-              </section>
+              <div className="ui-table-card">
+                <EmptyState title={t.loadError} />
+              </div>
             )
           ) : null}
 
@@ -194,7 +198,16 @@ function MissionDetail({ missionId }: { missionId: string }) {
           accepted={accepted}
           deviceCode={deviceCode}
           deviceLabel={deviceLabel}
-        />
+          permitStatus={mission.flightPermitStatus ?? 'NOT_REQUESTED'}
+          permitNote={mission.flightPermitNote}
+        >
+          {isCompleted && resultApproved ? (
+            <ManagerDeliveryPanel
+              orderId={mission.orderId}
+              refreshKey={revision}
+            />
+          ) : null}
+        </MissionCrewCard>
       </div>
     </div>
   )

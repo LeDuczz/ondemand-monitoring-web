@@ -122,7 +122,7 @@ export function CustomerFinancePanel({
           <p>{t.description}</p>
         </div>
         {quote ? (
-          <span className="finance-status">Báo giá v{quote.version}</span>
+          <span className="finance-status">{t.quoteVersion(quote.version)}</span>
         ) : null}
       </header>
 

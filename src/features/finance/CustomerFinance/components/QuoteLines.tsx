@@ -1,10 +1,13 @@
 import type { CustomerQuote } from '../../types'
 import { pricingDescription } from '../../../../shared/lib/pricingPresentation'
 import { formatVnd } from '../../../../shared/lib/formatVnd'
+import { useI18n } from '../../../../shared/i18n'
+import { customerFinancePanelMessages } from '../CustomerFinancePanel.messages'
 import { lineText } from '../customerFinanceHelpers'
 
 /** Quote lines grouped per checklist (heading + subtotal), then the order-level lines. */
 export function QuoteLines({ items }: { items: CustomerQuote['items'] }) {
+  const { t, lang } = useI18n(customerFinancePanelMessages)
   const lines = items.filter((item) => item.type !== 'ADJUSTMENT')
   const groups = new Map<string, CustomerQuote['items']>()
   const orderLevel: CustomerQuote['items'] = []
@@ -24,7 +27,10 @@ export function QuoteLines({ items }: { items: CustomerQuote['items'] }) {
     <div className="customer-quote-groups">
       {[...groups.entries()].map(([id, rows]) => {
         const name =
-          pricingDescription(rows[0].description).split(' · ')[0] || 'Nội dung'
+          (lang === 'vi'
+            ? pricingDescription(rows[0].description)
+            : rows[0].description
+          ).split(' · ')[0] || t.contentFallback
         return (
           <section key={id} className="customer-quote-group">
             <header>
@@ -34,7 +40,7 @@ export function QuoteLines({ items }: { items: CustomerQuote['items'] }) {
             <ul>
               {rows.map((row) => (
                 <li key={row.id}>
-                  <span>{lineText(row, name)}</span>
+                  <span>{lineText(row, t, lang, name)}</span>
                   <span>{formatVnd(row.amount)}</span>
                 </li>
               ))}
@@ -45,13 +51,13 @@ export function QuoteLines({ items }: { items: CustomerQuote['items'] }) {
       {orderLevel.length > 0 && (
         <section className="customer-quote-group">
           <header>
-            <strong>Theo đơn hàng</strong>
+            <strong>{t.byOrder}</strong>
             <b>{formatVnd(sum(orderLevel))}</b>
           </header>
           <ul>
             {orderLevel.map((row) => (
               <li key={row.id}>
-                <span>{lineText(row)}</span>
+                <span>{lineText(row, t, lang)}</span>
                 <span>{formatVnd(row.amount)}</span>
               </li>
             ))}

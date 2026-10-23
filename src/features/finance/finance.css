@@ -1130,3 +1130,36 @@
 .finance-quote .finance-summary .is-total dd {
   color: var(--ui-primary-text);
 }
+
+/* Customer portal: the warning / ready notices keep AA contrast in both themes
+   (light: #92400e on #fef3c7 = 6.4:1, dark: #fde68a on #3a2b08 = 11:1). */
+.odm-cus .customer-deposit-notice,
+.odm-cus .co-estimate-notice {
+  border-color: #d97706;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.odm-cus .customer-deposit-notice.is-ready {
+  border-color: #059669;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+:root[data-theme='dark'] .odm-cus .customer-deposit-notice,
+:root[data-theme='dark'] .odm-cus .co-estimate-notice {
+  border-color: #fbbf24;
+  background: #3a2b08;
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .odm-cus .customer-deposit-notice.is-ready {
+  border-color: #4ade80;
+  background: #12331f;
+  color: #bbf7d0;
+}
+
+.odm-cus .customer-deposit-notice b,
+.odm-cus .customer-deposit-notice span {
+  color: inherit;
+}

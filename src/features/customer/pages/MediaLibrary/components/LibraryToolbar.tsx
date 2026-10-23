@@ -10,6 +10,8 @@ export function LibraryToolbar({ filter, onChange }: Props) {
   const { t } = useI18n(libraryToolbarMessages)
   return (
     <div className="ml-toolbar">
+      <div className="ml-kinds">
+      <span className="ml-field-label">{t.kindLabel}</span>
       <div className="ml-chips" role="group" aria-label={t.kindLabel}>
         {KINDS.map((kind) => (
           <button
@@ -23,14 +25,18 @@ export function LibraryToolbar({ filter, onChange }: Props) {
           </button>
         ))}
       </div>
-      <input
-        type="search"
-        className="ml-search"
-        value={filter.query}
-        placeholder={t.searchPlaceholder}
-        aria-label={t.searchLabel}
-        onChange={(event) => onChange({ query: event.target.value })}
-      />
+      </div>
+      <div className="ml-search-wrap">
+        <span className="ml-field-label">{t.searchLabel}</span>
+        <input
+          type="search"
+          className="ml-search"
+          value={filter.query}
+          placeholder={t.searchPlaceholder}
+          aria-label={t.searchLabel}
+          onChange={(event) => onChange({ query: event.target.value })}
+        />
+      </div>
     </div>
   )
 }

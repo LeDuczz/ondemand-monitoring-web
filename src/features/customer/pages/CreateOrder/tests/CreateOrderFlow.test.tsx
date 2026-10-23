@@ -62,7 +62,7 @@ async function fillService(onContent?: () => Promise<void> | void) {
 }
 
 async function fillLocation() {
-  fireEvent.change(await screen.findByLabelText(/Địa chỉ\/khu vực/), {
+  fireEvent.change(await screen.findByLabelText(/Địa chỉ hoặc khu vực/), {
     target: { value: 'KCN Long Hậu' },
   })
   fireEvent.change(screen.getByLabelText(/Người liên hệ/), { target: { value: 'An' } })
@@ -169,7 +169,7 @@ describe('CreateOrderPage wizard', () => {
     next('Nội dung giám sát')
     expect(await screen.findByText('Nhập tiêu đề yêu cầu.')).toBeInTheDocument()
     expect(screen.queryByText('Chọn dịch vụ giám sát.')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/Địa chỉ\/khu vực/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Địa chỉ hoặc khu vực/)).not.toBeInTheDocument()
   })
 
   it('requires a service and title when the active catalog is empty', async () => {
@@ -181,7 +181,7 @@ describe('CreateOrderPage wizard', () => {
       await screen.findByText('Chọn dịch vụ giám sát.'),
     ).toBeInTheDocument()
     expect(screen.getByText('Nhập tiêu đề yêu cầu.')).toBeInTheDocument()
-    expect(screen.queryByLabelText(/Địa chỉ\/khu vực/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Địa chỉ hoặc khu vực/)).not.toBeInTheDocument()
   })
 
   it('shows the real location map on step 3 and requires an address', async () => {

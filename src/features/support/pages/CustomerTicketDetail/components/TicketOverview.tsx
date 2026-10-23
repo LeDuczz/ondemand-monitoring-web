@@ -15,42 +15,57 @@ export function TicketOverview({ ticket }: { ticket: SupportTicketDto }) {
   const urgent = ticket.priority === 'URGENT' || ticket.priority === 'HIGH'
 
   return (
-    <Card>
-      <div className="td-head">
-        <div>
-          <div className="td-badges">
-            <TicketStatusBadge status={ticket.status} />
-            <span className="sp-chip">{category}</span>
-            <StatusBadge tone={urgent ? 'danger' : 'neutral'}>{t.priority(priorityLabel)}</StatusBadge>
+    <aside className="td-side">
+      <Card title={t.ticketFacts}>
+        <dl className="td-facts">
+          <div>
+            <dt>{t.statusLabel}</dt>
+            <dd>
+              <TicketStatusBadge status={ticket.status} />
+            </dd>
           </div>
-          <h2 className="td-subject">{ticket.subject}</h2>
-        </div>
-        <div className="sp-muted">{t.openedAt(fmtDateTime(ticket.openedAt, locale))}</div>
-      </div>
-
-      {(ticket.orderId || ticket.missionId) && (
-        <div className="td-context">
+          <div>
+            <dt>{t.categoryLabel}</dt>
+            <dd>
+              <span className="sp-chip">{category}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>{t.priorityLabel}</dt>
+            <dd>
+              <StatusBadge tone={urgent ? 'danger' : 'neutral'}>{priorityLabel}</StatusBadge>
+            </dd>
+          </div>
+          <div>
+            <dt>{t.openedLabel}</dt>
+            <dd>{fmtDateTime(ticket.openedAt, locale)}</dd>
+          </div>
+          {ticket.assignedStaffName && (
+            <div>
+              <dt>{t.assignedStaff}</dt>
+              <dd>{ticket.assignedStaffName}</dd>
+            </div>
+          )}
           {ticket.orderId && (
             <div>
-              {t.relatedOrder}:{' '}
-              <a href={customerHref({ screen: 'orderDetail', orderId: ticket.orderId })}>{t.viewOrder}</a>
+              <dt>{t.relatedOrder}</dt>
+              <dd>
+                <a href={customerHref({ screen: 'orderDetail', orderId: ticket.orderId })}>{t.viewOrder}</a>
+              </dd>
             </div>
           )}
           {ticket.missionId && (
             <div>
-              {t.relatedMission}:{' '}
-              <a href={customerHref({ screen: 'orderDetail', orderId: ticket.orderId || ticket.missionId })}>
-                {t.viewMission}
-              </a>
+              <dt>{t.relatedMission}</dt>
+              <dd>
+                <a href={customerHref({ screen: 'orderDetail', orderId: ticket.orderId || ticket.missionId })}>
+                  {t.viewMission}
+                </a>
+              </dd>
             </div>
           )}
-          {ticket.assignedStaffName && (
-            <div>
-              {t.assignedStaff}: <strong>{ticket.assignedStaffName}</strong>
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
+        </dl>
+      </Card>
+    </aside>
   )
 }

@@ -35,8 +35,9 @@ export function CustomerTicketsListPage() {
 
       <Card>
         <div className="tl-bar">
-          <div>
-            {t.total}: <strong>{list.tickets.length}</strong>
+          <div className="tl-total">
+            <span>{t.total}</span>
+            <strong>{list.tickets.length}</strong>
           </div>
           <label className="tl-filter">
             <span className="sp-muted">{t.filter}</span>

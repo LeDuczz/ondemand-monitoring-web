@@ -2886,21 +2886,21 @@ ul.co-help {
   height: 100%;
   gap: 0;
   padding: 14px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--ui-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--ui-surface);
   overflow-wrap: break-word;
 }
 .co-service-grid .co-service:hover {
   transform: none;
-  border-color: #93c5fd;
+  border-color: var(--ui-primary);
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 .co-service-grid .co-service.is-active {
   /* Same border width as the idle state so the card never changes size. */
   padding: 14px;
-  border-color: #2563eb;
-  background: #f8faff;
+  border-color: var(--ui-primary);
+  background: var(--ui-primary-soft);
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.14);
 }
 .co-service-grid .co-service-illustration {
@@ -2914,7 +2914,7 @@ ul.co-help {
   margin-top: 12px;
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ui-text);
 }
 .co-service-grid .co-service-desc {
   display: block;
@@ -2924,14 +2924,14 @@ ul.co-help {
   text-overflow: clip;
   font-size: 13px;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--ui-text-2);
 }
 .co-service-grid .co-service > strong {
   margin-top: auto;
   padding-top: 14px;
   font-size: 17px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ui-text);
 }
 .co-service-card {
   padding-bottom: 8px;
@@ -4047,4 +4047,244 @@ ul.co-help {
   .co-grid.is-location .co-real-map-wrap {
     height: clamp(300px, 46vh, 420px);
   }
+}
+
+/* ======================================================================
+   Relayout C: stepper on top, form in the main column, summary + cost +
+   primary action as separate cards in a sticky right column.
+   ====================================================================== */
+
+/* 24px between sections. The shell already pads the page, so no extra gutter. */
+.co-page {
+  gap: 24px;
+  padding: 0 0 40px;
+}
+
+.co-page .ui-page-subtitle,
+.co-page .co-hint,
+.co-page .co-sub,
+.co-page .co-estimate-notice {
+  max-width: 75ch;
+}
+
+/* The summary column is a stack of cards (16px apart), not one glued panel. */
+.co-page .co-grid.co-grid > .co-summary {
+  position: static;
+  gap: 16px;
+  max-height: none;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.co-page .co-grid.co-grid > .co-summary > .ui-card,
+.co-page .co-grid.co-grid > .co-summary > .co-block,
+.co-page .co-grid.co-grid > .co-summary > .co-summary-cta {
+  margin: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  box-shadow: none;
+}
+
+.co-page .co-grid.co-grid > .co-summary > .ui-card + .ui-card {
+  border-top: 1px solid var(--ui-border);
+}
+
+.co-page .co-summary .ui-card-header {
+  padding: 16px 20px 0;
+}
+
+.co-page .co-summary .ui-card-body {
+  padding: 12px 20px 20px;
+}
+
+.co-page .co-summary .ui-card-title,
+.co-page .co-summary .ui-card-header h2 {
+  font-size: 16px;
+}
+
+.co-page .co-summary-cta {
+  padding: 16px 20px;
+}
+
+/* Back is ghost; Next / Submit is the only solid button in the flow. */
+.co-page .co-footer .odm-btn.odm-btn-gh {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ui-text-2);
+}
+
+.co-page .co-footer .odm-btn.odm-btn-gh:hover:not(:disabled) {
+  background: var(--ui-surface-2);
+  color: var(--ui-text);
+}
+
+/* Field groups: label above the input, 16px between fields. */
+.co-page .co-mt {
+  margin-top: 16px;
+}
+
+/* Sticky only where the column fits the viewport; otherwise it flows. */
+@media (min-width: 1001px) and (min-height: 820px) {
+  .co-page .co-grid.co-grid > .co-summary {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+  }
+}
+
+/* Phones and tablets: the summary and cost sit below the form, in reading order. */
+@media (max-width: 1000px) {
+  .co-page .co-grid.co-grid > .co-summary {
+    position: static;
+  }
+}
+
+/* Quick request page: one main column plus a sticky summary column. */
+.co-grid.is-request {
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.85fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.co-request-main {
+  gap: 24px;
+}
+
+.co-page .co-grid.is-request > .co-summary {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+.co-grid.is-request .co-summary-cta .co-footer {
+  flex-direction: column-reverse;
+  align-items: stretch;
+}
+
+.co-grid.is-request .co-summary-cta .co-footer .odm-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.co-grid.is-request .co-summary-cta .co-footer-spacer {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  .co-grid.is-request {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .co-page .co-grid.is-request > .co-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .co-page {
+    gap: 16px;
+  }
+  .co-request-main {
+    gap: 16px;
+  }
+}
+
+/* ---------- Dark mode: surfaces that were hard-coded light ---------- */
+
+:root[data-theme='dark'] .co-page .co-authz,
+:root[data-theme='dark'] .co-page .co-terms-check,
+:root[data-theme='dark'] .co-page .co-service-grid .co-service,
+:root[data-theme='dark'] .co-page .checklist-quote-details {
+  border-color: var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+}
+
+:root[data-theme='dark'] .co-page .co-service-grid .co-service.is-active,
+:root[data-theme='dark'] .co-page .co-authz-relationships label:has(input:checked),
+:root[data-theme='dark'] .co-page .co-authz-confirm,
+:root[data-theme='dark'] .co-page .airspace-status,
+:root[data-theme='dark'] .co-page .co-location-status.is-resolving {
+  border-color: var(--ui-primary);
+  background: var(--ui-primary-soft);
+  color: var(--ui-primary-text);
+}
+
+:root[data-theme='dark'] .co-page .co-service-grid .co-service.is-active {
+  color: var(--ui-text);
+}
+
+:root[data-theme='dark'] .co-page .airspace-status.is-warning,
+:root[data-theme='dark'] .co-page .co-location-status.is-error,
+:root[data-theme='dark'] .co-page .co-terms-important,
+:root[data-theme='dark'] .co-page .checklist-pricing-notice,
+:root[data-theme='dark'] .co-page .co-content-editor .checklist-card .checklist-pricing-notice,
+:root[data-theme='dark'] .co-page .checklist-card .checklist-custom-tag.is-pending-quote {
+  border-color: var(--ui-warning);
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning-text);
+}
+
+:root[data-theme='dark'] .co-page .co-location-status.is-confirmed {
+  background: var(--ui-success-soft);
+  color: var(--ui-success-text);
+}
+
+:root[data-theme='dark'] .co-page .checklist-card .checklist-row.is-removed,
+:root[data-theme='dark'] .co-page .checklist-card .checklist-row.is-compact:hover,
+:root[data-theme='dark'] .co-page .checklist-card .checklist-row.is-compact.is-removed,
+:root[data-theme='dark'] .co-page .checklist-card .checklist-row textarea:disabled,
+:root[data-theme='dark'] .co-page .checklist-card .checklist-add:hover:not(:disabled),
+:root[data-theme='dark'] .co-page .checklist-card .checklist-row:not(.is-compact):focus-within {
+  background: var(--ui-surface-2);
+}
+
+:root[data-theme='dark'] .co-page .checklist-card .checklist-row.is-compact.is-removed .checklist-index {
+  background: var(--ui-surface-2);
+  color: var(--ui-text-3);
+}
+
+:root[data-theme='dark'] .co-page .checklist-card .checklist-icon-btn.is-danger:hover:not(:disabled) {
+  background: var(--ui-danger-soft);
+}
+
+:root[data-theme='dark'] .co-page .co-map-legend .is-unknown {
+  background: var(--ui-border-strong);
+}
+
+/* Back sits on the card, not on a dark chip. */
+:root[data-theme='dark'] .co-page .co-footer .odm-btn.odm-btn-gh,
+:root[data-theme='dark'] .co-page .co-content-navigation .odm-btn-gh {
+  background: transparent;
+  color: var(--ui-text-2);
+}
+
+:root[data-theme='dark'] .co-page .co-authz-note,
+:root[data-theme='dark'] .co-page .co-authz-document label > span,
+:root[data-theme='dark'] .co-page .co-authz-file {
+  color: var(--ui-text-2);
+}
+
+:root[data-theme='dark'] .co-page .co-authz-file button,
+:root[data-theme='dark'] .co-page .airspace-status a {
+  color: var(--ui-primary-text);
+}
+
+:root[data-theme='dark'] .co-page .co-authz-document-title button {
+  color: var(--ui-danger-text);
+}
+
+:root[data-theme='dark'] .co-page .airspace-status.is-warning a {
+  color: var(--ui-warning-text);
+}
+
+:root[data-theme='dark'] .co-page .co-terms-icon,
+:root[data-theme='dark'] .co-page .co-terms-title,
+:root[data-theme='dark'] .co-page .co-terms-list,
+:root[data-theme='dark'] .co-page .co-terms-list li.is-key,
+:root[data-theme='dark'] .co-page .co-terms-important .co-terms-details summary {
+  color: var(--ui-warning-text);
 }

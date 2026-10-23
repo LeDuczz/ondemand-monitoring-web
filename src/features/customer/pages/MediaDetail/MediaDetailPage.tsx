@@ -32,12 +32,14 @@ export function MediaDetailPage({ mediaId }: { mediaId: string }) {
           <MediaViewer item={item} />
           <SiblingNav prev={detail.nav.prev} next={detail.nav.next} />
         </div>
-        <Card title={t.fileInfo}>
-          <div className="mdp-stack">
-            <MediaInfoList item={item} missionLabel={detail.missionLabel} />
-            <DownloadButton item={item} />
-          </div>
-        </Card>
+        <aside className="mdp-side">
+          <Card title={t.fileInfo}>
+            <div className="mdp-stack">
+              <MediaInfoList item={item} missionLabel={detail.missionLabel} />
+              <DownloadButton item={item} />
+            </div>
+          </Card>
+        </aside>
       </div>
     </div>
   )

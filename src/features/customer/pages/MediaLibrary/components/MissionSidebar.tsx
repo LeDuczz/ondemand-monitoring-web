@@ -1,4 +1,3 @@
-import { Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import type { MediaMissionGroup } from '../../../lib/media/types'
 import { missionSidebarMessages } from './MissionSidebar.messages'
@@ -26,11 +25,12 @@ export function MissionSidebar({ groups, total, selected, onSelect }: Props) {
     </li>
   )
   return (
-    <Card title={t.heading} className="ml-sidebar">
+    <div className="ml-missions-group" role="group" aria-label={t.heading}>
+      <span className="ml-field-label">{t.heading}</span>
       <ul className="ml-missions">
         {item(null, t.all, total)}
         {groups.map((g) => item(g.missionId, g.label, g.count))}
       </ul>
-    </Card>
+    </div>
   )
 }

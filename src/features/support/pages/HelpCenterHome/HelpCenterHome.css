@@ -209,3 +209,126 @@
   color: var(--ui-danger-text);
   font-weight: 600;
 }
+
+/* ---------- Relayout C: readable help center ---------- */
+
+/* Search card: left aligned, one clear field, no centered hero. */
+.odm-cus .hc-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+}
+
+.odm-cus .hc-eyebrow {
+  margin-bottom: 0;
+}
+
+.odm-cus .hc-search {
+  width: 100%;
+  max-width: 75ch;
+  margin: 0;
+}
+
+.odm-cus .hc-section-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.odm-cus .hc-topics {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+}
+
+.odm-cus .hc-topic {
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.odm-cus .hc-topic:focus-visible,
+.odm-cus .hc-faq-q:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: -2px;
+}
+
+.odm-cus .hc-topic-name {
+  overflow-wrap: anywhere;
+}
+
+.odm-cus .hc-topic-desc {
+  max-width: 60ch;
+}
+
+.odm-cus .hc-topic.is-selected .hc-topic-desc {
+  color: var(--ui-text-2);
+}
+
+/* FAQ: one readable column, answers capped at 75ch. */
+.odm-cus .hc-faq-head,
+.odm-cus .hc-faq-list {
+  max-width: 880px;
+}
+
+.odm-cus .hc-faq-head {
+  margin-bottom: 16px;
+}
+
+.odm-cus .hc-faq-list {
+  gap: 8px;
+}
+
+.odm-cus .hc-faq {
+  border-radius: 12px;
+}
+
+.odm-cus .hc-faq-q {
+  padding: 16px 20px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.odm-cus .hc-faq-q > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.odm-cus .hc-faq-body {
+  padding: 0 20px 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+.odm-cus .hc-faq-body p {
+  max-width: 75ch;
+}
+
+.odm-cus .hc-feedback {
+  max-width: 75ch;
+}
+
+@media (max-width: 640px) {
+  .odm-cus .hc-faq-q {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .odm-cus .hc-faq-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .odm-cus .hc-feedback,
+  .odm-cus .hc-feedback-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+.odm-cus .hc-faq-head .hc-section-title {
+  margin: 0;
+}
+
+.odm-cus .hc-faq-meta [aria-hidden='true'] {
+  color: var(--ui-text-3);
+  font-size: 11px;
+}

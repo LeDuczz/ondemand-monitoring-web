@@ -93,3 +93,104 @@
 .tl-view:hover {
   text-decoration: underline;
 }
+
+/* ---------- Relayout C: Orders-style list (toolbar card above a row card) ---------- */
+
+.odm-cus .tl-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 320px);
+  align-items: end;
+  gap: 16px 24px;
+}
+
+.odm-cus .tl-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+}
+
+.odm-cus .tl-total strong {
+  color: var(--ui-text);
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.odm-cus .tl-filter {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.odm-cus .tl-filter .sp-input {
+  width: 100%;
+  min-height: 40px;
+}
+
+.odm-cus .tl-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-1);
+}
+
+.odm-cus .tl-row {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 16px 24px;
+  padding: 16px 20px;
+  border: 0;
+  border-top: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.odm-cus .tl-row:first-child {
+  border-top: 0;
+}
+
+.odm-cus .tl-row:hover {
+  background: var(--ui-surface-2);
+}
+
+.odm-cus .tl-main {
+  flex: 1 1 auto;
+  max-width: 75ch;
+}
+
+.odm-cus .tl-side {
+  flex: none;
+  min-width: 140px;
+}
+
+.odm-cus .tl-view:focus-visible,
+.odm-cus .tl-subject:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+/* Phones: each row stacks, same as the Orders cards. */
+@media (max-width: 640px) {
+  .odm-cus .tl-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .odm-cus .tl-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .odm-cus .tl-side {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+  }
+  .odm-cus .tl-view {
+    margin-top: 0;
+  }
+}

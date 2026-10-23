@@ -41,26 +41,28 @@ export function CustomerTicketDetailPage({ ticketId }: { ticketId: string }) {
             {t.ticketCode}: <span className="sp-mono">{ticket.ticketCode}</span>
           </>
         }
+        subtitle={ticket.subject}
       />
 
-      <TicketOverview ticket={ticket} />
-
-      <Card title={t.conversation}>
-        <MessageList messages={ticket.messages} description={ticket.description} />
-        {isTicketFinished(ticket.status) ? (
-          <div className="sp-notice is-success">{t.finished}</div>
-        ) : (
-          <ReplyForm
-            content={detail.replyContent}
-            attachment={detail.replyAttachment}
-            sending={detail.sending}
-            error={detail.sendError}
-            onContent={detail.setReplyContent}
-            onAttachment={detail.setReplyAttachment}
-            onSubmit={detail.sendReply}
-          />
-        )}
-      </Card>
+      <div className="td-layout">
+        <Card title={t.conversation} className="td-thread">
+          <MessageList messages={ticket.messages} description={ticket.description} />
+          {isTicketFinished(ticket.status) ? (
+            <div className="sp-notice is-success">{t.finished}</div>
+          ) : (
+            <ReplyForm
+              content={detail.replyContent}
+              attachment={detail.replyAttachment}
+              sending={detail.sending}
+              error={detail.sendError}
+              onContent={detail.setReplyContent}
+              onAttachment={detail.setReplyAttachment}
+              onSubmit={detail.sendReply}
+            />
+          )}
+        </Card>
+        <TicketOverview ticket={ticket} />
+      </div>
     </div>
   )
 }

@@ -140,3 +140,111 @@
   flex: 1 1 260px;
   width: auto;
 }
+
+/* ---------- Relayout C: thread on the left, ticket facts on the right ---------- */
+
+.odm-cus .td-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.odm-cus .td-side {
+  position: sticky;
+  top: 0;
+  min-width: 0;
+}
+
+.td-facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.td-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--ui-border);
+}
+
+.td-facts > div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.td-facts dt {
+  flex: none;
+  color: var(--ui-text-3);
+  font-size: 13px;
+}
+
+.td-facts dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.td-facts a {
+  color: var(--ui-primary-text);
+  text-decoration: none;
+}
+
+.td-facts a:hover {
+  text-decoration: underline;
+}
+
+/* Thread: wide bubbles, 75ch measure, reply box closes the card. */
+.odm-cus .td-messages {
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.odm-cus .td-bubble {
+  max-width: min(75ch, 85%);
+  border-radius: 12px;
+}
+
+.odm-cus .td-msg-author {
+  color: var(--ui-text);
+}
+
+.odm-cus .td-msg.is-mine .td-bubble {
+  border-color: var(--ui-primary);
+}
+
+.odm-cus .td-reply {
+  gap: 12px;
+  padding-top: 24px;
+}
+
+.odm-cus .td-reply-row {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .odm-cus .td-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Facts first on small screens: they are short and give the thread context. */
+  .odm-cus .td-side {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .odm-cus .td-bubble {
+    max-width: 92%;
+  }
+  .odm-cus .td-reply-row .odm-btn {
+    width: 100%;
+  }
+}

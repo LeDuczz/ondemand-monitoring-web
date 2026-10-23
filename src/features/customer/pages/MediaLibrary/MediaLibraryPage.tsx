@@ -34,30 +34,30 @@ export function MediaLibraryPage() {
         }
       />
       <NewMediaNotice count={lib.notificationCount} />
-      <div className="ml-layout">
+      <section className="ml-toolbar-card" aria-label={t.title}>
+        <LibraryToolbar filter={lib.filter} onChange={lib.setFilter} />
         <MissionSidebar
           groups={lib.groups}
           total={lib.total}
           selected={lib.filter.missionId}
           onSelect={(missionId) => lib.setFilter({ missionId })}
         />
-        <div className="ml-main">
-          <LibraryToolbar filter={lib.filter} onChange={lib.setFilter} />
-          {lib.totalFiltered === 0 ? (
-            <LibraryEmpty filtered={lib.isFiltered} onClear={lib.clearFilter} />
-          ) : (
-            <>
-              <MediaGrid items={lib.pageItems} onOpen={(item) => lib.openPreview(item.id)} />
-              <Pager
-                page={lib.page}
-                totalPages={lib.totalPages}
-                totalItems={lib.totalFiltered}
-                unit={t.unit}
-                onPage={lib.setPage}
-              />
-            </>
-          )}
-        </div>
+      </section>
+      <div className="ml-main">
+        {lib.totalFiltered === 0 ? (
+          <LibraryEmpty filtered={lib.isFiltered} onClear={lib.clearFilter} />
+        ) : (
+          <>
+            <MediaGrid items={lib.pageItems} onOpen={(item) => lib.openPreview(item.id)} />
+            <Pager
+              page={lib.page}
+              totalPages={lib.totalPages}
+              totalItems={lib.totalFiltered}
+              unit={t.unit}
+              onPage={lib.setPage}
+            />
+          </>
+        )}
       </div>
       {lib.preview && (
         <MediaPreviewModal

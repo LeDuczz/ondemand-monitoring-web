@@ -58,8 +58,8 @@ export function CustomerCreateRequestPage() {
           )}
 
           <LocationStep form={form} errors={errors} update={update} />
-          <div className="co-grid">
-            <div className="co-stack">
+          <div className="co-grid is-request">
+            <div className="co-stack co-request-main">
               <RequestBasicsCard form={form} errors={errors} update={update} />
               <ServicePicker
                 services={meta.services}
@@ -74,8 +74,6 @@ export function CustomerCreateRequestPage() {
                 disabled={submit.submitting}
                 onReload={r.clearSubmitError}
               />
-            </div>
-            <div className="co-stack">
               <ScheduleCard
                 form={form}
                 errors={errors}
@@ -96,39 +94,40 @@ export function CustomerCreateRequestPage() {
                 update={update}
               />
             </div>
+            <aside className="co-stack co-summary is-request-summary">
+              <RequestSummaryCard
+                mediaTotals={r.checklist.mediaTotals}
+                form={form}
+                service={r.service}
+                time={r.time}
+                deliverable={r.deliverable}
+                checklistCounts={{
+                  total: packageSelectedCount + additionalChecklists.length,
+                  packageSelected: packageSelectedCount,
+                  packageTotal: packageChecklists.length,
+                  additional: additionalChecklists.length,
+                }}
+              />
+              <PricingEstimateCard
+                estimate={estimate}
+                loading={meta.pricingLoading}
+                hasService={Boolean(r.service)}
+                aiAnalysisRequested={false}
+                additionalChecklists={additionalChecklists}
+              />
+              <div className="co-summary-cta">
+                <SubmitBar
+                  error={submit.confirmOpen ? null : r.submitError}
+                  disabled={
+                    meta.loading ||
+                    submit.submitting ||
+                    (Boolean(form.serviceId) && !r.checklist.valid)
+                  }
+                  onSubmit={submit.openConfirm}
+                />
+              </div>
+            </aside>
           </div>
-          <div className="co-grid">
-            <RequestSummaryCard
-              mediaTotals={r.checklist.mediaTotals}
-              form={form}
-              service={r.service}
-              time={r.time}
-              deliverable={r.deliverable}
-              checklistCounts={{
-                total: packageSelectedCount + additionalChecklists.length,
-                packageSelected: packageSelectedCount,
-                packageTotal: packageChecklists.length,
-                additional: additionalChecklists.length,
-              }}
-            />
-            <PricingEstimateCard
-              estimate={estimate}
-              loading={meta.pricingLoading}
-              hasService={Boolean(r.service)}
-              aiAnalysisRequested={false}
-              additionalChecklists={additionalChecklists}
-            />
-          </div>
-
-          <SubmitBar
-            error={submit.confirmOpen ? null : r.submitError}
-            disabled={
-              meta.loading ||
-              submit.submitting ||
-              (Boolean(form.serviceId) && !r.checklist.valid)
-            }
-            onSubmit={submit.openConfirm}
-          />
           {submit.confirmOpen && (
             <ConfirmSubmitModal
               form={form}

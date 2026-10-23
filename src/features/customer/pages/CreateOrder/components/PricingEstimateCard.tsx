@@ -22,6 +22,24 @@ function requestedMedia(row: ChecklistRow) {
     : { images: row.minimumEvidenceCount, videos: 0 }
 }
 
+function contextualFeeLabel(type: string, t: typeof pricingEstimateMessages.vi) {
+  switch (type) {
+    case 'CONTEXT_AREA':
+    case 'CONTEXT_EXTRA_AREA':
+      return t.areaSurcharge
+    case 'CONTEXT_DISTANCE':
+      return t.distanceSurcharge
+    case 'CONTEXT_ALTITUDE':
+      return t.altitudeSurcharge
+    case 'CONTEXT_EXTRA_IMAGE':
+      return t.extraImages
+    case 'CONTEXT_EXTRA_VIDEO':
+      return t.extraVideos
+    default:
+      return t.contextSurcharge
+  }
+}
+
 /** Pricing estimate from `GET /api/services/pricing-estimate`. */
 export function PricingEstimateCard({
   estimate,
@@ -40,6 +58,9 @@ export function PricingEstimateCard({
     const deliverableFees = estimate.additionalRequirements.filter((item) =>
       item.type.startsWith('OUTPUT_'),
     )
+    const contextualFees = estimate.additionalRequirements.filter((item) =>
+      item.type.startsWith('CONTEXT_'),
+    )
     const hasAdditionalServices =
       additionalChecklists.length > 0 || Boolean(estimate.quotePending)
     body = (
@@ -48,6 +69,12 @@ export function PricingEstimateCard({
           <span>{t.servicePrice}</span>
           <strong>{formatMoney(estimate.servicePrice, locale)}</strong>
         </div>
+        {contextualFees.map((fee) => (
+          <div className="co-money-row" key={fee.type}>
+            <span>{contextualFeeLabel(fee.type, t)}</span>
+            <strong>+{formatMoney(fee.additionalPrice, locale)}</strong>
+          </div>
+        ))}
         {aiAnalysisRequested && (
           <div className="co-money-row">
             <span>{t.aiAnalysis}</span>

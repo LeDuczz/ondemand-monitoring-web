@@ -4,6 +4,7 @@ import { useI18n } from '../../../../../shared/i18n'
 import { readStoredDraft } from '../../../lib/createOrder/draftStorage'
 import {
   buildOrderPayload,
+  pricingAreaHa,
   withAdditionalRequirementChecklist,
 } from '../../../lib/createOrder/payload'
 import { scoreRequest } from '../../../lib/createOrder/scoring'
@@ -16,7 +17,6 @@ import { useWizard } from './useWizard'
 import { useOrderChecklist } from '../../../lib/checklist/useOrderChecklist'
 import { ApiError } from '../../../../../shared/api/httpClient'
 import type { FormErrors, FormState } from '../../../lib/createOrder/types'
-import { calcArea } from '../../../lib/createOrder/payload'
 
 const formFields = new Set<keyof FormState>([
   'serviceId',
@@ -51,8 +51,9 @@ export function useCreateOrderWizard() {
   const stored = useMemo(readStoredDraft, [])
   const f = useCreateOrderForm(stored)
   const { form, step } = f
+  const checklistPricingReady = step >= 3
   const checklist = useOrderChecklist(form.serviceId, {
-    areaHa: Number(calcArea(form.radiusM)),
+    areaHa: checklistPricingReady ? pricingAreaHa(form) : undefined,
     lengthKm: Number(form.estimatedLengthM || 0) / 1000,
     altitudeM: Number.isFinite(form.altitudeM) ? form.altitudeM : 0,
     aiAnalysisRequested: false,

@@ -22,7 +22,7 @@ export function LiveOrderCard({ order }: { order: OrderRow }) {
         </div>
         <a
           className="odm-btn odm-btn-p"
-          href={customerHref({ screen: 'live', orderId: order.id })}
+          href={customerHref({ screen: 'orderDetail', orderId: order.id })}
         >
           {t.enter}
         </a>

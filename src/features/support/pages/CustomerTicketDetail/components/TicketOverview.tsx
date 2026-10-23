@@ -39,7 +39,7 @@ export function TicketOverview({ ticket }: { ticket: SupportTicketDto }) {
           {ticket.missionId && (
             <div>
               {t.relatedMission}:{' '}
-              <a href={customerHref({ screen: 'live', orderId: ticket.orderId || ticket.missionId })}>
+              <a href={customerHref({ screen: 'orderDetail', orderId: ticket.orderId || ticket.missionId })}>
                 {t.viewMission}
               </a>
             </div>

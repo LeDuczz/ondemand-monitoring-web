@@ -7,7 +7,6 @@ import { CustomerLayout } from './CustomerLayout'
 import { useNewMediaCount } from './hooks/useNewMediaCount'
 import { CreateOrderPage } from './pages/CreateOrder'
 import { DashboardPage } from './pages/Dashboard'
-import { LivePage } from './pages/Live'
 import { LiveHubPage } from './pages/LiveHub'
 import { MediaDetailPage } from './pages/MediaDetail'
 import { MediaLibraryPage } from './pages/MediaLibrary'
@@ -67,7 +66,6 @@ function renderScreen(
   if (route.screen === 'createOrder') return <CreateOrderPage />
   if (route.screen === 'orderDetail')
     return <OrderDetailPage orderId={route.orderId} />
-  if (route.screen === 'live') return <LivePage orderId={route.orderId} />
   if (route.screen === 'media') return <MediaPage orderId={route.orderId} />
   if (route.screen === 'liveHub') return <LiveHubPage />
   if (route.screen === 'mediaLibrary') return <MediaLibraryPage />

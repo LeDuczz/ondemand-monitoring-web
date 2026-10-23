@@ -36,7 +36,7 @@ export function TicketRow({ ticket }: { ticket: SupportTicketDto }) {
             {ticket.missionId && (
                 <a
                   className="sp-link-chip is-green"
-                  href={customerHref({ screen: 'live', orderId: ticket.orderId || ticket.missionId })}
+                  href={customerHref({ screen: 'orderDetail', orderId: ticket.orderId || ticket.missionId })}
                   title={t.viewMissionTitle}
                 >
                   {t.viewMission}

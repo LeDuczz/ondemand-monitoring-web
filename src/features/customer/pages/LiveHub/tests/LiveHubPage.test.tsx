@@ -30,8 +30,8 @@ describe('LiveHubPage', () => {
   it('derives the active orders from /api/orders/mine?status=IN_PROGRESS', async () => {
     const list = vi.spyOn(customerApi, 'listMyOrders')
     render(<LiveHubPage />)
-    const link = await screen.findByRole('link', { name: 'Vào xem trực tiếp →' })
-    expect(link).toHaveAttribute('href', '#portal/customer/orders/cus-ord-001/live')
+    const link = await screen.findByRole('link', { name: 'Xem chi tiết đơn →' })
+    expect(link).toHaveAttribute('href', '#portal/customer/orders/cus-ord-001')
     expect(list).toHaveBeenCalledWith({ status: 'IN_PROGRESS', signal: expect.any(AbortSignal) })
     expect(screen.getAllByRole('listitem')).toHaveLength(1)
   })
@@ -47,6 +47,6 @@ describe('LiveHubPage', () => {
     render(<LiveHubPage />)
     expect(await screen.findByText('Không tải được danh sách đơn đang thực hiện')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
-    expect(await screen.findByRole('link', { name: 'Vào xem trực tiếp →' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Xem chi tiết đơn →' })).toBeInTheDocument()
   })
 })

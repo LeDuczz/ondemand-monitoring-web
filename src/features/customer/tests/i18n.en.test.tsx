@@ -169,12 +169,6 @@ const ROUTES: Route[] = [
     vi: 'Phân tích AI',
     en: 'AI analysis',
   },
-  {
-    name: 'Live',
-    hash: '#portal/customer/orders/cus-ord-001/live',
-    vi: 'Giám sát trực tiếp',
-    en: 'Live monitoring',
-  },
   { name: 'LiveHub', hash: '#portal/customer/live', vi: 'Xem trực tiếp', en: 'Live view' },
   {
     name: 'Media (order)',

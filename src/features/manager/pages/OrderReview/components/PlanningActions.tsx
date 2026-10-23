@@ -47,7 +47,7 @@ export function PlanningActions({
 }) {
   const { t } = useI18n(planningActionsMessages)
   return (
-    <div className="odm-planning-actions">
+    <div className="odm-planning-actions mgr-actionbar">
       {writable && data.plan.planStatus === 'DRAFT' && (
         <>
           <Button

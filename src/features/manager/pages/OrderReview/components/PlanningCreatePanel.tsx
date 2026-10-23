@@ -6,6 +6,7 @@ import type { ExecutionPlan } from '../../../types/planning'
 import type { MissionResponse } from '../../../types/missions'
 import type { OrderDetail } from '../../../types/orders'
 import type { Invoice } from '../../../../finance/types'
+import { Button, Card } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { planningCreatePanelMessages } from './PlanningCreatePanel.messages'
 
@@ -33,18 +34,14 @@ export function PlanningCreatePanel({
 }) {
   const { t } = useI18n(planningCreatePanelMessages)
   return (
-    <section className="odm-planning-create-panel" aria-label={t.panelLabel}>
-      <header className="odm-planning-create-head">
-        <span className="odm-planning-create-icon" aria-hidden="true">
-          ＋
-        </span>
-        <div>
-          <h3>{t.title}</h3>
-          <p>{t.intro}</p>
-        </div>
-        <button
-          className="odm-planning-create-close"
+    <Card
+      title={t.title}
+      className="mgr-plan-create"
+      actions={
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           aria-label={t.closeFormLabel}
           title={t.closeFormTitle}
           onClick={async () => {
@@ -59,17 +56,21 @@ export function PlanningCreatePanel({
           }}
         >
           ×
-        </button>
-      </header>
-      <MissionCreatePage
-        orderId={orderId}
-        replacesMissionId={creating.replacesMissionId}
-        onCreated={(id) => {
-          setSelectedId(id)
-          setCreating(null)
-          query.reload()
-        }}
-      />
-    </section>
+        </Button>
+      }
+    >
+      <section aria-label={t.panelLabel}>
+        <p className="mgr-muted">{t.intro}</p>
+        <MissionCreatePage
+          orderId={orderId}
+          replacesMissionId={creating.replacesMissionId}
+          onCreated={(id) => {
+            setSelectedId(id)
+            setCreating(null)
+            query.reload()
+          }}
+        />
+      </section>
+    </Card>
   )
 }

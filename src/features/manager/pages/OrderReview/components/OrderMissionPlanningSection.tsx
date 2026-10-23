@@ -22,7 +22,12 @@ import { PlanningCreatePanel } from './PlanningCreatePanel'
 import { PlanningAdjustmentForm } from './PlanningAdjustmentForm'
 import { PlanningMissionItem } from './PlanningMissionItem'
 import { managerHref } from '../../../routes'
-import { Button } from '../../../../../shared/components/ui'
+import {
+  Button,
+  EmptyState,
+  Skeleton,
+} from '../../../../../shared/components/ui'
+import '../planningLayout.css'
 import { orderMissionPlanningSectionMessages } from './OrderMissionPlanningSection.messages'
 
 /** What the page header needs to draw the Order/Mission workflow honestly. */
@@ -214,7 +219,7 @@ function OrderPlanningWorkspace({
     )
   return (
     <section
-      className="odm-or-card odm-planning"
+      className="odm-planning mgr-plan"
       aria-label="Order Mission planning"
     >
       {confirmation.dialog}
@@ -233,7 +238,13 @@ function OrderPlanningWorkspace({
           </Button>
         }
       />
-      {query.loading && <p role="status">{ts.loadingPlan}</p>}
+      {query.loading && (
+        <div className="mgr-plan-loading">
+          <p role="status">{ts.loadingPlan}</p>
+          <Skeleton variant="block" height={96} />
+          <Skeleton variant="block" height={160} />
+        </div>
+      )}
       {query.error ? <p role="alert">{planningError(query.error)}</p> : null}
       {message && (
         <p role="status" className="odm-planning-notice">
@@ -266,24 +277,6 @@ function OrderPlanningWorkspace({
               </Button>
             </div>
           )}
-          {writable && (
-            <PlanningActions
-              writable={writable}
-              data={data}
-              busy={busy}
-              saving={saving}
-              creating={creating}
-              setCreating={setCreating}
-              continueToResourceAssignment={continueToResourceAssignment}
-              amending={amending}
-              setAmending={setAmending}
-              setReason={setReason}
-              selected={selected}
-              dirty={dirty}
-              onAssignResources={onAssignResources}
-              setAssigningResources={setAssigningResources}
-            />
-          )}
           {dirty && (
             <p className="odm-mission-meta" role="status">
               {ts.unsavedPerMission}
@@ -310,8 +303,7 @@ function OrderPlanningWorkspace({
           )}
           {data.missions.length === 0 && (
             <div className="odm-plan-empty">
-              <h3>{t.empty}</h3>
-              <p>{t.emptyHint}</p>
+              <EmptyState title={t.empty} description={t.emptyHint} />
             </div>
           )}
           <div className="odm-planning-workspace">
@@ -359,6 +351,24 @@ function OrderPlanningWorkspace({
               })}
             </div>
           </div>
+          {writable && (
+            <PlanningActions
+              writable={writable}
+              data={data}
+              busy={busy}
+              saving={saving}
+              creating={creating}
+              setCreating={setCreating}
+              continueToResourceAssignment={continueToResourceAssignment}
+              amending={amending}
+              setAmending={setAmending}
+              setReason={setReason}
+              selected={selected}
+              dirty={dirty}
+              onAssignResources={onAssignResources}
+              setAssigningResources={setAssigningResources}
+            />
+          )}
         </>
       )}
     </section>

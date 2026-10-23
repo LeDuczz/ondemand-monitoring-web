@@ -6,6 +6,7 @@ import { Button } from '../../../../../shared/components/ui'
 import { useI18n } from '../../../../../shared/i18n'
 import { planningPaymentGateMessages } from './PlanningPaymentGate.messages'
 
+/** Deposit gate shown as a clear banner above the mission cards. */
 export function PlanningPaymentGate({
   checkingPayment,
   checkPayment,
@@ -22,49 +23,39 @@ export function PlanningPaymentGate({
 }) {
   const { t, locale } = useI18n(planningPaymentGateMessages)
   return (
-    <div className="odm-planning-payment-gate" role="status">
-      <div className="odm-gate-head">
+    <div className="mgr-banner mgr-plan-gate" role="status">
+      <div className="mgr-plan-gate-text">
         <strong>{t.waiting}</strong>
-        <Button
-          type="button"
-          disabled={checkingPayment}
-          onClick={() => void checkPayment()}
-        >
-          {checkingPayment ? t.checking : t.checkPayment}
-        </Button>
-      </div>
-      <p>{t.unlockNote}</p>
-      {data.invoice ? (
-        <div className="odm-gate-deposit">
-          <div
-            className="odm-gate-bar"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={data.invoice.depositAmount}
-            aria-valuenow={data.invoice.paidAmount}
-          >
-            <span
-              style={{
-                width: `${Math.min(
-                  100,
-                  data.invoice.depositAmount > 0
-                    ? (data.invoice.paidAmount / data.invoice.depositAmount) *
-                        100
-                    : 0,
-                )}%`,
-              }}
+        <span>{t.unlockNote}</span>
+        {data.invoice ? (
+          <>
+            <progress
+              className="mgr-plan-progress"
+              max={Math.max(data.invoice.depositAmount, 1)}
+              value={Math.min(
+                data.invoice.paidAmount,
+                Math.max(data.invoice.depositAmount, 1),
+              )}
+              aria-label={t.waiting}
             />
-          </div>
-          <span>
-            {t.paid(
-              data.invoice.paidAmount.toLocaleString(locale),
-              data.invoice.depositAmount.toLocaleString(locale),
-            )}
-          </span>
-        </div>
-      ) : (
-        <span>{t.notAccepted}</span>
-      )}
+            <span>
+              {t.paid(
+                data.invoice.paidAmount.toLocaleString(locale),
+                data.invoice.depositAmount.toLocaleString(locale),
+              )}
+            </span>
+          </>
+        ) : (
+          <span>{t.notAccepted}</span>
+        )}
+      </div>
+      <Button
+        type="button"
+        disabled={checkingPayment}
+        onClick={() => void checkPayment()}
+      >
+        {checkingPayment ? t.checking : t.checkPayment}
+      </Button>
     </div>
   )
 }

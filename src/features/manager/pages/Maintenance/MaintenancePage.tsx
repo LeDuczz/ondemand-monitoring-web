@@ -1,148 +1,140 @@
-// MNG-10: Maintenance ticket kanban board with Manager Search, Filter & System Operator Assignment Workflow
+// MNG-10: Maintenance tickets with search, filters, operator assignment and resolution
 import { useMemo, useState } from 'react'
+import { StateView } from '../../../../shared/components/odm/StateView'
+import { PageHeader, Skeleton } from '../../../../shared/components/ui'
 import { useApiQuery } from '../../../../shared/hooks/useApiQuery'
-import type { TicketStatus } from '../../../../shared/types/domain'
+import { useI18n } from '../../../../shared/i18n'
 import { maintenanceApi } from '../../api/maintenanceApi'
 import type { MaintenanceTicket } from '../../types/maintenance'
 import '../../manager.css'
 import { AssignModal } from './components/AssignModal'
-import { MaintenanceStats } from './components/MaintenanceStats'
-import { TicketFilterBar } from './components/TicketFilterBar'
+import { DetailPanel } from './components/DetailPanel'
 import { MaintenanceLoadError } from './components/MaintenanceLoadError'
-import { TicketBoard } from './components/TicketBoard'
+import { MaintenanceStats } from './components/MaintenanceStats'
+import { MaintenanceToolbar } from './components/MaintenanceToolbar'
+import { ResolveModal } from './components/ResolveModal'
+import { TicketsTable } from './components/TicketsTable'
+import {
+  matchesTicketSearch,
+  ticketStats,
+  type PriorityFilter,
+  type StatusFilter,
+} from './maintenanceHelpers'
+import { maintenancePageMessages } from './MaintenancePage.messages'
 
 export function MaintenancePage() {
+  const { t } = useI18n(maintenancePageMessages)
   const [tickets, setTickets] = useState<MaintenanceTicket[] | null>(null)
-  const [selectedTicket, setSelectedTicket] =
-    useState<MaintenanceTicket | null>(null)
-  const [assignTicket, setAssignTicket] = useState<MaintenanceTicket | null>(
-    null,
-  )
-
-  // Manager Search & Filter controls state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [priorityFilter, setPriorityFilter] = useState<string>('ALL')
-  const [assignedFilter, setAssignedFilter] = useState<string>('ALL')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [assignTicket, setAssignTicket] = useState<MaintenanceTicket | null>(null)
+  const [resolveTicket, setResolveTicket] = useState<MaintenanceTicket | null>(null)
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState<StatusFilter>('ALL')
+  const [priority, setPriority] = useState<PriorityFilter>('ALL')
 
   const query = useApiQuery(
     (signal) => maintenanceApi.listTickets({ signal }),
     [],
   )
 
-  const allTickets = tickets ?? query.data?.items ?? []
-
-  // Filtered tickets based on search query, priority, and assignment status
-  const filteredTickets = useMemo(() => {
-    return allTickets.filter((t) => {
-      // Search text check
-      const q = searchQuery.toLowerCase().trim()
-      const matchQuery =
-        !q ||
-        t.code.toLowerCase().includes(q) ||
-        t.droneCode.toLowerCase().includes(q) ||
-        t.title.toLowerCase().includes(q) ||
-        (t.assignedTo && t.assignedTo.toLowerCase().includes(q))
-
-      // Priority check
-      const matchPriority =
-        priorityFilter === 'ALL' || t.priority === priorityFilter
-
-      // Assigned check
-      const matchAssigned =
-        assignedFilter === 'ALL' ||
-        (assignedFilter === 'UNASSIGNED' && !t.assignedTo) ||
-        (assignedFilter === 'ASSIGNED' && !!t.assignedTo)
-
-      return matchQuery && matchPriority && matchAssigned
-    })
-  }, [allTickets, searchQuery, priorityFilter, assignedFilter])
-
-  const byColumn = useMemo(() => {
-    const map: Record<TicketStatus, MaintenanceTicket[]> = {
-      OPEN: [],
-      IN_PROGRESS: [],
-      RESOLVED: [],
-      CLOSED: [],
-    }
-    for (const t of filteredTickets) {
-      map[t.status]?.push(t)
-    }
-    return map
-  }, [filteredTickets])
-
-  const unassignedCount = allTickets.filter(
-    (t) => (t.status === 'OPEN' || t.status === 'IN_PROGRESS') && !t.assignedTo,
-  ).length
-  const urgentCount = allTickets.filter(
-    (t) =>
-      (t.status === 'OPEN' || t.status === 'IN_PROGRESS') &&
-      (t.priority === 'CRITICAL' || t.priority === 'HIGH'),
-  ).length
-  const resolvedCount = allTickets.filter(
-    (t) => t.status === 'RESOLVED' || t.status === 'CLOSED',
-  ).length
+  const allTickets = useMemo(
+    () => tickets ?? query.data?.items ?? [],
+    [tickets, query.data?.items],
+  )
+  const stats = useMemo(() => ticketStats(allTickets), [allTickets])
+  const visible = useMemo(
+    () =>
+      allTickets.filter(
+        (ticket) =>
+          matchesTicketSearch(ticket, search) &&
+          (status === 'ALL' || ticket.status === status) &&
+          (priority === 'ALL' || ticket.priority === priority),
+      ),
+    [allTickets, search, status, priority],
+  )
+  const selected = allTickets.find((ticket) => ticket.id === selectedId) ?? null
 
   function handleTicketUpdated(updated: MaintenanceTicket) {
     const base = tickets ?? query.data?.items ?? []
-    setTickets(base.map((t) => (t.id === updated.id ? updated : t)))
-    if (selectedTicket?.id === updated.id) {
-      setSelectedTicket(updated)
-    }
+    setTickets(base.map((ticket) => (ticket.id === updated.id ? updated : ticket)))
     setAssignTicket(null)
+    setResolveTicket(null)
   }
 
+  const ready = !query.loading && !query.error
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        padding: '0 4px',
-      }}
-    >
-      {/* Header Banner & Stats */}
-      <MaintenanceStats
-        unassignedCount={unassignedCount}
-        urgentCount={urgentCount}
-        resolvedCount={resolvedCount}
+    <div className="odm-or">
+      <PageHeader
+        title={t.title}
+        subtitle={ready ? t.subtitle(allTickets.length) : undefined}
       />
 
-      {/* Search & Filter Toolbar */}
-      <TicketFilterBar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        priorityFilter={priorityFilter}
-        setPriorityFilter={setPriorityFilter}
-        assignedFilter={assignedFilter}
-        setAssignedFilter={setAssignedFilter}
+      <MaintenanceStats stats={stats} />
+
+      <MaintenanceToolbar
+        search={search}
+        onSearch={setSearch}
+        status={status}
+        onStatus={setStatus}
+        priority={priority}
+        onPriority={setPriority}
       />
 
-      {/* Content */}
       {query.loading && (
-        <div style={{ padding: 40, textAlign: 'center' }} aria-busy="true">
-          <div className="odm-sk" style={{ height: 300, borderRadius: 12 }} />
+        <div aria-busy="true">
+          <Skeleton variant="block" height={300} />
         </div>
       )}
 
-      {!query.loading && !!query.error && (
-        <MaintenanceLoadError query={query} />
+      {!query.loading && !!query.error && <MaintenanceLoadError query={query} />}
+
+      {ready && visible.length === 0 && (
+        <section className="odm-or-card">
+          <StateView
+            state="empty"
+            title={t.emptyTitle}
+            description={t.emptyDescription}
+          />
+        </section>
       )}
 
-      {!query.loading && !query.error && (
-        <TicketBoard
-          byColumn={byColumn}
-          selectedTicket={selectedTicket}
-          setSelectedTicket={setSelectedTicket}
-          setAssignTicket={setAssignTicket}
-        />
+      {ready && visible.length > 0 && (
+        <div className={`odm-or-list-layout${selected ? ' has-panel' : ''}`}>
+          <TicketsTable
+            tickets={visible}
+            total={allTickets.length}
+            selectedId={selectedId}
+            onSelect={(ticket) =>
+              setSelectedId(selectedId === ticket.id ? null : ticket.id)
+            }
+            onAssign={setAssignTicket}
+            onResolve={setResolveTicket}
+          />
+          {selected && (
+            <DetailPanel
+              key={selected.id}
+              ticket={selected}
+              onClose={() => setSelectedId(null)}
+              onAssignClick={setAssignTicket}
+              onResolveClick={setResolveTicket}
+            />
+          )}
+        </div>
       )}
 
-      {/* Modals */}
       {assignTicket && (
         <AssignModal
           ticket={assignTicket}
           onClose={() => setAssignTicket(null)}
           onAssigned={handleTicketUpdated}
+        />
+      )}
+      {resolveTicket && (
+        <ResolveModal
+          ticket={resolveTicket}
+          onClose={() => setResolveTicket(null)}
+          onResolved={handleTicketUpdated}
         />
       )}
     </div>

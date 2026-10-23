@@ -30,48 +30,69 @@ export function PlanningCreatePanel({
   }>
 }) {
   return (
-    <section
-      className="odm-planning-create-panel"
+    <div
+      className="odm-planning-modal-backdrop"
+      onClick={async (e) => {
+        if (e.target === e.currentTarget) {
+          if (
+            await confirmation.confirm({
+              title: 'Đóng form tạo Mission?',
+              body: 'Dữ liệu chưa gửi sẽ không được lưu.',
+              action: 'Đóng form',
+            })
+          )
+            setCreating(null)
+        }
+      }}
+      role="dialog"
+      aria-modal="true"
       aria-label="Tạo Mission trong Order"
     >
-      <header className="odm-planning-create-head">
-        <span className="odm-planning-create-icon" aria-hidden="true">
-          ＋
-        </span>
-        <div>
-          <h3>Tạo Mission mới</h3>
-          <p>
-            Đặt tên dễ nhận biết, sau đó kiểm tra thời tiết và chọn lịch bay.
-          </p>
-        </div>
-        <button
-          className="odm-planning-create-close"
-          type="button"
-          aria-label="Đóng form tạo Mission"
-          title="Đóng form"
-          onClick={async () => {
-            if (
-              await confirmation.confirm({
-                title: 'Đóng form tạo Mission?',
-                body: 'Dữ liệu chưa gửi sẽ không được lưu.',
-                action: 'Đóng form',
-              })
-            )
+      <div
+        className="odm-planning-modal-dialog"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="odm-planning-create-head">
+          <span className="odm-planning-create-icon" aria-hidden="true">
+            ＋
+          </span>
+          <div>
+            <h3>Tạo Mission mới</h3>
+            <p>
+              Đặt tên dễ nhận biết, sau đó kiểm tra thời tiết và chọn lịch bay.
+            </p>
+          </div>
+          <button
+            className="odm-planning-create-close"
+            type="button"
+            aria-label="Đóng form tạo Mission"
+            title="Đóng form"
+            onClick={async () => {
+              if (
+                await confirmation.confirm({
+                  title: 'Đóng form tạo Mission?',
+                  body: 'Dữ liệu chưa gửi sẽ không được lưu.',
+                  action: 'Đóng form',
+                })
+              )
+                setCreating(null)
+            }}
+          >
+            ×
+          </button>
+        </header>
+        <div className="odm-planning-modal-body">
+          <MissionCreatePage
+            orderId={orderId}
+            replacesMissionId={creating.replacesMissionId}
+            onCreated={(id) => {
+              setSelectedId(id)
               setCreating(null)
-          }}
-        >
-          ×
-        </button>
-      </header>
-      <MissionCreatePage
-        orderId={orderId}
-        replacesMissionId={creating.replacesMissionId}
-        onCreated={(id) => {
-          setSelectedId(id)
-          setCreating(null)
-          query.reload()
-        }}
-      />
-    </section>
+              query.reload()
+            }}
+          />
+        </div>
+      </div>
+    </div>
   )
 }

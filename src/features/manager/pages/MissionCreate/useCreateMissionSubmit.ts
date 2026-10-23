@@ -1,10 +1,6 @@
 import { planningPresentationMessages } from '../../components/common/planningPresentation.messages'
 import { missionCreatePageMessages } from './MissionCreatePage.messages'
 import { missionsApi } from '../../api/missionsApi'
-import {
-  missionCreationKey,
-  clearMissionCreationKey,
-} from '../../api/missionCreationIntent'
 import { managerHref } from '../../routes'
 import { ApiError } from '../../../../shared/api/httpClient'
 import { planningApi } from '../../api/planningApi'
@@ -22,6 +18,8 @@ export function useCreateMissionSubmit({
   replacesMissionId,
   orderId,
   scopeLabel,
+  selectedChecklistIds,
+  hasChecklistItems = false,
   setSubmit,
   planningT,
   scheduledStart,
@@ -38,6 +36,8 @@ export function useCreateMissionSubmit({
   replacesMissionId: string | undefined
   orderId: string
   scopeLabel: string
+  selectedChecklistIds: string[]
+  hasChecklistItems?: boolean
   setSubmit: Dispatch<SetStateAction<SubmitState>>
   planningT: (typeof planningPresentationMessages)['vi']
   scheduledStart: string
@@ -53,7 +53,8 @@ export function useCreateMissionSubmit({
       submit.kind === 'submitting' ||
       planQuery.loading ||
       planQuery.error ||
-      planQuery.data?.planStatus !== 'DRAFT' ||
+      (planQuery.data?.planStatus !== 'DRAFT' &&
+        !(replacesMissionId && planQuery.data?.planStatus === 'FINALIZED')) ||
       replacementQuery.loading ||
       replacementQuery.error ||
       (replacesMissionId &&
@@ -81,20 +82,24 @@ export function useCreateMissionSubmit({
       })
       return
     }
+    if (hasChecklistItems && selectedChecklistIds.length === 0) {
+      setSubmit({
+        kind: 'validationFailed',
+        message: 'Vui lòng chọn ít nhất một hạng mục checklist cho Mission.',
+      })
+      return
+    }
     setSubmit({ kind: 'submitting' })
     try {
       const intent = {
         scopeLabel: scopeLabel.trim(),
-        ...(replacesMissionId ? { replacesMissionId } : {}),
         scheduledStart: startDate.toISOString(),
         scheduledEnd: endDate.toISOString(),
+        checklistIds: selectedChecklistIds,
       }
-      const mission = await missionsApi.createMission(orderId, {
-        ...intent,
-        idempotencyKey: missionCreationKey(orderId, intent),
-        expectedPlanRevision: planRevision,
-      })
-      clearMissionCreationKey(orderId)
+      const mission = replacesMissionId
+        ? await missionsApi.replaceMission(replacesMissionId, intent)
+        : await missionsApi.createMission(orderId, intent)
       if (onCreated) onCreated(mission.id)
       else setNavigateTo(managerHref({ screen: 'orderReview', orderId }))
     } catch (err) {

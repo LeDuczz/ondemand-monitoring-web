@@ -223,6 +223,7 @@ export type OrderInternalNote = {
  */
 export type OrderMissionBrief = {
   executionPlanRevision?: number
+  checklistItems?: OrderChecklistSnapshot[]
   id: string
   code: string
   serviceName: string

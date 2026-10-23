@@ -160,6 +160,7 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
 function toOrderMissionBrief(order: OrderDetail): OrderMissionBrief {
   return {
     executionPlanRevision: order.executionPlanRevision,
+    checklistItems: order.checklistItems,
     id: order.id,
     code: order.code,
     serviceName: order.serviceName,

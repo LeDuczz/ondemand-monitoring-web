@@ -177,14 +177,12 @@ export type CancelMissionRequest = {
   reason: string
 }
 
-/** Body of `POST /api/orders/{id}/missions` [BRIEF C4 = TK]. */
+/** Body of `POST /api/missions/{orderId}`. */
 export type CreateMissionRequest = {
-  replacesMissionId?: string
-  idempotencyKey: string
-  expectedPlanRevision: number
   scopeLabel: string
   scheduledStart: string
   scheduledEnd: string
+  checklistIds: string[]
 }
 
 export type ResourceCandidateBase = {
@@ -347,6 +345,7 @@ export type MissionResponse = MissionStopMetadata & {
   flightPermitDataUrl?: string | null
   operatorId: string | null
   staffAssignments?: MissionStaffAssignmentResponse[]
+  deviceAssignments?: MissionDeviceAssignmentResponse[]
   droneId: string | null
   droneCode: string | null
   deviceId?: string | null
@@ -385,6 +384,18 @@ export type MissionStaffAssignmentResponse = {
   assignedAt: string | null
   respondedAt: string | null
   declineReason: string | null
+}
+
+export type MissionDeviceAssignmentResponse = {
+  id: string
+  deviceId: string
+  deviceCode: string | null
+  deviceName: string | null
+  deviceSerialNumber: string | null
+  deviceStatus: string | null
+  deviceRole: 'MAIN' | 'SUPPORT'
+  checkupStatus: 'PENDING' | 'PASSED' | 'FAILED' | 'SKIPPED'
+  assignedAt: string | null
 }
 
 export type FlightTokenResponse = {

@@ -52,9 +52,70 @@
 }
 .ppd-name {
   display: grid;
-  gap: 4px;
+  gap: 7px;
   max-width: 420px;
+  color: #334155;
+  font-size: 13px;
   font-weight: 600;
+}
+.ppd-name input,
+.pricing-policy-guardrails input,
+.pricing-rule-editor input:not([type='checkbox']),
+.pricing-rule-editor select {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: 0;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  color: #0f172a;
+  font: inherit;
+  font-size: 14px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+.ppd-name input:hover,
+.pricing-policy-guardrails input:hover,
+.pricing-rule-editor input:not([type='checkbox']):hover,
+.pricing-rule-editor select:hover {
+  border-color: #94a3b8;
+  background: #fefefe;
+}
+.ppd-name input:focus,
+.pricing-policy-guardrails input:focus,
+.pricing-rule-editor input:not([type='checkbox']):focus,
+.pricing-rule-editor select:focus {
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 235, 0.11),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.pricing-policy-guardrails label {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 650;
+}
+.pricing-rule-editor select {
+  cursor: pointer;
+}
+.ppd-name input:disabled,
+.pricing-policy-guardrails input:disabled,
+.pricing-rule-editor input:not([type='checkbox']):disabled,
+.pricing-rule-editor select:disabled {
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #94a3b8;
 }
 .ppo-eyebrow.is-draft {
   background: #fef3c7;
@@ -264,7 +325,7 @@
 .pricing-field {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: 7px;
 }
 .pricing-field-wide {
   grid-column: 1 / -1;
@@ -273,6 +334,10 @@
   color: #334155;
   font-size: 13px;
   font-weight: 650;
+  transition: color 0.16s ease;
+}
+.pricing-field:focus-within .pricing-field-label {
+  color: #1d4ed8;
 }
 .pricing-field small {
   color: #64748b;
@@ -284,28 +349,73 @@
   align-items: center;
   overflow: hidden;
   border: 1px solid #cbd5e1;
-  border-radius: 9px;
+  border-radius: 10px;
   background: #fff;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+.pricing-input-affix:hover {
+  border-color: #94a3b8;
 }
 .pricing-input-affix:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 235, 0.11),
+    0 1px 2px rgba(15, 23, 42, 0.06);
 }
 .pricing-input-affix input {
   min-width: 0;
   width: 100%;
-  padding: 9px 10px;
+  height: 42px;
+  padding: 0 13px;
   border: 0 !important;
   outline: 0;
   background: transparent;
+  color: #0f172a;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.pricing-input-affix input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+.pricing-input-affix input:disabled {
+  cursor: not-allowed;
+  color: #94a3b8;
 }
 .pricing-input-affix > span {
-  padding: 9px 10px;
+  display: inline-flex;
+  align-self: stretch;
+  align-items: center;
+  min-width: 46px;
+  justify-content: center;
+  padding: 0 12px;
   border-left: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #64748b;
+  background: #f1f5f9;
+  color: #475569;
   font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+.pricing-input-affix:focus-within > span {
+  border-left-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.pricing-input-affix:has(input:disabled) {
+  border-color: #e2e8f0;
+  background: #f8fafc;
 }
 .pricing-card-actions {
   display: flex;

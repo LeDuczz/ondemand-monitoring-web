@@ -13,6 +13,203 @@
   background: var(--bg);
 }
 
+/* ---------- Preflight safety workspace ---------- */
+
+.odm-flight-step-title {
+  text-wrap: balance;
+}
+
+.odm-preflight-scroll {
+  container-type: inline-size;
+}
+
+.odm-preflight-summary {
+  min-width: 0;
+  box-shadow: none;
+}
+
+.odm-preflight-progress-number {
+  min-width: 6ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.odm-preflight-weather {
+  container-type: inline-size;
+  box-shadow: none;
+}
+
+.odm-preflight-weather-title,
+.odm-preflight-group-heading h2 {
+  margin: 0;
+  color: var(--tx);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.odm-preflight-weather-message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+.odm-preflight-weather-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.odm-preflight-weather-field {
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.odm-preflight-weather-field.is-span-2 {
+  grid-column: span 2;
+}
+
+.odm-preflight-weather-field.is-span-4 {
+  grid-column: span 4;
+}
+
+.odm-preflight-weather-input,
+.odm-preflight-weather-field select {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.odm-preflight-weather-input:focus-visible,
+.odm-preflight-weather-field select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.odm-preflight-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.odm-preflight-group-heading {
+  min-width: 0;
+}
+
+.odm-preflight-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.odm-preflight-item {
+  min-width: 0;
+  box-shadow: none;
+}
+
+.odm-preflight-item-main {
+  grid-template-columns: 44px minmax(0, 1fr) 210px;
+  min-width: 0;
+}
+
+.odm-preflight-item-detail,
+.odm-preflight-item-meta,
+.odm-preflight-item-status {
+  color: var(--tx2);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.odm-preflight-item-meta {
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.odm-preflight-item-status {
+  white-space: normal;
+}
+
+.odm-preflight-item-action {
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.odm-preflight-readonly-result {
+  display: inline-flex;
+  min-width: 112px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: var(--sf3);
+  color: var(--tx2);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.odm-preflight-readonly-result.is-passed {
+  background: var(--green-bg);
+  color: var(--green-fg);
+}
+
+.odm-preflight-readonly-result.is-failed {
+  background: var(--red-bg);
+  color: var(--red-fg);
+}
+
+.odm-preflight-item-action .odm-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+@container (max-width: 1050px) {
+  .odm-preflight-weather-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .odm-preflight-weather-field.is-span-4 {
+    grid-column: span 2;
+  }
+
+  .odm-preflight-checklist-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container (max-width: 640px) {
+  .odm-preflight-weather-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .odm-preflight-weather-field.is-span-2,
+  .odm-preflight-weather-field.is-span-4 {
+    grid-column: span 1;
+  }
+
+  .odm-preflight-item-main {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .odm-preflight-item-action {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .odm-preflight-item-action > * {
+    flex: 1;
+  }
+}
+
 .odm-opr-shell {
   display: flex;
   width: 100%;

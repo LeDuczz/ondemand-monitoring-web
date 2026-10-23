@@ -55,6 +55,13 @@ export type OrderPermitDocument = {
   dataUrl: string
 }
 
+export type OrderAuthorizationDocument = OrderPermitDocument & {
+  documentType: string
+  documentName: string
+  notes?: string | null
+  verificationStatus?: string | null
+}
+
 /** `order.attachments[]` item [BRIEF] — brief-only field. */
 export type OrderAttachment = {
   name: string
@@ -107,6 +114,9 @@ export type OrderDetail = {
   siteContactName?: string | null
   siteContactPhone?: string | null
   accessNotes?: string | null
+  monitoringRelationship?: string | null
+  monitoringAuthorizationConfirmed?: boolean | null
+  monitoringAuthorizationDocuments?: OrderAuthorizationDocument[] | null
   permitStatus?: string | null
   permitNumber?: string | null
   permitExpiresOn?: string | null
@@ -275,6 +285,9 @@ export type OrderCreateResponse = {
   siteContactName?: string | null
   siteContactPhone?: string | null
   accessNotes?: string | null
+  monitoringRelationship?: string | null
+  monitoringAuthorizationConfirmed?: boolean | null
+  monitoringAuthorizationDocuments?: OrderAuthorizationDocument[] | null
   permitStatus?: string | null
   permitNumber?: string | null
   permitExpiresOn?: string | null

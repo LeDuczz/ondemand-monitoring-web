@@ -6,7 +6,12 @@ import type {
   ServiceOption,
   ServicePricingEstimate,
 } from '../../../api/customerApi'
-import type { FormErrors, FormState, Step, UpdateField } from '../../../lib/createOrder/types'
+import type {
+  FormErrors,
+  FormState,
+  Step,
+  UpdateField,
+} from '../../../lib/createOrder/types'
 import type { ChecklistRow } from '../../../lib/checklist/types'
 import { DeliverablesCard } from './DeliverablesCard'
 import { DeliveryOptionsCard } from './DeliveryOptionsCard'
@@ -40,7 +45,7 @@ type Props = {
 export function ReviewStep(p: Props) {
   return (
     <div className="co-grid is-review">
-      <div className="co-stack">
+      <div className="co-stack co-review-form">
         <DeliverablesCard
           deliverables={p.deliverables}
           loading={p.deliverablesLoading}
@@ -55,7 +60,7 @@ export function ReviewStep(p: Props) {
           mediaTotals={p.mediaTotals}
         />
       </div>
-      <aside className="co-stack co-summary is-tall">
+      <aside className="co-stack co-summary is-tall co-review-summary">
         <RequestSummaryCard
           mediaTotals={p.mediaTotals}
           form={p.form}

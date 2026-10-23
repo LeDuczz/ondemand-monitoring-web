@@ -153,7 +153,11 @@ export function MonitoringChecklistSection({
   const [openId, setOpenId] = useState<string | null>(null)
   const locked =
     resultStatus === 'PENDING_MANAGER_APPROVAL' || resultStatus === 'APPROVED'
-  const editable = canExecute && resultKnown && !locked && !loading && !error
+  const canEditExecution =
+    canExecute && resultKnown && !locked && !loading && !error
+  const canEditAssessment =
+    canAssess && resultKnown && !locked && !loading && !error
+  const editable = canEditExecution || canEditAssessment
   const rows = [...(data?.executions ?? [])].sort(
     (a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id),
   )
@@ -321,8 +325,8 @@ export function MonitoringChecklistSection({
                         key={`${missionId}:${item.id}`}
                         item={item}
                         missionId={missionId}
-                        editable={editable}
-                        canAssess={canAssess}
+                        canExecute={canEditExecution}
+                        canAssess={canEditAssessment}
                         rejected={resultStatus === 'REJECTED'}
                         refresh={refresh}
                         compact
@@ -368,7 +372,7 @@ export function MonitoringChecklistSection({
     return (
       <div
         className="monitoring-checklist mc-preview"
-        aria-label="Checklist thực hiện"
+        aria-label="Kết quả checklist"
       >
         <div className="mc-preview-notice" role="note">
           <strong>🔒 Checklist chưa thể cập nhật</strong>
@@ -413,11 +417,11 @@ export function MonitoringChecklistSection({
   return (
     <section
       className="monitoring-checklist odm-card"
-      aria-label="Monitoring Checklist"
+      aria-label="Kết quả checklist"
     >
       <header>
         <div>
-          <h2>Checklist thực hiện</h2>
+          <h2>Kết quả checklist</h2>
           {!hideImplementationHints && (
             <p>Các mục cần thực hiện và bằng chứng cho nhiệm vụ này.</p>
           )}
@@ -525,8 +529,8 @@ export function MonitoringChecklistSection({
                 key={`${missionId}:${item.id}`}
                 item={item}
                 missionId={missionId}
-                editable={editable}
-                canAssess={canAssess}
+                canExecute={canEditExecution}
+                canAssess={canEditAssessment}
                 rejected={resultStatus === 'REJECTED'}
                 refresh={refresh}
               />
@@ -554,7 +558,7 @@ export function MonitoringChecklistSection({
 function ChecklistExecutionItem({
   item,
   missionId,
-  editable,
+  canExecute,
   canAssess,
   rejected,
   refresh,
@@ -562,12 +566,13 @@ function ChecklistExecutionItem({
 }: {
   item: MissionChecklistExecution
   missionId: string
-  editable: boolean
+  canExecute: boolean
   canAssess: boolean
   rejected: boolean
   refresh: () => void
   compact?: boolean
 }) {
+  const editable = canExecute || canAssess
   const [editing, setEditing] = useState(false)
   const [base, setBase] = useState(item)
   const [status, setStatus] = useState(item.executionStatus)
@@ -588,7 +593,7 @@ function ChecklistExecutionItem({
   }
   async function save() {
     if (!editable || busy || conflict) return
-    if (status === 'UNABLE_TO_VERIFY' && !reason.trim()) {
+    if (canExecute && status === 'UNABLE_TO_VERIFY' && !reason.trim()) {
       setError('Vui lòng nhập lý do không thể xác minh.')
       return
     }
@@ -605,11 +610,17 @@ function ChecklistExecutionItem({
           item.id,
           {
             expectedVersion: base.version,
-            executionStatus: status,
-            assessmentStatus: assessment,
-            observation: observation.trim() || null,
+            executionStatus: canExecute ? status : base.executionStatus,
+            assessmentStatus: canAssess ? assessment : base.assessmentStatus,
+            observation: canExecute
+              ? observation.trim() || null
+              : base.observation,
             unableToVerifyReason:
-              status === 'UNABLE_TO_VERIFY' ? reason.trim() : null,
+              canExecute
+                ? status === 'UNABLE_TO_VERIFY'
+                  ? reason.trim()
+                  : null
+                : base.unableToVerifyReason,
           },
         )
       setBase(updated)
@@ -675,8 +686,8 @@ function ChecklistExecutionItem({
             }}
           >
             <fieldset disabled={!editable || busy}>
-              <label>
-                Trạng thái
+              {canExecute && <label>
+                Trạng thái thực hiện
                 <select
                   value={status}
                   onChange={(event) => {
@@ -692,12 +703,11 @@ function ChecklistExecutionItem({
                     ),
                   )}
                 </select>
-              </label>
-              <label>
-                Đánh giá
+              </label>}
+              {canAssess && <label>
+                Đánh giá nghiệm thu
                 <select
                   value={assessment}
-                  disabled={!canAssess}
                   onChange={(event) =>
                     setAssessment(
                       event.target.value as ChecklistAssessmentStatus,
@@ -712,21 +722,21 @@ function ChecklistExecutionItem({
                     </option>
                   ))}
                 </select>
-              </label>
-              <p className="mc-help">
+              </label>}
+              {canAssess && <p className="mc-help">
                 ⓘ Đánh giá không đạt không tự động làm mission thất bại.
-              </p>
-              <label>
-                Ghi chú
+              </p>}
+              {canExecute && <label>
+                Ghi nhận thực hiện
                 <textarea
                   maxLength={2000}
                   placeholder="Thêm ghi chú nếu cần..."
                   value={observation}
                   onChange={(event) => setObservation(event.target.value)}
                 />
-              </label>
-              <small className="mc-counter">{observation.length} / 2000</small>
-              {status === 'UNABLE_TO_VERIFY' && (
+              </label>}
+              {canExecute && <small className="mc-counter">{observation.length} / 2000</small>}
+              {canExecute && status === 'UNABLE_TO_VERIFY' && (
                 <label>
                   Lý do không thể xác minh
                   <textarea
@@ -821,7 +831,7 @@ function ChecklistExecutionItem({
           }}
         >
           <fieldset disabled={!editable || busy}>
-            <label>
+            {canExecute && <label>
               Trạng thái thực hiện
               <select
                 value={status}
@@ -838,12 +848,11 @@ function ChecklistExecutionItem({
                   ),
                 )}
               </select>
-            </label>
-            <label>
-              Đánh giá
+            </label>}
+            {canAssess && <label>
+              Đánh giá nghiệm thu
               <select
                 value={assessment}
-                disabled={!canAssess}
                 onChange={(event) =>
                   setAssessment(event.target.value as ChecklistAssessmentStatus)
                 }
@@ -856,21 +865,21 @@ function ChecklistExecutionItem({
                   ),
                 )}
               </select>
-            </label>
-            <small>
+            </label>}
+            {canAssess && <small>
               Không đạt yêu cầu không đồng nghĩa mission thất bại. Chưa đánh giá
               là lựa chọn hợp lệ.
-            </small>
-            <label>
-              Ghi nhận
+            </small>}
+            {canExecute && <label>
+              Ghi nhận thực hiện
               <textarea
                 maxLength={2000}
                 value={observation}
                 onChange={(event) => setObservation(event.target.value)}
               />
-            </label>
-            <small>{observation.length} / 2000</small>
-            {status === 'UNABLE_TO_VERIFY' && (
+            </label>}
+            {canExecute && <small>{observation.length} / 2000</small>}
+            {canExecute && status === 'UNABLE_TO_VERIFY' && (
               <label>
                 Lý do không thể xác minh
                 <textarea

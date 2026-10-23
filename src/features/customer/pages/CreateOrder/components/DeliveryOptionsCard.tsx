@@ -51,7 +51,6 @@ export function DeliveryOptionsCard({
       wanted.some((format, index) => format !== form.resultFormats[index])
     )
       update('resultFormats', wanted)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaTotals.images, mediaTotals.videos, form.resultFormats])
 
   function toggle<T extends string>(list: readonly T[], value: T): T[] {
@@ -78,8 +77,10 @@ export function DeliveryOptionsCard({
             >
               <input
                 type="checkbox"
+                name="resultFormats"
                 checked={form.resultFormats.includes(format)}
                 disabled={derived(format) !== undefined}
+                aria-invalid={Boolean(errors.resultFormats)}
                 onChange={() =>
                   update('resultFormats', toggle(form.resultFormats, format))
                 }
@@ -105,7 +106,9 @@ export function DeliveryOptionsCard({
             >
               <input
                 type="checkbox"
+                name="deliveryMethods"
                 checked={form.deliveryMethods.includes(method)}
+                aria-invalid={Boolean(errors.deliveryMethods)}
                 onChange={() =>
                   update(
                     'deliveryMethods',
@@ -160,30 +163,39 @@ export function DeliveryOptionsCard({
           <div className="co-terms-title">{t.termsHeading}</div>
           <span className="co-terms-badge">{t.termsRequired}</span>
         </div>
-        <ul className="co-terms-list">
-          <li>{t.commitmentUse}</li>
-          <li>{t.commitmentRetention}</li>
-          <li>{t.commitmentResponsibility}</li>
-          <li>{t.commitmentPermit}</li>
-          <li className="is-key">{t.commitmentPrivacy}</li>
-        </ul>
         <label
           className={`co-check co-terms-check${errors.termsAccepted ? ' has-error' : ''}`}
         >
           <input
             type="checkbox"
+            name="termsAccepted"
             checked={form.termsAccepted}
             aria-invalid={Boolean(errors.termsAccepted)}
+            aria-describedby={
+              errors.termsAccepted ? 'co-terms-error' : 'co-terms-privacy'
+            }
             onChange={(event) => update('termsAccepted', event.target.checked)}
           />
           <span className="co-terms-check-copy">
             <strong>{t.termsLabel}</strong>
-            <small>{t.termsPrivacyNotice}</small>
+            <small id="co-terms-privacy">{t.termsPrivacyNotice}</small>
           </span>
         </label>
         {errors.termsAccepted && (
-          <div className="ui-field-error">{errors.termsAccepted}</div>
+          <div id="co-terms-error" className="ui-field-error" role="alert">
+            {errors.termsAccepted}
+          </div>
         )}
+        <details className="co-terms-details">
+          <summary>{t.commitmentsToggle}</summary>
+          <ul className="co-terms-list">
+            <li>{t.commitmentUse}</li>
+            <li>{t.commitmentRetention}</li>
+            <li>{t.commitmentResponsibility}</li>
+            <li>{t.commitmentPermit}</li>
+            <li className="is-key">{t.commitmentPrivacy}</li>
+          </ul>
+        </details>
       </div>
     </Card>
   )

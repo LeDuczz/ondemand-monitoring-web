@@ -248,6 +248,7 @@ describe('MonitoringChecklistSection', () => {
     render(
       <MonitoringChecklistSection
         {...props}
+        canAssess
         data={{
           ...data,
           executions: [{ ...item, executionStatus: 'IN_PROGRESS' }],
@@ -258,10 +259,10 @@ describe('MonitoringChecklistSection', () => {
     fireEvent.change(screen.getByLabelText('Trạng thái thực hiện'), {
       target: { value: 'COMPLETED' },
     })
-    fireEvent.change(screen.getByLabelText('Đánh giá'), {
+    fireEvent.change(screen.getByLabelText('Đánh giá nghiệm thu'), {
       target: { value: 'NON_COMPLIANT' },
     })
-    fireEvent.change(screen.getByLabelText('Ghi nhận'), {
+    fireEvent.change(screen.getByLabelText('Ghi nhận thực hiện'), {
       target: { value: '  vết nứt  ' },
     })
     fireEvent.click(screen.getByText('Lưu mục'))
@@ -320,7 +321,7 @@ describe('MonitoringChecklistSection', () => {
       <MonitoringChecklistSection {...props} refresh={refresh} />,
     )
     fireEvent.click(screen.getByText('Cập nhật mục'))
-    fireEvent.change(screen.getByLabelText('Ghi nhận'), {
+    fireEvent.change(screen.getByLabelText('Ghi nhận thực hiện'), {
       target: { value: 'Chưa lưu' },
     })
     fireEvent.click(screen.getByText('Lưu mục'))
@@ -335,14 +336,14 @@ describe('MonitoringChecklistSection', () => {
         }}
       />,
     )
-    expect(screen.getByLabelText('Ghi nhận')).toHaveValue('Chưa lưu')
+    expect(screen.getByLabelText('Ghi nhận thực hiện')).toHaveValue('Chưa lưu')
     expect(screen.getByText('Lưu mục')).toBeDisabled()
     expect(save).toHaveBeenCalledTimes(1)
     expect(refresh).toHaveBeenCalledOnce()
     fireEvent.click(
       screen.getByText('Dùng dữ liệu mới (bỏ chỉnh sửa chưa lưu)'),
     )
-    expect(screen.getByLabelText('Ghi nhận')).toHaveValue('Mới từ server')
+    expect(screen.getByLabelText('Ghi nhận thực hiện')).toHaveValue('Mới từ server')
   })
   it.each(['DRAFT', 'REJECTED'] as const)(
     '%s allows capability-driven editing',

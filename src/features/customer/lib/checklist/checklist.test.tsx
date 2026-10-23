@@ -308,7 +308,9 @@ describe('Order checklist state and editor', () => {
     render(<Editor />)
     await screen.findByLabelText('Nội dung giám sát 1')
     expect(
-      screen.getByText(/Thay đổi danh sách này có thể làm thay đổi chi phí/),
+      screen.getByText(
+        /Thay đổi danh sách có thể làm thay đổi chi phí dự kiến/,
+      ),
     ).toBeInTheDocument()
     expect(screen.getAllByText(/Mặc định của dịch vụ/)).toHaveLength(2)
     expect(screen.getByLabelText('Nội dung giám sát 1')).toHaveValue('First')
@@ -329,6 +331,43 @@ describe('Order checklist state and editor', () => {
     expect(
       screen.queryByLabelText('Nội dung giám sát 3'),
     ).not.toBeInTheDocument()
+  })
+
+  it('has one keyboard-accessible edit action per compact row and keeps changes when switching views', async () => {
+    vi.spyOn(customerApi, 'getServiceChecklist').mockResolvedValue(template())
+    function CompactEditor() {
+      return <ChecklistEditor variant="compact" checklist={useOrderChecklist('A')} />
+    }
+    render(<CompactEditor />)
+
+    const edit = await screen.findByRole('button', { name: 'Sửa nội dung 1' })
+    expect(screen.getAllByRole('button', { name: 'Sửa nội dung 1' })).toHaveLength(1)
+    expect(screen.getByRole('checkbox', { name: 'Chọn nội dung 1' })).toBeChecked()
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Chọn nội dung 1' }),
+    ).toHaveAttribute('aria-describedby', 'checklist-summary-link-1')
+
+    fireEvent.click(edit)
+    const content = screen.getByLabelText('Nội dung giám sát 1')
+    expect(content).toHaveFocus()
+    fireEvent.change(content, { target: { value: 'Updated monitoring content' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Xong' }))
+
+    expect(screen.getByRole('button', { name: 'Sửa nội dung 1' })).toHaveFocus()
+    fireEvent.click(screen.getByRole('button', { name: 'Dạng nhóm' }))
+    expect(screen.getByText('Updated monitoring content')).toBeInTheDocument()
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Chọn nội dung 1',
+      }),
+    ).toBeChecked()
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm nội dung giám sát' }), {
+      target: { value: 'Updated' },
+    })
+    expect(screen.getByText('Updated monitoring content')).toBeInTheDocument()
+    expect(screen.queryByText('Second')).not.toBeInTheDocument()
   })
 
   it('does not display unselected catalog items outside the service package', async () => {

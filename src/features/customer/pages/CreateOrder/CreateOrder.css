@@ -42,7 +42,7 @@
 }
 
 .co-grid.is-review {
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
   gap: 24px;
 }
 
@@ -2778,6 +2778,26 @@ ul.co-help {
   height: 18px;
   accent-color: #d97706;
 }
+.co-terms-important .co-terms-details {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, #d97706 30%, transparent);
+}
+.co-terms-important .co-terms-details summary {
+  width: max-content;
+  max-width: 100%;
+  padding: 2px 0;
+  color: #92400e;
+  font-weight: 700;
+}
+.co-terms-important .co-terms-details summary:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 3px;
+}
+.co-terms-important .co-terms-details .co-terms-list {
+  margin: 10px 0 0;
+}
 :root[data-theme='dark'] .co-terms-important {
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.45);
@@ -2923,6 +2943,20 @@ ul.co-help {
 .co-grid.is-service {
   grid-template-columns: minmax(0, 13fr) minmax(360px, 7fr);
   gap: 20px;
+  align-items: stretch;
+}
+
+/* Keep the two step-one panels aligned on desktop without imposing a fixed
+   height. The grid row takes the natural height of the taller panel, then the
+   service card stretches to match it. */
+.co-grid.is-service > .co-stack:first-child,
+.co-grid.is-service > .co-summary.is-tall {
+  align-self: stretch;
+}
+
+.co-grid.is-service > .co-stack:first-child > .ui-card {
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* Keep the progress overview compact; details belong to the current step only. */
@@ -2999,11 +3033,15 @@ ul.co-help {
 @media (max-width: 1000px) {
   .co-grid.is-service {
     grid-template-columns: minmax(0, 1fr);
+    align-items: start;
   }
   .co-grid.is-service > .co-summary.is-tall {
     position: static;
     max-height: none;
     overflow: visible;
+  }
+  .co-grid.is-service > .co-stack:first-child > .ui-card {
+    height: auto;
   }
 }
 
@@ -3036,11 +3074,57 @@ ul.co-help {
 
 .co-grid,
 .co-grid.is-service,
-.co-grid.is-review,
 .co-grid.is-location {
   grid-template-columns: minmax(0, 1.65fr) minmax(340px, 0.85fr);
   gap: 24px;
   align-items: start;
+}
+
+/* Step 6 is a side-by-side decision screen: both columns carry comparable
+   weight, while the summary remains wide enough for Vietnamese copy. */
+.co-grid.is-review {
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.co-review-form,
+.co-review-summary {
+  min-width: 0;
+}
+
+/* Step 6 is one review surface split into two balanced panels. Consolidating
+   the editable cards prevents the left column from ending early and exposing
+   a large patch of page background beside the taller summary. */
+.co-review-form {
+  gap: 0;
+  height: 100%;
+  overflow: clip;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+}
+
+.co-review-form > .ui-card {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.co-review-form > .ui-card + .ui-card {
+  flex: 1;
+  border-top: 1px solid var(--ui-border);
+}
+
+.co-grid.is-review > .co-review-summary {
+  position: static;
+  height: 100%;
+}
+
+/* The service step uses the full grid row height for both desktop panels. */
+.co-grid.is-service {
+  align-items: stretch;
 }
 
 /* Step 5 is a scheduling form, not a pricing review. Give the editable fields

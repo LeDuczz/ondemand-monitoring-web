@@ -23,7 +23,7 @@ import { orderDetailPageMessages } from './OrderDetailPage.messages'
 import {
   CustomerFinancePanel,
   type CustomerFinanceState,
-} from '../../../finance/CustomerFinancePanel'
+} from '../../../finance/CustomerFinance'
 import { CustomerDeliveryPanel } from '../../../delivery/CustomerDeliveryPanel'
 import type { CustomerMissionSummary } from '../../api/customerMissionReportApi'
 

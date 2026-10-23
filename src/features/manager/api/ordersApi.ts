@@ -48,6 +48,37 @@ function radiusFromDeliverables(order: OrderCreateResponse) {
   return null
 }
 
+function attachmentsFromDeliverables(order: OrderCreateResponse) {
+  const files = new Map<string, NonNullable<OrderDetail['attachments']>[number]>()
+  for (const deliverable of order.deliverables ?? []) {
+    const requirement = deliverable.requirement
+    if (!requirement) continue
+    for (const key of ['areaFiles', 'customerAttachments'] as const) {
+      const candidates = requirement[key]
+      if (!Array.isArray(candidates)) continue
+      for (const candidate of candidates) {
+        if (!candidate || typeof candidate !== 'object') continue
+        const file = candidate as Record<string, unknown>
+        const name = typeof file.fileName === 'string' ? file.fileName : null
+        const url = typeof file.dataUrl === 'string' ? file.dataUrl : null
+        if (!name || !url) continue
+        const sizeBytes = numberValue(file.sizeBytes)
+        files.set(`${name}:${url}`, {
+          name,
+          sizeLabel:
+            sizeBytes == null ? 'Không rõ dung lượng' : `${(sizeBytes / 1_000_000).toFixed(2)} MB`,
+          mimeType:
+            typeof file.contentType === 'string'
+              ? file.contentType
+              : 'application/octet-stream',
+          url,
+        })
+      }
+    }
+  }
+  return [...files.values()]
+}
+
 function toOrderDetail(order: OrderCreateResponse): OrderDetail {
   return {
     executionPlanRevision: order.executionPlanRevision,
@@ -84,7 +115,7 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
         label: `${item.deliverableTypeName}${formatRequirement(item.requirement)}`,
       })) ?? null,
     purpose: order.description || null,
-    attachments: null,
+    attachments: attachmentsFromDeliverables(order),
     title: order.title,
     description: order.description,
     usagePurpose: order.usagePurpose ?? null,
@@ -94,6 +125,11 @@ function toOrderDetail(order: OrderCreateResponse): OrderDetail {
     siteContactName: order.siteContactName ?? null,
     siteContactPhone: order.siteContactPhone ?? null,
     accessNotes: order.accessNotes ?? null,
+    monitoringRelationship: order.monitoringRelationship ?? null,
+    monitoringAuthorizationConfirmed:
+      order.monitoringAuthorizationConfirmed ?? null,
+    monitoringAuthorizationDocuments:
+      order.monitoringAuthorizationDocuments ?? null,
     permitStatus: order.permitStatus ?? null,
     permitNumber: order.permitNumber ?? null,
     permitExpiresOn: order.permitExpiresOn ?? null,

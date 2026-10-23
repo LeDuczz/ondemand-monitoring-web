@@ -20,7 +20,9 @@ describe('PricingEstimateCard', () => {
       />,
     )
 
-    expect(screen.getByText(/Đây là chi phí dự kiến/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Quản lý sẽ gửi báo giá cuối cùng/),
+    ).toBeInTheDocument()
     expect(screen.getByText(/báo giá cuối cùng/)).toBeInTheDocument()
     expect(screen.queryByText('Dịch vụ bổ sung')).not.toBeInTheDocument()
   })
@@ -80,11 +82,17 @@ describe('PricingEstimateCard', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'DỊCH VỤ BỔ SUNG' })).toBeInTheDocument()
-    expect(screen.getByText('Kiểm tra tình trạng mái phía sau')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'DỊCH VỤ BỔ SUNG' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Kiểm tra tình trạng mái phía sau'),
+    ).toBeInTheDocument()
     expect(screen.getByText('20 ảnh · 2 video')).toBeInTheDocument()
     expect(screen.getByText('Chờ quản lý duyệt báo giá')).toBeInTheDocument()
-    expect(screen.getByText('Đang chờ quản lý duyệt báo giá')).toBeInTheDocument()
+    expect(
+      screen.getByText('Đang chờ quản lý duyệt báo giá'),
+    ).toBeInTheDocument()
     expect(screen.getAllByText(/3\.500\.000/)).toHaveLength(2)
     expect(screen.queryByText(/880\.000/)).not.toBeInTheDocument()
   })

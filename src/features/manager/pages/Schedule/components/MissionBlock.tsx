@@ -1,18 +1,18 @@
+import type { CSSProperties } from 'react'
+
 import type { MissionCalendarItem } from '../../../types/missions'
-import {
-  toLocalHours,
-  HOUR_START,
-  PX_PER_HOUR,
-  toneBg,
-  toneFg,
-} from '../scheduleHelpers'
+import { toLocalHours, HOUR_START } from '../scheduleHelpers'
 import { missionStatusTone } from '../../../../../shared/lib/statusTone'
+import { toUiTone } from '../../../../../shared/components/ui'
 
 // ── MissionBlock ───────────────────────────────────────────────────────────
 
 export type MissionBlockProps = {
   mission: MissionCalendarItem
-  dayIndex: number
+  /** Lane inside an overlapping cluster, 0-based. */
+  lane: number
+  /** Number of lanes in the cluster, so overlapping missions sit side by side. */
+  lanes: number
   selected: boolean
   onSelect: (m: MissionCalendarItem) => void
   missionStatusLabel: string
@@ -20,6 +20,8 @@ export type MissionBlockProps = {
 
 export function MissionBlock({
   mission,
+  lane,
+  lanes,
   selected,
   onSelect,
   missionStatusLabel,
@@ -31,62 +33,34 @@ export function MissionBlock({
     ? toLocalHours(mission.scheduledEndAt)
     : startH
 
-  const top = Math.max(0, (startH - HOUR_START) * PX_PER_HOUR)
-  const height = Math.max(18, (endH - startH) * PX_PER_HOUR - 2)
-
-  const tone = missionStatusTone[mission.status] ?? 'gray'
-  const bg = toneBg[tone]
-  const fg = toneFg[tone]
+  const tone = toUiTone(missionStatusTone[mission.status] ?? 'gray')
+  // Geometry is data-driven, so it is handed to the stylesheet as custom properties.
+  const geometry = {
+    '--start': Math.max(0, startH - HOUR_START),
+    '--span': Math.max(0.3, endH - startH),
+    '--lane': lane,
+    '--lanes': lanes,
+  } as CSSProperties
 
   return (
     <button
       type="button"
-      style={{
-        position: 'absolute',
-        top,
-        left: 2,
-        right: 2,
-        height,
-        background: bg,
-        color: fg,
-        border: selected ? `2px solid ${fg}` : '1px solid transparent',
-        borderRadius: 5,
-        padding: '3px 5px',
-        textAlign: 'left',
-        fontSize: 11,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        lineHeight: 1.3,
-      }}
+      className={`mgr-sched-block is-${tone}${selected ? ' is-selected' : ''}`}
+      style={geometry}
       onClick={() => onSelect(mission)}
       aria-pressed={selected}
       aria-label={`${mission.missionCode} ${missionStatusLabel}`}
     >
-      <div
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontWeight: 600,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
+      <span className="mgr-sched-block-code">
         {mission.missionCode.slice(-6)}
-      </div>
+      </span>
       {mission.droneCode && (
-        <div
-          style={{
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            opacity: 0.8,
-          }}
-        >
+        <span className="mgr-sched-block-meta">
           {mission.droneCode}
           {mission.operatorName
             ? ` · ${mission.operatorName.split(' ').at(-1)}`
             : ''}
-        </div>
+        </span>
       )}
     </button>
   )

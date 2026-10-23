@@ -1,12 +1,15 @@
+import { useMemo, type CSSProperties } from 'react'
+
 import type { MissionCalendarItem } from '../../../types/missions'
 import type { PageMessages } from '../scheduleTypes'
-import { useMemo } from 'react'
 import {
   TOTAL_HOURS,
   HOUR_START,
-  formatDateShort,
   PX_PER_HOUR,
+  formatDateShort,
   isSameDay,
+  layoutLanes,
+  toLocalHours,
 } from '../scheduleHelpers'
 import { MissionBlock } from './MissionBlock'
 
@@ -33,81 +36,74 @@ export function WeekGrid({
     () => Array.from({ length: TOTAL_HOURS }, (_, i) => HOUR_START + i),
     [],
   )
+  const columns = useMemo(
+    () =>
+      days.map((day) =>
+        layoutLanes(
+          missions
+            .filter(
+              (m) =>
+                m.scheduledStartAt &&
+                isSameDay(new Date(m.scheduledStartAt), day),
+            )
+            .map((m) => {
+              const start = toLocalHours(m.scheduledStartAt!)
+              return {
+                item: m,
+                start,
+                end: m.scheduledEndAt ? toLocalHours(m.scheduledEndAt) : start,
+              }
+            }),
+        ),
+      ),
+    [days, missions],
+  )
+  const metrics = {
+    '--sched-hours': TOTAL_HOURS,
+    '--sched-hour-px': `${PX_PER_HOUR}px`,
+  } as CSSProperties
 
   return (
-    <div className="odm-sched-grid" aria-label={t.weekGridAriaLabel}>
-      {/* Header row */}
-      <div className="odm-sched-grid-head">
-        {/* Time gutter label */}
-        <div className="odm-sched-gutter" />
-        {days.map((day, i) => (
-          <div key={i} className="odm-sched-day-head">
-            <span style={{ color: 'var(--tx3)', fontSize: 11 }}>
-              {t.shortDays[i]}
-            </span>{' '}
-            <span style={{ fontWeight: 600 }}>{formatDateShort(day)}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Body: time labels + day columns */}
+    <div className="mgr-sched-scroll">
       <div
-        className="odm-sched-grid-body"
-        style={{ height: TOTAL_HOURS * PX_PER_HOUR }}
+        className="mgr-sched-grid"
+        style={metrics}
+        aria-label={t.weekGridAriaLabel}
       >
-        {/* Time labels */}
-        <div className="odm-sched-gutter">
-          {hours.map((h) => (
-            <div
-              key={h}
-              style={{
-                height: PX_PER_HOUR,
-                fontSize: 11,
-                color: 'var(--tx3)',
-                paddingTop: 2,
-              }}
-            >
-              {String(h).padStart(2, '0')}:00
+        <div className="mgr-sched-head">
+          <div className="mgr-sched-gutter" />
+          {days.map((day, i) => (
+            <div key={i} className="mgr-sched-day-head">
+              <span className="mgr-muted">{t.shortDays[i]}</span>{' '}
+              <strong>{formatDateShort(day)}</strong>
             </div>
           ))}
         </div>
 
-        {/* Day columns */}
-        {days.map((day, di) => {
-          const dayMissions = missions.filter(
-            (m) =>
-              m.scheduledStartAt &&
-              isSameDay(new Date(m.scheduledStartAt), day),
-          )
-          return (
-            <div key={di} className="odm-sched-day-col">
-              {/* Horizontal hour lines */}
-              {hours.map((h) => (
-                <div
-                  key={h}
-                  style={{
-                    position: 'absolute',
-                    top: (h - HOUR_START) * PX_PER_HOUR,
-                    left: 0,
-                    right: 0,
-                    height: 1,
-                    background: 'var(--bd)',
-                  }}
-                />
-              ))}
-              {dayMissions.map((m) => (
+        <div className="mgr-sched-body">
+          <div className="mgr-sched-gutter">
+            {hours.map((h) => (
+              <div key={h} className="mgr-sched-hour">
+                {String(h).padStart(2, '0')}:00
+              </div>
+            ))}
+          </div>
+          {columns.map((column, di) => (
+            <div key={di} className="mgr-sched-day-col">
+              {column.map(({ item, lane, lanes }) => (
                 <MissionBlock
-                  key={m.id}
-                  mission={m}
-                  dayIndex={di}
-                  selected={selectedId === m.id}
+                  key={item.id}
+                  mission={item}
+                  lane={lane}
+                  lanes={lanes}
+                  selected={selectedId === item.id}
                   onSelect={onSelect}
-                  missionStatusLabel={getMissionStatusLabel(m.status)}
+                  missionStatusLabel={getMissionStatusLabel(item.status)}
                 />
               ))}
             </div>
-          )
-        })}
+          ))}
+        </div>
       </div>
     </div>
   )

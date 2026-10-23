@@ -34,21 +34,46 @@ export function toLocalHours(iso: string): number {
   return d.getHours() + d.getMinutes() / 60
 }
 
-/** Tone → CSS variable suffix for mission block colours. */
-export const toneBg: Record<string, string> = {
-  gray: 'var(--gray-bg)',
-  yellow: 'var(--yellow-bg)',
-  blue: 'var(--blue-bg)',
-  green: 'var(--green-bg)',
-  orange: 'var(--orange-bg)',
-  red: 'var(--red-bg)',
-}
+/** A mission placed in a day column; overlapping missions get side-by-side lanes. */
+export type LaneItem<T> = { item: T; lane: number; lanes: number }
 
-export const toneFg: Record<string, string> = {
-  gray: 'var(--gray-fg)',
-  yellow: 'var(--yellow-fg)',
-  blue: 'var(--blue-fg)',
-  green: 'var(--green-fg)',
-  orange: 'var(--orange-fg)',
-  red: 'var(--red-fg)',
+/** Minimum visual duration (hours) so very short missions still collide when stacked. */
+const MIN_VISUAL_HOURS = 0.3
+
+/**
+ * Greedy lane assignment: missions that overlap in time form a cluster and are
+ * laid out in parallel lanes, each cluster sharing the same lane count.
+ */
+export function layoutLanes<T>(
+  entries: Array<{ item: T; start: number; end: number }>,
+): Array<LaneItem<T>> {
+  const sorted = [...entries].sort((a, b) => a.start - b.start || a.end - b.end)
+  const result: Array<LaneItem<T>> = []
+  let cluster: Array<{ item: T; lane: number }> = []
+  let laneEnds: number[] = []
+  let clusterEnd = -Infinity
+
+  const flush = () => {
+    const lanes = laneEnds.length
+    for (const entry of cluster) result.push({ ...entry, lanes })
+    cluster = []
+    laneEnds = []
+    clusterEnd = -Infinity
+  }
+
+  for (const entry of sorted) {
+    const end = Math.max(entry.end, entry.start + MIN_VISUAL_HOURS)
+    if (cluster.length > 0 && entry.start >= clusterEnd) flush()
+    let lane = laneEnds.findIndex((laneEnd) => laneEnd <= entry.start)
+    if (lane === -1) {
+      lane = laneEnds.length
+      laneEnds.push(end)
+    } else {
+      laneEnds[lane] = end
+    }
+    cluster.push({ item: entry.item, lane })
+    clusterEnd = Math.max(clusterEnd, end)
+  }
+  flush()
+  return result
 }
